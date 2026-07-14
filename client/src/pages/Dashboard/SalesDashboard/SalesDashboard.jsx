@@ -57,6 +57,47 @@ const getCurrentFinancialYearLabel = () => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getCurrentFinancialYearStart = () => {
+  const today = dayjs();
+  return today.month() < 3 ? today.year() - 1 : today.year();
+};
+
+const getUnifiedClientTypeAndDate = (clientType, client) => {
+  let resolvedClientType = clientType || "Unknown";
+
+  if (resolvedClientType === "meeting") {
+    const purpose = (client?.purposeOfVisit || "").trim().toLowerCase();
+    if (purpose === "meeting room booking") {
+      resolvedClientType = "externalMeeting";
+    } else if (purpose === "half-day pass" || purpose === "full-day pass") {
+      resolvedClientType = "openDesk";
+    }
+  }
+
+  if (resolvedClientType === "coworking" && client?.service?.serviceName) {
+    const serviceName = client.service.serviceName.toLowerCase();
+    if (serviceName.includes("workation")) {
+      resolvedClientType = "workation";
+    } else if (serviceName.includes("living") || serviceName.includes("coliving")) {
+      resolvedClientType = "coliving";
+    }
+  }
+
+  let clientDate = null;
+
+  if (resolvedClientType === "coworking") {
+    clientDate = client?.startDate || null;
+  } else if (resolvedClientType === "virtualOffice") {
+    clientDate = client?.termStartDate || client?.rentDate || null;
+  } else if (resolvedClientType === "externalMeeting" || resolvedClientType === "openDesk") {
+    clientDate = client?.dateOfVisit || client?.scheduledDate || null;
+  } else {
+    clientDate = client?.startDate || client?.dateOfVisit || client?.termStartDate || null;
+  }
+
+  return { resolvedClientType, clientDate };
+};
+
 const getNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
   return value ? "paid" : "unpaid";
@@ -484,6 +525,15 @@ const SalesDashboard = () => {
       }
     },
   });
+
+  const { data: consolidatedClientsData = {} } = useQuery({
+    queryKey: ["sales-dashboard-consolidated-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/consolidated-clients");
+      return response.data || {};
+    },
+  });
+
   const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
     queryKey: ["unitsData"],
     queryFn: async () => {
@@ -513,6 +563,38 @@ const SalesDashboard = () => {
       );
     }).length;
   }, [clientsData]);
+
+  const currentFinancialYearUniqueClients = useMemo(() => {
+    const currentFinancialYearStart = getCurrentFinancialYearStart();
+
+    return Object.entries(consolidatedClientsData || {}).flatMap(([key, clients]) => {
+      const normalizedClients = Array.isArray(clients) ? clients : [];
+      const clientType = key.replace(/Clients$/, "");
+
+      return normalizedClients.filter((client) => {
+        const { resolvedClientType, clientDate } = getUnifiedClientTypeAndDate(
+          clientType,
+          client,
+        );
+
+        if (
+          !["coworking", "virtualOffice", "externalMeeting", "openDesk"].includes(
+            resolvedClientType,
+          )
+        ) {
+          return false;
+        }
+
+        const parsedDate = dayjs(clientDate);
+        if (!parsedDate.isValid()) return false;
+
+        const clientFinancialYearStart =
+          parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+
+        return clientFinancialYearStart === currentFinancialYearStart;
+      });
+    }).length;
+  }, [consolidatedClientsData]);
 
   const activeUnits = useMemo(
     () =>
@@ -667,22 +749,22 @@ const SalesDashboard = () => {
       },
       {
         title: "Occupied Desks",
-        value: 553,
+        value: totalCoWorkingSeats || 0,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Occupancy %",
-        value: "93",
+        value: occupancyPercentage,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
-        title: "Clients",
-        value: "45",
+        title: "Total Clients",
+        value: currentFinancialYearUniqueClients || 0,
         route: "/app/dashboard/sales-dashboard/clients",
       },
       {
         title: "Provisioned Desks",
-        value: "140",
+        value: " ",
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
     ],
