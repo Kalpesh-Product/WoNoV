@@ -35,8 +35,10 @@ const reviewSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
+
+reviewSchema.index({ meeting: 1 });
 
 const Review = mongoose.model("Review", reviewSchema);
 module.exports = Review;
