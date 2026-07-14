@@ -23,7 +23,7 @@ async function fetchVisitors(req, res) {
   const payload = await fetchVisitorReportService({
     roles: req.body?.roles || [],
     company: req.company,
-    query: req.query,
+    query: req.query?.query,
   });
 
   return res.status(200).json(payload);

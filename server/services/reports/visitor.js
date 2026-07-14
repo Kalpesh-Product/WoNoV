@@ -2,15 +2,67 @@ const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
 
-const attachExternalVisits = async (visitors) => {
+const normalizeVisitorQuery = (query) =>
+  typeof query === "string" ? query : query?.query;
+
+const populateVisitorListFields = [
+  {
+    path: "department",
+    select: "name",
+  },
+  {
+    path: "visitorCompany",
+    select: "companyName pocName",
+  },
+  {
+    path: "toMeet",
+    select: "firstName lastName email",
+  },
+  {
+    path: "toMeetCompany",
+    select: "clientName companyName name",
+  },
+  {
+    path: "clientToMeet",
+    select: "employeeName email",
+  },
+  {
+    path: "checkedInBy",
+    select: "firstName lastName",
+  },
+  {
+    path: "checkedOutBy",
+    select: "firstName lastName",
+  },
+  {
+    path: "meeting",
+    select:
+      "subject agenda startDate endDate startTime endTime meetingType status",
+  },
+  {
+    path: "building",
+    select: "buildingName",
+  },
+  {
+    path: "unit",
+    select: "unitNo unitName",
+  },
+];
+
+const attachExternalVisits = async (visitors, companyId) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
     return visitors;
   }
 
-  const visitorIds = visitors.map((visitor) => visitor._id);
-  const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
+  const visitorIds = visitors.map((visitor) => visitor._id).filter(Boolean);
+  const visits = await ExternalVisits.find({
+    visitorId: { $in: visitorIds },
+    ...(companyId && { company: companyId }),
+  })
+    .select("-__v")
     .sort({ checkIn: -1 })
-    .lean();
+    .lean()
+    .exec();
 
   const visitsByVisitor = visits.reduce((acc, visit) => {
     const visitorId = visit.visitorId?.toString();
@@ -27,7 +79,7 @@ const attachExternalVisits = async (visitors) => {
   }, {});
 
   return visitors.map((visitor) => ({
-    ...visitor.toObject(),
+    ...visitor,
     externalVisits: visitsByVisitor[visitor._id.toString()] || [],
   }));
 };
@@ -41,8 +93,9 @@ const fetchVisitorReportService = async ({
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
+    const queryKey = normalizeVisitorQuery(query);
     let visitors;
-    let filter = { company: companyId };
+    const filter = { company: companyId };
 
     if (dateFilter) {
       filter.checkIn = dateFilter.checkIn;
@@ -65,15 +118,12 @@ const fetchVisitorReportService = async ({
     //       }),
     //     }
 
-    switch (query) {
+    switch (queryKey) {
       case "department":
         visitors = await Visitor.aggregate([
           {
             $match: {
-              company: companyId,
-              ...(dateFilter?.checkIn && {
-                checkIn: dateFilter?.checkIn,
-              }),
+              ...filter,
             },
           },
           { $match: { department: { $ne: null } } },
@@ -104,94 +154,23 @@ const fetchVisitorReportService = async ({
         endOfDay.setHours(23, 59, 59, 999);
 
         visitors = await Visitor.find({
-          company: companyId,
+          ...filter,
           dateOfVisit: { $gte: startOfDay, $lte: endOfDay },
-          ...(dateFilter?.checkIn && {
-            checkIn: dateFilter?.checkIn,
-          }),
-        }).populate([
-          {
-            path: "department",
-            select: "name",
-          },
-          {
-            path: "visitorCompany",
-            select: "companyName",
-          },
-          {
-            path: "toMeet",
-            select: "firstName lastName email",
-          },
-          {
-            path: "toMeetCompany",
-            select: "clientName companyName name",
-          },
-          {
-            path: "clientToMeet",
-            select: "employeeName email",
-          },
-          // {
-          //   path: "clientCompany",
-          //   select: "clientName email",
-          // },
-          {
-            path: "building",
-            select: "buildingName",
-          },
-          {
-            path: "unit",
-            select: "unitNo unitName",
-          },
-          {
-            path: "meeting",
-          },
-        ]);
-        visitors = await attachExternalVisits(visitors);
+        })
+          .select("-__v")
+          .populate(populateVisitorListFields)
+          .lean()
+          .exec();
+        visitors = await attachExternalVisits(visitors, companyId);
         break;
 
       default:
-        visitors = await Visitor.find(filter).populate([
-          {
-            path: "department",
-            select: "name",
-          },
-          {
-            path: "toMeet",
-            select: "firstName lastName email",
-          },
-          {
-            path: "toMeetCompany",
-            select: "clientName companyName name",
-          },
-          {
-            path: "visitorCompany",
-            select: "companyName pocName",
-          },
-          {
-            path: "clientToMeet",
-            select: "employeeName email",
-          },
-          {
-            path: "checkedInBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "checkedOutBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "meeting",
-          },
-          {
-            path: "building",
-            select: "buildingName",
-          },
-          {
-            path: "unit",
-            select: "unitNo unitName",
-          },
-        ]);
-        visitors = await attachExternalVisits(visitors);
+        visitors = await Visitor.find(filter)
+          .select("-__v")
+          .populate(populateVisitorListFields)
+          .lean()
+          .exec();
+        visitors = await attachExternalVisits(visitors, companyId);
     }
 
     return visitors;
