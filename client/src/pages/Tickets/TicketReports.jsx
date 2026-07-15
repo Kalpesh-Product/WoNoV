@@ -119,12 +119,12 @@ const TicketReports = () => {
     { field: "description", headerName: "Description", hide: true },
     //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
-    { field: "assignedAtDate", headerName: "Assign Date", hide: true },
+    { field: "assignedAtDate", headerName: "Assign At", hide: true },
    // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
       // field: "acceptedAtDate",
       field: "acceptedAt",
-      headerName: "Accepted Date",
+      headerName: "Accepted At",
       hide: true,
       // cellRenderer: (params) => params.value,
     },
@@ -140,7 +140,7 @@ const TicketReports = () => {
     {
       // field: "escalatedAtDate",
       field: "escalatedAt",
-      headerName: "Escalated Date",
+      headerName: "Escalated At",
       hide: true,
     },
     // {
@@ -153,7 +153,7 @@ const TicketReports = () => {
     {
       // field: "closedAtDate",
       field: "closedAt",
-      headerName: "Closed Date",
+      headerName: "Closed At",
       hide: true,
       // cellRenderer: (params) => params.value,
     },
@@ -164,7 +164,7 @@ const TicketReports = () => {
     //   cellRenderer: (params) => params.value,
     // },
     { field: "rejectedBy", headerName: "Rejected By", hide: true },
-    { field: "rejectedAt", headerName: "Rejected Date", hide: true },
+    { field: "rejectedAt", headerName: "Rejected At", hide: true },
     { field: "reason", headerName: "Rejection Reason", hide: true },
   ];
 
@@ -264,6 +264,7 @@ const TicketReports = () => {
         escalatedAt: "",
         escalatedAtDate: "",
         escalatedAtTime: "",
+        reasonForEscalated: "",
       };
     }
 
@@ -285,6 +286,7 @@ const TicketReports = () => {
       escalatedAt: escalatedAtRaw ? formatDateTime(escalatedAtRaw) : "",
       escalatedAtDate: escalatedAtRaw || "",
       escalatedAtTime: escalatedAtRaw || "",
+      reasonForEscalated: latest?.description || "",
     };
   };
 
@@ -307,6 +309,7 @@ const TicketReports = () => {
                   raisedBy: getFullName(item.raisedBy),
                   description: item.description || "",
                   status: item.status || "",
+                  image: item?.image?.url || "",
                   assignees:
                     item.assignees?.map(
                       (assignee) =>
@@ -483,6 +486,10 @@ const TicketReports = () => {
               detail={selectedMeeting?.escalatedAt || ""}
             />
             <DetalisFormatted
+              title={"Reason for Escalated"}
+              detail={selectedMeeting?.reasonForEscalated || ""}
+            />
+            <DetalisFormatted
               title="Closed By"
               detail={selectedMeeting?.closedBy || ""}
             />
@@ -501,6 +508,15 @@ const TicketReports = () => {
               />
             ) : (
               ""
+            )}
+            {selectedMeeting?.image && (
+              <div className="lg:col-span-1">
+                <img
+                  src={selectedMeeting.image}
+                  alt="Ticket Attachment"
+                  className="max-w-full max-h-96 rounded border"
+                />
+              </div>
             )}
           </div>
         ) : (

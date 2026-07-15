@@ -26,6 +26,13 @@ const getCurrentFinancialYearLabel = () => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getFinancialYearLabel = (dateValue) => {
+  const date = dayjs(dateValue);
+  if (!date.isValid()) return null;
+  const startYear = date.month() < 3 ? date.year() - 1 : date.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
@@ -443,6 +450,22 @@ const BudgetPage = () => {
       0,
     ) || 0;
 
+  const selectedFYActualAmount = useMemo(
+    () =>
+      (hrFinance || []).reduce(
+        (acc, item) => {
+          if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
+            return acc;
+          }
+          const actualAmount = Number(item?.actualAmount || 0);
+
+          return acc + actualAmount;
+        },
+        0,
+      ),
+    [hrFinance, selectedFiscalYear],
+  );
+
   const navigate = useNavigate();
   // BUDGET NEW END
 
@@ -454,7 +477,9 @@ const BudgetPage = () => {
         valueKey="amount"
         chartOptions={expenseOptions}
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${inrFormat(totalUtilised)}`}
+        titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        selectedFY={selectedFiscalYear}
+        onSelectedFYChange={setSelectedFiscalYear}
       />
 
       {canRequestBudget && (

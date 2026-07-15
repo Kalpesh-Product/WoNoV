@@ -204,8 +204,18 @@ const MeetingReports = () => {
     { field: "date", headerName: "Date" },
     { field: "duration", headerName: "Duration" },
 
-    { field: "startTime", headerName: "Start Time", hide: true },
-    { field: "endTime", headerName: "End Time", hide: true },
+    {
+      field: "startTime",
+      headerName: "Start Time",
+      hide: true,
+      exportFormat: "datetime-comma",
+    },
+    {
+      field: "endTime",
+      headerName: "End Time",
+      hide: true,
+      exportFormat: "datetime-comma",
+    },
     {
       field: "housekeepingStatus",
       headerName: "Housekeeping Status",
@@ -213,7 +223,6 @@ const MeetingReports = () => {
     },
     { field: "companyName", headerName: "Company", hide: true },
     { field: "participants", headerName: "Participants", hide: true },
-    { field: "bookedBy", headerName: "Booked By", hide: true },
     { field: "receptionist", headerName: "Receptionist", hide: true },
     { field: "department", headerName: "Department", hide: true },
     { field: "location", headerName: "Location", hide: true },
@@ -270,6 +279,7 @@ const MeetingReports = () => {
             <YearWiseTable
               search={true}
               exportData
+              taskExportDateTimeFormatting
               dateColumn={"date"}
               tableTitle={"Meetings Reports"}
               data={[

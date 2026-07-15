@@ -5,10 +5,30 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
+import humanDate from "../../../utils/humanDateForamt";
 
 const AssetReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+
+  const formatDateTime = (value) => {
+    if (!value) return "N/A";
+    const dateObj = new Date(value);
+    if (Number.isNaN(dateObj.getTime())) return "N/A";
+
+    const datePart = `${String(dateObj.getDate()).padStart(2, "0")}-${String(
+      dateObj.getMonth() + 1,
+    ).padStart(2, "0")}-${dateObj.getFullYear()}`;
+    const timePart = dateObj
+      .toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      })
+      .toLowerCase();
+
+    return `${datePart}, ${timePart}`;
+  };
 
   const userDepartmentIds = (auth?.user?.departments || []).map((department) =>
     department?._id?.toString(),
@@ -24,11 +44,12 @@ const AssetReports = () => {
 
   const assetReportsColumns = [
     // visible columns
+    { field: "srNo", headerName: "Sr No", flex: 1 },
     { field: "assetNumber", headerName: "Asset Number", flex: 1 },
     { field: "category", headerName: "Category", flex: 1 },
     { field: "brand", headerName: "Brand", flex: 1 },
     { field: "price", headerName: "Price", flex: 1 },
-    { field: "purchaseDate", headerName: "Purchase Date", flex: 1 },
+    { field: "purchaseDate", headerName: "Purchase Date", flex: 1, exportFormat: "date" },
     { field: "warranty", headerName: "Warranty", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
 
@@ -37,16 +58,17 @@ const AssetReports = () => {
     { field: "assetName", headerName: "Asset Name", hide: true },
     { field: "serialNumber", headerName: "Serial Number", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    { field: "addedAt", headerName: "Added At", hide: true },
+    { field: "addedAt", headerName: "Added At", hide: true, exportFormat: "datetime-comma" },
     { field: "addedBy", headerName: "Added By", hide: true },
     { field: "assetType", headerName: "Asset Type", hide: true },
     { field: "department", headerName: "Department", hide: true },
+    { field: "departmentAssetId", headerName: "Department Asset ID", hide: true },
     { field: "unitNo", headerName: "Unit No", hide: true },
     { field: "ownershipType", headerName: "Ownership Type", hide: true },
     { field: "quantity", headerName: "Quantity", hide: true },
-    { field: "warrantyExpiryDate", headerName: "Warranty Expiry Date", hide: true },
+    { field: "warrantyExpiryDate", headerName: "Warranty Expiry Date", hide: true, exportFormat: "date" },
     { field: "warrantyMonths", headerName: "Warranty (Months)", hide: true },
-    { field: "rentedExpirationDate", headerName: "Rental Expiry Date", hide: true },
+    { field: "rentedExpirationDate", headerName: "Rental Expiry Date", hide: true, exportFormat: "date" },
     { field: "subCategory", headerName: "Sub Category", hide: true },
     { field: "tangible", headerName: "Tangible", hide: true },
     { field: "status", headerName: "Status", hide: true },
@@ -54,6 +76,13 @@ const AssetReports = () => {
     { field: "underMaintenance", headerName: "Under Maintenance", hide: true },
     { field: "extra", headerName: "Extra", hide: true },
     { field: "assigned", headerName: "Assigned", hide: true },
+    { field: "assignee", headerName: "Assignee", hide: true },
+    { field: "approvedBy", headerName: "Approved By", hide: true },
+    { field: "assignedBy", headerName: "Assigned By", hide: true },
+    { field: "approvedAt", headerName: "Approved At", hide: true },
+    { field: "assignedAt", headerName: "Assigned At", hide: true },
+    { field: "assignedBuilding", headerName: "Assigned Building", hide: true },
+    { field: "assignedUnit", headerName: "Assigned Unit", hide: true },
     { field: "assetImage", headerName: "Asset Image", hide: true },
     { field: "warrantyDocument", headerName: "Warranty Document", hide: true },
   ];
@@ -65,7 +94,8 @@ const AssetReports = () => {
           userDepartmentIds.includes(departmentGroup?.departmentId?.toString()),
         )
         .flatMap((departmentGroup) =>
-          (departmentGroup?.assets || []).map((asset) => ({
+          (departmentGroup?.assets || []).map((asset, index) => ({
+            srNo: index + 1,
             assetNumber: asset?.assetId || "N/A",
             secondaryId: asset?.secondaryId || "N/A",
             assetName: asset?.name || "N/A",
@@ -81,6 +111,7 @@ const AssetReports = () => {
             assetType: asset?.assetType || "N/A",
             brand: asset?.brand || "N/A",
             department: departmentGroup?.departmentName || "N/A",
+            departmentAssetId: asset?.departmentAssetId || "N/A",
             unitNo: asset?.location?.unitNo || "N/A",
             location:
               asset?.location?.unitNo || asset?.location?.unitName || "N/A",
@@ -103,6 +134,27 @@ const AssetReports = () => {
             damaged: asset?.isDamaged ? "Yes" : "No",
             extra: asset?.isExtra ? "Yes" : "No",
             assigned: asset?.isAssigned ? "Yes" : "No",
+            assignee: asset?.assignedAsset?.assignee
+              ? `${asset.assignedAsset.assignee.firstName || ""} ${asset.assignedAsset.assignee.lastName || ""}`.trim()
+              : "N/A",
+            approvedBy: asset?.assignedAsset?.approvedBy
+              ? `${asset.assignedAsset.approvedBy.firstName || ""} ${asset.assignedAsset.approvedBy.lastName || ""}`.trim()
+              : "N/A",
+            assignedBy: asset?.assignedAsset?.assignedBy
+              ? `${asset.assignedAsset.assignedBy.firstName || ""} ${asset.assignedAsset.assignedBy.lastName || ""}`.trim()
+              : "N/A",
+            approvedAt:
+              asset?.assignedAsset?.approvedBy && asset?.assignedAsset?.updatedAt
+                ? formatDateTime(asset.assignedAsset.updatedAt)
+                : "N/A",
+            assignedAt: asset?.assignedAsset?.assignedAt
+              ? formatDateTime(asset.assignedAsset.assignedAt)
+              : asset?.assignedAsset?.createdAt
+                ? formatDateTime(asset.assignedAsset.createdAt)
+                : "N/A",
+            assignedBuilding:
+              asset?.assignedAsset?.location?.building?.buildingName || "N/A",
+            assignedUnit: asset?.assignedAsset?.location?.unitNo || "N/A",
             assetImage: asset?.assetImage?.url || "N/A",
             warrantyDocument: asset?.warrantyDocument?.link || "N/A",
           })),
@@ -117,6 +169,7 @@ const AssetReports = () => {
           search
           exportData
           exportAllColumns
+          taskExportDateTimeFormatting
           dateColumn="purchaseDate"
           tableTitle="Asset Reports"
           data={isLoading ? [] : reportData}

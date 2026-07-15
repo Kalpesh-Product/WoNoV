@@ -262,6 +262,23 @@ const department = usePageDepartment();
     keepPreviousData: true,
   });
 
+  const pastEmployeesQuery = useQuery({
+    queryKey: ["past-employees-summary"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/users/fetch-users", {
+          params: { status: "false" },
+        });
+        return Array.isArray(response.data)
+          ? response.data.filter((employee) => employee.isActive === false)
+          : [];
+      } catch (error) {
+        throw new Error(error.response?.data?.message || "Failed to fetch past employees");
+      }
+    },
+    keepPreviousData: true,
+  });
+
   //--------------------HR BUDGET---------------------------//
   const { data: hrFinance = [], isLoading: isHrFinanceLoading } = useQuery({
     queryKey: ["hrFinance"],
@@ -394,14 +411,107 @@ const totalUtilised = useMemo(() => {
   return selectedHrExpenseSeries.data.reduce((sum, val) => sum + val, 0);
 }, [selectedHrExpenseSeries]);
 
-const marchActualExpense = Math.round(
-  selectedHrExpenseSeries?.data?.[11] || 0
+const currentFiscalMonthIndexForCard =
+  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+const previousFiscalMonthIndexForCard =
+  currentFiscalMonthIndexForCard > 0 ? currentFiscalMonthIndexForCard - 1 : 11;
+
+const selectedHrFiscalStartYear = Number(
+  String(selectedHrFiscalYear || "").match(/\d{4}/)?.[0],
 );
 
-const marchProjectedExpense = Math.round(
-  (selectedHrExpenseSeries?.data?.[11] || 0) +
-    (selectedHrProjectedSeries?.data?.[11] || 0)
+const previousExpenseMonthLabel = Number.isFinite(selectedHrFiscalStartYear)
+  ? dayjs(
+      new Date(
+        previousFiscalMonthIndexForCard <= 8
+          ? selectedHrFiscalStartYear
+          : selectedHrFiscalStartYear + 1,
+        (previousFiscalMonthIndexForCard + 3) % 12,
+        1,
+      ),
+    ).format("MMMM-YY")
+  : "";
+
+const previousMonthActualExpense = Math.round(
+  selectedHrExpenseSeries?.data?.[previousFiscalMonthIndexForCard] || 0
 );
+
+const previousMonthProjectedExpense = Math.round(
+  selectedHrProjectedSeries?.data?.[previousFiscalMonthIndexForCard] || 0
+);
+
+const averageActualAmount = useMemo(() => {
+  if (!selectedHrExpenseSeries?.data?.length) return 0;
+
+  const totalActual = selectedHrExpenseSeries.data.reduce(
+    (sum, value) => sum + (Number(value) || 0),
+    0
+  );
+
+  return totalActual / selectedHrExpenseSeries.data.length;
+}, [selectedHrExpenseSeries]);
+
+const averageProjectedAmount = useMemo(() => {
+  if (!selectedHrProjectedSeries?.data?.length) return 0;
+
+  const totalProjected = selectedHrProjectedSeries.data.reduce(
+    (sum, value) => sum + (Number(value) || 0),
+    0
+  );
+
+  return totalProjected / selectedHrProjectedSeries.data.length;
+}, [selectedHrProjectedSeries]);
+
+const activeHeadCount = usersQuery.isLoading
+  ? 0
+  : Array.isArray(usersQuery.data)
+    ? usersQuery.data.length
+    : 0;
+
+const previousMonthExitLabel = dayjs().subtract(1, "month").format("MMMM-YY");
+const previousMonthStart = dayjs().subtract(1, "month").startOf("month");
+const previousMonthEnd = dayjs().subtract(1, "month").endOf("month");
+
+const previousMonthExitCount = useMemo(() => {
+  const pastEmployees = Array.isArray(pastEmployeesQuery.data)
+    ? pastEmployeesQuery.data
+    : [];
+
+  return pastEmployees.filter((employee) => {
+    const exitDate = employee?.endDate || employee?.updatedAt;
+    if (!exitDate) return false;
+
+    const parsedExitDate = dayjs(exitDate);
+    if (!parsedExitDate.isValid()) return false;
+
+    return (
+      parsedExitDate.isSameOrAfter(previousMonthStart, "day") &&
+      parsedExitDate.isSameOrBefore(previousMonthEnd, "day")
+    );
+  }).length;
+}, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
+
+const previousMonthExitEmployeeIds = useMemo(() => {
+  const pastEmployees = Array.isArray(pastEmployeesQuery.data)
+    ? pastEmployeesQuery.data
+    : [];
+
+  return pastEmployees
+    .filter((employee) => {
+      const exitDate = employee?.endDate || employee?.updatedAt;
+      if (!exitDate) return false;
+
+      const parsedExitDate = dayjs(exitDate);
+      if (!parsedExitDate.isValid()) return false;
+
+      return (
+        parsedExitDate.isSameOrAfter(previousMonthStart, "day") &&
+        parsedExitDate.isSameOrBefore(previousMonthEnd, "day")
+      );
+    })
+    .map((employee) => employee?._id || employee?.empId)
+    .filter(Boolean);
+}, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
 
  const expenseOptions = {
   chart: {
@@ -762,7 +872,7 @@ const marchProjectedExpense = Math.round(
     isDepartmentTask
   );
 
-   const annualKpaTotals = useMemo(() => {
+  const annualKpaTotals = useMemo(() => {
     const selectedYearSeries = tasksData.filter(
       (series) => series.group === selectedFiscalYear
     );
@@ -787,6 +897,38 @@ const marchProjectedExpense = Math.round(
       pending: monthlyPending.reduce((sum, count) => sum + count, 0),
     };
   }, [tasksData, selectedFiscalYear]);
+
+  const annualKpaTotal =
+    annualKpaTotals.completed + annualKpaTotals.pending;
+
+  const annualTasksTotals = useMemo(() => {
+    const selectedYearSeries = tasksGraphData.filter(
+      (series) => series.group === selectedFiscalYear
+    );
+
+    const monthlyCompleted = Array(12).fill(0);
+    const monthlyPending = Array(12).fill(0);
+
+    selectedYearSeries.forEach((series) => {
+      (series.data || []).forEach((point, index) => {
+        const rawCount = Number(point?.raw) || 0;
+        if (series.name === "Completed Tasks") {
+          monthlyCompleted[index] = rawCount;
+        }
+        if (series.name === "Remaining Tasks") {
+          monthlyPending[index] = rawCount;
+        }
+      });
+    });
+
+    return {
+      completed: monthlyCompleted.reduce((sum, count) => sum + count, 0),
+      pending: monthlyPending.reduce((sum, count) => sum + count, 0),
+    };
+  }, [tasksGraphData, selectedFiscalYear]);
+
+  const annualTasksTotal =
+    annualTasksTotals.completed + annualTasksTotals.pending;
 
   const tasksOptions = {
     chart: {
@@ -1234,30 +1376,31 @@ const marchProjectedExpense = Math.round(
       route: "finance",
     },
     {
-      title: `${
-        selectedHrFiscalYear === "FY 2024-25" ? "March 2025" : "March 2026"
-      }`,
-      value: `INR ${inrFormat(marchActualExpense)}`,
+      title: `Projected Amount ${previousExpenseMonthLabel}`,
+      value: `INR ${inrFormat(previousMonthProjectedExpense)}`,
       route: "finance",
     },
     {
-      title: `${
-        selectedHrFiscalYear === "FY 2024-25"
-          ? "March 2025 Budget"
-          : "March 2026 Budget"
-      }`,
-      value: `INR ${inrFormat(marchProjectedExpense)}`,
+      title: `Actual Amount ${previousExpenseMonthLabel}`,
+      value: `INR ${inrFormat(previousMonthActualExpense)}`,
       route: "finance",
     },
     {
-      title: "Exit Head Count",
-      value: "2",
+      title: "Overall Active Head Count",
+      value: activeHeadCount,
+      route: "employee/employee-list",
+    },
+    {
+      title: `Exit Head Count ${previousMonthExitLabel}`,
+      value: previousMonthExitCount,
       route: "employee/past-employees",
-    },
-    {
-      title: "Per Sq. Ft.",
-      value: `INR ${inrFormat(totalSqft ? totalUtilised / totalSqft : 0)}`,
-      route: "finance",
+      stateData: {
+        filterType: "last-month-exits",
+        startDate: previousMonthStart.toISOString(),
+        endDate: previousMonthEnd.toISOString(),
+        label: previousMonthExitLabel,
+        employeeIds: previousMonthExitEmployeeIds,
+      },
     },
   ],
 };
@@ -1330,36 +1473,35 @@ const marchProjectedExpense = Math.round(
           route: "finance",
         },
         {
-          title: "Average Salary",
-          value: `INR ${inrFormat(totalSalary / totalEmployees)}`,
-          route: "employee/employee-list",
+          title: "Annual Average Projected Amt",
+          value: `INR ${inrFormat(averageProjectedAmount)}`,
+          route: "finance",
         },
         {
-          title: "Average Head Count",
-          value: `${usersQuery.isLoading ? 0 : averageHeadCount.average}`,
-          route: "employee/employee-list",
+          title: "Annual Average Actual Amt",
+          value: `INR ${inrFormat(averageActualAmount)}`,
+          route: "finance",
         },
         {
           title: "Average Attendance",
           route: "employee/attendance",
           value: averageAttendance
-            ? `${(Number(averageAttendance) - 55).toFixed(0)}%`
+            ? `${Number(averageAttendance).toFixed(0)}%`
             : "0%",
         },
         {
           title: "Average Hours",
           route: "employee/attendance",
           value: averageWorkingHours
-            ? `${(Number(averageWorkingHours) / 30).toFixed(2)}h`
+            ? `${Number(averageWorkingHours).toFixed(2)}h`
             : "0h",
         },
       ],
     }),
     [
       totalUtilised,
-      totalSalary,
-      totalEmployees,
-      averageHeadCount,
+      averageProjectedAmount,
+      averageActualAmount,
       averageAttendance,
       averageWorkingHours,
     ]
@@ -1599,10 +1741,13 @@ const marchProjectedExpense = Math.round(
               options={tasksOptions}
               title={"ANNUAL KPA VS ACHIEVEMENTS"}
               titleAmount=""
+              TitleAmountTotal={annualKpaTotal}
               TitleAmountGreen={annualKpaTotals.completed}
               TitleAmountRed={annualKpaTotals.pending}
+              totalTitle="Total"
               greenTitle="KPA"
               redTitle="KPA"
+              summaryChipVariant="ticket"
               secondParam
               currentYear={true}
               onYearChange={setSelectedFiscalYear}
@@ -1622,7 +1767,14 @@ const marchProjectedExpense = Math.round(
               data={tasksGraphData}
               options={tasksOverallOptions}
               title={"ANNUAL TASKS VS ACHIEVEMENTS"}
-              titleAmount={`TOTAL TASKS : ${overallTasksForYear.length || 0}`}
+              titleAmount=""
+              TitleAmountTotal={annualTasksTotal}
+              TitleAmountGreen={annualTasksTotals.completed}
+              TitleAmountRed={annualTasksTotals.pending}
+              totalTitle="Total"
+              greenTitle="Tasks"
+              redTitle="Tasks"
+              summaryChipVariant="ticket"
               secondParam
               currentYear={true}
               onYearChange={setSelectedFiscalYear}

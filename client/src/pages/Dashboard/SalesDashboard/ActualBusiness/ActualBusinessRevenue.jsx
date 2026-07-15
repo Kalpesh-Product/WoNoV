@@ -50,40 +50,59 @@ const fyOptions = [
   { label: "FY 2025–26", value: "2025-26" },
 ];
 
-const transformRevenueData = (rawData, yearKey) => {
-  const transformed = [];
-
-  rawData.forEach((item) => {
-    const source = item.name;
-    const monthlyData = item.data[yearKey];
-
-    if (Array.isArray(monthlyData)) {
-      monthlyData.forEach((value, index) => {
-        transformed.push({
-          month: months[index],
-          source,
-          totalRevenue: value,
-        });
-      });
-    }
-  });
-
-  return transformed;
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
 };
 
-const groupByMonth = (data) => {
-  const grouped = {};
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
 
-  data.forEach(({ month, source, totalRevenue }) => {
-    if (!grouped[month]) grouped[month] = [];
-    grouped[month].push({
-      name: source,
-      revenue: totalRevenue,
-      clients: [], // You can replace this with actual client data if needed
-    });
-  });
+const normalizeVerticalLabel = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
 
-  return grouped;
+  if (normalized === "meeting" || normalized === "meetings") return "Meetings";
+  if (
+    normalized === "alternate" ||
+    normalized === "alternate revenue" ||
+    normalized === "alternate revenues" ||
+    normalized === "alt. revenue" ||
+    normalized === "alt. revenues"
+  ) {
+    return "Alt. Revenues";
+  }
+  if (normalized === "virtual office" || normalized === "virtual offices") {
+    return "Virtual Offices";
+  }
+  if (normalized === "workation" || normalized === "workations") {
+    return "Workations";
+  }
+  if (
+    normalized === "co-working" ||
+    normalized === "co-working revenue" ||
+    normalized === "coworking" ||
+    normalized === "co working"
+  ) {
+    return "Coworking";
+  }
+
+  return value || "N/A";
+};
+
+const getFinancialYearForDate = (value) => {
+  const dateObj = new Date(value);
+  if (Number.isNaN(dateObj.getTime())) return null;
+
+  const monthIndex = dateObj.getMonth();
+  const startYear = monthIndex < 3 ? dateObj.getFullYear() - 1 : dateObj.getFullYear();
+
+  return `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
 const ActualBusinessRevenue = () => {
@@ -104,13 +123,66 @@ const ActualBusinessRevenue = () => {
   const [selectedMonth, setSelectedMonth] = useState(getCurrentFinancialMonth());
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearValue());
 
-  const { data: totalRevenue = [], isLoading: isTotalRevenue } = useQuery({
-    queryKey: ["totalRevenue"],
+  const { data: simpleRevenue = {}, isLoading: isTotalRevenue } = useQuery({
+    queryKey: ["turnover-simple-revenue"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/consolidated-revenue");
-      return response.data || [];
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      return response.data || {};
     },
   });
+
+  const unifiedRevenueData = useMemo(() => {
+    const flatten = [];
+
+    (simpleRevenue?.meetingRevenue || []).forEach((item) => {
+      flatten.push({
+        vertical: "Meetings",
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    (simpleRevenue?.alternateRevenues || []).forEach((item) => {
+      flatten.push({
+        vertical: "Alt. Revenues",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    (simpleRevenue?.virtualOfficeRevenues || []).forEach((item) => {
+      flatten.push({
+        vertical: "Virtual Offices",
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus,
+        ),
+      });
+    });
+
+    (simpleRevenue?.workationRevenues || []).forEach((item) => {
+      flatten.push({
+        vertical: "Workations",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    (simpleRevenue?.coworkingRevenues || []).forEach((item) => {
+      flatten.push({
+        vertical: "Coworking",
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten.filter((item) => item.date);
+  }, [simpleRevenue]);
 
   const dynamicFyOptions = useMemo(() => {
     const currentFinancialYearValue = getCurrentFinancialYearValue();
@@ -126,12 +198,11 @@ const ActualBusinessRevenue = () => {
       );
     }
 
-    (totalRevenue || []).forEach((item) => {
-      Object.keys(item?.data || {}).forEach((fyKey) => {
-        if (fyKey) {
-          fyValues.add(fyKey);
-        }
-      });
+    unifiedRevenueData.forEach((item) => {
+      const fyKey = getFinancialYearForDate(item.date);
+      if (fyKey) {
+        fyValues.add(fyKey);
+      }
     });
 
     return Array.from(fyValues)
@@ -140,7 +211,7 @@ const ActualBusinessRevenue = () => {
         value: fyValue,
         label: `FY ${fyValue}`,
       }));
-  }, [totalRevenue]);
+  }, [unifiedRevenueData]);
 
   useEffect(() => {
     if (!dynamicFyOptions.some((fy) => fy.value === selectedFY)) {
@@ -151,11 +222,72 @@ const ActualBusinessRevenue = () => {
     }
   }, [dynamicFyOptions, selectedFY]);
 
-  const formattedData = transformRevenueData(totalRevenue, selectedFY);
+  const selectedMonthEntries = useMemo(
+    () =>
+      unifiedRevenueData.filter((item) => {
+        const itemDate = new Date(item.date);
+        if (Number.isNaN(itemDate.getTime())) return false;
 
-  const groupedRevenue = groupByMonth(formattedData);
-  const selectedMonthData = groupedRevenue[selectedMonth] || [];
-  console.log("Selected month : ", selectedMonthData);
+        const financialMonth =
+          months[
+            itemDate.getMonth() >= 3
+              ? itemDate.getMonth() - 3
+              : itemDate.getMonth() + 9
+          ];
+
+        return (
+          getFinancialYearForDate(item.date) === selectedFY &&
+          financialMonth === selectedMonth
+        );
+      }),
+    [unifiedRevenueData, selectedFY, selectedMonth],
+  );
+
+  const selectedMonthSummary = useMemo(
+    () =>
+      selectedMonthEntries.reduce(
+        (summary, item) => {
+          summary.total += item.revenue;
+
+          if (item.normalizedStatus === "paid") {
+            summary.paid += item.revenue;
+          } else {
+            summary.unpaid += item.revenue;
+          }
+
+          return summary;
+        },
+        { total: 0, paid: 0, unpaid: 0 },
+      ),
+    [selectedMonthEntries],
+  );
+
+  const selectedMonthData = useMemo(() => {
+    const grouped = {};
+
+    selectedMonthEntries.forEach((item) => {
+      const vertical = normalizeVerticalLabel(item.vertical);
+
+      if (!grouped[vertical]) {
+        grouped[vertical] = {
+          name: vertical,
+          paidRevenue: 0,
+          totalRevenue: 0,
+          unpaidRevenue: 0,
+        };
+      }
+
+      grouped[vertical].totalRevenue += item.revenue;
+
+      if (item.normalizedStatus === "paid") {
+        grouped[vertical].paidRevenue += item.revenue;
+      } else {
+        grouped[vertical].unpaidRevenue += item.revenue;
+      }
+    });
+
+    return Object.values(grouped);
+  }, [selectedMonthEntries]);
 
   const handleMonthChange = (event) => {
     setSelectedMonth(event.target.value);
@@ -185,8 +317,8 @@ const ActualBusinessRevenue = () => {
 
   const graphData = [
     {
-      name: "Revenue",
-      data: selectedMonthData.map((item) => item.revenue),
+      name: "Paid Revenue",
+      data: selectedMonthData.map((item) => item.paidRevenue),
     },
   ];
 
@@ -202,7 +334,7 @@ const ActualBusinessRevenue = () => {
       title: { text: "Verticals" },
     },
     yaxis: {
-      title: { text: "Revenue in Lakhs (INR)" },
+      title: { text: "Paid Revenue in Lakhs (INR)" },
       labels: {
         formatter: (value) => `${(value / 100000).toLocaleString("en-IN")}`,
       },
@@ -233,7 +365,7 @@ const ActualBusinessRevenue = () => {
       },
     },
     legend: { position: "top" },
-    colors: ["#54C4A7", "#EB5C45"],
+    colors: ["#54C4A7"],
   };
 
  const handleVerticalNavigation = (vertical) => {
@@ -269,8 +401,7 @@ const ActualBusinessRevenue = () => {
   const tableData = selectedMonthData.map((domain, index) => ({
     id: index + 1,
     vertical: domain.name,
-    revenue: ` ${inrFormat(domain.revenue)}`,
-    clients: domain.clients || [],
+    revenue: ` ${inrFormat(domain.paidRevenue)}`,
   }));
 
   const selectedMonthYearLabel = useMemo(() => {
@@ -299,9 +430,7 @@ const ActualBusinessRevenue = () => {
             layout={1}
             title={"Vertical-wise Revenue"}
             titleLabel={selectedMonthYearLabel}
-            TitleAmount={`INR ${inrFormat(
-            selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
-            )}`}
+            TitleAmount={`INR ${inrFormat(selectedMonthSummary.paid)}`}
             border
           >
             <NormalBarGraph data={graphData} options={options} height={400} />
@@ -350,9 +479,13 @@ const ActualBusinessRevenue = () => {
           <WidgetSection
             border
             title={`Vertical-wise Revenue Breakdown FY ${selectedFY}`}
-            TitleAmount={`INR ${inrFormat(
-              selectedMonthData.reduce((sum, d) => sum + d.revenue, 0),
-            )}`}
+            TitleAmountTotal={`INR ${inrFormat(selectedMonthSummary.total)}`}
+            TitleAmountGreen={`INR ${inrFormat(selectedMonthSummary.paid)}`}
+            TitleAmountRed={`INR ${inrFormat(selectedMonthSummary.unpaid)}`}
+            totalTitle="Total"
+            greenTitle="Paid"
+            redTitle="Unpaid"
+            summaryChipVariant="ticket"
           >
             <AgTable
               hideFilter
