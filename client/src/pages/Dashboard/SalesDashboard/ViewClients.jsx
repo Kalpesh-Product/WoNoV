@@ -66,16 +66,6 @@ const ViewClients = () => {
     });
   }, [data]);
 
-
-  const { data: meetings = [] } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () => {
-      const response = await axios.get("/api/meetings/get-meetings");
-      return response.data;
-    },
-  });
-
-
   console.log("data ", unifiedClients);
 
   const isOpenDeskVisitor = (visitor) => {
@@ -97,26 +87,66 @@ const ViewClients = () => {
     [unifiedClients]
   );
 
-  const meetingVisitorsCount = useMemo(
+  const coWorkingStatusSummary = useMemo(() => {
+    const active = coWorkingClients.filter((client) => client?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, coWorkingClients.length - active),
+    };
+  }, [coWorkingClients]);
+
+  const virtualOfficeClients = Array.isArray(data?.virtualOfficeClients)
+    ? data.virtualOfficeClients
+    : [];
+
+  const virtualOfficeStatusSummary = useMemo(() => {
+    const active = virtualOfficeClients.filter((client) =>
+      typeof client?.isActive === "boolean"
+        ? client.isActive
+        : Boolean(client?.clientStatus)
+    ).length;
+
+    return {
+      active,
+      inactive: Math.max(0, virtualOfficeClients.length - active),
+    };
+  }, [virtualOfficeClients]);
+
+  const externalMeetingVisitors = useMemo(
     () =>
       externalVisitors.filter((visitor) => {
         const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
         return purpose === "meeting room booking";
-      }).length,
+      }),
     [externalVisitors]
   );
 
-  const openDeskVisitorsCount = useMemo(
-    () =>
-      externalVisitors.filter((visitor) => isOpenDeskVisitor(visitor)).length,
+  const externalMeetingStatusSummary = useMemo(() => {
+    const active = externalMeetingVisitors.filter((visitor) => visitor?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, externalMeetingVisitors.length - active),
+    };
+  }, [externalMeetingVisitors]);
+
+  const openDeskVisitors = useMemo(
+    () => externalVisitors.filter((visitor) => isOpenDeskVisitor(visitor)),
     [externalVisitors]
   );
+
+  const openDeskStatusSummary = useMemo(() => {
+    const active = openDeskVisitors.filter((visitor) => visitor?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, openDeskVisitors.length - active),
+    };
+  }, [openDeskVisitors]);
 
   const clientCounts = {
     coWorking: coWorkingClients.length,
-    virtualOfficeClients: data?.virtualOfficeClients?.length || 0,
-    externalMeetings: meetingVisitorsCount,
-    openDesk: openDeskVisitorsCount,
+    virtualOfficeClients: virtualOfficeClients.length,
+    externalMeetings: externalMeetingVisitors.length,
+    openDesk: openDeskVisitors.length,
   };
 
   const verticalsData = [
@@ -124,12 +154,14 @@ const ViewClients = () => {
       id: 1,
       name: "Overall Co-Working",
       value: clientCounts.coWorking,
+      statusSummary: coWorkingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
     },
     {
       id: 2,
       name: "Overall Virtual-Office",
       value: clientCounts.virtualOfficeClients,
+      statusSummary: virtualOfficeStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
     // {
@@ -142,6 +174,7 @@ const ViewClients = () => {
       id: 3,
       name: "Overall External Meetings",
       value: clientCounts.externalMeetings,
+      statusSummary: externalMeetingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
@@ -149,6 +182,7 @@ const ViewClients = () => {
       id: 4,
       name: "Overall Open Desk",
       value: clientCounts.openDesk,
+      statusSummary: openDeskStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
@@ -273,6 +307,7 @@ const ViewClients = () => {
             key={item.id}
             data={item.value}
             title={item.name}
+            statusSummary={item.statusSummary}
             route={item.route}
           />
         ))}

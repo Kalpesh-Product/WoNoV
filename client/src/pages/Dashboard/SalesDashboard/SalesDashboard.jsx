@@ -448,7 +448,7 @@ const SalesDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val), // <-- format here
+      formatter: (val) => (Number(val) > 0 ? inrFormat(val) : ""), // <-- format here
       style: {
         fontSize: "12px",
         colors: ["#000"],
