@@ -92,7 +92,6 @@ const fetchVisitorReportService = async ({
   isMeeting = false,
   isOpendDesk = false,
 }) => {
-  console.log("dateFilter", dateFilter);
   try {
     const companyId = new mongoose.Types.ObjectId(company);
     const queryKey = normalizeVisitorQuery(query);
@@ -113,9 +112,6 @@ const fetchVisitorReportService = async ({
         }),
       };
     } else {
-      console.log(
-        "dateFilter is not provided, using default date range for dashboard",
-      );
       //for dashboard
       filter.checkIn = {
         $gte: new Date("2026-01-01T18:30:00.000Z"),
@@ -133,17 +129,6 @@ const fetchVisitorReportService = async ({
       };
     }
 
-    console.log("filter", filter);
-
-    // {
-    //       company: companyId,
-    //       ...(dateFilter?.checkIn && {
-    //         checkIn: dateFilter?.checkIn,
-    //       }),
-    //     }
-
-    console.time("mongo-aggregate");
-
     // visitors = await Visitor.aggregate([
     //   { $match: filter },
     //   {
@@ -157,10 +142,6 @@ const fetchVisitorReportService = async ({
     //     },
     //   },
     // ]);
-
-    console.timeEnd("mongo-aggregate");
-
-    console.log("Mongo state:", mongoose.connection.readyState);
 
     //     const result = await Visitor.aggregate([
     //   { $match: filter },
