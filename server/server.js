@@ -62,7 +62,6 @@ if (isQueueEnabled) {
   require("./queues/queueEvents");
 }
 
-require("./queues/queueEvents");
 require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;

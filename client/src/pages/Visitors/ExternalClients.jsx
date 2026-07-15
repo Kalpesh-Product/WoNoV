@@ -23,7 +23,6 @@ import useAuth from "../../hooks/useAuth";
 import UploadFileInput from "../../components/UploadFileInput";
 import humanDate from "../../utils/humanDateForamt";
 import { State } from "country-state-city";
-import buildDateFilterPayload from "../../utils/buildDateFilter";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";
@@ -109,30 +108,46 @@ const ExternalClients = ({
   const [clientDateRange, setClientDateRange] = useState(
     initialClientDateRange,
   );
-  const clientDateFilterPayload = useMemo(
-    () =>
-      buildDateFilterPayload({
-        startDate: clientDateRange?.startDate,
-        endDate: clientDateRange?.endDate,
-        field: "checkIn",
-      }),
+  const clientFilters = useMemo(
+    () => ({
+      startDate: clientDateRange?.startDate
+        ? dayjs(clientDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: clientDateRange?.endDate
+        ? dayjs(clientDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
     [clientDateRange],
   );
   const handleClientDateFilterChange = useCallback(({ selectedRange }) => {
     if (!selectedRange?.startDate || !selectedRange?.endDate) return;
-    setClientDateRange(selectedRange);
+
+    setClientDateRange((currentRange) => {
+      const currentStart = currentRange?.startDate
+        ? new Date(currentRange.startDate).getTime()
+        : null;
+      const currentEnd = currentRange?.endDate
+        ? new Date(currentRange.endDate).getTime()
+        : null;
+      const nextStart = new Date(selectedRange.startDate).getTime();
+      const nextEnd = new Date(selectedRange.endDate).getTime();
+
+      if (currentStart === nextStart && currentEnd === nextEnd) {
+        return currentRange;
+      }
+
+      return selectedRange;
+    });
   }, []);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: [
-      "clients",
-      clientDateFilterPayload.dateFilter.checkIn.$gte,
-      clientDateFilterPayload.dateFilter.checkIn.$lte,
-    ],
+    queryKey: ["clients", clientFilters.startDate, clientFilters.endDate],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/visitors/fetch-visitors", {
-          params: clientDateFilterPayload,
+          params: {
+            filters: clientFilters,
+          },
         });
         return response.data;
       } catch (error) {

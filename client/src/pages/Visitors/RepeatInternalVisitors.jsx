@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
 import { MenuItem, TextField } from "@mui/material";
@@ -19,6 +19,7 @@ import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanTime from "../../utils/humanTime";
+import buildDateFilterPayload from "../../utils/buildDateFilter";
 
 const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
 
@@ -68,10 +69,58 @@ const RepeatInternalVisitors = () => {
   const selectedCompany = watchRepeat("toMeetCompany");
   const watchLocation = watchRepeat("location");
 
+  const initialVisitorDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [visitorDateRange, setVisitorDateRange] = useState(
+    initialVisitorDateRange,
+  );
+  const visitorDateFilterPayload = useMemo(
+    () =>
+      buildDateFilterPayload({
+        startDate: visitorDateRange?.startDate,
+        endDate: visitorDateRange?.endDate,
+        field: "checkIn",
+      }),
+    [visitorDateRange],
+  );
+  const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    setVisitorDateRange((currentRange) => {
+      const currentStart = currentRange?.startDate
+        ? new Date(currentRange.startDate).getTime()
+        : null;
+      const currentEnd = currentRange?.endDate
+        ? new Date(currentRange.endDate).getTime()
+        : null;
+      const nextStart = new Date(selectedRange.startDate).getTime();
+      const nextEnd = new Date(selectedRange.endDate).getTime();
+
+      if (currentStart === nextStart && currentEnd === nextEnd) {
+        return currentRange;
+      }
+
+      return selectedRange;
+    });
+  }, []);
+
   const { data: visitorsData = [] } = useQuery({
-    queryKey: ["visitors"],
+    queryKey: [
+      "visitors",
+      "repeat-internal",
+      visitorDateFilterPayload.dateFilter.checkIn.$gte,
+      visitorDateFilterPayload.dateFilter.checkIn.$lte,
+    ],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: visitorDateFilterPayload,
+      });
       return response.data;
     },
   });
@@ -105,16 +154,18 @@ const RepeatInternalVisitors = () => {
     },
   });
 
-  const { data: clientMembers = [], isLoading: clientMembersIsLoading } = useQuery({
-    queryKey: ["clientMembers", selectedCompany],
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/sales/co-working-client-members?clientId=${selectedCompany}`,
-      );
-      return response.data;
-    },
-    enabled: !!selectedCompany && selectedCompany !== "6799f0cd6a01edbe1bc3fcea",
-  });
+  const { data: clientMembers = [], isLoading: clientMembersIsLoading } =
+    useQuery({
+      queryKey: ["clientMembers", selectedCompany],
+      queryFn: async () => {
+        const response = await axios.get(
+          `/api/sales/co-working-client-members?clientId=${selectedCompany}`,
+        );
+        return response.data;
+      },
+      enabled:
+        !!selectedCompany && selectedCompany !== "6799f0cd6a01edbe1bc3fcea",
+    });
 
   const getEmployeeDepartments = (employee) =>
     Array.isArray(employee?.departments) ? employee.departments : [];
@@ -128,7 +179,9 @@ const RepeatInternalVisitors = () => {
   const uniqueDepartments = Array.from(departmentMap.values());
 
   const departmentEmployees = employees.filter((item) =>
-    getEmployeeDepartments(item).some((dept) => dept._id === selectedDepartment),
+    getEmployeeDepartments(item).some(
+      (dept) => dept._id === selectedDepartment,
+    ),
   );
 
   const { mutate, isPending: isUpdating } = useMutation({
@@ -180,7 +233,10 @@ const RepeatInternalVisitors = () => {
       setValue("email", visitor.email || "");
       setValue("phoneNumber", visitor.phoneNumber || "");
       setValue("purposeOfVisit", visitor.purposeOfVisit || "");
-      setValue("checkOutRaw", visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null);
+      setValue(
+        "checkOutRaw",
+        visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
+      );
     }
   };
 
@@ -248,7 +304,9 @@ const RepeatInternalVisitors = () => {
   };
 
   const submit = (data) => {
-    const checkInDate = selectedVisitor?.checkIn ? dayjs(selectedVisitor.checkIn) : null;
+    const checkInDate = selectedVisitor?.checkIn
+      ? dayjs(selectedVisitor.checkIn)
+      : null;
     const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
 
     const combinedCheckout =
@@ -286,42 +344,85 @@ const RepeatInternalVisitors = () => {
       unit: data.unit || null,
       visitorCompany: data.visitorCompany || "",
       department:
-        data.toMeetCompany === BIZNEST_COMPANY_ID ? data.department || null : null,
+        data.toMeetCompany === BIZNEST_COMPANY_ID
+          ? data.department || null
+          : null,
       toMeetCompany: data.toMeetCompany || null,
       toMeet:
-        data.toMeetCompany === BIZNEST_COMPANY_ID
-          ? data.toMeet || null
-          : null,
+        data.toMeetCompany === BIZNEST_COMPANY_ID ? data.toMeet || null : null,
       clientToMeet:
-        data.toMeetCompany !== BIZNEST_COMPANY_ID
-          ? data.toMeet || null
-          : null,
+        data.toMeetCompany !== BIZNEST_COMPANY_ID ? data.toMeet || null : null,
       checkOut: hasCheckOut ? checkOut.toISOString() : null,
       checkIn: hasCheckIn ? checkIn.toISOString() : null,
     });
   };
 
-  const getBuildingName = (visitor) => {
-    if (!visitor) return "N/A";
-    if (visitor?.building?.buildingName) return visitor.building.buildingName;
-    if (typeof visitor?.building === "string") {
-      const matchedBuilding = auth?.user?.company?.workLocations?.find(
-        (loc) => loc?._id === visitor.building,
-      );
-      return matchedBuilding?.buildingName || "N/A";
-    }
-    return "N/A";
-  };
+  const getBuildingName = useCallback(
+    (visitor) => {
+      if (!visitor) return "N/A";
+      if (visitor?.building?.buildingName) return visitor.building.buildingName;
+      if (typeof visitor?.building === "string") {
+        const matchedBuilding = auth?.user?.company?.workLocations?.find(
+          (loc) => loc?._id === visitor.building,
+        );
+        return matchedBuilding?.buildingName || "N/A";
+      }
+      return "N/A";
+    },
+    [auth?.user?.company?.workLocations],
+  );
 
-  const getUnitName = (visitor) => {
-    if (!visitor) return "N/A";
-    if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
-    if (typeof visitor?.unit === "string") {
-      const matchedUnit = unitsData?.find((unit) => unit?._id === visitor.unit);
-      return matchedUnit?.unitNo || matchedUnit?.name || "N/A";
-    }
-    return "N/A";
-  };
+  const getUnitName = useCallback(
+    (visitor) => {
+      if (!visitor) return "N/A";
+      if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
+      if (typeof visitor?.unit === "string") {
+        const matchedUnit = unitsData?.find(
+          (unit) => unit?._id === visitor.unit,
+        );
+        return matchedUnit?.unitNo || matchedUnit?.name || "N/A";
+      }
+      return "N/A";
+    },
+    [unitsData],
+  );
+
+  const visitorsTableData = useMemo(
+    () =>
+      visitorsData
+        .filter((m) => m.visitorFlag !== "Client")
+        .map((item, index) => ({
+          ...item,
+          srNo: index + 1,
+          mongoId: item._id,
+          firstName: item.firstName,
+          lastName: item.lastName,
+          name: `${item.firstName} ${item.lastName}`,
+          email: item.email,
+          visitorType: item.visitorType,
+          visitorCompany: item.visitorCompany,
+          date: item.date,
+          phoneNumber: item.phoneNumber,
+          purposeOfVisit: item.purposeOfVisit,
+          toMeet: item.toMeet
+            ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+            : item.clientToMeet
+              ? item?.clientToMeet?.employeeName
+              : "",
+          buildingName: getBuildingName(item),
+          unitName: getUnitName(item),
+          checkIn: item.checkIn,
+          checkInBy: item.checkedInBy
+            ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+            : "-",
+          checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+          checkOutRaw: item.checkOut,
+          checkOutBy: item.checkedOutBy
+            ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+            : "-",
+        })),
+    [getBuildingName, getUnitName, visitorsData],
+  );
 
   const visitorsColumns = [
     { field: "srNo", headerName: "Sr No" },
@@ -376,64 +477,117 @@ const RepeatInternalVisitors = () => {
           dateColumn={"checkIn"}
           search
           tableTitle="Repeat Internal Visitors"
-          data={visitorsData
-            .filter((m) => m.visitorFlag !== "Client")
-            .map((item, index) => ({
-              ...item,
-              srNo: index + 1,
-              mongoId: item._id,
-              firstName: item.firstName,
-              lastName: item.lastName,
-              name: `${item.firstName} ${item.lastName}`,
-              email: item.email,
-              visitorType: item.visitorType,
-              visitorCompany: item.visitorCompany,
-              date: item.date,
-              phoneNumber: item.phoneNumber,
-              purposeOfVisit: item.purposeOfVisit,
-              toMeet: item.toMeet
-                ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
-                : item.clientToMeet
-                  ? item?.clientToMeet?.employeeName
-                  : "",
-              buildingName: getBuildingName(item),
-              unitName: getUnitName(item),
-              checkIn: item.checkIn,
-              checkInBy: item.checkedInBy
-                ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
-                : "-",
-              checkOut: item.checkOut ? humanTime(item.checkOut) : "",
-              checkOutRaw: item.checkOut,
-              checkOutBy: item.checkedOutBy
-                ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
-                : "-",
-            }))}
+          // data={visitorsData
+          //   .filter((m) => m.visitorFlag !== "Client")
+          //   .map((item, index) => ({
+          //     ...item,
+          //     srNo: index + 1,
+          //     mongoId: item._id,
+          //     firstName: item.firstName,
+          //     lastName: item.lastName,
+          //     name: `${item.firstName} ${item.lastName}`,
+          //     email: item.email,
+          //     visitorType: item.visitorType,
+          //     visitorCompany: item.visitorCompany,
+          //     date: item.date,
+          //     phoneNumber: item.phoneNumber,
+          //     purposeOfVisit: item.purposeOfVisit,
+          //     toMeet: item.toMeet
+          //       ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+          //       : item.clientToMeet
+          //         ? item?.clientToMeet?.employeeName
+          //         : "",
+          //     buildingName: getBuildingName(item),
+          //     unitName: getUnitName(item),
+          //     checkIn: item.checkIn,
+          //     checkInBy: item.checkedInBy
+          //       ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+          //       : "-",
+          //     checkOut: item.checkOut ? humanTime(item.checkOut) : "",
+          //     checkOutRaw: item.checkOut,
+          //     checkOutBy: item.checkedOutBy
+          //       ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+          //       : "-",
+          //   }))}
+          initialDateRange={initialVisitorDateRange}
+          onDateFilterChange={handleVisitorDateFilterChange}
+          data={visitorsTableData}
           columns={visitorsColumns}
         />
       </PageFrame>
 
-      <MuiModal open={isViewEditModalOpen} onClose={closeViewEditModal} title="Visitor Details">
-        <form onSubmit={handleSubmit(submit)} className="grid grid-cols-1 gap-4">
+      <MuiModal
+        open={isViewEditModalOpen}
+        onClose={closeViewEditModal}
+        title="Visitor Details"
+      >
+        <form
+          onSubmit={handleSubmit(submit)}
+          className="grid grid-cols-1 gap-4"
+        >
           {modalMode === "view" ? (
             <>
-              <DetalisFormatted title="First Name" detail={selectedVisitor?.firstName} />
-              <DetalisFormatted title="Last Name" detail={selectedVisitor?.lastName} />
+              <DetalisFormatted
+                title="First Name"
+                detail={selectedVisitor?.firstName}
+              />
+              <DetalisFormatted
+                title="Last Name"
+                detail={selectedVisitor?.lastName}
+              />
               <DetalisFormatted title="Email" detail={selectedVisitor?.email} />
-              <DetalisFormatted title="Phone Number" detail={selectedVisitor?.phoneNumber} />
-              <DetalisFormatted title="Purpose" detail={selectedVisitor?.purposeOfVisit} />
-              <DetalisFormatted title="Visitor Type" detail={selectedVisitor?.visitorType} />
-              <DetalisFormatted title="Visitor Company" detail={selectedVisitor?.visitorCompany} />
-              <DetalisFormatted title="To Meet" detail={selectedVisitor?.toMeet} />
-              <DetalisFormatted title="Building" detail={selectedVisitor?.buildingName || "N/A"} />
-              <DetalisFormatted title="Unit" detail={selectedVisitor?.unitName || "N/A"} />
-              <DetalisFormatted title="Date of Visit" detail={selectedVisitor?.date} />
-              <DetalisFormatted title="Check In" detail={humanTime(selectedVisitor?.checkIn)} />
-              <DetalisFormatted title="Check In By" detail={selectedVisitor?.checkInBy} />
+              <DetalisFormatted
+                title="Phone Number"
+                detail={selectedVisitor?.phoneNumber}
+              />
+              <DetalisFormatted
+                title="Purpose"
+                detail={selectedVisitor?.purposeOfVisit}
+              />
+              <DetalisFormatted
+                title="Visitor Type"
+                detail={selectedVisitor?.visitorType}
+              />
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisitor?.visitorCompany}
+              />
+              <DetalisFormatted
+                title="To Meet"
+                detail={selectedVisitor?.toMeet}
+              />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedVisitor?.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={selectedVisitor?.unitName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Date of Visit"
+                detail={selectedVisitor?.date}
+              />
+              <DetalisFormatted
+                title="Check In"
+                detail={humanTime(selectedVisitor?.checkIn)}
+              />
+              <DetalisFormatted
+                title="Check In By"
+                detail={selectedVisitor?.checkInBy}
+              />
               <DetalisFormatted
                 title="Check Out"
-                detail={selectedVisitor?.checkOutRaw ? humanTime(selectedVisitor.checkOutRaw) : ""}
+                detail={
+                  selectedVisitor?.checkOutRaw
+                    ? humanTime(selectedVisitor.checkOutRaw)
+                    : ""
+                }
               />
-              <DetalisFormatted title="Check Out By" detail={selectedVisitor?.checkOutBy} />
+              <DetalisFormatted
+                title="Check Out By"
+                detail={selectedVisitor?.checkOutBy}
+              />
             </>
           ) : (
             <>
@@ -441,14 +595,24 @@ const RepeatInternalVisitors = () => {
                 name="firstName"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="First Name" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="First Name"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
                 name="lastName"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Last Name" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Last Name"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -462,14 +626,24 @@ const RepeatInternalVisitors = () => {
                 name="phoneNumber"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Phone Number" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Phone Number"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
                 name="purposeOfVisit"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Purpose" size="small" fullWidth />
+                  <TextField
+                    {...field}
+                    label="Purpose"
+                    size="small"
+                    fullWidth
+                  />
                 )}
               />
               <Controller
@@ -480,7 +654,9 @@ const RepeatInternalVisitors = () => {
                     label="Checkout Time"
                     value={field.value}
                     onChange={field.onChange}
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                 )}
               />
@@ -494,18 +670,34 @@ const RepeatInternalVisitors = () => {
         </form>
       </MuiModal>
 
-      <MuiModal open={isRepeatModalOpen} onClose={closeRepeatModal} title="Repeat Visitor">
-        <form className="grid grid-cols-1 gap-4" onSubmit={handleRepeatSubmit(submitRepeatVisitor)}>
+      <MuiModal
+        open={isRepeatModalOpen}
+        onClose={closeRepeatModal}
+        title="Repeat Visitor"
+      >
+        <form
+          className="grid grid-cols-1 gap-4"
+          onSubmit={handleRepeatSubmit(submitRepeatVisitor)}
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Controller
               name="firstName"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="First Name" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="First Name"
+                  size="small"
+                  disabled
+                />
+              )}
             />
             <Controller
               name="lastName"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Last Name" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Last Name" size="small" disabled />
+              )}
             />
           </div>
 
@@ -513,12 +705,21 @@ const RepeatInternalVisitors = () => {
             <Controller
               name="email"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Email" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Email" size="small" disabled />
+              )}
             />
             <Controller
               name="phoneNumber"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Phone Number" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Phone Number"
+                  size="small"
+                  disabled
+                />
+              )}
             />
           </div>
 
@@ -526,12 +727,21 @@ const RepeatInternalVisitors = () => {
             <Controller
               name="gender"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Gender" size="small" disabled />}
+              render={({ field }) => (
+                <TextField {...field} label="Gender" size="small" disabled />
+              )}
             />
             <Controller
               name="visitorCompany"
               control={repeatControl}
-              render={({ field }) => <TextField {...field} label="Visitor Company" size="small" disabled />}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Visitor Company"
+                  size="small"
+                  disabled
+                />
+              )}
             />
           </div>
 
@@ -755,9 +965,10 @@ const RepeatInternalVisitors = () => {
                           "& .Mui-focused .MuiOutlinedInput-notchedOutline": {
                             borderColor: "#000000",
                           },
-                          "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "#000000",
-                          },
+                          "& .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
+                            {
+                              borderColor: "#000000",
+                            },
                           "&:hover .MuiOutlinedInput-root.Mui-error .MuiOutlinedInput-notchedOutline":
                             {
                               borderColor: "#000000",

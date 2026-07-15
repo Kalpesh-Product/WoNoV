@@ -98,8 +98,35 @@ const fetchVisitorReportService = async ({
     let visitors;
     const filter = { company: companyId };
 
-    if (dateFilter) {
-      filter.checkIn = dateFilter.checkIn;
+    // if (dateFilter.checkIn) {
+    //   filter.checkIn = dateFilter.checkIn;
+    // }
+    // else {
+    //   //for dashboard
+    //   filter.checkIn = dateFilter.checkIn = {
+    //     $gte: "2026-01-01T18:30:00.000Z",
+    //     $lte: "2027-03-31T18:29:59.999Z",
+    //   };
+    // }
+
+    if (dateFilter?.checkIn) {
+      filter.checkIn = {
+        ...(dateFilter.checkIn.$gte && {
+          $gte: new Date(dateFilter.checkIn.$gte),
+        }),
+        ...(dateFilter.checkIn.$lte && {
+          $lte: new Date(dateFilter.checkIn.$lte),
+        }),
+      };
+    } else {
+      console.log(
+        "dateFilter is not provided, using default date range for dashboard",
+      );
+      //for dashboard
+      filter.checkIn = {
+        $gte: new Date("2026-01-01T18:30:00.000Z"),
+        $lte: new Date("2027-03-31T18:29:59.999Z"),
+      };
     }
 
     if (isMeeting) {
@@ -112,12 +139,41 @@ const fetchVisitorReportService = async ({
       };
     }
 
+    console.log("filter", filter);
+
     // {
     //       company: companyId,
     //       ...(dateFilter?.checkIn && {
     //         checkIn: dateFilter?.checkIn,
     //       }),
     //     }
+
+    console.time("mongo-aggregate");
+
+    // visitors = await Visitor.aggregate([
+    //   { $match: filter },
+    //   {
+    //     $project: {
+    //       firstName: 1,
+    //       lastName: 1,
+    //       email: 1,
+    //       checkIn: 1,
+    //       checkOut: 1,
+    //       visitorType: 1,
+    //     },
+    //   },
+    // ]);
+
+    console.timeEnd("mongo-aggregate");
+
+    console.log("Mongo state:", mongoose.connection.readyState);
+
+    //     const result = await Visitor.aggregate([
+    //   { $match: filter },
+    //   { $project: { _id: 1 } },
+    // ]).explain("executionStats");
+
+    // console.dir(result, { depth: null });
 
     switch (queryKey) {
       case "department":
@@ -188,24 +244,25 @@ const fetchVisitorReportService = async ({
               state: 1,
               sector: 1,
               visitorType: 1,
-              visitorCompany: 1,
-              visitorRoles: 1,
               visitrFlag: 1,
               purposeOfVisit: 1,
               visitorRoles: 1,
               department: 1,
               visitorCompany: 1,
-              toMeet: 1,
-              toMeetCompany: 1,
-              checkedInBy: 1,
-              checkedOutBy: 1,
+              ...(dateFilter?.checkIn && {
+                toMeet: 1,
+                clientToMeet: 1,
+                toMeetCompany: 1,
+                checkedInBy: 1,
+                checkedOutBy: 1,
+              }),
+
               building: 1,
               unit: 1,
               dateOfVisit: 1,
               scheduledDate: 1,
               scheduledStartTime: 1,
               scheduledEndTime: 1,
-              meeting: 1,
               checkIn: 1,
               checkOut: 1,
               amount: 1,
@@ -227,40 +284,159 @@ const fetchVisitorReportService = async ({
             },
           },
 
-          {
-            $lookup: {
-              from: "externalvisits",
-              let: {
-                visitorId: "$_id",
-                companyId: "$company",
-              },
-              pipeline: [
+          ...(dateFilter?.checkIn
+            ? [
                 {
-                  $match: {
-                    $expr: {
-                      $and: [
-                        { $eq: ["$visitorId", "$$visitorId"] },
-                        { $eq: ["$company", "$$companyId"] },
-                      ],
-                    },
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "toMeet",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                          email: 1,
+                        },
+                      },
+                    ],
+                    as: "toMeet",
                   },
                 },
                 {
-                  $project: {
-                    __v: 0,
+                  $set: {
+                    toMeet: { $first: "$toMeet" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "coworkingmembers",
+                    localField: "clientToMeet",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          employeeName: 1,
+                          email: 1,
+                        },
+                      },
+                    ],
+                    as: "clientToMeet",
                   },
                 },
                 {
-                  $sort: {
-                    checkIn: -1,
+                  $set: {
+                    clientToMeet: { $first: "$clientToMeet" },
                   },
                 },
-              ],
-              as: "externalVisits",
-            },
-          },
+
+                {
+                  $lookup: {
+                    from: "coworkingclients",
+                    localField: "toMeetCompany",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          clientName: 1,
+                          companyName: 1,
+                          name: 1,
+                        },
+                      },
+                    ],
+                    as: "toMeetCompany",
+                  },
+                },
+                {
+                  $set: {
+                    toMeetCompany: { $first: "$toMeetCompany" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "checkedInBy",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                        },
+                      },
+                    ],
+                    as: "checkedInBy",
+                  },
+                },
+                {
+                  $set: {
+                    checkedInBy: { $first: "$checkedInBy" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "checkedOutBy",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                        },
+                      },
+                    ],
+                    as: "checkedOutBy",
+                  },
+                },
+                {
+                  $set: {
+                    checkedOutBy: { $first: "$checkedOutBy" },
+                  },
+                },
+
+                //        {
+                //   $lookup: {
+                //     from: "externalvisits",
+                //     let: {
+                //       visitorId: "$_id",
+                //       companyId: "$company",
+                //     },
+                //     pipeline: [
+                //       {
+                //         $match: {
+                //           $expr: {
+                //             $and: [
+                //               { $eq: ["$visitorId", "$$visitorId"] },
+                //               { $eq: ["$company", "$$companyId"] },
+                //             ],
+                //           },
+                //         },
+                //       },
+                //       {
+                //         $project: {
+                //           __v: 0,
+                //         },
+                //       },
+                //       {
+                //         $sort: {
+                //           checkIn: -1,
+                //         },
+                //       },
+                //     ],
+                //     as: "externalVisits",
+                //   },
+                // },
+              ]
+            : []),
         ]);
-      // visitors = await attachExternalVisits(visitors, companyId);
+
+        if (dateFilter?.checkIn) {
+          visitors = await attachExternalVisits(visitors, companyId);
+        }
     }
 
     return visitors;

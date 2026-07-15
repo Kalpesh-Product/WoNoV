@@ -17,58 +17,29 @@ const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
 const Unit = require("../../models/locations/Unit");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const buildDateFilter = require("../../utils/dateFilter");
 const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
 
 async function fetchVisitors(req, res) {
-  const parseJsonParam = (value) => {
-    if (typeof value !== "string") return value;
-
-    try {
-      return JSON.parse(value);
-    } catch (error) {
-      return value;
-    }
+  const requestFilters = req.query?.filters || {
+    startDate: req.query?.["filters[startDate]"],
+    endDate: req.query?.["filters[endDate]"],
   };
 
-  const getNestedQueryValue = (query = {}, path = []) =>
-    path.reduce((value, key) => (value ? value[key] : undefined), query);
+  console.time("fetchVisitors");
 
-  const getDateFilterFromRequest = (req) => {
-    const bodyDateFilter = req.body?.dateFilter || req.body?.data?.dateFilter;
-    if (bodyDateFilter) return bodyDateFilter;
-
-    const queryDateFilter = parseJsonParam(
-      req.query?.dateFilter || req.query?.data?.dateFilter,
-    );
-    if (queryDateFilter && typeof queryDateFilter === "object") {
-      return queryDateFilter;
-    }
-
-    const dateField = req.query?.dateField || "checkIn";
-    const startDate =
-      req.query?.startDate ||
-      getNestedQueryValue(req.query, ["dateFilter", dateField, "$gte"]);
-    const endDate =
-      req.query?.endDate ||
-      getNestedQueryValue(req.query, ["dateFilter", dateField, "$lte"]);
-
-    if (!startDate && !endDate) return undefined;
-
-    return {
-      [dateField]: {
-        ...(startDate ? { $gte: startDate } : {}),
-        ...(endDate ? { $lte: endDate } : {}),
-      },
-    };
-  };
-
-  console.log("Request body:", req.params);
   const payload = await fetchVisitorReportService({
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
-    dateFilter: getDateFilterFromRequest(req),
+    dateFilter: buildDateFilter({
+      startDate: requestFilters?.startDate,
+      endDate: requestFilters?.endDate,
+      field: "checkIn",
+    }),
   });
+
+  console.timeEnd("fetchVisitors");
 
   return res.status(200).json(payload);
 }
