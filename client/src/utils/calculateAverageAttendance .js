@@ -3,6 +3,10 @@ import { format } from "date-fns";
 
 export const calculateAverageAttendance = (attendances, workingDays) => {
   const userDayMap = {};
+  const totalWorkingDays =
+    Number.isFinite(Number(workingDays)) && Number(workingDays) > 0
+      ? Number(workingDays)
+      : 220;
 
   attendances.forEach((entry) => {
     const userId = entry.user;
@@ -13,8 +17,10 @@ export const calculateAverageAttendance = (attendances, workingDays) => {
   });
 
   const allPercentages = Object.values(userDayMap).map(
-    (daysSet) => (daysSet.size / 220) * 100
+    (daysSet) => (daysSet.size / totalWorkingDays) * 100
   );
+
+  if (!allPercentages.length) return "0.00";
 
   const averageAttendance =
     allPercentages.reduce((sum, percent) => sum + percent, 0) /

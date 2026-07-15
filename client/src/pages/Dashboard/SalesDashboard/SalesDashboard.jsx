@@ -404,6 +404,10 @@ const SalesDashboard = () => {
   const currentMonthName = dayjs().format("MMMM");
   const currentFiscalMonthIndex =
     dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+  const previousRevenueMonth = dayjs().subtract(1, "month");
+  const previousRevenueMonthName = previousRevenueMonth.format("MMMM");
+  const previousFiscalMonthIndex =
+    currentFiscalMonthIndex > 0 ? currentFiscalMonthIndex - 1 : 11;
   const incomeExpenseCategories =
     Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
       ? [
@@ -674,12 +678,12 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: `${currentMonthName} ${
+        title: `${previousRevenueMonthName} ${
           Number.isFinite(selectedFiscalYearStart)
             ? selectedFiscalYearStart + 1
             : ""
         }`,
-        value: `INR ${inrFormat(selectedSeries?.data?.[currentFiscalMonthIndex] || 0)}`,
+        value: `INR ${inrFormat(selectedSeries?.data?.[previousFiscalMonthIndex] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {

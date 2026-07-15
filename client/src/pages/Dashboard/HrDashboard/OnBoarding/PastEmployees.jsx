@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -6,11 +6,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { setSelectedEmployee } from "../../../../redux/slices/hrSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import dayjs from "dayjs";
 
 export default function PastEmployees() {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const filterState = location.state || {};
 
   const formatDateValue = (value) => {
     if (!value) return "";
@@ -60,9 +63,15 @@ export default function PastEmployees() {
                 _id: employee._id,
                 empId: employee.empId,
                 isActive: employee.isActive,
+                rawEndDate: employee.endDate,
+                rawUpdatedAt: employee.updatedAt,
               };
             } catch (detailError) {
-              return employee;
+              return {
+                ...employee,
+                rawEndDate: employee.endDate,
+                rawUpdatedAt: employee.updatedAt,
+              };
             }
           })
         );
@@ -75,6 +84,37 @@ export default function PastEmployees() {
       }
     },
   });
+
+  const filteredEmployees =
+    filterState?.filterType === "last-month-exits"
+      ? (employees || []).filter((employee) => {
+          const selectedEmployeeIds = Array.isArray(filterState?.employeeIds)
+            ? filterState.employeeIds
+            : [];
+          const employeeId = employee?._id || employee?.empId;
+
+          if (selectedEmployeeIds.length > 0) {
+            return selectedEmployeeIds.includes(employeeId);
+          }
+
+          const exitDate =
+            employee?.rawEndDate ||
+            employee?.endDate ||
+            employee?.rawUpdatedAt ||
+            employee?.updatedAt;
+          if (!exitDate || !filterState?.startDate || !filterState?.endDate) {
+            return false;
+          }
+
+          const parsedExitDate = dayjs(exitDate);
+          if (!parsedExitDate.isValid()) return false;
+
+          return (
+            parsedExitDate.isSameOrAfter(dayjs(filterState.startDate), "day") &&
+            parsedExitDate.isSameOrBefore(dayjs(filterState.endDate), "day")
+          );
+        })
+      : employees || [];
 
   const viewEmployeeColumns = [
     { field: "srno", headerName: "SR No", width: 100 },
@@ -187,12 +227,16 @@ export default function PastEmployees() {
         <div className="w-full">
           <AgTable
             search={true}
-            tableTitle={"Past Employees List"}
+            tableTitle={
+              filterState?.filterType === "last-month-exits"
+                ? `Past Employees List - Exit ${filterState?.label || ""}`
+                : "Past Employees List"
+            }
             data={
               isLoading
                 ? []
                 : [
-                    ...employees.map((employee, index) => ({
+                    ...filteredEmployees.map((employee, index) => ({
                       id: employee._id,
                       srno: index + 1,
                       employeeName: `${employee.firstName ? employee.firstName : ""
