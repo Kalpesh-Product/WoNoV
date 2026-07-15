@@ -45,6 +45,15 @@ const ViewClients = () => {
       }
     },
   });
+
+  const { data: coWorkingClients = [] } = useQuery({
+    queryKey: ["view-clients-co-working"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const unifiedClients = useMemo(() => {
     if (!data || typeof data !== "object") return [];
 
@@ -68,6 +77,18 @@ const ViewClients = () => {
 
 
   console.log("data ", unifiedClients);
+
+  const isOpenDeskVisitor = (visitor) => {
+    const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
+    const isDayPass =
+      purpose === "half-day pass" ||
+      purpose === "full-day pass" ||
+      purpose === "half day pass" ||
+      purpose === "full day pass";
+
+    return isDayPass || Boolean(visitor?.convertedFromInternal);
+  };
+
   const externalVisitors = useMemo(
     () =>
       unifiedClients.filter(
@@ -87,16 +108,13 @@ const ViewClients = () => {
 
   const openDeskVisitorsCount = useMemo(
     () =>
-      externalVisitors.filter((visitor) => {
-        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
-        return purpose === "half-day pass" || purpose === "full-day pass";
-      }).length,
+      externalVisitors.filter((visitor) => isOpenDeskVisitor(visitor)).length,
     [externalVisitors]
   );
 
   const clientCounts = {
-    coWorking: data?.coworkingClients?.filter((client) => client.isActive).length || 0,
-    virtualOfficeClients: data?.virtualOfficeClients?.filter((client) => client.clientStatus === true).length || 0,
+    coWorking: coWorkingClients.length,
+    virtualOfficeClients: data?.virtualOfficeClients?.length || 0,
     externalMeetings: meetingVisitorsCount,
     openDesk: openDeskVisitorsCount,
   };
@@ -104,13 +122,13 @@ const ViewClients = () => {
   const verticalsData = [
     {
       id: 1,
-      name: "Co-Working",
+      name: "Overall Co-Working",
       value: clientCounts.coWorking,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
     },
     {
       id: 2,
-      name: "Virtual-Office",
+      name: "Overall Virtual-Office",
       value: clientCounts.virtualOfficeClients,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
@@ -122,14 +140,14 @@ const ViewClients = () => {
     // },
     {
       id: 3,
-      name: "External Meetings",
+      name: "Overall External Meetings",
       value: clientCounts.externalMeetings,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
     {
       id: 4,
-      name: "Open Desk",
+      name: "Overall Open Desk",
       value: clientCounts.openDesk,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
