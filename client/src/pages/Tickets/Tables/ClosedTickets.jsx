@@ -279,6 +279,15 @@ const ClosedTickets = ({ title, departmentId }) => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+          {viewTicketDetails?.image && (
+            <div className="lg:col-span-1">
+              <img
+                src={viewTicketDetails.image}
+                alt="Ticket Attachment"
+                className="max-w-full max-h-96 rounded border"
+              />
+            </div>
+          )}
         </div>
       </MuiModal>
     </div>

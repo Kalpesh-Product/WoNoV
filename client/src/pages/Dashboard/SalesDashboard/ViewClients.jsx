@@ -45,6 +45,15 @@ const ViewClients = () => {
       }
     },
   });
+
+  const { data: coWorkingClients = [] } = useQuery({
+    queryKey: ["view-clients-co-working"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const unifiedClients = useMemo(() => {
     if (!data || typeof data !== "object") return [];
 
@@ -57,17 +66,19 @@ const ViewClients = () => {
     });
   }, [data]);
 
-
-  const { data: meetings = [] } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () => {
-      const response = await axios.get("/api/meetings/get-meetings");
-      return response.data;
-    },
-  });
-
-
   console.log("data ", unifiedClients);
+
+  const isOpenDeskVisitor = (visitor) => {
+    const purpose = (visitor?.purposeOfVisit || "").trim().toLowerCase();
+    const isDayPass =
+      purpose === "half-day pass" ||
+      purpose === "full-day pass" ||
+      purpose === "half day pass" ||
+      purpose === "full day pass";
+
+    return isDayPass || Boolean(visitor?.convertedFromInternal);
+  };
+
   const externalVisitors = useMemo(
     () =>
       unifiedClients.filter(
@@ -76,42 +87,81 @@ const ViewClients = () => {
     [unifiedClients]
   );
 
-  const meetingVisitorsCount = useMemo(
+  const coWorkingStatusSummary = useMemo(() => {
+    const active = coWorkingClients.filter((client) => client?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, coWorkingClients.length - active),
+    };
+  }, [coWorkingClients]);
+
+  const virtualOfficeClients = Array.isArray(data?.virtualOfficeClients)
+    ? data.virtualOfficeClients
+    : [];
+
+  const virtualOfficeStatusSummary = useMemo(() => {
+    const active = virtualOfficeClients.filter((client) =>
+      typeof client?.isActive === "boolean"
+        ? client.isActive
+        : Boolean(client?.clientStatus)
+    ).length;
+
+    return {
+      active,
+      inactive: Math.max(0, virtualOfficeClients.length - active),
+    };
+  }, [virtualOfficeClients]);
+
+  const externalMeetingVisitors = useMemo(
     () =>
       externalVisitors.filter((visitor) => {
         const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
         return purpose === "meeting room booking";
-      }).length,
+      }),
     [externalVisitors]
   );
 
-  const openDeskVisitorsCount = useMemo(
-    () =>
-      externalVisitors.filter((visitor) => {
-        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
-        return purpose === "half-day pass" || purpose === "full-day pass";
-      }).length,
+  const externalMeetingStatusSummary = useMemo(() => {
+    const active = externalMeetingVisitors.filter((visitor) => visitor?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, externalMeetingVisitors.length - active),
+    };
+  }, [externalMeetingVisitors]);
+
+  const openDeskVisitors = useMemo(
+    () => externalVisitors.filter((visitor) => isOpenDeskVisitor(visitor)),
     [externalVisitors]
   );
+
+  const openDeskStatusSummary = useMemo(() => {
+    const active = openDeskVisitors.filter((visitor) => visitor?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, openDeskVisitors.length - active),
+    };
+  }, [openDeskVisitors]);
 
   const clientCounts = {
-    coWorking: data?.coworkingClients?.filter((client) => client.isActive).length || 0,
-    virtualOfficeClients: data?.virtualOfficeClients?.filter((client) => client.clientStatus === true).length || 0,
-    externalMeetings: meetingVisitorsCount,
-    openDesk: openDeskVisitorsCount,
+    coWorking: coWorkingClients.length,
+    virtualOfficeClients: virtualOfficeClients.length,
+    externalMeetings: externalMeetingVisitors.length,
+    openDesk: openDeskVisitors.length,
   };
 
   const verticalsData = [
     {
       id: 1,
-      name: "Co-Working",
+      name: "Overall Co-Working",
       value: clientCounts.coWorking,
+      statusSummary: coWorkingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
     },
     {
       id: 2,
-      name: "Virtual-Office",
+      name: "Overall Virtual-Office",
       value: clientCounts.virtualOfficeClients,
+      statusSummary: virtualOfficeStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
     },
     // {
@@ -122,15 +172,17 @@ const ViewClients = () => {
     // },
     {
       id: 3,
-      name: "External Meetings",
+      name: "Overall External Meetings",
       value: clientCounts.externalMeetings,
+      statusSummary: externalMeetingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
     {
       id: 4,
-      name: "Open Desk",
+      name: "Overall Open Desk",
       value: clientCounts.openDesk,
+      statusSummary: openDeskStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
@@ -255,6 +307,7 @@ const ViewClients = () => {
             key={item.id}
             data={item.value}
             title={item.name}
+            statusSummary={item.statusSummary}
             route={item.route}
           />
         ))}

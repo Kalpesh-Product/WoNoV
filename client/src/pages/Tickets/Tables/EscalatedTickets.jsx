@@ -98,6 +98,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
           ticket.escalatedTo.length > 0
             ? ticket.escalatedTo[escalatedIndex].createdAt
             : null;
+        const reasonForEscalated =
+          ticket.escalatedTo.length > 0
+            ? ticket.escalatedTo[escalatedIndex].description
+            : "";
         const raisedBy = `${ticket.raisedBy?.firstName} ${ticket.raisedBy?.lastName}`;
         const acceptedBy = ticket.acceptedBy
           ? `${ticket.acceptedBy?.firstName} ${ticket.acceptedBy?.lastName}`
@@ -125,6 +129,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
           acceptedAt: ticket.acceptedAt || "N/A",
           escalatedStatus,
           escalatedAt,
+          reasonForEscalated,
           escalatedTo:
             ticket.escalatedTo
               .map((dept) => dept.raisedToDepartment.name)
@@ -154,6 +159,7 @@ const EscalatedTickets = ({ title, departmentId }) => {
       headerName: "From Department",
     },
     { field: "raisedBy", headerName: "Raised By" },
+    { field: "reasonForEscalated", headerName: "Reason for Escalated" },
     { field: "raisedToDepartment", headerName: "Raised To Department" },
     // {
     //   field: "tickets",
@@ -379,6 +385,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
               <DetalisFormatted
                 title="Escalated At"
                 detail={formatDateTime(selectedTicket?.escalatedAt)}
+              />
+              <DetalisFormatted
+                title="Reason for Escalated"
+                detail={selectedTicket?.reasonForEscalated || ""}
               />
               {selectedTicket?.image && (
                 <div className="lg:col-span-1">

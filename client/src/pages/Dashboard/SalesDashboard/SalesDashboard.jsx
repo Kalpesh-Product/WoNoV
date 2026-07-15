@@ -32,7 +32,7 @@ import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
 import { YearCalendar } from "@mui/x-date-pickers";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
 import SectorLegend from "../../../components/graphs/SectorLegend";
@@ -50,9 +50,73 @@ import {
 } from "./salesAccessConfig";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getCurrentFinancialYearStart = () => {
+  const today = dayjs();
+  return today.month() < 3 ? today.year() - 1 : today.year();
+};
+
+const getUnifiedClientTypeAndDate = (clientType, client) => {
+  let resolvedClientType = clientType || "Unknown";
+
+  if (resolvedClientType === "meeting") {
+    const purpose = (client?.purposeOfVisit || "").trim().toLowerCase();
+    if (purpose === "meeting room booking") {
+      resolvedClientType = "externalMeeting";
+    } else if (purpose === "half-day pass" || purpose === "full-day pass") {
+      resolvedClientType = "openDesk";
+    }
+  }
+
+  if (resolvedClientType === "coworking" && client?.service?.serviceName) {
+    const serviceName = client.service.serviceName.toLowerCase();
+    if (serviceName.includes("workation")) {
+      resolvedClientType = "workation";
+    } else if (serviceName.includes("living") || serviceName.includes("coliving")) {
+      resolvedClientType = "coliving";
+    }
+  }
+
+  let clientDate = null;
+
+  if (resolvedClientType === "coworking") {
+    clientDate = client?.startDate || null;
+  } else if (resolvedClientType === "virtualOffice") {
+    clientDate = client?.termStartDate || client?.rentDate || null;
+  } else if (resolvedClientType === "externalMeeting" || resolvedClientType === "openDesk") {
+    clientDate = client?.dateOfVisit || client?.scheduledDate || null;
+  } else {
+    clientDate = client?.startDate || client?.dateOfVisit || client?.termStartDate || null;
+  }
+
+  return { resolvedClientType, clientDate };
+};
+
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    getCurrentFinancialYearLabel(),
+  );
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -224,40 +288,74 @@ const SalesDashboard = () => {
   //------------------------PAGE ACCESS END-------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
-  function aggregateMonthlyRevenueByYear(data = []) {
+  function aggregateMonthlyPaidRevenueByYear(simpleRevenue = {}) {
     const monthsInYear = 12;
     const revenueByYear = {};
 
-    data.forEach((item) => {
-      Object.entries(item?.data || {}).forEach(([year, revenueArray]) => {
-        if (!revenueByYear[year]) {
-          revenueByYear[year] = new Array(monthsInYear).fill(0);
-        }
+    const addRevenue = (dateValue, amountValue, statusValue) => {
+      if (getNormalizedPaymentStatus(statusValue) !== "paid") return;
 
-        for (let i = 0; i < monthsInYear; i++) {
-          revenueByYear[year][i] += revenueArray?.[i] || 0;
-        }
-      });
+      const parsedDate = dayjs(dateValue);
+      if (!parsedDate.isValid()) return;
+
+      const calendarMonth = parsedDate.month();
+      const startYear =
+        calendarMonth < 3 ? parsedDate.year() - 1 : parsedDate.year();
+      const financialYearKey = `${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+      const financialMonthIndex =
+        calendarMonth >= 3 ? calendarMonth - 3 : calendarMonth + 9;
+
+      if (!revenueByYear[financialYearKey]) {
+        revenueByYear[financialYearKey] = new Array(monthsInYear).fill(0);
+      }
+
+      revenueByYear[financialYearKey][financialMonthIndex] +=
+        getNumericAmount(amountValue);
+    };
+
+    (simpleRevenue?.meetingRevenue || []).forEach((item) => {
+      addRevenue(item?.date, item?.taxable, item?.status);
+    });
+
+    (simpleRevenue?.alternateRevenues || []).forEach((item) => {
+      addRevenue(item?.invoiceCreationDate, item?.taxableAmount, item?.status);
+    });
+
+    (simpleRevenue?.virtualOfficeRevenues || []).forEach((item) => {
+      addRevenue(
+        item?.rentDate,
+        item?.revenue ?? item?.taxableAmount,
+        item?.status ?? item?.rentStatus,
+      );
+    });
+
+    (simpleRevenue?.workationRevenues || []).forEach((item) => {
+      addRevenue(item?.date, item?.taxableAmount, item?.status);
+    });
+
+    (simpleRevenue?.coworkingRevenues || []).forEach((item) => {
+      addRevenue(item?.rentDate, item?.revenue, item?.rentStatus);
     });
 
     return revenueByYear;
   }
 
-  const { data: totalRevenue = [], isLoading: isTotalLoading } = useQuery({
-    queryKey: ["totalRevenue"],
+  const { data: simpleRevenue = {}, isLoading: isTotalLoading } = useQuery({
+    queryKey: ["sales-dashboard-simple-revenue"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/sales/consolidated-revenue");
-        return response.data;
+        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        return response.data || {};
       } catch (error) {
         console.error(error);
+        return {};
       }
     },
   });
 
   const revenueByFiscalYear = useMemo(
-    () => aggregateMonthlyRevenueByYear(totalRevenue),
-    [totalRevenue],
+    () => aggregateMonthlyPaidRevenueByYear(simpleRevenue),
+    [simpleRevenue],
   );
 
   const incomeExpenseData = useMemo(
@@ -272,19 +370,44 @@ const SalesDashboard = () => {
     [revenueByFiscalYear],
   );
 
-  const selectedSeries = incomeExpenseData.find(
-    (item) => item.group === selectedFiscalYear,
-  );
+  const selectedSeries =
+    incomeExpenseData.find((item) => item.group === selectedFiscalYear) || {
+      name: "Expense",
+      group: selectedFiscalYear,
+      data: new Array(12).fill(0),
+    };
 
   const totalValue = useMemo(() => {
     if (!selectedSeries) return 0;
     return selectedSeries.data.reduce((sum, val) => sum + val, 0);
   }, [selectedSeries]);
 
-  const selectedFiscalYearShort = selectedSeries?.group?.replace("FY ", "");
+  const maxSelectedRevenue = useMemo(() => {
+    return Math.max(...(selectedSeries?.data || []), 0);
+  }, [selectedSeries]);
+
+  const yAxisTickCount = 4;
+
+  const yAxisMax = useMemo(() => {
+    if (maxSelectedRevenue <= 0) return 100000;
+    return (
+      Math.ceil((maxSelectedRevenue * 1.15) / (100000 * yAxisTickCount)) *
+      100000 *
+      yAxisTickCount
+    );
+  }, [maxSelectedRevenue]);
+
+  const selectedFiscalYearShort = selectedFiscalYear?.replace("FY ", "");
   const selectedFiscalYearStart = Number(
     selectedFiscalYearShort?.split("-")?.[0],
   );
+  const currentMonthName = dayjs().format("MMMM");
+  const currentFiscalMonthIndex =
+    dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+  const previousRevenueMonth = dayjs().subtract(1, "month");
+  const previousRevenueMonthName = previousRevenueMonth.format("MMMM");
+  const previousFiscalMonthIndex =
+    currentFiscalMonthIndex > 0 ? currentFiscalMonthIndex - 1 : 11;
   const incomeExpenseCategories =
     Number.isFinite(selectedFiscalYearStart) && selectedFiscalYearStart > 0
       ? [
@@ -329,12 +452,12 @@ const SalesDashboard = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val), // <-- format here
+      formatter: (val) => (Number(val) > 0 ? inrFormat(val) : ""), // <-- format here
       style: {
         fontSize: "12px",
         colors: ["#000"],
       },
-      offsetY: -22,
+      offsetY: -20,
     },
 
     stroke: {
@@ -347,11 +470,15 @@ const SalesDashboard = () => {
     },
     yaxis: {
       min: 0,
-      max: 6000000,
-      tickAmount: 4,
+      max: yAxisMax,
+      tickAmount: yAxisTickCount,
+      forceNiceScale: true,
       title: { text: "Amount In Lakhs (INR)" },
       labels: {
-        formatter: (val) => val / 100000, // Converts value to Lakhs
+        formatter: (val) =>
+          Number(val / 100000).toLocaleString("en-IN", {
+            maximumFractionDigits: 0,
+          }),
       },
     },
 
@@ -402,6 +529,15 @@ const SalesDashboard = () => {
       }
     },
   });
+
+  const { data: consolidatedClientsData = {} } = useQuery({
+    queryKey: ["sales-dashboard-consolidated-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/consolidated-clients");
+      return response.data || {};
+    },
+  });
+
   const { data: unitsData = [], isPending: isUnitsPending } = useQuery({
     queryKey: ["unitsData"],
     queryFn: async () => {
@@ -414,6 +550,55 @@ const SalesDashboard = () => {
       }
     },
   });
+
+  const currentMonthUniqueClients = useMemo(() => {
+    const now = dayjs();
+
+    return (clientsData || []).filter((client) => {
+      const clientDate = client?.rentDate || client?.createdAt;
+      if (!clientDate) return false;
+
+      const parsedDate = dayjs(clientDate);
+      if (!parsedDate.isValid()) return false;
+
+      return (
+        parsedDate.month() === now.month() &&
+        parsedDate.year() === now.year()
+      );
+    }).length;
+  }, [clientsData]);
+
+  const currentFinancialYearUniqueClients = useMemo(() => {
+    const currentFinancialYearStart = getCurrentFinancialYearStart();
+
+    return Object.entries(consolidatedClientsData || {}).flatMap(([key, clients]) => {
+      const normalizedClients = Array.isArray(clients) ? clients : [];
+      const clientType = key.replace(/Clients$/, "");
+
+      return normalizedClients.filter((client) => {
+        const { resolvedClientType, clientDate } = getUnifiedClientTypeAndDate(
+          clientType,
+          client,
+        );
+
+        if (
+          !["coworking", "virtualOffice", "externalMeeting", "openDesk"].includes(
+            resolvedClientType,
+          )
+        ) {
+          return false;
+        }
+
+        const parsedDate = dayjs(clientDate);
+        if (!parsedDate.isValid()) return false;
+
+        const clientFinancialYearStart =
+          parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+
+        return clientFinancialYearStart === currentFinancialYearStart;
+      });
+    }).length;
+  }, [consolidatedClientsData]);
 
   const activeUnits = useMemo(
     () =>
@@ -493,17 +678,17 @@ const SalesDashboard = () => {
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
-        title: `March ${
+        title: `${previousRevenueMonthName} ${
           Number.isFinite(selectedFiscalYearStart)
             ? selectedFiscalYearStart + 1
             : ""
         }`,
-        value: `INR ${inrFormat(selectedSeries?.data?.[11] || 0)}`,
+        value: `INR ${inrFormat(selectedSeries?.data?.[previousFiscalMonthIndex] || 0)}`,
         route: "/app/dashboard/sales-dashboard/revenue/total-revenue",
       },
       {
         title: "Closing Desks",
-        value: totalCoWorkingSeats || 0,
+        value: totalOccupancyFromInventory || 0,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
@@ -553,7 +738,7 @@ const SalesDashboard = () => {
       },
       {
         title: "Unique Clients",
-        value: clientsData.length || 0,
+        value: currentMonthUniqueClients || 0,
         route: "/app/dashboard/sales-dashboard/clients",
       },
     ],
@@ -568,22 +753,22 @@ const SalesDashboard = () => {
       },
       {
         title: "Occupied Desks",
-        value: 553,
+        value: totalCoWorkingSeats || 0,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
         title: "Occupancy %",
-        value: "93",
+        value: occupancyPercentage,
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
       {
-        title: "Clients",
-        value: "45",
+        title: "Total Clients",
+        value: currentFinancialYearUniqueClients || 0,
         route: "/app/dashboard/sales-dashboard/clients",
       },
       {
         title: "Provisioned Desks",
-        value: "140",
+        value: " ",
         route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       },
     ],
@@ -1083,7 +1268,7 @@ const SalesDashboard = () => {
     "bargraph-sales-dashboard",
     incomeExpenseData,
     incomeExpenseOptions,
-    "BIZ Nest SALES DEPARTMENT REVENUES",
+    `BIZ Nest SALES DEPARTMENT REVENUES ${selectedFiscalYear}`,
     `INR ${inrFormat(totalValue)}`,
     setSelectedFiscalYear,
   );
@@ -1246,13 +1431,14 @@ const SalesDashboard = () => {
         <>
           {!isTotalLoading ? (
             allowedGraph.map((config) => (
-              <YearlyGraph2
+              <YearlyGraph
                 key={config.key}
                 chartId={config.chartId}
                 data={config.data}
                 options={config.options}
                 title={config.title}
                 titleAmount={config.titleAmount}
+                currentYear={selectedFiscalYear}
                 onYearChange={config.onYearChange}
               />
             ))

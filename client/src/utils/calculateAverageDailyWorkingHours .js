@@ -41,6 +41,10 @@ import { differenceInMinutes, parseISO } from "date-fns";
 
 export const calculateAverageDailyWorkingHours = (attendances, workingDays) => {
   const userTimeMap = {};
+  const totalWorkingDays =
+    Number.isFinite(Number(workingDays)) && Number(workingDays) > 0
+      ? Number(workingDays)
+      : 1;
 
   attendances.forEach((entry) => {
     const userId = entry.user;
@@ -54,17 +58,14 @@ export const calculateAverageDailyWorkingHours = (attendances, workingDays) => {
     if (!userTimeMap[userId]) {
       userTimeMap[userId] = 0;
     }
-    if (!userTimeMap[userId]) {
-      userTimeMap[userId] = 0;
-    }
-
-    userTimeMap[userId] += minutesWorked;
     userTimeMap[userId] += minutesWorked;
   });
 
   const allAvgHours = Object.values(userTimeMap).map(
-    (totalMinutes) => totalMinutes / 60 / workingDays
+    (totalMinutes) => totalMinutes / 60 / totalWorkingDays
   );
+
+  if (!allAvgHours.length) return "0.00";
 
   const overallAverage =
     allAvgHours.reduce((sum, hours) => sum + hours, 0) / allAvgHours.length;

@@ -527,34 +527,103 @@ const ListOfAssets = () => {
     { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "assetId", headerName: "Asset Id" },
     { field: "secondaryId", headerName: "Secondary Id" },
-    // { field: "department", headerName: "Department" },
+    { field: "description", headerName: "Description", hide: true },
+    { field: "addedAt", headerName: "Added At", hide: true, exportFormat: "date" },
+    { field: "department", headerName: "Department", hide: true },
+    { field: "assetType", headerName: "Asset Type", hide: true },
     { field: "subCategory", headerName: "Sub-Category" },
+    { field: "category", headerName: "Category", hide: true },
     { field: "brand", headerName: "Brand" },
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
     { field: "building", headerName: "Building" },
     { field: "unit", headerName: "Unit" },
-    // {
-    //   field: "price",
-    //   headerName: "Price (INR)",
-    //   cellRenderer: (params) => inrFormat(params.value),
-    // },
-    // { field: "purchaseDate", headerName: "Purchase Date" },
-    // { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "price",
+      headerName: "Price (INR)",
+      hide: true,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "quantity",
+      headerName: "Quantity",
+      hide: true,
+    },
+    {
+      field: "purchaseDate",
+      headerName: "Purchase Date",
+      hide: true,
+      exportFormat: "date",
+      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    },
+    { field: "warranty", headerName: "Warranty (Months)", hide: true },
     {
       field: "warrantyExpiryDate",
       headerName: "Warranty Expiry Date",
+      exportFormat: "date",
       cellRenderer: (params) => humanDate(params.value),
     },
     {
       field: "addedBy",
       headerName: "Added By",
     },
-    // {
-    //   field: "rentedExpirationDate",
-    //   headerName: "Rental Expiry Date",
-    //   cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
-    // },
+    {
+      field: "ownershipType",
+      headerName: "Ownership Type",
+      hide: true,
+    },
+    {
+      field: "tangableLabel",
+      headerName: "Tangible",
+      hide: true,
+    },
+    {
+      field: "rentedExpirationDate",
+      headerName: "Rental Expiry Date",
+      hide: true,
+      exportFormat: "date",
+      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+    },
+    {
+      field: "damagedLabel",
+      headerName: "Damaged",
+      hide: true,
+    },
+    {
+      field: "underMaintenanceLabel",
+      headerName: "Under Maintenance",
+      hide: true,
+    },
+    {
+      field: "extraLabel",
+      headerName: "Extra",
+      hide: true,
+    },
+    {
+      field: "assignedLabel",
+      headerName: "Assigned",
+      hide: true,
+    },
+    {
+      field: "assignedBuilding",
+      headerName: "Assigned Building",
+      hide: true,
+    },
+    {
+      field: "assignedUnit",
+      headerName: "Assigned Unit",
+      hide: true,
+    },
+    {
+      field: "assetImageUrl",
+      headerName: "Asset Image",
+      hide: true,
+    },
+    {
+      field: "warrantyDocumentLink",
+      headerName: "Warranty Document",
+      hide: true,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -630,12 +699,31 @@ const ListOfAssets = () => {
             category: item?.subCategory?.category?.categoryName || "N/A",
             building: item?.location?.building?.buildingName || "N/A",
             unit: item?.location?.unitNo || "N/A",
+            description: item?.description || "N/A",
+            addedAt: item?.createdAt || null,
+            assetType: item?.assetType || "N/A",
+            price: item?.price ?? 0,
+            quantity: item?.quantity ?? 1,
+            purchaseDate: item?.purchaseDate || null,
+            warranty: item?.warranty ?? "N/A",
             addedBy: item?.createdBy?.firstName
               ? `${item.createdBy.firstName} ${item?.createdBy?.lastName || ""}`.trim()
               : item?.createdBy?.name ||
                 (auth?.user?.firstName
                   ? `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim()
                   : auth?.user?.name || "N/A"),
+            ownershipType: item?.ownershipType || "N/A",
+            tangableLabel: item?.tangable ? "Yes" : "No",
+            rentedExpirationDate: item?.rentedExpirationDate || null,
+            damagedLabel: item?.isDamaged ? "Yes" : "No",
+            underMaintenanceLabel: item?.isUnderMaintenance ? "Yes" : "No",
+            extraLabel: item?.isExtra ? "Yes" : "No",
+            assignedLabel: item?.isAssigned ? "Yes" : "No",
+            assignedBuilding:
+              item?.assignedAsset?.location?.building?.buildingName || "N/A",
+            assignedUnit: item?.assignedAsset?.location?.unitNo || "N/A",
+            assetImageUrl: item?.assetImage?.url || "N/A",
+            warrantyDocumentLink: item?.warrantyDocument?.link || "N/A",
           };
         });
   //-----------------------Table Data----------------------//
@@ -655,8 +743,9 @@ const ListOfAssets = () => {
         data={tableData}
         columns={assetColumns}
         handleSubmit={isAssetCardView ? undefined : handleAddAsset}
-        exportData={isAssetCardView}
+        exportData={!isAssetCardView}
         exportButtonTitle="Export"
+        taskExportDateTimeFormatting
       />
 
       <MuiModal

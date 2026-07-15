@@ -43,11 +43,12 @@ const Approvals = () => {
     const dateObj = new Date(value);
     if (Number.isNaN(dateObj.getTime())) return "N/A";
 
-    const datePart = `${dateObj.getDate()}-${dateObj.getMonth() + 1}-${dateObj.getFullYear()}`;
+    const datePart = `${String(dateObj.getDate()).padStart(2, "0")}-${String(
+      dateObj.getMonth() + 1
+    ).padStart(2, "0")}-${dateObj.getFullYear()}`;
     const timePart = dateObj.toLocaleTimeString("en-IN", {
       hour: "2-digit",
       minute: "2-digit",
-      second: "2-digit",
       hour12: true,
     }).toLowerCase();
 
@@ -127,12 +128,27 @@ const Approvals = () => {
   const assetsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "assignee", headerName: "Assignee Name" },
+    { field: "assignedByName", headerName: "Assigned By", hide: true },
+    { field: "assignedOn", headerName: "Assigned At", hide: true },
     { field: "assetNumber", headerName: "Asset Id" },
+    { field: "assetType", headerName: "Asset Type", hide: true },
+    { field: "secondaryId", headerName: "Secondary ID", hide: true },
+    { field: "departmentAssetId", headerName: "Department Asset ID", hide: true },
     { field: "department", headerName: "Department" },
     { field: "category", headerName: "Category" },
     { field: "brand", headerName: "Brand" },
     { field: "name", headerName: "Asset Name" },
+    { field: "subCategoryName", headerName: "Sub Category", hide: true },
+    { field: "purchaseOnLabel", headerName: "Purchase Date", hide: true },
+    { field: "warranty", headerName: "Warranty (Months)", hide: true },
+    { field: "warrantyExpiryLabel", headerName: "Warranty Expiry Date", hide: true },
+    { field: "rentedMonths", headerName: "Rented Months", hide: true },
+    { field: "rentalExpiryLabel", headerName: "Rented Expiration Date", hide: true },
+    { field: "priceLabel", headerName: "Price", hide: true },
     { field: "serialNumber", headerName: "Serial Number" },
+    { field: "description", headerName: "Description", hide: true },
+    { field: "ownershipType", headerName: "Ownership Type", hide: true },
+    { field: "tangableLabel", headerName: "Tangable", hide: true },
     { field: "building", headerName: "Building", minWidth: 160, flex: 1 },
     { field: "unit", headerName: "Location", minWidth: 140, flex: 1 },
     {
@@ -147,6 +163,10 @@ const Approvals = () => {
       minWidth: 160,
       flex: 1,
     },
+    { field: "damagedLabel", headerName: "Damaged", hide: true },
+    { field: "underMaintenanceLabel", headerName: "Under Maintenance", hide: true },
+    { field: "extraLabel", headerName: "Extra", hide: true },
+    { field: "revokedLabel", headerName: "Revoked", hide: true },
     {
       field: "status",
       headerName: "Status",
@@ -240,23 +260,52 @@ const Approvals = () => {
           item?.unit ||
           "N/A";
         const category = assets?.subCategory?.category?.categoryName;
+        const assignedByPerson = item?.assignedBy || item?.approvedBy;
+        const assignedByName = assignedByPerson
+          ? `${assignedByPerson.firstName || ""} ${assignedByPerson.lastName || ""}`.trim()
+          : "N/A";
         return {
           ...assets,
           ...item,
           srNo: index + 1,
           assignee: `${item.assignee?.firstName} ${item.assignee?.lastName}`,
+          assignedByName,
+          assignedOn: formatDateTime(item?.assignedAt || item?.createdAt),
           assetId: item._id,
           assetNumber: item?.asset?.assetId,
           department: item?.fromDepartment?.name,
           category: category,
           brand: assets?.brand,
           name: assets?.name || "N/A",
+          assetType: assets?.assetType || "N/A",
+          secondaryId: assets?.secondaryId || "N/A",
+          departmentAssetId: assets?.departmentAssetId || "N/A",
+          subCategoryName: assets?.subCategory?.subCategoryName || "N/A",
+          purchaseOnLabel: assets?.purchaseDate
+            ? humanDate(assets.purchaseDate)
+            : "N/A",
+          warranty: assets?.warranty ?? "N/A",
+          warrantyExpiryLabel: assets?.warrantyExpiryDate
+            ? humanDate(assets.warrantyExpiryDate)
+            : "N/A",
+          rentedMonths: assets?.rentedMonths ?? "N/A",
+          rentalExpiryLabel: assets?.rentedExpirationDate
+            ? humanDate(assets.rentedExpirationDate)
+            : "N/A",
+          priceLabel: `INR ${inrFormat(assets?.price)}`,
           serialNumber: assets?.serialNumber || "N/A",
+          description: assets?.description || "N/A",
+          ownershipType: assets?.ownershipType || "N/A",
+          tangableLabel: assets?.tangable ? "Yes" : "No",
           building: buildingName,
           location: assignedLocation,
           unit: unitNo,
           assignedBuilding: assignedBuildingName,
           assignedUnit: assignedUnitNo,
+          damagedLabel: assets?.isDamaged ? "Yes" : "No",
+          underMaintenanceLabel: assets?.isUnderMaintenance ? "Yes" : "No",
+          extraLabel: assets?.isExtra ? "Yes" : "No",
+          revokedLabel: item?.isRevoked ? "Yes" : "No",
           assetLocation,
           assignedLocation,
         };
@@ -317,9 +366,10 @@ const Approvals = () => {
         <AgTable
           key={assignedAssets.length}
           search={true}
-          tableTitle={"Assigned Assets"}
+          tableTitle={"Approval Assets"}
           data={tableData}
           columns={assetsColumns}
+          exportData
         />
       </PageFrame>
       <MuiModal
@@ -377,7 +427,11 @@ const Approvals = () => {
             />
             <DetalisFormatted
               title={"Purchase Date"}
-              detail={formatDateTime(selectedAsset?.purchaseDate)}
+              detail={
+                selectedAsset?.purchaseDate
+                  ? humanDate(selectedAsset?.purchaseDate)
+                  : "N/A"
+              }
             />
             <DetalisFormatted
               title={"Warranty (Months)"}

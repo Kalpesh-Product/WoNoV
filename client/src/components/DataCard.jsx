@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import { motion } from "motion/react";
 
-const DataCard = ({ title, description, data, route, onClick }) => {
+const DataCard = ({ title, description, data, route, onClick, statusSummary }) => {
   const navigate = useNavigate();
 
   const handleCardAction = () => {
@@ -31,7 +31,20 @@ const DataCard = ({ title, description, data, route, onClick }) => {
       </div>
       <hr className="border-gray-300 mb-4" />
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-800 capitalize">{description}</div>
+        <div className="flex flex-wrap items-center gap-2">
+          {statusSummary ? (
+            <>
+              <div className="rounded-lg border border-[#B7E4C7] bg-[#E8F7EA] px-3 py-1 text-[11px] font-semibold text-[#17803D]">
+                ACTIVE : {statusSummary.active ?? 0}
+              </div>
+              <div className="rounded-lg border border-[#F5B7A7] bg-[#FDEBE6] px-3 py-1 text-[11px] font-semibold text-[#E05A33]">
+                INACTIVE : {statusSummary.inactive ?? 0}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-gray-800 capitalize">{description}</div>
+          )}
+        </div>
 
         {typeof route === "string" &&
           route.trim() !== "" &&
