@@ -8,7 +8,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
-const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
+const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
     [data]
@@ -222,6 +222,10 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
             />
           </div>
         </div>
+
+        {children ? (
+          <div className="mt-6 border-t border-borderGray pt-4">{children}</div>
+        ) : null}
       </WidgetSection>
 
       {/* Accordion for Monthly Client Breakdown */}
