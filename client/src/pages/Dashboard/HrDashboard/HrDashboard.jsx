@@ -762,7 +762,7 @@ const marchProjectedExpense = Math.round(
     isDepartmentTask
   );
 
-   const annualKpaTotals = useMemo(() => {
+  const annualKpaTotals = useMemo(() => {
     const selectedYearSeries = tasksData.filter(
       (series) => series.group === selectedFiscalYear
     );
@@ -787,6 +787,38 @@ const marchProjectedExpense = Math.round(
       pending: monthlyPending.reduce((sum, count) => sum + count, 0),
     };
   }, [tasksData, selectedFiscalYear]);
+
+  const annualKpaTotal =
+    annualKpaTotals.completed + annualKpaTotals.pending;
+
+  const annualTasksTotals = useMemo(() => {
+    const selectedYearSeries = tasksGraphData.filter(
+      (series) => series.group === selectedFiscalYear
+    );
+
+    const monthlyCompleted = Array(12).fill(0);
+    const monthlyPending = Array(12).fill(0);
+
+    selectedYearSeries.forEach((series) => {
+      (series.data || []).forEach((point, index) => {
+        const rawCount = Number(point?.raw) || 0;
+        if (series.name === "Completed Tasks") {
+          monthlyCompleted[index] = rawCount;
+        }
+        if (series.name === "Remaining Tasks") {
+          monthlyPending[index] = rawCount;
+        }
+      });
+    });
+
+    return {
+      completed: monthlyCompleted.reduce((sum, count) => sum + count, 0),
+      pending: monthlyPending.reduce((sum, count) => sum + count, 0),
+    };
+  }, [tasksGraphData, selectedFiscalYear]);
+
+  const annualTasksTotal =
+    annualTasksTotals.completed + annualTasksTotals.pending;
 
   const tasksOptions = {
     chart: {
@@ -1599,10 +1631,13 @@ const marchProjectedExpense = Math.round(
               options={tasksOptions}
               title={"ANNUAL KPA VS ACHIEVEMENTS"}
               titleAmount=""
+              TitleAmountTotal={annualKpaTotal}
               TitleAmountGreen={annualKpaTotals.completed}
               TitleAmountRed={annualKpaTotals.pending}
+              totalTitle="Total"
               greenTitle="KPA"
               redTitle="KPA"
+              summaryChipVariant="ticket"
               secondParam
               currentYear={true}
               onYearChange={setSelectedFiscalYear}
@@ -1622,7 +1657,14 @@ const marchProjectedExpense = Math.round(
               data={tasksGraphData}
               options={tasksOverallOptions}
               title={"ANNUAL TASKS VS ACHIEVEMENTS"}
-              titleAmount={`TOTAL TASKS : ${overallTasksForYear.length || 0}`}
+              titleAmount=""
+              TitleAmountTotal={annualTasksTotal}
+              TitleAmountGreen={annualTasksTotals.completed}
+              TitleAmountRed={annualTasksTotals.pending}
+              totalTitle="Total"
+              greenTitle="Tasks"
+              redTitle="Tasks"
+              summaryChipVariant="ticket"
               secondParam
               currentYear={true}
               onYearChange={setSelectedFiscalYear}
