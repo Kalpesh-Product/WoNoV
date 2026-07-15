@@ -1,7 +1,7 @@
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
@@ -14,6 +14,7 @@ import formatDateTime, {
   formatDateTimeFields,
 } from "../../utils/formatDateTime";
 import { State } from "country-state-city";
+import dayjs from "dayjs";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "-";
@@ -48,10 +49,61 @@ const VisitorReports = () => {
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const axios = useAxiosPrivate();
 
+  const initialVisitorDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [visitorDateRange, setVisitorDateRange] = useState(
+    initialVisitorDateRange,
+  );
+  const visitorFilters = useMemo(
+    () => ({
+      startDate: visitorDateRange?.startDate
+        ? dayjs(visitorDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: visitorDateRange?.endDate
+        ? dayjs(visitorDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
+    [visitorDateRange],
+  );
+  const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    setVisitorDateRange((currentRange) => {
+      const currentStart = currentRange?.startDate
+        ? new Date(currentRange.startDate).getTime()
+        : null;
+      const currentEnd = currentRange?.endDate
+        ? new Date(currentRange.endDate).getTime()
+        : null;
+      const nextStart = new Date(selectedRange.startDate).getTime();
+      const nextEnd = new Date(selectedRange.endDate).getTime();
+
+      if (currentStart === nextStart && currentEnd === nextEnd) {
+        return currentRange;
+      }
+
+      return selectedRange;
+    });
+  }, []);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["visitor-reports"],
+    queryKey: [
+      "visitor-reports",
+      visitorFilters.startDate,
+      visitorFilters.endDate,
+    ],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          filters: visitorFilters,
+        },
+      });
       return response.data;
     },
   });
@@ -85,9 +137,9 @@ const VisitorReports = () => {
       headerName: "Date Of Visit",
     },
     { field: "gender", headerName: "Gender", hide: true },
-    { field: "building", headerName: "Building" ,hide: true },
-    { field: "unit", headerName: "Unit" ,hide: true },
-   // { field: "buildingName", headerName: "Building Name", hide: true },
+    { field: "building", headerName: "Building", hide: true },
+    { field: "unit", headerName: "Unit", hide: true },
+    // { field: "buildingName", headerName: "Building Name", hide: true },
     //{ field: "unitNo", headerName: "Unit No", hide: true },
     { field: "unitName", headerName: "Unit Name", hide: true },
     { field: "visitorCompany", headerName: "Visitor Company", hide: true },
@@ -242,7 +294,10 @@ const VisitorReports = () => {
       gender: visitor.gender || "-",
       building: buildingName,
       unit:
-        visitor?.unit?.unitNo || visitor?.unit?.unitName || visitor?.unit || "-",
+        visitor?.unit?.unitNo ||
+        visitor?.unit?.unitName ||
+        visitor?.unit ||
+        "-",
       buildingName,
       unitNo,
       unitName,
@@ -321,7 +376,9 @@ const VisitorReports = () => {
         <div>
           <YearWiseTable
             exportData
-            dateColumn={"date"}
+            dateColumn={"checkIn"}
+            initialDateRange={initialVisitorDateRange}
+            onDateFilterChange={handleVisitorDateFilterChange}
             search={true}
             searchColumn={"name"}
             tableTitle={"Visitor Reports"}
@@ -348,9 +405,13 @@ const VisitorReports = () => {
             <DetalisFormatted title="Gender" detail={selectedVisitor.gender} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
             <DetalisFormatted title="Email" detail={selectedVisitor.email} />
-             <DetalisFormatted
+            <DetalisFormatted
               title="Building"
-              detail={selectedVisitor?.building?.buildingName || selectedVisitor?.building || "-"}
+              detail={
+                selectedVisitor?.building?.buildingName ||
+                selectedVisitor?.building ||
+                "-"
+              }
             />
             <DetalisFormatted
               title="Unit"

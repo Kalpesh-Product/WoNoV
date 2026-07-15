@@ -80,13 +80,15 @@ const RepeatInternalVisitors = () => {
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,
   );
-  const visitorDateFilterPayload = useMemo(
-    () =>
-      buildDateFilterPayload({
-        startDate: visitorDateRange?.startDate,
-        endDate: visitorDateRange?.endDate,
-        field: "checkIn",
-      }),
+  const visitorFilters = useMemo(
+    () => ({
+      startDate: visitorDateRange?.startDate
+        ? dayjs(visitorDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: visitorDateRange?.endDate
+        ? dayjs(visitorDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
     [visitorDateRange],
   );
   const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
@@ -114,12 +116,14 @@ const RepeatInternalVisitors = () => {
     queryKey: [
       "visitors",
       "repeat-internal",
-      visitorDateFilterPayload.dateFilter.checkIn.$gte,
-      visitorDateFilterPayload.dateFilter.checkIn.$lte,
+      visitorFilters.startDate,
+      visitorFilters.endDate,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
-        params: visitorDateFilterPayload,
+        params: {
+          filters: visitorFilters,
+        },
       });
       return response.data;
     },

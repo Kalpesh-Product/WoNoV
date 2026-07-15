@@ -32,6 +32,7 @@ async function fetchVisitors(req, res) {
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
+    visitorFlag: req.query?.visitorFlag,
     dateFilter: buildDateFilter({
       startDate: requestFilters?.startDate,
       endDate: requestFilters?.endDate,

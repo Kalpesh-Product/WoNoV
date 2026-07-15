@@ -88,6 +88,7 @@ const fetchVisitorReportService = async ({
   dateFilter,
   query,
   company,
+  visitorFlag,
   isMeeting = false,
   isOpendDesk = false,
 }) => {
@@ -98,16 +99,9 @@ const fetchVisitorReportService = async ({
     let visitors;
     const filter = { company: companyId };
 
-    // if (dateFilter.checkIn) {
-    //   filter.checkIn = dateFilter.checkIn;
-    // }
-    // else {
-    //   //for dashboard
-    //   filter.checkIn = dateFilter.checkIn = {
-    //     $gte: "2026-01-01T18:30:00.000Z",
-    //     $lte: "2027-03-31T18:29:59.999Z",
-    //   };
-    // }
+    if (visitorFlag) {
+      filter.visitorFlag = visitorFlag;
+    }
 
     if (dateFilter?.checkIn) {
       filter.checkIn = {
@@ -255,10 +249,10 @@ const fetchVisitorReportService = async ({
                 toMeetCompany: 1,
                 checkedInBy: 1,
                 checkedOutBy: 1,
+                building: 1,
+                unit: 1,
               }),
 
-              building: 1,
-              unit: 1,
               dateOfVisit: 1,
               scheduledDate: 1,
               scheduledStartTime: 1,
@@ -286,6 +280,16 @@ const fetchVisitorReportService = async ({
 
           ...(dateFilter?.checkIn
             ? [
+                {
+                  $set: {
+                    hasToMeet: {
+                      $and: [
+                        { $ne: [{ $type: "$toMeet" }, "missing"] },
+                        { $ne: ["$toMeet", null] },
+                      ],
+                    },
+                  },
+                },
                 {
                   $lookup: {
                     from: "userdatas",
@@ -350,8 +354,17 @@ const fetchVisitorReportService = async ({
                 },
                 {
                   $set: {
-                    toMeetCompany: { $first: "$toMeetCompany" },
+                    toMeetCompany: {
+                      $cond: [
+                        "$hasToMeet",
+                        "BIZ Nest",
+                        { $first: "$toMeetCompany" },
+                      ],
+                    },
                   },
+                },
+                {
+                  $unset: "hasToMeet",
                 },
 
                 {
@@ -395,6 +408,48 @@ const fetchVisitorReportService = async ({
                 {
                   $set: {
                     checkedOutBy: { $first: "$checkedOutBy" },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "units",
+                    localField: "unit",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          unitNo: 1,
+                          unitName: 1,
+                        },
+                      },
+                    ],
+                    as: "unit",
+                  },
+                },
+                {
+                  $set: {
+                    unit: { $first: "$unit" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "buildings",
+                    localField: "building",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          buildingName: 1,
+                        },
+                      },
+                    ],
+                    as: "building",
+                  },
+                },
+                {
+                  $set: {
+                    building: { $first: "$building" },
                   },
                 },
 
