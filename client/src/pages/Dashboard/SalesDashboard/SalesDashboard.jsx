@@ -98,6 +98,77 @@ const getUnifiedClientTypeAndDate = (clientType, client) => {
   return { resolvedClientType, clientDate };
 };
 
+const getDashboardUniqueClientBucket = (clientType, client) => {
+  let rawServiceName = clientType || "Unknown";
+
+  if (rawServiceName === "meeting") {
+    const purpose = (client?.purposeOfVisit || "").trim().toLowerCase();
+    if (purpose === "meeting room booking") {
+      rawServiceName = "externalMeeting";
+    } else if (
+      purpose === "half-day pass" ||
+      purpose === "full-day pass" ||
+      purpose === "half day pass" ||
+      purpose === "full day pass"
+    ) {
+      rawServiceName = "openDesk";
+    }
+  }
+
+  if (rawServiceName === "coworking" && client?.service?.serviceName) {
+    const serviceName = client.service.serviceName.toLowerCase();
+    if (serviceName.includes("workation")) {
+      rawServiceName = "workation";
+    } else if (serviceName.includes("living") || serviceName.includes("coliving")) {
+      rawServiceName = "coliving";
+    }
+  }
+
+  const allowedTypes = new Set([
+    "coworking",
+    "virtualOffice",
+    "externalMeeting",
+    "openDesk",
+  ]);
+
+  if (!allowedTypes.has(rawServiceName)) return null;
+
+  let date = null;
+
+  if (rawServiceName === "coworking") {
+    date = client?.startDate ? new Date(client.startDate) : null;
+  } else if (rawServiceName === "virtualOffice") {
+    date = client?.termStartDate
+      ? new Date(client.termStartDate)
+      : client?.rentDate
+        ? new Date(client.rentDate)
+        : null;
+  } else if (rawServiceName === "externalMeeting" || rawServiceName === "openDesk") {
+    date = client?.dateOfVisit
+      ? new Date(client.dateOfVisit)
+      : client?.scheduledDate
+        ? new Date(client.scheduledDate)
+        : null;
+  } else {
+    date =
+      client?.startDate || client?.dateOfVisit || client?.termStartDate
+        ? new Date(
+            client?.startDate || client?.dateOfVisit || client?.termStartDate,
+          )
+        : null;
+  }
+
+  if (!date || Number.isNaN(date.getTime())) return null;
+
+  const formattedDate = date.toISOString().split("T")[0];
+  const parsedDate = dayjs(formattedDate);
+  if (!parsedDate.isValid()) return null;
+
+  return {
+    monthLabel: parsedDate.format("MMM-YY"),
+  };
+};
+
 const getNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
   return value ? "paid" : "unpaid";
@@ -552,21 +623,19 @@ const SalesDashboard = () => {
   });
 
   const currentMonthUniqueClients = useMemo(() => {
-    const now = dayjs();
+    const currentMonthLabel = dayjs().format("MMM-YY");
 
-    return (clientsData || []).filter((client) => {
-      const clientDate = client?.rentDate || client?.createdAt;
-      if (!clientDate) return false;
+    return Object.entries(consolidatedClientsData || {})
+      .flatMap(([key, clients]) => {
+        const normalizedClients = Array.isArray(clients) ? clients : [];
+        const clientType = key.replace(/Clients$/, "");
 
-      const parsedDate = dayjs(clientDate);
-      if (!parsedDate.isValid()) return false;
-
-      return (
-        parsedDate.month() === now.month() &&
-        parsedDate.year() === now.year()
-      );
-    }).length;
-  }, [clientsData]);
+        return normalizedClients
+          .map((client) => getDashboardUniqueClientBucket(clientType, client))
+          .filter(Boolean);
+      })
+      .filter((client) => client.monthLabel === currentMonthLabel).length;
+  }, [consolidatedClientsData]);
 
   const currentFinancialYearUniqueClients = useMemo(() => {
     const currentFinancialYearStart = getCurrentFinancialYearStart();
