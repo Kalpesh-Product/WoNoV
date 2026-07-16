@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Select,
   MenuItem,
@@ -68,6 +68,7 @@ const UniqueLeads = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
+  const leadsTableRef = useRef(null);
 
   const leadsData = useSelector((state) => state?.sales?.leadsData);
   const [modalOpen, setModalOpen] = useState(false);
@@ -331,6 +332,51 @@ const UniqueLeads = () => {
         newMonth
       )}`
     );
+  };
+
+  const handleLeadsExport = () => {
+    const gridApi = leadsTableRef.current?.api;
+    if (!gridApi) return;
+
+    const exportColumnKeys = gridApi
+      .getAllGridColumns()
+      .filter((column) => {
+        const colDef = column.getColDef?.() || {};
+        const field = (colDef.field || "").toString().toLowerCase();
+        const headerName = (colDef.headerName || "").toString().toLowerCase();
+        const isActionColumn =
+          field.includes("action") || headerName.includes("action");
+
+        return (
+          !isActionColumn &&
+          !colDef.suppressCsvExport &&
+          !colDef.suppressExcelExport
+        );
+      })
+      .map((column) => column.getColId());
+
+    gridApi.exportDataAsCsv({
+      fileName: "Unique Leads details.csv",
+      allColumns: true,
+      columnKeys: exportColumnKeys,
+      processCellCallback: (params) => {
+        const field = params?.column?.getColDef?.()?.field;
+        const value = params?.value;
+
+        if (!value) return "";
+
+        if (
+          field === "dateOfContact" ||
+          field === "startDate" ||
+          field === "lastFollowUpDate"
+        ) {
+          const formattedValue = humanDate(value);
+          return formattedValue === "N/A" ? "" : formattedValue;
+        }
+
+        return String(value);
+      },
+    });
   };
 
   // const handleViewTypeChange = (event) => {
@@ -836,13 +882,19 @@ const UniqueLeads = () => {
             dateColumn="dateOfContact"
             initialMonth={selectedMonth}
             key="leads-table"
-            exportData
             hideHeaderDivider
+            tableRef={leadsTableRef}
             searchRowActions={
-              <PrimaryButton
-                title="Add Leads"
-                handleSubmit={() => setAddLeadOpen(true)}
-              />
+              <div className="flex items-center gap-2">
+                <PrimaryButton
+                  title="Add Leads"
+                  handleSubmit={() => setAddLeadOpen(true)}
+                />
+                <PrimaryButton
+                  title="Export"
+                  handleSubmit={handleLeadsExport}
+                />
+              </div>
             }
           />
         </div>
