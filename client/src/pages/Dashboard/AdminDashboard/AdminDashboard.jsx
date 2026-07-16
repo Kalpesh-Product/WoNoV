@@ -178,22 +178,38 @@ const AdminDashboard = () => {
   console.log("electric : ", electrictyExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
-  const monthlyGroups = {};
+  const averageMonthlyExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
 
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
+    const currentFyMonthlyTotals = hrFinance.reduce((acc, item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return acc;
+      }
 
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0),
-  );
+      const itemFiscalYear = formatFiscalYear(getFiscalYearStart(item.dueDate));
 
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
+      if (itemFiscalYear !== currentFiscalYear) {
+        return acc;
+      }
+
+      const monthKey = dayjs(item.dueDate).format("YYYY-MM");
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = 0;
+      }
+
+      acc[monthKey] += getAmount(item.actualAmount);
+      return acc;
+    }, {});
+
+    const monthlyTotals = Object.values(currentFyMonthlyTotals);
+
+    return monthlyTotals.length
+      ? monthlyTotals.reduce((sum, value) => sum + value, 0) / monthlyTotals.length
+      : 0;
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
   const totalOverallExpense = isHrFinanceLoading
     ? 0
