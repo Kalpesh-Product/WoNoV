@@ -152,14 +152,14 @@ const ViewClients = () => {
   const verticalsData = [
     {
       id: 1,
-      name: "Overall Co-Working",
+      name: "Co-Working",
       value: clientCounts.coWorking,
       statusSummary: coWorkingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
     },
     {
       id: 2,
-      name: "Overall Virtual-Office",
+      name: "Virtual-Office",
       value: clientCounts.virtualOfficeClients,
       statusSummary: virtualOfficeStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
@@ -172,7 +172,7 @@ const ViewClients = () => {
     // },
     {
       id: 3,
-      name: "Overall External Meetings",
+      name: "External Meetings",
       value: clientCounts.externalMeetings,
       statusSummary: externalMeetingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
@@ -180,7 +180,7 @@ const ViewClients = () => {
     },
     {
       id: 4,
-      name: "Overall Open Desk",
+      name: "Open Desk",
       value: clientCounts.openDesk,
       statusSummary: openDeskStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
@@ -297,21 +297,29 @@ const ViewClients = () => {
           data={transformedData}
           hideAccordion
           additionalData={`CLIENTS : ${unifiedClients.length}`}
-        />
+        >
+          <div className="border-b border-borderGray px-4 pb-4">
+            <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
+              Overall Clients
+            </h2>
+          </div>
+          <div className="pt-4">
+          <WidgetSection
+            layout={verticalsData.length <= 2 ? verticalsData.length : 2}
+          >
+            {verticalsData.map((item) => (
+              <DataCard
+                key={item.id}
+                data={item.value}
+                title={item.name}
+                statusSummary={item.statusSummary}
+                route={item.route}
+              />
+            ))}
+          </WidgetSection>
+          </div>
+        </UniqueClients>
       </div>
-      <WidgetSection
-        layout={verticalsData.length <= 2 ? verticalsData.length : 2}
-      >
-        {verticalsData.map((item) => (
-          <DataCard
-            key={item.id}
-            data={item.value}
-            title={item.name}
-            statusSummary={item.statusSummary}
-            route={item.route}
-          />
-        ))}
-      </WidgetSection>
     </div>
   );
 };

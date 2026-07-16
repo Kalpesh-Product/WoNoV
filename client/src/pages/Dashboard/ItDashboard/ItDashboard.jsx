@@ -56,9 +56,12 @@ const getAmount = (value) => {
   return 0;
 };
 
+const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
-  formatFiscalYear(getFiscalYearStart())
+  currentFiscalYear
 );
+const currentFiscalMonthIndexForCard =
+  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
@@ -388,23 +391,23 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     if (!fyData[fiscalYearLabel]) {
       fyData[fiscalYearLabel] = {
         actual: Array(12).fill(0),
-        projectedTotal: Array(12).fill(0),
+        projectedBalance: Array(12).fill(0),
       };
     }
 
     const actualAmount = getAmount(item.actualAmount);
     const projectedAmount = getAmount(item.projectedAmount);
+    const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
 
     fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projectedTotal[monthIndex] += projectedAmount;
+    fyData[fiscalYearLabel].projectedBalance[monthIndex] +=
+      remainingProjectedAmount;
   });
-
-  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 
   if (!fyData[currentFiscalYear]) {
     fyData[currentFiscalYear] = {
       actual: Array(12).fill(0),
-      projectedTotal: Array(12).fill(0),
+      projectedBalance: Array(12).fill(0),
     };
   }
 
@@ -415,14 +418,6 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
-      const projectedBalance = data.projectedTotal.map((projected, index) => {
-        const actual = data.actual[index] || 0;
-
-        // Gray bar shows remaining projected amount above actual.
-        // If actual is 0, full projected amount shows in gray.
-        return Math.max(projected - actual, 0);
-      });
-
       return [
         {
           name: "Actual Amount",
@@ -432,11 +427,11 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
         {
           name: "Projected Amount",
           group: fiscalYear,
-          data: projectedBalance,
+          data: data.projectedBalance,
         },
       ];
     });
-}, [hrFinance]);
+}, [hrFinance, currentFiscalYear]);
 
 const roundedMax = useMemo(() => {
   const fiscalYears = [
@@ -491,6 +486,15 @@ const roundedMax = useMemo(() => {
         total: {
           enabled: true,
           formatter: (_, config) => {
+            const isCurrentFiscalYearSelected =
+              selectedFiscalYear === currentFiscalYear;
+            const isCurrentFiscalMonth =
+              config?.dataPointIndex === currentFiscalMonthIndexForCard;
+
+            if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
+              return "";
+            }
+
             const total =
               config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
               0;
@@ -553,7 +557,6 @@ const roundedMax = useMemo(() => {
 
       const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
       const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
-      const projectedTotal = actualAmount + projectedBalance;
 
       const monthLabel =
         w.globals.labels && w.globals.labels[dataPointIndex]
@@ -563,7 +566,7 @@ const roundedMax = useMemo(() => {
       const isActual = seriesName === "Actual Amount";
 
       const label = isActual ? "Actual Amount" : "Projected Amount";
-      const amount = isActual ? actualAmount : projectedTotal;
+      const amount = isActual ? actualAmount : projectedBalance;
       const color = isActual ? "#54C4A7" : "#c4c4c4";
 
       return `
