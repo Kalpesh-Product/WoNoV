@@ -68,28 +68,22 @@ const createLead = async (req, res, next) => {
       }
     }
 
-    let query = {
-      company,
-      companyName: { $regex: new RegExp(`^${companyName.trim()}$`, "i") },
-      emailAddress: emailAddress.trim(),
-    };
-    // // Duplicate company name
-
     const trimmedCompanyName = companyName.trim();
-    const trimmedEmailAddress = emailAddress?.trim().toLowerCase();
+    const trimmedEmailAddress = emailAddress
+      ? emailAddress.trim().toLowerCase()
+      : undefined;
+
+    const duplicateConditions = [
+      { companyName: { $regex: new RegExp(`^${trimmedCompanyName}$`, "i") } },
+    ];
+
+    if (trimmedEmailAddress) {
+      duplicateConditions.push({ emailAddress: trimmedEmailAddress });
+    }
 
     const companyExists = await Lead.findOne({
       company,
-      $or: [
-        {
-          companyName: {
-            $regex: new RegExp(`^${trimmedCompanyName}$`, "i"),
-          },
-        },
-        {
-          emailAddress: trimmedEmailAddress,
-        },
-      ],
+      $or: duplicateConditions,
     });
 
     if (companyExists) {
