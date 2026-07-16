@@ -63,6 +63,10 @@ const usePageDepartment = () => {
     section = "tech";
   }
 
+  if (section === "admin") {
+    section = "administration";
+  }
+
   const userDepartments = auth?.user?.departments || [];
 
   const managementAccessDepartments = [
