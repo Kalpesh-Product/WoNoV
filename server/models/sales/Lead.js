@@ -12,6 +12,7 @@ const LeadSchema = new mongoose.Schema(
     companyName: {
       type: String,
       required: true,
+      unique: true,
     },
     serviceCategory: {
       type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +47,9 @@ const LeadSchema = new mongoose.Schema(
     },
     emailAddress: {
       type: String,
+      unique: true,
+      sparse: true,
+      match: [/^\S+@\S+\.\S+$/, "Invalid email format"],
     },
     source: {
       type: String,
