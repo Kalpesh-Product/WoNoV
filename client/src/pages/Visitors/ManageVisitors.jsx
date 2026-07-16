@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -19,6 +19,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import useAuth from "../../hooks/useAuth";
+import buildDateFilterPayload from "../../utils/buildDateFilter";
 
 const ManageVisitors = () => {
   const { auth } = useAuth();
@@ -37,13 +38,22 @@ const ManageVisitors = () => {
   const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
   const isTopManagementUser = userDepartments.some(
     (department) =>
-      String(department?.name || "").trim().toLowerCase() === "top management",
+      String(department?.name || "")
+        .trim()
+        .toLowerCase() === "top management",
   );
-  const isTechManager = userDepartments.some(
-    (department) => String(department?.name || "").trim().toLowerCase() === "tech",
-  )
-    && userRoles.some((role) =>
-      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+  const isTechManager =
+    userDepartments.some(
+      (department) =>
+        String(department?.name || "")
+          .trim()
+          .toLowerCase() === "tech",
+    ) &&
+    userRoles.some((role) =>
+      String(role?.roleTitle || "")
+        .trim()
+        .toLowerCase()
+        .includes("manager"),
     );
   const canEditVisitSchedule =
     allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
@@ -51,10 +61,41 @@ const ManageVisitors = () => {
     isTechManager;
   const editedCheckInRaw = watch("checkInRaw");
 
+  const initialVisitorDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [visitorDateRange, setVisitorDateRange] = useState(
+    initialVisitorDateRange,
+  );
+  const visitorFilters = useMemo(
+    () => ({
+      startDate: visitorDateRange?.startDate
+        ? dayjs(visitorDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: visitorDateRange?.endDate
+        ? dayjs(visitorDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
+    [visitorDateRange],
+  );
+  const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+    setVisitorDateRange(selectedRange);
+  }, []);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["visitors"],
+    queryKey: ["visitors", visitorFilters.startDate, visitorFilters.endDate],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          filters: visitorFilters,
+        },
+      });
       return response.data;
     },
   });
@@ -109,10 +150,7 @@ const ManageVisitors = () => {
             ? dayjs(visitor.date)
             : null,
       );
-      setValue(
-        "checkInRaw",
-        visitor.checkIn ? dayjs(visitor.checkIn) : null,
-      );
+      setValue("checkInRaw", visitor.checkIn ? dayjs(visitor.checkIn) : null);
       setValue(
         "checkOutRaw",
         visitor.checkOutRaw ? dayjs(visitor.checkOutRaw) : null,
@@ -144,12 +182,18 @@ const ManageVisitors = () => {
     const checkInDate =
       canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
         ? (selectedVisitDate || existingCheckIn || dayjs())
-            .hour(selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0)
+            .hour(
+              selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0,
+            )
             .minute(
-              selectedCheckInTime?.minute?.() ?? existingCheckIn?.minute?.() ?? 0,
+              selectedCheckInTime?.minute?.() ??
+                existingCheckIn?.minute?.() ??
+                0,
             )
             .second(
-              selectedCheckInTime?.second?.() ?? existingCheckIn?.second?.() ?? 0,
+              selectedCheckInTime?.second?.() ??
+                existingCheckIn?.second?.() ??
+                0,
             )
             .millisecond(
               selectedCheckInTime?.millisecond?.() ??
@@ -177,7 +221,9 @@ const ManageVisitors = () => {
 
     mutate({
       ...restData,
-      checkIn: checkInDate ? checkInDate.toISOString() : selectedVisitor?.checkIn,
+      checkIn: checkInDate
+        ? checkInDate.toISOString()
+        : selectedVisitor?.checkIn,
       dateOfVisit: checkInDate
         ? checkInDate.toISOString()
         : selectedVisitor?.checkIn || null,
@@ -232,27 +278,35 @@ const ManageVisitors = () => {
     },
   ];
 
-  const getBuildingName = (visitor) => {
-    if (!visitor) return "N/A";
-    if (visitor?.building?.buildingName) return visitor.building.buildingName;
-    if (typeof visitor?.building === "string") {
-      const matchedBuilding = auth?.user?.company?.workLocations?.find(
-        (loc) => loc?._id === visitor.building,
-      );
-      return matchedBuilding?.buildingName || "N/A";
-    }
-    return "N/A";
-  };
+  const getBuildingName = useCallback(
+    (visitor) => {
+      if (!visitor) return "N/A";
+      if (visitor?.building?.buildingName) return visitor.building.buildingName;
+      if (typeof visitor?.building === "string") {
+        const matchedBuilding = auth?.user?.company?.workLocations?.find(
+          (loc) => loc?._id === visitor.building,
+        );
+        return matchedBuilding?.buildingName || "N/A";
+      }
+      return "N/A";
+    },
+    [auth?.user?.company?.workLocations],
+  );
 
-  const getUnitName = (visitor) => {
-    if (!visitor) return "N/A";
-    if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
-    if (typeof visitor?.unit === "string") {
-      const matchedUnit = unitsData?.find((unit) => unit?._id === visitor.unit);
-      return matchedUnit?.unitNo || matchedUnit?.name || "N/A";
-    }
-    return "N/A";
-  };
+  const getUnitName = useCallback(
+    (visitor) => {
+      if (!visitor) return "N/A";
+      if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
+      if (typeof visitor?.unit === "string") {
+        const matchedUnit = unitsData?.find(
+          (unit) => unit?._id === visitor.unit,
+        );
+        return matchedUnit?.unitNo || matchedUnit?.name || "N/A";
+      }
+      return "N/A";
+    },
+    [unitsData],
+  );
 
   const hasRole = (record, role) => {
     const roles = Array.isArray(record?.visitorRoles)
@@ -298,6 +352,55 @@ const ManageVisitors = () => {
     );
   };
 
+  const visitorsTableData = useMemo(
+    () =>
+      visitorsData
+        .filter((visitor) => hasRole(visitor, "Visitor"))
+        .map((item, index) => {
+          const latestVisitorVisit = getLatestVisitByRole(
+            item?.externalVisits,
+            "Visitor",
+          );
+
+          return {
+            srNo: index + 1,
+            mongoId: item._id,
+            firstName: item.firstName,
+            lastName: item.lastName,
+            name: `${item.firstName} ${item.lastName}`,
+            email: item.email,
+            visitorType: latestVisitorVisit?.visitorType || item.visitorType,
+            visitorCompany:
+              latestVisitorVisit?.visitorCompany || item.visitorCompany,
+            date: latestVisitorVisit?.dateOfVisit || item.date,
+            phoneNumber: item.phoneNumber,
+            purposeOfVisit:
+              latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,
+            toMeet: item.toMeet
+              ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+              : item.clientToMeet
+                ? item?.clientToMeet?.employeeName
+                : "",
+            buildingName: getBuildingName(item),
+            unitName: getUnitName(item),
+            checkIn: latestVisitorVisit?.checkIn || item.checkIn,
+            checkInBy: item.checkedInBy
+              ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+              : "-",
+            checkOut: latestVisitorVisit?.checkOut
+              ? humanTime(latestVisitorVisit.checkOut)
+              : item.checkOut
+                ? humanTime(item.checkOut)
+                : "",
+            checkOutRaw: latestVisitorVisit?.checkOut || item.checkOut,
+            checkOutBy: item.checkedOutBy
+              ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+              : "-",
+          };
+        }),
+    [getBuildingName, getUnitName, visitorsData],
+  );
+
   return (
     <div>
       <PageFrame>
@@ -305,51 +408,55 @@ const ManageVisitors = () => {
           dateColumn={"checkIn"}
           search
           tableTitle="Visitors Today"
-          data={visitorsData
-            .filter((visitor) => hasRole(visitor, "Visitor"))
-            .map((item, index) => {
-              const latestVisitorVisit = getLatestVisitByRole(
-                item?.externalVisits,
-                "Visitor",
-              );
+          initialDateRange={initialVisitorDateRange}
+          onDateFilterChange={handleVisitorDateFilterChange}
+          // data={visitorsData
+          //   .filter((visitor) => hasRole(visitor, "Visitor"))
+          //   .map((item, index) => {
+          //     const latestVisitorVisit = getLatestVisitByRole(
+          //       item?.externalVisits,
+          //       "Visitor",
+          //     );
 
-              return {
-                srNo: index + 1,
-                mongoId: item._id,
-                firstName: item.firstName,
-                lastName: item.lastName,
-                name: `${item.firstName} ${item.lastName}`,
-                email: item.email,
-                visitorType:
-                  latestVisitorVisit?.visitorType || item.visitorType,
-                visitorCompany:
-                  latestVisitorVisit?.visitorCompany || item.visitorCompany,
-                date: latestVisitorVisit?.dateOfVisit || item.date,
-                phoneNumber: item.phoneNumber,
-                purposeOfVisit:
-                  latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,
-                toMeet: item.toMeet
-                  ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
-                  : item.clientToMeet
-                    ? item?.clientToMeet?.employeeName
-                    : "",
-                buildingName: getBuildingName(item),
-                unitName: getUnitName(item),
-                checkIn: latestVisitorVisit?.checkIn || item.checkIn,
-                checkInBy: item.checkedInBy
-                  ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
-                  : "-",
-                checkOut: latestVisitorVisit?.checkOut
-                  ? humanTime(latestVisitorVisit.checkOut)
-                  : item.checkOut
-                    ? humanTime(item.checkOut)
-                    : "",
-                checkOutRaw: latestVisitorVisit?.checkOut || item.checkOut,
-                checkOutBy: item.checkedOutBy
-                  ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
-                  : "-",
-              };
-            })}
+          //     return {
+          //       srNo: index + 1,
+          //       mongoId: item._id,
+          //       firstName: item.firstName,
+          //       lastName: item.lastName,
+          //       name: `${item.firstName} ${item.lastName}`,
+          //       email: item.email,
+          //       visitorType:
+          //         latestVisitorVisit?.visitorType || item.visitorType,
+          //       visitorCompany:
+          //         latestVisitorVisit?.visitorCompany || item.visitorCompany,
+          //       date: latestVisitorVisit?.dateOfVisit || item.date,
+          //       phoneNumber: item.phoneNumber,
+          //       purposeOfVisit:
+          //         latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,
+          //       toMeet: item.toMeet
+          //         ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
+          //         : item.clientToMeet
+          //           ? item?.clientToMeet?.employeeName
+          //           : "",
+          //       buildingName: getBuildingName(item),
+          //       unitName: getUnitName(item),
+          //       checkIn: latestVisitorVisit?.checkIn || item.checkIn,
+          //       checkInBy: item.checkedInBy
+          //         ? `${item.checkedInBy.firstName} ${item.checkedInBy.lastName}`
+          //         : "-",
+          //       checkOut: latestVisitorVisit?.checkOut
+          //         ? humanTime(latestVisitorVisit.checkOut)
+          //         : item.checkOut
+          //           ? humanTime(item.checkOut)
+          //           : "",
+          //       checkOutRaw: latestVisitorVisit?.checkOut || item.checkOut,
+          //       checkOutBy: item.checkedOutBy
+          //         ? `${item.checkedOutBy.firstName} ${item.checkedOutBy.lastName}`
+          //         : "-",
+          //     };
+          //   })}
+
+          data={visitorsTableData}
           columns={visitorsColumns}
         />
       </PageFrame>
@@ -536,7 +643,8 @@ const ManageVisitors = () => {
                         textField: { size: "small", fullWidth: true },
                       }}
                       shouldDisableTime={(time, view) => {
-                        const startTime = editedCheckInRaw || selectedVisitor?.checkIn;
+                        const startTime =
+                          editedCheckInRaw || selectedVisitor?.checkIn;
                         const timeValue = time?.$d;
 
                         if (!startTime || !timeValue) return false;

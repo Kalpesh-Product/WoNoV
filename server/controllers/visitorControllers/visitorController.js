@@ -17,14 +17,30 @@ const { handleDocumentUpload } = require("../../config/s3Config");
 const Building = require("../../models/locations/Building");
 const Unit = require("../../models/locations/Unit");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const buildDateFilter = require("../../utils/dateFilter");
 const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
 
 async function fetchVisitors(req, res) {
+  const requestFilters = req.query?.filters || {
+    startDate: req.query?.["filters[startDate]"],
+    endDate: req.query?.["filters[endDate]"],
+  };
+
+  console.time("fetchVisitors");
+
   const payload = await fetchVisitorReportService({
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
+    visitorFlag: req.query?.visitorFlag,
+    dateFilter: buildDateFilter({
+      startDate: requestFilters?.startDate,
+      endDate: requestFilters?.endDate,
+      field: "checkIn",
+    }),
   });
+
+  console.timeEnd("fetchVisitors");
 
   return res.status(200).json(payload);
 }
