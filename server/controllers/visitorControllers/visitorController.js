@@ -33,6 +33,7 @@ async function fetchVisitors(req, res) {
     company: req.company,
     query: req.query?.query,
     visitorFlag: req.query?.visitorFlag,
+    multipleVisits: req.query?.multipleVisits === "true",
     dateFilter: buildDateFilter({
       startDate: requestFilters?.startDate,
       endDate: requestFilters?.endDate,
@@ -262,11 +263,10 @@ const addVisitor = async (req, res, next) => {
 
     const visitorExists = await Visitor.findOne({ phoneNumber: phoneNumber });
 
-    console.log("Visitor exists with phone number:", visitorExists);
     if (visitorExists) {
       return res.status(400).json({
         message:
-          "Visitor already exists. Continue from 'Repeat Visitors' in Mix Bag.",
+          "Visitor with same phone number already exists. Continue from 'Repeat Visitors' in Mix Bag.",
       });
     }
 

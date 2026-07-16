@@ -94,6 +94,7 @@ const ManageVisitors = () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
         params: {
           filters: visitorFilters,
+          multipleVisits: true,
         },
       });
       return response.data;
