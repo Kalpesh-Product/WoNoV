@@ -147,6 +147,7 @@ const ExternalClients = ({
         const response = await axios.get("/api/visitors/fetch-visitors", {
           params: {
             filters: clientFilters,
+            multipleVisits: true,
           },
         });
         return response.data;
@@ -916,12 +917,16 @@ const ExternalClients = ({
                   Array.isArray(item?.externalVisits) &&
                   item.externalVisits.length > 0
                     ? [...item.externalVisits]
-                        .reverse()
-                        .find(
+                        .filter(
                           (visit) =>
                             visit?.visitorType === "Full-Day Pass" ||
                             visit?.visitorType === "Half-Day Pass",
-                        ) || null
+                        )
+                        .sort(
+                          (a, b) =>
+                            new Date(b?.dateOfVisit || 0).getTime() -
+                            new Date(a?.dateOfVisit || 0).getTime(),
+                        )[0] || null
                     : null;
 
                 const latestCheckInBy = latestVisit?.checkedInBy;
