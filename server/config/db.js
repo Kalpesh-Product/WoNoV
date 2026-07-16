@@ -1,14 +1,14 @@
-// const mongoose = require("mongoose");
+const mongoose = require("mongoose");
 
-// const connectDb = async (url) => {
-//   try {
-//     await mongoose.connect(url);
-//   } catch (error) {
-//     error;
-//   }
-// };
+const connectDb = async (url) => {
+  try {
+    await mongoose.connect(url);
+  } catch (error) {
+    error;
+  }
+};
 
-// module.exports = connectDb;
+module.exports = connectDb;
 
 // lib/db.js — unchanged, this file is already correct
 // const mongoose = require("mongoose");
@@ -30,23 +30,23 @@
 
 // module.exports = connectDB;
 
-const mongoose = require("mongoose");
+// const mongoose = require("mongoose");
 
-let cachedConnection = null;
+// let cachedConnection = null;
 
-const connectDb = async () => {
-  if (cachedConnection && mongoose.connection.readyState === 1) {
-    return cachedConnection;
-  }
+// const connectDb = async () => {
+//   if (cachedConnection && mongoose.connection.readyState === 1) {
+//     return cachedConnection;
+//   }
 
-  cachedConnection = await mongoose.connect(process.env.DB_URL, {
-    maxPoolSize: 10,
-    minPoolSize: 1,
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 20000,
-  });
+//   cachedConnection = await mongoose.connect(process.env.DB_URL, {
+//     maxPoolSize: 10,
+//     minPoolSize: 1,
+//     serverSelectionTimeoutMS: 5000,
+//     socketTimeoutMS: 20000,
+//   });
 
-  return cachedConnection;
-};
+//   return cachedConnection;
+// };
 
-module.exports = connectDb;
+// module.exports = connectDb;

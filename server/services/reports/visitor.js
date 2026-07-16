@@ -49,6 +49,24 @@ const populateVisitorListFields = [
   },
 ];
 
+const populateExternalVisitFields = [
+  { path: "department", select: "name" },
+  { path: "toMeet", select: "firstName lastName email" },
+  {
+    path: "toMeetCompany",
+    select: "clientName companyName name",
+  },
+  { path: "clientToMeet", select: "employeeName email" },
+  { path: "checkedInBy", select: "firstName lastName" },
+  { path: "checkedOutBy", select: "firstName lastName" },
+  {
+    path: "meeting",
+    select:
+      "subject agenda startDate endDate startTime endTime meetingType status",
+  },
+  { path: "unit", select: "unitNo unitName" },
+];
+
 const attachExternalVisits = async (visitors, companyId) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
     return visitors;
@@ -61,6 +79,7 @@ const attachExternalVisits = async (visitors, companyId) => {
   })
     .select("-__v")
     .sort({ checkIn: -1 })
+    .populate(populateExternalVisitFields)
     .lean()
     .exec();
 
@@ -89,6 +108,7 @@ const fetchVisitorReportService = async ({
   query,
   company,
   visitorFlag,
+  multipleVisits = false,
   isMeeting = false,
   isOpendDesk = false,
 }) => {
@@ -193,7 +213,9 @@ const fetchVisitorReportService = async ({
           .populate(populateVisitorListFields)
           .lean()
           .exec();
-        visitors = await attachExternalVisits(visitors, companyId);
+        if (multipleVisits) {
+          visitors = await attachExternalVisits(visitors, companyId);
+        }
         break;
 
       default:
@@ -219,7 +241,7 @@ const fetchVisitorReportService = async ({
               state: 1,
               sector: 1,
               visitorType: 1,
-              visitrFlag: 1,
+              visitorFlag: 1,
               purposeOfVisit: 1,
               visitorRoles: 1,
               department: 1,
@@ -470,7 +492,7 @@ const fetchVisitorReportService = async ({
             : []),
         ]);
 
-        if (dateFilter?.checkIn) {
+        if (multipleVisits) {
           visitors = await attachExternalVisits(visitors, companyId);
         }
     }
