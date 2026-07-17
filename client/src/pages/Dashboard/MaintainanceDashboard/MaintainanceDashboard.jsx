@@ -791,24 +791,61 @@ const roundedMax = useMemo(() => {
   // ------------------------------------------------------------------------------------------------------------------//
   // ------------------------------------------------------------------------------------------------------------------//
   // Due Maintenance
-  const dueMaintenance = [
-    { name: "AC", tasks: 10 },
-    { name: "Furniture", tasks: 20 },
-    { name: "Carpets", tasks: 30 },
-    { name: "Plumbing", tasks: 30 },
-    { name: "Glass Items", tasks: 30 },
-    { name: "Others", tasks: 30 },
+  const dueTicketStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+
+  const totalMaintenanceTicketsCount = Array.isArray(tickets) ? tickets.length : 0;
+  const dueMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+    (ticket) => dueTicketStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+
+  const dueMaintenanceData = [
+    { label: "Total", value: totalMaintenanceTicketsCount },
+    { label: "Due", value: dueMaintenanceTicketsCount },
   ];
 
-  const dueMaintenanceCount = dueMaintenance.map((user) => user.tasks);
-  const colorsMaintenance = [
-    "#FF5733",
-    "#FFC300",
-    "#28B463",
-    "#28b49a",
-    "#7a02ad",
-    "#ff00e6",
-  ];
+  const dueMaintenanceOptions = {
+    labels: dueMaintenanceData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#93C5FD", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          dueMaintenanceOptions.colors[
+            seriesIndex % dueMaintenanceOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
   //----------------------------------------------------------------------------------------------------------//
 
   //----------------------------------------------------------------------------------------------------------//
@@ -1107,12 +1144,10 @@ const roundedMax = useMemo(() => {
       key: PERMISSIONS.MAINTENANCE_DUE_MAINTENANCE.value,
       title: "Due Maintenance",
       border: true,
-      series: [],
-      labels: [],
-      colors: colorsMaintenance,
-      centerLabel: "Due Tasks",
-      tooltipValue: dueMaintenanceCount,
-      type: "Donut",
+      data: dueMaintenanceData,
+      options: dueMaintenanceOptions,
+      centerAlign: true,
+      type: "PieChartMui",
     },
   ];
   const allowedPieDonut = filterPermissions(
