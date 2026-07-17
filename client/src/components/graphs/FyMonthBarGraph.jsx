@@ -20,6 +20,54 @@ const getMonthLabel = (dateStr) => {
   return date.isValid() ? date.format("MMM-YY") : "";
 };
 
+const getMonthsForFinancialYear = (fyLabel) => {
+  if (!fyLabel?.startsWith("FY")) return [];
+
+  const [startYearStr] = fyLabel.replace("FY", "").trim().split("-");
+  const startYear = parseInt(startYearStr, 10);
+
+  if (Number.isNaN(startYear)) return [];
+
+  const endYear = startYear + 1;
+
+  return [
+    `Apr-${String(startYear).slice(-2)}`,
+    `May-${String(startYear).slice(-2)}`,
+    `Jun-${String(startYear).slice(-2)}`,
+    `Jul-${String(startYear).slice(-2)}`,
+    `Aug-${String(startYear).slice(-2)}`,
+    `Sep-${String(startYear).slice(-2)}`,
+    `Oct-${String(startYear).slice(-2)}`,
+    `Nov-${String(startYear).slice(-2)}`,
+    `Dec-${String(startYear).slice(-2)}`,
+    `Jan-${String(endYear).slice(-2)}`,
+    `Feb-${String(endYear).slice(-2)}`,
+    `Mar-${String(endYear).slice(-2)}`,
+  ];
+};
+
+const getCurrentFinancialYear = () => {
+  const today = dayjs();
+  const year = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${year}-${String((year + 1) % 100).padStart(2, "0")}`;
+};
+
+const shiftFinancialYear = (fyLabel, direction) => {
+  if (!fyLabel?.startsWith("FY")) {
+    return getCurrentFinancialYear();
+  }
+
+  const [startYearStr] = fyLabel.replace("FY", "").trim().split("-");
+  const startYear = parseInt(startYearStr, 10);
+
+  if (Number.isNaN(startYear)) {
+    return getCurrentFinancialYear();
+  }
+
+  const nextStartYear = startYear + direction;
+  return `FY ${nextStartYear}-${String((nextStartYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const FyMonthBarGraph = ({
   data = [],
   dateKey = "dueDate",
@@ -27,6 +75,7 @@ const FyMonthBarGraph = ({
   valueKey = "actualAmount",
   graphTitle = "Monthly Expenses",
   chartOptions = {},
+  fixedFY = "",
 }) => {
   // Extract FYs and Month labels
   const fyOptions = useMemo(() => {
@@ -41,27 +90,46 @@ const FyMonthBarGraph = ({
   const [selectedFY, setSelectedFY] = useState("");
   const [monthOptions, setMonthOptions] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState("");
+  const effectiveFY = fixedFY || selectedFY;
 
   useEffect(() => {
-    if (fyOptions.length > 0 && !selectedFY) setSelectedFY(fyOptions[fyOptions.length - 1]);
-  }, [fyOptions, selectedFY]);
+    if (fixedFY) {
+      setSelectedFY(fixedFY);
+      return;
+    }
+
+    const currentFY = getCurrentFinancialYear();
+
+    if (!selectedFY) {
+      setSelectedFY(currentFY);
+    }
+  }, [fixedFY, selectedFY]);
 
   const fyFilteredData = useMemo(() => {
-    return data.filter((d) => getFinancialYear(d?.[dateKey]) === selectedFY);
-  }, [data, selectedFY, dateKey]);
+    return data.filter((d) => getFinancialYear(d?.[dateKey]) === effectiveFY);
+  }, [data, effectiveFY, dateKey]);
 
   useEffect(() => {
-    const monthSet = new Set(
-      fyFilteredData.map((d) => getMonthLabel(d?.[dateKey]))
-    );
-    const sorted = Array.from(monthSet).sort(
-      (a, b) => dayjs(a, "MMM-YY") - dayjs(b, "MMM-YY")
-    );
-    setMonthOptions(sorted);
-    if (!selectedMonth && sorted.length > 0) setSelectedMonth(sorted[0]);
-  }, [fyFilteredData, selectedMonth]);
+    const fyMonths = getMonthsForFinancialYear(effectiveFY);
+    setMonthOptions(fyMonths);
 
-  const currentFYIndex = fyOptions.indexOf(selectedFY);
+    if (!fyMonths.length) {
+      if (selectedMonth) {
+        setSelectedMonth("");
+      }
+      return;
+    }
+
+    const currentMonthLabel = dayjs().format("MMM-YY");
+    const defaultMonth = fyMonths.includes(currentMonthLabel)
+      ? currentMonthLabel
+      : fyMonths[0];
+
+    if (!selectedMonth || !fyMonths.includes(selectedMonth)) {
+      setSelectedMonth(defaultMonth);
+    }
+  }, [effectiveFY, selectedMonth]);
+
   const currentMonthIndex = monthOptions.indexOf(selectedMonth);
 
   const filteredData = useMemo(() => {
@@ -158,7 +226,7 @@ const FyMonthBarGraph = ({
   return (
     <WidgetSection
       border
-      title={`${graphTitle}  ${selectedFY}`}
+      title={`${graphTitle}  ${effectiveFY}`}
       TitleAmount={`INR ${inrFormat(barData.total || 0)}`}
     >
       <div className="flex flex-col gap-4 rounded-md">
@@ -174,14 +242,20 @@ const FyMonthBarGraph = ({
           <div className="flex items-center gap-2">
             <SecondaryButton
               title={<MdNavigateBefore />}
-              disabled={currentFYIndex === 0}
-              handleSubmit={() => setSelectedFY(fyOptions[currentFYIndex - 1])}
+              disabled={Boolean(fixedFY)}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, -1))
+              }
             />
-            <span className="text-primary font-semibold text-content">{selectedFY}</span>
+            <span className="text-primary font-semibold text-content">
+              {effectiveFY || selectedFY}
+            </span>
             <SecondaryButton
               title={<MdNavigateNext />}
-              disabled={currentFYIndex === fyOptions.length - 1}
-              handleSubmit={() => setSelectedFY(fyOptions[currentFYIndex + 1])}
+              disabled={Boolean(fixedFY)}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, 1))
+              }
             />
           </div>
 

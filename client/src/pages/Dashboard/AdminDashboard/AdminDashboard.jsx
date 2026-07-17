@@ -170,12 +170,22 @@ const AdminDashboard = () => {
  
   //------------------------Graph round functions-------------------//
   //----------------------Electricity expense-----------------------//
-  const electrictyExpense = isHrFinanceLoading
-    ? 0
-    : hrFinance
-      .filter((item) => item.expanseType === "ELECTRICITY")
-      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
-  console.log("electric : ", electrictyExpense);
+  const currentMonthElectricityExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
+
+    return hrFinance
+      .filter((item) => {
+        if (item?.expanseType !== "ELECTRICITY" || !item?.dueDate) {
+          return false;
+        }
+
+        return dayjs(item.dueDate).isSame(dayjs(), "month");
+      })
+      .reduce((sum, item) => sum + (Number(item.actualAmount) || 0), 0);
+  }, [hrFinance, isHrFinanceLoading]);
+  console.log("electric : ", currentMonthElectricityExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
   const averageMonthlyExpense = useMemo(() => {
@@ -220,7 +230,15 @@ const AdminDashboard = () => {
       return { totalSqFt: 0, totalExpense: 0, perSqFtExpense: 0 };
     }
 
-    const groupedByUnit = hrFinance.reduce((acc, item) => {
+    const currentMonthBudgets = hrFinance.filter((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return false;
+      }
+
+      return dayjs(item.dueDate).isSame(dayjs(), "month");
+    });
+
+    const groupedByUnit = currentMonthBudgets.reduce((acc, item) => {
       const unit = item.unit;
 
       if (!unit?._id) return acc;
@@ -1585,7 +1603,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.ADMIN_ELECTRICITY_EXPENSE_PER_SQFT.value,
       title: "Total",
-      data: `INR ${inrFormat(electrictyExpense / totalSqFt)}`,
+      data: `INR ${inrFormat(currentMonthElectricityExpense / totalSqFt)}`,
       description: "Electricity Expense Per Sq. Ft.",
       route: "per-sq-ft-electricity-expense",
     },
