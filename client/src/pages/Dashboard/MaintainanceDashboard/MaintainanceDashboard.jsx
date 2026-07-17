@@ -318,6 +318,119 @@ const currentFiscalMonthIndexForCard =
       enabled: !!department?._id,
     });
 
+  const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
+    queryKey: ["maintenance-ticket-issues", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error("Error fetching maintenance tickets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
+
+  const categoryWiseMaintenance = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const categoryCountMap = tickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([unit, expense]) => ({ unit, expense }))
+      .sort((first, second) => second.expense - first.expense);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.expense, 0);
+
+    return [...topCategories, { unit: "Others", expense: othersCount }];
+  }, [isTicketsLoading, tickets]);
+
+  const totalCategoryWiseMaintenance = categoryWiseMaintenance.reduce(
+    (sum, item) => sum + item.expense,
+    0
+  );
+  const pieCategoryWiseMaintenanceData = categoryWiseMaintenance.map(
+    (item) => ({
+      label: item.unit,
+      value: item.expense,
+    })
+  );
+  const pieCategoryWiseMaintenanceOptions = {
+    labels: categoryWiseMaintenance.map((item) => item.unit),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+      "#7D6B91",
+      "#B7B7A4",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          categoryWiseMaintenance?.[seriesIndex]?.unit ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          pieCategoryWiseMaintenanceOptions.colors[
+            seriesIndex % pieCategoryWiseMaintenanceOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -699,57 +812,6 @@ const roundedMax = useMemo(() => {
   //----------------------------------------------------------------------------------------------------------//
 
   //----------------------------------------------------------------------------------------------------------//
-  // Categoty Wise Maintenance
-  const categoryWiseMaintenance = [
-    { unit: "AC", expense: 12000 },
-    { unit: "Carpets", expense: 10000 },
-    { unit: "Plumbing", expense: 11500 },
-    { unit: "Furniture", expense: 10000 },
-    { unit: "Electronics", expense: 10000 },
-    { unit: "Stationery", expense: 10000 },
-    { unit: "Glass Items", expense: 10000 },
-    { unit: "Others", expense: 10000 },
-  ];
-  const totalCategoryWiseMaintenance = categoryWiseMaintenance.reduce(
-    (sum, item) => sum + item.expense,
-    0
-  );
-  const pieCategoryWiseMaintenanceData = categoryWiseMaintenance.map(
-    (item) => ({
-      label: `${item.unit} (${(
-        (item.expense / totalCategoryWiseMaintenance) *
-        100
-      ).toFixed(1)}%)`,
-      value: item.expense,
-    })
-  );
-  const pieCategoryWiseMaintenanceOptions = {
-    labels: categoryWiseMaintenance.map((item) => item.unit),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    stroke: {
-      show: true,
-      width: 5, // Increase for more "gap"
-      colors: ["#ffffff"], // Or match background color
-    },
-    colors: [
-      "#0D47A1", // Dark Blue
-      "#1565C0",
-      "#1976D2",
-      "#1E88E5",
-      "#2196F3",
-      "#42A5F5",
-      "#64B5F6",
-      "#90CAF9", // Lightest
-    ],
-    tooltip: {
-      y: {
-        formatter: (val) => `${val} Due tasks`,
-      },
-    },
-  };
-  //----------------------------------------------------------------------------------------------------------//
   // Gender Data
   const genderData = [
     { gender: "Male", count: "45" },
@@ -1036,8 +1098,9 @@ const roundedMax = useMemo(() => {
       key: PERMISSIONS.MAINTENANCE_CATEGORY_WISE_MAINTENANCE.value,
       title: "Category Wise Maintenance",
       border: true,
-      data: [],
-      options: [],
+      data: pieCategoryWiseMaintenanceData,
+      options: pieCategoryWiseMaintenanceOptions,
+      centerAlign: true,
       type: "PieChartMui",
     },
     {
@@ -1332,7 +1395,13 @@ const roundedMax = useMemo(() => {
         if (config.type === "PieChartMui") {
           return (
             <WidgetSection key={config.key} border={config.border} title={config.title}>
-              <PieChartMui data={config.data} options={config.options} />
+              <PieChartMui
+                data={config.data}
+                options={config.options}
+                width={config.width}
+                height={config.height}
+                centerAlign={config.centerAlign}
+              />
             </WidgetSection>
           );
         } else if (config.type === "Donut") {
