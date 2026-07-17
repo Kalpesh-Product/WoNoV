@@ -21,8 +21,15 @@ const AnnualExpense = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const location = useLocation();
-  const isAdminAnnualExpensesRoute = location.pathname.includes(
+  const normalizedPathname = location.pathname.toLowerCase();
+  const isAdminAnnualExpensesRoute = normalizedPathname.includes(
     "/admin-dashboard/annual-expenses",
+  );
+  const isMaintenanceAnnualExpensesRoute = normalizedPathname.includes(
+    "/maintenance-dashboard/annual-expenses",
+  );
+  const isItAnnualExpensesRoute = normalizedPathname.includes(
+    "/it-dashboard/annual-expenses",
   );
   const department = usePageDepartment();
   const queryClient = useQueryClient(); 
@@ -139,7 +146,10 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
             {
               field: "projectedAmount",
-              headerName: isAdminAnnualExpensesRoute
+              headerName:
+                isAdminAnnualExpensesRoute ||
+                isMaintenanceAnnualExpensesRoute ||
+                isItAnnualExpensesRoute
                 ? "Projected Amount (INR)"
                 : "Amount (INR)",
               flex: 1,
