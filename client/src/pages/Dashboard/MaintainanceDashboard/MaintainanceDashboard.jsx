@@ -13,6 +13,7 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Box, Chip, Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -27,12 +28,18 @@ import humanDate from "../../../utils/humanDateForamt";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "./../../../constants/permissions";
 import { filterPermissions } from "../../../utils/accessConfig";
+import StatusChip from "../../../components/StatusChip";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../../redux/slices/assetsSlice";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 const department = usePageDepartment();
 const axios = useAxiosPrivate();
 const navigate = useNavigate();
+const dispatch = useDispatch();
 
 const getFiscalYearStart = (date = dayjs()) => {
   const parsedDate = dayjs(date);
@@ -58,6 +65,23 @@ const getAmount = (value) => {
   }
 
   return 0;
+};
+
+const currentDepartmentId = department?._id;
+const currentDepartmentName = department?.name || "Maintenance";
+const encodedDepartmentName = encodeURIComponent(currentDepartmentName);
+
+const handleUnderMaintenanceAssetsClick = () => {
+  if (!currentDepartmentId) return;
+
+  dispatch(setSelectedDepartment(currentDepartmentId));
+  dispatch(setSelectedDepartmentName(currentDepartmentName));
+  navigate(
+    `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+    {
+      state: { assetStatusFilter: "underMaintenance" },
+    },
+  );
 };
 
 const fiscalMonths = [
@@ -163,60 +187,7 @@ const currentFiscalMonthIndexForCard =
     },
   });
 
-  //------------------------Graph round functions-------------------//
-  // const expenseSeries = useMemo(() => {
-  //   // Initialize monthly buckets
-  //   const months = Array.from({ length: 12 }, (_, index) =>
-  //     dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  //   );
-
-  //   const fyData = {
-  //     "FY 2024-25": Array(12).fill(0),
-  //     "FY 2025-26": Array(12).fill(0),
-  //   };
-
-  //   hrFinance.forEach((item) => {
-  //     const date = dayjs(item.dueDate);
-  //     const year = date.year();
-  //     const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-  //     if (year === 2024 && monthIndex >= 3) {
-  //       // Apr 2024 to Dec 2024 (month 3 to 11)
-  //       fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-  //     } else if (year === 2025) {
-  //       if (monthIndex <= 2) {
-  //         // Jan to Mar 2025 (months 0–2)
-  //         fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-  //       } else if (monthIndex >= 3) {
-  //         // Apr 2025 to Dec 2025 (months 3–11)
-  //         fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-  //       }
-  //     } else if (year === 2026 && monthIndex <= 2) {
-  //       // Jan to Mar 2026
-  //       fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-  //     }
-  //   });
-
-  //   return [
-  //     {
-  //       name: "total",
-  //       group: "FY 2024-25",
-  //       data: fyData["FY 2024-25"],
-  //     },
-  //     {
-  //       name: "total",
-  //       group: "FY 2025-26",
-  //       data: fyData["FY 2025-26"],
-  //     },
-  //   ];
-  // }, [hrFinance]);
-
-  // const maxExpenseValue = Math.max(
-  //   ...expenseSeries.flatMap((series) => series.data)
-  // );
-  // const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
-  //------------------------Graph round functions-------------------//
-  //----------------------Monthly average-----------------------//
+  
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
     if (!department?._id) {
@@ -239,23 +210,6 @@ const currentFiscalMonthIndexForCard =
     enabled: !!department?._id,
   });
   //----------------------KPA Data-----------------------//
-  const monthlyGroups = {};
-
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
-
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0)
-  );
-
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
-
   const totalOverallExpense = isHrFinanceLoading
     ? []
     : hrFinance.reduce((sum, item) => (sum + item.actualAmount || 0, 0));
@@ -301,6 +255,38 @@ const currentFiscalMonthIndexForCard =
     ? []
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
+  const { data: maintenanceAssets = [], isLoading: isMaintenanceAssetsLoading } =
+    useQuery({
+      queryKey: ["maintenance-assets", department?._id],
+      queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+
+        try {
+          const response = await axios.get(
+            `/api/assets/get-assets?departmentId=${department._id}`,
+          );
+          return Array.isArray(response.data)
+            ? response.data.flatMap((item) => item?.assets || [])
+            : [];
+        } catch (error) {
+          console.error("Error fetching maintenance assets:", error);
+          return [];
+        }
+      },
+      enabled: !!department?._id,
+    });
+
+  const underMaintenanceAssetsCount = useMemo(() => {
+    if (isMaintenanceAssetsLoading || !Array.isArray(maintenanceAssets)) {
+      return 0;
+    }
+
+    return maintenanceAssets.filter((asset) => asset?.isUnderMaintenance === true)
+      .length;
+  }, [maintenanceAssets, isMaintenanceAssetsLoading]);
+
   const monthlyDueTasksCount = useMemo(() => {
     const currentMonth = dayjs();
 
@@ -331,6 +317,119 @@ const currentFiscalMonthIndexForCard =
       },
       enabled: !!department?._id,
     });
+
+  const { data: tickets = [], isLoading: isTicketsLoading } = useQuery({
+    queryKey: ["maintenance-ticket-issues", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error("Error fetching maintenance tickets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
+
+  const categoryWiseMaintenance = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const categoryCountMap = tickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([unit, expense]) => ({ unit, expense }))
+      .sort((first, second) => second.expense - first.expense);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.expense, 0);
+
+    return [...topCategories, { unit: "Others", expense: othersCount }];
+  }, [isTicketsLoading, tickets]);
+
+  const totalCategoryWiseMaintenance = categoryWiseMaintenance.reduce(
+    (sum, item) => sum + item.expense,
+    0
+  );
+  const pieCategoryWiseMaintenanceData = categoryWiseMaintenance.map(
+    (item) => ({
+      label: item.unit,
+      value: item.expense,
+    })
+  );
+  const pieCategoryWiseMaintenanceOptions = {
+    labels: categoryWiseMaintenance.map((item) => item.unit),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+      "#7D6B91",
+      "#B7B7A4",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          categoryWiseMaintenance?.[seriesIndex]?.unit ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          pieCategoryWiseMaintenanceOptions.colors[
+            seriesIndex % pieCategoryWiseMaintenanceOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
@@ -586,6 +685,28 @@ const roundedMax = useMemo(() => {
         item.group === selectedFiscalYear && item.name === "Actual Amount"
     )
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
+
+  const currentFyAverageMonthlyExpense = useMemo(() => {
+    const currentFyActualSeries = expenseRawSeries.find(
+      (item) =>
+        item.group === currentFiscalYear && item.name === "Actual Amount"
+    );
+
+    const currentFyMonths = Array.isArray(currentFyActualSeries?.data)
+      ? currentFyActualSeries.data
+      : [];
+
+    if (!currentFyMonths.length) {
+      return 0;
+    }
+
+    const totalCurrentFyExpense = currentFyMonths.reduce(
+      (sum, value) => sum + Number(value || 0),
+      0
+    );
+
+    return totalCurrentFyExpense / 12;
+  }, [currentFiscalYear, expenseRawSeries]);
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -670,77 +791,63 @@ const roundedMax = useMemo(() => {
   // ------------------------------------------------------------------------------------------------------------------//
   // ------------------------------------------------------------------------------------------------------------------//
   // Due Maintenance
-  const dueMaintenance = [
-    { name: "AC", tasks: 10 },
-    { name: "Furniture", tasks: 20 },
-    { name: "Carpets", tasks: 30 },
-    { name: "Plumbing", tasks: 30 },
-    { name: "Glass Items", tasks: 30 },
-    { name: "Others", tasks: 30 },
+  const dueTicketStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+
+  const totalMaintenanceTicketsCount = Array.isArray(tickets) ? tickets.length : 0;
+  const dueMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+    (ticket) => dueTicketStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+
+  const dueMaintenanceData = [
+    { label: "Total", value: totalMaintenanceTicketsCount },
+    { label: "Due", value: dueMaintenanceTicketsCount },
   ];
 
-  const dueMaintenanceCount = dueMaintenance.map((user) => user.tasks);
-  const colorsMaintenance = [
-    "#FF5733",
-    "#FFC300",
-    "#28B463",
-    "#28b49a",
-    "#7a02ad",
-    "#ff00e6",
-  ];
-  //----------------------------------------------------------------------------------------------------------//
-
-  //----------------------------------------------------------------------------------------------------------//
-  // Categoty Wise Maintenance
-  const categoryWiseMaintenance = [
-    { unit: "AC", expense: 12000 },
-    { unit: "Carpets", expense: 10000 },
-    { unit: "Plumbing", expense: 11500 },
-    { unit: "Furniture", expense: 10000 },
-    { unit: "Electronics", expense: 10000 },
-    { unit: "Stationery", expense: 10000 },
-    { unit: "Glass Items", expense: 10000 },
-    { unit: "Others", expense: 10000 },
-  ];
-  const totalCategoryWiseMaintenance = categoryWiseMaintenance.reduce(
-    (sum, item) => sum + item.expense,
-    0
-  );
-  const pieCategoryWiseMaintenanceData = categoryWiseMaintenance.map(
-    (item) => ({
-      label: `${item.unit} (${(
-        (item.expense / totalCategoryWiseMaintenance) *
-        100
-      ).toFixed(1)}%)`,
-      value: item.expense,
-    })
-  );
-  const pieCategoryWiseMaintenanceOptions = {
-    labels: categoryWiseMaintenance.map((item) => item.unit),
+  const dueMaintenanceOptions = {
+    labels: dueMaintenanceData.map((item) => item.label),
     chart: {
       fontFamily: "Poppins-Regular",
     },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
     stroke: {
       show: true,
-      width: 5, // Increase for more "gap"
-      colors: ["#ffffff"], // Or match background color
+      width: 2,
+      colors: ["#ffffff"],
     },
-    colors: [
-      "#0D47A1", // Dark Blue
-      "#1565C0",
-      "#1976D2",
-      "#1E88E5",
-      "#2196F3",
-      "#42A5F5",
-      "#64B5F6",
-      "#90CAF9", // Lightest
-    ],
+    colors: ["#93C5FD", "#FCA5A5"],
     tooltip: {
-      y: {
-        formatter: (val) => `${val} Due tasks`,
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          dueMaintenanceOptions.colors[
+            seriesIndex % dueMaintenanceOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
       },
     },
   };
+  //----------------------------------------------------------------------------------------------------------//
+
   //----------------------------------------------------------------------------------------------------------//
   // Gender Data
   const genderData = [
@@ -891,31 +998,6 @@ const roundedMax = useMemo(() => {
     };
   });
 
-  const priorityTasks = [
-    { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Inspect Fire Extinguishers",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    { taskName: "Test Alarm System", type: "Monthly", endTime: "10:00 AM" },
-    { taskName: "Clean AC Filters", type: "Daily", endTime: "02:30 PM" },
-    { taskName: "Check Water Pressure", type: "Daily", endTime: "08:00 AM" },
-    {
-      taskName: "Monitor Security Cameras",
-      type: "Daily",
-      endTime: "11:45 PM",
-    },
-    {
-      taskName: "Update Software Patches",
-      type: "Monthly",
-      endTime: "06:00 PM",
-    },
-    { taskName: "Backup Server Data", type: "Daily", endTime: "07:30 PM" },
-    { taskName: "Test Emergency Lights", type: "Monthly", endTime: "04:15 PM" },
-    { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
-  ];
-
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
@@ -923,9 +1005,23 @@ const roundedMax = useMemo(() => {
       id: "status",
       label: "Status",
       renderCell: (data) => {
+        const status = String(data.status || "-");
+        const normalizedStatus = status.toLowerCase();
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+          completed: { backgroundColor: "#DCFCE7", color: "#166534" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
+            <Chip sx={{ ...chipStyle }} label={status} size="small" />
           </>
         );
       },
@@ -934,80 +1030,7 @@ const roundedMax = useMemo(() => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const executiveTimings = [
-    {
-      srNo: 1,
-      id: 2,
-      name: "Rajesh Sawant",
-      building: "DTC",
-      unitNo: "002",
-      startTime: "9:00AM",
-      endTime: "06:00PM",
-    },
-    {
-      srNo: 2,
-      id: 2,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "501(B)",
-      startTime: "09:30 AM",
-      endTime: "06:30 PM",
-    },
-    {
-      srNo: 3,
-      id: 3,
-      name: "Rajesh Sawant",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 4,
-      id: 4,
-      name: "Praktan Madkaikar",
-      building: "DTC",
-      unitNo: "007",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 5,
-      id: 5,
-      name: "Praktan Madkaikar",
-      building: "DTC",
-      unitNo: "004",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 6,
-      id: 6,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "601(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 7,
-      id: 7,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "601(B)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 8,
-      id: 8,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "501(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-  ];
+
 
   const executiveTimingsColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -1112,20 +1135,19 @@ const roundedMax = useMemo(() => {
       key: PERMISSIONS.MAINTENANCE_CATEGORY_WISE_MAINTENANCE.value,
       title: "Category Wise Maintenance",
       border: true,
-      data: [],
-      options: [],
+      data: pieCategoryWiseMaintenanceData,
+      options: pieCategoryWiseMaintenanceOptions,
+      centerAlign: true,
       type: "PieChartMui",
     },
     {
       key: PERMISSIONS.MAINTENANCE_DUE_MAINTENANCE.value,
       title: "Due Maintenance",
       border: true,
-      series: [],
-      labels: [],
-      colors: colorsMaintenance,
-      centerLabel: "Due Tasks",
-      tooltipValue: dueMaintenanceCount,
-      type: "Donut",
+      data: dueMaintenanceData,
+      options: dueMaintenanceOptions,
+      centerAlign: true,
+      type: "PieChartMui",
     },
   ];
   const allowedPieDonut = filterPermissions(
@@ -1188,13 +1210,13 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_EXPENSE.value, // maintenance_monthly_expense
       title: "Average",
-      data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      data: `INR ${inrFormat(currentFyAverageMonthlyExpense)}`,
       description: "Monthly Expense",
       route: "maintenance-expenses",
     },
     {
       key: PERMISSIONS.MAINTENANCE_EXPENSE_PER_SQFT.value,
-      title: "Avg",
+      title: "Total",
       data: `INR ${inrFormat(totalUtilised / totalSqFt)}`,
       description: "Expense per Sqft",
       route: "per-sq-ft-expense",
@@ -1202,10 +1224,10 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.MAINTENANCE_ASSETS_UNDER_MANAGEMENT.value,
       title: "Total",
-      data: 0,
+      data: underMaintenanceAssetsCount,
       description: "Assets Under Management",
-      // route: "maintenance-assets",
-      route: "/app/assets/view-assets/Maintenance/list-of-assets",
+      route: `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+      onClick: handleUnderMaintenanceAssetsClick,
     },
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,
@@ -1230,7 +1252,7 @@ const roundedMax = useMemo(() => {
       rows: transformedTasks,
       columns: priorityTasksColumns,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedTasks.length,
     },
     {
       key: PERMISSIONS.MAINTENANCE_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
@@ -1239,7 +1261,7 @@ const roundedMax = useMemo(() => {
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedWeeklyShifts.length,
     },
   ];
 
@@ -1356,10 +1378,12 @@ const roundedMax = useMemo(() => {
       layout: 3,
       widgets: allowedMaintenanceDataCards.map((config) => (
         <DataCard
+          key={config.key}
           route={config.route}
           title={config.title}
           data={config.data}
           description={config.description}
+          onClick={config.onClick}
         />
       )),
     },
@@ -1406,7 +1430,13 @@ const roundedMax = useMemo(() => {
         if (config.type === "PieChartMui") {
           return (
             <WidgetSection key={config.key} border={config.border} title={config.title}>
-              <PieChartMui data={config.data} options={config.options} />
+              <PieChartMui
+                data={config.data}
+                options={config.options}
+                width={config.width}
+                height={config.height}
+                centerAlign={config.centerAlign}
+              />
             </WidgetSection>
           );
         } else if (config.type === "Donut") {

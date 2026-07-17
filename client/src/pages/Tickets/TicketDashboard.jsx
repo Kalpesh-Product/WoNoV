@@ -199,15 +199,11 @@ const TicketDashboard = () => {
 
   const departmentCountMap = {};
 
-  const today = new Date();
   const currentYear = new Date().getFullYear();
 
   const todayTickets = ticketsData.filter((ticket) => {
-    const createdAt = new Date(ticket.createdAt);
-    return (
-      createdAt.getDate() === today.getDate() &&
-      createdAt.getFullYear() === currentYear
-    );
+    if (!ticket?.createdAt) return false;
+    return dayjs(ticket.createdAt).isSame(dayjs(), "day");
   });
 
   const lastMonth = new Date().getMonth();

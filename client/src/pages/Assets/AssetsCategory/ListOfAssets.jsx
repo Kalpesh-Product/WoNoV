@@ -384,7 +384,7 @@ const ListOfAssets = () => {
             : "",
         // assetImage: null,
          assetImage: selectedForEdit?.assetImage?.url || null,
-        warrantyDocument: null,
+        warrantyDocument: selectedForEdit?.warrantyDocument?.link || null,
       });
     }
   }, [modalMode, selectedForEdit]);
@@ -421,7 +421,7 @@ const ListOfAssets = () => {
       if (data.assetImage) {
         formData.append("assetImage", data.assetImage);
       }
-      if (data.warrantyDocument) {
+      if (data.warrantyDocument instanceof File) {
         formData.append("warrantyDocument", data.warrantyDocument);
       }
 
@@ -829,11 +829,7 @@ const ListOfAssets = () => {
                     const selectedValue = event.target.value;
 
                     if (selectedValue === "add_vendor") {
-                      // Open in new tab (blank page)
-                      window.open(
-                        "/app/assets/mix-bag/vender/vendor-onboard",
-                        "_blank",
-                      );
+                      navigate("/app/assets/mix-bag/vendor");
 
                       // Reset the dropdown after navigation
                       setTimeout(() => {

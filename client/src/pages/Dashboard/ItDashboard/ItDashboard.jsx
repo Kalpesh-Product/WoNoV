@@ -719,17 +719,7 @@ const roundedMax = useMemo(() => {
     "#E91E63",
   ];
   //----------------------------------------------------------------------------------------------------------//
-  // const unitWiseExpense = [
-  //   { unit: "ST-701A", expense: 12000 },
-  //   { unit: "ST-701B", expense: 10000 },
-  //   { unit: "ST-601A", expense: 11500 },
-  //   { unit: "ST-601B", expense: 10000 },
-  // ];
-
-  // const totalUnitWiseExpense = unitWiseExpense.reduce(
-  //   (sum, item) => sum + item.expense,
-  //   0
-  // );
+  
 
   const unitWiseExpense = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return [];
@@ -811,31 +801,6 @@ const roundedMax = useMemo(() => {
 
   //----------------------------------------------------------------------------------------------------------//
 
-  const priorityTasks = [
-    { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Inspect Fire Extinguishers",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    { taskName: "Test Alarm System", type: "Monthly", endTime: "10:00 AM" },
-    { taskName: "Clean AC Filters", type: "Daily", endTime: "02:30 PM" },
-    { taskName: "Check Water Pressure", type: "Daily", endTime: "08:00 AM" },
-    {
-      taskName: "Monitor Security Cameras",
-      type: "Daily",
-      endTime: "11:45 PM",
-    },
-    {
-      taskName: "Update Software Patches",
-      type: "Monthly",
-      endTime: "06:00 PM",
-    },
-    { taskName: "Backup Server Data", type: "Daily", endTime: "07:30 PM" },
-    { taskName: "Test Emergency Lights", type: "Monthly", endTime: "04:15 PM" },
-    { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
-  ];
-
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
@@ -843,9 +808,23 @@ const roundedMax = useMemo(() => {
       id: "status",
       label: "Status",
       renderCell: (data) => {
+        const status = String(data.status || "-");
+        const normalizedStatus = status.toLowerCase();
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+          completed: { backgroundColor: "#DCFCE7", color: "#166534" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
+            <Chip sx={{ ...chipStyle }} label={status} size="small" />
           </>
         );
       },
@@ -854,64 +833,7 @@ const roundedMax = useMemo(() => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const executiveTimings = [
-    {
-      name: "Machindranath Parkar",
-      building: "DTC",
-      unitNo: "002",
-      startTime: "9:00AM",
-      endTime: "06:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "DTC",
-      unitNo: "004",
-      startTime: "10:00AM",
-      endTime: "07:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "ST",
-      unitNo: "601(A)",
-      startTime: "8:30AM",
-      endTime: "05:30PM",
-    },
-    {
-      name: "Dasmond Goes",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "9:15AM",
-      endTime: "06:15PM",
-    },
-    {
-      name: "Dasmond Goes",
-      building: "DTC",
-      unitNo: "501(B)",
-      startTime: "10:00AM",
-      endTime: "07:00PM",
-    },
-    {
-      name: "Rajiv Kumar Pal",
-      building: "DTC",
-      unitNo: "601(B)",
-      startTime: "8:00AM",
-      endTime: "04:00PM",
-    },
-    {
-      name: "Rajiv Kumar Pal",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "11:00AM",
-      endTime: "08:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "ST",
-      unitNo: "005",
-      startTime: "9:45AM",
-      endTime: "06:45PM",
-    },
-  ];
+ 
 
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -921,37 +843,7 @@ const roundedMax = useMemo(() => {
     { id: "endDate", label: "End Date", align: "left" },
   ];
   //----------------------------------------------------------------------------------------------------------//
-  // const clientComplaints = [
-  //   { client: "Zomato", complaints: 1 },
-  //   { client: "SqaudStack", complaints: 2 },
-  //   { client: "Swiggy", complaints: 1 },
-  //   { client: "Zimetrics", complaints: 1 },
-  // ];
-
-  // const totalClientComplaints = clientComplaints.reduce(
-  //   (sum, item) => sum + item.complaints,
-  //   0
-  // );
-
-  // const pieComplaintsData = clientComplaints.map((item) => ({
-  //   label: `${item.client} (${(
-  //     (item.complaints / totalClientComplaints) *
-  //     100
-  //   ).toFixed(1)}%)`,
-  //   value: item.complaints,
-  // }));
-
-  // const pieComplaintsOptions = {
-  //   labels: clientComplaints.map((item) => item.client),
-  //   chart: {
-  //     fontFamily: "Poppins-Regular",
-  //   },
-  //   tooltip: {
-  //     y: {
-  //       formatter: (val) => `${val} complaints`, // ✅ shows actual number
-  //     },
-  //   },
-  // };
+  
   //  Department-Wise Complaints graph
   const departmentIssueSummary = useMemo(() => {
     if (isTicketsLoading || !Array.isArray(tickets)) return [];
@@ -1172,7 +1064,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.IT_TOP_10_HIGH_PRIORITY_DUE_TASKS.value,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedTasks.length,
       title: "Top 10 High Priority Due Tasks",
       rows: transformedTasks,
       columns: priorityTasksColumns,
@@ -1180,7 +1072,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.IT_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedWeeklyShifts.length,
       title: "Weekly Executive Shift Timing",
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
