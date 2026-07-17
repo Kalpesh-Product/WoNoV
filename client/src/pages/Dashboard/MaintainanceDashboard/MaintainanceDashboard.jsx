@@ -1194,7 +1194,7 @@ const roundedMax = useMemo(() => {
     },
     {
       key: PERMISSIONS.MAINTENANCE_EXPENSE_PER_SQFT.value,
-      title: "Avg",
+      title: "Total",
       data: `INR ${inrFormat(totalUtilised / totalSqFt)}`,
       description: "Expense per Sqft",
       route: "per-sq-ft-expense",
