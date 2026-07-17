@@ -137,6 +137,7 @@ const AdminPerSqFtElectricityExpense = () => {
         columns={columns}
         totalKey="expense"
         dateColumn={"dueDate"}
+        preserveCurrentMonthRange
         search
         sortByString="unitNo"
         sortOrder="asc"
