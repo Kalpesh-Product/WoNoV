@@ -210,23 +210,6 @@ const currentFiscalMonthIndexForCard =
     enabled: !!department?._id,
   });
   //----------------------KPA Data-----------------------//
-  const monthlyGroups = {};
-
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
-
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0)
-  );
-
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
-
   const totalOverallExpense = isHrFinanceLoading
     ? []
     : hrFinance.reduce((sum, item) => (sum + item.actualAmount || 0, 0));
@@ -589,6 +572,28 @@ const roundedMax = useMemo(() => {
         item.group === selectedFiscalYear && item.name === "Actual Amount"
     )
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
+
+  const currentFyAverageMonthlyExpense = useMemo(() => {
+    const currentFyActualSeries = expenseRawSeries.find(
+      (item) =>
+        item.group === currentFiscalYear && item.name === "Actual Amount"
+    );
+
+    const currentFyMonths = Array.isArray(currentFyActualSeries?.data)
+      ? currentFyActualSeries.data
+      : [];
+
+    if (!currentFyMonths.length) {
+      return 0;
+    }
+
+    const totalCurrentFyExpense = currentFyMonths.reduce(
+      (sum, value) => sum + Number(value || 0),
+      0
+    );
+
+    return totalCurrentFyExpense / 12;
+  }, [currentFiscalYear, expenseRawSeries]);
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -1107,7 +1112,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_EXPENSE.value, // maintenance_monthly_expense
       title: "Average",
-      data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      data: `INR ${inrFormat(currentFyAverageMonthlyExpense)}`,
       description: "Monthly Expense",
       route: "maintenance-expenses",
     },
