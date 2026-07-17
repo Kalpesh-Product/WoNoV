@@ -13,6 +13,7 @@ import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
 import { Box, Chip, Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -27,12 +28,18 @@ import humanDate from "../../../utils/humanDateForamt";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "./../../../constants/permissions";
 import { filterPermissions } from "../../../utils/accessConfig";
+import StatusChip from "../../../components/StatusChip";
+import {
+  setSelectedDepartment,
+  setSelectedDepartmentName,
+} from "../../../redux/slices/assetsSlice";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
 const department = usePageDepartment();
 const axios = useAxiosPrivate();
 const navigate = useNavigate();
+const dispatch = useDispatch();
 
 const getFiscalYearStart = (date = dayjs()) => {
   const parsedDate = dayjs(date);
@@ -58,6 +65,23 @@ const getAmount = (value) => {
   }
 
   return 0;
+};
+
+const currentDepartmentId = department?._id;
+const currentDepartmentName = department?.name || "Maintenance";
+const encodedDepartmentName = encodeURIComponent(currentDepartmentName);
+
+const handleUnderMaintenanceAssetsClick = () => {
+  if (!currentDepartmentId) return;
+
+  dispatch(setSelectedDepartment(currentDepartmentId));
+  dispatch(setSelectedDepartmentName(currentDepartmentName));
+  navigate(
+    `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+    {
+      state: { assetStatusFilter: "underMaintenance" },
+    },
+  );
 };
 
 const fiscalMonths = [
@@ -163,60 +187,7 @@ const currentFiscalMonthIndexForCard =
     },
   });
 
-  //------------------------Graph round functions-------------------//
-  // const expenseSeries = useMemo(() => {
-  //   // Initialize monthly buckets
-  //   const months = Array.from({ length: 12 }, (_, index) =>
-  //     dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  //   );
-
-  //   const fyData = {
-  //     "FY 2024-25": Array(12).fill(0),
-  //     "FY 2025-26": Array(12).fill(0),
-  //   };
-
-  //   hrFinance.forEach((item) => {
-  //     const date = dayjs(item.dueDate);
-  //     const year = date.year();
-  //     const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-  //     if (year === 2024 && monthIndex >= 3) {
-  //       // Apr 2024 to Dec 2024 (month 3 to 11)
-  //       fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-  //     } else if (year === 2025) {
-  //       if (monthIndex <= 2) {
-  //         // Jan to Mar 2025 (months 0–2)
-  //         fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-  //       } else if (monthIndex >= 3) {
-  //         // Apr 2025 to Dec 2025 (months 3–11)
-  //         fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-  //       }
-  //     } else if (year === 2026 && monthIndex <= 2) {
-  //       // Jan to Mar 2026
-  //       fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-  //     }
-  //   });
-
-  //   return [
-  //     {
-  //       name: "total",
-  //       group: "FY 2024-25",
-  //       data: fyData["FY 2024-25"],
-  //     },
-  //     {
-  //       name: "total",
-  //       group: "FY 2025-26",
-  //       data: fyData["FY 2025-26"],
-  //     },
-  //   ];
-  // }, [hrFinance]);
-
-  // const maxExpenseValue = Math.max(
-  //   ...expenseSeries.flatMap((series) => series.data)
-  // );
-  // const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
-  //------------------------Graph round functions-------------------//
-  //----------------------Monthly average-----------------------//
+  
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
     if (!department?._id) {
@@ -300,6 +271,38 @@ const currentFiscalMonthIndexForCard =
   const totalSqFt = isUnitsData
     ? []
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
+
+  const { data: maintenanceAssets = [], isLoading: isMaintenanceAssetsLoading } =
+    useQuery({
+      queryKey: ["maintenance-assets", department?._id],
+      queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+
+        try {
+          const response = await axios.get(
+            `/api/assets/get-assets?departmentId=${department._id}`,
+          );
+          return Array.isArray(response.data)
+            ? response.data.flatMap((item) => item?.assets || [])
+            : [];
+        } catch (error) {
+          console.error("Error fetching maintenance assets:", error);
+          return [];
+        }
+      },
+      enabled: !!department?._id,
+    });
+
+  const underMaintenanceAssetsCount = useMemo(() => {
+    if (isMaintenanceAssetsLoading || !Array.isArray(maintenanceAssets)) {
+      return 0;
+    }
+
+    return maintenanceAssets.filter((asset) => asset?.isUnderMaintenance === true)
+      .length;
+  }, [maintenanceAssets, isMaintenanceAssetsLoading]);
 
   const monthlyDueTasksCount = useMemo(() => {
     const currentMonth = dayjs();
@@ -891,31 +894,6 @@ const roundedMax = useMemo(() => {
     };
   });
 
-  const priorityTasks = [
-    { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Inspect Fire Extinguishers",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    { taskName: "Test Alarm System", type: "Monthly", endTime: "10:00 AM" },
-    { taskName: "Clean AC Filters", type: "Daily", endTime: "02:30 PM" },
-    { taskName: "Check Water Pressure", type: "Daily", endTime: "08:00 AM" },
-    {
-      taskName: "Monitor Security Cameras",
-      type: "Daily",
-      endTime: "11:45 PM",
-    },
-    {
-      taskName: "Update Software Patches",
-      type: "Monthly",
-      endTime: "06:00 PM",
-    },
-    { taskName: "Backup Server Data", type: "Daily", endTime: "07:30 PM" },
-    { taskName: "Test Emergency Lights", type: "Monthly", endTime: "04:15 PM" },
-    { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
-  ];
-
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
@@ -923,9 +901,23 @@ const roundedMax = useMemo(() => {
       id: "status",
       label: "Status",
       renderCell: (data) => {
+        const status = String(data.status || "-");
+        const normalizedStatus = status.toLowerCase();
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+          completed: { backgroundColor: "#DCFCE7", color: "#166534" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
+            <Chip sx={{ ...chipStyle }} label={status} size="small" />
           </>
         );
       },
@@ -934,80 +926,7 @@ const roundedMax = useMemo(() => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const executiveTimings = [
-    {
-      srNo: 1,
-      id: 2,
-      name: "Rajesh Sawant",
-      building: "DTC",
-      unitNo: "002",
-      startTime: "9:00AM",
-      endTime: "06:00PM",
-    },
-    {
-      srNo: 2,
-      id: 2,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "501(B)",
-      startTime: "09:30 AM",
-      endTime: "06:30 PM",
-    },
-    {
-      srNo: 3,
-      id: 3,
-      name: "Rajesh Sawant",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 4,
-      id: 4,
-      name: "Praktan Madkaikar",
-      building: "DTC",
-      unitNo: "007",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 5,
-      id: 5,
-      name: "Praktan Madkaikar",
-      building: "DTC",
-      unitNo: "004",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 6,
-      id: 6,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "601(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 7,
-      id: 7,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "601(B)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-    {
-      srNo: 8,
-      id: 8,
-      name: "Praktan Madkaikar",
-      building: "ST",
-      unitNo: "501(A)",
-      startTime: "09:00 AM",
-      endTime: "06:00 PM",
-    },
-  ];
+
 
   const executiveTimingsColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
@@ -1202,10 +1121,10 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.MAINTENANCE_ASSETS_UNDER_MANAGEMENT.value,
       title: "Total",
-      data: 0,
+      data: underMaintenanceAssetsCount,
       description: "Assets Under Management",
-      // route: "maintenance-assets",
-      route: "/app/assets/view-assets/Maintenance/list-of-assets",
+      route: `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+      onClick: handleUnderMaintenanceAssetsClick,
     },
     {
       key: PERMISSIONS.MAINTENANCE_MONTHLY_KPA.value,
@@ -1230,7 +1149,7 @@ const roundedMax = useMemo(() => {
       rows: transformedTasks,
       columns: priorityTasksColumns,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedTasks.length,
     },
     {
       key: PERMISSIONS.MAINTENANCE_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
@@ -1239,7 +1158,7 @@ const roundedMax = useMemo(() => {
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedWeeklyShifts.length,
     },
   ];
 
@@ -1356,10 +1275,12 @@ const roundedMax = useMemo(() => {
       layout: 3,
       widgets: allowedMaintenanceDataCards.map((config) => (
         <DataCard
+          key={config.key}
           route={config.route}
           title={config.title}
           data={config.data}
           description={config.description}
+          onClick={config.onClick}
         />
       )),
     },
