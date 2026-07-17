@@ -16,8 +16,10 @@ const MuiTable = ({
   rowKey = "id",
   rowsToDisplay,
   scroll = false,
+  scrollHeight = 480,
 }) => {
   const displayedRows = rowsToDisplay ? rows.slice(0, rowsToDisplay) : rows;
+  const shouldScroll = scroll && (Boolean(rowsToDisplay) || Boolean(scrollHeight));
 
   return (
     <div className="border-default border-borderGray rounded-md">
@@ -27,13 +29,12 @@ const MuiTable = ({
       <Paper>
         <TableContainer
           style={{
-            // height: scroll && rowsToDisplay ? 385 : "none",
-            height: scroll && rowsToDisplay ? 480 : "none",
-            overflowY: scroll && rowsToDisplay ? "auto" : "hidden",
+            height: shouldScroll ? scrollHeight : "none",
+            overflowY: shouldScroll ? "auto" : "hidden",
             overflowX: "auto",
           }}
         >
-          <Table stickyHeader={scroll && rowsToDisplay}>
+          <Table stickyHeader={shouldScroll}>
             <TableHead>
               <TableRow>
                 {columns.map((column) => (

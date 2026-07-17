@@ -521,7 +521,7 @@ const fetchWeeklyUnits = async (req, res, next) => {
 
     const transformedData = weeklySchedules
       .map((schedule) => applyCurrentStatuses(schedule, currentDate))
-      .filter((schedule) => schedule.employee?.isActive)
+      .filter((schedule) => schedule.employee?.id?.isActive !== false)
       .map((schedule) => ({
         ...schedule,
         manager,

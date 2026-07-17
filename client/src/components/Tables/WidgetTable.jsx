@@ -48,6 +48,7 @@ const WidgetTable = ({
   redTitle,
   totalTitle,
   summaryChipVariant,
+  preserveCurrentMonthRange = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -67,6 +68,17 @@ const WidgetTable = ({
 
     const currentMonthStart = today.startOf("month");
     const currentMonthEnd = today.endOf("month");
+
+    if (preserveCurrentMonthRange) {
+      setDateRange([
+        {
+          startDate: currentMonthStart.toDate(),
+          endDate: currentMonthEnd.toDate(),
+          key: "selection",
+        },
+      ]);
+      return;
+    }
 
     const monthHasData = data.some((item) => {
       const date = dayjs(item[dateColumn]);
@@ -112,7 +124,7 @@ const WidgetTable = ({
         key: "selection",
       },
     ]);
-  }, [data, dateColumn, isUserChangedRange]);
+  }, [data, dateColumn, isUserChangedRange, preserveCurrentMonthRange]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);

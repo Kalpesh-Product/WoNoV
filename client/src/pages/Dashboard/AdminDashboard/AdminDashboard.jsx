@@ -170,30 +170,56 @@ const AdminDashboard = () => {
  
   //------------------------Graph round functions-------------------//
   //----------------------Electricity expense-----------------------//
-  const electrictyExpense = isHrFinanceLoading
-    ? 0
-    : hrFinance
-      .filter((item) => item.expanseType === "ELECTRICITY")
-      .reduce((sum, item) => sum + item.actualAmount || 0, 0);
-  console.log("electric : ", electrictyExpense);
+  const currentMonthElectricityExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
+
+    return hrFinance
+      .filter((item) => {
+        if (item?.expanseType !== "ELECTRICITY" || !item?.dueDate) {
+          return false;
+        }
+
+        return dayjs(item.dueDate).isSame(dayjs(), "month");
+      })
+      .reduce((sum, item) => sum + (Number(item.actualAmount) || 0), 0);
+  }, [hrFinance, isHrFinanceLoading]);
+  console.log("electric : ", currentMonthElectricityExpense);
   //----------------------Electricity expense-----------------------//
   //----------------------Monthly average-----------------------//
-  const monthlyGroups = {};
+  const averageMonthlyExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
 
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
+    const currentFyMonthlyTotals = hrFinance.reduce((acc, item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return acc;
+      }
 
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0),
-  );
+      const itemFiscalYear = formatFiscalYear(getFiscalYearStart(item.dueDate));
 
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
+      if (itemFiscalYear !== currentFiscalYear) {
+        return acc;
+      }
+
+      const monthKey = dayjs(item.dueDate).format("YYYY-MM");
+
+      if (!acc[monthKey]) {
+        acc[monthKey] = 0;
+      }
+
+      acc[monthKey] += getAmount(item.actualAmount);
+      return acc;
+    }, {});
+
+    const monthlyTotals = Object.values(currentFyMonthlyTotals);
+
+    return monthlyTotals.length
+      ? monthlyTotals.reduce((sum, value) => sum + value, 0) / monthlyTotals.length
+      : 0;
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
   const totalOverallExpense = isHrFinanceLoading
     ? 0
@@ -204,7 +230,15 @@ const AdminDashboard = () => {
       return { totalSqFt: 0, totalExpense: 0, perSqFtExpense: 0 };
     }
 
-    const groupedByUnit = hrFinance.reduce((acc, item) => {
+    const currentMonthBudgets = hrFinance.filter((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return false;
+      }
+
+      return dayjs(item.dueDate).isSame(dayjs(), "month");
+    });
+
+    const groupedByUnit = currentMonthBudgets.reduce((acc, item) => {
       const unit = item.unit;
 
       if (!unit?._id) return acc;
@@ -285,6 +319,37 @@ const AdminDashboard = () => {
     },
   });
 
+  const { data: holidayEvents = [] } = useQuery({
+    queryKey: ["admin-holiday-events"],
+    queryFn: async () => {
+      try {
+        const [holidaysResponse, eventsResponse] = await Promise.all([
+          axios.get("/api/events/get-holidays"),
+          axios.get("/api/events/get-events"),
+        ]);
+
+        const holidays = Array.isArray(holidaysResponse.data)
+          ? holidaysResponse.data.map((item) => ({
+              ...item,
+              type: item?.type || "holiday",
+            }))
+          : [];
+
+        const events = Array.isArray(eventsResponse.data)
+          ? eventsResponse.data.map((item) => ({
+              ...item,
+              type: item?.type || "event",
+            }))
+          : [];
+
+        return [...holidays, ...events];
+      } catch (error) {
+        console.error("Error fetching holiday and events data:", error);
+        return [];
+      }
+    },
+  });
+
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
@@ -321,20 +386,54 @@ const AdminDashboard = () => {
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
     useQuery({
-      queryKey: ["weeklySchedule"],
+      queryKey: ["weeklySchedule", department?._id],
       queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+
         try {
           const response = await axios.get(
-            `/api/weekly-unit/fetch-weekly-unit/${department._id}`,
+            `/api/administration/fetch-weekly-unit/${department._id}`,
           );
-
-          console.log("weekly schedule", weeklySchedule.length);
           return response.data;
         } catch (error) {
-          throw new Error("Error fetching data");
+          console.error("Error fetching weekly schedule:", error);
+          return [];
+        }
+      },
+      enabled: !!department?._id,
+    });
+
+  const { data: houseKeepingMembers = [], isLoading: isHouseKeepingLoading } =
+    useQuery({
+      queryKey: ["housekeeping-staff"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get("/api/company/housekeeping-members");
+          return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+          console.error("Error fetching housekeeping members:", error);
+          return [];
         }
       },
     });
+
+  const {
+    data: houseKeepingAssignments = [],
+    isLoading: isHouseKeepingAssignmentsLoading,
+  } = useQuery({
+    queryKey: ["housekeeping-assignments"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/company/get-housekeeping-schedule");
+        return Array.isArray(response.data?.data) ? response.data.data : [];
+      } catch (error) {
+        console.error("Error fetching housekeeping assignments:", error);
+        return [];
+      }
+    },
+  });
 
   const expenseRawSeries = useMemo(() => {
   const fyData = {};
@@ -997,8 +1096,8 @@ const roundedMax = useMemo(() => {
   const upcomingEventsColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "event", label: "Event", align: "left" },
+    { id: "type", label: "Type", align: "left" },
     { id: "date", label: "Date", align: "left" },
-    { id: "location", label: "Location", align: "left" },
   ];
 
   const clientMemberBirthdaysColumns = [
@@ -1009,8 +1108,35 @@ const roundedMax = useMemo(() => {
     { id: "company", label: "Company", align: "left" },
   ];
 
-  const today = dayjs.utc().startOf("day");
-  const cutOff = today.add(15, "day");
+  const today = dayjs().startOf("day");
+  const upcomingCutOff = today.add(15, "day");
+
+  const upcomingEvents = useMemo(
+    () =>
+      (holidayEvents || [])
+        .map((event) => {
+          const startDate = dayjs(event?.start).startOf("day");
+          const normalizedType = String(
+            event?.type || event?.extendedProps?.type || "",
+          )
+            .trim()
+            .toLowerCase();
+
+          return {
+            event: event?.title || "-",
+            type: normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : "-",
+            date: startDate.isValid() ? startDate.format("DD-MM-YYYY") : "-",
+            eventDate: startDate,
+            isUpcoming:
+              startDate.isValid() &&
+              !startDate.isBefore(today) &&
+              ["holiday", "event"].includes(normalizedType),
+          };
+        })
+        .filter((event) => event.isUpcoming)
+        .sort((a, b) => a.eventDate.diff(b.eventDate)),
+    [holidayEvents, today],
+  );
 
   const upcomingBirthdays = clientsData
     .flatMap((client) =>
@@ -1034,7 +1160,7 @@ const roundedMax = useMemo(() => {
             dateOfBirth: dob.format("DD-MM-YYYY"),
             upComingIn: upComingIn === 0 ? "Today" : `${upComingIn} days`,
             isUpcoming:
-              birthdayStart.isBefore(cutOff) &&
+              birthdayStart.isBefore(upcomingCutOff) &&
               birthdayStart.isAfter(today.subtract(1, "day")),
           };
         }),
@@ -1085,7 +1211,7 @@ const roundedMax = useMemo(() => {
               ? "Tomorrow"
               : `${upComingInDays} days`,
         isUpcoming:
-          anniversary.isBefore(cutOff) &&
+          anniversary.isBefore(upcomingCutOff) &&
           anniversary.isAfter(today.subtract(1, "day")),
       };
     })
@@ -1121,6 +1247,76 @@ const roundedMax = useMemo(() => {
       unitNo: emp.location.unitNo,
     }));
   }, [weeklySchedule, isWeeklyScheduleLoading]);
+
+  const transformedHouseKeepingMembers = useMemo(() => {
+    if (
+      isHouseKeepingLoading ||
+      isHouseKeepingAssignmentsLoading ||
+      !Array.isArray(houseKeepingMembers)
+    ) {
+      return [];
+    }
+
+    const latestAssignmentsByMember = houseKeepingAssignments.reduce(
+      (acc, assignment) => {
+        const memberId = assignment?.housekeepingMember?._id;
+
+        if (!memberId) {
+          return acc;
+        }
+
+        const existingAssignment = acc[memberId];
+        const assignmentDate = dayjs(
+          assignment?.endDate || assignment?.startDate || assignment?.createdAt,
+        ).valueOf();
+        const existingDate = existingAssignment
+          ? dayjs(
+              existingAssignment?.endDate ||
+                existingAssignment?.startDate ||
+                existingAssignment?.createdAt,
+            ).valueOf()
+          : -Infinity;
+
+        if (!existingAssignment || assignmentDate > existingDate) {
+          acc[memberId] = assignment;
+        }
+
+        return acc;
+      },
+      {},
+    );
+
+    return houseKeepingMembers
+      .filter((member) => member?.isActive !== false)
+      .sort((a, b) => {
+        const firstDate = a?.dateOfJoining || a?.createdAt || 0;
+        const secondDate = b?.dateOfJoining || b?.createdAt || 0;
+        return dayjs(secondDate).valueOf() - dayjs(firstDate).valueOf();
+      })
+      .map((member, index) => {
+        const assignedUnit = latestAssignmentsByMember[member?._id]?.unit;
+
+        return {
+          id: index + 1,
+          name:
+            [member?.firstName, member?.lastName].filter(Boolean).join(" ") ||
+            "N/A",
+          dateOfJoin: member?.dateOfJoining
+            ? humanDate(member.dateOfJoining)
+            : member?.createdAt
+              ? humanDate(member.createdAt)
+              : "-",
+          building:
+            assignedUnit?.building?.buildingName || member?.workBuilding || "-",
+          unitNo: assignedUnit?.unitNo || member?.unitNo || "-",
+        };
+      });
+  }, [
+    houseKeepingAssignments,
+    houseKeepingMembers,
+    isHouseKeepingAssignmentsLoading,
+    isHouseKeepingLoading,
+  ]);
 
   const transformedTasks = tasks.map((task, index) => {
     return {
@@ -1407,7 +1603,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.ADMIN_ELECTRICITY_EXPENSE_PER_SQFT.value,
       title: "Total",
-      data: `INR ${inrFormat(electrictyExpense / totalSqFt)}`,
+      data: `INR ${inrFormat(currentMonthElectricityExpense / totalSqFt)}`,
       description: "Electricity Expense Per Sq. Ft.",
       route: "per-sq-ft-electricity-expense",
     },
@@ -1431,17 +1627,20 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.ADMIN_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
       scroll: true,
+      scrollHeight: 480,
       Title: "Weekly Executive Shift Timing",
-      rowsToDisplay: 3,
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
     },
     {
       key: PERMISSIONS.ADMIN_UPCOMING_EVENTS_LIST.value,
       scroll: true,
+      scrollHeight: 480,
       Title: "Upcoming Events List",
-      rowsToDisplay: 3,
-      rows: [],
+      rows: upcomingEvents.map((item, index) => ({
+        ...item,
+        id: index + 1,
+      })),
       columns: upcomingEventsColumns,
     },
     {
@@ -1474,9 +1673,9 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.ADMIN_NEWLY_JOINED_HOUSE_KEEPING_MEMBERS.value,
       scroll: true,
+      scrollHeight: 480,
       Title: "Newly Joined House Keeping Members",
-      rowsToDisplay: 4,
-      rows: [],
+      rows: transformedHouseKeepingMembers,
       columns: houseKeepingMemberColumns,
     },
   ];

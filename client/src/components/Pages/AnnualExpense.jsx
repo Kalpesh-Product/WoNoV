@@ -21,6 +21,9 @@ const AnnualExpense = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const location = useLocation();
+  const isAdminAnnualExpensesRoute = location.pathname.includes(
+    "/admin-dashboard/annual-expenses",
+  );
   const department = usePageDepartment();
   const queryClient = useQueryClient(); 
   const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
@@ -134,7 +137,16 @@ const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
             // { field: "department", headerName: "Department", flex: 200 },
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-            { field: "projectedAmount", headerName: "Amount (INR)", flex: 1 },
+            {
+              field: "projectedAmount",
+              headerName: isAdminAnnualExpensesRoute
+                ? "Projected Amount (INR)"
+                : "Amount (INR)",
+              flex: 1,
+            },
+
+            { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
+
             { field: "dueDate", headerName: "Due Date", flex: 1 },
             { field: "status", headerName: "Status", flex: 1 },
           ],
