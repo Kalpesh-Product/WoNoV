@@ -154,7 +154,8 @@ const InventoryRecordHistory = () => {
               "N/A"
             : "N/A",
 
-          dateRaw: safeDate,
+          rawDateTime: safeDate,
+          inventoryStamp: formatDateTime(safeDate),
         };
       });
     },
@@ -175,8 +176,12 @@ const InventoryRecordHistory = () => {
       )
       .sort(
         (a, b) =>
-          new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
-          new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+          new Date(
+            b?.createdAt || b?.rawDateTime || b?.date || b?.updatedAt || 0,
+          ) -
+          new Date(
+            a?.createdAt || a?.rawDateTime || a?.date || a?.updatedAt || 0,
+          ),
       )
       .map((item, index) => ({
         ...item,
@@ -293,11 +298,11 @@ const InventoryRecordHistory = () => {
       minWidth: 160,
     },
     {
-      field: "dateRaw",
+      field: "inventoryStamp",
       headerName: "Date",
       flex: 1,
       minWidth: 160,
-      cellRenderer: (params) => formatDateTime(params.value),
+      cellRenderer: (params) => params.value,
     },
   ];
 
@@ -393,7 +398,7 @@ const InventoryRecordHistory = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={formatDateTime(selectedAsset.dateRaw)}
+              detail={formatDateTime(selectedAsset.rawDateTime)}
             />
             <DetalisFormatted
               title="Category"

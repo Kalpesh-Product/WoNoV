@@ -565,7 +565,7 @@ const fetchClientsOccupancyReportService = async ({
     buildingName: client.buildingName,
     "Client Name": client.clientName,
     "Occupied Desks": client.occupiedDesks,
-    "Occupied %": `${client.occupiedPercent} %`,
+    "Occupied %": client.occupiedPercent,
     // "Occupied %": totalOccupiedDesks
     //   ? `${Math.round((client.occupiedDesks / totalOccupiedDesks) * 100)} %`
     //   : "0 %",
