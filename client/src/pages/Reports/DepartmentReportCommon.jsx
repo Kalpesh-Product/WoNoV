@@ -1925,6 +1925,32 @@ const mergeHrCsvFields = (rows = []) => {
     const normalizedReportName = String(reportName || "").trim().toLowerCase();
     const hiddenFields = [];
     let exportData = appendReportSerialNumbers(reportData, reportName);
+    const formatSubstitutions = (substitutions = []) =>
+      substitutions
+        .map((item) => {
+          const substituteName = [
+            item?.substitute?.firstName,
+            item?.substitute?.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const fromDate = item?.fromDate
+            ? dayjs(item.fromDate).format("DD-MM-YYYY")
+            : "";
+          const toDate = item?.toDate
+            ? dayjs(item.toDate).format("DD-MM-YYYY")
+            : "";
+
+          return [
+            substituteName ? `Substitute: ${substituteName}` : "",
+            fromDate ? `From Date: ${fromDate}` : "",
+            toDate ? `To Date: ${toDate}` : "",
+          ]
+            .filter(Boolean)
+            .join("; ");
+        })
+        .filter(Boolean)
+        .join(" | ");
 
     if (
       normalizedModuleKey === "performance" &&
@@ -1989,31 +2015,7 @@ const mergeHrCsvFields = (rows = []) => {
             employeeName:
               [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
               "",
-            substitutions: substitutions
-              .map((item) => {
-                const substituteName = [
-                  item?.substitute?.firstName,
-                  item?.substitute?.lastName,
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-                const fromDate = item?.fromDate
-                  ? dayjs(item.fromDate).format("DD-MM-YYYY")
-                  : "";
-                const toDate = item?.toDate
-                  ? dayjs(item.toDate).format("DD-MM-YYYY")
-                  : "";
-
-                return [
-                  substituteName ? `Substitute: ${substituteName}` : "",
-                  fromDate ? `From Date: ${fromDate}` : "",
-                  toDate ? `To Date: ${toDate}` : "",
-                ]
-                  .filter(Boolean)
-                  .join("; ");
-              })
-              .filter(Boolean)
-              .join(" | "),
+            substitutions: formatSubstitutions(substitutions),
           };
         }
 
@@ -2029,31 +2031,7 @@ const mergeHrCsvFields = (rows = []) => {
           employeeName:
             [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
             "",
-          substitutions: substitutions
-            .map((item) => {
-              const substituteName = [
-                item?.substitute?.firstName,
-                item?.substitute?.lastName,
-              ]
-                .filter(Boolean)
-                .join(" ");
-              const fromDate = item?.fromDate
-                ? dayjs(item.fromDate).format("DD-MM-YYYY")
-                : "";
-              const toDate = item?.toDate
-                ? dayjs(item.toDate).format("DD-MM-YYYY")
-                : "";
-
-              return [
-                substituteName ? `Substitute: ${substituteName}` : "",
-                fromDate ? `From Date: ${fromDate}` : "",
-                toDate ? `To Date: ${toDate}` : "",
-              ]
-                .filter(Boolean)
-                .join("; ");
-            })
-            .filter(Boolean)
-            .join(" | "),
+          substitutions: formatSubstitutions(substitutions),
           ...(buildingName !== undefined ? { buildingName } : {}),
           ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
           location: undefined,
@@ -2066,6 +2044,57 @@ const mergeHrCsvFields = (rows = []) => {
 
       hiddenFields.push(/^location$/);
       hiddenFields.push(/^employee$/);
+    }
+
+    if (normalizedReportName.includes("housekeeping schedule report")) {
+      const reshapeHousekeepingScheduleFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const unit = row.unit;
+        const housekeepingMember = row.housekeepingMember;
+        const substitutions = Array.isArray(row.substitutions)
+          ? row.substitutions
+          : [];
+
+        if (!unit || typeof unit !== "object" || Array.isArray(unit)) {
+          return {
+            ...row,
+            memberName:
+              [housekeepingMember?.firstName, housekeepingMember?.lastName]
+                .filter(Boolean)
+                .join(" ") || "",
+            substitutions: formatSubstitutions(substitutions),
+          };
+        }
+
+        const { building, ...restUnit } = unit;
+        const { buildingName, ...restBuilding } =
+          building && typeof building === "object" && !Array.isArray(building)
+            ? building
+            : {};
+
+        return {
+          ...row,
+          ...restUnit,
+          memberName:
+            [housekeepingMember?.firstName, housekeepingMember?.lastName]
+              .filter(Boolean)
+              .join(" ") || "",
+          substitutions: formatSubstitutions(substitutions),
+          ...(buildingName !== undefined ? { buildingName } : {}),
+          ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
+          unit: undefined,
+        };
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeHousekeepingScheduleFields)
+        : reshapeHousekeepingScheduleFields(exportData);
+
+      hiddenFields.push(/^unit$/);
+      hiddenFields.push(/^housekeepingMember$/);
     }
 
     return downloadCsv({
