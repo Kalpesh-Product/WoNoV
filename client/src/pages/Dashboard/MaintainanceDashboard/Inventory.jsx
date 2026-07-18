@@ -1434,6 +1434,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "dateRaw",
       headerName: "Date",
+      exportFormat: "datetime-comma",
       cellRenderer: (params) => {
         return formatDateTime(params.value);
       },
@@ -1948,6 +1949,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 columns={inventoryColumns}
                 handleSubmit={handleAddAsset}
                 exportData
+                taskExportDateTimeFormatting
               />
             </PageFrame>
           )}
