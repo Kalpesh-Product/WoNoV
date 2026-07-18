@@ -83,6 +83,43 @@ const AdminDashboard = () => {
   ];
 
   const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+  const currentMonthStart = dayjs().startOf("month");
+  const currentMonthEnd = dayjs().endOf("month");
+  const currentMonthLabel = dayjs().format("MMMM");
+  const parseHouseKeepingJoiningDate = (value) => {
+    if (!value) {
+      return null;
+    }
+
+    if (dayjs.isDayjs(value)) {
+      return value.isValid() ? value : null;
+    }
+
+    if (value instanceof Date) {
+      const parsedDate = dayjs(value);
+      return parsedDate.isValid() ? parsedDate : null;
+    }
+
+    if (typeof value === "string") {
+      const trimmedValue = value.trim();
+
+      if (!trimmedValue) {
+        return null;
+      }
+
+      const formatCandidates = [
+        dayjs(trimmedValue),
+        dayjs(trimmedValue, "DD-MM-YYYY", true),
+        dayjs(trimmedValue, "YYYY-MM-DD", true),
+        dayjs(trimmedValue, "DD/MM/YYYY", true),
+      ];
+
+      return formatCandidates.find((date) => date.isValid()) || null;
+    }
+
+    const parsedDate = dayjs(value);
+    return parsedDate.isValid() ? parsedDate : null;
+  };
 
   const [selectedFiscalYear, setSelectedFiscalYear] =
     useState(currentFiscalYear);
@@ -1302,7 +1339,21 @@ const roundedMax = useMemo(() => {
     );
 
     return houseKeepingMembers
-      .filter((member) => member?.isActive !== false)
+      .filter((member) => {
+        if (member?.isActive === false) {
+          return false;
+        }
+
+        const joiningDate = parseHouseKeepingJoiningDate(
+          member?.dateOfJoining || member?.createdAt,
+        );
+
+        return (
+          Boolean(joiningDate) &&
+          joiningDate.valueOf() >= currentMonthStart.valueOf() &&
+          joiningDate.valueOf() <= currentMonthEnd.valueOf()
+        );
+      })
       .sort((a, b) => {
         const firstDate = a?.dateOfJoining || a?.createdAt || 0;
         const secondDate = b?.dateOfJoining || b?.createdAt || 0;
@@ -1327,6 +1378,8 @@ const roundedMax = useMemo(() => {
         };
       });
   }, [
+    currentMonthEnd,
+    currentMonthStart,
     houseKeepingAssignments,
     houseKeepingMembers,
     isHouseKeepingAssignmentsLoading,
@@ -1689,7 +1742,7 @@ const roundedMax = useMemo(() => {
       key: PERMISSIONS.ADMIN_NEWLY_JOINED_HOUSE_KEEPING_MEMBERS.value,
       scroll: true,
       scrollHeight: 480,
-      Title: "Newly Joined House Keeping Members",
+      Title: `Newly Joined House Keeping Members - ${currentMonthLabel}`,
       rows: transformedHouseKeepingMembers,
       columns: houseKeepingMemberColumns,
     },
