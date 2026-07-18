@@ -121,6 +121,26 @@ const FinanceDashboard = () => {
     enabled: Boolean(department?._id),
   });
 
+  const { data: financeTickets = [], isLoading: isFinanceTicketsLoading } = useQuery({
+    queryKey: ["finance-dashboard-tickets", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`,
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error("Error fetching finance tickets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
+
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
       queryKey: ["revenueExpenseData"],
@@ -308,6 +328,151 @@ const FinanceDashboard = () => {
     "#E67E22",
     "#E91E63",
   ];
+
+  const financeCategoryWiseTickets = useMemo(() => {
+    if (isFinanceTicketsLoading || !Array.isArray(financeTickets)) return [];
+
+    const categoryCountMap = financeTickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [financeTickets, isFinanceTicketsLoading]);
+
+  const financeCategoryWiseTicketsData = financeCategoryWiseTickets.map((item) => ({
+    label: item.label,
+    value: item.value,
+  }));
+
+  const financeCategoryWiseTicketsOptions = {
+    labels: financeCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          financeCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          financeCategoryWiseTicketsOptions.colors[
+            seriesIndex % financeCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const financePendingStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+
+  const financePendingTicketsCount = (Array.isArray(financeTickets) ? financeTickets : []).filter(
+    (ticket) => financePendingStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+
+  const financeCompletedTicketsCount = (Array.isArray(financeTickets) ? financeTickets : []).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  ).length;
+
+  const financeDueTicketsData = [
+    { label: "Completed", value: financeCompletedTicketsCount },
+    { label: "Pending", value: financePendingTicketsCount },
+  ];
+
+  const financeDueTicketsOptions = {
+    labels: financeDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          financeDueTicketsOptions.colors[
+            seriesIndex % financeDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
 
   // const yearCategories = {
   //   "FY 2024-25": [
@@ -1425,6 +1590,29 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     (widget) => !widget.key || userPermissions.includes(widget.key)
   );
 
+  const financeTicketChartConfigs = [
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Category Wise Tickets",
+      data: financeCategoryWiseTicketsData,
+      options: financeCategoryWiseTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Due Tickets",
+      data: financeDueTicketsData,
+      options: financeDueTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+  ];
+
   //------------------------PAGE ACCESS FINANCE DATA CARD END-------------------//
 
   // LIST OF WIDGETS
@@ -1646,6 +1834,20 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
               tooltipFormatter={config.tooltipFormatter}
             />
           )}
+        </WidgetSection>
+      )),
+    },
+    {
+      layout: financeTicketChartConfigs.length,
+      widgets: financeTicketChartConfigs.map((config) => (
+        <WidgetSection key={config.title} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            centerAlign={config.centerAlign}
+            height={config.height}
+            width={config.width}
+          />
         </WidgetSection>
       )),
     },

@@ -1,11 +1,14 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetSection from "../../../components/WidgetSection";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import SecondaryButton from "../../../components/SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 const formatCurrencyWithDecimals = (value = 0) =>
   Number(value).toLocaleString("en-IN", {
@@ -13,9 +16,40 @@ const formatCurrencyWithDecimals = (value = 0) =>
     maximumFractionDigits: 2,
   });
 
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getFinancialYear = (dateStr) => {
+  const date = dayjs(dateStr);
+  if (!date.isValid()) return null;
+
+  const startYear = date.month() < 3 ? date.year() - 1 : date.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const shiftFinancialYear = (fyLabel, direction) => {
+  if (!fyLabel?.startsWith("FY")) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const [startYearText] = fyLabel.replace("FY", "").trim().split("-");
+  const startYear = parseInt(startYearText, 10);
+
+  if (Number.isNaN(startYear)) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const nextStartYear = startYear + direction;
+  return `FY ${nextStartYear}-${String((nextStartYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const ItPerSqExpense = () => {
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   const IT_DEPARTMENT_ID = "6798baa8e469e809084e2497";
   const activeDepartmentId = location.pathname.includes("/IT-dashboard/")
     ? IT_DEPARTMENT_ID
@@ -35,7 +69,11 @@ const ItPerSqExpense = () => {
   const tableData = useMemo(() => {
     if (isBudgetLoading || !Array.isArray(itBudgets)) return [];
 
-    const groupedByUnits = itBudgets.reduce((acc, item) => {
+    const selectedFYBudgets = itBudgets.filter(
+      (item) => getFinancialYear(item?.dueDate) === selectedFY
+    );
+
+    const groupedByUnits = selectedFYBudgets.reduce((acc, item) => {
       const unit = item.unit;
 
       if (!unit?._id) return acc;
@@ -72,7 +110,7 @@ const ItPerSqExpense = () => {
           expensePerSqFt,
         };
       });
-  }, [itBudgets, isBudgetLoading]);
+  }, [itBudgets, isBudgetLoading, selectedFY]);
 
   const perSqFtTotals = useMemo(() => {
     if (!tableData.length) return { totalSqFt: 0, totalExpense: 0 };
@@ -159,17 +197,39 @@ const ItPerSqExpense = () => {
         layout={1}
         border
         padding
-        title={"it expense per sq. ft"}
+        title={`it expense per sq. ft ${selectedFY}`}
         TitleAmount={`INR ${formatCurrencyWithDecimals(expensePerSqFtTotal)}`}
       >
-        <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+        <div className="flex flex-col gap-4 rounded-md">
+          <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+
+          <div className="flex justify-center items-center gap-4 pt-2 -mt-2 pb-4">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, -1))
+              }
+            />
+
+            <span className="text-primary text-content font-semibold">
+              {selectedFY}
+            </span>
+
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, 1))
+              }
+            />
+          </div>
+        </div>
       </WidgetSection>
       <PageFrame>
         <YearWiseTable
           data={tableData}
           columns={columns}
           search
-          tableTitle="it expense per sq. ft"
+          tableTitle={`it expense per sq. ft ${selectedFY}`}
           exportData
         />
       </PageFrame>

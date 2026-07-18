@@ -150,22 +150,27 @@ const currentFiscalMonthIndexForCard =
     ? []
     : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
-  const monthlyGroups = {};
+  const averageMonthlyExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
 
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
+    const currentFyTotalActual = hrFinance.reduce((sum, item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return sum;
+      }
 
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0),
-  );
+      const itemFiscalYear = formatFiscalYear(getFiscalYearStart(item.dueDate));
 
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
+      if (itemFiscalYear !== currentFiscalYear) {
+        return sum;
+      }
+
+      return sum + getAmount(item.actualAmount);
+    }, 0);
+
+    return currentFyTotalActual / 12;
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
   //------------------------Graph round functions-------------------//
   // const expenseSeries = useMemo(() => {
@@ -321,6 +326,16 @@ const currentFiscalMonthIndexForCard =
     : hrFinance
       .filter((item) => item.expanseType === "INTERNET EXPENSES")
       .reduce((sum, item) => sum + item.actualAmount || 0, 0);
+
+  const currentFiscalYearOverallExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
+
+    return hrFinance
+      .filter((item) => formatFiscalYear(getFiscalYearStart(item?.dueDate)) === currentFiscalYear)
+      .reduce((sum, item) => sum + getAmount(item?.actualAmount), 0);
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
   //----------------------Units data-----------------------//
 
@@ -622,6 +637,7 @@ const roundedMax = useMemo(() => {
         item.group === selectedFiscalYear && item.name === "Actual Amount"
     )
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
+
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -1034,7 +1050,7 @@ const roundedMax = useMemo(() => {
     {
       key: PERMISSIONS.IT_EXPENSE_PER_SQFT.value,
       title: "Total",
-      data: `INR ${inrFormat((totalOverallExpense || 0) / totalSqFt)}`,
+      data: `INR ${inrFormat((currentFiscalYearOverallExpense || 0) / totalSqFt)}`,
       description: "Expense per sq.ft",
       route: "per-sq-ft-expense",
     },
@@ -1195,6 +1211,181 @@ const roundedMax = useMemo(() => {
     },
   ];
   const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
+
+  const itCategoryWiseTickets = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const categoryCountMap = tickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [isTicketsLoading, tickets]);
+
+  const itCategoryWiseTicketsData = itCategoryWiseTickets.map((item) => ({
+    label: item.label,
+    value: item.value,
+  }));
+
+  const itCategoryWiseTicketsOptions = {
+    labels: itCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          itCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          itCategoryWiseTicketsOptions.colors[
+            seriesIndex % itCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const itPendingStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
+
+  const itPendingTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+    (ticket) =>
+      itPendingStatuses.has(String(ticket?.status || "").toLowerCase()),
+  ).length;
+
+  const itCompletedTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter((ticket) => String(ticket?.status || "").toLowerCase() === "closed")
+    .length;
+
+  const itDueTicketsData = [
+    { label: "Completed", value: itCompletedTicketsCount },
+    { label: "Pending", value: itPendingTicketsCount },
+  ];
+
+  const itDueTicketsOptions = {
+    labels: itDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          itDueTicketsOptions.colors[
+            seriesIndex % itDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const itTicketChartConfigs = [
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Category Wise Tickets",
+      data: itCategoryWiseTicketsData,
+      options: itCategoryWiseTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Due Tickets",
+      data: itDueTicketsData,
+      options: itDueTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+  ];
 
   const pieDonutConfig = [
     {
@@ -1532,6 +1723,20 @@ const roundedMax = useMemo(() => {
           );
         }
       }),
+    },
+    {
+      layout: itTicketChartConfigs.length,
+      widgets: itTicketChartConfigs.map((config) => (
+        <WidgetSection key={config.title} border={config.border} title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={config.width}
+            height={config.height}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
     },
   ];
 
