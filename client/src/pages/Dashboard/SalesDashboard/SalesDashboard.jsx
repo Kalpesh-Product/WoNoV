@@ -224,6 +224,26 @@ const SalesDashboard = () => {
     enabled: Boolean(department?._id),
   });
 
+  const { data: salesTickets = [], isLoading: isSalesTicketsLoading } = useQuery({
+    queryKey: ["sales-dashboard-tickets", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`,
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error("Error fetching sales tickets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
+
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
     {
@@ -355,6 +375,151 @@ const SalesDashboard = () => {
     "#E67E22",
     "#E91E63",
   ];
+
+  const salesCategoryWiseTickets = useMemo(() => {
+    if (isSalesTicketsLoading || !Array.isArray(salesTickets)) return [];
+
+    const categoryCountMap = salesTickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [isSalesTicketsLoading, salesTickets]);
+
+  const salesCategoryWiseTicketsData = salesCategoryWiseTickets.map((item) => ({
+    label: item.label,
+    value: item.value,
+  }));
+
+  const salesCategoryWiseTicketsOptions = {
+    labels: salesCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          salesCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          salesCategoryWiseTicketsOptions.colors[
+            seriesIndex % salesCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const salesPendingStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+
+  const salesPendingTicketsCount = (Array.isArray(salesTickets) ? salesTickets : []).filter(
+    (ticket) => salesPendingStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+
+  const salesCompletedTicketsCount = (Array.isArray(salesTickets) ? salesTickets : []).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  ).length;
+
+  const salesDueTicketsData = [
+    { label: "Completed", value: salesCompletedTicketsCount },
+    { label: "Pending", value: salesPendingTicketsCount },
+  ];
+
+  const salesDueTicketsOptions = {
+    labels: salesDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          salesDueTicketsOptions.colors[
+            seriesIndex % salesDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
 
   //------------------------PAGE ACCESS END-------------------//
 
@@ -1488,6 +1653,29 @@ const SalesDashboard = () => {
   ];
   const allowedDueTasks = salesFilterPermissions(dueTasksConfigs, userPermissions);
 
+  const salesTicketChartConfigs = [
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Category Wise Tickets",
+      data: salesCategoryWiseTicketsData,
+      options: salesCategoryWiseTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      type: "PieChartMui",
+      border: true,
+      title: "Due Tickets",
+      data: salesDueTicketsData,
+      options: salesDueTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+  ];
+
 
   const meetingsWidgets = [
     {
@@ -1646,6 +1834,20 @@ const SalesDashboard = () => {
               tooltipFormatter={config.tooltipFormatter}
             />
           )}
+        </WidgetSection>
+      )),
+    },
+    {
+      layout: salesTicketChartConfigs.length,
+      widgets: salesTicketChartConfigs.map((config) => (
+        <WidgetSection key={config.title} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={config.width}
+            height={config.height}
+            centerAlign
+          />
         </WidgetSection>
       )),
     },

@@ -793,14 +793,16 @@ const roundedMax = useMemo(() => {
   // Due Maintenance
   const dueTicketStatuses = new Set(["open", "pending", "in progress", "escalated"]);
 
-  const totalMaintenanceTicketsCount = Array.isArray(tickets) ? tickets.length : 0;
-  const dueMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+  const pendingMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
     (ticket) => dueTicketStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+  const completedMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
   ).length;
 
   const dueMaintenanceData = [
-    { label: "Total", value: totalMaintenanceTicketsCount },
-    { label: "Due", value: dueMaintenanceTicketsCount },
+    { label: "Completed", value: completedMaintenanceTicketsCount },
+    { label: "Pending", value: pendingMaintenanceTicketsCount },
   ];
 
   const dueMaintenanceOptions = {
@@ -820,7 +822,7 @@ const roundedMax = useMemo(() => {
       width: 2,
       colors: ["#ffffff"],
     },
-    colors: ["#93C5FD", "#FCA5A5"],
+    colors: ["#59C9A5", "#FCA5A5"],
     tooltip: {
       fillSeriesColor: false,
       custom: ({ series, seriesIndex, w }) => {
@@ -1133,7 +1135,7 @@ const roundedMax = useMemo(() => {
   const maintenancePieDonutChart = [
     {
       key: PERMISSIONS.MAINTENANCE_CATEGORY_WISE_MAINTENANCE.value,
-      title: "Category Wise Maintenance",
+      title: "Category Wise Tickets",
       border: true,
       data: pieCategoryWiseMaintenanceData,
       options: pieCategoryWiseMaintenanceOptions,
@@ -1142,7 +1144,7 @@ const roundedMax = useMemo(() => {
     },
     {
       key: PERMISSIONS.MAINTENANCE_DUE_MAINTENANCE.value,
-      title: "Due Maintenance",
+      title: "Due Tickets",
       border: true,
       data: dueMaintenanceData,
       options: dueMaintenanceOptions,
