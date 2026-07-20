@@ -1317,8 +1317,12 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
   };
 
 
-const mergeHrCsvFields = (rows = []) => {
+const mergeHrCsvFields = (rows = [], reportName = "") => {
   if (normalizedModuleKey !== "hr") return rows;
+  const normalizedReportName = String(reportName || "").trim().toLowerCase();
+  const isHousekeepingStaffReport = normalizedReportName.includes(
+    "housekeeping staff report",
+  );
 
   const formatHrTime = (value) => {
     if (!value) return "";
@@ -1351,6 +1355,14 @@ const mergeHrCsvFields = (rows = []) => {
 
   return rows.map((row) => {
     const nextRow = { ...row };
+    const staffFullName = [
+      row?.firstName || row?.["firstName"] || "",
+      row?.middleName || row?.["middleName"] || "",
+      row?.lastName || row?.["lastName"] || "",
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(" ");
 
     const userFirstName = String(
       row?.user?.firstName || row?.["user.firstName"] || "",
@@ -1457,6 +1469,13 @@ const mergeHrCsvFields = (rows = []) => {
 
     if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
       nextRow.role = roleTitles;
+    }
+
+    if (isHousekeepingStaffReport && staffFullName) {
+      nextRow.name = staffFullName;
+      delete nextRow.firstName;
+      delete nextRow.middleName;
+      delete nextRow.lastName;
     }
 
     delete nextRow["departments.name"];
@@ -1849,6 +1868,7 @@ const mergeHrCsvFields = (rows = []) => {
           reportName,
         ),
       ),
+      reportName,
     );
 
     const reorderTimeColumns = (inputRow) => {
@@ -1995,6 +2015,42 @@ const mergeHrCsvFields = (rows = []) => {
       normalizedReportName.includes("open desk clients report")
     ) {
       hiddenFields.push(/^unit$/);
+    }
+
+    if (normalizedReportName.includes("housekeeping staff report")) {
+      const reshapeHousekeepingStaffFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const fullName = [
+          row?.name,
+          row?.firstName,
+          row?.middleName,
+          row?.lastName,
+        ]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const nextRow = { ...row };
+
+        if (fullName) {
+          nextRow.name = fullName;
+        }
+
+        delete nextRow.firstName;
+        delete nextRow.middleName;
+        delete nextRow.lastName;
+
+        return nextRow;
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeHousekeepingStaffFields)
+        : reshapeHousekeepingStaffFields(exportData);
     }
 
     if (normalizedReportName.includes("weekly schedule report")) {
