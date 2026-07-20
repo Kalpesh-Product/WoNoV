@@ -26,21 +26,18 @@ async function fetchVisitors(req, res) {
     endDate: req.query?.["filters[endDate]"],
   };
 
-  console.time("fetchVisitors");
-
   const payload = await fetchVisitorReportService({
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
     visitorFlag: req.query?.visitorFlag,
+    multipleVisits: req.query?.multipleVisits === "true",
     dateFilter: buildDateFilter({
       startDate: requestFilters?.startDate,
       endDate: requestFilters?.endDate,
       field: "checkIn",
     }),
   });
-
-  console.timeEnd("fetchVisitors");
 
   return res.status(200).json(payload);
 }
@@ -262,11 +259,10 @@ const addVisitor = async (req, res, next) => {
 
     const visitorExists = await Visitor.findOne({ phoneNumber: phoneNumber });
 
-    console.log("Visitor exists with phone number:", visitorExists);
     if (visitorExists) {
       return res.status(400).json({
         message:
-          "Visitor already exists. Continue from 'Repeat Visitors' in Mix Bag.",
+          "Visitor with same phone number already exists. Continue from 'Repeat Visitors' in Mix Bag.",
       });
     }
 
@@ -2109,7 +2105,6 @@ const updateDayPassVisitPayment = async (req, res, next) => {
     }
 
     const visitor = await Visitor.findById(externalVisit.visitorId);
-    console.log("Visitor for payment update:", visitor);
     if (!visitor) {
       return res.status(404).json({ message: "Associated visitor not found" });
     }
