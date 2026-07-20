@@ -48,6 +48,13 @@ const getMemberCandidates = (item) => [
   item?.completedBy,
 ];
 
+const formatAssignedDate = (value) => {
+  const stringValue = String(value || "").trim();
+  if (!stringValue) return "-";
+  if (/^\d{2}-\d{2}-\d{4}$/.test(stringValue)) return stringValue;
+  return humanDate(stringValue);
+};
+
 const HrCompletedMemberKraDetails = ({ kraType, title }) => {
   const axios = useAxiosPrivate();
   const location = useLocation();
@@ -124,6 +131,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
       srno: index + 1,
       taskName: item?.taskName || item?.kraName || item?.task || "-",
       assignedDate: item?.assignedDate,
+      assignedOn: formatAssignedDate(item?.assignedDate),
       actualCompletionDateRaw: item?.completedDate || item?.completionDate || "",
       completionDateRaw:
         item?.completedDate || item?.completionDate || item?.dueDate,
@@ -144,7 +152,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
   const columns = [
     { headerName: "Sr No", field: "srno", width: 100 },
     { headerName: "KRA List", field: "taskName", flex: 1 },
-    { headerName: "Assigned Date", field: "assignedDate", flex: 1 },
+    { headerName: "Assigned Date", field: "assignedOn", flex: 1 },
     { headerName: "Completion Date", field: "completionDate", flex: 1 },
     { headerName: "Completion Time", field: "completionTime", flex: 1 },
     { headerName: "Completed By", field: "completedBy", flex: 1 },
@@ -189,7 +197,7 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
       .map((row, index) => ({
         "Sr No": index + 1,
         "KRA List": row?.taskName || "-",
-        "Assigned Date": row?.assignedDate || "-",
+        "Assigned Date": row?.assignedOn || "-",
         "Completion Date": row?.completionDate || "-",
         "Completion Time": row?.completionTime || "-",
         "Completed By": row?.completedBy || "-",
