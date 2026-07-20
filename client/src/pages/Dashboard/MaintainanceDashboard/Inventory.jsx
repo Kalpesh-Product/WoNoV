@@ -94,7 +94,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const blockedUnitsByTab = useMemo(
     () => ({
-      sunteck: ["601 B", "ST 601 B"],
+      sunteck: [],
       dempo: ["605 A", "603 A"],
     }),
     [],
@@ -1434,6 +1434,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     {
       field: "dateRaw",
       headerName: "Date",
+      exportFormat: "datetime-comma",
       cellRenderer: (params) => {
         return formatDateTime(params.value);
       },
@@ -1948,6 +1949,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 columns={inventoryColumns}
                 handleSubmit={handleAddAsset}
                 exportData
+                taskExportDateTimeFormatting
               />
             </PageFrame>
           )}

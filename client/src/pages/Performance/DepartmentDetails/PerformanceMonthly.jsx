@@ -8,12 +8,13 @@ import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
+import SecondaryButton from "../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../components/MuiModal";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 // import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
 import { toast } from "sonner";
@@ -26,10 +27,11 @@ import {
   setSelectedDepartmentName,
 } from "../../../redux/slices/performanceSlice";
 import { FaCheckSquare } from "react-icons/fa";
-import { MdDeleteForever } from "react-icons/md";
+import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
 import ConfirmationModal from "../../../components/ConfirmationModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 const PerformanceMonthly = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -40,6 +42,10 @@ const PerformanceMonthly = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [selectedKpa, setSelectedKpa] = useState(null);
+  const [completedTaskView, setCompletedTaskView] = useState(null);
+  const [completionCommentError, setCompletionCommentError] = useState("");
+  const completionCommentRef = useRef("");
   const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
   const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
@@ -320,7 +326,8 @@ const PerformanceMonthly = () => {
     mutationKey: ["updateMonthlyKpa"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-status/${data}/KPA`
+        `/api/performance/update-status/${data.taskId}/KPA`,
+        { comment: data.comment }
       );
       return response.data;
     },
@@ -330,6 +337,10 @@ const PerformanceMonthly = () => {
       queryClient.invalidateQueries({ queryKey: ["fetchedMonthlyKPA"] });
       queryClient.invalidateQueries({ queryKey: ["completedEntriesKPA"] });
       toast.success(data.message || "KPA updated");
+      setSelectedKpa(null);
+      completionCommentRef.current = "";
+      setCompletionCommentError("");
+      setOpenModal(false);
     },
     onError: (error) => {
       // toast.success("KPA updated");
@@ -337,6 +348,27 @@ const PerformanceMonthly = () => {
     },
   });
   //--------------UPDATE REQUEST FOR MONTHLY KPA-----------------//
+
+  const openMarkDoneModal = (taskData) => {
+    setSelectedKpa(taskData);
+    completionCommentRef.current = "";
+    setCompletionCommentError("");
+    setOpenModal(true);
+  };
+
+  const handleMarkAsDoneWithComment = () => {
+    const trimmedComment = completionCommentRef.current.trim();
+
+    if (!trimmedComment) {
+      setCompletionCommentError("Comment is required");
+      return;
+    }
+
+    updateMonthlyKpa({
+      taskId: selectedKpa?.mongoId || selectedKpa?.id || selectedKpa?._id,
+      comment: trimmedComment,
+    });
+  };
 
   const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
     mutationKey: ["deleteMonthlyKpaRecurrence"],
@@ -464,7 +496,7 @@ const PerformanceMonthly = () => {
                     )
                       return;
 
-                    updateMonthlyKpa(params.data.mongoId);
+                    openMarkDoneModal(params.data);
                   }}
                   className="p-2"
                 >
@@ -544,6 +576,22 @@ const PerformanceMonthly = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KPA List", field: "taskName", flex: 1},
+    {
+      headerName: "Action",
+      field: "action",
+      pinned: "right",
+      width: 110,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="View Completed KPA"
+          onClick={() => setCompletedTaskView(params.data)}
+          className="h-8 w-8 flex items-center justify-center"
+        >
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
+      ),
+    },
     { headerName: "Start Date", field: "startDateTime", flex: 1, exportFormat: "date" },
     { headerName: "End Date", field: "endDateTime", flex: 1, exportFormat: "date" },
     { headerName: "Completed By", field: "completedBy" ,flex: 1},
@@ -556,6 +604,12 @@ const PerformanceMonthly = () => {
         params.value
           ? `${humanDate(params.value)}, ${humanTime(params.value)}`
           : "",
+    },
+    {
+      headerName: "Comment",
+      field: "comment",
+      hide: true,
+      flex: 1,
     },
     {
       field: "status",
@@ -731,6 +785,7 @@ const PerformanceMonthly = () => {
                     completionDate: item.completionDate,
                     completionTime: item.completionDate,
                     completedBy: item.completedBy,
+                    comment: item.comment,
                     status: item.status,
                     startDateTime: item.assignedDate,
                     endDateTime: item.dueDate,
@@ -758,9 +813,54 @@ const PerformanceMonthly = () => {
 
       <MuiModal
         open={openModal}
-        onClose={resetModalState}
-       title={isEditMode ? "Edit Task" : "Add Department Monthly KPA"}
+        onClose={() => {
+          resetModalState();
+          setSelectedKpa(null);
+          completionCommentRef.current = "";
+          setCompletionCommentError("");
+        }}
+       title={selectedKpa ? "Comment" : isEditMode ? "Edit Task" : "Add Department Monthly KPA"}
       >
+        {selectedKpa ? (
+          <div className="grid grid-cols-1 gap-4">
+            <TextField
+              label="Comment"
+              size="small"
+              multiline
+              rows={4}
+              key={selectedKpa?.mongoId || selectedKpa?.id || "monthly-kpa-comment"}
+              defaultValue=""
+              onChange={(event) => {
+                completionCommentRef.current = event.target.value;
+                if (completionCommentError) {
+                  setCompletionCommentError("");
+                }
+              }}
+              error={!!completionCommentError}
+              helperText={completionCommentError}
+              fullWidth
+            />
+
+            <div className="flex items-center justify-center gap-3">
+              <PrimaryButton
+                title="Mark as Done"
+                handleSubmit={handleMarkAsDoneWithComment}
+                isLoading={isUpdatePending}
+                disabled={isUpdatePending}
+              />
+              <SecondaryButton
+                title="Cancel"
+                handleSubmit={() => {
+                  setSelectedKpa(null);
+                  completionCommentRef.current = "";
+                  setCompletionCommentError("");
+                  setOpenModal(false);
+                }}
+                disabled={isUpdatePending}
+              />
+            </div>
+          </div>
+        ) : (
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
           className="grid grid-cols-1 lg:grid-cols-1 gap-4"
@@ -889,6 +989,33 @@ const PerformanceMonthly = () => {
             isLoading={isAddKpaPending}
           />
         </form>
+        )}
+      </MuiModal>
+      <MuiModal
+        open={!!completedTaskView}
+        onClose={() => setCompletedTaskView(null)}
+        title="Completed Department Monthly KPA"
+      >
+        {completedTaskView && (
+                    <div className="grid grid-cols-1 gap-4">
+                        <DetalisFormatted title={"KPA"} detail={completedTaskView?.taskName} />
+                        <DetalisFormatted
+                            title={"Start Date"}
+                            detail={humanDate(completedTaskView?.startDateTime)}
+                        />
+                        <DetalisFormatted
+                            title={"End Date"}
+                            detail={humanDate(completedTaskView?.endDateTime)}
+                        />
+                        <DetalisFormatted title={"Completed By"} detail={completedTaskView?.completedBy} />
+                        <DetalisFormatted
+                            title={"Completed At"}
+                            detail={`${humanDate(completedTaskView?.completionDate)}, ${humanTime(completedTaskView?.completionTime)}`}
+                        />
+            <DetalisFormatted title={"Status"} detail={completedTaskView?.status} />
+            <DetalisFormatted title={"Comment"} detail={completedTaskView?.comment || "-"} />
+          </div>
+        )}
       </MuiModal>
     </>
   );

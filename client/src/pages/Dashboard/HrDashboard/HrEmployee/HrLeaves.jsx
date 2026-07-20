@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
@@ -34,6 +34,40 @@ const HrLeaves = () => {
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+
+  const extendedFyOptions = useMemo(
+    () =>
+      Array.from({ length: 11 }, (_, index) => {
+        const startYear = 2020 + index;
+        return {
+          label: `FY ${startYear}-${String(startYear + 1).slice(-2)}`,
+          start: new Date(startYear, 3, 1),
+          end: new Date(startYear + 1, 2, 31),
+        };
+      }),
+    []
+  );
+
+  const defaultFY = useMemo(() => {
+    const today = dayjs();
+    const currentFyStartYear =
+      today.month() >= 3 ? today.year() : today.year() - 1;
+
+    return (
+      extendedFyOptions.find(
+        (fy) => fy.start.getFullYear() === currentFyStartYear
+      ) || extendedFyOptions[extendedFyOptions.length - 1]
+    );
+  }, [extendedFyOptions]);
+
+  useEffect(() => {
+    setSelectedFY(defaultFY);
+    setCurrentMonth(
+      dayjs().isBetween(dayjs(defaultFY.start), dayjs(defaultFY.end), "month", "[]")
+        ? new Date()
+        : defaultFY.start
+    );
+  }, [defaultFY]);
 
   const { data: attendanceData = {}, isLoading } = useQuery({
     queryKey: ["attendance"],
@@ -331,15 +365,27 @@ const HrLeaves = () => {
                 size="small"
                 value={selectedFY.label}
                 onChange={(e) => {
-                  const fy = fyOptions.find(
+                  const fy = extendedFyOptions.find(
                     (fy) => fy.label === e.target.value
                   );
                   setSelectedFY(fy);
                   setCurrentMonth(fy.start);
                 }}
                 className="min-w-[140px]"
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#1E3D73",
+                    color: "#fff",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1E3D73",
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: "#fff",
+                  },
+                }}
               >
-                {fyOptions.map((fy) => (
+                {extendedFyOptions.map((fy) => (
                   <MenuItem key={fy.label} value={fy.label}>
                     {fy.label}
                   </MenuItem>
@@ -362,6 +408,18 @@ const HrLeaves = () => {
                 className="min-w-[160px]"
                 SelectProps={{
                   IconComponent: KeyboardArrowDownIcon,
+                }}
+                sx={{
+                  "& .MuiOutlinedInput-root": {
+                    backgroundColor: "#1E3D73",
+                    color: "#fff",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#1E3D73",
+                  },
+                  "& .MuiSvgIcon-root": {
+                    color: "#fff",
+                  },
                 }}
               >
                 {generateMonthOptions(selectedFY.start, selectedFY.end).map(

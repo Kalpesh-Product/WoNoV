@@ -364,7 +364,7 @@ const Collections = () => {
       : dayjs();
 
     return selectedMonth.isValid()
-      ? `COLLECTIONS - ${selectedMonth.format("MMMM").toUpperCase()}`
+      ? `CO-WORKING COLLECTIONS - ${selectedMonth.format("MMMM").toUpperCase()}`
       : "COLLECTIONS";
   }, [selectedMonthLabel]);
 
@@ -450,7 +450,7 @@ const Collections = () => {
     <div className="flex flex-col gap-8">
       <WidgetSection
         layout={1}
-        title={"COLLECTIONS"}
+        title={"CO-WORKING COLLECTIONS"}
          titleLabel={selectedFiscalYear}
         TitleAmount={`INR ${inrFormat(selectedGraph.paidTotal)}`}
         border

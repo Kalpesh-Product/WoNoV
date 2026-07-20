@@ -4,6 +4,7 @@ const {
   fetchVoucherService,
   fetchBudgetVoucherService,
   fetchProfitLossReportService,
+  fetchPerSqFtExpenseService,
 } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
@@ -43,11 +44,16 @@ const {
   fetchUsersReportService,
   fetchLeavesReportService,
   fetchAttendanceReportService,
+  fetchHousekeepingStaffReportService,
 } = require("./employees");
 const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
 const { fetchHolidayAndEventsService } = require("./holidayEvent");
 const { fetchInventoryService } = require("./inventory");
+const {
+  fetchWeeklyScheduleReportService,
+  fetchHousekeepingScheduleReportService,
+} = require("./weeklySchedule");
 const normalizeReportIdentifier = (value = "") =>
   value
     .trim()
@@ -149,6 +155,20 @@ const reportServiceRegistry = {
 
   employees: createReportService(fetchUsersReportService, {
     dateField: "startDate",
+  }),
+
+  housekeepingschedule: createReportService(
+    fetchHousekeepingScheduleReportService,
+    {
+      dateField: "startDate",
+    },
+  ),
+  weeklyschedule: createReportService(fetchWeeklyScheduleReportService, {
+    dateField: "startDate",
+  }),
+
+  housekeepingstaff: createReportService(fetchHousekeepingStaffReportService, {
+    dateField: "dateOfJoining",
   }),
 
   "external-clients": createReportService(fetchClientVisitorsReportService, {
@@ -285,6 +305,17 @@ const reportServiceRegistry = {
       staticParams: { type: "total" },
     },
   ),
+
+  persqftexpense: createReportService(fetchPerSqFtExpenseService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+  }),
+
+  persqftelectricalexpense: createReportService(fetchPerSqFtExpenseService, {
+    dateField: "dueDate",
+    contextKeys: FINANCE_REPORT_CONTEXT_KEYS,
+    staticParams: { type: "electrical" },
+  }),
 
   // "historical-profit-loss": createReportService(fetchProfitLossReportService, {
   //   dateField: "dueDate",

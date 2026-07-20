@@ -19,7 +19,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { Box, Skeleton } from "@mui/material";
 import dayjs from "dayjs";
 import { filterPermissions } from "../../../utils/accessConfig";
@@ -28,10 +28,58 @@ import { PERMISSIONS } from "../../../constants/permissions";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 
 const FrontendDashboard = () => {
-  const { setIsSidebarOpen } = useSidebar();
-  const [isReady, setIsReady] = useState(false);
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
-  const { auth } = useAuth();
+const { setIsSidebarOpen } = useSidebar();
+const [isReady, setIsReady] = useState(false);
+
+const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalMonthIndex = (date) => {
+  const parsedDate = dayjs(date);
+  const month = parsedDate.month();
+
+  return month >= 3 ? month - 3 : month + 9;
+};
+
+const getAmount = (value) => {
+  if (typeof value === "number") return value;
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
+};
+
+const fiscalMonths = [
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+];
+
+const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+
+const [selectedFiscalYear, setSelectedFiscalYear] =
+  useState(currentFiscalYear);
+const currentFiscalMonthIndexForCard =
+  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+
+const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const department = usePageDepartment();
 
@@ -184,120 +232,241 @@ const FrontendDashboard = () => {
   }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
+  const fyData = {};
+
+  hrFinance.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+    const monthIndex = getFiscalMonthIndex(item.dueDate);
+
+    if (!fyData[fiscalYearLabel]) {
+      fyData[fiscalYearLabel] = {
+        actual: Array(12).fill(0),
+        projectedBalance: Array(12).fill(0),
+      };
+    }
+
+    const actualAmount = getAmount(item.actualAmount);
+    const projectedAmount = getAmount(item.projectedAmount);
+    const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+
+    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+    fyData[fiscalYearLabel].projectedBalance[monthIndex] +=
+      remainingProjectedAmount;
+  });
+
+  if (!fyData[currentFiscalYear]) {
+    fyData[currentFiscalYear] = {
+      actual: Array(12).fill(0),
+      projectedBalance: Array(12).fill(0),
     };
+  }
 
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month();
+  return Object.entries(fyData)
+    .sort(([fyA], [fyB]) => {
+      const startA = Number(fyA.slice(3, 7));
+      const startB = Number(fyB.slice(3, 7));
+      return startA - startB;
+    })
+    .flatMap(([fiscalYear, data]) => {
+      return [
+        {
+          name: "Actual Amount",
+          group: fiscalYear,
+          data: data.actual,
+        },
+        {
+          name: "Projected Amount",
+          group: fiscalYear,
+          data: data.projectedBalance,
+        },
+      ];
+    });
+}, [hrFinance, currentFiscalYear]);
 
-      if (year === 2024 && monthIndex >= 3) {
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
+const roundedMax = useMemo(() => {
+  const fiscalYears = [
+    ...new Set(expenseRawSeries.map((series) => series.group)),
+  ];
+
+  const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+    const actualSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Actual Amount"
+    );
+
+    const projectedSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Projected Amount"
+    );
+
+    const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+      const actual = actualSeries?.data?.[index] || 0;
+      const projectedBalance = projectedSeries?.data?.[index] || 0;
+
+      return actual + projectedBalance;
     });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
+    return Math.max(max, ...monthlyMax);
+  }, 0);
 
-  const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
+  return Math.ceil((maxValue + 100000) / 100000) * 100000;
+}, [expenseRawSeries]);
 
-      stacked: false,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
+ const expenseOptions = {
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+    stacked: true,
+    fontFamily: "Poppins-Regular, Arial, sans-serif",
+    events: {
+      dataPointSelection: () => {
+        navigate("finance/budget");
+      },
+    },
+  },
+  colors: ["#54C4A7", "#c4c4c4"],
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "40%",
+      borderRadius: 5,
+      borderRadiusApplication: "end",
+      dataLabels: {
+        position: "top",
+        total: {
+          enabled: true,
+          formatter: (_, config) => {
+            const isCurrentFiscalYearSelected =
+              selectedFiscalYear === currentFiscalYear;
+            const isCurrentFiscalMonth =
+              config?.dataPointIndex === currentFiscalMonthIndexForCard;
+
+            if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
+              return "";
+            }
+
+            const total =
+              config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
+              0;
+
+            return total ? inrFormat(Number(total)) : "";
+          },
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#000",
+          },
+          offsetY: -8,
         },
       },
     },
-    colors: ["#54C4A7", "#EB5C45"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-        borderRadiusApplication: "none",
-        dataLabels: {
-          position: "top",
-        },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  xaxis: {
+    categories: fiscalMonths,
+  },
+  yaxis: {
+    min: 0,
+    max: roundedMax,
+    tickAmount: 4,
+    title: { text: "Amount In Lakhs (INR)" },
+    labels: {
+      formatter: (val) => `${val / 100000}`,
+    },
+  },
+  fill: {
+    opacity: 1,
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "none",
       },
     },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
+    active: {
+      filter: {
+        type: "none",
       },
+    },
+  },
+  legend: {
+    show: true,
+    position: "top",
+  },
+  tooltip: {
+    enabled: true,
+    custom: function ({ seriesIndex, dataPointIndex, w }) {
+      const seriesName = w.globals.seriesNames?.[seriesIndex];
 
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
-    },
+      const actualSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Actual Amount"
+      );
 
-    yaxis: {
-      max: 50000,
-      title: { text: "Amount In Lakhs (INR)" },
-      labels: {
-        formatter: (val) => `${val / 100000}`,
-      },
-    },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
+      const projectedSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Projected Amount"
+      );
 
-    tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-                 rawData,
-               ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
-      },
+      const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
+      const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
+
+      const monthLabel =
+        w.globals.labels && w.globals.labels[dataPointIndex]
+          ? w.globals.labels[dataPointIndex]
+          : `Month ${dataPointIndex + 1}`;
+
+      const isActual = seriesName === "Actual Amount";
+
+      const label = isActual ? "Actual Amount" : "Projected Amount";
+      const amount = isActual ? actualAmount : projectedBalance;
+      const color = isActual ? "#54C4A7" : "#c4c4c4";
+
+      return `
+        <div class="apexcharts-tooltip-title" style="
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          padding: 6px 10px;
+          margin-bottom: 0;
+        ">
+          ${monthLabel}
+        </div>
+
+        <div style="
+          padding: 8px 10px;
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          background: #fff;
+          min-width: 230px;
+        ">
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+          ">
+            <span style="
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: ${color};
+              display: inline-block;
+            "></span>
+
+            <span>${label}:</span>
+
+            <span style="font-weight: 600;">
+              INR ${Math.round(amount).toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+      `;
     },
-  };
+  },
+};
   //--------------------Frontend budget-graph-----------------------//
 
   const utilisedData = [
@@ -544,11 +713,13 @@ const FrontendDashboard = () => {
     },
   };
 
-  const totalUtilised =
-    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
-      (acc, val) => acc + val,
-      0,
-    ) || 0;
+ const totalUtilised =
+  expenseRawSeries
+    .find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Actual Amount"
+    )
+    ?.data?.reduce((acc, val) => acc + val, 0) || 0;
 
   const currentDepartmentComplaints = useMemo(() => {
     if (isTicketsLoading || !Array.isArray(tickets)) return null;
@@ -806,19 +977,206 @@ const FrontendDashboard = () => {
 
   const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
 
+  const frontendCategoryWiseTickets = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const categoryCountMap = tickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [isTicketsLoading, tickets]);
+
+  const frontendCategoryWiseTicketsData = frontendCategoryWiseTickets.map(
+    (item) => ({
+      label: item.label,
+      value: item.value,
+    }),
+  );
+
+  const frontendCategoryWiseTicketsOptions = {
+    labels: frontendCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          frontendCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          frontendCategoryWiseTicketsOptions.colors[
+            seriesIndex % frontendCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const frontendPendingStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
+
+  const frontendPendingTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter((ticket) =>
+    frontendPendingStatuses.has(String(ticket?.status || "").toLowerCase()),
+  ).length;
+
+  const frontendCompletedTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
+  ).length;
+
+  const frontendDueTicketsData = [
+    { label: "Completed", value: frontendCompletedTicketsCount },
+    { label: "Pending", value: frontendPendingTicketsCount },
+  ];
+
+  const frontendDueTicketsOptions = {
+    labels: frontendDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          frontendDueTicketsOptions.colors[
+            seriesIndex % frontendDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const frontendTicketChartConfigs = [
+    {
+      key: PERMISSIONS.FRONTEND_CATEGORY_WISE_TICKETS.value,
+      title: "Category Wise Tickets",
+      data: frontendCategoryWiseTicketsData,
+      options: frontendCategoryWiseTicketsOptions,
+    },
+    {
+      key: PERMISSIONS.FRONTEND_DUE_TICKETS.value,
+      title: "Due Tickets",
+      data: frontendDueTicketsData,
+      options: frontendDueTicketsOptions,
+    },
+  ];
+
+  const allowedFrontendTicketCharts = filterPermissions(
+    frontendTicketChartConfigs,
+    userPermissions,
+  );
+
   const techWidgets = [
     {
-      layout: allowedSalesGraph.length,
-      widgets: allowedSalesGraph.map((config) => (
-        <WidgetSection
-          layout={1}
-          border
-          title={config.title}
-          titleLabel={config.titleLabel}
+      layout: allowedExpenseGraph.length,
+      widgets: [
+        <Suspense
+          fallback={
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {/* Simulating chart skeleton */}
+              <Skeleton variant="text" width={200} height={30} />
+              <Skeleton variant="rectangular" width="100%" height={300} />
+            </Box>
+          }
         >
-          <BarGraph data={config.data} options={config.options} />
-        </WidgetSection>
-      )),
+          {allowedExpenseGraph.map((config) => (
+            <YearlyGraph
+              data={config.data}
+              options={config.options}
+              title={config.title}
+              onYearChange={config.onYearChange}
+              titleAmount={config.titleAmount}
+            />
+          ))}
+        </Suspense>,
+      ],
     },
     {
       layout: allowedCards.length,
@@ -864,6 +1222,20 @@ const FrontendDashboard = () => {
         </WidgetSection>
       )),
     },
+    {
+      layout: allowedFrontendTicketCharts.length,
+      widgets: allowedFrontendTicketCharts.map((config) => (
+        <WidgetSection key={config.title} layout={1} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={500}
+            height={320}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
+    },
 
     {
       layout: allowedFrontendComplaints.length,
@@ -878,28 +1250,17 @@ const FrontendDashboard = () => {
       )),
     },
     {
-      layout: allowedExpenseGraph.length,
-      widgets: [
-        <Suspense
-          fallback={
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Simulating chart skeleton */}
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </Box>
-          }
+      layout: allowedSalesGraph.length,
+      widgets: allowedSalesGraph.map((config) => (
+        <WidgetSection
+          layout={1}
+          border
+          title={config.title}
+          titleLabel={config.titleLabel}
         >
-          {allowedExpenseGraph.map((config) => (
-            <YearlyGraph2
-              data={config.data}
-              options={config.options}
-              title={config.title}
-              onYearChange={config.onYearChange}
-              titleAmount={config.titleAmount}
-            />
-          ))}
-        </Suspense>,
-      ],
+          <BarGraph data={config.data} options={config.options} />
+        </WidgetSection>
+      )),
     },
     {
       layout: allowedIssuesGraph.length,

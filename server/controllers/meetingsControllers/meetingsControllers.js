@@ -1471,14 +1471,14 @@ const extendMeeting = async (req, res, next) => {
       ? monthHistory.remainingCredit
       : bookingUserCompany.meetingCreditBalance;
 
-    if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
-      throw new CustomError(
-        "Insufficient credits to extend this meeting",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
+    // if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
+    //   throw new CustomError(
+    //     "Insufficient credits to extend this meeting",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
 
     const updateFields = {
       $inc: {
@@ -1875,12 +1875,11 @@ const updateMeetingStatus = async (req, res, next) => {
   const currDate = new Date();
 
   // Prevent completing/ongoing meeting before start date/time
-  // if (status && currDate < new Date(meeting.startTime)) {
-  //   return res.status(400).json({
-  //     message:
-  //       "Meeting cannot be marked completed/ongoing before its start time",
-  //   });
-  // }
+  if (currDate < meeting.startTime) {
+    return res.status(400).json({
+      message: `Meeting cannot be marked ${status.toLowerCase()} before its start time`,
+    });
+  }
 
   const updatePayload = {
     status,

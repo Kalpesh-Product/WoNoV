@@ -15,7 +15,7 @@ import { useNavigate } from "react-router-dom";
 import BudgetGraph from "../../../components/graphs/BudgetGraph";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useSidebar } from "../../../context/SideBarContext";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
 import { useQuery } from "@tanstack/react-query";
@@ -30,8 +30,40 @@ import { filterPermissions } from "../../../utils/accessConfig";
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const department = usePageDepartment();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const getFiscalYearStart = (date = dayjs()) => {
+  const parsedDate = dayjs(date);
+  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+};
+
+const formatFiscalYear = (startYear) =>
+  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getFiscalMonthIndex = (date) => {
+  const parsedDate = dayjs(date);
+  const month = parsedDate.month();
+
+  return month >= 3 ? month - 3 : month + 9;
+};
+
+const getAmount = (value) => {
+  if (typeof value === "number") return value;
+
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  return 0;
+};
+
+const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
+  currentFiscalYear
+);
+const currentFiscalMonthIndexForCard =
+  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -118,75 +150,104 @@ const ItDashboard = () => {
     ? []
     : hrFinance.reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
-  const monthlyGroups = {};
+  const averageMonthlyExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
 
-  hrFinance.forEach((item) => {
-    const dueDate = new Date(item.dueDate);
-    const monthKey = `${dueDate.getFullYear()}-${dueDate.getMonth() + 1}`; // e.g., "2024-4"
-    if (!monthlyGroups[monthKey]) monthlyGroups[monthKey] = [];
-    monthlyGroups[monthKey].push(item.actualAmount || 0);
-  });
+    const currentFyTotalActual = hrFinance.reduce((sum, item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return sum;
+      }
 
-  const monthlyTotals = Object.values(monthlyGroups).map((amounts) =>
-    amounts.reduce((sum, val) => sum + val, 0),
-  );
+      const itemFiscalYear = formatFiscalYear(getFiscalYearStart(item.dueDate));
 
-  const averageMonthlyExpense = monthlyTotals.length
-    ? monthlyTotals.reduce((a, b) => a + b, 0) / monthlyTotals.length
-    : 0;
+      if (itemFiscalYear !== currentFiscalYear) {
+        return sum;
+      }
+
+      return sum + getAmount(item.actualAmount);
+    }, 0);
+
+    return currentFyTotalActual / 12;
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
   //------------------------Graph round functions-------------------//
-  const expenseSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
-    );
+  // const expenseSeries = useMemo(() => {
+  //   // Initialize monthly buckets
+  //   const months = Array.from({ length: 12 }, (_, index) =>
+  //     dayjs(`2024-04-01`).add(index, "month").format("MMM"),
+  //   );
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+  //   const fyData = {
+  //     "FY 2024-25": Array(12).fill(0),
+  //     "FY 2025-26": Array(12).fill(0),
+  //   };
 
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+  //   hrFinance.forEach((item) => {
+  //     const date = dayjs(item.dueDate);
+  //     const year = date.year();
+  //     const monthIndex = date.month(); // 0 = Jan, 11 = Dec
 
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
-    });
+  //     if (year === 2024 && monthIndex >= 3) {
+  //       // Apr 2024 to Dec 2024 (month 3 to 11)
+  //       fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+  //     } else if (year === 2025) {
+  //       if (monthIndex <= 2) {
+  //         // Jan to Mar 2025 (months 0–2)
+  //         fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+  //       } else if (monthIndex >= 3) {
+  //         // Apr 2025 to Dec 2025 (months 3–11)
+  //         fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+  //       }
+  //     } else if (year === 2026 && monthIndex <= 2) {
+  //       // Jan to Mar 2026
+  //       fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
+  //     }
+  //   });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
+  //   return [
+  //     {
+  //       name: "total",
+  //       group: "FY 2024-25",
+  //       data: fyData["FY 2024-25"],
+  //     },
+  //     {
+  //       name: "total",
+  //       group: "FY 2025-26",
+  //       data: fyData["FY 2025-26"],
+  //     },
+  //   ];
+  // }, [hrFinance]);
 
-  const maxExpenseValue = Math.max(
-    ...expenseSeries.flatMap((series) => series.data),
-  );
-  const roundedMax = Math.ceil((maxExpenseValue + 100000) / 100000) * 100000;
+//   const roundedMax = useMemo(() => {
+//   const fiscalYears = [
+//     ...new Set(expenseRawSeries.map((series) => series.group)),
+//   ];
+
+//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+//     const actualSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Actual Amount"
+//     );
+
+//     const projectedSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Projected Amount"
+//     );
+
+//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+//       const actual = actualSeries?.data?.[index] || 0;
+//       const projectedBalance = projectedSeries?.data?.[index] || 0;
+
+//       return actual + projectedBalance;
+//     });
+
+//     return Math.max(max, ...monthlyMax);
+//   }, 0);
+
+//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+// }, [expenseRawSeries]);
   //------------------------Graph round functions-------------------//
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
@@ -266,6 +327,16 @@ const ItDashboard = () => {
       .filter((item) => item.expanseType === "INTERNET EXPENSES")
       .reduce((sum, item) => sum + item.actualAmount || 0, 0);
 
+  const currentFiscalYearOverallExpense = useMemo(() => {
+    if (isHrFinanceLoading || !Array.isArray(hrFinance)) {
+      return 0;
+    }
+
+    return hrFinance
+      .filter((item) => formatFiscalYear(getFiscalYearStart(item?.dueDate)) === currentFiscalYear)
+      .reduce((sum, item) => sum + getAmount(item?.actualAmount), 0);
+  }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
+
   //----------------------Units data-----------------------//
 
   const { data: weeklySchedule = [], isLoading: isWeeklyScheduleLoading } =
@@ -323,149 +394,259 @@ const ItDashboard = () => {
   );
 
   const expenseRawSeries = useMemo(() => {
-    // Initialize monthly buckets
-    const months = Array.from({ length: 12 }, (_, index) =>
-      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
+  const fyData = {};
+
+  hrFinance.forEach((item) => {
+    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+    const monthIndex = getFiscalMonthIndex(item.dueDate);
+
+    if (!fyData[fiscalYearLabel]) {
+      fyData[fiscalYearLabel] = {
+        actual: Array(12).fill(0),
+        projectedBalance: Array(12).fill(0),
+      };
+    }
+
+    const actualAmount = getAmount(item.actualAmount);
+    const projectedAmount = getAmount(item.projectedAmount);
+    const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+
+    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+    fyData[fiscalYearLabel].projectedBalance[monthIndex] +=
+      remainingProjectedAmount;
+  });
+
+  if (!fyData[currentFiscalYear]) {
+    fyData[currentFiscalYear] = {
+      actual: Array(12).fill(0),
+      projectedBalance: Array(12).fill(0),
+    };
+  }
+
+  return Object.entries(fyData)
+    .sort(([fyA], [fyB]) => {
+      const startA = Number(fyA.slice(3, 7));
+      const startB = Number(fyB.slice(3, 7));
+      return startA - startB;
+    })
+    .flatMap(([fiscalYear, data]) => {
+      return [
+        {
+          name: "Actual Amount",
+          group: fiscalYear,
+          data: data.actual,
+        },
+        {
+          name: "Projected Amount",
+          group: fiscalYear,
+          data: data.projectedBalance,
+        },
+      ];
+    });
+}, [hrFinance, currentFiscalYear]);
+
+const roundedMax = useMemo(() => {
+  const fiscalYears = [
+    ...new Set(expenseRawSeries.map((series) => series.group)),
+  ];
+
+  const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+    const actualSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Actual Amount"
     );
 
-    const fyData = {
-      "FY 2024-25": Array(12).fill(0),
-      "FY 2025-26": Array(12).fill(0),
-    };
+    const projectedSeries = expenseRawSeries.find(
+      (series) =>
+        series.group === fiscalYear && series.name === "Projected Amount"
+    );
 
-    hrFinance.forEach((item) => {
-      const date = dayjs(item.dueDate);
-      const year = date.year();
-      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
+    const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+      const actual = actualSeries?.data?.[index] || 0;
+      const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-      if (year === 2024 && monthIndex >= 3) {
-        // Apr 2024 to Dec 2024 (month 3 to 11)
-        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-      } else if (year === 2025) {
-        if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
-          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-        } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
-          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
-        }
-      } else if (year === 2026 && monthIndex <= 2) {
-        // Jan to Mar 2026
-        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-      }
+      return actual + projectedBalance;
     });
 
-    return [
-      {
-        name: "total",
-        group: "FY 2024-25",
-        data: fyData["FY 2024-25"],
-      },
-      {
-        name: "total",
-        group: "FY 2025-26",
-        data: fyData["FY 2025-26"],
-      },
-    ];
-  }, [hrFinance]);
+    return Math.max(max, ...monthlyMax);
+  }, 0);
+
+  return Math.ceil((maxValue + 100000) / 100000) * 100000;
+}, [expenseRawSeries]);
 
   const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
+  chart: {
+    type: "bar",
+    toolbar: { show: false },
+    stacked: true,
+    fontFamily: "Poppins-Regular, Arial, sans-serif",
+    events: {
+      dataPointSelection: () => {
+        navigate("finance/budget");
+      },
+    },
+  },
+  colors: ["#54C4A7", "#c4c4c4"],
+  plotOptions: {
+    bar: {
+      horizontal: false,
+      columnWidth: "40%",
+      borderRadius: 5,
+      borderRadiusApplication: "end",
+      dataLabels: {
+        position: "top",
+        total: {
+          enabled: true,
+          formatter: (_, config) => {
+            const isCurrentFiscalYearSelected =
+              selectedFiscalYear === currentFiscalYear;
+            const isCurrentFiscalMonth =
+              config?.dataPointIndex === currentFiscalMonthIndexForCard;
 
-      stacked: false,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      events: {
-        dataPointSelection: () => {
-          navigate("finance/budget");
+            if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
+              return "";
+            }
+
+            const total =
+              config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
+              0;
+
+            return total ? inrFormat(Number(total)) : "";
+          },
+          style: {
+            fontSize: "12px",
+            fontWeight: 600,
+            color: "#000",
+          },
+          offsetY: -8,
         },
       },
     },
-    colors: ["#54C4A7", "#EB5C45"],
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 5,
-        borderRadiusApplication: "none",
-        dataLabels: {
-          position: "top",
-        },
+  },
+  dataLabels: {
+    enabled: false,
+  },
+  yaxis: {
+    min: 0,
+    max: roundedMax,
+    tickAmount: 4,
+    title: { text: "Amount In Lakhs (INR)" },
+    labels: {
+      formatter: (val) => `${val / 100000}`,
+    },
+  },
+  fill: {
+    opacity: 1,
+  },
+  states: {
+    hover: {
+      filter: {
+        type: "none",
       },
     },
-    dataLabels: {
-      enabled: true,
-      formatter: (val) => {
-        return inrFormat(val);
+    active: {
+      filter: {
+        type: "none",
       },
+    },
+  },
+  legend: {
+    show: true,
+    position: "top",
+  },
+  tooltip: {
+    enabled: true,
+    custom: function ({ seriesIndex, dataPointIndex, w }) {
+      const seriesName = w.globals.seriesNames?.[seriesIndex];
 
-      style: {
-        fontSize: "12px",
-        colors: ["#000"],
-      },
-      offsetY: -22,
-    },
+      const actualSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Actual Amount"
+      );
 
-    yaxis: {
-      min: 0,
-      max: roundedMax,
-      tickAmount: 4,
-      title: { text: "Amount In Lakhs (INR)" },
-      labels: {
-        formatter: (val) => `${val / 100000}`,
-      },
-    },
-    fill: {
-      opacity: 1,
-    },
-    legend: {
-      show: true,
-      position: "top",
-    },
+      const projectedSeries = w.globals.initialSeries.find(
+        (item) => item.name === "Projected Amount"
+      );
 
-    tooltip: {
-      enabled: false,
-      custom: function ({ series, seriesIndex, dataPointIndex }) {
-        const rawData = expenseRawSeries[seriesIndex]?.data[dataPointIndex];
-        // return `<div style="padding: 8px; font-family: Poppins, sans-serif;">
-        //       HR Expense: INR ${rawData.toLocaleString("en-IN")}
-        //     </div>`;
-        return `
-              <div style="padding: 8px; font-size: 13px; font-family: Poppins, sans-serif">
-          
-                <div style="display: flex; align-items: center; justify-content: space-between; background-color: #d7fff4; color: #00936c; padding: 6px 8px; border-radius: 4px; margin-bottom: 4px;">
-                  <div><strong>Finance Expense:</strong></div>
-                  <div style="width: 10px;"></div>
-               <div style="text-align: left;">INR ${Math.round(
-          rawData,
-        ).toLocaleString("en-IN")}</div>
-  
-                </div>
-       
-              </div>
-            `;
-      },
+      const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
+      const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
+
+      const monthLabel =
+        w.globals.labels && w.globals.labels[dataPointIndex]
+          ? w.globals.labels[dataPointIndex]
+          : `Month ${dataPointIndex + 1}`;
+
+      const isActual = seriesName === "Actual Amount";
+
+      const label = isActual ? "Actual Amount" : "Projected Amount";
+      const amount = isActual ? actualAmount : projectedBalance;
+      const color = isActual ? "#54C4A7" : "#c4c4c4";
+
+      return `
+        <div class="apexcharts-tooltip-title" style="
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          padding: 6px 10px;
+          margin-bottom: 0;
+        ">
+          ${monthLabel}
+        </div>
+
+        <div style="
+          padding: 8px 10px;
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          background: #fff;
+          min-width: 230px;
+        ">
+          <div style="
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+          ">
+            <span style="
+              width: 12px;
+              height: 12px;
+              border-radius: 50%;
+              background: ${color};
+              display: inline-block;
+            "></span>
+
+            <span>${label}:</span>
+
+            <span style="font-weight: 600;">
+              INR ${Math.round(amount).toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
+      `;
     },
-  };
+  },
+};
   const budgetBar = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
   }, [isHrFinanceLoading, hrFinance]);
   const totalUtilised =
-    budgetBar?.[selectedFiscalYear]?.utilisedBudget?.reduce(
-      (acc, val) => acc + val,
-      0,
-    ) || 0;
-  useEffect(() => {
-    setIsSidebarOpen(true);
-  }, []); // Empty dependency array ensures this runs once on mount
+  expenseRawSeries
+    .find(
+      (item) =>
+        item.group === selectedFiscalYear && item.name === "Actual Amount"
+    )
+    ?.data?.reduce((acc, val) => acc + val, 0) || 0;
 
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
 
-  const navigate = useNavigate();
+  useEffect(() => {
+    setIsSidebarOpen(true);
+  }, []); // Empty dependency array ensures this runs once on mount
+
+  //const navigate = useNavigate();
   const utilisedData = [
     1250000, 1500000, 990000, 850000, 700000, 500000, 800000, 950000, 1000000,
     650000, 500000, 1200000,
@@ -554,17 +735,7 @@ const ItDashboard = () => {
     "#E91E63",
   ];
   //----------------------------------------------------------------------------------------------------------//
-  // const unitWiseExpense = [
-  //   { unit: "ST-701A", expense: 12000 },
-  //   { unit: "ST-701B", expense: 10000 },
-  //   { unit: "ST-601A", expense: 11500 },
-  //   { unit: "ST-601B", expense: 10000 },
-  // ];
-
-  // const totalUnitWiseExpense = unitWiseExpense.reduce(
-  //   (sum, item) => sum + item.expense,
-  //   0
-  // );
+  
 
   const unitWiseExpense = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return [];
@@ -646,31 +817,6 @@ const ItDashboard = () => {
 
   //----------------------------------------------------------------------------------------------------------//
 
-  const priorityTasks = [
-    { taskName: "Check Lights", type: "Daily", endTime: "12:00 PM" },
-    {
-      taskName: "Inspect Fire Extinguishers",
-      type: "Daily",
-      endTime: "03:00 PM",
-    },
-    { taskName: "Test Alarm System", type: "Monthly", endTime: "10:00 AM" },
-    { taskName: "Clean AC Filters", type: "Daily", endTime: "02:30 PM" },
-    { taskName: "Check Water Pressure", type: "Daily", endTime: "08:00 AM" },
-    {
-      taskName: "Monitor Security Cameras",
-      type: "Daily",
-      endTime: "11:45 PM",
-    },
-    {
-      taskName: "Update Software Patches",
-      type: "Monthly",
-      endTime: "06:00 PM",
-    },
-    { taskName: "Backup Server Data", type: "Daily", endTime: "07:30 PM" },
-    { taskName: "Test Emergency Lights", type: "Monthly", endTime: "04:15 PM" },
-    { taskName: "Calibrate Sensors", type: "Monthly", endTime: "01:00 PM" },
-  ];
-
   const priorityTasksColumns = [
     { id: "id", label: "Sr No", align: "left" },
     { id: "taskName", label: "Task Name", align: "left" },
@@ -678,9 +824,23 @@ const ItDashboard = () => {
       id: "status",
       label: "Status",
       renderCell: (data) => {
+        const status = String(data.status || "-");
+        const normalizedStatus = status.toLowerCase();
+        const styleMap = {
+          approved: { backgroundColor: "#DCFCE7", color: "#166534" },
+          pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
+          rejected: { backgroundColor: "#FEE2E2", color: "#991B1B" },
+          completed: { backgroundColor: "#DCFCE7", color: "#166534" },
+        };
+
+        const chipStyle = styleMap[normalizedStatus] || {
+          backgroundColor: "#F5F5F5",
+          color: "#616161",
+        };
+
         return (
           <>
-            <Chip sx={{ color: "#1E3D73" }} label={data.status} />
+            <Chip sx={{ ...chipStyle }} label={status} size="small" />
           </>
         );
       },
@@ -689,64 +849,7 @@ const ItDashboard = () => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-  const executiveTimings = [
-    {
-      name: "Machindranath Parkar",
-      building: "DTC",
-      unitNo: "002",
-      startTime: "9:00AM",
-      endTime: "06:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "DTC",
-      unitNo: "004",
-      startTime: "10:00AM",
-      endTime: "07:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "ST",
-      unitNo: "601(A)",
-      startTime: "8:30AM",
-      endTime: "05:30PM",
-    },
-    {
-      name: "Dasmond Goes",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "9:15AM",
-      endTime: "06:15PM",
-    },
-    {
-      name: "Dasmond Goes",
-      building: "DTC",
-      unitNo: "501(B)",
-      startTime: "10:00AM",
-      endTime: "07:00PM",
-    },
-    {
-      name: "Rajiv Kumar Pal",
-      building: "DTC",
-      unitNo: "601(B)",
-      startTime: "8:00AM",
-      endTime: "04:00PM",
-    },
-    {
-      name: "Rajiv Kumar Pal",
-      building: "ST",
-      unitNo: "701(A)",
-      startTime: "11:00AM",
-      endTime: "08:00PM",
-    },
-    {
-      name: "Faizan Shaikh",
-      building: "ST",
-      unitNo: "005",
-      startTime: "9:45AM",
-      endTime: "06:45PM",
-    },
-  ];
+ 
 
   const executiveTimingsColumns = [
     { id: "id", label: "Sr No", align: "left" },
@@ -756,37 +859,7 @@ const ItDashboard = () => {
     { id: "endDate", label: "End Date", align: "left" },
   ];
   //----------------------------------------------------------------------------------------------------------//
-  // const clientComplaints = [
-  //   { client: "Zomato", complaints: 1 },
-  //   { client: "SqaudStack", complaints: 2 },
-  //   { client: "Swiggy", complaints: 1 },
-  //   { client: "Zimetrics", complaints: 1 },
-  // ];
-
-  // const totalClientComplaints = clientComplaints.reduce(
-  //   (sum, item) => sum + item.complaints,
-  //   0
-  // );
-
-  // const pieComplaintsData = clientComplaints.map((item) => ({
-  //   label: `${item.client} (${(
-  //     (item.complaints / totalClientComplaints) *
-  //     100
-  //   ).toFixed(1)}%)`,
-  //   value: item.complaints,
-  // }));
-
-  // const pieComplaintsOptions = {
-  //   labels: clientComplaints.map((item) => item.client),
-  //   chart: {
-  //     fontFamily: "Poppins-Regular",
-  //   },
-  //   tooltip: {
-  //     y: {
-  //       formatter: (val) => `${val} complaints`, // ✅ shows actual number
-  //     },
-  //   },
-  // };
+  
   //  Department-Wise Complaints graph
   const departmentIssueSummary = useMemo(() => {
     if (isTicketsLoading || !Array.isArray(tickets)) return [];
@@ -977,7 +1050,7 @@ const ItDashboard = () => {
     {
       key: PERMISSIONS.IT_EXPENSE_PER_SQFT.value,
       title: "Total",
-      data: `INR ${inrFormat((totalOverallExpense || 0) / totalSqFt)}`,
+      data: `INR ${inrFormat((currentFiscalYearOverallExpense || 0) / totalSqFt)}`,
       description: "Expense per sq.ft",
       route: "per-sq-ft-expense",
     },
@@ -1007,7 +1080,7 @@ const ItDashboard = () => {
     {
       key: PERMISSIONS.IT_TOP_10_HIGH_PRIORITY_DUE_TASKS.value,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedTasks.length,
       title: "Top 10 High Priority Due Tasks",
       rows: transformedTasks,
       columns: priorityTasksColumns,
@@ -1015,7 +1088,7 @@ const ItDashboard = () => {
     {
       key: PERMISSIONS.IT_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
       scroll: true,
-      rowsToDisplay: 4,
+      rowsToDisplay: transformedWeeklyShifts.length,
       title: "Weekly Executive Shift Timing",
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
@@ -1138,6 +1211,188 @@ const ItDashboard = () => {
     },
   ];
   const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
+
+  const itCategoryWiseTickets = useMemo(() => {
+    if (isTicketsLoading || !Array.isArray(tickets)) return [];
+
+    const categoryCountMap = tickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [isTicketsLoading, tickets]);
+
+  const itCategoryWiseTicketsData = itCategoryWiseTickets.map((item) => ({
+    label: item.label,
+    value: item.value,
+  }));
+
+  const itCategoryWiseTicketsOptions = {
+    labels: itCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
+    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          itCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          itCategoryWiseTicketsOptions.colors[
+            seriesIndex % itCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const itPendingStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
+
+  const itPendingTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
+    (ticket) =>
+      itPendingStatuses.has(String(ticket?.status || "").toLowerCase()),
+  ).length;
+
+  const itCompletedTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter((ticket) => String(ticket?.status || "").toLowerCase() === "closed")
+    .length;
+
+  const itDueTicketsData = [
+    { label: "Completed", value: itCompletedTicketsCount },
+    { label: "Pending", value: itPendingTicketsCount },
+  ];
+
+  const itDueTicketsOptions = {
+    labels: itDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          itDueTicketsOptions.colors[
+            seriesIndex % itDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  const itTicketChartConfigs = [
+    {
+      key: PERMISSIONS.IT_CATEGORY_WISE_TICKETS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Category Wise Tickets",
+      data: itCategoryWiseTicketsData,
+      options: itCategoryWiseTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      key: PERMISSIONS.IT_DUE_TICKETS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Due Tickets",
+      data: itDueTicketsData,
+      options: itDueTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+  ];
+
+  const allowedItTicketCharts = filterPermissions(
+    itTicketChartConfigs,
+    userPermissions,
+  );
 
   const pieDonutConfig = [
     {
@@ -1366,7 +1621,7 @@ const ItDashboard = () => {
           padding
           key={config.key}
         >
-          <YearlyGraph2
+          <YearlyGraph
             chartId={config.chartId}
             data={config.data}
             options={config.options}
@@ -1475,6 +1730,20 @@ const ItDashboard = () => {
           );
         }
       }),
+    },
+    {
+      layout: allowedItTicketCharts.length,
+      widgets: allowedItTicketCharts.map((config) => (
+        <WidgetSection key={config.title} border={config.border} title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            width={config.width}
+            height={config.height}
+            centerAlign
+          />
+        </WidgetSection>
+      )),
     },
   ];
 

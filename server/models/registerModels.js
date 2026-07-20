@@ -60,3 +60,10 @@ require("./performances/kraKpaTask");
 
 //Events
 require("./events/Events");
+
+//Housekeeping
+require("./hr/HouseKeepingStaff");
+require("./HousekeepingSchedule");
+
+//Weekly Schedule
+require("./WeeklySchedule");

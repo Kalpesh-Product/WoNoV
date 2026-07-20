@@ -172,23 +172,55 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
   const assetsColumns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "assetId", headerName: "Asset ID" },
-    // { field: "department", headerName: "Department" },
+    { field: "assetType", headerName: "Asset Type", hide: true },
+    { field: "secondaryId", headerName: "Secondary ID", hide: true },
+    { field: "departmentAssetId", headerName: "Department Asset ID", hide: true },
     { field: "brand", headerName: "Brand" },
+    { field: "department", headerName: "Department", hide: true },
+    { field: "underMaintenanceLabel", headerName: "Under Maintenance", hide: true },
     { field: "name", headerName: "Asset Name" },
     { field: "serialNumber", headerName: "Serial Number" },
-   { field: "building", headerName: "Building" },
+    { field: "building", headerName: "Building" },
     { field: "unit", headerName: "Location" },
+    { field: "ownershipType", headerName: "Ownership Type", hide: true },
+    { field: "rentedMonths", headerName: "Rented Months", hide: true },
+    {
+      field: "rentalExpiry",
+      headerName: "Rented Expiration Date",
+      hide: true,
+      exportFormat: "date",
+      cellRenderer: (params) => params.value || "N/A",
+    },
     {
       field: "price",
       headerName: "Price (INR)",
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
-      field: "purchaseDate",
+      field: "purchaseOn",
       headerName: "Purchase Date",
-      cellRenderer: (params) => humanDate(params.value),
+      exportFormat: "date",
+      cellRenderer: (params) => params.value || "N/A",
     },
     { field: "warranty", headerName: "Warranty (Months)" },
+    {
+      field: "warrantyExpiry",
+      headerName: "Warranty Expiry Date",
+      hide: true,
+      exportFormat: "date",
+      cellRenderer: (params) => params.value || "N/A",
+    },
+    { field: "description", headerName: "Description", hide: true },
+    { field: "assetStatus", headerName: "Status", hide: true },
+    { field: "subCategory", headerName: "Sub Category", hide: true },
+    { field: "tangableLabel", headerName: "Tangable", hide: true },
+    { field: "damagedLabel", headerName: "Damaged", hide: true },
+    { field: "extraLabel", headerName: "Extra", hide: true },
+    {
+      field: "assignedLabel",
+      headerName: "Assigned",
+      hide: true,
+    },
     {
       field: "isAssigned",
       headerName: "Status",
@@ -251,8 +283,11 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
       .map((item, index) => ({
         ...item,
         srNo: index + 1,
-        department: item?.department?.name,
-        subCategory: item?.subCategory?.subCategoryName,
+        department: item?.department?.name || "N/A",
+        subCategory: item?.subCategory?.subCategoryName || "N/A",
+        assetType: item?.assetType || "N/A",
+        secondaryId: item?.secondaryId || "N/A",
+        departmentAssetId: item?.departmentAssetId || "N/A",
         building:
           item?.location?.building?.buildingName ||
           item?.building?.buildingName ||
@@ -260,6 +295,22 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
           "N/A",
         location: item?.location || null,
         unit: item?.location?.unitNo || "N/A",
+        underMaintenanceLabel: item?.isUnderMaintenance ? "Yes" : "No",
+        ownershipType: item?.ownershipType || "N/A",
+        rentedMonths: item?.rentedMonths ?? "N/A",
+        purchaseOn: item?.purchaseDate ? humanDate(item.purchaseDate) : "N/A",
+        rentalExpiry: item?.rentedExpirationDate
+          ? humanDate(item.rentedExpirationDate)
+          : "N/A",
+        warrantyExpiry: item?.warrantyExpiryDate
+          ? humanDate(item.warrantyExpiryDate)
+          : "N/A",
+        description: item?.description || "N/A",
+        assetStatus: item?.status || "N/A",
+        tangableLabel: item?.tangable ? "Yes" : "No",
+        damagedLabel: item?.isDamaged ? "Yes" : "No",
+        extraLabel: item?.isExtra ? "Yes" : "No",
+        assignedLabel: item?.isAssigned ? "Yes" : "No",
         isAssigned:
           item?.assignmentState || (item?.isAssigned ? "Assigned" : "Available"),
       }));
@@ -276,6 +327,7 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
           //tableTitle={"Assign Assets"}
           data={tableData}
           columns={assetsColumns}
+          exportData
         />
       </PageFrame>
       <MuiModal

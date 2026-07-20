@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const upload = require("../config/multerConfig");
 
 const {
   createTasks,
@@ -19,6 +20,7 @@ const {
   getMyAssignedTasks,
   getTodayDeptTasks,
   getTasksSummary,
+  bulkInsertTasks,
 } = require("../controllers/tasksControllers/tasksControllers");
 
 router.post("/create-tasks", createTasks);
@@ -38,5 +40,6 @@ router.get("/get-my-completed-tasks", getMyCompletedTasks);
 router.patch("/delete-task/:id", deleteTask);
 router.get("/get-my-assigned-tasks", getMyAssignedTasks);
 router.get("/get-tasks-summary", getTasksSummary); // consolidated data for graph
+router.post("/bulk-insert", upload.single("file"), bulkInsertTasks);
 
 module.exports = router;

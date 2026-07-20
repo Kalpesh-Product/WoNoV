@@ -7,10 +7,11 @@ import { useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import { Chip, CircularProgress, TextField } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
+import SecondaryButton from "../../../components/SecondaryButton";
 import useAuth from "../../../hooks/useAuth";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
@@ -22,11 +23,12 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { FaCheckSquare } from "react-icons/fa";
-import { MdDeleteForever } from "react-icons/md";
+import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useCurrentDay from "../../../hooks/useCurrentDay";
 import ConfirmationModal from "../../../components/ConfirmationModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 const PerformanceKra = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -60,6 +62,9 @@ const PerformanceKra = () => {
     .join(" ")
     .trim();
   const [selectedKra, setSelectedKra] = useState(null);
+  const [completedTaskView, setCompletedTaskView] = useState(null);
+  const [completionCommentError, setCompletionCommentError] = useState("");
+  const completionCommentRef = useRef("");
    const [selectedDate, setSelectedDate] = useState(dayjs().startOf("day"));
   const getTodayIsoStart = () => dayjs().startOf("day").toISOString();
   const today = useCurrentDay();
@@ -267,22 +272,27 @@ const PerformanceKra = () => {
     mutationKey: ["updateDailyKra"],
     mutationFn: async (data) => {
       const response = await axios.patch(
-        `/api/performance/update-status/${data}/KRA`
+        `/api/performance/update-status/${data.taskId}/KRA`,
+        { comment: data.comment }
       );
       return response.data;
     },
-    onSuccess: (data, taskId) => {
+    onSuccess: (data, variables) => {
       queryClient.setQueriesData(
         { queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] },
         (oldData = []) =>
           (oldData || []).filter((item) => {
             const rowId = item?.id || item?._id;
-            return rowId?.toString?.() !== taskId?.toString?.();
+            return rowId?.toString?.() !== variables?.taskId?.toString?.();
           })
       );
       queryClient.invalidateQueries({ queryKey: ["fetchedDepartmentsKRA", effectiveDeptId] });
       queryClient.invalidateQueries({ queryKey: ["completedEntries", effectiveDeptId] });
       toast.success(data.message || "KRA updated");
+      completionCommentRef.current = "";
+      setCompletionCommentError("");
+      setSelectedKra(null);
+      setOpenModal(false);
     },
     onError: (error) => {
       toast.success("KRA updated");
@@ -292,6 +302,27 @@ const PerformanceKra = () => {
   });
 
   //--------------POST REQUEST FOR DAILY KRA-----------------//
+
+  const openMarkDoneModal = (taskData) => {
+    setSelectedKra(taskData);
+    completionCommentRef.current = "";
+    setCompletionCommentError("");
+    setOpenModal(true);
+  };
+
+  const handleMarkAsDoneWithComment = () => {
+    const trimmedComment = completionCommentRef.current.trim();
+
+    if (!trimmedComment) {
+      setCompletionCommentError("Comment is required");
+      return;
+    }
+
+    updateDailyKra({
+      taskId: selectedKra?.id || selectedKra?._id,
+      comment: trimmedComment,
+    });
+  };
 
   const fetchDepartments = async () => {
     try {
@@ -393,7 +424,7 @@ const PerformanceKra = () => {
                   onClick={() => {
                     if (!rowCanMarkDone || !isRowSelected || isUpdatePending || isDeletePending)
                       return;
-                    updateDailyKra(params.data.id || params.data._id);
+                    openMarkDoneModal(params.data);
                   }}
                   className="p-2"
                 >
@@ -480,6 +511,22 @@ const PerformanceKra = () => {
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
     { headerName: "KRA List", field: "taskName", flex: 1 },
+    {
+      headerName: "Action",
+      field: "action",
+      pinned: "right",
+      width: 110,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="View Completed KRA"
+          onClick={() => setCompletedTaskView(params.data)}
+          className="h-8 w-8 flex items-center justify-center"
+        >
+          <MdOutlineRemoveRedEye size={22} color="#111827" />
+        </button>
+      ),
+    },
     // { headerName: "Assigned Time", field: "assignedDate" },
 
     { headerName: "Completed By", field: "completedBy",flex: 1 },
@@ -497,6 +544,12 @@ const PerformanceKra = () => {
       flex: 1,
       exportFormat: "time",
      // cellRenderer: (params) => humanTime(params.value),
+    },
+    {
+      headerName: "Comment",
+      field: "comment",
+      hide: true,
+      flex: 1,
     },
     {
       field: "status",
@@ -694,6 +747,7 @@ const PerformanceKra = () => {
                       item.completionTime ||
                       item.completionDate ||
                       item.dueDate,
+                    comment: item.comment,
                  //   completionDate: item.completedDate || item.completionDate || item.dueDate,
                  //   completionTime: item.completedDate || item.completionTime || item.completionDate || item.dueDate,
                     status: item.status,
@@ -723,9 +777,53 @@ const PerformanceKra = () => {
 
       <MuiModal
         open={openModal}
-        onClose={() => setOpenModal(false)}
-         title={isEditMode ? "Edit Task" : "Add Department Daily KRA"}
+        onClose={() => {
+          setOpenModal(false);
+          setSelectedKra(null);
+          completionCommentRef.current = "";
+          setCompletionCommentError("");
+        }}
+         title={selectedKra ? "Comment" : isEditMode ? "Edit Task" : "Add Department Daily KRA"}
       >
+        {selectedKra ? (
+          <div className="grid grid-cols-1 gap-4">
+            <TextField
+              label="Comment"
+              size="small"
+              multiline
+              rows={4}
+              key={selectedKra?.id || selectedKra?._id || "kra-comment"}
+              defaultValue=""
+              onChange={(event) => {
+                completionCommentRef.current = event.target.value;
+                if (completionCommentError) {
+                  setCompletionCommentError("");
+                }
+              }}
+              error={!!completionCommentError}
+              helperText={completionCommentError}
+              fullWidth
+            />
+            <div className="flex items-center justify-center gap-3">
+              <PrimaryButton
+                title="Mark as Done"
+                handleSubmit={handleMarkAsDoneWithComment}
+                isLoading={isUpdatePending}
+                disabled={isUpdatePending}
+              />
+              <SecondaryButton
+                title="Cancel"
+                handleSubmit={() => {
+                  setOpenModal(false);
+                  setSelectedKra(null);
+                  completionCommentRef.current = "";
+                  setCompletionCommentError("");
+                }}
+                disabled={isUpdatePending}
+              />
+            </div>
+          </div>
+        ) : (
         <form
           onSubmit={submitDailyKra(handleFormSubmit)}
           className="grid grid-cols-1 lg:grid-cols-1 gap-4"
@@ -800,6 +898,25 @@ const PerformanceKra = () => {
             disabled={isAddKraPending}
           />
         </form>
+        )}
+      </MuiModal>
+      <MuiModal
+        open={!!completedTaskView}
+        onClose={() => setCompletedTaskView(null)}
+        title="Completed Department Daily KRA"
+      >
+        {completedTaskView && (
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted title={"KRA"} detail={completedTaskView?.taskName} />
+            <DetalisFormatted title={"Completed By"} detail={completedTaskView?.completedBy} />
+            <DetalisFormatted
+              title={"Completed Date"}
+              detail={`${humanDate(completedTaskView?.completionDate)}, ${humanTime(completedTaskView?.completionTime)}`}
+            />
+            <DetalisFormatted title={"Status"} detail={completedTaskView?.status} />
+            <DetalisFormatted title={"Comment"} detail={completedTaskView?.comment || "-"} />
+          </div>
+        )}
       </MuiModal>
     </>
   );

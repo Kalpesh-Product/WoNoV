@@ -1317,8 +1317,12 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
   };
 
 
-const mergeHrCsvFields = (rows = []) => {
+const mergeHrCsvFields = (rows = [], reportName = "") => {
   if (normalizedModuleKey !== "hr") return rows;
+  const normalizedReportName = String(reportName || "").trim().toLowerCase();
+  const isHousekeepingStaffReport = normalizedReportName.includes(
+    "housekeeping staff report",
+  );
 
   const formatHrTime = (value) => {
     if (!value) return "";
@@ -1351,6 +1355,14 @@ const mergeHrCsvFields = (rows = []) => {
 
   return rows.map((row) => {
     const nextRow = { ...row };
+    const staffFullName = [
+      row?.firstName || row?.["firstName"] || "",
+      row?.middleName || row?.["middleName"] || "",
+      row?.lastName || row?.["lastName"] || "",
+    ]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+      .join(" ");
 
     const userFirstName = String(
       row?.user?.firstName || row?.["user.firstName"] || "",
@@ -1457,6 +1469,13 @@ const mergeHrCsvFields = (rows = []) => {
 
     if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
       nextRow.role = roleTitles;
+    }
+
+    if (isHousekeepingStaffReport && staffFullName) {
+      nextRow.name = staffFullName;
+      delete nextRow.firstName;
+      delete nextRow.middleName;
+      delete nextRow.lastName;
     }
 
     delete nextRow["departments.name"];
@@ -1849,6 +1868,7 @@ const mergeHrCsvFields = (rows = []) => {
           reportName,
         ),
       ),
+      reportName,
     );
 
     const reorderTimeColumns = (inputRow) => {
@@ -1924,6 +1944,33 @@ const mergeHrCsvFields = (rows = []) => {
   const triggerDataDownload = (reportData, reportName) => {
     const normalizedReportName = String(reportName || "").trim().toLowerCase();
     const hiddenFields = [];
+    let exportData = appendReportSerialNumbers(reportData, reportName);
+    const formatSubstitutions = (substitutions = []) =>
+      substitutions
+        .map((item) => {
+          const substituteName = [
+            item?.substitute?.firstName,
+            item?.substitute?.lastName,
+          ]
+            .filter(Boolean)
+            .join(" ");
+          const fromDate = item?.fromDate
+            ? dayjs(item.fromDate).format("DD-MM-YYYY")
+            : "";
+          const toDate = item?.toDate
+            ? dayjs(item.toDate).format("DD-MM-YYYY")
+            : "";
+
+          return [
+            substituteName ? `Substitute: ${substituteName}` : "",
+            fromDate ? `From Date: ${fromDate}` : "",
+            toDate ? `To Date: ${toDate}` : "",
+          ]
+            .filter(Boolean)
+            .join("; ");
+        })
+        .filter(Boolean)
+        .join(" | ");
 
     if (
       normalizedModuleKey === "performance" &&
@@ -1970,8 +2017,144 @@ const mergeHrCsvFields = (rows = []) => {
       hiddenFields.push(/^unit$/);
     }
 
+    if (normalizedReportName.includes("housekeeping staff report")) {
+      const reshapeHousekeepingStaffFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const fullName = [
+          row?.name,
+          row?.firstName,
+          row?.middleName,
+          row?.lastName,
+        ]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+          .join(" ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+        const nextRow = { ...row };
+
+        if (fullName) {
+          nextRow.name = fullName;
+        }
+
+        delete nextRow.firstName;
+        delete nextRow.middleName;
+        delete nextRow.lastName;
+
+        return nextRow;
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeHousekeepingStaffFields)
+        : reshapeHousekeepingStaffFields(exportData);
+    }
+
+    if (normalizedReportName.includes("weekly schedule report")) {
+      const reshapeWeeklyScheduleLocationFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const location = row.location;
+        const employee = row.employee;
+        const substitutions = Array.isArray(row.substitutions)
+          ? row.substitutions
+          : [];
+
+        if (!location || typeof location !== "object" || Array.isArray(location)) {
+          return {
+            ...row,
+            employeeName:
+              [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
+              "",
+            substitutions: formatSubstitutions(substitutions),
+          };
+        }
+
+        const { building, ...restLocation } = location;
+        const { buildingName, ...restBuilding } =
+          building && typeof building === "object" && !Array.isArray(building)
+            ? building
+            : {};
+
+        return {
+          ...row,
+          ...restLocation,
+          employeeName:
+            [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
+            "",
+          substitutions: formatSubstitutions(substitutions),
+          ...(buildingName !== undefined ? { buildingName } : {}),
+          ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
+          location: undefined,
+        };
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeWeeklyScheduleLocationFields)
+        : reshapeWeeklyScheduleLocationFields(exportData);
+
+      hiddenFields.push(/^location$/);
+      hiddenFields.push(/^employee$/);
+    }
+
+    if (normalizedReportName.includes("housekeeping schedule report")) {
+      const reshapeHousekeepingScheduleFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const unit = row.unit;
+        const housekeepingMember = row.housekeepingMember;
+        const substitutions = Array.isArray(row.substitutions)
+          ? row.substitutions
+          : [];
+
+        if (!unit || typeof unit !== "object" || Array.isArray(unit)) {
+          return {
+            ...row,
+            memberName:
+              [housekeepingMember?.firstName, housekeepingMember?.lastName]
+                .filter(Boolean)
+                .join(" ") || "",
+            substitutions: formatSubstitutions(substitutions),
+          };
+        }
+
+        const { building, ...restUnit } = unit;
+        const { buildingName, ...restBuilding } =
+          building && typeof building === "object" && !Array.isArray(building)
+            ? building
+            : {};
+
+        return {
+          ...row,
+          ...restUnit,
+          memberName:
+            [housekeepingMember?.firstName, housekeepingMember?.lastName]
+              .filter(Boolean)
+              .join(" ") || "",
+          substitutions: formatSubstitutions(substitutions),
+          ...(buildingName !== undefined ? { buildingName } : {}),
+          ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
+          unit: undefined,
+        };
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeHousekeepingScheduleFields)
+        : reshapeHousekeepingScheduleFields(exportData);
+
+      hiddenFields.push(/^unit$/);
+      hiddenFields.push(/^housekeepingMember$/);
+    }
+
     return downloadCsv({
-      data: appendReportSerialNumbers(reportData, reportName),
+      data: exportData,
       fileName: reportName,
       hiddenFields,
     });

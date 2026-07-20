@@ -247,9 +247,13 @@ const ConvertInternalVisitors = () => {
   }, [selectedCountry, selectedState, stateOptions]);
 
   const { data: visitorsData = [], isPending } = useQuery({
-    queryKey: ["mix-bag-convert-internal-visitors"],
+    queryKey: ["mix-bag-convert-internal-visitors", "Visitor"],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          visitorFlag: "Visitor", // Fetch only internal visitors
+        },
+      });
       return response.data;
     },
   });
@@ -266,7 +270,7 @@ const ConvertInternalVisitors = () => {
           if (!parsedDate.isValid()) return true;
 
           //return parsedDate.startOf("day").isBefore(dayjs().startOf("day"));
-           return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
+          return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
         })
         .map((visitor, index) => ({
           srNo: index + 1,

@@ -74,7 +74,9 @@ const ViewClientInfo = () => {
   const queryClient = useQueryClient();
   const selectedLead = location?.state?.selectedLead || null;
   const decodedClientParam = client ? decodeURIComponent(client) : "";
-  const [isEditing, setIsEditing] = useState(Boolean(location?.state?.editMode));
+  const [isEditing, setIsEditing] = useState(
+    Boolean(location?.state?.editMode),
+  );
 
   const {
     control,
@@ -208,12 +210,15 @@ const ViewClientInfo = () => {
     const matchedService = services.find(
       (service) => service._id === payload.serviceCategory,
     );
-    const matchedUnit = units.find((unit) => unit._id === payload.proposedLocations);
+    const matchedUnit = units.find(
+      (unit) => unit._id === payload.proposedLocations,
+    );
 
     return {
       ...lead,
       ...payload,
-      serviceCategory: matchedService || lead?.serviceCategory || payload.serviceCategory,
+      serviceCategory:
+        matchedService || lead?.serviceCategory || payload.serviceCategory,
       proposedLocations: matchedUnit
         ? [matchedUnit]
         : lead?.proposedLocations || payload.proposedLocations,
@@ -245,7 +250,10 @@ const ViewClientInfo = () => {
       return { response: response.data, payload };
     },
     onSuccess: ({ response, payload }) => {
-      const normalizedUpdatedLead = getNormalizedUpdatedLead(activeLead, payload);
+      const normalizedUpdatedLead = getNormalizedUpdatedLead(
+        activeLead,
+        payload,
+      );
       const nextLeads = queryClient.setQueryData(
         ["sales-leads", "view-client-info"],
         (old = []) =>
@@ -324,7 +332,7 @@ const ViewClientInfo = () => {
       label: "Company Name",
       rules: {
         required: "Company Name is required",
-       // validate: noOnlyWhitespace,
+        // validate: noOnlyWhitespace,
       },
     },
     {
@@ -357,7 +365,9 @@ const ViewClientInfo = () => {
     {
       name: "pocName",
       label: "POC Name",
-      //rules: { validate: noOnlyWhitespace },
+      rules: {
+        required: "POC Name is required",
+      },
     },
     {
       name: "designation",
@@ -370,7 +380,13 @@ const ViewClientInfo = () => {
       rules: { validate: isValidPhoneNumber },
     },
     { name: "emailAddress", label: "Email", rules: { validate: isValidEmail } },
-    { name: "leadSource", label: "Lead Source" },
+    {
+      name: "leadSource",
+      label: "Lead Source",
+      rules: {
+        required: "Lead Source is required",
+      },
+    },
     { name: "period", label: "Period" },
     { name: "openDesks", label: "Open Desks", inputType: "number" },
     { name: "cabinDesks", label: "Cabin Desks", inputType: "number" },
@@ -442,86 +458,108 @@ const ViewClientInfo = () => {
             <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-5 px-4 py-2">
               {fields
                 .filter(({ editOnly }) => isEditing || !editOnly)
-                .map(({ name, label, type, rules, options = [], inputType, readOnly }) => (
-                  <div key={name}>
-                    {isEditing ? (
-                      <Controller
-                        name={name}
-                        control={control}
-                        rules={rules}
-                        render={({ field }) =>
-                          type === "date" ? (
-                            <DatePicker
-                              {...field}
-                              format="DD-MM-YYYY"
-                              value={
-                                field.value && dayjs(field.value).isValid()
-                                  ? dayjs(field.value)
-                                  : null
-                              }
-                              onChange={(date) =>
-                                field.onChange(date ? date.toISOString() : "")
-                              }
-                              slotProps={{
-                                textField: {
-                                  size: "small",
-                                  fullWidth: true,
-                                  label,
-                                  error: !!errors[name],
-                                  helperText: errors[name]?.message,
-                                },
-                              }}
-                            />
-                          ) : type === "select" ? (
-                            <TextField
-                              {...field}
-                              select
-                              size="small"
-                              label={label}
-                              fullWidth
-                              error={!!errors[name]}
-                              helperText={errors[name]?.message}
-                            >
-                              {options.map((option) => (
-                                <MenuItem
-                                  key={typeof option === "object" ? option.value : option}
-                                  value={typeof option === "object" ? option.value : option}
-                                >
-                                  {typeof option === "object" ? option.label : option}
-                                </MenuItem>
-                              ))}
-                            </TextField>
-                          ) : (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label={label}
-                              fullWidth
-                              type={inputType || "text"}
-                              InputProps={readOnly ? { readOnly: true } : undefined}
-                              error={!!errors[name]}
-                              helperText={errors[name]?.message}
-                            />
-                          )
-                        }
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[70%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            {label}
-                          </span>
+                .map(
+                  ({
+                    name,
+                    label,
+                    type,
+                    rules,
+                    options = [],
+                    inputType,
+                    readOnly,
+                  }) => (
+                    <div key={name}>
+                      {isEditing ? (
+                        <Controller
+                          name={name}
+                          control={control}
+                          rules={rules}
+                          render={({ field }) =>
+                            type === "date" ? (
+                              <DatePicker
+                                {...field}
+                                format="DD-MM-YYYY"
+                                value={
+                                  field.value && dayjs(field.value).isValid()
+                                    ? dayjs(field.value)
+                                    : null
+                                }
+                                onChange={(date) =>
+                                  field.onChange(date ? date.toISOString() : "")
+                                }
+                                slotProps={{
+                                  textField: {
+                                    size: "small",
+                                    fullWidth: true,
+                                    label,
+                                    error: !!errors[name],
+                                    helperText: errors[name]?.message,
+                                  },
+                                }}
+                              />
+                            ) : type === "select" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label={label}
+                                fullWidth
+                                error={!!errors[name]}
+                                helperText={errors[name]?.message}
+                              >
+                                {options.map((option) => (
+                                  <MenuItem
+                                    key={
+                                      typeof option === "object"
+                                        ? option.value
+                                        : option
+                                    }
+                                    value={
+                                      typeof option === "object"
+                                        ? option.value
+                                        : option
+                                    }
+                                  >
+                                    {typeof option === "object"
+                                      ? option.label
+                                      : option}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            ) : (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label={label}
+                                fullWidth
+                                type={inputType || "text"}
+                                InputProps={
+                                  readOnly ? { readOnly: true } : undefined
+                                }
+                                error={!!errors[name]}
+                                helperText={errors[name]?.message}
+                              />
+                            )
+                          }
+                        />
+                      ) : (
+                        <div className="py-2 flex justify-between items-start gap-2">
+                          <div className="w-[70%] justify-start flex">
+                            <span className="font-pmedium text-gray-600 text-content">
+                              {label}
+                            </span>
+                          </div>
+                          <div>:</div>
+                          <div className="w-full">
+                            <span className="text-gray-500">
+                              {getDisplayValue(name, type)}
+                            </span>
+                          </div>
                         </div>
-                        <div>:</div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {getDisplayValue(name, type)}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      )}
+                    </div>
+                  ),
+                )}
             </div>
 
             {isEditing && (

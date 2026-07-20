@@ -534,7 +534,7 @@ const fetchSimpleUnits = async (req, res, next) => {
   try {
     const companyId = req.company;
     const units = await Unit.find({ company: companyId, isActive: true })
-     //const units = await Unit.find({ company: companyId })
+      //const units = await Unit.find({ company: companyId })
       .populate([{ path: "building", select: "buildingName" }])
       .lean()
       .exec();
@@ -553,7 +553,7 @@ const fetchSimpleUnits = async (req, res, next) => {
       acc[unitId] = (acc[unitId] || 0) + 1;
       return acc;
     }, {});
-       const newResponse = units.map((unit) => ({
+    const newResponse = units.map((unit) => ({
       ...unit,
       coworkingClientsCount: unitClientCountMap[unit?._id?.toString?.()] || 0,
     }));

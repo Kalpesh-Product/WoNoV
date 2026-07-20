@@ -22,9 +22,11 @@ const createEvent = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
+    const normalizedType = String(type).trim().toLowerCase();
+
     const newEvent = new Event({
       title,
-      type,
+      type: normalizedType,
       description,
       start: startDate,
       end: endDate,
@@ -187,7 +189,7 @@ const getNormalEvents = async (req, res, next) => {
 
     const normalEvents = await Event.find({
       company: company,
-      type: "event",
+      type: { $in: ["event", "Event"] },
       active: true,
     });
 
@@ -207,7 +209,7 @@ const getHolidays = async (req, res, next) => {
 
     const holidays = await Event.find({
       company: company,
-      type: "holiday",
+      type: { $in: ["holiday", "Holiday"] },
       active: true,
     });
 

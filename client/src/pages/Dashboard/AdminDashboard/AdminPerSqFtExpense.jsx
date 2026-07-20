@@ -1,19 +1,50 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import AgTable from "../../../components/AgTable";
-import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetSection from "../../../components/WidgetSection";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import SecondaryButton from "../../../components/SecondaryButton";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
 const formatCurrencyWithDecimals = (value = 0) =>
   Number(value || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
+const getCurrentFinancialYearLabel = () => {
+  const today = dayjs();
+  const startYear = today.month() < 3 ? today.year() - 1 : today.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getFinancialYear = (dateStr) => {
+  const date = dayjs(dateStr);
+  if (!date.isValid()) return null;
+
+  const startYear = date.month() < 3 ? date.year() - 1 : date.year();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const shiftFinancialYear = (fyLabel, direction) => {
+  if (!fyLabel?.startsWith("FY")) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const [startYearText] = fyLabel.replace("FY", "").trim().split("-");
+  const startYear = parseInt(startYearText, 10);
+
+  if (Number.isNaN(startYear)) {
+    return getCurrentFinancialYearLabel();
+  }
+
+  const nextStartYear = startYear + direction;
+  return `FY ${nextStartYear}-${String((nextStartYear + 1) % 100).padStart(2, "0")}`;
+};
 
 // const AdminPerSqFtExpense = () => {
 //   const axios = useAxiosPrivate();
@@ -169,10 +200,8 @@ const formatCurrencyWithDecimals = (value = 0) =>
 
 const AdminPerSqFtExpense = () => {
   const axios = useAxiosPrivate();
-  const navigate = useNavigate();
-
-
   const department = usePageDepartment();
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
 
   const { data: hrFinance = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["departmentBudget", department?._id],
@@ -188,7 +217,11 @@ const AdminPerSqFtExpense = () => {
   const tableData = useMemo(() => {
     if (isBudgetLoading || !Array.isArray(hrFinance)) return [];
 
-    const groupedByUnits = hrFinance.reduce((acc, item) => {
+    const selectedFYBudgets = hrFinance.filter((item) =>
+      getFinancialYear(item?.dueDate) === selectedFY
+    );
+
+    const groupedByUnits = selectedFYBudgets.reduce((acc, item) => {
       const unit = item.unit;
 
       if (!unit?._id) return acc;
@@ -203,6 +236,7 @@ const AdminPerSqFtExpense = () => {
           buildingName: unit.building?.buildingName || "-",
           sqft: Number(unit.sqft) || 0,
           totalExpense: 0,
+          dueDate: item?.dueDate,
         };
       }
 
@@ -227,7 +261,7 @@ const AdminPerSqFtExpense = () => {
           expensePerSqFt,
         };
       });
-  }, [hrFinance, isBudgetLoading]);
+  }, [hrFinance, isBudgetLoading, selectedFY]);
 
   const perSqFtTotals = useMemo(() => {
     if (!tableData.length) return { totalSqFt: 0, totalExpense: 0 };
@@ -317,17 +351,39 @@ const AdminPerSqFtExpense = () => {
         layout={1}
         border
         padding
-        title={"Admin Expense Per Sq. ft"}
+        title={`Admin Expense Per Sq. ft ${selectedFY}`}
         TitleAmount={`INR ${formatCurrencyWithDecimals(expensePerSqFtTotal)}`}
       >
-        <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+        <div className="flex flex-col gap-4 rounded-md">
+          <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+
+          <div className="flex justify-center items-center gap-4 pt-2 -mt-2 pb-6">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, -1))
+              }
+            />
+
+            <span className="text-primary text-content font-semibold">
+              {selectedFY}
+            </span>
+
+            <SecondaryButton
+              title={<MdNavigateNext />}
+              handleSubmit={() =>
+                setSelectedFY(shiftFinancialYear(selectedFY, 1))
+              }
+            />
+          </div>
+        </div>
       </WidgetSection>
       <PageFrame>
         <YearWiseTable
           data={tableData}
           columns={columns}
           search
-          tableTitle="Admin Expense Per Sq. ft"
+          tableTitle={`Admin Expense Per Sq. ft ${selectedFY}`}
           exportData
         />
       </PageFrame>

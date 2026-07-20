@@ -8,7 +8,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
-const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
+const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
     [data]
@@ -35,13 +35,18 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
     return sortedYears;
   }, [allClients]);
 
-  const [financialYearIndex, setFinancialYearIndex] = useState(0);
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState(() => {
+    const currentDate = dayjs();
+    return currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
+  });
 
   useEffect(() => {
-    setFinancialYearIndex(availableFinancialYears.length - 1);
+    setSelectedFinancialYear(
+      availableFinancialYears[availableFinancialYears.length - 1]
+    );
   }, [availableFinancialYears]);
 
-  const currentFinancialYear = availableFinancialYears[financialYearIndex];
+  const currentFinancialYear = selectedFinancialYear;
   const financialYearLabel = `FY ${currentFinancialYear}-${String(currentFinancialYear + 1).slice(-2)}`;
 
   const financialYearMonths = useMemo(
@@ -97,6 +102,20 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
       };
     });
   }, [allClients, currentFinancialYear, financialYearMonths]);
+
+  const selectedFinancialYearClientsCount = useMemo(
+    () =>
+      transformedData.reduce(
+        (total, item) =>
+          total +
+          (item["Coworking"] || 0) +
+          (item["Virtualoffice"] || 0) +
+          (item["External Meetings"] || 0) +
+          (item["Open Desk"] || 0),
+        0
+      ),
+    [transformedData]
+  );
 
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = [
@@ -154,13 +173,11 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
   };
 
   const handlePrevYear = () => {
-    setFinancialYearIndex((prev) => Math.max(prev - 1, 0));
+    setSelectedFinancialYear((prev) => prev - 1);
   };
 
   const handleNextYear = () => {
-    setFinancialYearIndex((prev) =>
-      Math.min(prev + 1, availableFinancialYears.length - 1)
-    );
+    setSelectedFinancialYear((prev) => prev + 1);
   };
 
   // Define Table Columns
@@ -178,7 +195,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
         border
         padding
         title={"Unique Clients"}
-        TitleAmount={additionalData || ""}
+        TitleAmount={`CLIENTS : ${selectedFinancialYearClientsCount}`}
       >
         <div className="p-1"></div>
 
@@ -188,21 +205,27 @@ const LeadsLayout = ({ hideAccordion, data, additionalData }) => {
           options={barChartOptions}
           height={400}
         />
-        <div className="flex justify-center items-center">
-          <div className="flex items-center pb-4">
+        <div className="flex justify-center items-center pt-4 pb-2">
+          <div className="flex items-center gap-[2px] mt-4">
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevYear}
-              disabled={financialYearIndex === 0}
+              externalStyles="min-w-20 px-6 py-2 bg-[#d1d5db] text-black font-semibold rounded-lg"
             />
-            <div className="text-sm min-w-[120px] text-center">{financialYearLabel}</div>
+            <div className="min-w-[96px] px-0 text-center text-primary text-content font-semibold">
+              {financialYearLabel}
+            </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               handleSubmit={handleNextYear}
-              disabled={financialYearIndex === availableFinancialYears.length - 1}
+              externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
             />
           </div>
         </div>
+
+        {children ? (
+          <div className="mt-6 border-t border-borderGray pt-4">{children}</div>
+        ) : null}
       </WidgetSection>
 
       {/* Accordion for Monthly Client Breakdown */}

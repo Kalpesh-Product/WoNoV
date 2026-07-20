@@ -7,6 +7,91 @@ const UserData = require("../../models/hr/UserData");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 
+const REQUIRED_BULK_TASK_FIELDS = [
+  "task",
+  "assignedBy",
+  "assignTo",
+  "taskType",
+  "department",
+  "assignedDate",
+  "status",
+];
+
+const VALID_TASK_TYPES = [
+  "KPA",
+  "KRA",
+  "INDIVIDUALKPA",
+  "INDIVIDUALKRA",
+  "TEAMKPA",
+  "TEAMKRA",
+];
+
+const normalizeCsvKey = (key = "") =>
+  key
+    .toString()
+    .replace(/\uFEFF/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_()-]+/g, "");
+
+const getCsvValue = (row, fieldName) => {
+  const normalizedFieldName = normalizeCsvKey(fieldName);
+  const matchedKey = Object.keys(row).find(
+    (key) => normalizeCsvKey(key) === normalizedFieldName,
+  );
+
+  return matchedKey ? row[matchedKey]?.toString().trim() : "";
+};
+
+// const parseOptionalCsvDate = (value, fieldName, rowNumber, errors) => {
+//   if (!value) return undefined;
+
+//   const [year, month, day] = value.split("-").map(Number);
+
+//   if (!year || !month || !day) {
+//     errors.push({
+//       row: rowNumber,
+//       field: fieldName,
+//       message: "Invalid date",
+//     });
+//     return undefined;
+//   }
+
+//   // 9:30 AM IST = 4:00 AM UTC
+//   return new Date(Date.UTC(year, month - 1, day, 4, 0, 0));
+// };
+
+const parseOptionalCsvDate = (value, fieldName, rowNumber, errors) => {
+  if (!value) return undefined;
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    errors.push({
+      row: rowNumber,
+      field: fieldName,
+      message: "Invalid date",
+    });
+    return undefined;
+  }
+
+  let hoursUTC = 0;
+  let minutesUTC = 0;
+
+  // IST = UTC + 5:30
+  if (fieldName === "assignedDate") {
+    // 9:30 AM IST = 4:00 AM UTC
+    hoursUTC = 4;
+    minutesUTC = 0;
+  } else if (fieldName === "dueDate") {
+    // 6:30 PM IST = 1:00 PM UTC
+    hoursUTC = 13;
+    minutesUTC = 0;
+  }
+
+  return new Date(Date.UTC(year, month - 1, day, hoursUTC, minutesUTC, 0));
+};
+
 const createDeptBasedTask = async (req, res, next) => {
   const { user, ip, company } = req;
   try {
@@ -137,6 +222,8 @@ const updateTaskStatus = async (req, res, next) => {
 
   try {
     const { taskId, taskType } = req.params;
+    const comment =
+      typeof req.body?.comment === "string" ? req.body.comment.trim() : "";
 
     if (!taskId) {
       // throw new CustomError(
@@ -226,6 +313,7 @@ const updateTaskStatus = async (req, res, next) => {
       task: taskId,
       completedBy: user,
       status: "Completed",
+      comment,
       completionDate,
       company,
     });
@@ -753,6 +841,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
               dueTime: "6:30 PM",
               completionDate: task.completionDate ? task.completionDate : "N/A",
               status: task.status,
+              comment: task.comment || "",
             };
           });
 
@@ -933,6 +1022,7 @@ const getAllKpaTasks = async (req, res, next) => {
         assignedDate: task.task.assignedDate,
         dueDate: task.task.dueDate,
         status: task.status,
+        comment: task.comment || "",
       };
 
       if (!transformedByDepartment[departmentName]) {
@@ -992,7 +1082,6 @@ const getAllKpaTasks = async (req, res, next) => {
 
 const bulkInsertKraKpaTasks = async (req, res, next) => {
   try {
-    const { departmentId } = req.params;
     const file = req.file;
     const company = req.company;
 
@@ -1002,43 +1091,181 @@ const bulkInsertKraKpaTasks = async (req, res, next) => {
         .json({ message: "Please provide a valid CSV file." });
     }
 
-    const employees = await UserData.find({ isActive: true }).lean().exec();
-    const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
-
-    const tasksToInsert = [];
-
+    const rows = [];
+    const parseErrors = [];
     const stream = Readable.from(file.buffer.toString("utf-8").trim());
 
-    stream
-      .pipe(csvParser())
-      .on("data", (row) => {
-        const empId = row["Assigned By (EMP ID)"];
-        const assignedBy = employeeMap.get(empId);
+    await new Promise((resolve, reject) => {
+      stream
+        .pipe(csvParser())
+        .on("data", (row) => rows.push(row))
+        .on("end", resolve)
+        .on("error", reject);
+    });
 
-        tasksToInsert.push({
-          task: row["Task"],
-          company,
-          assignedBy,
-          description: row["Description"],
-          taskType: row["Task Type (KPA/KRA)"],
-          kpaDuration: row["KPA Duration"] || undefined,
-          assignedDate: row["Assigned Date"]
-            ? new Date(row["Assigned Date"])
-            : null,
-          dueDate: row["Due Date"] ? new Date(row["Due Date"]) : null,
-          department: departmentId,
-        });
-      })
-      .on("end", async () => {
-        await kraKpaRole.insertMany(tasksToInsert);
-        res.status(201).json({
-          message: "Tasks inserted successfully",
-          count: tasksToInsert.length,
-        });
-      })
-      .on("error", (err) => {
-        next(err);
+    if (!rows.length) {
+      return res.status(400).json({ message: "CSV file is empty." });
+    }
+
+    const uniqueFirstNames = new Set();
+    const uniqueDepartmentNames = new Set();
+
+    rows.forEach((row, index) => {
+      const rowNumber = index + 2;
+
+      REQUIRED_BULK_TASK_FIELDS.forEach((field) => {
+        if (!getCsvValue(row, field)) {
+          parseErrors.push({
+            row: rowNumber,
+            field,
+            message: `${field} is required`,
+          });
+        }
       });
+
+      const assignedBy = getCsvValue(row, "assignedBy");
+      const assignTo = getCsvValue(row, "assignTo");
+      const department = getCsvValue(row, "department");
+
+      if (assignedBy) uniqueFirstNames.add(assignedBy.toLowerCase());
+      if (assignTo) uniqueFirstNames.add(assignTo.toLowerCase());
+      if (department) uniqueDepartmentNames.add(department.toLowerCase());
+    });
+
+    if (parseErrors.length) {
+      return res.status(400).json({
+        message: "CSV validation failed.",
+        errors: parseErrors,
+      });
+    }
+
+    const [users, departments] = await Promise.all([
+      UserData.find({
+        company,
+        isActive: { $ne: false },
+      })
+        .select("firstName")
+        .lean(),
+      Department.find({
+        isActive: { $ne: false },
+      })
+        .select("name")
+        .lean(),
+    ]);
+
+    const userMap = new Map();
+    users.forEach((user) => {
+      const key = user.firstName.toLowerCase();
+      if (uniqueFirstNames.has(key) && !userMap.has(key)) {
+        userMap.set(key, user._id);
+      }
+    });
+
+    const departmentMap = new Map();
+    departments.forEach((department) => {
+      const key = department.name.toLowerCase();
+      if (uniqueDepartmentNames.has(key) && !departmentMap.has(key)) {
+        departmentMap.set(key, department._id);
+      }
+    });
+
+    const tasksToInsert = rows.map((row, index) => {
+      const rowNumber = index + 2;
+      const task = getCsvValue(row, "task");
+      const assignedByName = getCsvValue(row, "assignedBy");
+      const assignToName = getCsvValue(row, "assignTo");
+      const description = getCsvValue(row, "description");
+      const taskType = getCsvValue(row, "taskType").toUpperCase();
+      const departmentName = getCsvValue(row, "department");
+      const assignedDate = parseOptionalCsvDate(
+        getCsvValue(row, "assignedDate"),
+        "assignedDate",
+        rowNumber,
+        parseErrors,
+      );
+      const dueDate = parseOptionalCsvDate(
+        getCsvValue(row, "dueDate"),
+        "dueDate",
+        rowNumber,
+        parseErrors,
+      );
+      const dueTime = getCsvValue(row, "dueTime");
+      const status = getCsvValue(row, "status");
+      const assignedBy = userMap.get(assignedByName.toLowerCase());
+      const assignTo = userMap.get(assignToName.toLowerCase());
+      const department = departmentMap.get(departmentName.toLowerCase());
+
+      if (!assignedBy) {
+        parseErrors.push({
+          row: rowNumber,
+          field: "assignedBy",
+          message: `No active user found with firstName ${assignedByName}`,
+        });
+      }
+
+      if (!assignTo) {
+        parseErrors.push({
+          row: rowNumber,
+          field: "assignTo",
+          message: `No active user found with firstName ${assignToName}`,
+        });
+      }
+
+      if (!department) {
+        parseErrors.push({
+          row: rowNumber,
+          field: "department",
+          message: `No active department found with name ${departmentName}`,
+        });
+      }
+
+      if (!VALID_TASK_TYPES.includes(taskType)) {
+        parseErrors.push({
+          row: rowNumber,
+          field: "taskType",
+          message: `taskType must be one of ${VALID_TASK_TYPES.join(", ")}`,
+        });
+      }
+
+      if (status !== "Pending") {
+        parseErrors.push({
+          row: rowNumber,
+          field: "status",
+          message: "status must be Pending",
+        });
+      }
+
+      return {
+        task,
+        company,
+        assignedBy,
+        assignTo,
+        description,
+        taskType,
+        assignedDate,
+        dueDate,
+        dueTime: dueTime || undefined,
+        department,
+        status,
+        kpaDuration: ["KPA", "TEAMKPA", "INDIVIDUALKPA"].includes(taskType)
+          ? "Monthly"
+          : undefined,
+      };
+    });
+
+    if (parseErrors.length) {
+      return res.status(400).json({
+        message: "CSV validation failed.",
+        errors: parseErrors,
+      });
+    }
+
+    await kraKpaRole.insertMany(tasksToInsert, { ordered: true });
+
+    return res.status(201).json({
+      message: "Tasks inserted successfully",
+      count: tasksToInsert.length,
+    });
   } catch (error) {
     next(error);
   }

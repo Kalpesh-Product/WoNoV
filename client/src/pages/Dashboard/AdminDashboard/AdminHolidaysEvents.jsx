@@ -2,91 +2,74 @@ import { useState } from "react";
 import PrimaryButton from "../../../components/PrimaryButton";
 import AgTable from "../../../components/AgTable";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
 import { DatePicker } from "@mui/x-date-pickers";
 import PageFrame from "../../../components/Pages/PageFrame";
+import { toast } from "sonner";
 
-const AdminHolidaysEvents = ({ title }) => {
+const AdminHolidaysEvents = () => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const holdiayEvents = [
     { field: "id", headerName: "SR No", width: 100 },
-    { field: "title", headerName: "Holiday / Event Name", flex: 1 },
+    { field: "title", headerName: "Holiday - Event Name", flex: 1 },
+    { field: "type", headerName: "Type", flex: 1 },
     { field: "start", headerName: "Date", flex: 1 },
   ];
 
   const [modalOpen, setModalOpen] = useState(false); // For opening/closing modal
-  const [newEvent, setNewEvent] = useState({ title: "", startDate: null }); // Form state
+  const [newEvent, setNewEvent] = useState({
+    title: "",
+    type: "Holiday",
+    description: "",
+    startDate: null,
+  }); // Form state
 
-  const handleSubmit = async (e) => {
+  const { mutate: createHolidayEvent, isPending: isCreatingHolidayEvent } =
+    useMutation({
+      mutationFn: async () => {
+        const startDate = newEvent.startDate ? dayjs(newEvent.startDate) : null;
+
+        return axios.post("/api/events/create-event", {
+          title: newEvent.title.trim(),
+          type: newEvent.type,
+          description: newEvent.description.trim() || newEvent.title.trim(),
+          start: startDate ? startDate.startOf("day").toISOString() : null,
+          end: startDate ? startDate.endOf("day").toISOString() : null,
+        });
+      },
+      onSuccess: () => {
+        toast.success("Holiday / event added successfully");
+        setNewEvent({
+          title: "",
+          type: "Holiday",
+          description: "",
+          startDate: null,
+        });
+        setModalOpen(false);
+        queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            "Failed to add holiday / event",
+        );
+      },
+    });
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    try {
-      await axios.post("/api/events/create", {
-        title: newEvent.title,
-        start: newEvent.startDate,
-      });
-      setNewEvent({ title: "", startDate: null }); // Clear form
-      setModalOpen(false); // Close modal
-      // You may want to trigger a refetch here if you're using React Query
-    } catch (error) {
-      console.error("Failed to create holiday/event:", error);
-    }
-  };
 
-  const rows = [
-    {
-      srno: "1",
-      holidayEvent: "New Year 2025",
-      date: "01 Jan, 2025",
-    },
-    {
-      srno: "2",
-      holidayEvent: "Rebublic Day 2025",
-      date: "26 Jan, 2025",
-    },
-    {
-      srno: "3",
-      holidayEvent: "Gudi Padava",
-      date: "30 Mar, 2025",
-    },
-    {
-      srno: "4",
-      holidayEvent: "Eid-Alt-Fitr (Ramadan)",
-      date: "31 Mar, 2025",
-    },
-    {
-      srno: "5",
-      holidayEvent: "Sankalp's Birthday",
-      date: "31 Jan, 2025",
-    },
-    {
-      srno: "6",
-      holidayEvent: "Labour Day (May Day)",
-      date: "01 May, 2025",
-    },
-    {
-      srno: "7",
-      holidayEvent: "Eid Al-Adha (Bakri Eid)",
-      date: "07 Jun, 2025",
-    },
-    {
-      srno: "8",
-      holidayEvent: "15 Aug 2025",
-      date: "15 Aug, 2025",
-    },
-    {
-      srno: "9",
-      holidayEvent: "Ganesh Chaturthi (1st Day)",
-      date: "27 Aug, 2025",
-    },
-    {
-      srno: "10",
-      holidayEvent: "Gandhi Jayanti",
-      date: "02 Oct, 2025",
-    },
-  ];
+    if (!newEvent.title.trim() || !newEvent.startDate || !newEvent.type) {
+      toast.error("Title, type and date are required");
+      return;
+    }
+
+    createHolidayEvent();
+  };
 
   const { data: holidayEvents = [] } = useQuery({
     queryKey: ["holidayEvents"],
@@ -106,10 +89,10 @@ const AdminHolidaysEvents = ({ title }) => {
         <div>
           <div className="flex justify-between items-center pb-4">
             <span className="text-title font-pmedium text-primary">
-              {`Holiday & Event List`}
+              {`HOLIDAYS & EVENT LIST`}
             </span>
             <PrimaryButton
-              title={"Add Holiday / Event"}
+              title={"Add Holiday - Event"}
               handleSubmit={() => setModalOpen(true)}
             />
           </div>
@@ -118,12 +101,20 @@ const AdminHolidaysEvents = ({ title }) => {
             <AgTable
               key={holdiayEvents.length}
               search={true}
-              searchColumn={"Holiday / Event Name"}
+              searchColumn={"Holiday - Event Name"}
               columns={holdiayEvents}
               data={[
                 ...holidayEvents.map((holidays, index) => ({
                   id: index + 1, // Auto-increment Sr No
                   title: holidays.title, // Birthday Name
+                  type: (() => {
+                    const normalizedType =
+                      holidays.type || holidays.extendedProps?.type || "";
+                    return normalizedType
+                      ? normalizedType.charAt(0).toUpperCase() +
+                          normalizedType.slice(1).toLowerCase()
+                      : "-";
+                  })(),
                   start: dayjs(new Date(holidays.start)).format("DD-MM-YYYY"), // Format as readable date
                 })),
               ]}
@@ -134,7 +125,7 @@ const AdminHolidaysEvents = ({ title }) => {
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
-        title="Add Holiday / Event">
+        title="Add Holiday - Event">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <TextField
             label="Title"
@@ -145,15 +136,43 @@ const AdminHolidaysEvents = ({ title }) => {
               setNewEvent({ ...newEvent, title: e.target.value })
             }
           />
+          <TextField
+            select
+            label="Type"
+            fullWidth
+            size="small"
+            value={newEvent.type}
+            onChange={(e) =>
+              setNewEvent({ ...newEvent, type: e.target.value })
+            }
+          >
+            <MenuItem value="Holiday">Holiday</MenuItem>
+            <MenuItem value="Event">Event</MenuItem>
+          </TextField>
+          <TextField
+            label="Description"
+            fullWidth
+            size="small"
+            value={newEvent.description}
+            onChange={(e) =>
+              setNewEvent({ ...newEvent, description: e.target.value })
+            }
+          />
           <DatePicker
             label="Date"
+            format="DD-MM-YYYY"
             slotProps={{ textField: { size: "small" } }}
             value={newEvent.startDate ? dayjs(newEvent.startDate) : null}
             onChange={(newDate) =>
               setNewEvent({ ...newEvent, startDate: newDate })
             }
           />
-          <PrimaryButton type="submit" title="Add Holiday / Event" />
+          <PrimaryButton
+            type="submit"
+            title="Add Holiday - Event"
+            isLoading={isCreatingHolidayEvent}
+            disabled={isCreatingHolidayEvent}
+          />
         </form>
       </MuiModal>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -53,14 +53,22 @@ const ExternalClients = ({
   const userRoles = Array.isArray(auth?.user?.role) ? auth.user.role : [];
   const isTopManagementUser = userDepartments.some(
     (department) =>
-      String(department?.name || "").trim().toLowerCase() === "top management",
+      String(department?.name || "")
+        .trim()
+        .toLowerCase() === "top management",
   );
-  const isTechManager = userDepartments.some(
-    (department) =>
-      String(department?.name || "").trim().toLowerCase() === "tech",
-  )
-    && userRoles.some((role) =>
-      String(role?.roleTitle || "").trim().toLowerCase().includes("manager"),
+  const isTechManager =
+    userDepartments.some(
+      (department) =>
+        String(department?.name || "")
+          .trim()
+          .toLowerCase() === "tech",
+    ) &&
+    userRoles.some((role) =>
+      String(role?.roleTitle || "")
+        .trim()
+        .toLowerCase()
+        .includes("manager"),
     );
   const canEditVisitSchedule =
     allowedVisitScheduleEditorIds.includes(String(auth?.user?._id || "")) ||
@@ -89,11 +97,59 @@ const ExternalClients = ({
     );
   };
 
+  const initialClientDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [clientDateRange, setClientDateRange] = useState(
+    initialClientDateRange,
+  );
+  const clientFilters = useMemo(
+    () => ({
+      startDate: clientDateRange?.startDate
+        ? dayjs(clientDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: clientDateRange?.endDate
+        ? dayjs(clientDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
+    [clientDateRange],
+  );
+  const handleClientDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    setClientDateRange((currentRange) => {
+      const currentStart = currentRange?.startDate
+        ? new Date(currentRange.startDate).getTime()
+        : null;
+      const currentEnd = currentRange?.endDate
+        ? new Date(currentRange.endDate).getTime()
+        : null;
+      const nextStart = new Date(selectedRange.startDate).getTime();
+      const nextEnd = new Date(selectedRange.endDate).getTime();
+
+      if (currentStart === nextStart && currentEnd === nextEnd) {
+        return currentRange;
+      }
+
+      return selectedRange;
+    });
+  }, []);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["clients"],
+    queryKey: ["clients", clientFilters.startDate, clientFilters.endDate],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/visitors/fetch-visitors");
+        const response = await axios.get("/api/visitors/fetch-visitors", {
+          params: {
+            filters: clientFilters,
+            multipleVisits: true,
+          },
+        });
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -113,7 +169,7 @@ const ExternalClients = ({
     },
   });
 
-  const { handleSubmit, reset, control, setValue } = useForm({
+  const { handleSubmit, reset, control, setValue, watch } = useForm({
     defaultValues: {
       firstName: "",
       lastName: "",
@@ -146,6 +202,7 @@ const ExternalClients = ({
       registeredClientCompany: "",
     },
   });
+  const editedCheckInRaw = watch("checkInRaw");
   const handleEditToggle = () => {
     if (!isEditing && selectedVisitor) {
       reset({
@@ -495,7 +552,7 @@ const ExternalClients = ({
           {
             field: "paymentStatus",
             headerName: "Payment Status",
-            pinned:"right",
+            pinned: "right",
             cellRenderer: (params) => (
               <Chip
                 label={isPaymentCompleted(params.value) ? "Paid" : "Unpaid"}
@@ -515,7 +572,7 @@ const ExternalClients = ({
           {
             field: "financeStatus",
             headerName: "Finance Status",
-            pinned:"right",
+            pinned: "right",
             cellRenderer: (params) => {
               const status = params.value || "Wait for Payment";
               const chipStyle = getFinanceStatusChipStyle(status);
@@ -670,7 +727,10 @@ const ExternalClients = ({
         "dateOfVisit",
         selectedVisitor.dateOfVisit ? dayjs(selectedVisitor.dateOfVisit) : null,
       );
-      setValue("checkInRaw", selectedVisitor.checkInRaw || "");
+      setValue(
+        "checkInRaw",
+        selectedVisitor.checkInRaw ? dayjs(selectedVisitor.checkInRaw) : null,
+      );
       setValue("checkInBy", selectedVisitor.checkInBy || "");
 
       setValue("checkOutBy", selectedVisitor.checkOutBy || "");
@@ -701,9 +761,37 @@ const ExternalClients = ({
 
   const submit = async (data) => {
     if (isEditing && selectedVisitor) {
-      const checkInDate = selectedVisitor.checkIn
+      const existingCheckIn = selectedVisitor.checkIn
         ? dayjs(selectedVisitor.checkIn)
         : null;
+      const selectedVisitDate = data.dateOfVisit
+        ? dayjs(data.dateOfVisit)
+        : null;
+      const selectedCheckInTime = data.checkInRaw
+        ? dayjs(data.checkInRaw)
+        : null;
+      const checkInDate =
+        canEditVisitSchedule && (selectedVisitDate || selectedCheckInTime)
+          ? (selectedVisitDate || existingCheckIn || dayjs())
+              .hour(
+                selectedCheckInTime?.hour?.() ?? existingCheckIn?.hour?.() ?? 0,
+              )
+              .minute(
+                selectedCheckInTime?.minute?.() ??
+                  existingCheckIn?.minute?.() ??
+                  0,
+              )
+              .second(
+                selectedCheckInTime?.second?.() ??
+                  existingCheckIn?.second?.() ??
+                  0,
+              )
+              .millisecond(
+                selectedCheckInTime?.millisecond?.() ??
+                  existingCheckIn?.millisecond?.() ??
+                  0,
+              )
+          : existingCheckIn;
       const checkOutRaw = data.checkOutRaw ? dayjs(data.checkOutRaw) : null;
 
       const combinedCheckout =
@@ -728,9 +816,10 @@ const ExternalClients = ({
         name: `${data.firstName} ${data.lastName}`,
         email: data.email,
         phoneNumber: data.phoneNumber,
-        dateOfVisit: data.dateOfVisit
-          ? dayjs(data.dateOfVisit).toISOString()
-          : null,
+        dateOfVisit: checkInDate ? checkInDate.toISOString() : null,
+        checkIn: checkInDate
+          ? checkInDate.toISOString()
+          : selectedVisitor?.checkIn,
         purposeOfVisit: data.purposeOfVisit,
         // checkOut: data.checkOutRaw
         //   ? dayjs(data.checkOutRaw).toISOString()
@@ -817,6 +906,8 @@ const ExternalClients = ({
           search={true}
           tableTitle={tableTitle}
           dateColumn={"checkIn"}
+          initialDateRange={initialClientDateRange}
+          onDateFilterChange={handleClientDateFilterChange}
           data={[
             ...visitorsData
 
@@ -826,12 +917,16 @@ const ExternalClients = ({
                   Array.isArray(item?.externalVisits) &&
                   item.externalVisits.length > 0
                     ? [...item.externalVisits]
-                        .reverse()
-                        .find(
+                        .filter(
                           (visit) =>
                             visit?.visitorType === "Full-Day Pass" ||
                             visit?.visitorType === "Half-Day Pass",
-                        ) || null
+                        )
+                        .sort(
+                          (a, b) =>
+                            new Date(b?.dateOfVisit || 0).getTime() -
+                            new Date(a?.dateOfVisit || 0).getTime(),
+                        )[0] || null
                     : null;
 
                 const latestCheckInBy = latestVisit?.checkedInBy;
@@ -1212,7 +1307,9 @@ const ExternalClients = ({
                       name="dateOfVisit"
                       control={control}
                       render={({ field }) => {
-                        const selectedDate = field.value ? dayjs(field.value) : null;
+                        const selectedDate = field.value
+                          ? dayjs(field.value)
+                          : null;
 
                         return (
                           <DatePicker
@@ -1233,7 +1330,10 @@ const ExternalClients = ({
                                 return false;
                               }
 
-                              return date.isBefore(dayjs().startOf("day"), "day");
+                              return date.isBefore(
+                                dayjs().startOf("day"),
+                                "day",
+                              );
                             }}
                             slotProps={{
                               textField: {
@@ -1270,33 +1370,6 @@ const ExternalClients = ({
                           renderInput={(params) => (
                             <TextField {...params} size="small" fullWidth />
                           )}
-                          shouldDisableTime={(time, view) => {
-                            const startTime = selectedVisitor.checkIn;
-                            const timeValue = time.$d;
-
-                            if (!startTime) return false;
-
-                            const startDate = new Date(startTime);
-
-                            if (view === "hours") {
-                              return (
-                                timeValue.getHours() < startDate.getHours()
-                              );
-                            }
-
-                            if (view === "minutes") {
-                              const selectedHour = field.value
-                                ? new Date(field.value).getHours()
-                                : startDate.getHours();
-
-                              return (
-                                timeValue.getHours() === selectedHour &&
-                                timeValue.getMinutes() < startDate.getMinutes()
-                              );
-                            }
-
-                            return false;
-                          }}
                         />
                       )}
                     />
@@ -1360,10 +1433,11 @@ const ExternalClients = ({
                             <TextField {...params} size="small" fullWidth />
                           )}
                           shouldDisableTime={(time, view) => {
-                            const startTime = selectedVisitor.checkIn;
-                            const timeValue = time.$d;
+                            const startTime =
+                              editedCheckInRaw || selectedVisitor?.checkIn;
+                            const timeValue = time?.$d;
 
-                            if (!startTime) return false;
+                            if (!startTime || !timeValue) return false;
 
                             const startDate = new Date(startTime);
 

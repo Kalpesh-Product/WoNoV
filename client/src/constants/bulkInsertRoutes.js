@@ -14,6 +14,7 @@ const bulkInsertRoutes = [
       },
       {
         name: "performance",
+         // aliases: ["KRA", "KPA", "KRA KPA", "KRA/KPA", "performance tasks"],
         fileKey: "performance-tasks",
         route:
           "/api/performance/bulk-insert-performance-tasks/6798bae6e469e809084e24a4",
@@ -45,6 +46,24 @@ const bulkInsertRoutes = [
       {
         name: "inventory",
         route: "/api/invenotry/bulk-insert-inventory/6798bae6e469e809084e24a4",
+      },
+    ],
+  },
+  {
+    department: "6798ba9de469e809084e2494", // Tech / Frontend Department
+    bulkInsertRoutes: [
+      {
+        name: "performance",
+        aliases: ["KRA", "KPA", "KRA KPA", "KRA/KPA", "performance"],
+        fileKey: "performance",
+        route:
+          "/api/performance/bulk-upload-performance-tasks",
+      },
+      {
+        name: "tasks",    
+        fileKey: "file",
+        route:
+          "api/tasks/bulk-insert",
       },
     ],
   },
@@ -93,6 +112,7 @@ const bulkInsertRoutes = [
       },
       {
         name: "performance", //working
+         //aliases: ["KRA", "KPA", "KRA KPA", "KRA/KPA", "performance tasks"],
         fileKey: "performance-tasks",
         route:
           "/api/performance/bulk-insert-performance-tasks/6798bacce469e809084e24a1",

@@ -17,6 +17,7 @@ const YearlyGraph = ({
    greenTitle,
   redTitle,
   totalTitle,
+  summaryChipVariant,
   responsiveResize = false,
   secondParam = false,
   chartHeight,
@@ -42,7 +43,18 @@ const YearlyGraph = ({
     return fyStartYear;
   };
 
+  const getStartYearFromFiscalYear = (fiscalYear) => {
+    if (typeof fiscalYear === "number") return fiscalYear;
+
+    const parsedYear = Number(String(fiscalYear || "").match(/\d{4}/)?.[0]);
+    return parsedYear || null;
+  };
+
+
   const [selectedYearStart, setSelectedYearStart] = useState(() => {
+     const currentYearStart = getStartYearFromFiscalYear(currentYear);
+    if (currentYearStart) return currentYearStart;
+    
     if (dateKey && data?.length > 0) {
       const dateValue = data[0]?.[dateKey];
       if (dateValue) return getYearIndexFromDate(dateValue);
@@ -120,6 +132,7 @@ const YearlyGraph = ({
         totalTitle={totalTitle}
          greenTitle={greenTitle}
         redTitle={redTitle}
+        summaryChipVariant={summaryChipVariant}
       >
         <div className="flex flex-col gap-4">
           <BarGraph

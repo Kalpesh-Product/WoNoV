@@ -12,7 +12,7 @@ import MuiTable from "../../../components/Tables/MuiTable";
 import { useNavigate } from "react-router-dom";
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useMemo, useState } from "react";
-import YearlyGraph2 from "../../../components/graphs/YearlyGraph2";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -41,7 +41,16 @@ const FinanceDashboard = () => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   const navigate = useNavigate();
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState("FY 2025-26");
+  const currentFiscalYearLabel = useMemo(() => {
+    const today = dayjs();
+    const startYear = today.month() >= 3 ? today.year() : today.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  }, []);
+
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
+    currentFiscalYearLabel
+  );
 
   //------------------------PAGE ACCESS CARD START-------------------//
   const cardsConfig = [
@@ -112,6 +121,26 @@ const FinanceDashboard = () => {
     enabled: Boolean(department?._id),
   });
 
+  const { data: financeTickets = [], isLoading: isFinanceTicketsLoading } = useQuery({
+    queryKey: ["finance-dashboard-tickets", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
+
+      try {
+        const response = await axios.get(
+          `/api/tickets/department-tickets/${department._id}`,
+        );
+        return Array.isArray(response.data) ? response.data : [];
+      } catch (error) {
+        console.error("Error fetching finance tickets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
+
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
       queryKey: ["revenueExpenseData"],
@@ -141,8 +170,25 @@ const FinanceDashboard = () => {
     refetchOnReconnect: true,
   });
 
+  const { data: simpleRevenue = {} } = useQuery({
+    queryKey: ["finance-dashboard-simpleRevenue"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        return response.data || {};
+      } catch (error) {
+        console.error(error);
+        return {};
+      }
+    },
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
+
   const selectedPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
-  const chartPayoutMonth = dayjs().format("MMM-YY");
+  const chartPayoutMonth = dayjs().subtract(1, "month").format("MMM-YY");
 
   const payoutMonthPayments = isBudgetDataLoading
     ? []
@@ -175,9 +221,7 @@ const FinanceDashboard = () => {
       item?.dueDate && dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
   );
 
-  const testExpense = revenueExpenseData
-    .filter((item) => item.expense)
-    .flatMap((item) => item.expense);
+  const testExpense = Array.isArray(budgetData) ? budgetData : [];
 
   const testIncome = revenueExpenseData.filter((item) => item.income);
 
@@ -285,59 +329,317 @@ const FinanceDashboard = () => {
     "#E91E63",
   ];
 
-  const yearCategories = {
-    "FY 2024-25": [
-      "Apr-24",
-      "May-24",
-      "Jun-24",
-      "Jul-24",
-      "Aug-24",
-      "Sep-24",
-      "Oct-24",
-      "Nov-24",
-      "Dec-24",
-      "Jan-25",
-      "Feb-25",
-      "Mar-25",
+  const financeCategoryWiseTickets = useMemo(() => {
+    if (isFinanceTicketsLoading || !Array.isArray(financeTickets)) return [];
+
+    const categoryCountMap = financeTickets.reduce((acc, item) => {
+      const category = String(item?.ticket || "Others").trim() || "Others";
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+
+    const sortedCategories = Object.entries(categoryCountMap)
+      .map(([label, value]) => ({ label, value }))
+      .sort((first, second) => second.value - first.value);
+
+    if (sortedCategories.length <= 5) {
+      return sortedCategories;
+    }
+
+    const topCategories = sortedCategories.slice(0, 5);
+    const othersCount = sortedCategories
+      .slice(5)
+      .reduce((sum, item) => sum + item.value, 0);
+
+    return [...topCategories, { label: "Others", value: othersCount }];
+  }, [financeTickets, isFinanceTicketsLoading]);
+
+  const financeCategoryWiseTicketsData = financeCategoryWiseTickets.map((item) => ({
+    label: item.label,
+    value: item.value,
+  }));
+
+  const financeCategoryWiseTicketsOptions = {
+    labels: financeCategoryWiseTickets.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 4,
+        vertical: 2,
+      },
+      formatter: (seriesName) =>
+        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: [
+      "#274C77",
+      "#6096BA",
+      "#A3CEF1",
+      "#8B5E3C",
+      "#5B8E7D",
+      "#D08C60",
     ],
-    "FY 2025-26": [
-      "Apr-25",
-      "May-25",
-      "Jun-25",
-      "Jul-25",
-      "Aug-25",
-      "Sep-25",
-      "Oct-25",
-      "Nov-25",
-      "Dec-25",
-      "Jan-26",
-      "Feb-26",
-      "Mar-26",
-    ],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const category =
+          financeCategoryWiseTickets?.[seriesIndex]?.label ||
+          w?.globals?.labels?.[seriesIndex] ||
+          "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          financeCategoryWiseTicketsOptions.colors[
+            seriesIndex % financeCategoryWiseTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${category} : ${count}
+        </div>`;
+      },
+    },
   };
+
+  const financePendingStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+
+  const financePendingTicketsCount = (Array.isArray(financeTickets) ? financeTickets : []).filter(
+    (ticket) => financePendingStatuses.has(String(ticket?.status || "").toLowerCase())
+  ).length;
+
+  const financeCompletedTicketsCount = (Array.isArray(financeTickets) ? financeTickets : []).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  ).length;
+
+  const financeDueTicketsData = [
+    { label: "Completed", value: financeCompletedTicketsCount },
+    { label: "Pending", value: financePendingTicketsCount },
+  ];
+
+  const financeDueTicketsOptions = {
+    labels: financeDueTicketsData.map((item) => item.label),
+    chart: {
+      fontFamily: "Poppins-Regular",
+    },
+    legend: {
+      horizontalAlign: "center",
+      itemMargin: {
+        horizontal: 8,
+        vertical: 4,
+      },
+    },
+    stroke: {
+      show: true,
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    colors: ["#59C9A5", "#FCA5A5"],
+    tooltip: {
+      fillSeriesColor: false,
+      custom: ({ series, seriesIndex, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const count = series?.[seriesIndex] ?? 0;
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          financeDueTicketsOptions.colors[
+            seriesIndex % financeDueTicketsOptions.colors.length
+          ];
+
+        return `<div style="
+          padding:8px 12px;
+          font-size:12px;
+          font-family:Poppins-Regular;
+          font-weight:600;
+          background:${color};
+          color:#fff;
+          border-radius:6px;
+        ">
+          ${label} : ${count}
+        </div>`;
+      },
+    },
+  };
+
+  // const yearCategories = {
+  //   "FY 2024-25": [
+  //     "Apr-24",
+  //     "May-24",
+  //     "Jun-24",
+  //     "Jul-24",
+  //     "Aug-24",
+  //     "Sep-24",
+  //     "Oct-24",
+  //     "Nov-24",
+  //     "Dec-24",
+  //     "Jan-25",
+  //     "Feb-25",
+  //     "Mar-25",
+  //   ],
+  //   "FY 2025-26": [
+  //     "Apr-25",
+  //     "May-25",
+  //     "Jun-25",
+  //     "Jul-25",
+  //     "Aug-25",
+  //     "Sep-25",
+  //     "Oct-25",
+  //     "Nov-25",
+  //     "Dec-25",
+  //     "Jan-26",
+  //     "Feb-26",
+  //     "Mar-26",
+  //   ],
+  // };
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-  const incomeSources = revenueExpenseData.flatMap((item) => {
-    const income = item.income || {};
+  const getGraphNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getGraphNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const incomeSources = useMemo(() => {
+    if (!simpleRevenue) return [];
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(
+          item.status ?? item.rentStatus
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getGraphNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getGraphNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
+
+   const getFiscalYearLabel = (dateInput) => {
+    const parsedDate = dayjs(dateInput);
+    if (!parsedDate.isValid()) return null;
+
+    const startYear = parsedDate.month() >= 3
+      ? parsedDate.year()
+      : parsedDate.year() - 1;
+
+    return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  };
+
+  const buildFiscalYearMonths = (fiscalYear) => {
+    const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
+    if (!startYear) return [];
+
     return [
-      ...(income.meetingRevenue || []),
-      ...(income.alternateRevenues || []),
-      ...(income.virtualOfficeRevenues || []),
-      ...(income.workationRevenues || []),
-      ...(income.coworkingRevenues || []),
-    ];
-  });
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+      "Jan",
+      "Feb",
+      "Mar",
+    ].map((month, index) => {
+      const year = index < 9 ? startYear : startYear + 1;
+      return `${month}-${String(year).slice(-2)}`;
+    });
+  };
+
+  const yearCategories = useMemo(() => {
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      currentFiscalYearLabel,
+    ]);
+
+    incomeSources.forEach((income) => {
+      const fiscalYear = getFiscalYearLabel(
+        income.date,
+      );
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    testExpense.forEach((expense) => {
+      const fiscalYear = getFiscalYearLabel(expense.dueDate);
+      if (fiscalYear) fiscalYears.add(fiscalYear);
+    });
+
+    return [...fiscalYears]
+      .sort((a, b) => Number(a.match(/\d{4}/)?.[0] || 0) - Number(b.match(/\d{4}/)?.[0] || 0))
+      .reduce((acc, fiscalYear) => {
+        acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
+        return acc;
+      }, {});
+  }, [currentFiscalYearLabel, incomeSources, testExpense]);
 
   const monthWiseIncome = {};
   incomeSources.forEach((income) => {
-    const rawDate =
-      income.date || income.rentDate || income.invoiceCreationDate;
+    const rawDate = income.date;
     if (!rawDate) return;
     const monthKey = dayjs(rawDate).format("MMM-YY");
     if (excludedMonths.includes(monthKey)) return;
 
-    const amount =
-      income.taxableAmount || income.revenue || income.taxable || 0;
+    if (income.normalizedStatus !== "paid") return;
+
+    const amount = income.revenue || 0;
     if (!monthWiseIncome[monthKey]) {
       monthWiseIncome[monthKey] = {
         month: monthKey,
@@ -363,7 +665,15 @@ const FinanceDashboard = () => {
   );
 
   const selectedYearMonths = yearCategories[selectedFiscalYear] || [];
-  const lastMonthLabel = selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const previousCalendarMonthLabel = dayjs()
+    .subtract(1, "month")
+    .format("MMM-YY");
+  const summaryMonthLabel = selectedYearMonths.includes(previousCalendarMonthLabel)
+    ? previousCalendarMonthLabel
+    : selectedYearMonths[selectedYearMonths.length - 1] || "-";
+  const summaryMonthIndex = selectedYearMonths.findIndex(
+    (month) => month === summaryMonthLabel
+  );
 
   const monthWiseExpenses = {};
   testExpense.forEach((exp) => {
@@ -429,12 +739,34 @@ const FinanceDashboard = () => {
 
   //------------------Expensedata----------------------//
 
-  const lastMonthDataIncome = currentIncomeSeries?.data?.at(-1) || 0;
-  const lastMonthData = currentExpenseSeries?.data?.at(-1) || 0;
+  const summaryMonthIncome =
+    summaryMonthIndex >= 0 ? currentIncomeSeries?.data?.[summaryMonthIndex] || 0 : 0;
+  const summaryMonthExpense =
+    summaryMonthIndex >= 0 ? currentExpenseSeries?.data?.[summaryMonthIndex] || 0 : 0;
   //----------INCOME-EXPENSE GRAPH conversion------------------//
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   const incomeExpenseData = [...incomeData, ...expenseData];
+  const incomeExpenseAxisMax = useMemo(() => {
+    const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
+      Boolean
+    );
+    const maxValue = visibleSeries.reduce((currentMax, series) => {
+      const seriesMax = (series?.data || []).reduce(
+        (max, value) => Math.max(max, Number(value) || 0),
+        0
+      );
+
+      return Math.max(currentMax, seriesMax);
+    }, 0);
+
+    if (maxValue <= 0) return 100000;
+
+    const paddedMax = maxValue * 1.15;
+    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+
+    return Math.ceil(paddedMax / magnitude) * magnitude;
+  }, [currentExpenseSeries, currentIncomeSeries]);
 
   const incomeExpenseOptions = {
     chart: {
@@ -474,7 +806,8 @@ const FinanceDashboard = () => {
       colors: ["transparent"],
     },
     yaxis: {
-      max: 8000000,
+      min: 0,
+      max: incomeExpenseAxisMax,
       title: {
         text: "Amount In Lakhs (INR)",
       },
@@ -527,8 +860,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -554,8 +887,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -581,8 +914,8 @@ const FinanceDashboard = () => {
     timePeriod: selectedFiscalYear,
     descriptionData: [
       {
-        title: lastMonthLabel,
-        value: `INR ${inrFormat(lastMonthDataIncome - lastMonthData)}`,
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(summaryMonthIncome - summaryMonthExpense)}`,
         route: "monthly-profit-loss",
       },
       {
@@ -660,7 +993,7 @@ const FinanceDashboard = () => {
         },
       },
     },
-    colors: ["#4CAF50", "#FFECC5"],
+    colors: ["#4CAF50", "#FDE3A7"],
     labels: pieMonthlyPayoutData.map((item) => item.label),
     legend: {
       show: true,
@@ -673,11 +1006,23 @@ const FinanceDashboard = () => {
       },
     },
     tooltip: {
-      y: {
-        formatter: function (value, { seriesIndex }) {
-          const category = pieMonthlyPayoutData[seriesIndex];
-          return `INR ${category?.value?.toLocaleString("en-IN") || 0}`;
-        },
+      custom: function ({ seriesIndex }) {
+        const category = pieMonthlyPayoutData[seriesIndex];
+        const isPending = category?.label === "Pending";
+
+        return `
+          <div style="
+            padding: 6px 10px;
+            border-radius: 4px;
+            background: ${isPending ? "#FDE3A7" : "#4CAF50"};
+            color: ${isPending ? "#000000" : "#FFFFFF"};
+            font-family: Poppins-Regular;
+            font-size: 12px;
+            font-weight: 600;
+          ">
+            ${category?.label || ""}: INR ${category?.value?.toLocaleString("en-IN") || 0}
+          </div>
+        `;
       },
     },
     plotOptions: {
@@ -697,60 +1042,110 @@ const FinanceDashboard = () => {
     : null;
 
   const income = incomeEntry?.income;
-  const currentCollectionsMonth = dayjs().format("MMM-YY");
+  const currentCollectionsMonth = dayjs().subtract(1, "month").format("MMM-YY");
+
+  const getNormalizedPaymentStatus = (value) => {
+    if (typeof value === "string") return value.trim().toLowerCase();
+    return value ? "paid" : "unpaid";
+  };
+
+  const getNumericAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsedValue = parseFloat(value.replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    }
+    return 0;
+  };
+
+  const unifiedRevenueData = useMemo(() => {
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.status ?? item.rentStatus,
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten;
+  }, [simpleRevenue]);
 
   // 2. Calculation function (unchanged but included for completeness)
-  const calculatePaidVsUnpaid = (income = {}) => {
-    const revenueSources = [
-      income.meetingRevenue || [],
-      income.alternateRevenues || [],
-      income.virtualOfficeRevenues || [],
-      income.workationRevenues || [],
-      income.coworkingRevenues || [],
-    ];
-
+  const calculatePaidVsUnpaid = (revenueData = []) => {
     let paid = 0;
     let unpaid = 0;
 
-    revenueSources.forEach((source) => {
-      source.forEach((item) => {
-        const rawDate =
-          item.date || item.rentDate || item.invoiceCreationDate;
-        if (!rawDate || !dayjs(rawDate).isValid()) return;
+    revenueData.forEach((item) => {
+      if (!item.date || !dayjs(item.date).isValid()) return;
 
-        const monthKey = dayjs(rawDate).format("MMM-YY");
-        if (monthKey !== currentCollectionsMonth) return;
+      const monthKey = dayjs(item.date).format("MMM-YY");
+      if (monthKey !== currentCollectionsMonth) return;
 
-        const amount = item.revenue || item.taxableAmount || 0;
+      const amount = getNumericAmount(item.revenue);
 
-        if (item.status === "paid") {
-          paid += amount;
-        } else {
-          unpaid += amount;
-        }
-      });
+      if (item.normalizedStatus === "paid") {
+        paid += amount;
+      } else {
+        unpaid += amount;
+      }
     });
 
     return { paid, unpaid };
   };
 
   // 3. Safely calculate paid and unpaid values
-  const { paid, unpaid } = income
-    ? calculatePaidVsUnpaid(income)
+  const { paid, unpaid } = unifiedRevenueData.length
+    ? calculatePaidVsUnpaid(unifiedRevenueData)
     : { paid: 0, unpaid: 0 };
 
   // 4. Prepare pie chart data
   const pieChartData = [
-    { label: "Collected", value: paid },
-    { label: "Due", value: unpaid },
+    { label: "Paid", value: paid },
+    { label: "Unpaid", value: unpaid },
   ];
 
   const pieChartOptions = {
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    labels: ["Collected", "Due"],
-    colors: ["#2196F3", "#FF9800"],
+    labels: ["Paid", "Unpaid"],
+    colors: ["#66DB66", "#EA9A87"],
     legend: {
       position: "right",
     },
@@ -866,37 +1261,76 @@ const FinanceDashboard = () => {
   ];
 
   const statutoryDonutLabels = ["Approved", "Pending"];
-  const statutoryDonutColors = ["#4CAF50", "#FF9800"];
+  const statutoryDonutColors = ["#4CAF50", "#FDE3A7"];
   const statutoryTooltipValues = statutoryDonutSeries.map(
     (amount, i) => `${statutoryDonutLabels[i]}: ₹ ${amount}`
   );
   //-----------------------------------------------------Donut Statutory Payments------------------------------------------------------//
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
-  const currentMonthRentalPayments = isBudgetDataLoading
-    ? []
-    : budgetData.filter(
+  // const currentMonthRentalPayments = isBudgetDataLoading
+  //   ? []
+  //   : budgetData.filter(
+  //     (item) =>
+  //       item?.expanseType === "Monthly Rent" &&
+  //       item?.dueDate &&
+  //       dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
+  //   );
+
+  // const totalPaid = currentMonthRentalPayments
+  //   .filter((item) => item.status === "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // const totalUnpaid = currentMonthRentalPayments
+  //   .filter((item) => item.status !== "Approved")
+  //   .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+
+  // // Donut chart props
+  // const donutRentalLabels = ["Paid", "Unpaid"];
+  // const donutRentalSeries = [totalPaid, totalUnpaid];
+  // const donutRentalTooltipValue = [
+  //   ` INR ${totalPaid.toLocaleString()}`,
+  //   ` INR ${totalUnpaid.toLocaleString()}`,
+  // ];
+  // const donutRentalColors = ["#4CAF50", "#F44336"];
+
+  //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
+const currentMonthRentalPayments = isBudgetDataLoading
+  ? []
+  : budgetData.filter(
       (item) =>
         item?.expanseType === "Monthly Rent" &&
         item?.dueDate &&
         dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth
     );
 
-  const totalPaid = currentMonthRentalPayments
-    .filter((item) => item.status === "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalPaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "paid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  const totalUnpaid = currentMonthRentalPayments
-    .filter((item) => item.status !== "Approved")
-    .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
+const totalUnpaid = currentMonthRentalPayments
+  .filter(
+    (item) =>
+      String(item.isPaid || "")
+        .trim()
+        .toLowerCase() === "unpaid"
+  )
+  .reduce((sum, item) => sum + Number(item.actualAmount || 0), 0);
 
-  // Donut chart props
-  const donutRentalLabels = ["Paid", "Unpaid"];
-  const donutRentalSeries = [totalPaid, totalUnpaid];
-  const donutRentalTooltipValue = [
-    ` INR ${totalPaid.toLocaleString()}`,
-    ` INR ${totalUnpaid.toLocaleString()}`,
-  ];
-  const donutRentalColors = ["#4CAF50", "#F44336"];
+// Donut chart props
+const donutRentalLabels = ["Paid", "Unpaid"];
+const donutRentalSeries = [totalPaid, totalUnpaid];
+const donutRentalTooltipValue = [
+  ` INR ${totalPaid.toLocaleString("en-IN")}`,
+  ` INR ${totalUnpaid.toLocaleString("en-IN")}`,
+];
+const donutRentalColors = ["#66DB66", "#EA9A87"];
+
+//-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
 
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//
@@ -959,7 +1393,7 @@ const FinanceDashboard = () => {
     },
     {
       key: "financeCustomerCollections",
-      title: `Customer Collections ${dayjs().format("MMM-YY")} `,
+      title: `Customer Collections ${currentCollectionsMonth} `,
       layout: 1,
       border: true,
       data: pieChartData,
@@ -1156,6 +1590,35 @@ const FinanceDashboard = () => {
     (widget) => !widget.key || userPermissions.includes(widget.key)
   );
 
+  const financeTicketChartConfigs = [
+    {
+      key: PERMISSIONS.FINANCE_CATEGORY_WISE_TICKETS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Category Wise Tickets",
+      data: financeCategoryWiseTicketsData,
+      options: financeCategoryWiseTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+    {
+      key: PERMISSIONS.FINANCE_DUE_TICKETS.value,
+      type: "PieChartMui",
+      border: true,
+      title: "Due Tickets",
+      data: financeDueTicketsData,
+      options: financeDueTicketsOptions,
+      centerAlign: true,
+      height: 320,
+      width: 500,
+    },
+  ];
+
+  const allowedFinanceTicketCharts = financeTicketChartConfigs.filter(
+    (widget) => !widget.key || userPermissions.includes(widget.key)
+  );
+
   //------------------------PAGE ACCESS FINANCE DATA CARD END-------------------//
 
   // LIST OF WIDGETS
@@ -1179,7 +1642,7 @@ const FinanceDashboard = () => {
     {
       layout: allowedYearlyGraphs.length,
       widgets: allowedYearlyGraphs.map((item) => (
-        <YearlyGraph2
+        <YearlyGraph
           layout={item.layout}
           key={item.key}
           data={item.data}
@@ -1189,6 +1652,7 @@ const FinanceDashboard = () => {
           TitleAmountGreen={item.TitleAmountGreen}
           TitleAmountRed={item.TitleAmountRed}
           onYearChange={item.onYearChange}
+          currentYear={selectedFiscalYear}
         />
       )),
     },
@@ -1379,6 +1843,20 @@ const FinanceDashboard = () => {
         </WidgetSection>
       )),
     },
+    {
+      layout: allowedFinanceTicketCharts.length,
+      widgets: allowedFinanceTicketCharts.map((config) => (
+        <WidgetSection key={config.title} border title={config.title}>
+          <PieChartMui
+            data={config.data}
+            options={config.options}
+            centerAlign={config.centerAlign}
+            height={config.height}
+            width={config.width}
+          />
+        </WidgetSection>
+      )),
+    },
 
     {
       layout: allowedMuiTables.length,
@@ -1397,9 +1875,13 @@ const FinanceDashboard = () => {
     },
   ];
 
+  const visibleTechWidgets = techWidgets.filter(
+    (section) => Array.isArray(section?.widgets) && section.widgets.length > 0,
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      {techWidgets.map((section, index) => (
+      {visibleTechWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout}>
           {section?.widgets}
         </WidgetSection>

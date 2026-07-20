@@ -2,15 +2,86 @@ const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
 
-const attachExternalVisits = async (visitors) => {
+const normalizeVisitorQuery = (query) =>
+  typeof query === "string" ? query : query?.query;
+
+const populateVisitorListFields = [
+  {
+    path: "department",
+    select: "name",
+  },
+  {
+    path: "visitorCompany",
+    select: "companyName pocName",
+  },
+  {
+    path: "toMeet",
+    select: "firstName lastName email",
+  },
+  {
+    path: "toMeetCompany",
+    select: "clientName companyName name",
+  },
+  {
+    path: "clientToMeet",
+    select: "employeeName email",
+  },
+  {
+    path: "checkedInBy",
+    select: "firstName lastName",
+  },
+  {
+    path: "checkedOutBy",
+    select: "firstName lastName",
+  },
+  {
+    path: "meeting",
+    select:
+      "subject agenda startDate endDate startTime endTime meetingType status",
+  },
+  {
+    path: "building",
+    select: "buildingName",
+  },
+  {
+    path: "unit",
+    select: "unitNo unitName",
+  },
+];
+
+const populateExternalVisitFields = [
+  { path: "department", select: "name" },
+  { path: "toMeet", select: "firstName lastName email" },
+  {
+    path: "toMeetCompany",
+    select: "clientName companyName name",
+  },
+  { path: "clientToMeet", select: "employeeName email" },
+  { path: "checkedInBy", select: "firstName lastName" },
+  { path: "checkedOutBy", select: "firstName lastName" },
+  {
+    path: "meeting",
+    select:
+      "subject agenda startDate endDate startTime endTime meetingType status",
+  },
+  { path: "unit", select: "unitNo unitName" },
+];
+
+const attachExternalVisits = async (visitors, companyId) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
     return visitors;
   }
 
-  const visitorIds = visitors.map((visitor) => visitor._id);
-  const visits = await ExternalVisits.find({ visitorId: { $in: visitorIds } })
+  const visitorIds = visitors.map((visitor) => visitor._id).filter(Boolean);
+  const visits = await ExternalVisits.find({
+    visitorId: { $in: visitorIds },
+    ...(companyId && { company: companyId }),
+  })
+    .select("-__v")
     .sort({ checkIn: -1 })
-    .lean();
+    .populate(populateExternalVisitFields)
+    .lean()
+    .exec();
 
   const visitsByVisitor = visits.reduce((acc, visit) => {
     const visitorId = visit.visitorId?.toString();
@@ -27,7 +98,7 @@ const attachExternalVisits = async (visitors) => {
   }, {});
 
   return visitors.map((visitor) => ({
-    ...visitor.toObject(),
+    ...visitor,
     externalVisits: visitsByVisitor[visitor._id.toString()] || [],
   }));
 };
@@ -36,16 +107,36 @@ const fetchVisitorReportService = async ({
   dateFilter,
   query,
   company,
+  visitorFlag,
+  multipleVisits = false,
   isMeeting = false,
   isOpendDesk = false,
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
+    const queryKey = normalizeVisitorQuery(query);
     let visitors;
-    let filter = { company: companyId };
+    const filter = { company: companyId };
 
-    if (dateFilter) {
-      filter.checkIn = dateFilter.checkIn;
+    if (visitorFlag) {
+      filter.visitorFlag = visitorFlag;
+    }
+
+    if (dateFilter?.checkIn) {
+      filter.checkIn = {
+        ...(dateFilter.checkIn.$gte && {
+          $gte: new Date(dateFilter.checkIn.$gte),
+        }),
+        ...(dateFilter.checkIn.$lte && {
+          $lte: new Date(dateFilter.checkIn.$lte),
+        }),
+      };
+    } else {
+      //for dashboard
+      filter.checkIn = {
+        $gte: new Date("2026-01-01T18:30:00.000Z"),
+        $lte: new Date("2027-03-31T18:29:59.999Z"),
+      };
     }
 
     if (isMeeting) {
@@ -58,22 +149,33 @@ const fetchVisitorReportService = async ({
       };
     }
 
-    // {
-    //       company: companyId,
-    //       ...(dateFilter?.checkIn && {
-    //         checkIn: dateFilter?.checkIn,
-    //       }),
-    //     }
+    // visitors = await Visitor.aggregate([
+    //   { $match: filter },
+    //   {
+    //     $project: {
+    //       firstName: 1,
+    //       lastName: 1,
+    //       email: 1,
+    //       checkIn: 1,
+    //       checkOut: 1,
+    //       visitorType: 1,
+    //     },
+    //   },
+    // ]);
 
-    switch (query) {
+    //     const result = await Visitor.aggregate([
+    //   { $match: filter },
+    //   { $project: { _id: 1 } },
+    // ]).explain("executionStats");
+
+    // console.dir(result, { depth: null });
+
+    switch (queryKey) {
       case "department":
         visitors = await Visitor.aggregate([
           {
             $match: {
-              company: companyId,
-              ...(dateFilter?.checkIn && {
-                checkIn: dateFilter?.checkIn,
-              }),
+              ...filter,
             },
           },
           { $match: { department: { $ne: null } } },
@@ -104,94 +206,295 @@ const fetchVisitorReportService = async ({
         endOfDay.setHours(23, 59, 59, 999);
 
         visitors = await Visitor.find({
-          company: companyId,
+          ...filter,
           dateOfVisit: { $gte: startOfDay, $lte: endOfDay },
-          ...(dateFilter?.checkIn && {
-            checkIn: dateFilter?.checkIn,
-          }),
-        }).populate([
-          {
-            path: "department",
-            select: "name",
-          },
-          {
-            path: "visitorCompany",
-            select: "companyName",
-          },
-          {
-            path: "toMeet",
-            select: "firstName lastName email",
-          },
-          {
-            path: "toMeetCompany",
-            select: "clientName companyName name",
-          },
-          {
-            path: "clientToMeet",
-            select: "employeeName email",
-          },
-          // {
-          //   path: "clientCompany",
-          //   select: "clientName email",
-          // },
-          {
-            path: "building",
-            select: "buildingName",
-          },
-          {
-            path: "unit",
-            select: "unitNo unitName",
-          },
-          {
-            path: "meeting",
-          },
-        ]);
-        visitors = await attachExternalVisits(visitors);
+        })
+          .select("-__v")
+          .populate(populateVisitorListFields)
+          .lean()
+          .exec();
+        if (multipleVisits) {
+          visitors = await attachExternalVisits(visitors, companyId);
+        }
         break;
 
       default:
-        visitors = await Visitor.find(filter).populate([
+        // visitors = await Visitor.find(filter)
+        //   .select("-__v")
+        //   .populate(populateVisitorListFields)
+        //   .lean()
+        //   .exec();
+        visitors = await Visitor.aggregate([
           {
-            path: "department",
-            select: "name",
+            $match: filter,
           },
+
           {
-            path: "toMeet",
-            select: "firstName lastName email",
+            $project: {
+              firstName: 1,
+              middleName: 1,
+              lastName: 1,
+              email: 1,
+              gender: 1,
+              phoneNumber: 1,
+              city: 1,
+              state: 1,
+              sector: 1,
+              visitorType: 1,
+              visitorFlag: 1,
+              purposeOfVisit: 1,
+              visitorRoles: 1,
+              department: 1,
+              visitorCompany: 1,
+              ...(dateFilter?.checkIn && {
+                toMeet: 1,
+                clientToMeet: 1,
+                toMeetCompany: 1,
+                checkedInBy: 1,
+                checkedOutBy: 1,
+                building: 1,
+                unit: 1,
+              }),
+
+              dateOfVisit: 1,
+              scheduledDate: 1,
+              scheduledStartTime: 1,
+              scheduledEndTime: 1,
+              checkIn: 1,
+              checkOut: 1,
+              amount: 1,
+              gstAmount: 1,
+              discount: 1,
+              totalAmount: 1,
+              paymentStatus: 1,
+              paymentMode: 1,
+              paymentProof: 1,
+              notes: 1,
+              gstNumber: 1,
+              panNumber: 1,
+              idProof: 1,
+              panFile: 1,
+              otherFile: 1,
+              gstFile: 1,
+              registeredClientCompany: 1,
+              brandName: 1,
+            },
           },
-          {
-            path: "toMeetCompany",
-            select: "clientName companyName name",
-          },
-          {
-            path: "visitorCompany",
-            select: "companyName pocName",
-          },
-          {
-            path: "clientToMeet",
-            select: "employeeName email",
-          },
-          {
-            path: "checkedInBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "checkedOutBy",
-            select: "firstName lastName",
-          },
-          {
-            path: "meeting",
-          },
-          {
-            path: "building",
-            select: "buildingName",
-          },
-          {
-            path: "unit",
-            select: "unitNo unitName",
-          },
+
+          ...(dateFilter?.checkIn
+            ? [
+                {
+                  $set: {
+                    hasToMeet: {
+                      $and: [
+                        { $ne: [{ $type: "$toMeet" }, "missing"] },
+                        { $ne: ["$toMeet", null] },
+                      ],
+                    },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "toMeet",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                          email: 1,
+                        },
+                      },
+                    ],
+                    as: "toMeet",
+                  },
+                },
+                {
+                  $set: {
+                    toMeet: { $first: "$toMeet" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "coworkingmembers",
+                    localField: "clientToMeet",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          employeeName: 1,
+                          email: 1,
+                        },
+                      },
+                    ],
+                    as: "clientToMeet",
+                  },
+                },
+                {
+                  $set: {
+                    clientToMeet: { $first: "$clientToMeet" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "coworkingclients",
+                    localField: "toMeetCompany",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          clientName: 1,
+                          companyName: 1,
+                          name: 1,
+                        },
+                      },
+                    ],
+                    as: "toMeetCompany",
+                  },
+                },
+                {
+                  $set: {
+                    toMeetCompany: {
+                      $cond: [
+                        "$hasToMeet",
+                        "BIZ Nest",
+                        { $first: "$toMeetCompany" },
+                      ],
+                    },
+                  },
+                },
+                {
+                  $unset: "hasToMeet",
+                },
+
+                {
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "checkedInBy",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                        },
+                      },
+                    ],
+                    as: "checkedInBy",
+                  },
+                },
+                {
+                  $set: {
+                    checkedInBy: { $first: "$checkedInBy" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "userdatas",
+                    localField: "checkedOutBy",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          firstName: 1,
+                          lastName: 1,
+                        },
+                      },
+                    ],
+                    as: "checkedOutBy",
+                  },
+                },
+                {
+                  $set: {
+                    checkedOutBy: { $first: "$checkedOutBy" },
+                  },
+                },
+                {
+                  $lookup: {
+                    from: "units",
+                    localField: "unit",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          unitNo: 1,
+                          unitName: 1,
+                        },
+                      },
+                    ],
+                    as: "unit",
+                  },
+                },
+                {
+                  $set: {
+                    unit: { $first: "$unit" },
+                  },
+                },
+
+                {
+                  $lookup: {
+                    from: "buildings",
+                    localField: "building",
+                    foreignField: "_id",
+                    pipeline: [
+                      {
+                        $project: {
+                          buildingName: 1,
+                        },
+                      },
+                    ],
+                    as: "building",
+                  },
+                },
+                {
+                  $set: {
+                    building: { $first: "$building" },
+                  },
+                },
+
+                //        {
+                //   $lookup: {
+                //     from: "externalvisits",
+                //     let: {
+                //       visitorId: "$_id",
+                //       companyId: "$company",
+                //     },
+                //     pipeline: [
+                //       {
+                //         $match: {
+                //           $expr: {
+                //             $and: [
+                //               { $eq: ["$visitorId", "$$visitorId"] },
+                //               { $eq: ["$company", "$$companyId"] },
+                //             ],
+                //           },
+                //         },
+                //       },
+                //       {
+                //         $project: {
+                //           __v: 0,
+                //         },
+                //       },
+                //       {
+                //         $sort: {
+                //           checkIn: -1,
+                //         },
+                //       },
+                //     ],
+                //     as: "externalVisits",
+                //   },
+                // },
+              ]
+            : []),
         ]);
-        visitors = await attachExternalVisits(visitors);
+
+        if (multipleVisits) {
+          visitors = await attachExternalVisits(visitors, companyId);
+        }
     }
 
     return visitors;

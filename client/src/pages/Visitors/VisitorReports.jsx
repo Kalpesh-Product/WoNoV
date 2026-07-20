@@ -1,7 +1,7 @@
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
@@ -13,16 +13,97 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import formatDateTime, {
   formatDateTimeFields,
 } from "../../utils/formatDateTime";
+import { State } from "country-state-city";
+import dayjs from "dayjs";
+
+const getStateName = (stateValue) => {
+  if (!stateValue) return "-";
+
+  const normalizedStateValue = String(stateValue).trim();
+  const state = State.getStateByCodeAndCountry(
+    normalizedStateValue.toUpperCase(),
+    "IN",
+  );
+
+  return state?.name || normalizedStateValue;
+};
+
+const formatDateValue = (value) => {
+  if (!value) return "-";
+  const formattedValue = humanDate(value);
+  return formattedValue === "N/A" || formattedValue === "â€”"
+    ? "-"
+    : formattedValue;
+};
+
+const formatTimeValue = (value) => {
+  if (!value) return "-";
+  const formattedValue = humanTime(value);
+  return formattedValue === "Invalid date" || formattedValue === "â€”"
+    ? "-"
+    : formattedValue;
+};
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const axios = useAxiosPrivate();
 
+  const initialVisitorDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [visitorDateRange, setVisitorDateRange] = useState(
+    initialVisitorDateRange,
+  );
+  const visitorFilters = useMemo(
+    () => ({
+      startDate: visitorDateRange?.startDate
+        ? dayjs(visitorDateRange.startDate).startOf("day").toISOString()
+        : undefined,
+      endDate: visitorDateRange?.endDate
+        ? dayjs(visitorDateRange.endDate).endOf("day").toISOString()
+        : undefined,
+    }),
+    [visitorDateRange],
+  );
+  const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    setVisitorDateRange((currentRange) => {
+      const currentStart = currentRange?.startDate
+        ? new Date(currentRange.startDate).getTime()
+        : null;
+      const currentEnd = currentRange?.endDate
+        ? new Date(currentRange.endDate).getTime()
+        : null;
+      const nextStart = new Date(selectedRange.startDate).getTime();
+      const nextEnd = new Date(selectedRange.endDate).getTime();
+
+      if (currentStart === nextStart && currentEnd === nextEnd) {
+        return currentRange;
+      }
+
+      return selectedRange;
+    });
+  }, []);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["visitor-reports"],
+    queryKey: [
+      "visitor-reports",
+      visitorFilters.startDate,
+      visitorFilters.endDate,
+    ],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          filters: visitorFilters,
+        },
+      });
       return response.data;
     },
   });
@@ -34,6 +115,8 @@ const VisitorReports = () => {
 
   const meetingReportsColumn = [
     { field: "srNo", headerName: "Sr No" },
+    //{ field: "firstName", headerName: "First Name", hide: true },
+    //{ field: "lastName", headerName: "Last Name", hide: true },
     {
       field: "name",
       headerName: "Name",
@@ -54,11 +137,28 @@ const VisitorReports = () => {
       headerName: "Date Of Visit",
     },
     { field: "gender", headerName: "Gender", hide: true },
-    { field: "building", headerName: "Building" ,hide: true },
-    { field: "unit", headerName: "Unit" ,hide: true },
+    { field: "building", headerName: "Building", hide: true },
+    { field: "unit", headerName: "Unit", hide: true },
+    // { field: "buildingName", headerName: "Building Name", hide: true },
+    //{ field: "unitNo", headerName: "Unit No", hide: true },
+    { field: "unitName", headerName: "Unit Name", hide: true },
     { field: "visitorCompany", headerName: "Visitor Company", hide: true },
+    { field: "brandName", headerName: "Brand Name", hide: true },
     { field: "toMeetCompany", headerName: "Company To Meet", hide: true },
+    // {
+    //   field: "toMeetCompanyClientName",
+    //   headerName: "To Meet Company - Client Name",
+    //   hide: true,
+    // },
+    // {
+    //   field: "clientToMeetEmployeeName",
+    //   headerName: "Client To Meet - Employee Name",
+    //   hide: true,
+    // },
     { field: "department", headerName: "Department", hide: true },
+    { field: "city", headerName: "City", hide: true },
+    { field: "state", headerName: "State", hide: true },
+    { field: "sector", headerName: "Sector", hide: true },
     { field: "idProofType", headerName: "ID Type", hide: true },
     { field: "idProofNumber", headerName: "ID Number", hide: true },
     { field: "gstNumber", headerName: "GST Number", hide: true },
@@ -74,6 +174,7 @@ const VisitorReports = () => {
       headerName: "Scheduled Date",
       hide: true,
     },
+    { field: "checkInDate", headerName: "Check In Date", hide: true },
 
     {
       field: "checkInTime",
@@ -83,6 +184,7 @@ const VisitorReports = () => {
       field: "checkInBy",
       headerName: "Checked In By",
     },
+    { field: "checkOutDate", headerName: "Check Out Date", hide: true },
     {
       field: "checkOutTime",
       headerName: "Check Out Time",
@@ -90,6 +192,22 @@ const VisitorReports = () => {
     {
       field: "checkOutBy",
       headerName: "Checked Out By",
+    },
+    { field: "paymentAmount", headerName: "Amount", hide: true },
+    { field: "discountAmount", headerName: "Discount", hide: true },
+    { field: "gstAmount", headerName: "Gst Amount", hide: true },
+    { field: "totalAmount", headerName: "Total Amount", hide: true },
+    { field: "paymentStatus", headerName: "Payment Status", hide: true },
+    {
+      field: "paymentVerification",
+      headerName: "Payment Verification",
+      hide: true,
+    },
+    { field: "paymentMode", headerName: "Payment Mode", hide: true },
+    {
+      field: "paymentProofUrl",
+      headerName: "Payment Proof - Url",
+      hide: true,
     },
 
     // {
@@ -131,6 +249,21 @@ const VisitorReports = () => {
   // }));
 
   const rows = visitorsData.map((visitor, index) => {
+    const visitRecords = Array.isArray(visitor?.externalVisits)
+      ? visitor.externalVisits
+      : [];
+
+    const latestVisit = [...visitRecords].sort((a, b) => {
+      const aTime = new Date(
+        a?.checkIn || a?.dateOfVisit || a?.createdAt || 0,
+      ).getTime();
+      const bTime = new Date(
+        b?.checkIn || b?.dateOfVisit || b?.createdAt || 0,
+      ).getTime();
+      return bTime - aTime;
+    })[0];
+
+    const paymentSource = latestVisit || visitor;
     const toMeetName = visitor.toMeet
       ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
       : visitor.clientToMeet
@@ -147,37 +280,57 @@ const VisitorReports = () => {
           visitor?.toMeetCompany ||
           "-";
 
+    const buildingName =
+      visitor?.building?.buildingName || visitor?.building || "-";
+    const unitNo = visitor?.unit?.unitNo || "-";
+    const unitName = visitor?.unit?.unitName || visitor?.unit || "-";
+
     return {
       srNo: index + 1,
+      firstName: visitor.firstName || "-",
+      lastName: visitor.lastName || "-",
       name:
         `${visitor.firstName || ""} ${visitor.lastName || ""}`.trim() || "-",
       gender: visitor.gender || "-",
-      building: visitor?.building?.buildingName || visitor?.building || "-",
+      building: buildingName,
       unit:
         visitor?.unit?.unitNo ||
         visitor?.unit?.unitName ||
         visitor?.unit ||
         "-",
+      buildingName,
+      unitNo,
+      unitName,
       email: visitor.email || "-",
       phone: visitor.phoneNumber || "-",
       purpose: visitor.purposeOfVisit || "-",
       toMeet: toMeetName,
       toMeetCompany,
+      toMeetCompanyClientName:
+        visitor?.toMeetCompany?.clientName ||
+        visitor?.toMeetCompany?.companyName ||
+        visitor?.toMeetCompany?.name ||
+        "-",
+      clientToMeetEmployeeName: visitor?.clientToMeet?.employeeName || "-",
       visitorCompany: visitor.visitorCompany || "-",
+      brandName: visitor?.brandName || "-",
       department: visitor.department?.name || "-",
+      city: visitor?.city || visitor?.hoCity || "-",
+      state: getStateName(visitor?.state || visitor?.hoState),
+      sector: visitor?.sector || "-",
       idProofType: visitor.idProof?.idType || "-",
       idProofNumber: visitor.idProof?.idNumber || "-",
       panNumber: visitor.panNumber || "-",
       gstNumber: visitor.gstNumber || "-",
       checkIn: visitor.checkIn,
-      checkInDate: visitor.checkIn,
-      checkInTime: visitor.checkIn,
+      checkInDate: formatDateValue(visitor.checkIn),
+      checkInTime: formatTimeValue(visitor.checkIn),
       checkInBy: visitor.checkedInBy
         ? `${visitor.checkedInBy.firstName} ${visitor.checkedInBy.lastName}`
         : "-",
       checkOut: visitor.checkOut,
-      checkOutDate: visitor.checkOut,
-      checkOutTime: visitor.checkOut,
+      checkOutDate: formatDateValue(visitor.checkOut),
+      checkOutTime: formatTimeValue(visitor.checkOut),
       checkOutBy: visitor.checkedOutBy
         ? `${visitor.checkedOutBy.firstName} ${visitor.checkedOutBy.lastName}`
         : "-",
@@ -185,13 +338,35 @@ const VisitorReports = () => {
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
       date: visitor.dateOfVisit || visitor.checkIn,
-      dateOfVisit: visitor.dateOfVisit || visitor.checkInDate,
-      scheduledDate: visitor.scheduledDate,
+      dateOfVisit: formatDateValue(visitor.dateOfVisit || visitor.checkInDate),
+      scheduledDate: formatDateValue(visitor.scheduledDate),
       gstFile: visitor?.gstFile?.link,
       otherFile: visitor?.otherFile?.link,
       panFile: visitor?.panFile?.link,
-      brandName: visitor?.brandName,
-      registeredClientCompany: visitor?.registeredClientCompany,
+      paymentAmount:
+        paymentSource?.amount ??
+        paymentSource?.paymentAmount ??
+        paymentSource?.totalAmount ??
+        "-",
+      discountAmount:
+        paymentSource?.discount ?? paymentSource?.discountAmount ?? "-",
+      gstAmount: paymentSource?.gstAmount ?? "-",
+      totalAmount: paymentSource?.totalAmount ?? "-",
+      paymentStatus:
+        typeof paymentSource?.paymentStatus === "boolean"
+          ? paymentSource.paymentStatus
+            ? "true"
+            : "false"
+          : paymentSource?.paymentStatus || "-",
+      paymentVerification: paymentSource?.paymentVerification || "-",
+      paymentMode: paymentSource?.paymentMode || "-",
+      paymentProofUrl:
+        paymentSource?.paymentProof?.url ||
+        paymentSource?.paymentProof?.link ||
+        visitor?.paymentProof?.url ||
+        visitor?.paymentProof?.link ||
+        "-",
+      registeredClientCompany: visitor?.registeredClientCompany || "-",
     };
   });
 
@@ -201,7 +376,9 @@ const VisitorReports = () => {
         <div>
           <YearWiseTable
             exportData
-            dateColumn={"date"}
+            dateColumn={"checkIn"}
+            initialDateRange={initialVisitorDateRange}
+            onDateFilterChange={handleVisitorDateFilterChange}
             search={true}
             searchColumn={"name"}
             tableTitle={"Visitor Reports"}
@@ -228,9 +405,13 @@ const VisitorReports = () => {
             <DetalisFormatted title="Gender" detail={selectedVisitor.gender} />
             <DetalisFormatted title="Phone" detail={selectedVisitor.phone} />
             <DetalisFormatted title="Email" detail={selectedVisitor.email} />
-             <DetalisFormatted
+            <DetalisFormatted
               title="Building"
-              detail={selectedVisitor?.building?.buildingName || selectedVisitor?.building || "-"}
+              detail={
+                selectedVisitor?.building?.buildingName ||
+                selectedVisitor?.building ||
+                "-"
+              }
             />
             <DetalisFormatted
               title="Unit"
