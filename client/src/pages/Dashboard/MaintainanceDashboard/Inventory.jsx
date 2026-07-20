@@ -94,7 +94,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const blockedUnitsByTab = useMemo(
     () => ({
-      sunteck: ["601 B", "ST 601 B"],
+      sunteck: [],
       dempo: ["605 A", "603 A"],
     }),
     [],
