@@ -87,6 +87,24 @@ const HrCompletedMemberKraDetails = ({ kraType, title }) => {
     queryKey: ["hrCompletedMemberKra", departmentId, kraType],
     enabled: !!departmentId,
     queryFn: async () => {
+      if (kraType === "INDIVIDUALKRA") {
+        const [individualResponse, teamResponse] = await Promise.all([
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`,
+          ),
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKRA`,
+          ),
+        ]);
+
+        return [
+          ...(Array.isArray(individualResponse.data)
+            ? individualResponse.data
+            : []),
+          ...(Array.isArray(teamResponse.data) ? teamResponse.data : []),
+        ];
+      }
+
       const response = await axios.get(
         `/api/performance/get-completed-tasks?dept=${departmentId}&type=${kraType}`,
       );
