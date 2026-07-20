@@ -1592,6 +1592,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
 
   const financeTicketChartConfigs = [
     {
+      key: PERMISSIONS.FINANCE_CATEGORY_WISE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Category Wise Tickets",
@@ -1602,6 +1603,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       width: 500,
     },
     {
+      key: PERMISSIONS.FINANCE_DUE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Due Tickets",
@@ -1612,6 +1614,10 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       width: 500,
     },
   ];
+
+  const allowedFinanceTicketCharts = financeTicketChartConfigs.filter(
+    (widget) => !widget.key || userPermissions.includes(widget.key)
+  );
 
   //------------------------PAGE ACCESS FINANCE DATA CARD END-------------------//
 
@@ -1838,8 +1844,8 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       )),
     },
     {
-      layout: financeTicketChartConfigs.length,
-      widgets: financeTicketChartConfigs.map((config) => (
+      layout: allowedFinanceTicketCharts.length,
+      widgets: allowedFinanceTicketCharts.map((config) => (
         <WidgetSection key={config.title} border title={config.title}>
           <PieChartMui
             data={config.data}
@@ -1869,9 +1875,13 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     },
   ];
 
+  const visibleTechWidgets = techWidgets.filter(
+    (section) => Array.isArray(section?.widgets) && section.widgets.length > 0,
+  );
+
   return (
     <div className="flex flex-col gap-4">
-      {techWidgets.map((section, index) => (
+      {visibleTechWidgets.map((section, index) => (
         <WidgetSection key={index} layout={section?.layout}>
           {section?.widgets}
         </WidgetSection>

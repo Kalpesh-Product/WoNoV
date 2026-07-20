@@ -1080,6 +1080,16 @@ export const PERMISSIONS = {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  FINANCE_CATEGORY_WISE_TICKETS: {
+    value: "finance_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  FINANCE_DUE_TICKETS: {
+    value: "finance_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
 
   // Finance Tabs
   FINANCE_CASHFLOW_PROJECTIONS: {
@@ -1546,6 +1556,16 @@ export const PERMISSIONS = {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  SALES_CATEGORY_WISE_TICKETS: {
+    value: "sales_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  SALES_DUE_TICKETS: {
+    value: "sales_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
 
   //Finance
   SALES_BUDGET: {
@@ -1858,6 +1878,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   HR_EXECUTIVE_WISE_DUE_TASKS: {
     value: "hr_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  HR_CATEGORY_WISE_TICKETS: {
+    value: "hr_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  HR_DUE_TICKETS: {
+    value: "hr_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
 
@@ -2413,6 +2443,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  ADMIN_CATEGORY_WISE_TICKETS: {
+    value: "admin_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  ADMIN_DUE_TICKETS: {
+    value: "admin_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
   ADMIN_TOTAL_DESKS_COMPANY_WISE: {
     value: "admin_total_desks_company_wise_chart",
     title: "TOTAL DESKS COMPANY WISE",
@@ -2697,13 +2737,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
 
   //Pie Charts
   MAINTENANCE_CATEGORY_WISE_MAINTENANCE: {
-    value: "maintenance_category_wise_maintenance_chart",
-    title: "CATEGORY WISE MAINTENANCE",
+    value: "maintenance_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
     type: "read",
   },
   MAINTENANCE_DUE_MAINTENANCE: {
-    value: "maintenance_due_maintenance_chart",
-    title: "DUE MAINTENANCE",
+    value: "maintenance_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
   MAINTENANCE_UNIT_WISE_MAINTENANCE: {
@@ -2988,6 +3028,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  IT_CATEGORY_WISE_TICKETS: {
+    value: "it_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  IT_DUE_TICKETS: {
+    value: "it_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
   IT_UNIT_WISE_IT_EXPENSES: {
     value: "it_unit_wise_it_expenses_chart",
     title: "UNIT WISE IT EXPENSES",
@@ -3145,6 +3195,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   FRONTEND_EXECUTIVE_WISE_DUE_TASKS: {
     value: "frontend_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  FRONTEND_CATEGORY_WISE_TICKETS: {
+    value: "frontend_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  FRONTEND_DUE_TICKETS: {
+    value: "frontend_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
 
