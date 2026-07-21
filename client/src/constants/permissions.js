@@ -3441,7 +3441,7 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     route: "/app/dashboard/cafe-dashboard/finance",
   },
   CAFE_DEPARTMENT_EXPENSE: {
-    value: "cafe_department_expense_chart",
+    value: "cafe_department_expense_graph",
     title: "CAFE DEPARTMENT EXPENSE",
     type: "read",
     access: "page",
@@ -3495,7 +3495,7 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     access: "page",
     route: "/app/dashboard/cafe-dashboard/finance/voucher-history",
   },
-  
+
   SIDEBAR_TICKETS: {
     value: "sidebar_tickets",
     title: "TICKETS",

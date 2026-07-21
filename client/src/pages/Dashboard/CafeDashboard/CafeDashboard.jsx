@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { SiCashapp } from "react-icons/si";
 import Card from "../../../components/Card";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
@@ -26,6 +27,7 @@ const toAmount = (value) => {
 };
 
 const CafeDashboard = () => {
+  const navigate = useNavigate();
   const { setIsSidebarOpen } = useSidebar();
   const { hasPermission } = useUserPermissions();
   const axios = useAxiosPrivate();
@@ -97,24 +99,319 @@ const CafeDashboard = () => {
     [expenseSeries, selectedFiscalYear],
   );
 
-  const expenseOptions = useMemo(
-    () => ({
-      chart: { type: "bar", toolbar: { show: false }, stacked: true },
+ const expenseOptions = useMemo(
+  () => {
+    const selectedSeries = expenseSeries.filter(
+      (series) => series.group === selectedFiscalYear,
+    );
+
+    const actualData =
+      selectedSeries.find(
+        (series) => series.name === "Actual Amount",
+      )?.data || [];
+
+    const projectedData =
+      selectedSeries.find(
+        (series) => series.name === "Projected Amount",
+      )?.data || [];
+
+    const highestMonthlyAmount = Math.max(
+      ...Array.from({ length: 12 }, (_, index) => {
+        const actualAmount = Number(actualData[index] || 0);
+        const projectedAmount = Number(projectedData[index] || 0);
+
+        return actualAmount + projectedAmount;
+      }),
+      0,
+    );
+
+    const highestAmountInLakhs = highestMonthlyAmount / 100000;
+
+    let yAxisMaximumInLakhs = 5;
+
+    if (highestAmountInLakhs > 0) {
+      const magnitude =
+        10 ** Math.floor(Math.log10(highestAmountInLakhs));
+
+      const normalizedValue =
+        highestAmountInLakhs / magnitude;
+
+      let niceNormalizedMaximum;
+
+      if (normalizedValue <= 1) {
+        niceNormalizedMaximum = 1;
+      } else if (normalizedValue <= 2) {
+        niceNormalizedMaximum = 2;
+      } else if (normalizedValue <= 3) {
+        niceNormalizedMaximum = 3;
+      } else if (normalizedValue <= 5) {
+        niceNormalizedMaximum = 5;
+      } else {
+        niceNormalizedMaximum = 10;
+      }
+
+      yAxisMaximumInLakhs =
+        niceNormalizedMaximum * magnitude;
+    }
+
+    return {
+      chart: {
+        type: "bar",
+        stacked: true,
+        toolbar: {
+          show: false,
+        },
+        fontFamily: "Poppins-Regular, Arial, sans-serif",
+        animations: {
+          enabled: true,
+        },
+         events: {
+    dataPointSelection: () => {
+      navigate(
+        `/app/dashboard/cafe-dashboard/finance/budget?title=${encodeURIComponent(
+          "BIZ Nest CAFE DEPARTMENT EXPENSE",
+        )}&fy=${encodeURIComponent(selectedFiscalYear)}`,
+      );
+    },
+  },
+      },
+
       colors: ["#54C4A7", "#c4c4c4"],
-      plotOptions: { bar: { horizontal: false, columnWidth: "40%" } },
-      dataLabels: { enabled: false },
+
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "40%",
+          borderRadius: 5,
+          borderRadiusApplication: "end",
+
+          dataLabels: {
+            position: "top",
+
+            total: {
+              enabled: true,
+
+              formatter: (value, options) => {
+                const currentFiscalYear = formatFiscalYear(
+                  getFiscalYearStart(dayjs()),
+                );
+
+                const currentMonthIndex =
+                  getFiscalMonthIndex(dayjs());
+
+                const isCurrentMonth =
+                  selectedFiscalYear === currentFiscalYear &&
+                  options.dataPointIndex ===
+                    currentMonthIndex;
+
+                if (isCurrentMonth) return "";
+
+                const totalAmount = Number(value || 0);
+
+                if (totalAmount <= 0) return "";
+
+                return Math.round(
+                  totalAmount,
+                ).toLocaleString("en-IN");
+              },
+
+              offsetY: -10,
+
+              style: {
+                fontSize: "11px",
+                fontFamily:
+                  "Poppins-Regular, Arial, sans-serif",
+                fontWeight: 600,
+                color: "#000000",
+              },
+            },
+          },
+        },
+      },
+
+      dataLabels: {
+        enabled: false,
+      },
+
+      stroke: {
+        show: false,
+        width: 0,
+      },
+
+      fill: {
+        opacity: 1,
+      },
+
+      states: {
+        normal: {
+          filter: {
+            type: "none",
+            value: 0,
+          },
+        },
+
+        hover: {
+          filter: {
+            type: "none",
+            value: 0,
+          },
+        },
+
+        active: {
+          allowMultipleDataPointsSelection: false,
+
+          filter: {
+            type: "none",
+            value: 0,
+          },
+        },
+      },
+
+      grid: {
+        padding: {
+          top: 8,
+          right: 10,
+          bottom: 0,
+          left: 10,
+        },
+      },
+
+      xaxis: {
+        title: {
+          text: "  ",
+        },
+
+        labels: {
+          style: {
+            fontFamily:
+              "Poppins-Regular, Arial, sans-serif",
+          },
+        },
+      },
+
       yaxis: {
         min: 0,
-        title: { text: "Amount In Lakhs (INR)" },
-        labels: { formatter: (value) => `${value / 100000}` },
+
+        max: yAxisMaximumInLakhs * 100000,
+
+        tickAmount: 4,
+
+        forceNiceScale: false,
+
+        title: {
+          text: "Amount In Lakhs (INR)",
+
+          style: {
+            fontFamily:
+              "Poppins-Regular, Arial, sans-serif",
+          },
+        },
+
+        labels: {
+          formatter: (value) =>
+            `${Math.round(
+              Number(value || 0) / 100000,
+            )}`,
+
+          style: {
+            fontFamily:
+              "Poppins-Regular, Arial, sans-serif",
+          },
+        },
       },
-      legend: { show: true, position: "top" },
+
+      legend: {
+        show: true,
+        position: "top",
+        fontFamily:
+          "Poppins-Regular, Arial, sans-serif",
+      },
+
       tooltip: {
-        y: { formatter: (value) => `INR ${inrFormat(Number(value || 0))}` },
+        enabled: true,
+        shared: false,
+        intersect: true,
+
+        custom: ({
+          seriesIndex,
+          dataPointIndex,
+          w,
+        }) => {
+          const seriesName =
+            w.globals.seriesNames?.[seriesIndex] || "";
+
+          const amount = Number(
+            w.globals.initialSeries?.[seriesIndex]?.data?.[
+              dataPointIndex
+            ] || 0,
+          );
+
+          const monthLabel =
+            w.globals.labels?.[dataPointIndex] ||
+            `Month ${dataPointIndex + 1}`;
+
+          const color =
+            seriesName === "Actual Amount"
+              ? "#54C4A7"
+              : "#c4c4c4";
+
+          return `
+            <div
+              class="apexcharts-tooltip-title"
+              style="
+                font-family: Poppins-Regular;
+                font-size: 12px;
+                padding: 6px 10px;
+                margin-bottom: 0;
+              "
+            >
+              ${monthLabel}
+            </div>
+
+            <div
+              style="
+                padding: 8px 10px;
+                font-family: Poppins-Regular;
+                font-size: 12px;
+                background: #ffffff;
+                min-width: 220px;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 6px;
+                  white-space: nowrap;
+                "
+              >
+                <span
+                  style="
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 50%;
+                    background: ${color};
+                    display: inline-block;
+                    flex-shrink: 0;
+                  "
+                ></span>
+
+                <span>${seriesName}:</span>
+
+                <span style="font-weight: 600;">
+                  INR ${Math.round(
+                    amount,
+                  ).toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+          `;
+        },
       },
-    }),
-    [],
-  );
+    };
+  },
+  [expenseSeries, selectedFiscalYear],
+);
 
   return (
     <div className="p-4">
