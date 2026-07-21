@@ -57,7 +57,11 @@ const BudgetPage = () => {
   };
 
   const requestBudgetPermission =
-    requestBudgetPermissionByDepartment[department?._id];
+    //requestBudgetPermissionByDepartment[department?._id];
+     requestBudgetPermissionByDepartment[department?._id] ||
+    (department?.name?.toLowerCase() === "cafe"
+      ? PERMISSIONS.CAFE_REQUEST_BUDGET_BUTTON.value
+      : undefined);
   const canRequestBudget = requestBudgetPermission
     ? hasPermission(requestBudgetPermission)
     : true;

@@ -242,6 +242,24 @@ const masterPermissions = [
       },
     ],
   },
+    {
+    departmentId: "67b2ceb6b9b6ed5cedeb9a2c",
+    departmentName: "Cafe",
+    modules: [
+      {
+        name: "Finance",
+        submodules: [
+          { submoduleName: "Department Expense", actions: ["View"] },
+          { submoduleName: "Budget", actions: ["View", "Edit"] },
+          { submoduleName: "Budget History", actions: ["View", "Edit"] },
+          { submoduleName: "Payment Schedule", actions: ["View", "Edit"] },
+          { submoduleName: "Voucher", actions: ["View", "Edit"] },
+          { submoduleName: "Reject Voucher", actions: ["View", "Edit"] },
+          { submoduleName: "Voucher History", actions: ["View", "Edit"] },
+        ],
+      },
+    ],
+  },
 ];
 
 module.exports = masterPermissions;
