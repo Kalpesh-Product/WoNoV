@@ -322,6 +322,7 @@ const TicketReports = () => {
                   acceptedBy: getFullName(item.acceptedBy),
                   closedBy: getFullName(item.closedBy),
                   closedAt: item.closedAt ? formatDateTime(item.closedAt) : "",
+                  closedAtRaw: item.closedAt || "",
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -495,7 +496,7 @@ const TicketReports = () => {
             />
             <DetalisFormatted
               title="Closed At"
-              detail={formatDateTime(selectedMeeting?.closedAt) || ""}
+              detail={formatDateTime(selectedMeeting?.closedAtRaw) || ""}
             />
             {/* <DetalisFormatted
               title={"Rejected By"}
