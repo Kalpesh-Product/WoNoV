@@ -2,8 +2,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { FaArrowRight } from "react-icons/fa";
 import { SiCashapp } from "react-icons/si";
-import Card from "../../../components/Card";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -26,12 +26,48 @@ const toAmount = (value) => {
   return Number(String(value || "").replace(/,/g, "")) || 0;
 };
 
+const CafeDashboardCard = ({ title, icon, route }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div
+      onClick={() => navigate(route)}
+      className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:border-[0.2px] hover:border-primary hover:shadow-xl h-60"
+    >
+      <span className="absolute right-4 top-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <FaArrowRight size={14} />
+      </span>
+
+      {icon && (
+        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-3xl transition-transform duration-300 group-hover:scale-110">
+          {icon}
+        </div>
+      )}
+
+      <h3 className="text-base font-bold whitespace-nowrap">{title}</h3>
+    </div>
+  );
+};
+
 const CafeDashboard = () => {
   const navigate = useNavigate();
   const { setIsSidebarOpen } = useSidebar();
   const { hasPermission } = useUserPermissions();
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
+  const cafeCards = useMemo(
+    () =>
+      [
+        hasPermission(PERMISSIONS.CAFE_FINANCE.value)
+          ? {
+              title: "Finance",
+              icon: <SiCashapp />,
+              route: "/app/dashboard/cafe-dashboard/finance",
+            }
+          : null,
+      ].filter(Boolean),
+    [hasPermission],
+  );
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     formatFiscalYear(getFiscalYearStart()),
   );
@@ -430,13 +466,20 @@ redrawOnParentResize: false,
           />
         </div>
       )}
-      {hasPermission(PERMISSIONS.CAFE_FINANCE.value) && (
-        <div className="w-full max-w-sm">
-          <Card
-            title="Finance"
-            icon={<SiCashapp />}
-            route="/app/dashboard/cafe-dashboard/finance"
-          />
+      {cafeCards.length > 0 && (
+        <div
+          className={`grid w-full gap-4 ${
+            cafeCards.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+          }`}
+        >
+          {cafeCards.map((card) => (
+            <CafeDashboardCard
+              key={card.title}
+              title={card.title}
+              icon={card.icon}
+              route={card.route}
+            />
+          ))}
         </div>
       )}
     </div>
