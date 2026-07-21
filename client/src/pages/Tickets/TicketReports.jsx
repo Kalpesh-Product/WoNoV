@@ -157,6 +157,11 @@ const TicketReports = () => {
       hide: true,
       // cellRenderer: (params) => params.value,
     },
+    {
+      field: "closingRemark",
+      headerName: "Closing Remark",
+      hide: true,
+    },
     // {
     //   field: "closedAtTime",
     //   headerName: "Closed Time",
@@ -323,6 +328,7 @@ const TicketReports = () => {
                   closedBy: getFullName(item.closedBy),
                   closedAt: item.closedAt ? formatDateTime(item.closedAt) : "",
                   closedAtRaw: item.closedAt || "",
+                  closingRemark: item.closingRemark || "",
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -497,6 +503,10 @@ const TicketReports = () => {
             <DetalisFormatted
               title="Closed At"
               detail={formatDateTime(selectedMeeting?.closedAtRaw) || ""}
+            />
+            <DetalisFormatted
+              title="Closing Remark"
+              detail={selectedMeeting?.closingRemark || ""}
             />
             {/* <DetalisFormatted
               title={"Rejected By"}
