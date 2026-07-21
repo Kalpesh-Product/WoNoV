@@ -162,9 +162,12 @@ const CafeDashboard = () => {
           show: false,
         },
         fontFamily: "Poppins-Regular, Arial, sans-serif",
-        animations: {
-          enabled: true,
-        },
+       animations: {
+  enabled: false,
+},
+
+redrawOnWindowResize: false,
+redrawOnParentResize: false,
          events: {
     dataPointSelection: () => {
       navigate(
@@ -410,7 +413,7 @@ const CafeDashboard = () => {
       },
     };
   },
-  [expenseSeries, selectedFiscalYear],
+  [expenseSeries, selectedFiscalYear,navigate],
 );
 
   return (
