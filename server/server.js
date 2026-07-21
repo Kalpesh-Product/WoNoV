@@ -51,7 +51,11 @@ const printoutRoutes = require("./routes/printoutRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
 const CoworkingClient = require("./models/sales/CoworkingClient");
+const apiPerformanceLogger = require("./middlewares/apiPerformanceLogger");
+const { syncMetricsToSheet } = require("./services/performanceMetricsService");
 const isQueueEnabled = process.env.USE_QUEUE === "true";
+const isPerformanceTrackingEnabled =
+  process.env.ENABLE_API_PERFORMANCE_TRACKING === "true";
 
 let bullBoardAdapter = null;
 if (isQueueEnabled) {
@@ -87,6 +91,10 @@ app.get("/", (req, res) => {
 });
 
 require("./models/registerModels");
+
+if (isPerformanceTrackingEnabled) {
+  app.use(apiPerformanceLogger);
+}
 
 app.use("/api/auth", auditLogger, authRoutes);
 
@@ -133,6 +141,10 @@ app.use("/api/printout", verifyJwt, auditLogger, printoutRoutes);
 app.use("/api/logs", verifyJwt, logRoutes);
 if (bullBoardAdapter) {
   app.use("/admin/queues", bullBoardAdapter.getRouter());
+}
+
+if (isPerformanceTrackingEnabled) {
+  setInterval(syncMetricsToSheet, 60 * 1000);
 }
 
 app.all("*", (req, res) => {
