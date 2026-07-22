@@ -21,13 +21,23 @@ import formatDateTime from "../../../utils/formatDateTime";
 import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
+const normalizeUnitNo = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/^ST\s*/i, "")
+    .replace(/\s+/g, " ");
+
+const normalizeBuildingName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\bunits?\b/g, "")
+    .replace(/\btrade centre\b/g, "trade center")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const Inventory = ({ forcedBuildingTab = null }) => {
-  const normalizeUnitNo = (value) =>
-    String(value || "")
-      .trim()
-      .toUpperCase()
-      .replace(/^ST\s*/i, "")
-      .replace(/\s+/g, " ");
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -447,6 +457,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     name: "newPurchasePerUnitPrice",
   });
   const selectedCategoryForAdd = useWatch({ control, name: "category" });
+  const selectedBuildingForAdd = useWatch({ control, name: "buildingName" });
 
   const updateOpeningUnits = useWatch({
     control: updateControl,
@@ -896,6 +907,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       return;
     }
 
+    const activeBuildingName =
+      selectedBuildingForAdd ||
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName;
+    const activeBuildingKey = normalizeBuildingName(activeBuildingName);
+
     const selectedItemOption = itemOptions.find(
       (item) => String(item.id) === String(selectedItemForAdd),
     );
@@ -910,6 +929,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
     const matched = [...(inventoryData || [])]
       .filter((item) => {
+        const itemBuildingName = normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        );
         const itemId = String(item?.itemName?._id || item?.itemId || "");
         const categoryId = String(
           item?.category?._id || item?.categoryId || "",
@@ -929,8 +954,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         const isCategoryMatched =
           categoryId === String(selectedCategoryForAdd) ||
           (selectedCategoryName && categoryName === selectedCategoryName);
+        const isBuildingMatched =
+          activeBuildingKey &&
+          itemBuildingName &&
+          itemBuildingName === activeBuildingKey;
 
-        return isItemMatched && isCategoryMatched;
+        return isItemMatched && isCategoryMatched && isBuildingMatched;
       })
       .sort(
         (a, b) =>
@@ -970,7 +999,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     inventoryData,
     itemOptions,
     inventoryCategories,
+    selectedBuildingForAdd,
+    selectedTabConfig?.buildingName,
+    selectedUnit?.building?.buildingName,
+    selectedUnit?.buildingName,
+    defaultBuildingName,
     setAddValue,
+    inventoryRootView,
   ]);
   useEffect(() => {
     const activeBuildingName =
@@ -978,7 +1013,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       selectedUnit?.buildingName ||
       selectedTabConfig?.buildingName ||
       defaultBuildingName;
-    const activeUnitNo = selectedUnit?.unitNo || defaultUnitNo;
+    const activeUnitNo = selectedUnit?.unitNo || "";
 
     setAddValue("addedByName", currentUserName);
     setAddValue("date", currentDate);
@@ -1183,6 +1218,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const handleAddAsset = () => {
+    const defaultAddBuildingName =
+      inventoryRootView === "overall"
+        ? ""
+        : selectedUnit?.building?.buildingName ||
+          selectedUnit?.buildingName ||
+          selectedTabConfig?.buildingName ||
+          defaultBuildingName;
+
     setModalMode("add");
     setSelectedAsset(null);
     resetAddInventory({
@@ -1197,22 +1240,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       category: "",
       addedByName: currentUserName,
       date: currentDate,
-      buildingName:
-        selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      buildingName: defaultAddBuildingName,
       unitNo: selectedUnit?.unitNo || defaultUnitNo,
     });
     setAddValue("addedByName", currentUserName);
     setAddValue("date", currentDate);
-    setAddValue(
-      "buildingName",
-      selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
-    );
+    setAddValue("buildingName", defaultAddBuildingName);
     setAddValue("unitNo", selectedUnit?.unitNo || defaultUnitNo);
     setIsModalOpen(true);
   };
@@ -1269,28 +1302,100 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       toast.error("Department not found. Please refresh and try again.");
       return;
     }
-    if (!selectedUnit?._id) {
+    if (inventoryRootView !== "overall" && !selectedUnit?._id) {
       toast.error("Unit not found. Please reselect the unit and try again.");
       return;
     }
+
+    const submittedBuildingName =
+      data.buildingName ||
+      selectedBuildingForAdd ||
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName ||
+      "";
+
+    const selectedItemOption = itemOptions.find(
+      (item) => String(item.id) === String(data.itemName),
+    );
+    const selectedCategoryOption = inventoryCategories.find(
+      (category) => String(category._id) === String(data.category),
+    );
+
+    const selectedItemName = selectedItemOption?.name?.trim().toLowerCase();
+    const selectedCategoryName = selectedCategoryOption?.categoryName
+      ?.trim()
+      .toLowerCase();
+    const activeBuildingKey = normalizeBuildingName(submittedBuildingName);
+
+    const matchedInventory = [...(inventoryData || [])]
+      .filter((item) => {
+        const itemBuildingName = normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        );
+        const itemId = String(item?.itemName?._id || item?.itemId || "");
+        const categoryId = String(
+          item?.category?._id || item?.categoryId || "",
+        );
+        const itemName = String(item?.itemName || "")
+          .trim()
+          .toLowerCase();
+        const categoryName = String(
+          item?.categoryName || item?.category || item?.Category || "",
+        )
+          .trim()
+          .toLowerCase();
+
+        const isItemMatched =
+          itemId === String(data.itemName) ||
+          (selectedItemName && itemName === selectedItemName);
+        const isCategoryMatched =
+          categoryId === String(data.category) ||
+          (selectedCategoryName && categoryName === selectedCategoryName);
+        const isBuildingMatched =
+          activeBuildingKey &&
+          itemBuildingName &&
+          itemBuildingName === activeBuildingKey;
+
+        return isItemMatched && isCategoryMatched && isBuildingMatched;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || b.updatedAt || 0) -
+          new Date(a.createdAt || a.date || a.updatedAt || 0),
+      )[0];
+
+    const resolvedOpeningUnits = matchedInventory
+      ? Number(matchedInventory.newPurchaseUnits || 0)
+      : 0;
+    const resolvedOpeningPerUnitPrice = matchedInventory
+      ? Number(matchedInventory.newPurchasePerUnitPrice || 0)
+      : 0;
+    const resolvedOpeningInventoryValue = matchedInventory
+      ? Number(matchedInventory.newPurchaseInventoryValue || 0)
+      : 0;
+
     addAsset({
       itemName: data.itemName,
       department: department._id,
-      openingInventoryUnits: Number(data.openingInventoryUnits),
-      openingPerUnitPrice: Number(data.openingPerUnitPrice),
-      openingInventoryValue: Number(data.openingInventoryValue),
+      openingInventoryUnits: resolvedOpeningUnits,
+      openingPerUnitPrice: resolvedOpeningPerUnitPrice,
+      openingInventoryValue: resolvedOpeningInventoryValue,
       newPurchaseUnits: Number(data.newPurchaseUnits),
       newPurchasePerUnitPrice: Number(data.newPurchasePerUnitPrice),
       newPurchaseInventoryValue: Number(data.newPurchaseInventoryValue),
       consumedOpenInventoryUnits: 0,
       consumedNewPurchaseInventoryUnits: 0,
       closingInventoryUnits:
-        Number(data.openingInventoryUnits) + Number(data.newPurchaseUnits),
+        resolvedOpeningUnits + Number(data.newPurchaseUnits),
       category: data.category,
-      unit: selectedUnit._id,
+      unit: selectedUnit?._id || null,
       date: data.date,
-      buildingName: data.buildingName,
-      unitNo: data.unitNo,
+      buildingName: submittedBuildingName,
     });
   };
 
@@ -1344,7 +1449,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     });
   };
 
-  const inventoryColumns = [
+  const unitInventoryColumns = [
     {
       field: "id",
       headerName: "Sr No",
@@ -1362,7 +1467,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           }}
           className="text-primary cursor-pointer underline"
         >
-          {params.value}
+          {params.value || "-"}
         </span>
       ),
     },
@@ -1481,9 +1586,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 const currentPath = location.pathname.endsWith("/")
                   ? location.pathname.slice(0, -1)
                   : location.pathname;
-                 const recordPath = `${currentPath}/${encodeURIComponent(params.data.itemName)}`;
+                const recordPath = `${currentPath}/${encodeURIComponent(
+                  params.data.itemName,
+                )}`;
                 navigate(recordPath, {
-                  state: { inventoryCategory: params.data.categoryName || "" },
+                  state: {
+                    inventoryCategory: params.data.categoryName || "",
+                    buildingName: params.data.buildingName || "",
+                  },
                 });
               },
             },
@@ -1491,6 +1601,47 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         />
       ),
     },
+  ];
+
+  const overallInventoryColumns = [
+    {
+      field: "id",
+      headerName: "Sr No",
+      width: 100,
+      valueGetter: (params) => params.node.rowIndex + 1,
+    },
+    {
+      field: "buildingName",
+      headerName: "Building",
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="text-primary cursor-pointer underline"
+        >
+          {params.value || "-"}
+        </span>
+      ),
+    },
+    {
+      headerName: "Remaining Stock",
+      cellRenderer: (params) => {
+        const value =
+          params.data.remainingNewPurchaseInventoryUnits ??
+          params.data.remainingOpeningInventoryUnits ??
+          0;
+
+        return inrFormat(value);
+      },
+    },
+    {
+      field: "itemName",
+      headerName: "Item Name",
+      cellRenderer: (params) => <span>{params.value || "-"}</span>,
+    },
+    ...unitInventoryColumns.slice(2),
   ];
 
   const selectedBuildingUnits = useMemo(() => {
@@ -1635,7 +1786,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         )
       : inventoryTableData || [];
 
-    const latestByItemCategory = new Map();
+    const latestByBuildingItemCategory = new Map();
 
     unitFilteredRows.forEach((item) => {
       const itemKey =
@@ -1646,9 +1797,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         String(item?.categoryId || item?.categoryName || item?.category || "")
           .trim()
           .toLowerCase() || "unknown-category";
-      const compositeKey = `${itemKey}__${categoryKey}`;
+      const buildingKey =
+        normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        ) || "unknown-building";
+      const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
 
-      const existing = latestByItemCategory.get(compositeKey);
+      const existing = latestByBuildingItemCategory.get(compositeKey);
       const itemDate = new Date(
         item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
       );
@@ -1659,15 +1817,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               existing?.date ||
               existing?.updatedAt ||
               0,
-          )
+      )
         : null;
 
       if (!existing || itemDate > existingDate) {
-        latestByItemCategory.set(compositeKey, item);
+        latestByBuildingItemCategory.set(compositeKey, item);
       }
     });
 
-    return Array.from(latestByItemCategory.values()).sort(
+    return Array.from(latestByBuildingItemCategory.values()).sort(
       (a, b) =>
         new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
         new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
@@ -1841,7 +1999,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             data={selectedUnitInventoryRows || []}
             tableHeight={450}
             dateColumn={"date"}
-            columns={inventoryColumns}
+            columns={overallInventoryColumns}
             handleSubmit={handleAddAsset}
             exportData
             taskExportDateTimeFormatting
@@ -1934,12 +2092,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   search={true}
                   tableTitle={dynamicInventoryTitle}
                   hideTitle={true}
-                  buttonTitle={"Add Inventory"}
                   data={selectedUnitInventoryRows || []}
                   tableHeight={450}
                   dateColumn={"date"}
-                  columns={inventoryColumns}
-                  handleSubmit={handleAddAsset}
+                  columns={unitInventoryColumns}
                   exportData
                   taskExportDateTimeFormatting
                 />
@@ -2361,13 +2517,25 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     <TextField
                       {...field}
                       label="Building Name"
+                      select
                       fullWidth
                       size="small"
-                      disabled
-                    />
+                      className="md:col-span-2"
+                    >
+                      <MenuItem value="" disabled>
+                        Select building
+                      </MenuItem>
+                      {tabOptions
+                        .filter((tab) => tab.isAllowed)
+                        .map((tab) => (
+                          <MenuItem key={tab.key} value={tab.buildingName}>
+                            {tab.buildingName}
+                          </MenuItem>
+                        ))}
+                    </TextField>
                   )}
                 />
-                <Controller
+                {/* <Controller
                   name="unitNo"
                   control={control}
                   render={({ field }) => (
@@ -2379,7 +2547,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       disabled
                     />
                   )}
-                />
+                /> */}
                 <Controller
                   name="category"
                   control={control}
@@ -2540,140 +2708,228 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         )}
 
         {modalMode === "view" && selectedAsset && (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
-            {selectedAsset.image && (
-              <div className="col-span-2 flex justify-center">
-                <img
-                  src={selectedAsset.image}
-                  alt="Asset"
-                  className="max-h-40 object-contain rounded-md shadow-md"
-                />
+          inventoryRootView === "overall" ? (
+            <div className="px-2 py-4 space-y-8">
+              <div>
+                <div className="font-bold mb-4">Item Information</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Item Name"
+                    detail={selectedAsset.itemName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Department"
+                    detail={
+                      selectedAsset.department?.name ||
+                      selectedAsset.departmentName ||
+                      selectedAsset.department ||
+                      "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="Building Name"
+                    detail={selectedAsset.buildingName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Category"
+                    detail={selectedAsset.categoryName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Date"
+                    detail={formatDateTime(selectedAsset.dateRaw)}
+                  />
+                </div>
               </div>
-            )}
-            <div className="font-bold">Item Information</div>
-            <DetalisFormatted
-              title="Item Name"
-              detail={selectedAsset.itemName || "N/A"}
-            />
-            <DetalisFormatted
-              title="Department"
-              detail={
-                selectedAsset.department?.name ||
-                selectedAsset.department ||
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title="Date"
-              detail={formatDateTime(selectedAsset.dateRaw)}
-            />
-            <DetalisFormatted
-              title="Category"
-              detail={selectedAsset.categoryName || "N/A"}
-            />
-            <br />
 
-            <div className="font-bold">Inventory Units</div>
+              <div>
+                <div className="font-bold mb-4">Inventory Units</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Opening Units"
+                    detail={
+                      selectedAsset.openingInventoryUnits !== null &&
+                      selectedAsset.openingInventoryUnits !== undefined
+                        ? selectedAsset.openingInventoryUnits
+                        : "NA"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="Opening Per Unit Price"
+                    detail={
+                      selectedAsset.openingPerUnitPrice != null
+                        ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
+                        : "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Units"
+                    detail={
+                      selectedAsset.newPurchaseUnits !== null &&
+                      selectedAsset.newPurchaseUnits !== undefined
+                        ? selectedAsset.newPurchaseUnits
+                        : "NA"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Per Unit Price"
+                    detail={
+                      selectedAsset.newPurchasePerUnitPrice != null
+                        ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
+                        : "N/A"
+                    }
+                  />
+                </div>
+              </div>
 
-            <DetalisFormatted
-              title="Opening Units"
-              detail={selectedAsset.openingInventoryUnits !== null &&
-                selectedAsset.openingInventoryUnits  !== undefined
-                  ? selectedAsset.openingInventoryUnits 
-                  : "NA"
-              }
-            />
-            <DetalisFormatted
-              title="Opening Per Unit Price"
-              detail={
-                selectedAsset.openingPerUnitPrice != null
-                  ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
-                  : "N/A"
-              }
-            />
-            {/* <DetalisFormatted
-              title="New Purchase Units"
-              detail={selectedAsset.newPurchaseUnits ?? "0"}
-            /> */}
-            <DetalisFormatted
-              title="New Purchase Units"
-              detail={
-                selectedAsset.newPurchaseUnits !== null &&
-                selectedAsset.newPurchaseUnits !== undefined
-                  ? selectedAsset.newPurchaseUnits
-                  : "NA"
-              }
+              <div>
+                <div className="font-bold mb-4">Inventory Value</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Opening Value"
+                    detail={`INR ${
+                      inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                    }`}
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Value"
+                    detail={`INR ${
+                      inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="font-bold mb-4">Inventory Added By</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Name"
+                    detail={selectedAsset.addedByName || "N/A"}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
+              {selectedAsset.image && (
+                <div className="col-span-2 flex justify-center">
+                  <img
+                    src={selectedAsset.image}
+                    alt="Asset"
+                    className="max-h-40 object-contain rounded-md shadow-md"
+                  />
+                </div>
+              )}
+              <div className="font-bold">Item Information</div>
+              <DetalisFormatted
+                title="Item Name"
+                detail={selectedAsset.itemName || "N/A"}
               />
-            <DetalisFormatted
-              title="New Purchase Per Unit Price"
-              detail={
-                selectedAsset.newPurchasePerUnitPrice != null
-                  ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
-                  : "N/A"
-              }
-            />
-            {/* <DetalisFormatted
-              title="Closing Units"
-              detail={
-                // (selectedAsset?.remainingOpeningInventoryUnits || 0) +
-                selectedAsset?.remainingNewPurchaseInventoryUnits || 0
-              }
-            /> */}
-            <DetalisFormatted
-              title="Last Consumed Unit Value"
-              detail={
-                selectedAsset.lastConsumed ??
-               // selectedAsset.lastConsumedUnitValue ??
-              //  selectedAsset.consumedOpenInventoryUnits ??
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title="Last Remaining Units"
-              detail={
-                selectedAsset.remainingOpeningInventoryUnits ??
-                "0"
-              }
-            />
-            <DetalisFormatted
-              title="New Consumed Units"
-              detail={
-                selectedAsset.totalConsumed??
-                //selectedAsset.consumedNewPurchaseInventoryUnits ??
-                "0"
-              }
-            />
-            <DetalisFormatted
-              title="New Remaining Units"
-              detail={
-               selectedAsset.remainingNewPurchaseInventoryUnits??
-                "0"
-              }
-            />
-            <br />
-            <div className="font-bold">Inventory Value</div>
-            <DetalisFormatted
-              title="Opening Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-              }`}
-            />
+              <DetalisFormatted
+                title="Department"
+                detail={
+                  selectedAsset.department?.name ||
+                  selectedAsset.department ||
+                  "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Date"
+                detail={formatDateTime(selectedAsset.dateRaw)}
+              />
+              <DetalisFormatted
+                title="Category"
+                detail={selectedAsset.categoryName || "N/A"}
+              />
+              <br />
 
-            <DetalisFormatted
-              title="New Purchase Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-              }`}
-            />
-           
+              <div className="font-bold">Inventory Units</div>
 
-            <br />
-            <div className="font-bold">Inventory Added By</div>
-            <DetalisFormatted
-              title="Name"
-              detail={selectedAsset.addedByName || "N/A"}
-            />
-          </div>
+              <DetalisFormatted
+                title="Opening Units"
+                detail={selectedAsset.openingInventoryUnits !== null &&
+                  selectedAsset.openingInventoryUnits  !== undefined
+                    ? selectedAsset.openingInventoryUnits
+                    : "NA"
+                }
+              />
+              <DetalisFormatted
+                title="Opening Per Unit Price"
+                detail={
+                  selectedAsset.openingPerUnitPrice != null
+                    ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
+                    : "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="New Purchase Units"
+                detail={
+                  selectedAsset.newPurchaseUnits !== null &&
+                  selectedAsset.newPurchaseUnits !== undefined
+                    ? selectedAsset.newPurchaseUnits
+                    : "NA"
+                }
+              />
+              <DetalisFormatted
+                title="New Purchase Per Unit Price"
+                detail={
+                  selectedAsset.newPurchasePerUnitPrice != null
+                    ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
+                    : "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Last Consumed Unit Value"
+                detail={
+                  selectedAsset.lastConsumed ??
+                  "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Last Remaining Units"
+                detail={
+                  selectedAsset.remainingOpeningInventoryUnits ??
+                  "0"
+                }
+              />
+              <DetalisFormatted
+                title="New Consumed Units"
+                detail={
+                  selectedAsset.totalConsumed??
+                  "0"
+                }
+              />
+              <DetalisFormatted
+                title="New Remaining Units"
+                detail={
+                 selectedAsset.remainingNewPurchaseInventoryUnits??
+                  "0"
+                }
+              />
+              <br />
+              <div className="font-bold">Inventory Value</div>
+              <DetalisFormatted
+                title="Opening Value"
+                detail={`INR ${
+                  inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                }`}
+              />
+
+              <DetalisFormatted
+                title="New Purchase Value"
+                detail={`INR ${
+                  inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                }`}
+              />
+
+              <br />
+              <div className="font-bold">Inventory Added By</div>
+              <DetalisFormatted
+                title="Name"
+                detail={selectedAsset.addedByName || "N/A"}
+              />
+            </div>
+          )
         )}
 
         {modalMode === "edit" && (

@@ -45,6 +45,11 @@ const inventorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    buildingName: {
+      type: String,
+      required: false,
+      default: "",
+    },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

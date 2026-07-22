@@ -77,7 +77,7 @@ const MaintenanceInventoryTabs = () => {
       tabs={tabs}
       contentClassName="pt-2"
       hideTabsCondition={(pathname) =>
-         /\/inventory\/(sunteck-kanaka-units|dempo-trade-center)\/[^/]+(\/[^/]+)?$/i.test(
+        /\/inventory\/(overall-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test(
           pathname,
         )
       }

@@ -18,6 +18,7 @@ const createInventory = async (req, res, next) => {
       newPurchaseUnits = 0,
       newPurchasePerUnitPrice = 0,
       unit,
+      buildingName = "",
     } = req.body;
 
     /* ------------------ Validations ------------------ */
@@ -30,7 +31,7 @@ const createInventory = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid item id" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(unit)) {
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
       return res.status(400).json({ message: "Invalid unit id" });
     }
 
@@ -53,7 +54,8 @@ const createInventory = async (req, res, next) => {
       company,
       department: department,
       itemName: itemName,
-      unit: unit,
+      unit: unit || null,
+      buildingName: buildingName || "",
     }).sort({ createdAt: -1 });
 
     const previousRemaining = lastInventory?.remainingUnits || 0;
@@ -64,7 +66,8 @@ const createInventory = async (req, res, next) => {
       company,
       department,
       itemName,
-      unit,
+      unit: unit || null,
+      buildingName: buildingName || "",
       addedBy: user,
       newPurchaseUnits,
       newPurchasePerUnitPrice,
@@ -351,6 +354,9 @@ const getInventories = async (req, res, next) => {
             itemName: "$itemName",
             unit: "$unit",
             department: "$department",
+            buildingName: {
+              $ifNull: ["$buildingName", ""],
+            },
           },
           sortBy: { createdAt: 1 },
           output: {
@@ -499,6 +505,10 @@ const getInventories = async (req, res, next) => {
           department: {
             _id: "$department._id",
             name: "$department.name",
+          },
+
+          buildingName: {
+            $ifNull: ["$buildingName", "$unit.buildingName"],
           },
 
           unit: {

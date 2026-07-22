@@ -1112,6 +1112,10 @@ export const routes = createBrowserRouter([
                             element: <Inventory />,
                           },
                           {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
                             path: "category",
                             element: <Inventory />,
                           },
@@ -1394,6 +1398,10 @@ export const routes = createBrowserRouter([
                             element: <Inventory />,
                           },
                           {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
                             path: "category",
                             element: <Inventory />,
                           },
@@ -1616,6 +1624,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "overall-inventory",
                             element: <Inventory />,
+                          },
+                          {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
                           },
                           {
                             path: "category",
