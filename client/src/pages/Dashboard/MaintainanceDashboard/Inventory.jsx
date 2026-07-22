@@ -66,21 +66,21 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const inventoryTabPermissions = useMemo(() => {
     if (isAdminInventoryPath) {
       return {
-        sunteck: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS.value,
-        dempo: PERMISSIONS.ADMIN_INVENTORY_DEMPO_UNITS.value,
+        sunteck: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.ADMIN_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
       };
     }
 
     if (isItInventoryPath) {
       return {
-        sunteck: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS.value,
-        dempo: PERMISSIONS.IT_INVENTORY_DEMPO_UNITS.value,
+        sunteck: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.IT_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
       };
     }
 
     return {
-      sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS.value,
-      dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_UNITS.value,
+      sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
+      dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
     };
   }, [isAdminInventoryPath, isItInventoryPath]);
 
@@ -294,7 +294,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       return {
         category: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
         item: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.ADMIN_INVENTORY_LIST_TAB.value,
+        inventory: PERMISSIONS.ADMIN_OVERALL_INVENTORY_TAB.value,
       };
     }
 
@@ -302,49 +302,71 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       return {
         category: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
         item: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.IT_INVENTORY_LIST_TAB.value,
+        inventory: PERMISSIONS.IT_OVERALL_INVENTORY_TAB.value,
       };
     }
 
     return {
       category: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
       item: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
-      inventory: PERMISSIONS.MAINTENANCE_INVENTORY_LIST_TAB.value,
+      inventory: PERMISSIONS.MAINTENANCE_OVERALL_INVENTORY_TAB.value,
     };
   }, [isAdminInventoryPath, isItInventoryPath]);
 
   const unitTabOptions = useMemo(
-    () =>
-      [
-        {
-          key: "category",
-          path: "category",
-          label: "Category",
-          permission: unitTabPermissions.category,
-        },
-        {
-          key: "item",
-          path: "item",
-          label: "Item",
-          permission: unitTabPermissions.item,
-        },
-       {
-          key: "inventory",
-          path: "item-inventory",
-          label: "Inventory",
-          permission: unitTabPermissions.inventory,
-        },
-      ].filter((tab) => userPermissions.includes(tab.permission)),
-    [unitTabPermissions, userPermissions],
+    () => {
+      const baseTabs = forcedBuildingTab
+        ? [
+            {
+              key: "inventory",
+              path: "inventory",
+              label: "Inventory",
+              permission: unitTabPermissions.inventory,
+            },
+          ]
+        : [
+            {
+              key: "category",
+              path: "category",
+              label: "Category",
+              permission: unitTabPermissions.category,
+            },
+            {
+              key: "item",
+              path: "item",
+              label: "Item",
+              permission: unitTabPermissions.item,
+            },
+            {
+              key: "inventory",
+              path: "item-inventory",
+              label: "Inventory",
+              permission: unitTabPermissions.inventory,
+            },
+          ];
+
+      return baseTabs.filter((tab) => userPermissions.includes(tab.permission));
+    },
+    [forcedBuildingTab, unitTabPermissions, userPermissions],
   );
 
- const defaultUnitTabPath = unitTabOptions[0]?.path || "null";
-  const activeUnitTab =
-    unitTabOptions.find(
-      (tab) =>
-        tab.path === inventoryTabParam ||
-        (tab.key === "inventory" && inventoryTabParam === "inventory"),
-    )?.key || unitTabOptions[0]?.key || "null";
+  const defaultUnitTabPath = unitTabOptions[0]?.path || "inventory";
+
+  const inventoryRootView = useMemo(() => {
+    const pathname = location.pathname.toLowerCase();
+
+    if (pathname.includes("/overall-inventory")) return "overall";
+    if (!unitNoParam && pathname.endsWith("/category")) return "category";
+    if (!unitNoParam && pathname.endsWith("/item")) return "item";
+
+    return "building";
+  }, [location.pathname, unitNoParam]);
+
+  useEffect(() => {
+    if (inventoryRootView !== "building") {
+      setSelectedUnit(null);
+    }
+  }, [inventoryRootView]);
 
   useEffect(() => {
     setValue("itemName", selectedAsset?.itemName);
@@ -1671,7 +1693,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const handleUnitOpen = (unit) => {
     if (forcedBuildingTab && unit?.unitNo) {
       navigate(
-        `${location.pathname}/${encodeURIComponent(unit.unitNo)}/category`,
+        `${location.pathname}/${encodeURIComponent(unit.unitNo)}/inventory`,
       );
       return;
     }
@@ -1807,149 +1829,122 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     unitNoParam,
   ]);
   return (
-    <div className={forcedBuildingTab ? "" : "p-4"}>
-      {!selectedUnit ? (
+    <div className="p-0">
+      {inventoryRootView === "overall" && (
+        <PageFrame>
+          <YearWiseTable
+            key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+            search={true}
+            tableTitle="Overall Inventory"
+            hideTitle={true}
+            buttonTitle={"Add Inventory"}
+            data={selectedUnitInventoryRows || []}
+            tableHeight={450}
+            dateColumn={"date"}
+            columns={inventoryColumns}
+            handleSubmit={handleAddAsset}
+            exportData
+            taskExportDateTimeFormatting
+          />
+        </PageFrame>
+      )}
+      {inventoryRootView === "category" && (
+        <PageFrame>
+          <AgTable
+            data={categoryRows}
+            columns={categoryColumns}
+            search={true}
+            tableTitle="Inventory Category"
+            buttonTitle={"Add Category"}
+            handleClick={handleOpenCategoryModal}
+            tableHeight={450}
+            exportData
+          />
+        </PageFrame>
+      )}
+      {inventoryRootView === "item" && (
+        <PageFrame>
+          <AgTable
+            data={itemRows}
+            columns={itemColumns}
+            search={true}
+            tableTitle="Inventory Item"
+            buttonTitle={"Add Item"}
+            handleClick={handleOpenAddItemModal}
+            tableHeight={450}
+            exportData
+          />
+        </PageFrame>
+      )}
+      {inventoryRootView === "building" && (
         <>
-          {!forcedBuildingTab && (
-            <Box
-              sx={{
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                overflow: "hidden",
-                mb: 3,
-                display: "flex",
-              }}
-            >
-              {tabOptions
-                .filter((tab) => tab.isAllowed)
-                .map((tab, index, arr) => {
-                  const isActive = selectedBuildingTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      disabled={isActive}
-                      onClick={() => handleTabChange(tab.key)}
-                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
-                        arr.length === 1 ? "w-full" : "flex-1"
-                      } ${
-                        isActive
-                          ? "bg-primary text-white cursor-default"
-                          : "bg-white text-primary"
-                      } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-            </Box>
-          )}
-          <PageFrame>
-            <AgTable
-              data={unitListingRows}
-              columns={unitColumns}
-              search={true}
-              hideTitle={false}
-              tableTitle={unitWiseHeading}
-              tableHeight={440}
-              exportData
-            />
-          </PageFrame>
-        </>
-      ) : (
-        // <YearWiseTable
-        //   key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
-        //   search={true}
-        //   tableTitle={dynamicInventoryTitle}
-        //   hideTitle={true}
-        //   buttonTitle={"Add Inventory"}
-        //   secondaryButtonTitle={"Add Category"}
-        //   middleButtonTitle={"Add Item"}
-        //   handleSecondarySubmit={handleOpenCategoryModal}
-        //   handleMiddleSubmit={handleOpenAddItemModal}
-        //   data={selectedUnitInventoryRows || []}
-        //   tableHeight={450}
-        //   dateColumn={"date"}
-        //   columns={inventoryColumns}
-        //   handleSubmit={handleAddAsset}
-        // />
-        <>
-          {forcedBuildingTab && (
-            <Box
-              sx={{
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                overflow: "hidden",
-                mb: 3,
-                display: "flex",
-              }}
-            >
-              {unitTabOptions.map((tab, index) => {
-                const isActive = activeUnitTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    disabled={isActive}
-                    onClick={() => handleUnitTabChange(tab.path)}
-                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
-                      isActive
-                        ? "bg-primary text-white cursor-default"
-                        : "bg-white text-primary"
-                    } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </Box>
-          )}
-
-          {activeUnitTab === "category" && (
-            <PageFrame>
-              <AgTable
-                data={categoryRows}
-                columns={categoryColumns}
-                search={true}
-                tableTitle={dynamicCategoryTitle}
-                buttonTitle={"Add Category"}
-                handleClick={handleOpenCategoryModal}
-                tableHeight={450}
-                exportData
-              />
-            </PageFrame>
-          )}
-          {activeUnitTab === "item" && (
-            <PageFrame>
-              <AgTable
-                data={itemRows}
-                columns={itemColumns}
-                search={true}
-                tableTitle={dynamicItemTitle}
-                buttonTitle={"Add Item"}
-                handleClick={handleOpenAddItemModal}
-                tableHeight={450}
-                exportData
-              />
-            </PageFrame>
-          )}
-          {activeUnitTab === "inventory" && (
-            <PageFrame>
-              <YearWiseTable
-                key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
-                search={true}
-                tableTitle={dynamicInventoryTitle}
-                hideTitle={true}
-                buttonTitle={"Add Inventory"}
-                data={selectedUnitInventoryRows || []}
-                tableHeight={450}
-                dateColumn={"date"}
-                columns={inventoryColumns}
-                handleSubmit={handleAddAsset}
-                exportData
-                taskExportDateTimeFormatting
-              />
-            </PageFrame>
+          {!selectedUnit ? (
+            <>
+              {!forcedBuildingTab && (
+                <Box
+                  sx={{
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    mb: 3,
+                    display: "flex",
+                  }}
+                >
+                  {tabOptions
+                    .filter((tab) => tab.isAllowed)
+                    .map((tab, index, arr) => {
+                      const isActive = selectedBuildingTab === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          disabled={isActive}
+                          onClick={() => handleTabChange(tab.key)}
+                          className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
+                            arr.length === 1 ? "w-full" : "flex-1"
+                          } ${
+                            isActive
+                              ? "bg-primary text-white cursor-default"
+                              : "bg-white text-primary"
+                          } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                </Box>
+              )}
+              <PageFrame>
+                <AgTable
+                  data={unitListingRows}
+                  columns={unitColumns}
+                  search={true}
+                  hideTitle={false}
+                  tableTitle={unitWiseHeading}
+                  tableHeight={440}
+                  exportData
+                />
+              </PageFrame>
+            </>
+          ) : (
+            <>
+              <PageFrame>
+                <YearWiseTable
+                  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+                  search={true}
+                  tableTitle={dynamicInventoryTitle}
+                  hideTitle={true}
+                  buttonTitle={"Add Inventory"}
+                  data={selectedUnitInventoryRows || []}
+                  tableHeight={450}
+                  dateColumn={"date"}
+                  columns={inventoryColumns}
+                  handleSubmit={handleAddAsset}
+                  exportData
+                  taskExportDateTimeFormatting
+                />
+              </PageFrame>
+            </>
           )}
         </>
       )}

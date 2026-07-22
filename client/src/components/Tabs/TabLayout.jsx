@@ -11,6 +11,7 @@ const TabLayout = ({
   defaultTabPath,
   hideTabsCondition = () => false,
   hideTabsOnPaths = [], // NEW PROP
+  contentClassName = "py-4",
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -123,7 +124,7 @@ const TabLayout = ({
         </Tabs>
       )}
 
-      <div className="py-4">
+      <div className={contentClassName}>
         <Outlet />
       </div>
     </div>

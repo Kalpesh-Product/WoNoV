@@ -1108,6 +1108,18 @@ export const routes = createBrowserRouter([
                         element: <MaintenanceInventoryTabs />,
                         children: [
                           {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
+                          {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
@@ -1378,6 +1390,18 @@ export const routes = createBrowserRouter([
                         element: <MaintenanceInventoryTabs />,
                         children: [
                           {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
+                          {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
@@ -1589,6 +1613,18 @@ export const routes = createBrowserRouter([
                         //element: <Inventory />,
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                          {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
                           {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,

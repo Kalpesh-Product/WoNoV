@@ -2279,14 +2279,14 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "INVENTORY",
     type: "read",
   },
-  ADMIN_INVENTORY_SUNTECK_UNITS: {
-    value: "admin_inventory_sunteck_units",
+  ADMIN_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "admin_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
-  ADMIN_INVENTORY_DEMPO_UNITS: {
-    value: "admin_inventory_dempo_trade_centre_units",
+  ADMIN_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "admin_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
@@ -2303,9 +2303,9 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
-  ADMIN_INVENTORY_LIST_TAB: {
-    value: "admin_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  ADMIN_OVERALL_INVENTORY_TAB: {
+    value: "admin_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
@@ -2633,14 +2633,14 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "INVENTORY",
     type: "read",
   },
-  MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
-    value: "maintenance_inventory_sunteck_units",
+  MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "maintenance_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-  MAINTENANCE_INVENTORY_DEMPO_UNITS: {
-    value: "maintenance_inventory_dempo_trade_centre_units",
+  MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "maintenance_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
@@ -2658,9 +2658,9 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-  MAINTENANCE_INVENTORY_LIST_TAB: {
-    value: "maintenance_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  MAINTENANCE_OVERALL_INVENTORY_TAB: {
+    value: "maintenance_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
@@ -2903,14 +2903,14 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
-  IT_INVENTORY_SUNTECK_UNITS: {
-    value: "it_inventory_sunteck_units",
+  IT_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "it_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
-  IT_INVENTORY_DEMPO_UNITS: {
-    value: "it_inventory_dempo_trade_centre_units",
+  IT_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "it_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
@@ -2928,9 +2928,9 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
-  IT_INVENTORY_LIST_TAB: {
-    value: "it_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  IT_OVERALL_INVENTORY_TAB: {
+    value: "it_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
