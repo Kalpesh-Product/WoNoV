@@ -23,6 +23,8 @@
 
 // module.exports = apiPerformanceLogger;
 
+const { recordApiMetric } = require("../services/performanceMetricsService");
+
 const apiPerformanceLogger = (req, res, next) => {
   const startTime = process.hrtime.bigint();
 
@@ -31,10 +33,10 @@ const apiPerformanceLogger = (req, res, next) => {
 
     const durationMs = Number(endTime - startTime) / 1_000_000;
 
-    consle.log("Before API Performance Logger - Duration (ms):", durationMs);
+    console.log("Before API Performance Logger - Duration (ms):", durationMs);
     // Ignore APIs faster than 500 ms
     if (durationMs < 500) return;
-    consle.log("After API Performance Logger - Duration (ms):", durationMs);
+    console.log("After API Performance Logger - Duration (ms):", durationMs);
 
     const route = req.route?.path || req.originalUrl.split("?")[0];
 

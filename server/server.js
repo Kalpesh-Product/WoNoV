@@ -90,7 +90,7 @@ app.get("/", (req, res) => {
   }
 });
 
-require("./models/registerModels");
+// require("./models/registerModels");
 
 if (isPerformanceTrackingEnabled) {
   app.use(apiPerformanceLogger);
