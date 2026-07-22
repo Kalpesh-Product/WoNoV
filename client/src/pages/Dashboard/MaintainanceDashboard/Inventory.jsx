@@ -1573,7 +1573,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           rowId={params.data._id}
           menuItems={[
             {
-              label: "Edit",
+              label: inventoryRootView === "overall" ? "Assign" : "Edit",
               onClick: () => {
                 setSelectedAsset(params.data);
                 setModalMode("edit");
@@ -2472,7 +2472,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             ? "View Details"
             : modalMode === "add"
               ? "Add Inventory"
-              : "Edit Inventory"
+              : inventoryRootView === "overall"
+                ? "Assign Inventory"
+                : "Edit Inventory"
         }
       >
         {modalMode === "add" && (
@@ -3218,7 +3220,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               </div>
 
               <PrimaryButton
-                title="Update Inventory"
+                title={
+                  inventoryRootView === "overall"
+                    ? "Assign "
+                    : "Update Inventory"
+                }
                 className="w-full col-span-2"
                 type="submit"
               />

@@ -385,9 +385,7 @@ const InventoryRecordHistory = () => {
   }, [historyRows, location.state?.inventoryCategory]);
 
   const tableTitle = isOverallInventoryHistoryRoute
-    ? `Overall Inventory Item History - ${decodedItemName || "Item"}${
-        location.state?.buildingName ? ` - ${location.state.buildingName}` : ""
-      } - ${resolvedCategoryName}`
+    ? `Overall Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`
     : `Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`;
 
   return (
