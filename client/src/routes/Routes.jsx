@@ -348,6 +348,7 @@ import MonthMeetings from "../pages/MonthMeetings";
 import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
+import CafeFinance from "../pages/Dashboard/CafeDashboard/CafeFinance";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
@@ -2884,6 +2885,30 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <CafeDashboard />,
+                      },
+                       {
+                        path: "finance",
+                        element: <CafeFinance />,
+                        children: [
+                          { path: "budget", element: <BudgetPage /> },
+                          {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
+                          {
+                            path: "payment-schedule",
+                            element: <PaymentScheduleCommon />,
+                          },
+                          { path: "voucher", element: <Reimbursement /> },
+                          {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
+                          },
+                        ],
                       },
                     ],
                   },

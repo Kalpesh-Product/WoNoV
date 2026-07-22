@@ -1366,6 +1366,7 @@ const roundedMax = useMemo(() => {
 
   const itTicketChartConfigs = [
     {
+      key: PERMISSIONS.IT_CATEGORY_WISE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Category Wise Tickets",
@@ -1376,6 +1377,7 @@ const roundedMax = useMemo(() => {
       width: 500,
     },
     {
+      key: PERMISSIONS.IT_DUE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Due Tickets",
@@ -1386,6 +1388,11 @@ const roundedMax = useMemo(() => {
       width: 500,
     },
   ];
+
+  const allowedItTicketCharts = filterPermissions(
+    itTicketChartConfigs,
+    userPermissions,
+  );
 
   const pieDonutConfig = [
     {
@@ -1725,8 +1732,8 @@ const roundedMax = useMemo(() => {
       }),
     },
     {
-      layout: itTicketChartConfigs.length,
-      widgets: itTicketChartConfigs.map((config) => (
+      layout: allowedItTicketCharts.length,
+      widgets: allowedItTicketCharts.map((config) => (
         <WidgetSection key={config.title} border={config.border} title={config.title}>
           <PieChartMui
             data={config.data}

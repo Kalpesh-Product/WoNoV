@@ -1947,6 +1947,7 @@ const roundedMax = useMemo(() => {
 
   const adminTicketChartConfigs = [
     {
+      key: PERMISSIONS.ADMIN_CATEGORY_WISE_TICKETS.value,
       title: "Category Wise Tickets",
       data: adminCategoryWiseTicketsData,
       options: adminCategoryWiseTicketsOptions,
@@ -1954,6 +1955,7 @@ const roundedMax = useMemo(() => {
       height: 320,
     },
     {
+      key: PERMISSIONS.ADMIN_DUE_TICKETS.value,
       title: "Due Tickets",
       data: adminDueTicketsData,
       options: adminDueTicketsOptions,
@@ -1961,6 +1963,11 @@ const roundedMax = useMemo(() => {
       height: 320,
     },
   ];
+
+  const allowedAdminTicketCharts = filterPermissions(
+    adminTicketChartConfigs,
+    userPermissions,
+  );
 
   const piechartConfig2 = [
     {
@@ -2134,8 +2141,8 @@ const roundedMax = useMemo(() => {
       ],
     },
     {
-      layout: adminTicketChartConfigs.length,
-      widgets: adminTicketChartConfigs.map((config) => (
+      layout: allowedAdminTicketCharts.length,
+      widgets: allowedAdminTicketCharts.map((config) => (
         <WidgetSection border title={config.title}>
           <PieChartMui
             data={config.data}

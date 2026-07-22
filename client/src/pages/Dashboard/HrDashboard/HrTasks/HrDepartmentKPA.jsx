@@ -10,6 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import humanDate from "../../../../utils/humanDateForamt";
 
 const SHORT_MONTHS = [
   "Jan",
@@ -65,6 +66,13 @@ const getTaskMonthLabel = (assignedDate) => {
   if (Number.isNaN(jsDate.getTime())) return null;
 
   return `${SHORT_MONTHS[jsDate.getMonth()]}-${String(jsDate.getFullYear()).slice(2)}`;
+};
+
+const formatExportDate = (value) => {
+  const stringValue = String(value || "").trim();
+  if (!stringValue) return "-";
+  if (/^\d{2}-\d{2}-\d{4}$/.test(stringValue)) return stringValue;
+  return humanDate(stringValue);
 };
 
 const getDisplayName = (value) => {
@@ -420,9 +428,21 @@ const HrDepartmentKPA = () => {
       hide:true,
     },
    // { field: "assignedBy", headerName: "Assigned By", flex: 1,hide:true, },
-    { field: "assignedDate", headerName: "Assigned Date", flex: 1 },
+    {
+      field: "assignedOn",
+      headerName: "Assigned Date",
+      flex: 1,
+      valueGetter: (params) =>
+        formatExportDate(params.data?.assignedDate),
+    },
     // { field: "totalPercent", headerName: "Total (%)", flex: 1 },
-    { field: "dueDate", headerName: "Due Date", flex: 1 },
+    {
+      field: "dueOn",
+      headerName: "Due Date",
+      flex: 1,
+      valueGetter: (params) =>
+        formatExportDate(params.data?.dueDate),
+    },
     {
       field: "status",
       headerName: "Status",
@@ -492,7 +512,7 @@ const HrDepartmentKPA = () => {
       </WidgetSection>
 
       <WidgetSection
-        title={`KPA details`}
+        title={`Department Completed KPA details`}
         border
         TitleAmount={`${fullMonthNames[shortMonth]} : ${
           filteredTasks.length > 1

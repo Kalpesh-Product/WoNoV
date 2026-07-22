@@ -149,12 +149,37 @@ const reportServiceRegistry = {
     dateField: "inTime",
   }),
 
+  // approvedattendance: createReportService(fetchAttendanceReportService, {
+  //   dateField: "inTime",
+  //   staticParams: { type: "Approved" },
+  // }),
+
+  // pendingattendance: createReportService(fetchAttendanceReportService, {
+  //   dateField: "inTime",
+  //   staticParams: { type: "Pending" },
+  // }),
+
   leaves: createReportService(fetchLeavesReportService, {
     dateField: "fromDate",
   }),
 
+  approvedleaves: createReportService(fetchLeavesReportService, {
+    dateField: "fromDate",
+    staticParams: { type: "Approved" },
+  }),
+
+  pendingleaves: createReportService(fetchLeavesReportService, {
+    dateField: "fromDate",
+    staticParams: { type: "Pending" },
+  }),
+
   employees: createReportService(fetchUsersReportService, {
     dateField: "startDate",
+  }),
+
+  pastemployees: createReportService(fetchUsersReportService, {
+    dateField: "startDate",
+    staticParams: { type: "pastEmployees" },
   }),
 
   housekeepingschedule: createReportService(

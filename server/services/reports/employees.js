@@ -8,6 +8,7 @@ const fetchUsersReportService = async ({
   query = {},
   dateFilter,
   isReport = false,
+  type = "currentEmployees",
 } = {}) => {
   const { deptId, status = "true" } = query;
 
@@ -17,14 +18,14 @@ const fetchUsersReportService = async ({
 
   const filter = {
     company,
-    isActive: status === "true",
+    isActive: type === "pastEmployees" ? false : true,
   };
 
   if (deptId) {
     filter.departments = deptId;
   }
 
-  // Adjust this field if your report should filter on another date field
+  //past employees aren't filtered by date of exit as most of the time, it's not added in the system.
   if (dateFilter?.startDate) {
     filter.startDate = dateFilter.startDate;
   }
@@ -81,10 +82,18 @@ const fetchUsersReportService = async ({
   return transformedUsers || [];
 };
 
-const fetchLeavesReportService = async ({ company, dateFilter } = {}) => {
+const fetchLeavesReportService = async ({
+  company,
+  dateFilter,
+  type = "",
+} = {}) => {
   const matchStage = {
     "takenBy.isActive": true,
   };
+
+  if (type) {
+    matchStage.status = type;
+  }
 
   if (dateFilter?.fromDate) {
     matchStage.fromDate = dateFilter.fromDate;
@@ -204,10 +213,18 @@ const fetchLeavesReportService = async ({ company, dateFilter } = {}) => {
   return leaves || [];
 };
 
-const fetchAttendanceReportService = async ({ company, dateFilter } = {}) => {
+const fetchAttendanceReportService = async ({
+  company,
+  dateFilter,
+  type = "",
+} = {}) => {
   const matchStage = {
     "user.isActive": true,
   };
+
+  if (type) {
+    matchStage.status = type;
+  }
 
   if (dateFilter?.inTime) {
     matchStage.inTime = dateFilter.inTime;
