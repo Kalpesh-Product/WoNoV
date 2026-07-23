@@ -352,7 +352,7 @@ const getInventories = async (req, res, next) => {
         $setWindowFields: {
           partitionBy: {
             itemName: "$itemName",
-            unit: "$unit",
+            //unit: "$unit",
             department: "$department",
             buildingName: {
               $ifNull: ["$buildingName", ""],
@@ -382,9 +382,27 @@ const getInventories = async (req, res, next) => {
       /* ------------------ Opening + LastConsumed ------------------ */
       {
         $addFields: {
-          openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
-          openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
-          openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+          // openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
+          // openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
+          // openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+           openingInventoryUnits: {
+            $ifNull: [
+              "$openingInventoryUnits",
+              { $ifNull: ["$prevUnits", 0] },
+            ],
+          },
+          openingPerUnitPrice: {
+            $ifNull: [
+              "$openingPerUnitPrice",
+              { $ifNull: ["$prevPrice", 0] },
+            ],
+          },
+          openingInventoryValue: {
+            $ifNull: [
+              "$openingInventoryValue",
+              { $ifNull: ["$prevValue", 0] },
+            ],
+          },
           remainingOpeningInventoryUnits: {
             $ifNull: ["$prevRemaining", 0],
           },
@@ -852,6 +870,52 @@ const updateInventory = async (req, res) => {
           message: "Consumption exceeds available stock",
         });
       }
+     const previousInventory = await Inventory.findOne({
+        company,
+        department: inventory.department,
+        itemName: inventory.itemName,
+        buildingName:
+          updatePayload.buildingName || inventory.buildingName || "",
+        _id: { $ne: inventory._id },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+      // A consumption is a new history record. Keep the original transaction
+      // values as a snapshot, and only reduce its closing balance.
+      const consumptionHistory = await Inventory.create({
+        company,
+        department: inventory.department,
+        itemName: inventory.itemName,
+        unit: updatePayload.unit || inventory.unit || null,
+        buildingName:
+          updatePayload.buildingName || inventory.buildingName || "",
+        addedBy: user,
+        openingInventoryUnits:
+          inventory.openingInventoryUnits ??
+          previousInventory?.newPurchaseUnits ??
+          0,
+        openingPerUnitPrice:
+          inventory.openingPerUnitPrice ??
+          previousInventory?.newPurchasePerUnitPrice ??
+          0,
+        openingInventoryValue:
+          inventory.openingInventoryValue ??
+          previousInventory?.newPurchaseInventoryValue ??
+          0,
+        newPurchaseUnits: inventory.newPurchaseUnits,
+        newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice,
+        newPurchaseInventoryValue: inventory.newPurchaseInventoryValue,
+        consumptions: formattedConsumptions,
+        remainingUnits: newRemaining,
+      });
+
+      await consumptionHistory.populate([
+        { path: "itemName", select: "name" },
+        { path: "department", select: "name" },
+      ]);
+
+      return res.status(201).json(consumptionHistory);
     }
 
     /* ------------------ Update ------------------ */

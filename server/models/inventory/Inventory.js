@@ -32,6 +32,18 @@ const inventorySchema = new mongoose.Schema(
       required: false,
       default: 0,
     },
+     openingInventoryUnits: {
+      type: Number,
+      required: false,
+    },
+    openingPerUnitPrice: {
+      type: Number,
+      required: false,
+    },
+    openingInventoryValue: {
+      type: Number,
+      required: false,
+    },
 
     consumptions: [
       {

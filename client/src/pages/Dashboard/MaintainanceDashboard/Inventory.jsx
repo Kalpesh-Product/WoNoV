@@ -405,11 +405,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     );
     setValue(
       "newConsumedUnitValue",
-      selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
+     // selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
     );
     setValue(
       "remainingNewPurchaseInventoryUnits",
-      selectedAsset?.remainingNewPurchaseInventoryUnits ?? 0,
+       selectedAsset?.newRemainingUnitValue ??
+        selectedAsset?.remainingNewPurchaseInventoryUnits ??
+        selectedAsset?.remainingUnits ??
+        selectedAsset?.closingInventoryUnits ??
+        0,
+      //selectedAsset?.remainingNewPurchaseInventoryUnits ?? 0,
     );
     setValue(
       "closingInventoryUnits",
@@ -561,7 +566,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   useEffect(() => {
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
     const baseRemainingNewPurchaseUnits = Number(
-      selectedAsset?.remainingNewPurchaseInventoryUnits,
+      // selectedAsset?.remainingNewPurchaseInventoryUnits,
+      selectedAsset?.newRemainingUnitValue ??
+        selectedAsset?.remainingNewPurchaseInventoryUnits ??
+        selectedAsset?.remainingUnits ??
+        selectedAsset?.closingInventoryUnits,
     );
     const remainingNewPurchaseUnits = Number(updateRemainingNewPurchaseUnits);
     const safeBaseRemaining = Number.isFinite(baseRemainingNewPurchaseUnits)
@@ -664,6 +673,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           newRemainingUnitValue:
             item?.newRemainingUnitValue ??
             item?.remainingNewPurchaseInventoryUnits ??
+            item?.remainingUnits ??
             item?.closingInventoryUnits ??
             0,
           // Fix: Properly check for addedBy name
