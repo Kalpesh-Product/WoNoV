@@ -559,70 +559,33 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   }, [setValue, updateLastConsumedUnits, updateOpeningUnits]);
 
   useEffect(() => {
-    const lastRemainingUnits = Number(
-      (Number(updateOpeningUnits) || 0) -
-        (Number(updateLastConsumedUnits) || 0),
-    );
-    const newPurchaseUnitsValue = Number(updateNewPurchaseUnits) || 0;
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
-
-    const computedNewRemainingUnits =
-      lastRemainingUnits + newPurchaseUnitsValue - newConsumedUnits;
-
-    setValue(
-      "newRemainingUnitValue",
-      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
-    setValue(
-      "closingInventoryUnits",
-      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
-  }, [
-    setValue,
-    updateLastConsumedUnits,
-    updateNewConsumedUnits,
-    updateNewPurchaseUnits,
-    updateOpeningUnits,
-  ]);
-  useEffect(() => {
     const baseRemainingNewPurchaseUnits = Number(
       selectedAsset?.remainingNewPurchaseInventoryUnits,
     );
     const remainingNewPurchaseUnits = Number(updateRemainingNewPurchaseUnits);
-    const consumedNewUnits = Number(updateNewConsumedUnits) || 0;
-
     const safeBaseRemaining = Number.isFinite(baseRemainingNewPurchaseUnits)
       ? baseRemainingNewPurchaseUnits
       : Number.isFinite(remainingNewPurchaseUnits)
         ? remainingNewPurchaseUnits
         : 0;
 
-    const computedRemainingNewPurchaseUnits =
-      safeBaseRemaining - consumedNewUnits;
+    const computedNewRemainingUnits =
+      safeBaseRemaining - newConsumedUnits;
 
     setValue(
       "remainingNewPurchaseInventoryUnits",
-      computedRemainingNewPurchaseUnits >= 0
-        ? computedRemainingNewPurchaseUnits
-        : 0,
+      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
       {
         shouldDirty: true,
         shouldValidate: true,
       },
     );
   }, [
-    selectedAsset,
     setValue,
     updateNewConsumedUnits,
     updateRemainingNewPurchaseUnits,
+    selectedAsset,
   ]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
@@ -1198,11 +1161,27 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const { mutate: updateAsset, isPending: isUpdatingAsset } = useMutation({
     mutationFn: async (formData) => {
+      const consumedUnits = Number(
+        formData?.newConsumedUnitValue ??
+          formData?.consumedNewPurchaseInventoryUnits ??
+          0,
+      );
+
       const payload =
         inventoryRootView === "overall"
           ? {
               unit: formData.unit,
               buildingName: formData.buildingName,
+              ...(consumedUnits > 0
+                ? {
+                    consumptions: [
+                      {
+                        quantity: consumedUnits,
+                        source: "newPurchase",
+                      },
+                    ],
+                  }
+                : {}),
             }
           : {
               consumptions: [
@@ -1473,6 +1452,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       }
 
       updateAsset({
+        ...data,
         unit: matchedUnit._id,
         buildingName:
           matchedUnit?.building?.buildingName ||
@@ -1595,8 +1575,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       headerName: "Closing Units",
       cellRenderer: (params) => {
         const value =
-          // (params.data.remainingOpeningInventoryUnits || 0) +
-          params.data.remainingNewPurchaseInventoryUnits || 0;
+          params.data.newRemainingUnitValue ??
+          params.data.remainingNewPurchaseInventoryUnits ??
+          params.data.closingInventoryUnits ??
+          0;
 
         return inrFormat(value);
       },
@@ -1679,6 +1661,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       headerName: "Remaining Stock",
       cellRenderer: (params) => {
         const value =
+          params.data.newRemainingUnitValue ??
           params.data.remainingNewPurchaseInventoryUnits ??
           params.data.remainingOpeningInventoryUnits ??
           0;
@@ -2977,14 +2960,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               <DetalisFormatted
                 title="New Consumed Units"
                 detail={
-                  selectedAsset.totalConsumed??
+                  selectedAsset.totalConsumed ??
+                  selectedAsset.consumedNewPurchaseInventoryUnits ??
                   "0"
                 }
               />
               <DetalisFormatted
                 title="New Remaining Units"
                 detail={
-                 selectedAsset.remainingNewPurchaseInventoryUnits??
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
                   "0"
                 }
               />

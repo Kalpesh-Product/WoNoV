@@ -234,6 +234,7 @@ const InventoryRecordHistory = () => {
               minWidth: 150,
               flex: 1,
               valueGetter: (params) =>
+                params.data.newRemainingUnitValue ??
                 params.data.remainingNewPurchaseInventoryUnits ??
                 params.data.remainingOpeningInventoryUnits ??
                 0,
@@ -602,13 +603,18 @@ const InventoryRecordHistory = () => {
                 title="New Consumed Units"
                 detail={
                   selectedAsset.totalConsumed ??
-                  //selectedAsset.consumedNewPurchaseInventoryUnits ??
+                  selectedAsset.consumedNewPurchaseInventoryUnits ??
                   "0"
                 }
               />
               <DetalisFormatted
                 title="New Remaining Units"
-                detail={selectedAsset.remainingNewPurchaseInventoryUnits ?? "0"}
+                detail={
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
+                  "0"
+                }
               />
 
               <br />
