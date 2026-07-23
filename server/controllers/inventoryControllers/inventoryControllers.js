@@ -50,13 +50,25 @@ const createInventory = async (req, res, next) => {
       });
     }
 
-    const lastInventory = await Inventory.findOne({
+    // const lastInventory = await Inventory.findOne({
+    //   company,
+    //   department: department,
+    //   itemName: itemName,
+    //   unit: unit || null,
+    //   buildingName: buildingName || "",
+    // }).sort({ createdAt: -1 });
+
+    const inventoryHistoryFilter = {
       company,
-      department: department,
-      itemName: itemName,
-      unit: unit || null,
+      department,
+      itemName,
       buildingName: buildingName || "",
-    }).sort({ createdAt: -1 });
+      ...(unit ? { unit } : {}),
+    };
+
+    const lastInventory = await Inventory.findOne(inventoryHistoryFilter).sort({
+      createdAt: -1,
+    });
 
     const previousRemaining = lastInventory?.remainingUnits || 0;
 
@@ -881,8 +893,7 @@ const updateInventory = async (req, res) => {
         .sort({ createdAt: -1 })
         .lean();
 
-      // A consumption is a new history record. Keep the original transaction
-      // values as a snapshot, and only reduce its closing balance.
+   
       const consumptionHistory = await Inventory.create({
         company,
         department: inventory.department,
