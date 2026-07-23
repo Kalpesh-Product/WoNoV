@@ -761,7 +761,7 @@ const getInventories = async (req, res, next) => {
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { consumptions = [] } = req.body;
+    const { consumptions = [], unit, buildingName } = req.body;
     const { user, company } = req;
 
     const inventory = await Inventory.findOne({ _id: id, company });
@@ -770,6 +770,36 @@ const updateInventory = async (req, res) => {
       return res
         .status(404)
         .json({ message: "Inventory not found or unauthorized" });
+    }
+
+    const updatePayload = {};
+
+    if (unit !== undefined && unit !== null && unit !== "") {
+      if (!mongoose.Types.ObjectId.isValid(unit)) {
+        return res.status(400).json({ message: "Invalid unit id" });
+      }
+
+      const resolvedUnit = await Unit.findOne({
+        _id: unit,
+        company,
+      })
+        .populate({ path: "building", select: "buildingName" })
+        .lean();
+
+      if (!resolvedUnit) {
+        return res.status(404).json({
+          message: "Unit not found or unauthorized",
+        });
+      }
+
+      updatePayload.unit = resolvedUnit._id;
+      updatePayload.buildingName =
+        resolvedUnit?.building?.buildingName ||
+        buildingName ||
+        inventory.buildingName ||
+        "";
+    } else if (typeof buildingName === "string") {
+      updatePayload.buildingName = buildingName;
     }
 
     /* ------------------ Format consumptions ------------------ */
@@ -792,39 +822,59 @@ const updateInventory = async (req, res) => {
     }
 
     if (formattedConsumptions.length === 0) {
-      return res.status(400).json({
-        message: "At least one consumption entry is required",
-      });
+      if (!Object.keys(updatePayload).length) {
+        return res.status(400).json({
+          message: "No update data provided",
+        });
+      }
     }
 
-    /* ------------------ Calculate Incoming Consumption ------------------ */
+    let incomingConsumption = 0;
+    let newRemaining = Number(inventory.remainingUnits || 0);
 
-    const incomingConsumption = formattedConsumptions.reduce(
-      (sum, c) => sum + c.quantity,
-      0,
-    );
+    if (formattedConsumptions.length > 0) {
+      /* ------------------ Calculate Incoming Consumption ------------------ */
 
-    /* ------------------ Calculate New Remaining ------------------ */
+      incomingConsumption = formattedConsumptions.reduce(
+        (sum, c) => sum + c.quantity,
+        0,
+      );
 
-    const currentRemaining = Number(inventory.remainingUnits || 0);
-    const newRemaining = currentRemaining - incomingConsumption;
+      /* ------------------ Calculate New Remaining ------------------ */
 
-    /* ------------------ Validation ------------------ */
+      const currentRemaining = Number(inventory.remainingUnits || 0);
+      newRemaining = currentRemaining - incomingConsumption;
 
-    if (newRemaining < 0) {
-      return res.status(400).json({
-        message: "Consumption exceeds available stock",
-      });
+      /* ------------------ Validation ------------------ */
+
+      if (newRemaining < 0) {
+        return res.status(400).json({
+          message: "Consumption exceeds available stock",
+        });
+      }
     }
 
     /* ------------------ Update ------------------ */
 
+    const updateQuery = {};
+
+    if (Object.keys(updatePayload).length > 0) {
+      updateQuery.$set = {
+        ...updatePayload,
+      };
+    }
+
+    if (formattedConsumptions.length > 0) {
+      updateQuery.$push = { consumptions: { $each: formattedConsumptions } };
+      updateQuery.$set = {
+        ...(updateQuery.$set || {}),
+        remainingUnits: newRemaining,
+      };
+    }
+
     const updated = await Inventory.findOneAndUpdate(
       { _id: id, company },
-      {
-        $push: { consumptions: { $each: formattedConsumptions } },
-        $set: { remainingUnits: newRemaining },
-      },
+      updateQuery,
       { new: true, runValidators: true },
     )
       .populate("itemName", "name")

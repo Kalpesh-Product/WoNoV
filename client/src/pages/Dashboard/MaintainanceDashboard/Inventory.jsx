@@ -4,7 +4,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { Box, MenuItem, TextField } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+} from "@mui/material";
 import { toast } from "sonner";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -417,6 +425,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "buildingName",
       selectedAsset?.buildingName ||
+        selectedAsset?.unit?.building?.buildingName ||
+        selectedAsset?.unit?.buildingName ||
         selectedUnit?.building?.buildingName ||
         selectedUnit?.buildingName ||
         selectedTabConfig?.buildingName ||
@@ -424,7 +434,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     );
     setValue(
       "unitNo",
-      selectedAsset?.unitNo || selectedUnit?.unitNo || defaultUnitNo,
+      selectedAsset?.unitId ||
+        selectedAsset?.unit?._id ||
+        selectedUnit?._id ||
+        "",
     );
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
@@ -441,10 +454,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     defaultBuildingName,
     defaultUnitNo,
     selectedAsset,
+    selectedAsset?.unit?.building?.buildingName,
+    selectedAsset?.unit?.buildingName,
     selectedTabConfig?.buildingName,
     selectedUnit?.building?.buildingName,
     selectedUnit?.buildingName,
-    selectedUnit?.unitNo,
+    selectedUnit?._id,
     setValue,
   ]);
 
@@ -482,6 +497,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const updateNewConsumedUnits = useWatch({
     control: updateControl,
     name: "newConsumedUnitValue",
+  });
+  const updateAssignedUnitNo = useWatch({
+    control: updateControl,
+    name: "unitNo",
   });
   const updateRemainingNewPurchaseUnits = useWatch({
     control: updateControl,
@@ -1179,16 +1198,25 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const { mutate: updateAsset, isPending: isUpdatingAsset } = useMutation({
     mutationFn: async (formData) => {
+      const payload =
+        inventoryRootView === "overall"
+          ? {
+              unit: formData.unit,
+              buildingName: formData.buildingName,
+            }
+          : {
+              consumptions: [
+                {
+                  quantity:
+                    Number(formData.consumedNewPurchaseInventoryUnits) || 0,
+                  source: "newPurchase",
+                },
+              ],
+            };
+
       const response = await axios.patch(
         `/api/inventory/update-inventory/${selectedAsset?._id}`,
-        {
-          consumptions: [
-            {
-              quantity: Number(formData.consumedNewPurchaseInventoryUnits) || 0,
-              source: "newPurchase",
-            },
-          ],
-        },
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1434,6 +1462,28 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const handleUpdateSubmit = (data) => {
+    if (inventoryRootView === "overall") {
+      const matchedUnit = selectedBuildingUnits.find(
+        (unit) => String(unit?._id) === String(data.unitNo),
+      );
+
+      if (!matchedUnit?._id) {
+        toast.error("Please select a valid unit to assign.");
+        return;
+      }
+
+      updateAsset({
+        unit: matchedUnit._id,
+        buildingName:
+          matchedUnit?.building?.buildingName ||
+          matchedUnit?.buildingName ||
+          selectedTabConfig?.buildingName ||
+          defaultBuildingName ||
+          "",
+      });
+      return;
+    }
+
     updateAsset({
       ...data,
       openingInventoryUnits: Number(data.openingInventoryUnits) || 0,
@@ -1828,9 +1878,39 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     return Array.from(latestByBuildingItemCategory.values()).sort(
       (a, b) =>
         new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
-        new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+      new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
     );
   }, [inventoryTableData, selectedUnit]);
+
+  useEffect(() => {
+    if (inventoryRootView !== "overall") return;
+
+    const matchedUnit = selectedBuildingUnits.find(
+      (unit) => String(unit?._id) === String(updateAssignedUnitNo),
+    );
+
+    if (!matchedUnit) return;
+
+    setValue(
+      "buildingName",
+      matchedUnit?.building?.buildingName ||
+        matchedUnit?.buildingName ||
+        selectedTabConfig?.buildingName ||
+        defaultBuildingName ||
+        "",
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  }, [
+    defaultBuildingName,
+    inventoryRootView,
+    selectedBuildingUnits,
+    selectedTabConfig?.buildingName,
+    setValue,
+    updateAssignedUnitNo,
+  ]);
 
   const projectShortName =
     selectedBuildingTab === "dempo"
@@ -2985,14 +3065,51 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="unitNo"
                   control={updateControl}
+                  rules={
+                    inventoryRootView === "overall"
+                      ? { required: "Unit No is required" }
+                      : undefined
+                  }
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Unit No"
-                      fullWidth
-                      size="small"
-                      disabled
-                    />
+                    inventoryRootView === "overall" ? (
+                      <FormControl
+                        fullWidth
+                        size="small"
+                        error={!!updateErrors.unitNo}
+                      >
+                        <InputLabel id="assign-unit-no-label">
+                          Assign Unit No
+                        </InputLabel>
+                        <Select
+                          {...field}
+                          labelId="assign-unit-no-label"
+                          label="Assign Unit No"
+                          value={field.value ?? ""}
+                          onChange={(event) =>
+                            field.onChange(event.target.value)
+                          }
+                        >
+                          <MenuItem value="">Select unit</MenuItem>
+                          {selectedBuildingUnits.map((unit) => (
+                            <MenuItem key={unit?._id} value={unit?._id}>
+                              {unit?.unitNo}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>
+                          {updateErrors.unitNo?.message}
+                        </FormHelperText>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        {...field}
+                        value={field.value ?? ""}
+                        label="Unit No"
+                        fullWidth
+                        size="small"
+                        disabled
+                      />
+                    )
                   )}
                 />
                 <Controller
@@ -3152,41 +3269,54 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Controller
-                  name="lastConsumed"
-                  control={updateControl}
-                  // rules={{ required: "Last consumed unit value is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Last Consumed Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.lastConsumedUnitValue}
-                      // helperText={updateErrors.lastConsumedUnitValue?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="remainingOpeningInventoryUnits"
-                  control={updateControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Last Remaining Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                    />
-                  )}
-                />
-              </div>
+              {inventoryRootView !== "overall" && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Controller
+                    name="lastConsumed"
+                    control={updateControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Last Consumed Units"
+                        type="number"
+                        size="small"
+                        fullWidth
+                        disabled
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="remainingOpeningInventoryUnits"
+                    control={updateControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="Last Remaining Units"
+                        type="number"
+                        size="small"
+                        fullWidth
+                        disabled
+                      />
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <Controller
+                  name="remainingNewPurchaseInventoryUnits"
+                  control={updateControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="New Remaining Units"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      disabled
+                    />
+                  )}
+                />
                 <Controller
                   name="newConsumedUnitValue"
                   control={updateControl}
@@ -3200,20 +3330,6 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       fullWidth
                       error={!!updateErrors.newConsumedUnitValue}
                       helperText={updateErrors.newConsumedUnitValue?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="remainingNewPurchaseInventoryUnits"
-                  control={updateControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Remaining Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
                     />
                   )}
                 />
