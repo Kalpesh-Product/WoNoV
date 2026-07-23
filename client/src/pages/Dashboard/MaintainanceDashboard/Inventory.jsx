@@ -439,10 +439,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     );
     setValue(
       "unitNo",
-      selectedAsset?.unitId ||
-        selectedAsset?.unit?._id ||
-        selectedUnit?._id ||
-        "",
+      inventoryRootView === "overall"
+        ? selectedAsset?.unitId ||
+          selectedAsset?.unit?._id ||
+          selectedUnit?._id ||
+          ""
+        : selectedAsset?.unit?.unitNo ||
+          selectedAsset?.unitNo ||
+          selectedUnit?.unitNo ||
+          selectedTabConfig?.unitNo ||
+          defaultUnitNo ||
+          "",
     );
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
@@ -458,15 +465,18 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     currentUserName,
     defaultBuildingName,
     defaultUnitNo,
+    inventoryRootView,
     selectedAsset,
     selectedAsset?.unit?.building?.buildingName,
     selectedAsset?.unit?.buildingName,
     selectedTabConfig?.buildingName,
+    selectedTabConfig?.unitNo,
     selectedUnit?.building?.buildingName,
     selectedUnit?.buildingName,
+    selectedUnit?.unitNo,
     selectedUnit?._id,
     setValue,
-  ]);
+  ]); 
 
   const openingUnits = useWatch({ control, name: "openingInventoryUnits" });
   const openingUnitPrice = useWatch({ control, name: "openingPerUnitPrice" });
@@ -1515,61 +1525,49 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       field: "departmentName",
       headerName: "Department",
       hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
     },
     {
-      field: "openingInventoryUnits",
-      headerName: "Opening Units",
-      cellRenderer: (params) => inrFormat(params.value),
+      field: "buildingName",
+      headerName: "Building",
+      hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
     },
     {
-      field: "openingPerUnitPrice",
-      headerName: "Opening Per Unit Price",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "openingInventoryValue",
-      headerName: "Opening Value (INR)",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "newPurchaseUnits",
-      headerName: "New Purchase Units",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "newPurchasePerUnitPrice",
-      headerName: "New Purchase Per Unit Price",
-      cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "newPurchaseInventoryValue",
-      headerName: "New Purchase Value(INR)",
-      cellRenderer: (params) => inrFormat(params.value),
+      field: "unitNo",
+      headerName: "Unit",
+      hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
     },
     {
       field: "lastConsumedUnitValue",
       headerName: "Last Consumed Unit Value",
-      hide: true,
+      hide: inventoryRootView === "overall",
     },
     {
       field: "lastRemainingUnitValue",
       headerName: "Last Remaining Units",
-      hide: true,
+      hide: inventoryRootView === "overall",
     },
     {
       field: "newConsumedUnitValue",
       headerName: "New Consumed Unit",
-      hide: true,
+      hide: inventoryRootView === "overall",
     },
     {
       field: "newRemainingUnitValue",
       headerName: "New Remaining Units",
-      hide: true,
+      hide: inventoryRootView === "overall",
     },
     {
       field: "addedByName",
       headerName: "Name",
       hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
     },
     // {
     //   field: "consumedOpenInventoryUnits",
@@ -1582,15 +1580,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     //   cellRenderer: (params) => inrFormat(params.value),
     // },
     {
+      field: "closingUnits",
       headerName: "Closing Units",
+      valueGetter: (params) =>
+        params.data.newRemainingUnitValue ??
+        params.data.remainingNewPurchaseInventoryUnits ??
+        params.data.closingInventoryUnits ??
+        0,
       cellRenderer: (params) => {
-        const value =
-          params.data.newRemainingUnitValue ??
-          params.data.remainingNewPurchaseInventoryUnits ??
-          params.data.closingInventoryUnits ??
-          0;
-
-        return inrFormat(value);
+        return inrFormat(params.value);
       },
     },
     {
@@ -1668,6 +1666,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       ),
     },
     {
+      field: "departmentName",
+      headerName: "Department",
+      hide: true,
+    },
+    {
+      field: "addedByName",
+      headerName: "Name",
+      hide: true,
+    },
+    {
       headerName: "Remaining Stock",
       cellRenderer: (params) => {
         const value =
@@ -1684,7 +1692,94 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       headerName: "Item Name",
       cellRenderer: (params) => <span>{params.value || "-"}</span>,
     },
-    ...unitInventoryColumns.slice(2),
+    {
+      field: "openingInventoryUnits",
+      headerName: "Opening Units",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "openingPerUnitPrice",
+      headerName: "Opening Per Unit Price",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "openingInventoryValue",
+      headerName: "Opening Value (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newPurchaseUnits",
+      headerName: "New Purchase Units",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newPurchasePerUnitPrice",
+      headerName: "New Purchase Per Unit Price",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newPurchaseInventoryValue",
+      headerName: "New Purchase Value (INR)",
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "closingUnits",
+      headerName: "Closing Units",
+      valueGetter: (params) =>
+        params.data.newRemainingUnitValue ??
+        params.data.remainingNewPurchaseInventoryUnits ??
+        params.data.closingInventoryUnits ??
+        0,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "dateRaw",
+      headerName: "Date",
+      exportFormat: "datetime-comma",
+      cellRenderer: (params) => formatDateTime(params.value),
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            {
+              label: "Assign",
+              onClick: () => {
+                setSelectedAsset(params.data);
+                setModalMode("edit");
+                setIsModalOpen(true);
+              },
+            },
+            {
+              label: "View Records",
+              onClick: () => {
+                const currentPath = location.pathname.endsWith("/")
+                  ? location.pathname.slice(0, -1)
+                  : location.pathname;
+                const recordPath = `${currentPath}/${encodeURIComponent(
+                  params.data.itemName,
+                )}`;
+                navigate(recordPath, {
+                  state: {
+                    inventoryCategory: params.data.categoryName || "",
+                    buildingName: params.data.buildingName || "",
+                  },
+                });
+              },
+            },
+          ]}
+        />
+      ),
+    },
   ];
 
   const selectedBuildingUnits = useMemo(() => {
@@ -1912,8 +2007,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const selectedUnitHeadingName = selectedUnit?.unitNo || "Unit";
   const dynamicCategoryTitle = `List of Category - ${projectShortName} - ${selectedUnitHeadingName}`;
   const dynamicItemTitle = `List of Item - ${projectShortName} - ${selectedUnitHeadingName}`;
-  const dynamicInventoryTitle = `List of Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
-  const unitWiseHeading = `Unit Wise Inventory - ${selectedTabConfig?.label || ""}`;
+  const dynamicInventoryTitle = `List of Assigned Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
+  const unitWiseHeading = `Unit Wise Assign Inventory - ${selectedTabConfig?.label || ""}`;
 
   const handleTabChange = (value) => {
     if (forcedBuildingTab || value === selectedBuildingTab) return;
@@ -2069,16 +2164,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             tableTitle="Overall Inventory"
             hideTitle={true}
             buttonTitle={"Add Inventory"}
-            data={selectedUnitInventoryRows || []}
-            tableHeight={450}
-            dateColumn={"date"}
-            columns={overallInventoryColumns}
-            handleSubmit={handleAddAsset}
-            exportData
-            taskExportDateTimeFormatting
-          />
-        </PageFrame>
-      )}
+                data={selectedUnitInventoryRows || []}
+                tableHeight={450}
+                dateColumn={"date"}
+                columns={overallInventoryColumns}
+                handleSubmit={handleAddAsset}
+                exportData
+                exportAllColumns={true}
+                taskExportDateTimeFormatting
+              />
+            </PageFrame>
+          )}
       {inventoryRootView === "category" && (
         <PageFrame>
           <AgTable
@@ -2170,6 +2266,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   dateColumn={"date"}
                   columns={unitInventoryColumns}
                   exportData
+                  exportAllColumns={false}
                   taskExportDateTimeFormatting
                 />
               </PageFrame>
@@ -2853,6 +2950,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                         : "N/A"
                     }
                   />
+                  <DetalisFormatted
+                    title="Closing Units"
+                    detail={
+                      selectedAsset.newRemainingUnitValue ??
+                      selectedAsset.remainingNewPurchaseInventoryUnits ??
+                      selectedAsset.closingInventoryUnits ??
+                      "0"
+                    }
+                  />
                 </div>
               </div>
 
@@ -2916,43 +3022,22 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 title="Category"
                 detail={selectedAsset.categoryName || "N/A"}
               />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedAsset.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={
+                  selectedAsset.unit?.unitNo ||
+                  selectedAsset.unitNo ||
+                  "N/A"
+                }
+              />
               <br />
 
               <div className="font-bold">Inventory Units</div>
 
-              <DetalisFormatted
-                title="Opening Units"
-                detail={selectedAsset.openingInventoryUnits !== null &&
-                  selectedAsset.openingInventoryUnits  !== undefined
-                    ? selectedAsset.openingInventoryUnits
-                    : "NA"
-                }
-              />
-              <DetalisFormatted
-                title="Opening Per Unit Price"
-                detail={
-                  selectedAsset.openingPerUnitPrice != null
-                    ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
-                    : "N/A"
-                }
-              />
-              <DetalisFormatted
-                title="New Purchase Units"
-                detail={
-                  selectedAsset.newPurchaseUnits !== null &&
-                  selectedAsset.newPurchaseUnits !== undefined
-                    ? selectedAsset.newPurchaseUnits
-                    : "NA"
-                }
-              />
-              <DetalisFormatted
-                title="New Purchase Per Unit Price"
-                detail={
-                  selectedAsset.newPurchasePerUnitPrice != null
-                    ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
-                    : "N/A"
-                }
-              />
               <DetalisFormatted
                 title="Last Consumed Unit Value"
                 detail={
@@ -2984,20 +3069,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                   "0"
                 }
               />
-              <br />
-              <div className="font-bold">Inventory Value</div>
               <DetalisFormatted
-                title="Opening Value"
-                detail={`INR ${
-                  inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-                }`}
-              />
-
-              <DetalisFormatted
-                title="New Purchase Value"
-                detail={`INR ${
-                  inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-                }`}
+                title="Closing Units"
+                detail={
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
+                  "0"
+                }
               />
 
               <br />
@@ -3158,112 +3237,116 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  name="openingInventoryUnits"
-                  control={updateControl}
-                  rules={{ required: "Opening units required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.openingInventoryUnits}
-                      // helperText={updateErrors.openingInventoryUnits?.message}
+              {inventoryRootView === "overall" && (
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      name="openingInventoryUnits"
+                      control={updateControl}
+                      rules={{ required: "Opening units required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Units"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.openingInventoryUnits}
+                          // helperText={updateErrors.openingInventoryUnits?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="openingPerUnitPrice"
-                  control={updateControl}
-                  // rules={{ required: "Per unit price required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Per Unit Price"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.openingPerUnitPrice}
-                      // helperText={updateErrors.openingPerUnitPrice?.message}
+                    <Controller
+                      name="openingPerUnitPrice"
+                      control={updateControl}
+                      // rules={{ required: "Per unit price required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Per Unit Price"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.openingPerUnitPrice}
+                          // helperText={updateErrors.openingPerUnitPrice?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="openingInventoryValue"
-                  control={updateControl}
-                  rules={{ required: "Opening value required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Value"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
+                    <Controller
+                      name="openingInventoryValue"
+                      control={updateControl}
+                      rules={{ required: "Opening value required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Value"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  name="newPurchaseUnits"
-                  control={updateControl}
-                  // rules={{ required: "New purchase units required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.newPurchaseUnits}
-                      // helperText={updateErrors.newPurchaseUnits?.message}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      name="newPurchaseUnits"
+                      control={updateControl}
+                      // rules={{ required: "New purchase units required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Units"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.newPurchaseUnits}
+                          // helperText={updateErrors.newPurchaseUnits?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="newPurchasePerUnitPrice"
-                  control={updateControl}
-                  // rules={{ required: "New per unit price required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Per Unit Price"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.newPurchasePerUnitPrice}
-                      // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                    <Controller
+                      name="newPurchasePerUnitPrice"
+                      control={updateControl}
+                      // rules={{ required: "New per unit price required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Per Unit Price"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.newPurchasePerUnitPrice}
+                          // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="newPurchaseInventoryValue"
-                  control={updateControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Value"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
+                    <Controller
+                      name="newPurchaseInventoryValue"
+                      control={updateControl}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Value"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
+                </>
+              )}
 
               {inventoryRootView !== "overall" && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

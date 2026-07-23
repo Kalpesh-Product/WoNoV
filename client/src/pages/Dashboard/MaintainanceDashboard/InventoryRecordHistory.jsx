@@ -249,6 +249,11 @@ const InventoryRecordHistory = () => {
               minWidth: 180,
               cellRenderer: (params) => <span>{params.value || "N/A"}</span>,
             },
+            {
+              field: "departmentName",
+              headerName: "Department",
+              hide: true,
+            },
           ]
         : [
             {
@@ -266,6 +271,20 @@ const InventoryRecordHistory = () => {
               headerName: "Department",
               hide: true,
             },
+            {
+              field: "buildingName",
+              headerName: "Building",
+              hide: true,
+              minWidth: 190,
+              flex: 1,
+            },
+            {
+              field: "unitNo",
+              headerName: "Unit",
+              hide: true,
+              minWidth: 150,
+              flex: 1,
+            },
           ]
         : []),
       {
@@ -273,6 +292,9 @@ const InventoryRecordHistory = () => {
         headerName: "Opening Units",
         flex: 1,
         minWidth: 150,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
       {
@@ -280,12 +302,18 @@ const InventoryRecordHistory = () => {
         headerName: "Opening Unit Price",
         flex: 1,
         minWidth: 180,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
       },
       {
         field: "openingInventoryValue",
         headerName: "Opening Value",
         flex: 1,
         minWidth: 170,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
       {
@@ -293,12 +321,18 @@ const InventoryRecordHistory = () => {
         headerName: "New Purchases Unit",
         flex: 1,
         minWidth: 180,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
       },
       {
         field: "newPurchasePerUnitPrice",
         headerName: "New Purchases Per Unit Price",
         flex: 1,
         minWidth: 230,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
       {
@@ -306,6 +340,9 @@ const InventoryRecordHistory = () => {
         headerName: "New Purchases Value",
         flex: 1,
         minWidth: 190,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
       ...(isOverallInventoryHistoryRoute
@@ -321,22 +358,30 @@ const InventoryRecordHistory = () => {
       {
         field: "lastConsumedUnitValue",
         headerName: "Last Consumed Unit Value",
-        hide: true,
+        hide: isOverallInventoryHistoryRoute,
+        suppressCsvExport: isOverallInventoryHistoryRoute,
+        suppressExcelExport: isOverallInventoryHistoryRoute,
       },
       {
         field: "lastRemainingUnitValue",
         headerName: "Last Remaining Units",
-        hide: true,
+        hide: isOverallInventoryHistoryRoute,
+        suppressCsvExport: isOverallInventoryHistoryRoute,
+        suppressExcelExport: isOverallInventoryHistoryRoute,
       },
       {
         field: "newConsumedUnitValue",
         headerName: "New Consumed Unit",
-        hide: true,
+        hide: isOverallInventoryHistoryRoute,
+        suppressCsvExport: isOverallInventoryHistoryRoute,
+        suppressExcelExport: isOverallInventoryHistoryRoute,
       },
       {
         field: "newRemainingUnitValue",
         headerName: "New Remaining Units",
-        hide: true,
+        hide: isOverallInventoryHistoryRoute,
+        suppressCsvExport: isOverallInventoryHistoryRoute,
+        suppressExcelExport: isOverallInventoryHistoryRoute,
       },
       {
         field: "addedByName",
@@ -387,7 +432,7 @@ const InventoryRecordHistory = () => {
 
   const tableTitle = isOverallInventoryHistoryRoute
     ? `Overall Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`
-    : `Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`;
+    : `Assigned Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`;
 
   return (
     <>
@@ -479,6 +524,15 @@ const InventoryRecordHistory = () => {
                         : "N/A"
                     }
                   />
+                  <DetalisFormatted
+                    title="Closing Units"
+                    detail={
+                      selectedAsset.newRemainingUnitValue ??
+                      selectedAsset.remainingNewPurchaseInventoryUnits ??
+                      selectedAsset.closingInventoryUnits ??
+                      "0"
+                    }
+                  />
                 </div>
               </div>
 
@@ -542,50 +596,17 @@ const InventoryRecordHistory = () => {
                 title="Category"
                 detail={selectedAsset.categoryName || "N/A"}
               />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedAsset.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={selectedAsset.unitNo || "N/A"}
+              />
               <br />
 
               <div className="font-bold">Inventory Units</div>
-
-              <DetalisFormatted
-                title="Opening Units"
-                detail={
-                  selectedAsset.openingInventoryUnits !== null &&
-                  selectedAsset.openingInventoryUnits !== undefined
-                    ? selectedAsset.openingInventoryUnits
-                    : "NA"
-                }
-              />
-              <DetalisFormatted
-                title="Opening Per Unit Price"
-                detail={
-                  selectedAsset.openingPerUnitPrice != null
-                    ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
-                    : "N/A"
-                }
-              />
-              <DetalisFormatted
-                title="New Purchase Units"
-                detail={
-                  selectedAsset.newPurchaseUnits !== null &&
-                  selectedAsset.newPurchaseUnits !== undefined
-                    ? selectedAsset.newPurchaseUnits
-                    : "NA"
-                }
-              />
-              <DetalisFormatted
-                title="New Purchase Per Unit Price"
-                detail={
-                  selectedAsset.newPurchasePerUnitPrice != null
-                    ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
-                    : "N/A"
-                }
-              />
-              {/* <DetalisFormatted
-                            title="Closing Units"
-                            detail={
-                                selectedAsset?.remainingNewPurchaseInventoryUnits || 0
-                            }
-                        /> */}
               <DetalisFormatted
                 title="Last Consumed Units"
                 detail={
@@ -616,21 +637,14 @@ const InventoryRecordHistory = () => {
                   "0"
                 }
               />
-
-              <br />
-              <div className="font-bold">Inventory Value</div>
               <DetalisFormatted
-                title="Opening Value"
-                detail={`INR ${
-                  inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-                }`}
-              />
-
-              <DetalisFormatted
-                title="New Purchase Value"
-                detail={`INR ${
-                  inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-                }`}
+                title="Closing Units"
+                detail={
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
+                  "0"
+                }
               />
               <br />
               <div className="font-bold">Inventory Added By</div>
