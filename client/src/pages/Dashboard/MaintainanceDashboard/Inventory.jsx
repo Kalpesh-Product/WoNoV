@@ -45,7 +45,8 @@ const normalizeBuildingName = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
-const Inventory = ({ forcedBuildingTab = null }) => {
+// const Inventory = ({ forcedBuildingTab = null }) => {
+  const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -373,7 +374,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const inventoryRootView = useMemo(() => {
     const pathname = location.pathname.toLowerCase();
 
-    if (pathname.includes("/overall-inventory")) return "overall";
+   // if (pathname.includes("/overall-inventory")) return "overall";
+     if (/\/overall(?:-st|-dtc)?-inventory/.test(pathname)) return "overall";
     if (!unitNoParam && pathname.endsWith("/category")) return "category";
     if (!unitNoParam && pathname.endsWith("/item")) return "item";
 
@@ -729,8 +731,24 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const inventoryTableData = useMemo(() => {
     if (!Array.isArray(inventoryData)) return [];
-    return inventoryData;
-  }, [inventoryData]);
+     if (!overallBuildingTab) return inventoryData;
+
+    const scopedBuildingName =
+      overallBuildingTab === "sunteck" ? "Sunteck Kanaka" : "Dempo Trade Center";
+    const scopedBuildingKey = normalizeBuildingName(scopedBuildingName);
+
+    return inventoryData.filter(
+      (item) =>
+        normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        ) === scopedBuildingKey,
+    );
+  }, [inventoryData, overallBuildingTab]);
+  //   return inventoryData;
+  // }, [inventoryData]);
 
   const { data: inventoryCategories = [] } = useQuery({
     queryKey: ["inventory-categories", department?._id],
@@ -2255,7 +2273,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
             key={isInventoryLoading ? 0 : overallInventoryRows?.length}
             search={true}
-            tableTitle="Overall Inventory"
+           // tableTitle="Overall Inventory"
+             tableTitle={
+              overallBuildingTab === "sunteck"
+                ? "Overall ST Inventory"
+                : overallBuildingTab === "dempo"
+                  ? "Overall DTC Inventory"
+                  : "Overall Inventory"
+            }
             hideTitle={true}
             buttonTitle={"Add Inventory"}
               //  data={selectedUnitInventoryRows || []}

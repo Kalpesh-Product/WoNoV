@@ -17,12 +17,14 @@ const MaintenanceInventoryCard = () => {
     },
     {
       title: "OVERALL ST INVENTORY",
-      route: `${basePath}/sunteck-kanaka-units`,
+       route: `${basePath}/overall-st-inventory`,
+     // route: `${basePath}/sunteck-kanaka-units`,
       permission: cardPermissions.sunteck,
     },
     {
       title: "OVERALL DTC INVENTORY",
-      route: `${basePath}/dempo-trade-center`,
+      route: `${basePath}/overall-dtc-inventory`,
+    //  route: `${basePath}/dempo-trade-center`,
       permission: cardPermissions.dempo,
     },
     {

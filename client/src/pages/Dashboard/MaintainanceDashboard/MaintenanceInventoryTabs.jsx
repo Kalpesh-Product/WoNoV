@@ -8,6 +8,8 @@ export const getInventoryCardConfig = (pathname) => {
     return {
       basePath: "/app/dashboard/admin-dashboard/inventory",
       listPermission: PERMISSIONS.ADMIN_OVERALL_INVENTORY_TAB.value,
+       stListPermission: PERMISSIONS.ADMIN_OVERALL_ST_INVENTORY_TAB.value,
+      dtcListPermission: PERMISSIONS.ADMIN_OVERALL_DTC_INVENTORY_TAB.value,
       categoryPermission: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
       itemPermission: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
       sunteckPermission: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -25,6 +27,8 @@ export const getInventoryCardConfig = (pathname) => {
     return {
       basePath: "/app/dashboard/IT-dashboard/inventory",
       listPermission: PERMISSIONS.IT_OVERALL_INVENTORY_TAB.value,
+       stListPermission: PERMISSIONS.IT_OVERALL_ST_INVENTORY_TAB.value,
+      dtcListPermission: PERMISSIONS.IT_OVERALL_DTC_INVENTORY_TAB.value,
       categoryPermission: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
       itemPermission: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
       sunteckPermission: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -41,6 +45,8 @@ export const getInventoryCardConfig = (pathname) => {
   return {
     basePath: "/app/dashboard/maintenance-dashboard/inventory",
     listPermission: PERMISSIONS.MAINTENANCE_OVERALL_INVENTORY_TAB.value,
+    stListPermission: PERMISSIONS.MAINTENANCE_OVERALL_ST_INVENTORY_TAB.value,
+    dtcListPermission: PERMISSIONS.MAINTENANCE_OVERALL_DTC_INVENTORY_TAB.value,
     categoryPermission: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
     itemPermission: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
     sunteckPermission: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -61,12 +67,61 @@ const MaintenanceInventoryTabs = () => {
   const isCategoryOrItemPath = /\/inventory\/(category|item)$/i.test(
     location.pathname,
   );
+   const isStInventoryPath = location.pathname.includes("/overall-st-inventory");
+  const isDtcInventoryPath = location.pathname.includes("/overall-dtc-inventory");
+  const overallTab = isStInventoryPath
+    ? {
+        label: "Overall ST Inventory",
+        path: "overall-st-inventory",
+        permission: dashboardConfig.stListPermission,
+      }
+    : isDtcInventoryPath
+      ? {
+          label: "Overall DTC Inventory",
+          path: "overall-dtc-inventory",
+          permission: dashboardConfig.dtcListPermission,
+        }
+      : {
+          label: "Overall Inventory",
+          path: "overall-inventory",
+          permission: dashboardConfig.listPermission,
+        };
+
+  const buildingTabs = isStInventoryPath
+    ? [
+        {
+          label: "Sunteck Kanaka Units",
+          path: "sunteck-kanaka-units",
+          permission: dashboardConfig.sunteckPermission,
+        },
+      ]
+    : isDtcInventoryPath
+      ? [
+          {
+            label: "Dempo Trade Center",
+            path: "dempo-trade-center",
+            permission: dashboardConfig.dempoPermission,
+          },
+        ]
+      : [
+          {
+            label: "Sunteck Kanaka Units",
+            path: "sunteck-kanaka-units",
+            permission: dashboardConfig.sunteckPermission,
+          },
+          {
+            label: "Dempo Trade Center",
+            path: "dempo-trade-center",
+            permission: dashboardConfig.dempoPermission,
+          },
+        ];
   const tabs = [
-    {
-      label: "Overall Inventory",
-      path: "overall-inventory",
-      permission: dashboardConfig.listPermission,
-    },
+    overallTab,
+    // {
+    //   label: "Overall Inventory",
+    //   path: "overall-inventory",
+    //   permission: dashboardConfig.listPermission,
+    // },
     {
       label: "Category",
       path: "category",
@@ -77,21 +132,28 @@ const MaintenanceInventoryTabs = () => {
       path: "item",
       permission: dashboardConfig.itemPermission,
     },
-    {
-      label: "Sunteck Kanaka Units",
-      path: "sunteck-kanaka-units",
-      permission: dashboardConfig.sunteckPermission,
-    },
-    {
-      label: "Dempo Trade Center",
-      path: "dempo-trade-center",
-      permission: dashboardConfig.dempoPermission,
-    },
+        ...buildingTabs,
+    // {
+    //   label: "Sunteck Kanaka Units",
+    //   path: "sunteck-kanaka-units",
+    //   permission: dashboardConfig.sunteckPermission,
+    // },
+    // {
+    //   label: "Dempo Trade Center",
+    //   path: "dempo-trade-center",
+    //   permission: dashboardConfig.dempoPermission,
+    // },
   ].filter((tab) =>
     isCategoryOrItemPath
       ? ["category", "item"].includes(tab.path)
       : !["category", "item"].includes(tab.path),
   );
+   const defaultTabPath = isStInventoryPath
+    ? "overall-st-inventory"
+    : isDtcInventoryPath
+      ? "overall-dtc-inventory"
+      : "overall-inventory";
+
 
   return (
     <TabLayout
@@ -99,7 +161,8 @@ const MaintenanceInventoryTabs = () => {
       defaultTabPath={
         location.pathname === dashboardConfig.basePath
           ? undefined
-          : "overall-inventory"
+          : defaultTabPath
+         // : "overall-inventory"
       }
       tabs={tabs}
       contentClassName="pt-2"

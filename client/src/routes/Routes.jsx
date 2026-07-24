@@ -1116,8 +1116,24 @@ export const routes = createBrowserRouter([
                             path: "overall-inventory",
                             element: <Inventory />,
                           },
+                            {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
                           {
                             path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                            {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1406,8 +1422,24 @@ export const routes = createBrowserRouter([
                             path: "overall-inventory",
                             element: <Inventory />,
                           },
+                            {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
                           {
                             path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                             {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1638,8 +1670,24 @@ export const routes = createBrowserRouter([
                             path: "overall-inventory",
                             element: <Inventory />,
                           },
+                            {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
                           {
                             path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                            {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {

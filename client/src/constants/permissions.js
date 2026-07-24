@@ -2289,13 +2289,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "admin_overall_st_inventory_card",
     title: "OVERALL ST INVENTORY",
     type: "read",
-    route: "/app/dashboard/admin-dashboard/inventory/sunteck-kanaka-units",
+   route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory",
   },
   ADMIN_OVERALL_DTC_INVENTORY_CARD: {
     value: "admin_overall_dtc_inventory_card",
     title: "OVERALL DTC INVENTORY",
     type: "read",
-    route: "/app/dashboard/admin-dashboard/inventory/dempo-trade-center",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory",
   },
   ADMIN_INVENTORY_CATEGORY_ITEM_CARD: {
     value: "admin_inventory_category_item_card",
@@ -2332,6 +2332,18 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_OVERALL_ST_INVENTORY_TAB: {
+    value: "admin_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory",
+  },
+  ADMIN_OVERALL_DTC_INVENTORY_TAB: {
+    value: "admin_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory",
   },
   ADMIN_FINANCE: {
     value: "admin_finance_card",
@@ -2668,13 +2680,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "maintenance_overall_st_inventory_card",
     title: "OVERALL ST INVENTORY",
     type: "read",
-    route: "/app/dashboard/maintenance-dashboard/inventory/sunteck-kanaka-units",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory",
   },
   MAINTENANCE_OVERALL_DTC_INVENTORY_CARD: {
     value: "maintenance_overall_dtc_inventory_card",
     title: "OVERALL DTC INVENTORY",
     type: "read",
-    route: "/app/dashboard/maintenance-dashboard/inventory/dempo-trade-center",
+     route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory",
   },
   MAINTENANCE_INVENTORY_CATEGORY_ITEM_CARD: {
     value: "maintenance_inventory_category_item_card",
@@ -2714,7 +2726,18 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-
+MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
+    value: "maintenance_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory",
+  },
+  MAINTENANCE_OVERALL_DTC_INVENTORY_TAB: {
+    value: "maintenance_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory",
+  },
   MAINTENANCE_FINANCE: {
     value: "maintenance_finance_card",
     title: "FINANCE",
@@ -2963,13 +2986,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "it_overall_st_inventory_card",
     title: "OVERALL ST INVENTORY",
     type: "read",
-    route: "/app/dashboard/IT-dashboard/inventory/sunteck-kanaka-units",
+      route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory",
   },
   IT_OVERALL_DTC_INVENTORY_CARD: {
     value: "it_overall_dtc_inventory_card",
     title: "OVERALL DTC INVENTORY",
     type: "read",
-    route: "/app/dashboard/IT-dashboard/inventory/dempo-trade-center",
+      route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory",
   },
   IT_INVENTORY_CATEGORY_ITEM_CARD: {
     value: "it_inventory_category_item_card",
@@ -3007,6 +3030,18 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
+  },
+   IT_OVERALL_ST_INVENTORY_TAB: {
+    value: "it_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory",
+  },
+  IT_OVERALL_DTC_INVENTORY_TAB: {
+    value: "it_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory",
   },
   IT_FINANCE: {
     value: "it_finance_card",
