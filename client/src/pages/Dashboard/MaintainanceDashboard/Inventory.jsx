@@ -1754,6 +1754,18 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             {
               label: "Assign",
               onClick: () => {
+                 const recordBuildingName = normalizeBuildingName(
+                  params.data?.buildingName || "",
+                );
+                const matchingBuildingTab = tabOptions.find((tab) =>
+                  tab.buildingAliases.some((alias) =>
+                    recordBuildingName.includes(normalizeBuildingName(alias)),
+                  ),
+                );
+
+                if (matchingBuildingTab) {
+                  setSelectedBuildingTab(matchingBuildingTab.key);
+                }
                 setSelectedAsset(params.data);
                 setModalMode("edit");
                 setIsModalOpen(true);
@@ -1969,6 +1981,53 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
     );
   }, [inventoryTableData, selectedUnit]);
+  const overallInventoryRows = useMemo(() => {
+    // Assigned records belong to a unit and must not replace the overall
+    // record when the table keeps only the newest row for an item/category.
+    // Otherwise assigning 15 from a closing balance of 115 makes the overall
+    // table display the unit's 15 instead of the source balance of 100.
+    const overallRows = (inventoryTableData || []).filter(
+      (item) => !String(item?.unitNo || "").trim(),
+    );
+    const latestByBuildingItemCategory = new Map();
+
+    overallRows.forEach((item) => {
+      const itemKey =
+        String(item?.itemId || item?.itemName || "")
+          .trim()
+          .toLowerCase() || "unknown-item";
+      const categoryKey =
+        String(item?.categoryId || item?.categoryName || item?.category || "")
+          .trim()
+          .toLowerCase() || "unknown-category";
+      const buildingKey =
+        normalizeBuildingName(item?.buildingName || "") || "unknown-building";
+      const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
+      const existing = latestByBuildingItemCategory.get(compositeKey);
+      const itemDate = new Date(
+        item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+      );
+      const existingDate = existing
+        ? new Date(
+            existing?.createdAt ||
+              existing?.dateRaw ||
+              existing?.date ||
+              existing?.updatedAt ||
+              0,
+          )
+        : null;
+
+      if (!existing || itemDate > existingDate) {
+        latestByBuildingItemCategory.set(compositeKey, item);
+      }
+    });
+
+    return Array.from(latestByBuildingItemCategory.values()).sort(
+      (a, b) =>
+        new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
+        new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+    );
+  }, [inventoryTableData]);
 
   useEffect(() => {
     if (inventoryRootView !== "overall") return;
@@ -2159,12 +2218,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       {inventoryRootView === "overall" && (
         <PageFrame>
           <YearWiseTable
-            key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+          //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+            key={isInventoryLoading ? 0 : overallInventoryRows?.length}
             search={true}
             tableTitle="Overall Inventory"
             hideTitle={true}
             buttonTitle={"Add Inventory"}
-                data={selectedUnitInventoryRows || []}
+              //  data={selectedUnitInventoryRows || []}
+               data={overallInventoryRows}
                 tableHeight={450}
                 dateColumn={"date"}
                 columns={overallInventoryColumns}

@@ -162,7 +162,14 @@ const InventoryRecordHistory = () => {
         ) === selectedBuildingFromState;
 
       if (isOverallInventoryHistoryRoute) {
-        return matchesCategory && matchesItem && matchesBuilding;
+        //return matchesCategory && matchesItem && matchesBuilding;
+          const isOverallRecord = !String(item?.unitNo || "").trim();
+        return (
+          isOverallRecord &&
+          matchesCategory &&
+          matchesItem &&
+          matchesBuilding
+        );
       }
 
       return normalizeUnitNo(item?.unitNo) === unitKey && matchesCategory && matchesItem;

@@ -882,7 +882,101 @@ const updateInventory = async (req, res) => {
           message: "Consumption exceeds available stock",
         });
       }
-     const previousInventory = await Inventory.findOne({
+     //const previousInventory = await Inventory.findOne({
+       if (updatePayload.unit) {
+        const previousOverallInventory = await Inventory.findOne({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          buildingName: inventory.buildingName || "",
+          unit: null,
+          _id: { $ne: inventory._id },
+        })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        // The list API derives missing opening values from the preceding
+        // overall row. Resolve those values before creating assignment
+        // history, so opening columns remain stable just like purchase values.
+        const openingInventoryUnits =
+          inventory.openingInventoryUnits ??
+          previousOverallInventory?.newPurchaseUnits ??
+          0;
+        const openingPerUnitPrice =
+          inventory.openingPerUnitPrice ??
+          previousOverallInventory?.newPurchasePerUnitPrice ??
+          0;
+        const openingInventoryValue =
+          inventory.openingInventoryValue ??
+          previousOverallInventory?.newPurchaseInventoryValue ??
+          0;
+
+        const latestUnitInventory = await Inventory.findOne({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          unit: updatePayload.unit,
+        })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        // Assignments to the same unit are cumulative. For example, assigning
+        // 20 to a unit that already has a closing balance of 15 must create a
+        // new closing balance of 35, not replace it with 20.
+        const assignedRemaining =
+          Number(latestUnitInventory?.remainingUnits || 0) +
+          incomingConsumption;
+
+        const assignedInventory = await Inventory.create({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          unit: updatePayload.unit,
+          buildingName: updatePayload.buildingName,
+          addedBy: user,
+          // Keep the source row's opening and purchase columns unchanged in
+          // the unit-wise table. The allocated quantity belongs only in the
+          // target row's closing balance (`remainingUnits`).
+          openingInventoryUnits,
+          openingPerUnitPrice,
+          openingInventoryValue,
+          newPurchaseUnits: inventory.newPurchaseUnits || 0,
+          newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice || 0,
+          newPurchaseInventoryValue:
+            inventory.newPurchaseInventoryValue || 0,
+          remainingUnits: assignedRemaining,
+        });
+
+        // Preserve every assignment as an overall-inventory history row.
+        // Its opening and purchase values stay identical to the source row;
+        // only the closing balance changes after the assignment.
+        await Inventory.create({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          buildingName: inventory.buildingName || "",
+          addedBy: user,
+          openingInventoryUnits,
+          openingPerUnitPrice,
+          openingInventoryValue,
+          newPurchaseUnits: inventory.newPurchaseUnits || 0,
+          newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice || 0,
+          newPurchaseInventoryValue:
+            inventory.newPurchaseInventoryValue || 0,
+          consumptions: formattedConsumptions,
+          remainingUnits: newRemaining,
+        });
+
+        await assignedInventory.populate([
+          { path: "itemName", select: "name" },
+          { path: "department", select: "name" },
+          { path: "unit", select: "unitNo unitName building" },
+        ]);
+
+        return res.status(201).json(assignedInventory);
+      }
+
+      const previousInventory = await Inventory.findOne({
         company,
         department: inventory.department,
         itemName: inventory.itemName,
