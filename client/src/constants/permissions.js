@@ -2345,6 +2345,18 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory",
   },
+   ADMIN_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "admin_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  ADMIN_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "admin_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
+  },
   ADMIN_FINANCE: {
     value: "admin_finance_card",
     title: "FINANCE",
@@ -2738,6 +2750,18 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory",
   },
+  MAINTENANCE_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "maintenance_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  MAINTENANCE_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "maintenance_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
+  },
   MAINTENANCE_FINANCE: {
     value: "maintenance_finance_card",
     title: "FINANCE",
@@ -3030,6 +3054,19 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  
+  IT_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "it_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  IT_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "it_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
   },
    IT_OVERALL_ST_INVENTORY_TAB: {
     value: "it_overall_st_inventory_tab",

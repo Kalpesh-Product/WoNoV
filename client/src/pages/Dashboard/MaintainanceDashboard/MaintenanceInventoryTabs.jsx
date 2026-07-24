@@ -10,6 +10,8 @@ export const getInventoryCardConfig = (pathname) => {
       listPermission: PERMISSIONS.ADMIN_OVERALL_INVENTORY_TAB.value,
        stListPermission: PERMISSIONS.ADMIN_OVERALL_ST_INVENTORY_TAB.value,
       dtcListPermission: PERMISSIONS.ADMIN_OVERALL_DTC_INVENTORY_TAB.value,
+      stUnitPermission: PERMISSIONS.ADMIN_OVERALL_ST_INVENTORY_ST_UNIT_TAB.value,
+      dtcUnitPermission: PERMISSIONS.ADMIN_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB.value,
       categoryPermission: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
       itemPermission: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
       sunteckPermission: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -29,6 +31,8 @@ export const getInventoryCardConfig = (pathname) => {
       listPermission: PERMISSIONS.IT_OVERALL_INVENTORY_TAB.value,
        stListPermission: PERMISSIONS.IT_OVERALL_ST_INVENTORY_TAB.value,
       dtcListPermission: PERMISSIONS.IT_OVERALL_DTC_INVENTORY_TAB.value,
+       stUnitPermission: PERMISSIONS.IT_OVERALL_ST_INVENTORY_ST_UNIT_TAB.value,
+      dtcUnitPermission: PERMISSIONS.IT_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB.value,
       categoryPermission: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
       itemPermission: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
       sunteckPermission: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -47,6 +51,8 @@ export const getInventoryCardConfig = (pathname) => {
     listPermission: PERMISSIONS.MAINTENANCE_OVERALL_INVENTORY_TAB.value,
     stListPermission: PERMISSIONS.MAINTENANCE_OVERALL_ST_INVENTORY_TAB.value,
     dtcListPermission: PERMISSIONS.MAINTENANCE_OVERALL_DTC_INVENTORY_TAB.value,
+         stUnitPermission: PERMISSIONS.MAINTENANCE_OVERALL_ST_INVENTORY_ST_UNIT_TAB.value,
+    dtcUnitPermission: PERMISSIONS.MAINTENANCE_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB.value,
     categoryPermission: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
     itemPermission: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
     sunteckPermission: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
@@ -67,7 +73,7 @@ const MaintenanceInventoryTabs = () => {
   const isCategoryOrItemPath = /\/inventory\/(category|item)$/i.test(
     location.pathname,
   );
-   const isStInventoryPath = location.pathname.includes("/overall-st-inventory");
+    const isStInventoryPath = location.pathname.includes("/overall-st-inventory");
   const isDtcInventoryPath = location.pathname.includes("/overall-dtc-inventory");
   const overallTab = isStInventoryPath
     ? {
@@ -91,16 +97,16 @@ const MaintenanceInventoryTabs = () => {
     ? [
         {
           label: "Sunteck Kanaka Units",
-          path: "sunteck-kanaka-units",
-          permission: dashboardConfig.sunteckPermission,
+          path: "overall-st-inventory/sunteck-kanaka-units",
+          permission: dashboardConfig.stUnitPermission,
         },
       ]
     : isDtcInventoryPath
       ? [
           {
             label: "Dempo Trade Center",
-            path: "dempo-trade-center",
-            permission: dashboardConfig.dempoPermission,
+            path: "overall-dtc-inventory/dempo-trade-center",
+            permission: dashboardConfig.dtcUnitPermission,
           },
         ]
       : [
@@ -168,13 +174,16 @@ const MaintenanceInventoryTabs = () => {
       contentClassName="pt-2"
       hideTabsCondition={(pathname) =>
         pathname === dashboardConfig.basePath ||
-        /\/inventory\/(overall-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test(
+           /\/inventory\/(overall-inventory\/[^/]+|overall-st-inventory\/sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|overall-dtc-inventory\/dempo-trade-center\/[^/]+(?:\/[^/]+)?|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test( 
+      //  /\/inventory\/(overall-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test(
           pathname,
         )
       }
       hideTabsOnPaths={[
         "/inventory/sunteck-kanaka-units/",
+        "/inventory/overall-st-inventory/sunteck-kanaka-units/",
         "/inventory/dempo-trade-center/",
+        "/inventory/overall-dtc-inventory/dempo-trade-center/",
       ]}
     />
   );
