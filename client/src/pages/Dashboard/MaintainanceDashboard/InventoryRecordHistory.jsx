@@ -103,11 +103,6 @@ const InventoryRecordHistory = () => {
               ? item.category
               : item.category?.categoryName) ||
             "N/A",
-          lastConsumedUnitValue:
-            item?.lastConsumedUnitValue ??
-            item?.consumedOpenInventoryUnits ??
-            item?.lastConsumed ??
-            0,
           lastRemainingUnitValue:
             item?.lastRemainingUnitValue ??
             item?.remainingInventoryUnits ??
@@ -363,15 +358,8 @@ const InventoryRecordHistory = () => {
           ]
         : []),
       {
-        field: "lastConsumedUnitValue",
-        headerName: "Last Consumed Unit Value",
-        hide: isOverallInventoryHistoryRoute,
-        suppressCsvExport: isOverallInventoryHistoryRoute,
-        suppressExcelExport: isOverallInventoryHistoryRoute,
-      },
-      {
         field: "lastRemainingUnitValue",
-        headerName: "Last Remaining Units",
+        headerName: "New Assigned Unit",
         hide: isOverallInventoryHistoryRoute,
         suppressCsvExport: isOverallInventoryHistoryRoute,
         suppressExcelExport: isOverallInventoryHistoryRoute,
@@ -615,16 +603,7 @@ const InventoryRecordHistory = () => {
 
               <div className="font-bold">Inventory Units</div>
               <DetalisFormatted
-                title="Last Consumed Units"
-                detail={
-                  selectedAsset.lastConsumed ??
-                  // selectedAsset.lastConsumedUnitValue ??
-                  //selectedAsset.consumedOpenInventoryUnits ??
-                  "0"
-                }
-              />
-              <DetalisFormatted
-                title="Last Remaining Units"
+                title="New Assigned Unit"
                 detail={selectedAsset.remainingOpeningInventoryUnits ?? "0"}
               />
               <DetalisFormatted

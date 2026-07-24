@@ -1543,13 +1543,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       suppressExcelExport: true,
     },
     {
-      field: "lastConsumedUnitValue",
-      headerName: "Last Consumed Unit Value",
-      hide: inventoryRootView === "overall",
-    },
-    {
       field: "lastRemainingUnitValue",
-      headerName: "Last Remaining Units",
+      headerName: "New Assigned Unit",
       hide: inventoryRootView === "overall",
     },
     {
@@ -2705,7 +2700,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               ? "Add Inventory"
               : inventoryRootView === "overall"
                 ? "Assign Inventory"
-                : "Edit Inventory"
+                : `Edit Inventory - ${
+                    selectedAsset?.unit?.unitNo ||
+                    selectedAsset?.unitNo ||
+                    "Unit"
+                  }`
         }
       >
         {modalMode === "add" && (
@@ -3100,14 +3099,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               <div className="font-bold">Inventory Units</div>
 
               <DetalisFormatted
-                title="Last Consumed Unit Value"
-                detail={
-                  selectedAsset.lastConsumed ??
-                  "N/A"
-                }
-              />
-              <DetalisFormatted
-                title="Last Remaining Units"
+                title="New Assigned Unit"
                 detail={
                   selectedAsset.remainingOpeningInventoryUnits ??
                   "0"
@@ -3412,30 +3404,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               {inventoryRootView !== "overall" && (
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <Controller
-                    name="lastConsumed"
-                    control={updateControl}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        label="Last Consumed Units"
-                        type="number"
-                        size="small"
-                        fullWidth
-                        disabled
-                      />
-                    )}
-                  />
-                  <Controller
                     name="remainingOpeningInventoryUnits"
                     control={updateControl}
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        label="Last Remaining Units"
+                        label="New Assigned Unit"
                         type="number"
                         size="small"
                         fullWidth
                         disabled
+                        className="md:col-span-2"
                       />
                     )}
                   />
