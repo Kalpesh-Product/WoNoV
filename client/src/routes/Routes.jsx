@@ -229,6 +229,7 @@ import Inventory from "../pages/Dashboard/MaintainanceDashboard/Inventory";
 import InventoryRecordHistory from "../pages/Dashboard/MaintainanceDashboard/InventoryRecordHistory";
 import MaintenanceFinance from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceFinance";
 import MaintenanceInventoryTabs from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventoryTabs";
+import MaintenanceInventoryCard from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventorycard";
 import MaintenanceBudget from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceBudget";
 import MaintenancePayment from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenancePayment";
 import MaintenanceData from "../pages/Dashboard/MaintainanceDashboard/MaintenanceData/MaintenanceData";
@@ -1107,6 +1108,10 @@ export const routes = createBrowserRouter([
                         //element: <Inventory />,
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                           {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
                           {
                             path: "overall-inventory",
                             element: <Inventory />,
@@ -1393,6 +1398,10 @@ export const routes = createBrowserRouter([
                         path: "inventory",
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                           {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
                           {
                             path: "overall-inventory",
                             element: <Inventory />,
@@ -1621,6 +1630,10 @@ export const routes = createBrowserRouter([
                         //element: <Inventory />,
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                            {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
                           {
                             path: "overall-inventory",
                             element: <Inventory />,
