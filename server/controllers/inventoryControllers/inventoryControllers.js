@@ -63,7 +63,8 @@ const createInventory = async (req, res, next) => {
       department,
       itemName,
       buildingName: buildingName || "",
-      ...(unit ? { unit } : {}),
+      unit: unit || null,
+      //...(unit ? { unit } : {}),
     };
 
     const lastInventory = await Inventory.findOne(inventoryHistoryFilter).sort({
@@ -564,6 +565,7 @@ const getInventories = async (req, res, next) => {
           newPurchasePerUnitPrice: 1,
           newPurchaseInventoryValue: 1,
           remainingNewPurchaseInventoryUnits: 1,
+          assignedUnits: 1, 
 
           /* 🔥 Consumption */
           totalConsumed: 1,
@@ -944,6 +946,7 @@ const updateInventory = async (req, res) => {
           newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice || 0,
           newPurchaseInventoryValue:
             inventory.newPurchaseInventoryValue || 0,
+            assignedUnits: incomingConsumption,
           remainingUnits: assignedRemaining,
         });
 
@@ -1011,6 +1014,7 @@ const updateInventory = async (req, res) => {
         newPurchaseUnits: inventory.newPurchaseUnits,
         newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice,
         newPurchaseInventoryValue: inventory.newPurchaseInventoryValue,
+          assignedUnits: 0,
         consumptions: formattedConsumptions,
         remainingUnits: newRemaining,
       });

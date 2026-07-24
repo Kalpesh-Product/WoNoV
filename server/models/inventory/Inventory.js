@@ -71,6 +71,11 @@ const inventorySchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+      assignedUnits: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
   },
 
   {

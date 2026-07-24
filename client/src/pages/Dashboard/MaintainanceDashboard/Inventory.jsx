@@ -1209,7 +1209,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               consumptions: [
                 {
                   quantity:
-                    Number(formData.consumedNewPurchaseInventoryUnits) || 0,
+                    Number(formData.newConsumedUnitValue) || 0,
                   source: "newPurchase",
                 },
               ],
@@ -2070,6 +2070,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const getUnitAssignedDisplayValue = (inventory) => {
     if (!inventory) return 0;
+    
+    // Use the allocation recorded on this row. A unit-consumption row stores
+    // zero, so its closing balance changes without appearing as a new assign.
+    if (
+      inventory.assignedUnits !== undefined &&
+      inventory.assignedUnits !== null
+    ) {
+      return Number(inventory.assignedUnits) || 0;
+    }
 
     const hasConsumption = Array.isArray(inventory.consumptions)
       ? inventory.consumptions.length > 0

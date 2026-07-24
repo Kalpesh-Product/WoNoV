@@ -59,6 +59,12 @@ const InventoryRecordHistory = () => {
   const getUnitAssignedDisplayValue = useCallback(
     (inventory) => {
       if (!inventory || isOverallInventoryHistoryRoute) return 0;
+      if (
+        inventory.assignedUnits !== undefined &&
+        inventory.assignedUnits !== null
+      ) {
+        return Number(inventory.assignedUnits) || 0;
+      }
 
       const hasConsumption = Array.isArray(inventory.consumptions)
         ? inventory.consumptions.length > 0
