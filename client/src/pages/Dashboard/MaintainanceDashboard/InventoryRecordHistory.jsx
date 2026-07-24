@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -54,6 +54,34 @@ const InventoryRecordHistory = () => {
   const isOverallInventoryHistoryRoute = useMemo(
     () => location.pathname.includes("/overall-inventory/"),
     [location.pathname],
+  );
+
+  const getUnitAssignedDisplayValue = useCallback(
+    (inventory) => {
+      if (!inventory || isOverallInventoryHistoryRoute) return 0;
+
+      const hasConsumption = Array.isArray(inventory.consumptions)
+        ? inventory.consumptions.length > 0
+        : false;
+
+      if (hasConsumption) return 0;
+
+      const currentRemaining = Number(
+        inventory.newRemainingUnitValue ??
+          inventory.remainingNewPurchaseInventoryUnits ??
+          inventory.closingInventoryUnits ??
+          0,
+      );
+      const previousRemaining = Number(
+        inventory.lastRemainingUnitValue ??
+          inventory.remainingOpeningInventoryUnits ??
+          0,
+      );
+
+      const assignedValue = currentRemaining - previousRemaining;
+      return assignedValue > 0 ? assignedValue : currentRemaining || 0;
+    },
+    [isOverallInventoryHistoryRoute],
   );
 
   const { data: inventoryData = [] } = useQuery({
@@ -361,6 +389,8 @@ const InventoryRecordHistory = () => {
         field: "lastRemainingUnitValue",
         headerName: "New Assigned Unit",
         hide: isOverallInventoryHistoryRoute,
+        valueGetter: (params) => getUnitAssignedDisplayValue(params.data),
+        cellRenderer: (params) => inrFormat(params.value),
         suppressCsvExport: isOverallInventoryHistoryRoute,
         suppressExcelExport: isOverallInventoryHistoryRoute,
       },
@@ -407,7 +437,7 @@ const InventoryRecordHistory = () => {
         cellRenderer: (params) => params.value,
       },
     ];
-  }, [isOverallInventoryHistoryRoute]);
+  }, [getUnitAssignedDisplayValue, isOverallInventoryHistoryRoute]);
 
   const resolvedCategoryName = useMemo(() => {
     if (location.state?.inventoryCategory) {
@@ -604,7 +634,7 @@ const InventoryRecordHistory = () => {
               <div className="font-bold">Inventory Units</div>
               <DetalisFormatted
                 title="New Assigned Unit"
-                detail={selectedAsset.remainingOpeningInventoryUnits ?? "0"}
+                detail={getUnitAssignedDisplayValue(selectedAsset)}
               />
               <DetalisFormatted
                 title="New Consumed Units"

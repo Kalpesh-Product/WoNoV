@@ -395,7 +395,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue("lastConsumed", selectedAsset?.lastConsumed ?? "");
     setValue(
       "remainingOpeningInventoryUnits",
-      selectedAsset?.remainingOpeningInventoryUnits ?? 0,
+      inventoryRootView === "overall"
+        ? selectedAsset?.remainingOpeningInventoryUnits ?? 0
+        : getUnitAssignedDisplayValue(selectedAsset),
     );
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
@@ -1546,6 +1548,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       field: "lastRemainingUnitValue",
       headerName: "New Assigned Unit",
       hide: inventoryRootView === "overall",
+      valueGetter: (params) => getUnitAssignedDisplayValue(params.data),
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "newConsumedUnitValue",
@@ -2063,6 +2067,32 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const dynamicItemTitle = `List of Item - ${projectShortName} - ${selectedUnitHeadingName}`;
   const dynamicInventoryTitle = `List of Assigned Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
   const unitWiseHeading = `Unit Wise Assign Inventory - ${selectedTabConfig?.label || ""}`;
+
+  const getUnitAssignedDisplayValue = (inventory) => {
+    if (!inventory) return 0;
+
+    const hasConsumption = Array.isArray(inventory.consumptions)
+      ? inventory.consumptions.length > 0
+      : false;
+
+    if (hasConsumption) return 0;
+
+    const currentRemaining = Number(
+      inventory.newRemainingUnitValue ??
+        inventory.remainingNewPurchaseInventoryUnits ??
+        inventory.remainingUnits ??
+        inventory.closingInventoryUnits ??
+        0,
+    );
+    const previousRemaining = Number(
+      inventory.lastRemainingUnitValue ??
+        inventory.remainingOpeningInventoryUnits ??
+        0,
+    );
+
+    const assignedValue = currentRemaining - previousRemaining;
+    return assignedValue > 0 ? assignedValue : currentRemaining || 0;
+  };
 
   const handleTabChange = (value) => {
     if (forcedBuildingTab || value === selectedBuildingTab) return;
@@ -3100,10 +3130,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
               <DetalisFormatted
                 title="New Assigned Unit"
-                detail={
-                  selectedAsset.remainingOpeningInventoryUnits ??
-                  "0"
-                }
+                detail={getUnitAssignedDisplayValue(selectedAsset)}
               />
               <DetalisFormatted
                 title="New Consumed Units"
