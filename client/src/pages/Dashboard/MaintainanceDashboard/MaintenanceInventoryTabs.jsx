@@ -174,8 +174,7 @@ const MaintenanceInventoryTabs = () => {
       contentClassName="pt-2"
       hideTabsCondition={(pathname) =>
         pathname === dashboardConfig.basePath ||
-           /\/inventory\/(overall-inventory\/[^/]+|overall-st-inventory\/sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|overall-dtc-inventory\/dempo-trade-center\/[^/]+(?:\/[^/]+)?|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test( 
-      //  /\/inventory\/(overall-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(\/[^/]+)?|dempo-trade-center\/[^/]+(\/[^/]+)?)$/i.test(
+          /\/inventory\/(overall-st-inventory\/sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|overall-dtc-inventory\/dempo-trade-center\/[^/]+(?:\/[^/]+)?|overall-inventory\/[^/]+|overall-st-inventory\/[^/]+|overall-dtc-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|dempo-trade-center\/[^/]+(?:\/[^/]+)?)$/i.test(
           pathname,
         )
       }
@@ -184,6 +183,9 @@ const MaintenanceInventoryTabs = () => {
         "/inventory/overall-st-inventory/sunteck-kanaka-units/",
         "/inventory/dempo-trade-center/",
         "/inventory/overall-dtc-inventory/dempo-trade-center/",
+        "/inventory/overall-inventory/",
+        "/inventory/overall-st-inventory/",
+        "/inventory/overall-dtc-inventory/",
       ]}
     />
   );

@@ -374,10 +374,30 @@ const normalizeBuildingName = (value) =>
   const inventoryRootView = useMemo(() => {
     const pathname = location.pathname.toLowerCase();
 
-   // if (pathname.includes("/overall-inventory")) return "overall";
-     if (/\/overall(?:-st|-dtc)?-inventory/.test(pathname)) return "overall";
-    if (!unitNoParam && pathname.endsWith("/category")) return "category";
-    if (!unitNoParam && pathname.endsWith("/item")) return "item";
+    const isCategoryPath = pathname.endsWith("/category");
+    const isItemPath = pathname.endsWith("/item");
+    const isNestedSunteckUnitPath = /\/overall-st-inventory\/sunteck-kanaka-units(?:\/|$)/i.test(
+      pathname,
+    );
+    const isNestedDempoUnitPath = /\/overall-dtc-inventory\/dempo-trade-center(?:\/|$)/i.test(
+      pathname,
+    );
+    const isStandaloneUnitPath =
+      /\/sunteck-kanaka-units(?:\/|$)/i.test(pathname) ||
+      /\/dempo-trade-center(?:\/|$)/i.test(pathname);
+
+    if (!unitNoParam && isCategoryPath) return "category";
+    if (!unitNoParam && isItemPath) return "item";
+
+    // Unit routes must stay in the building view even though they live under
+    // /overall-st-inventory or /overall-dtc-inventory.
+    if (isNestedSunteckUnitPath || isNestedDempoUnitPath || isStandaloneUnitPath) {
+      return "building";
+    }
+
+    if (/\/overall(?:-st|-dtc)?-inventory(?:\/|$)/i.test(pathname)) {
+      return "overall";
+    }
 
     return "building";
   }, [location.pathname, unitNoParam]);

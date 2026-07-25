@@ -51,10 +51,37 @@ const InventoryRecordHistory = () => {
     () => normalizeText(location.state?.buildingName || ""),
     [location.state?.buildingName],
   );
-  const isOverallInventoryHistoryRoute = useMemo(
-    () => location.pathname.includes("/overall-inventory/"),
+  const isUnitInventoryHistoryRoute = useMemo(
+    () =>
+      /\/overall-st-inventory\/sunteck-kanaka-units\//i.test(location.pathname) ||
+      /\/overall-dtc-inventory\/dempo-trade-center\//i.test(location.pathname),
     [location.pathname],
   );
+  const isOverallInventoryHistoryRoute = useMemo(
+    () =>
+      !isUnitInventoryHistoryRoute &&
+      /\/overall(?:-st|-dtc)?-inventory\//i.test(location.pathname),
+    [isUnitInventoryHistoryRoute, location.pathname],
+  );
+  const historyTitlePrefix = useMemo(() => {
+    if (isUnitInventoryHistoryRoute) {
+      return "Assigned Inventory Item History";
+    }
+
+    if (location.pathname.includes("/overall-st-inventory/")) {
+      return "Overall ST Inventory Item History";
+    }
+
+    if (location.pathname.includes("/overall-dtc-inventory/")) {
+      return "Overall DTC Inventory Item History";
+    }
+
+    if (location.pathname.includes("/overall-inventory/")) {
+      return "Overall Inventory Item History";
+    }
+
+    return "Assigned Inventory Item History";
+  }, [isUnitInventoryHistoryRoute, location.pathname]);
 
   const getUnitAssignedDisplayValue = useCallback(
     (inventory) => {
@@ -461,9 +488,9 @@ const InventoryRecordHistory = () => {
     return uniqueCategories[0] || "Category";
   }, [historyRows, location.state?.inventoryCategory]);
 
-  const tableTitle = isOverallInventoryHistoryRoute
-    ? `Overall Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`
-    : `Assigned Inventory Item History - ${decodedItemName || "Item"} - ${resolvedCategoryName}`;
+  const tableTitle = `${historyTitlePrefix} - ${
+    decodedItemName || "Item"
+  } - ${resolvedCategoryName}`;
 
   return (
     <>
