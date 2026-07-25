@@ -51,7 +51,7 @@ const normalizeBuildingName = (value) =>
   const navigate = useNavigate();
   const location = useLocation();
   //const { unitNo: unitNoParam } = useParams();
-  const { unitNo: unitNoParam, inventoryTab: inventoryTabParam } = useParams();
+  const { unitNo: unitNoParam } = useParams();
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
     [auth?.user?.permissions?.permissions],
@@ -307,69 +307,6 @@ const normalizeBuildingName = (value) =>
     () => tabOptions.find((tab) => tab.key === selectedBuildingTab),
     [selectedBuildingTab, tabOptions],
   );
-
-  const unitTabPermissions = useMemo(() => {
-    if (isAdminInventoryPath) {
-      return {
-        category: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
-        item: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.ADMIN_OVERALL_INVENTORY_TAB.value,
-      };
-    }
-
-    if (isItInventoryPath) {
-      return {
-        category: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
-        item: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.IT_OVERALL_INVENTORY_TAB.value,
-      };
-    }
-
-    return {
-      category: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
-      item: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
-      inventory: PERMISSIONS.MAINTENANCE_OVERALL_INVENTORY_TAB.value,
-    };
-  }, [isAdminInventoryPath, isItInventoryPath]);
-
-  const unitTabOptions = useMemo(
-    () => {
-      const baseTabs = forcedBuildingTab
-        ? [
-            {
-              key: "inventory",
-              path: "inventory",
-              label: "Inventory",
-              permission: unitTabPermissions.inventory,
-            },
-          ]
-        : [
-            {
-              key: "category",
-              path: "category",
-              label: "Category",
-              permission: unitTabPermissions.category,
-            },
-            {
-              key: "item",
-              path: "item",
-              label: "Item",
-              permission: unitTabPermissions.item,
-            },
-            {
-              key: "inventory",
-              path: "item-inventory",
-              label: "Inventory",
-              permission: unitTabPermissions.inventory,
-            },
-          ];
-
-      return baseTabs.filter((tab) => userPermissions.includes(tab.permission));
-    },
-    [forcedBuildingTab, unitTabPermissions, userPermissions],
-  );
-
-  const defaultUnitTabPath = unitTabOptions[0]?.path || "inventory";
 
   const inventoryRootView = useMemo(() => {
     const pathname = location.pathname.toLowerCase();
@@ -1708,11 +1645,6 @@ const normalizeBuildingName = (value) =>
       hide: true,
     },
     {
-      field: "addedByName",
-      headerName: "Name",
-      hide: true,
-    },
-    {
       headerName: "Remaining Stock",
       cellRenderer: (params) => {
         const value =
@@ -1723,6 +1655,15 @@ const normalizeBuildingName = (value) =>
 
         return inrFormat(value);
       },
+    },
+    {
+      field: "addedByName",
+      headerName: "Name",
+    },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      cellRenderer: (params) => params.value,
     },
     {
       field: "itemName",
@@ -1768,11 +1709,6 @@ const normalizeBuildingName = (value) =>
         params.data.closingInventoryUnits ??
         0,
       cellRenderer: (params) => inrFormat(params.value),
-    },
-    {
-      field: "categoryName",
-      headerName: "Category",
-      cellRenderer: (params) => params.value,
     },
     {
       field: "dateRaw",
@@ -2149,18 +2085,10 @@ const normalizeBuildingName = (value) =>
 
   const handleUnitOpen = (unit) => {
     if (forcedBuildingTab && unit?.unitNo) {
-      navigate(
-        `${location.pathname}/${encodeURIComponent(unit.unitNo)}/inventory`,
-      );
+      navigate(`${location.pathname}/${encodeURIComponent(unit.unitNo)}`);
       return;
     }
     setSelectedUnit(unit);
-  };
-
-  const handleUnitTabChange = (tabPath) => {
-    if (!forcedBuildingTab || !selectedUnit?.unitNo) return;
-    const rootPath = location.pathname.split("/").slice(0, -1).join("/");
-    navigate(`${rootPath}/${tabPath}`);
   };
 
   const categoryColumns = [
@@ -2274,17 +2202,6 @@ const normalizeBuildingName = (value) =>
     status: item?.isActive ? "Active" : "Inactive",
   }));
 
-  useEffect(() => {
-    if (!forcedBuildingTab || !unitNoParam || inventoryTabParam) return;
-     navigate(`${location.pathname}/${defaultUnitTabPath}`, { replace: true });
-  }, [
-    defaultUnitTabPath,
-    forcedBuildingTab,
-    inventoryTabParam,
-    location.pathname,
-    navigate,
-    unitNoParam,
-  ]);
   return (
     <div className="p-0">
       {inventoryRootView === "overall" && (

@@ -218,8 +218,7 @@ const InventoryRecordHistory = () => {
         ) === selectedBuildingFromState;
 
       if (isOverallInventoryHistoryRoute) {
-        //return matchesCategory && matchesItem && matchesBuilding;
-          const isOverallRecord = !String(item?.unitNo || "").trim();
+        const isOverallRecord = !String(item?.unitNo || "").trim();
         return (
           isOverallRecord &&
           matchesCategory &&
@@ -306,6 +305,18 @@ const InventoryRecordHistory = () => {
               },
             },
             {
+              field: "addedByName",
+              headerName: "Name",
+              minWidth: 180,
+              flex: 1,
+            },
+            {
+              field: "categoryName",
+              headerName: "Category",
+              flex: 1,
+              minWidth: 160,
+            },
+            {
               field: "itemName",
               headerName: "Item Name",
               flex: 1,
@@ -325,6 +336,12 @@ const InventoryRecordHistory = () => {
               flex: 1,
               minWidth: 180,
               cellRenderer: renderClickableItem,
+            },
+            {
+              field: "categoryName",
+              headerName: "Category",
+              flex: 1,
+              minWidth: 160,
             },
           ]),
       ...(!isOverallInventoryHistoryRoute
@@ -441,11 +458,6 @@ const InventoryRecordHistory = () => {
         suppressCsvExport: isOverallInventoryHistoryRoute,
         suppressExcelExport: isOverallInventoryHistoryRoute,
       },
-      {
-        field: "addedByName",
-        headerName: "Name",
-        hide: true,
-      },
       ...(!isOverallInventoryHistoryRoute
         ? [
             {
@@ -456,12 +468,6 @@ const InventoryRecordHistory = () => {
             },
           ]
         : []),
-      {
-        field: "categoryName",
-        headerName: "Category",
-        flex: 1,
-        minWidth: 160,
-      },
       {
         field: "inventoryStamp",
         headerName: "Date",
