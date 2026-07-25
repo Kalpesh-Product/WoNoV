@@ -45,6 +45,62 @@ const normalizeBuildingName = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+function getUnitAssignedDisplayValue(inventory) {
+  if (!inventory) return 0;
+
+  // Use the allocation recorded on this row. A unit-consumption row stores
+  // zero, so its closing balance changes without appearing as a new assign.
+  if (inventory.assignedUnits !== undefined && inventory.assignedUnits !== null) {
+    return Number(inventory.assignedUnits) || 0;
+  }
+
+  const hasConsumption = Array.isArray(inventory.consumptions)
+    ? inventory.consumptions.length > 0
+    : false;
+
+  if (hasConsumption) return 0;
+
+  const currentRemaining = Number(
+    inventory.newRemainingUnitValue ??
+      inventory.remainingNewPurchaseInventoryUnits ??
+      inventory.remainingUnits ??
+      inventory.closingInventoryUnits ??
+      0,
+  );
+  const previousRemaining = Number(
+    inventory.lastRemainingUnitValue ??
+      inventory.remainingOpeningInventoryUnits ??
+      0,
+  );
+
+  const assignedValue = currentRemaining - previousRemaining;
+  return assignedValue > 0 ? assignedValue : currentRemaining || 0;
+}
+
+function getUnitInventorySummaryValues(rows = []) {
+  const summaryRows = Array.isArray(rows) ? rows : [];
+
+  return summaryRows.reduce(
+    (acc, row) => {
+      acc.assigned += Number(getUnitAssignedDisplayValue(row) || 0);
+      acc.consumed += Number(
+        row?.newConsumedUnitValue ??
+          row?.consumedNewPurchaseInventoryUnits ??
+          row?.totalConsumed ??
+          0,
+      );
+      acc.remaining += Number(
+        row?.newRemainingUnitValue ??
+          row?.remainingNewPurchaseInventoryUnits ??
+          row?.closingInventoryUnits ??
+          0,
+      );
+      return acc;
+    },
+    { assigned: 0, consumed: 0, remaining: 0 },
+  );
+}
+
 // const Inventory = ({ forcedBuildingTab = null }) => {
   const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   const { auth } = useAuth();
@@ -1823,29 +1879,92 @@ const normalizeBuildingName = (value) =>
           alias.toLowerCase(),
         ) || [];
 
-      const linkedInventory = inventoryTableData?.find((inv) => {
+      const matchingInventories = (inventoryTableData || []).filter((inv) => {
         const matchesUnit =
           normalizeUnitNo(inv?.unitNo) === normalizeUnitNo(unit?.unitNo);
 
         if (!matchesUnit) return false;
 
-        const invBuildingName = String(inv?.buildingName || "").toLowerCase();
+        const invBuildingName = String(
+          inv?.buildingName ||
+            inv?.unit?.buildingName ||
+            inv?.unit?.building?.buildingName ||
+            "",
+        ).toLowerCase();
         const matchesByAlias = buildingAliases.some((alias) =>
           invBuildingName.includes(alias),
         );
 
         return (
-          matchesByAlias || invBuildingName.includes(normalizedBuildingName)
+          !invBuildingName ||
+          matchesByAlias ||
+          invBuildingName.includes(normalizedBuildingName)
         );
       });
+
+      const latestByBuildingItemCategory = new Map();
+
+      matchingInventories.forEach((item) => {
+        const itemKey =
+          String(item?.itemId || item?.itemName || "")
+            .trim()
+            .toLowerCase() || "unknown-item";
+        const categoryKey =
+          String(item?.categoryId || item?.categoryName || item?.category || "")
+            .trim()
+            .toLowerCase() || "unknown-category";
+        const buildingKey =
+          normalizeBuildingName(
+            item?.buildingName ||
+              item?.unit?.buildingName ||
+              item?.unit?.building?.buildingName ||
+              "",
+          ) || "unknown-building";
+        const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
+
+        const existing = latestByBuildingItemCategory.get(compositeKey);
+        const itemDate = new Date(
+          item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+        );
+        const existingDate = existing
+          ? new Date(
+              existing?.createdAt ||
+                existing?.dateRaw ||
+                existing?.date ||
+                existing?.updatedAt ||
+                0,
+            )
+          : null;
+
+        if (!existing || itemDate > existingDate) {
+          latestByBuildingItemCategory.set(compositeKey, item);
+        }
+      });
+
+      const dedupedInventories = Array.from(
+        latestByBuildingItemCategory.values(),
+      ).sort(
+        (a, b) =>
+          new Date(
+            b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0,
+          ) -
+          new Date(
+            a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0,
+          ),
+      );
+
+      const linkedInventory = dedupedInventories[0] || null;
+      const unitSummary = getUnitInventorySummaryValues(dedupedInventories);
 
       return {
         id: unit?._id || `${selectedBuildingTab}-${index}`,
         srNo: index + 1,
         unitNo: unit?.unitNo || "-",
-        unitName: unit?.unitName || "-",
         category: linkedInventory?.categoryName || "-",
         itemName: linkedInventory?.itemName || "-",
+        newAssignedUnitTotal: unitSummary.assigned,
+        newConsumedUnitTotal: unitSummary.consumed,
+        newRemainingUnitTotal: unitSummary.remaining,
         rawUnit: unit,
       };
     });
@@ -1890,7 +2009,27 @@ const normalizeBuildingName = (value) =>
         </span>
       ),
     },
-    { field: "unitName", headerName: "Unit Name", minWidth: 210, flex: 1 },
+    {
+      field: "newAssignedUnitTotal",
+      headerName: "New Assigned Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
+    {
+      field: "newConsumedUnitTotal",
+      headerName: "New Consumed Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
+    {
+      field: "newRemainingUnitTotal",
+      headerName: "New Remaining Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
   ];
 
   // const selectedUnitInventoryRows = useMemo(() => {
@@ -1960,33 +2099,23 @@ const normalizeBuildingName = (value) =>
   }, [inventoryTableData, selectedUnit]);
 
   const selectedUnitInventorySummaryCards = useMemo(() => {
-    const rows = Array.isArray(selectedUnitInventoryRows)
-      ? selectedUnitInventoryRows
-      : [];
-
-    const totalFor = (selector) =>
-      rows.reduce((sum, row) => sum + (Number(selector(row)) || 0), 0);
+    const summary = getUnitInventorySummaryValues(selectedUnitInventoryRows);
 
     return [
       {
+        key: "assigned",
+        label: "New Assigned Unit",
+        value: summary.assigned,
+      },
+      {
         key: "consumed",
-        label: "Consumed Unit",
-        value: totalFor((row) => row?.newConsumedUnitValue),
+        label: "New Consumed Unit",
+        value: summary.consumed,
       },
       {
         key: "remaining",
-        label: "Remaining Unit",
-        value: totalFor((row) => row?.newRemainingUnitValue),
-      },
-      {
-        key: "closing",
-        label: "Closing Unit",
-        value: totalFor((row) =>
-          row?.newRemainingUnitValue ??
-          row?.remainingNewPurchaseInventoryUnits ??
-          row?.closingInventoryUnits ??
-          0,
-        ),
+        label: "New Remaining Unit",
+        value: summary.remaining,
       },
     ];
   }, [selectedUnitInventoryRows]);
@@ -2078,41 +2207,6 @@ const normalizeBuildingName = (value) =>
   const dynamicItemTitle = `List of Item - ${projectShortName} - ${selectedUnitHeadingName}`;
   const dynamicInventoryTitle = `List of Assigned Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
   const unitWiseHeading = `Unit Wise Assign Inventory - ${selectedTabConfig?.label || ""}`;
-
-  const getUnitAssignedDisplayValue = (inventory) => {
-    if (!inventory) return 0;
-    
-    // Use the allocation recorded on this row. A unit-consumption row stores
-    // zero, so its closing balance changes without appearing as a new assign.
-    if (
-      inventory.assignedUnits !== undefined &&
-      inventory.assignedUnits !== null
-    ) {
-      return Number(inventory.assignedUnits) || 0;
-    }
-
-    const hasConsumption = Array.isArray(inventory.consumptions)
-      ? inventory.consumptions.length > 0
-      : false;
-
-    if (hasConsumption) return 0;
-
-    const currentRemaining = Number(
-      inventory.newRemainingUnitValue ??
-        inventory.remainingNewPurchaseInventoryUnits ??
-        inventory.remainingUnits ??
-        inventory.closingInventoryUnits ??
-        0,
-    );
-    const previousRemaining = Number(
-      inventory.lastRemainingUnitValue ??
-        inventory.remainingOpeningInventoryUnits ??
-        0,
-    );
-
-    const assignedValue = currentRemaining - previousRemaining;
-    return assignedValue > 0 ? assignedValue : currentRemaining || 0;
-  };
 
   const handleTabChange = (value) => {
     if (forcedBuildingTab || value === selectedBuildingTab) return;
