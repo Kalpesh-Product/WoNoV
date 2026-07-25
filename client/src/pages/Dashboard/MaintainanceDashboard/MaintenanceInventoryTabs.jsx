@@ -73,8 +73,19 @@ const MaintenanceInventoryTabs = () => {
   const isCategoryOrItemPath = /\/inventory\/(category|item)$/i.test(
     location.pathname,
   );
-    const isStInventoryPath = location.pathname.includes("/overall-st-inventory");
+  const isStInventoryPath = location.pathname.includes("/overall-st-inventory");
   const isDtcInventoryPath = location.pathname.includes("/overall-dtc-inventory");
+  const isUnitDetailOrHistoryPath = /\/inventory\/(?:overall-st-inventory\/sunteck-kanaka-units|overall-dtc-inventory\/dempo-trade-center|sunteck-kanaka-units|dempo-trade-center)\/[^/]+(?:\/[^/]+){0,2}$/i.test(
+    location.pathname,
+  );
+  const isOverallHistoryPath =
+    /\/inventory\/overall-inventory\/[^/]+$/i.test(location.pathname) ||
+    /\/inventory\/overall-st-inventory\/(?!sunteck-kanaka-units(?:\/|$))[^/]+$/i.test(
+      location.pathname,
+    ) ||
+    /\/inventory\/overall-dtc-inventory\/(?!dempo-trade-center(?:\/|$))[^/]+$/i.test(
+      location.pathname,
+    );
   const overallTab = isStInventoryPath
     ? {
         label: "Overall ST Inventory",
@@ -172,21 +183,12 @@ const MaintenanceInventoryTabs = () => {
       }
       tabs={tabs}
       contentClassName="pt-2"
-      hideTabsCondition={(pathname) =>
-        pathname === dashboardConfig.basePath ||
-          /\/inventory\/(overall-st-inventory\/sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|overall-dtc-inventory\/dempo-trade-center\/[^/]+(?:\/[^/]+)?|overall-inventory\/[^/]+|overall-st-inventory\/[^/]+|overall-dtc-inventory\/[^/]+|sunteck-kanaka-units\/[^/]+(?:\/[^/]+)?|dempo-trade-center\/[^/]+(?:\/[^/]+)?)$/i.test(
-          pathname,
-        )
+      hideTabsCondition={() =>
+        location.pathname === dashboardConfig.basePath ||
+        isUnitDetailOrHistoryPath ||
+        isOverallHistoryPath
       }
-      hideTabsOnPaths={[
-        "/inventory/sunteck-kanaka-units/",
-        "/inventory/overall-st-inventory/sunteck-kanaka-units/",
-        "/inventory/dempo-trade-center/",
-        "/inventory/overall-dtc-inventory/dempo-trade-center/",
-        "/inventory/overall-inventory/",
-        "/inventory/overall-st-inventory/",
-        "/inventory/overall-dtc-inventory/",
-      ]}
+      hideTabsOnPaths={[]}
     />
   );
 };
