@@ -15,6 +15,11 @@ const MaintenanceInventoryCard = () => {
       route: `${basePath}/overall-inventory`,
       permission: cardPermissions.overall,
     },
+      {
+      title: "CATEGORY & ITEM",
+      route: `${basePath}/category`,
+      permission: cardPermissions.categoryItem,
+    },
     {
       title: "OVERALL ST INVENTORY",
        route: `${basePath}/overall-st-inventory`,
@@ -26,11 +31,6 @@ const MaintenanceInventoryCard = () => {
       route: `${basePath}/overall-dtc-inventory`,
     //  route: `${basePath}/dempo-trade-center`,
       permission: cardPermissions.dempo,
-    },
-    {
-      title: "CATEGORY & ITEM",
-      route: `${basePath}/category`,
-      permission: cardPermissions.categoryItem,
     },
   ];
 
