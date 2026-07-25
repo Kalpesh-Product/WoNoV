@@ -303,6 +303,12 @@ const normalizeBuildingName = (value) =>
     return "";
   }, [selectedBuildingTab]);
 
+  const scopedOverallBuildingName = useMemo(() => {
+    if (overallBuildingTab === "sunteck") return "Sunteck Kanaka";
+    if (overallBuildingTab === "dempo") return "Dempo Trade Center";
+    return "";
+  }, [overallBuildingTab]);
+
   const selectedTabConfig = useMemo(
     () => tabOptions.find((tab) => tab.key === selectedBuildingTab),
     [selectedBuildingTab, tabOptions],
@@ -1224,7 +1230,7 @@ const normalizeBuildingName = (value) =>
   const handleAddAsset = () => {
     const defaultAddBuildingName =
       inventoryRootView === "overall"
-        ? ""
+        ? scopedOverallBuildingName
         : selectedUnit?.building?.buildingName ||
           selectedUnit?.buildingName ||
           selectedTabConfig?.buildingName ||
@@ -2752,10 +2758,16 @@ const normalizeBuildingName = (value) =>
                       fullWidth
                       size="small"
                       className="md:col-span-2"
+                      disabled={
+                        inventoryRootView === "overall" &&
+                        Boolean(overallBuildingTab)
+                      }
                     >
-                      <MenuItem value="" disabled>
-                        Select building
-                      </MenuItem>
+                      {!(inventoryRootView === "overall" && overallBuildingTab) && (
+                        <MenuItem value="" disabled>
+                          Select building
+                        </MenuItem>
+                      )}
                       {tabOptions
                         .filter((tab) => tab.isAllowed)
                         .map((tab) => (
@@ -3439,7 +3451,11 @@ const normalizeBuildingName = (value) =>
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="New Consumed Units"
+                      label={
+                        inventoryRootView === "overall"
+                          ? "Assigned Unit Value"
+                          : "New Consumed Units"
+                      }
                       type="number"
                       size="small"
                       fullWidth

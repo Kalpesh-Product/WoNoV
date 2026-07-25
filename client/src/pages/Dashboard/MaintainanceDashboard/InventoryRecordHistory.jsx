@@ -345,7 +345,7 @@ const InventoryRecordHistory = () => {
             },
             {
               field: "addedByName",
-              headerName: "Assign by",
+              headerName: "Consumed By",
               flex: 1,
               minWidth: 180,
             },
