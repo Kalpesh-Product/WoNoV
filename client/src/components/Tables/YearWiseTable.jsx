@@ -27,6 +27,7 @@ const YearWiseTable = ({
   middleButtonTitle,
   middleButtonDisabled,
   handleMiddleSubmit,
+  headerActions,
   checkbox,
   checkAll,
   key,
@@ -367,6 +368,8 @@ const YearWiseTable = ({
         )}
 
         <div className="flex gap-2 items-center justify-end flex-nowrap ml-auto">
+          {headerActions ? headerActions : null}
+
           {/* ✅ Show calendar only if data is not empty */}
 
           {!hideDateControls && (

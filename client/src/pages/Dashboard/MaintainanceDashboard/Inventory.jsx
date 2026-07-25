@@ -1958,6 +1958,39 @@ const normalizeBuildingName = (value) =>
       new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
     );
   }, [inventoryTableData, selectedUnit]);
+
+  const selectedUnitInventorySummaryCards = useMemo(() => {
+    const rows = Array.isArray(selectedUnitInventoryRows)
+      ? selectedUnitInventoryRows
+      : [];
+
+    const totalFor = (selector) =>
+      rows.reduce((sum, row) => sum + (Number(selector(row)) || 0), 0);
+
+    return [
+      {
+        key: "consumed",
+        label: "Consumed Unit",
+        value: totalFor((row) => row?.newConsumedUnitValue),
+      },
+      {
+        key: "remaining",
+        label: "Remaining Unit",
+        value: totalFor((row) => row?.newRemainingUnitValue),
+      },
+      {
+        key: "closing",
+        label: "Closing Unit",
+        value: totalFor((row) =>
+          row?.newRemainingUnitValue ??
+          row?.remainingNewPurchaseInventoryUnits ??
+          row?.closingInventoryUnits ??
+          0,
+        ),
+      },
+    ];
+  }, [selectedUnitInventoryRows]);
+
   const overallInventoryRows = useMemo(() => {
     // Assigned records belong to a unit and must not replace the overall
     // record when the table keeps only the newest row for an item/category.
@@ -2326,6 +2359,21 @@ const normalizeBuildingName = (value) =>
                   tableHeight={450}
                   dateColumn={"date"}
                   columns={unitInventoryColumns}
+                  headerActions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedUnitInventorySummaryCards.map((card) => (
+                        <StatusChip
+                          key={card.key}
+                          status="Total"
+                          count={Number(card.value || 0)}
+                          variant="count"
+                          label={`${card.label.toUpperCase()} : ${Number(
+                            card.value || 0,
+                          ).toLocaleString("en-IN")}`}
+                        />
+                      ))}
+                    </div>
+                  }
                   exportData
                   exportAllColumns={false}
                   taskExportDateTimeFormatting
