@@ -306,7 +306,7 @@ const InventoryRecordHistory = () => {
             },
             {
               field: "addedByName",
-              headerName: "Name",
+              headerName: "Assign by",
               minWidth: 180,
               flex: 1,
             },
@@ -342,6 +342,12 @@ const InventoryRecordHistory = () => {
               headerName: "Category",
               flex: 1,
               minWidth: 160,
+            },
+            {
+              field: "addedByName",
+              headerName: "Assign by",
+              flex: 1,
+              minWidth: 180,
             },
           ]),
       ...(!isOverallInventoryHistoryRoute

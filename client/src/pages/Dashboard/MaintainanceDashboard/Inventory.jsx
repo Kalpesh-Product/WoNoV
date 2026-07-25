@@ -1499,6 +1499,16 @@ const normalizeBuildingName = (value) =>
       ),
     },
     {
+      field: "categoryName",
+      headerName: "Category",
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "addedByName",
+      headerName: "Added By",
+      cellRenderer: (params) => params.value || "-",
+    },
+    {
       field: "departmentName",
       headerName: "Department",
       hide: true,
@@ -1536,18 +1546,11 @@ const normalizeBuildingName = (value) =>
       headerName: "New Remaining Units",
       hide: inventoryRootView === "overall",
     },
-    {
-      field: "addedByName",
-      headerName: "Name",
-      hide: true,
-      suppressCsvExport: true,
-      suppressExcelExport: true,
-    },
     // {
-    //   field: "consumedOpenInventoryUnits",
-    //   headerName: "Consumed Unit Value",
-    //   cellRenderer: (params) => inrFormat(params.value),
-    // },
+      //   field: "consumedOpenInventoryUnits",
+      //   headerName: "Consumed Unit Value",
+      //   cellRenderer: (params) => inrFormat(params.value),
+      // },
     // {
     //   field: "remainingInventoryUnits",
     //   headerName: "Remaining Unit Value",
@@ -1564,11 +1567,6 @@ const normalizeBuildingName = (value) =>
       cellRenderer: (params) => {
         return inrFormat(params.value);
       },
-    },
-    {
-      field: "categoryName",
-      headerName: "Category",
-      cellRenderer: (params) => params.value,
     },
     {
       field: "dateRaw",
@@ -1658,7 +1656,7 @@ const normalizeBuildingName = (value) =>
     },
     {
       field: "addedByName",
-      headerName: "Name",
+      headerName: "Added By",
     },
     {
       field: "categoryName",
