@@ -180,7 +180,9 @@ const currentFiscalMonthIndexForCard =
           `/api/budget/company-budget?departmentId=6798bafbe469e809084e24a7
             `
         );
-        return response.data?.allBudgets;
+          return Array.isArray(response.data?.allBudgets)
+          ? response.data.allBudgets
+          : [];
       } catch (error) {
         throw new Error("Error fetching data");
       }
@@ -211,9 +213,11 @@ const currentFiscalMonthIndexForCard =
   });
   //----------------------KPA Data-----------------------//
   const totalOverallExpense = isHrFinanceLoading
-    ? []
-    : hrFinance.reduce((sum, item) => (sum + item.actualAmount || 0, 0));
-  console.log("totalExpense : ", totalOverallExpense);
+    ? 0
+    : hrFinance.reduce(
+        (sum, item) => sum + getAmount(item?.actualAmount),
+        0,
+      );
   //----------------------Monthly average-----------------------//
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
