@@ -22,6 +22,27 @@ const normalizeText = (value) =>
     .trim()
     .toLowerCase();
 
+const toTime = (value) => new Date(value || 0).getTime() || 0;
+
+const buildOverallHistoryKey = (item) =>
+  [
+    normalizeText(
+      item?.buildingName ||
+        item?.unit?.buildingName ||
+        item?.unit?.building?.buildingName ||
+        "",
+    ),
+    normalizeText(item?.categoryName),
+    normalizeText(item?.itemName),
+    normalizeText(item?.addedByName),
+    String(item?.openingInventoryUnits ?? ""),
+    String(item?.openingPerUnitPrice ?? ""),
+    String(item?.openingInventoryValue ?? ""),
+    String(item?.newPurchaseUnits ?? ""),
+    String(item?.newPurchasePerUnitPrice ?? ""),
+    String(item?.newPurchaseInventoryValue ?? ""),
+  ].join("|");
+
 const InventoryRecordHistory = () => {
   const { unitNo, inventoryItemName } = useParams();
   const location = useLocation();
@@ -218,17 +239,72 @@ const InventoryRecordHistory = () => {
         ) === selectedBuildingFromState;
 
       if (isOverallInventoryHistoryRoute) {
-        const isOverallRecord = !String(item?.unitNo || "").trim();
-        return (
-          isOverallRecord &&
-          matchesCategory &&
-          matchesItem &&
-          matchesBuilding
-        );
+        return matchesCategory && matchesItem && matchesBuilding;
       }
 
-      return normalizeUnitNo(item?.unitNo) === unitKey && matchesCategory && matchesItem;
+      return (
+        normalizeUnitNo(item?.unitNo) === unitKey &&
+        matchesCategory &&
+        matchesItem
+      );
     });
+
+    if (isOverallInventoryHistoryRoute) {
+      const sourceRows = filtered.filter((item) => !String(item?.unitNo || "").trim());
+      const assignedRows = filtered.filter((item) => String(item?.unitNo || "").trim());
+      const usedAssignedIds = new Set();
+
+      const mergedRows = sourceRows.map((sourceRow) => {
+        const sourceKey = buildOverallHistoryKey(sourceRow);
+        const sourceTime = toTime(sourceRow?.createdAt || sourceRow?.rawDateTime || sourceRow?.date || sourceRow?.updatedAt);
+
+        let matchedAssignedRow = null;
+        let matchedAssignedIndex = -1;
+
+        for (let index = 0; index < assignedRows.length; index += 1) {
+          if (usedAssignedIds.has(index)) continue;
+
+          const candidate = assignedRows[index];
+          if (buildOverallHistoryKey(candidate) !== sourceKey) continue;
+
+          const candidateTime = toTime(
+            candidate?.createdAt ||
+              candidate?.rawDateTime ||
+              candidate?.date ||
+              candidate?.updatedAt,
+          );
+
+          if (!matchedAssignedRow || Math.abs(candidateTime - sourceTime) < Math.abs(toTime(matchedAssignedRow?.createdAt || matchedAssignedRow?.rawDateTime || matchedAssignedRow?.date || matchedAssignedRow?.updatedAt) - sourceTime)) {
+            matchedAssignedRow = candidate;
+            matchedAssignedIndex = index;
+          }
+        }
+
+        if (matchedAssignedIndex >= 0) {
+          usedAssignedIds.add(matchedAssignedIndex);
+        }
+
+        return {
+          ...sourceRow,
+          unitNo: matchedAssignedRow?.unitNo || sourceRow?.unitNo || "",
+        };
+      });
+
+      return mergedRows
+        .sort(
+          (a, b) =>
+            new Date(
+              b?.createdAt || b?.rawDateTime || b?.date || b?.updatedAt || 0,
+            ) -
+            new Date(
+              a?.createdAt || a?.rawDateTime || a?.date || a?.updatedAt || 0,
+            ),
+        )
+        .map((item, index) => ({
+          ...item,
+          srNo: index + 1,
+        }));
+    }
 
     return filtered
       .sort(
@@ -309,6 +385,13 @@ const InventoryRecordHistory = () => {
               headerName: "Assign by",
               minWidth: 180,
               flex: 1,
+            },
+            {
+              field: "unitNo",
+              headerName: "Assigned Unit",
+              minWidth: 170,
+              flex: 1,
+              cellRenderer: (params) => params.value || "-",
             },
             {
               field: "categoryName",
@@ -625,7 +708,7 @@ const InventoryRecordHistory = () => {
               </div>
 
               <div>
-                <div className="font-bold mb-4">Inventory Added By</div>
+                <div className="font-bold mb-4">Inventory Assigned By</div>
                 <div className="space-y-4">
                   <DetalisFormatted
                     title="Name"
@@ -708,7 +791,7 @@ const InventoryRecordHistory = () => {
                 }
               />
               <br />
-              <div className="font-bold">Inventory Added By</div>
+              <div className="font-bold">Inventory Consumed By</div>
               <DetalisFormatted
                 title="Name"
                 detail={selectedAsset.addedByName || "N/A"}
