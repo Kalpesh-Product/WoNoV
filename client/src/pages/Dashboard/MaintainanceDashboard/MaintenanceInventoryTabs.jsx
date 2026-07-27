@@ -4,6 +4,27 @@ import { PERMISSIONS } from "../../../constants/permissions";
 import { useLocation } from "react-router-dom";
 
 export const getInventoryCardConfig = (pathname) => {
+  if (pathname.includes("/app/dashboard/cafe-dashboard/inventory")) {
+    return {
+      basePath: "/app/dashboard/cafe-dashboard/inventory",
+      listPermission: PERMISSIONS.CAFE_OVERALL_INVENTORY_TAB.value,
+      stListPermission: PERMISSIONS.CAFE_OVERALL_ST_INVENTORY_TAB.value,
+      dtcListPermission: PERMISSIONS.CAFE_OVERALL_DTC_INVENTORY_TAB.value,
+      stUnitPermission: PERMISSIONS.CAFE_OVERALL_ST_INVENTORY_ST_UNIT_TAB.value,
+      dtcUnitPermission: PERMISSIONS.CAFE_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB.value,
+      categoryPermission: PERMISSIONS.CAFE_INVENTORY_CATEGORY_TAB.value,
+      itemPermission: PERMISSIONS.CAFE_INVENTORY_ITEM_TAB.value,
+      sunteckPermission: PERMISSIONS.CAFE_INVENTORY_SUNTECK_UNITS_TABS.value,
+      dempoPermission: PERMISSIONS.CAFE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
+      cardPermissions: {
+        overall: PERMISSIONS.CAFE_OVERALL_INVENTORY_CARD.value,
+        sunteck: PERMISSIONS.CAFE_OVERALL_ST_INVENTORY_CARD.value,
+        dempo: PERMISSIONS.CAFE_OVERALL_DTC_INVENTORY_CARD.value,
+        categoryItem: PERMISSIONS.CAFE_INVENTORY_CATEGORY_ITEM_CARD.value,
+      },
+    };
+  }
+
   if (pathname.includes("/app/dashboard/admin-dashboard/inventory")) {
     return {
       basePath: "/app/dashboard/admin-dashboard/inventory",

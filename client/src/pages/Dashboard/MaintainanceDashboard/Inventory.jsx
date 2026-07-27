@@ -138,6 +138,10 @@ function getUnitInventorySummaryValues(rows = []) {
     "/app/dashboard/IT-dashboard/inventory",
   );
 
+  const isCafeInventoryPath = location.pathname.includes(
+    "/app/dashboard/cafe-dashboard/inventory",
+  );
+
   const inventoryTabPermissions = useMemo(() => {
     if (isAdminInventoryPath) {
       return {
@@ -153,11 +157,18 @@ function getUnitInventorySummaryValues(rows = []) {
       };
     }
 
+    if (isCafeInventoryPath) {
+      return {
+        sunteck: PERMISSIONS.CAFE_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.CAFE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
+      };
+    }
+
     return {
       sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
       dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
     };
-  }, [isAdminInventoryPath, isItInventoryPath]);
+  }, [isAdminInventoryPath, isCafeInventoryPath, isItInventoryPath]);
 
   const canViewSunteckUnits = userPermissions.includes(
     inventoryTabPermissions.sunteck,
