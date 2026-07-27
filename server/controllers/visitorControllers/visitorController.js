@@ -30,6 +30,8 @@ async function fetchVisitors(req, res) {
     roles: req.body?.roles || [],
     company: req.company,
     query: req.query?.query,
+    page: req.query?.page,
+    limit: req.query?.limit,
     visitorFlag: req.query?.visitorFlag,
     multipleVisits: req.query?.multipleVisits === "true",
     dateFilter: buildDateFilter({
