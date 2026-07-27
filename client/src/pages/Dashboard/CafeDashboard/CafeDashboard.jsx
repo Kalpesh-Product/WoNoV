@@ -3,7 +3,8 @@ import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
-import { SiCashapp } from "react-icons/si";
+import { MdFormatListBulleted } from "react-icons/md";
+import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -63,6 +64,20 @@ const CafeDashboard = () => {
               title: "Finance",
               icon: <SiCashapp />,
               route: "/app/dashboard/cafe-dashboard/finance",
+            }
+          : null,
+           hasPermission(PERMISSIONS.CAFE_MIX_BAG.value)
+          ? {
+              title: "Mix Bag",
+              icon: <MdFormatListBulleted />,
+              route: "/app/dashboard/cafe-dashboard/mix-bag",
+            }
+          : null,
+           hasPermission(PERMISSIONS.CAFE_DATA.value)
+          ? {
+              title: "Data",
+              icon: <SiGoogleadsense />,
+              route: "/app/dashboard/cafe-dashboard/data",
             }
           : null,
       ].filter(Boolean),

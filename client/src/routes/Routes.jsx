@@ -350,6 +350,7 @@ import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 import CafeFinance from "../pages/Dashboard/CafeDashboard/CafeFinance";
+import CafeDataCard from "../pages/Dashboard/CafeDashboard/CafeDataCard";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
@@ -3042,6 +3043,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <CafeDashboard />,
+                        },
+                      {
+                        path: "mix-bag",
+                        element: <div />, 
                       },
                        {
                         path: "finance",
@@ -3064,6 +3069,36 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
+                          },
+                        ],
+                      },
+                                            {
+                        path: "data",
+                        element: <CafeDataCard />,
+                        children: [
+                          {
+                            path: "asset-list",
+                            element: <DepartmentAssetCommon />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
+                          },
+                          {
+                            path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
+                            element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                         ],
                       },

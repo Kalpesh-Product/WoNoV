@@ -790,6 +790,104 @@ const getInventories = async (req, res, next) => {
 //   }
 // };
 
+const editInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      itemName,
+      buildingName,
+      openingInventoryUnits,
+      openingPerUnitPrice,
+      newPurchaseUnits,
+      newPurchasePerUnitPrice,
+    } = req.body;
+    const { company } = req;
+
+    const inventory = await Inventory.findOne({ _id: id, company });
+    if (!inventory) {
+      return res
+        .status(404)
+        .json({ message: "Inventory not found or unauthorized" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(itemName)) {
+      return res.status(400).json({ message: "Invalid item id" });
+    }
+
+    const resolvedItem = await Item.findOne({
+      _id: itemName,
+      department: inventory.department,
+      isActive: true,
+    });
+    if (!resolvedItem) {
+      return res.status(404).json({
+        message: "Item not found or unavailable for this department",
+      });
+    }
+
+    const numericFields = {
+      openingInventoryUnits,
+      openingPerUnitPrice,
+      newPurchaseUnits,
+      newPurchasePerUnitPrice,
+    };
+    const parsedFields = {};
+
+    for (const [field, value] of Object.entries(numericFields)) {
+      const parsedValue = Number(value);
+      if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+        return res.status(400).json({
+          message: `${field} must be a non-negative number`,
+        });
+      }
+      parsedFields[field] = parsedValue;
+    }
+
+    const unitDifference =
+      parsedFields.newPurchaseUnits - Number(inventory.newPurchaseUnits || 0);
+    const adjustedRemaining =
+      Number(inventory.remainingUnits || 0) + unitDifference;
+    if (adjustedRemaining < 0) {
+      return res.status(400).json({
+        message: "New purchase units cannot be less than consumed stock",
+      });
+    }
+
+    const updated = await Inventory.findOneAndUpdate(
+      { _id: id, company },
+      {
+        $set: {
+          itemName: resolvedItem._id,
+          buildingName:
+            typeof buildingName === "string"
+              ? buildingName.trim()
+              : inventory.buildingName,
+          ...parsedFields,
+          openingInventoryValue:
+            parsedFields.openingInventoryUnits *
+            parsedFields.openingPerUnitPrice,
+          newPurchaseInventoryValue:
+            parsedFields.newPurchaseUnits *
+            parsedFields.newPurchasePerUnitPrice,
+          remainingUnits: adjustedRemaining,
+        },
+      },
+      { new: true, runValidators: true },
+    )
+      .populate("itemName", "name category")
+      .populate("department", "name");
+
+    return res.status(200).json(updated);
+  } catch (error) {
+    console.error("Edit Inventory Error:", error);
+    return res.status(500).json({
+      message: "Failed to edit inventory",
+      error: error.message,
+    });
+  }
+};
+
+
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1603,6 +1701,7 @@ module.exports = {
   createInventory,
   getInventories,
   updateInventory,
+  editInventory,
   bulkInsertInventory,
 };
 
