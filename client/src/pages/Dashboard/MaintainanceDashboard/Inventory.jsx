@@ -1284,8 +1284,9 @@ function getUnitInventorySummaryValues(rows = []) {
       const payload =
         modalMode === "inventoryEdit"
           ? {
+            category: formData.category,
               itemName: formData.itemName,
-              buildingName: formData.buildingName,
+                buildingName: formData.buildingName?.trim() || "",
               openingInventoryUnits: Number(formData.openingInventoryUnits),
               openingPerUnitPrice: Number(formData.openingPerUnitPrice),
               newPurchaseUnits: Number(formData.newPurchaseUnits),
@@ -2998,6 +2999,7 @@ function getUnitInventorySummaryValues(rows = []) {
                 <Controller
                   name="buildingName"
                   control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{ required: "Building name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -3006,6 +3008,8 @@ function getUnitInventorySummaryValues(rows = []) {
                       fullWidth
                       size="small"
                       className="md:col-span-2"
+                       error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName?.message}
                       disabled={
                         modalMode === "add" &&
                         inventoryRootView === "overall" &&
@@ -3047,6 +3051,12 @@ function getUnitInventorySummaryValues(rows = []) {
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        if (modalMode === "inventoryEdit") {
+                          setValue("itemName", "");
+                        }
+                      }}
                       label="Category"
                       size="small"
                       fullWidth

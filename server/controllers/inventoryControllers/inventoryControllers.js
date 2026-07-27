@@ -794,6 +794,7 @@ const editInventory = async (req, res) => {
   try {
     const { id } = req.params;
     const {
+      category,
       itemName,
       buildingName,
       openingInventoryUnits,
@@ -802,6 +803,9 @@ const editInventory = async (req, res) => {
       newPurchasePerUnitPrice,
     } = req.body;
     const { company } = req;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid inventory id" });
+    }
 
     const inventory = await Inventory.findOne({ _id: id, company });
     if (!inventory) {
@@ -813,16 +817,25 @@ const editInventory = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(itemName)) {
       return res.status(400).json({ message: "Invalid item id" });
     }
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "Invalid category id" });
+    }
 
     const resolvedItem = await Item.findOne({
       _id: itemName,
+       ...(category ? { category } : {}),
       department: inventory.department,
       isActive: true,
     });
     if (!resolvedItem) {
       return res.status(404).json({
-        message: "Item not found or unavailable for this department",
+         message: "Item not found in the selected category or department",
       });
+    }
+    const normalizedBuildingName =
+      typeof buildingName === "string" ? buildingName.trim() : "";
+    if (!normalizedBuildingName) {
+      return res.status(400).json({ message: "Building name is required" });
     }
 
     const numericFields = {
@@ -853,29 +866,22 @@ const editInventory = async (req, res) => {
       });
     }
 
-    const updated = await Inventory.findOneAndUpdate(
-      { _id: id, company },
-      {
-        $set: {
-          itemName: resolvedItem._id,
-          buildingName:
-            typeof buildingName === "string"
-              ? buildingName.trim()
-              : inventory.buildingName,
-          ...parsedFields,
-          openingInventoryValue:
-            parsedFields.openingInventoryUnits *
-            parsedFields.openingPerUnitPrice,
-          newPurchaseInventoryValue:
-            parsedFields.newPurchaseUnits *
-            parsedFields.newPurchasePerUnitPrice,
-          remainingUnits: adjustedRemaining,
-        },
-      },
-      { new: true, runValidators: true },
-    )
-      .populate("itemName", "name category")
-      .populate("department", "name");
+     inventory.set({
+      itemName: resolvedItem._id,
+      buildingName: normalizedBuildingName,
+      ...parsedFields,
+      openingInventoryValue:
+        parsedFields.openingInventoryUnits * parsedFields.openingPerUnitPrice,
+      newPurchaseInventoryValue:
+        parsedFields.newPurchaseUnits * parsedFields.newPurchasePerUnitPrice,
+      remainingUnits: adjustedRemaining,
+    });
+
+    const updated = await inventory.save();
+    await updated.populate([
+      { path: "itemName", select: "name category" },
+      { path: "department", select: "name" },
+    ]);
 
     return res.status(200).json(updated);
   } catch (error) {

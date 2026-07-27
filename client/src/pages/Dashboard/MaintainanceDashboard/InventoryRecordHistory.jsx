@@ -26,12 +26,12 @@ const toTime = (value) => new Date(value || 0).getTime() || 0;
 
 const buildOverallHistoryKey = (item) =>
   [
-    normalizeText(
-      item?.buildingName ||
-        item?.unit?.buildingName ||
-        item?.unit?.building?.buildingName ||
-        "",
-    ),
+    // normalizeText(
+    //   item?.buildingName ||
+    //     item?.unit?.buildingName ||
+    //     item?.unit?.building?.buildingName ||
+    //     "",
+    // ),
     normalizeText(item?.categoryName),
     normalizeText(item?.itemName),
     normalizeText(item?.addedByName),
@@ -224,11 +224,15 @@ const InventoryRecordHistory = () => {
     const unitKey = normalizeUnitNo(decodedUnitNo);
     const itemKey = normalizeText(decodedItemName);
 
-    const filtered = inventoryData.filter((item) => {
+    const matchingItemRows = inventoryData.filter((item) => {
       const matchesCategory =
         !selectedCategoryFromState ||
         normalizeText(item?.categoryName) === selectedCategoryFromState;
       const matchesItem = normalizeText(item?.itemName) === itemKey;
+        return matchesCategory && matchesItem;
+    });
+
+    const filtered = matchingItemRows.filter((item) => {
       const matchesBuilding =
         !selectedBuildingFromState ||
         normalizeText(
@@ -238,20 +242,16 @@ const InventoryRecordHistory = () => {
             "",
         ) === selectedBuildingFromState;
 
-      if (isOverallInventoryHistoryRoute) {
-        return matchesCategory && matchesItem && matchesBuilding;
-      }
+      if (isOverallInventoryHistoryRoute) return matchesBuilding;
 
-      return (
-        normalizeUnitNo(item?.unitNo) === unitKey &&
-        matchesCategory &&
-        matchesItem
-      );
+      return normalizeUnitNo(item?.unitNo) === unitKey;
     });
 
     if (isOverallInventoryHistoryRoute) {
       const sourceRows = filtered.filter((item) => !String(item?.unitNo || "").trim());
-      const assignedRows = filtered.filter((item) => String(item?.unitNo || "").trim());
+ const assignedRows = matchingItemRows.filter((item) =>
+        String(item?.unitNo || "").trim(),
+      );
       const usedAssignedIds = new Set();
 
       const mergedRows = sourceRows.map((sourceRow) => {
@@ -267,12 +267,17 @@ const InventoryRecordHistory = () => {
           const candidate = assignedRows[index];
           if (buildOverallHistoryKey(candidate) !== sourceKey) continue;
 
+           const consumedUnits = Number(sourceRow?.totalConsumed || 0);
+          const assignedUnits = Number(candidate?.assignedUnits || 0);
+          if (consumedUnits <= 0 || assignedUnits !== consumedUnits) continue;
+
           const candidateTime = toTime(
             candidate?.createdAt ||
               candidate?.rawDateTime ||
               candidate?.date ||
               candidate?.updatedAt,
           );
+          if (Math.abs(candidateTime - sourceTime) > 60 * 1000) continue;
 
           if (!matchedAssignedRow || Math.abs(candidateTime - sourceTime) < Math.abs(toTime(matchedAssignedRow?.createdAt || matchedAssignedRow?.rawDateTime || matchedAssignedRow?.date || matchedAssignedRow?.updatedAt) - sourceTime)) {
             matchedAssignedRow = candidate;
