@@ -1892,10 +1892,14 @@ function getUnitInventorySummaryValues(rows = []) {
         <ThreeDotMenu
           rowId={params.data._id}
           menuItems={[
-              {
-              label: "Edit",
-              onClick: () => handleEditInventory(params.data),
-            },
+            ...(!overallBuildingTab
+              ? [
+                  {
+                    label: "Edit",
+                    onClick: () => handleEditInventory(params.data),
+                  },
+                ]
+              : []),
             {
               label: "Assign",
               onClick: () => {
