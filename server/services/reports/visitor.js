@@ -113,6 +113,7 @@ const fetchVisitorReportService = async ({
   isOpendDesk = false,
   page,
   limit,
+  type = "",
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
@@ -127,6 +128,16 @@ const fetchVisitorReportService = async ({
 
     if (visitorFlag) {
       filter.visitorFlag = visitorFlag;
+    }
+
+    if (type === "day-pass") {
+      filter.visitorType = {
+        $in: ["Full-Day Pass", "Half-Day Pass"],
+      };
+    }
+
+    if (type === "internal") {
+      filter.visitorFlag = "Visitor";
     }
 
     if (dateFilter?.checkIn) {
