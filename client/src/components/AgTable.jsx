@@ -42,6 +42,7 @@ const AgTableComponent = React.memo(
     hideHeaderDivider,
     tableRef,
     onSelectionChange,
+    isPagination = false
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -441,9 +442,10 @@ const AgTableComponent = React.memo(
             rowData={filteredData}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
-            pagination={false}
+            pagination={isPagination}
             isRowSelectable={isRowSelectable}
             paginationPageSize={paginationPageSize}
+           // paginationPageSize={false}
             suppressCellSelection={false}
             enableCellTextSelection={true}
             rowHeight={50}
