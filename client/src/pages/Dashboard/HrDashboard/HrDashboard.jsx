@@ -1846,6 +1846,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
 
   const hrTicketChartConfigs = [
     {
+      key: PERMISSIONS.HR_CATEGORY_WISE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Category Wise Tickets",
@@ -1856,6 +1857,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       width: 500,
     },
     {
+      key: PERMISSIONS.HR_DUE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Due Tickets",
@@ -1866,6 +1868,10 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       width: 500,
     },
   ];
+
+  const allowedHrTicketCharts = hrTicketChartConfigs.filter((widget) =>
+    userPermissions.includes(widget.key)
+  );
 
   const hrWidgets = [
     {
@@ -2023,8 +2029,8 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       )),
     },
     {
-      layout: hrTicketChartConfigs.length,
-      widgets: hrTicketChartConfigs.map((config) => (
+      layout: allowedHrTicketCharts.length,
+      widgets: allowedHrTicketCharts.map((config) => (
         <WidgetSection key={config.title} border title={config.title}>
           <PieChartMui
             data={config.data}
@@ -2086,6 +2092,10 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       ].filter(Boolean),
     },
   ];
+
+  const visibleHrWidgets = hrWidgets.filter(
+    (widget) => Array.isArray(widget?.widgets) && widget.widgets.length > 0,
+  );
 
   // const hrWidgets = [
   //   {
@@ -2314,7 +2324,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     <>
       <div>
         <div className="flex flex-col gap-4">
-          {hrWidgets.map((widget, index) => (
+          {visibleHrWidgets.map((widget, index) => (
             <LazyDashboardWidget
               key={index}
               layout={widget.layout}

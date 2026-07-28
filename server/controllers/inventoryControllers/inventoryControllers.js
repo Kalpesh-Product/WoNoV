@@ -18,6 +18,7 @@ const createInventory = async (req, res, next) => {
       newPurchaseUnits = 0,
       newPurchasePerUnitPrice = 0,
       unit,
+      buildingName = "",
     } = req.body;
 
     /* ------------------ Validations ------------------ */
@@ -30,7 +31,7 @@ const createInventory = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid item id" });
     }
 
-    if (!mongoose.Types.ObjectId.isValid(unit)) {
+    if (unit && !mongoose.Types.ObjectId.isValid(unit)) {
       return res.status(400).json({ message: "Invalid unit id" });
     }
 
@@ -49,12 +50,26 @@ const createInventory = async (req, res, next) => {
       });
     }
 
-    const lastInventory = await Inventory.findOne({
+    // const lastInventory = await Inventory.findOne({
+    //   company,
+    //   department: department,
+    //   itemName: itemName,
+    //   unit: unit || null,
+    //   buildingName: buildingName || "",
+    // }).sort({ createdAt: -1 });
+
+    const inventoryHistoryFilter = {
       company,
-      department: department,
-      itemName: itemName,
-      unit: unit,
-    }).sort({ createdAt: -1 });
+      department,
+      itemName,
+      buildingName: buildingName || "",
+      unit: unit || null,
+      //...(unit ? { unit } : {}),
+    };
+
+    const lastInventory = await Inventory.findOne(inventoryHistoryFilter).sort({
+      createdAt: -1,
+    });
 
     const previousRemaining = lastInventory?.remainingUnits || 0;
 
@@ -64,7 +79,8 @@ const createInventory = async (req, res, next) => {
       company,
       department,
       itemName,
-      unit,
+      unit: unit || null,
+      buildingName: buildingName || "",
       addedBy: user,
       newPurchaseUnits,
       newPurchasePerUnitPrice,
@@ -349,8 +365,11 @@ const getInventories = async (req, res, next) => {
         $setWindowFields: {
           partitionBy: {
             itemName: "$itemName",
-            unit: "$unit",
+            //unit: "$unit",
             department: "$department",
+            buildingName: {
+              $ifNull: ["$buildingName", ""],
+            },
           },
           sortBy: { createdAt: 1 },
           output: {
@@ -376,9 +395,27 @@ const getInventories = async (req, res, next) => {
       /* ------------------ Opening + LastConsumed ------------------ */
       {
         $addFields: {
-          openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
-          openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
-          openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+          // openingInventoryUnits: { $ifNull: ["$prevUnits", 0] },
+          // openingPerUnitPrice: { $ifNull: ["$prevPrice", 0] },
+          // openingInventoryValue: { $ifNull: ["$prevValue", 0] },
+           openingInventoryUnits: {
+            $ifNull: [
+              "$openingInventoryUnits",
+              { $ifNull: ["$prevUnits", 0] },
+            ],
+          },
+          openingPerUnitPrice: {
+            $ifNull: [
+              "$openingPerUnitPrice",
+              { $ifNull: ["$prevPrice", 0] },
+            ],
+          },
+          openingInventoryValue: {
+            $ifNull: [
+              "$openingInventoryValue",
+              { $ifNull: ["$prevValue", 0] },
+            ],
+          },
           remainingOpeningInventoryUnits: {
             $ifNull: ["$prevRemaining", 0],
           },
@@ -501,6 +538,10 @@ const getInventories = async (req, res, next) => {
             name: "$department.name",
           },
 
+          buildingName: {
+            $ifNull: ["$buildingName", "$unit.buildingName"],
+          },
+
           unit: {
             unitNo: "$unit.unitNo",
             unitName: "$unit.unitName",
@@ -524,6 +565,7 @@ const getInventories = async (req, res, next) => {
           newPurchasePerUnitPrice: 1,
           newPurchaseInventoryValue: 1,
           remainingNewPurchaseInventoryUnits: 1,
+          assignedUnits: 1, 
 
           /* 🔥 Consumption */
           totalConsumed: 1,
@@ -748,10 +790,114 @@ const getInventories = async (req, res, next) => {
 //   }
 // };
 
+const editInventory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      category,
+      itemName,
+      buildingName,
+      openingInventoryUnits,
+      openingPerUnitPrice,
+      newPurchaseUnits,
+      newPurchasePerUnitPrice,
+    } = req.body;
+    const { company } = req;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid inventory id" });
+    }
+
+    const inventory = await Inventory.findOne({ _id: id, company });
+    if (!inventory) {
+      return res
+        .status(404)
+        .json({ message: "Inventory not found or unauthorized" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(itemName)) {
+      return res.status(400).json({ message: "Invalid item id" });
+    }
+    if (category && !mongoose.Types.ObjectId.isValid(category)) {
+      return res.status(400).json({ message: "Invalid category id" });
+    }
+
+    const resolvedItem = await Item.findOne({
+      _id: itemName,
+       ...(category ? { category } : {}),
+      department: inventory.department,
+      isActive: true,
+    });
+    if (!resolvedItem) {
+      return res.status(404).json({
+         message: "Item not found in the selected category or department",
+      });
+    }
+    const normalizedBuildingName =
+      typeof buildingName === "string" ? buildingName.trim() : "";
+    if (!normalizedBuildingName) {
+      return res.status(400).json({ message: "Building name is required" });
+    }
+
+    const numericFields = {
+      openingInventoryUnits,
+      openingPerUnitPrice,
+      newPurchaseUnits,
+      newPurchasePerUnitPrice,
+    };
+    const parsedFields = {};
+
+    for (const [field, value] of Object.entries(numericFields)) {
+      const parsedValue = Number(value);
+      if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+        return res.status(400).json({
+          message: `${field} must be a non-negative number`,
+        });
+      }
+      parsedFields[field] = parsedValue;
+    }
+
+    const unitDifference =
+      parsedFields.newPurchaseUnits - Number(inventory.newPurchaseUnits || 0);
+    const adjustedRemaining =
+      Number(inventory.remainingUnits || 0) + unitDifference;
+    if (adjustedRemaining < 0) {
+      return res.status(400).json({
+        message: "New purchase units cannot be less than consumed stock",
+      });
+    }
+
+     inventory.set({
+      itemName: resolvedItem._id,
+      buildingName: normalizedBuildingName,
+      ...parsedFields,
+      openingInventoryValue:
+        parsedFields.openingInventoryUnits * parsedFields.openingPerUnitPrice,
+      newPurchaseInventoryValue:
+        parsedFields.newPurchaseUnits * parsedFields.newPurchasePerUnitPrice,
+      remainingUnits: adjustedRemaining,
+    });
+
+    const updated = await inventory.save();
+    await updated.populate([
+      { path: "itemName", select: "name category" },
+      { path: "department", select: "name" },
+    ]);
+
+    return res.status(200).json(updated);
+  } catch (error) {
+    console.error("Edit Inventory Error:", error);
+    return res.status(500).json({
+      message: "Failed to edit inventory",
+      error: error.message,
+    });
+  }
+};
+
+
 const updateInventory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { consumptions = [] } = req.body;
+    const { consumptions = [], unit, buildingName } = req.body;
     const { user, company } = req;
 
     const inventory = await Inventory.findOne({ _id: id, company });
@@ -760,6 +906,36 @@ const updateInventory = async (req, res) => {
       return res
         .status(404)
         .json({ message: "Inventory not found or unauthorized" });
+    }
+
+    const updatePayload = {};
+
+    if (unit !== undefined && unit !== null && unit !== "") {
+      if (!mongoose.Types.ObjectId.isValid(unit)) {
+        return res.status(400).json({ message: "Invalid unit id" });
+      }
+
+      const resolvedUnit = await Unit.findOne({
+        _id: unit,
+        company,
+      })
+        .populate({ path: "building", select: "buildingName" })
+        .lean();
+
+      if (!resolvedUnit) {
+        return res.status(404).json({
+          message: "Unit not found or unauthorized",
+        });
+      }
+
+      updatePayload.unit = resolvedUnit._id;
+      updatePayload.buildingName =
+        resolvedUnit?.building?.buildingName ||
+        buildingName ||
+        inventory.buildingName ||
+        "";
+    } else if (typeof buildingName === "string") {
+      updatePayload.buildingName = buildingName;
     }
 
     /* ------------------ Format consumptions ------------------ */
@@ -782,39 +958,200 @@ const updateInventory = async (req, res) => {
     }
 
     if (formattedConsumptions.length === 0) {
-      return res.status(400).json({
-        message: "At least one consumption entry is required",
-      });
+      if (!Object.keys(updatePayload).length) {
+        return res.status(400).json({
+          message: "No update data provided",
+        });
+      }
     }
 
-    /* ------------------ Calculate Incoming Consumption ------------------ */
+    let incomingConsumption = 0;
+    let newRemaining = Number(inventory.remainingUnits || 0);
 
-    const incomingConsumption = formattedConsumptions.reduce(
-      (sum, c) => sum + c.quantity,
-      0,
-    );
+    if (formattedConsumptions.length > 0) {
+      /* ------------------ Calculate Incoming Consumption ------------------ */
 
-    /* ------------------ Calculate New Remaining ------------------ */
+      incomingConsumption = formattedConsumptions.reduce(
+        (sum, c) => sum + c.quantity,
+        0,
+      );
 
-    const currentRemaining = Number(inventory.remainingUnits || 0);
-    const newRemaining = currentRemaining - incomingConsumption;
+      /* ------------------ Calculate New Remaining ------------------ */
 
-    /* ------------------ Validation ------------------ */
+      const currentRemaining = Number(inventory.remainingUnits || 0);
+      newRemaining = currentRemaining - incomingConsumption;
 
-    if (newRemaining < 0) {
-      return res.status(400).json({
-        message: "Consumption exceeds available stock",
+      /* ------------------ Validation ------------------ */
+
+      if (newRemaining < 0) {
+        return res.status(400).json({
+          message: "Consumption exceeds available stock",
+        });
+      }
+     //const previousInventory = await Inventory.findOne({
+       if (updatePayload.unit) {
+        const previousOverallInventory = await Inventory.findOne({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          buildingName: inventory.buildingName || "",
+          unit: null,
+          _id: { $ne: inventory._id },
+        })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        // The list API derives missing opening values from the preceding
+        // overall row. Resolve those values before creating assignment
+        // history, so opening columns remain stable just like purchase values.
+        const openingInventoryUnits =
+          inventory.openingInventoryUnits ??
+          previousOverallInventory?.newPurchaseUnits ??
+          0;
+        const openingPerUnitPrice =
+          inventory.openingPerUnitPrice ??
+          previousOverallInventory?.newPurchasePerUnitPrice ??
+          0;
+        const openingInventoryValue =
+          inventory.openingInventoryValue ??
+          previousOverallInventory?.newPurchaseInventoryValue ??
+          0;
+
+        const latestUnitInventory = await Inventory.findOne({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          unit: updatePayload.unit,
+        })
+          .sort({ createdAt: -1 })
+          .lean();
+
+        // Assignments to the same unit are cumulative. For example, assigning
+        // 20 to a unit that already has a closing balance of 15 must create a
+        // new closing balance of 35, not replace it with 20.
+        const assignedRemaining =
+          Number(latestUnitInventory?.remainingUnits || 0) +
+          incomingConsumption;
+
+        const assignedInventory = await Inventory.create({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          unit: updatePayload.unit,
+          buildingName: updatePayload.buildingName,
+          addedBy: user,
+          // Keep the source row's opening and purchase columns unchanged in
+          // the unit-wise table. The allocated quantity belongs only in the
+          // target row's closing balance (`remainingUnits`).
+          openingInventoryUnits,
+          openingPerUnitPrice,
+          openingInventoryValue,
+          newPurchaseUnits: inventory.newPurchaseUnits || 0,
+          newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice || 0,
+          newPurchaseInventoryValue:
+            inventory.newPurchaseInventoryValue || 0,
+            assignedUnits: incomingConsumption,
+          remainingUnits: assignedRemaining,
+        });
+
+        // Preserve every assignment as an overall-inventory history row.
+        // Its opening and purchase values stay identical to the source row;
+        // only the closing balance changes after the assignment.
+        await Inventory.create({
+          company,
+          department: inventory.department,
+          itemName: inventory.itemName,
+          buildingName: inventory.buildingName || "",
+          addedBy: user,
+          openingInventoryUnits,
+          openingPerUnitPrice,
+          openingInventoryValue,
+          newPurchaseUnits: inventory.newPurchaseUnits || 0,
+          newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice || 0,
+          newPurchaseInventoryValue:
+            inventory.newPurchaseInventoryValue || 0,
+          consumptions: formattedConsumptions,
+          remainingUnits: newRemaining,
+        });
+
+        await assignedInventory.populate([
+          { path: "itemName", select: "name" },
+          { path: "department", select: "name" },
+          { path: "unit", select: "unitNo unitName building" },
+        ]);
+
+        return res.status(201).json(assignedInventory);
+      }
+
+      const previousInventory = await Inventory.findOne({
+        company,
+        department: inventory.department,
+        itemName: inventory.itemName,
+        buildingName:
+          updatePayload.buildingName || inventory.buildingName || "",
+        _id: { $ne: inventory._id },
+      })
+        .sort({ createdAt: -1 })
+        .lean();
+
+   
+      const consumptionHistory = await Inventory.create({
+        company,
+        department: inventory.department,
+        itemName: inventory.itemName,
+        unit: updatePayload.unit || inventory.unit || null,
+        buildingName:
+          updatePayload.buildingName || inventory.buildingName || "",
+        addedBy: user,
+        openingInventoryUnits:
+          inventory.openingInventoryUnits ??
+          previousInventory?.newPurchaseUnits ??
+          0,
+        openingPerUnitPrice:
+          inventory.openingPerUnitPrice ??
+          previousInventory?.newPurchasePerUnitPrice ??
+          0,
+        openingInventoryValue:
+          inventory.openingInventoryValue ??
+          previousInventory?.newPurchaseInventoryValue ??
+          0,
+        newPurchaseUnits: inventory.newPurchaseUnits,
+        newPurchasePerUnitPrice: inventory.newPurchasePerUnitPrice,
+        newPurchaseInventoryValue: inventory.newPurchaseInventoryValue,
+          assignedUnits: 0,
+        consumptions: formattedConsumptions,
+        remainingUnits: newRemaining,
       });
+
+      await consumptionHistory.populate([
+        { path: "itemName", select: "name" },
+        { path: "department", select: "name" },
+      ]);
+
+      return res.status(201).json(consumptionHistory);
     }
 
     /* ------------------ Update ------------------ */
 
+    const updateQuery = {};
+
+    if (Object.keys(updatePayload).length > 0) {
+      updateQuery.$set = {
+        ...updatePayload,
+      };
+    }
+
+    if (formattedConsumptions.length > 0) {
+      updateQuery.$push = { consumptions: { $each: formattedConsumptions } };
+      updateQuery.$set = {
+        ...(updateQuery.$set || {}),
+        remainingUnits: newRemaining,
+      };
+    }
+
     const updated = await Inventory.findOneAndUpdate(
       { _id: id, company },
-      {
-        $push: { consumptions: { $each: formattedConsumptions } },
-        $set: { remainingUnits: newRemaining },
-      },
+      updateQuery,
       { new: true, runValidators: true },
     )
       .populate("itemName", "name")
@@ -1370,6 +1707,7 @@ module.exports = {
   createInventory,
   getInventories,
   updateInventory,
+  editInventory,
   bulkInsertInventory,
 };
 

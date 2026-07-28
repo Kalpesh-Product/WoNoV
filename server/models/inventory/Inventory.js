@@ -32,6 +32,18 @@ const inventorySchema = new mongoose.Schema(
       required: false,
       default: 0,
     },
+     openingInventoryUnits: {
+      type: Number,
+      required: false,
+    },
+    openingPerUnitPrice: {
+      type: Number,
+      required: false,
+    },
+    openingInventoryValue: {
+      type: Number,
+      required: false,
+    },
 
     consumptions: [
       {
@@ -45,11 +57,21 @@ const inventorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",
     },
+    buildingName: {
+      type: String,
+      required: false,
+      default: "",
+    },
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
     },
     remainingUnits: {
+      type: Number,
+      required: true,
+      default: 0,
+    },
+      assignedUnits: {
       type: Number,
       required: true,
       default: 0,

@@ -27,6 +27,12 @@ import { LuImageUp } from "react-icons/lu";
 import MuiModal from "../../../../../components/MuiModal";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 dayjs.extend(customParseFormat);
+const normalizeYesNoValue = (value) => {
+  const normalizedValue = String(value ?? "").trim().toLowerCase();
+  if (normalizedValue === "yes") return "Yes";
+  if (normalizedValue === "no") return "No";
+  return "";
+};
 
 
 
@@ -579,9 +585,11 @@ const EditDetails = () => {
       //   employeeData?.pFContributionRate ||
       //   "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
       payrollBatch:
-        employeeData?.payrollInformation?.payrollBatch ||
-        employeeData?.payrollBatch ||
-        "",
+         normalizeYesNoValue(
+          employeeData?.payrollInformation?.payrollBatch ||
+            employeeData?.payrollBatch,
+        ),
+
       //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status:
         employeeData?.status ||
@@ -1009,9 +1017,10 @@ const EditDetails = () => {
         //   employeeData?.pFContributionRate ||
         //   "",
         payrollBatch:
-          employeeData?.payrollInformation?.payrollBatch ||
-          employeeData?.payrollBatch ||
-          "",
+         normalizeYesNoValue(
+            employeeData?.payrollInformation?.payrollBatch ||
+              employeeData?.payrollBatch,
+          ),
         pfContributionRate:
           employeeData?.payrollInformation?.pfContributionRate ||
           employeeData?.pFContributionRate ||
@@ -1780,6 +1789,7 @@ const EditDetails = () => {
                               render={({ field }) =>
                                 [
                                   "includeInPayroll",
+                                   "payrollBatch",
                                   "professionalTaxExemption",
                                   "includePF",
                                 ].includes(fieldKey) ? (

@@ -467,7 +467,7 @@ const HrDepartmentTasks = () => {
       </WidgetSection>
 
       <WidgetSection
-        title={`Tasks details`}
+        title={`Department Completed Tasks details`}
         border
        TitleAmount={`${selectedMonthDisplay} : ${
           completedFilteredTasks.length > 1

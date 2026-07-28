@@ -1080,6 +1080,16 @@ export const PERMISSIONS = {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  FINANCE_CATEGORY_WISE_TICKETS: {
+    value: "finance_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  FINANCE_DUE_TICKETS: {
+    value: "finance_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
 
   // Finance Tabs
   FINANCE_CASHFLOW_PROJECTIONS: {
@@ -1546,6 +1556,16 @@ export const PERMISSIONS = {
     title: "EXECUTIVE WISE DUE TASKS",
     type: "read",
   },
+  SALES_CATEGORY_WISE_TICKETS: {
+    value: "sales_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  SALES_DUE_TICKETS: {
+    value: "sales_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
 
   //Finance
   SALES_BUDGET: {
@@ -1858,6 +1878,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   HR_EXECUTIVE_WISE_DUE_TASKS: {
     value: "hr_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  HR_CATEGORY_WISE_TICKETS: {
+    value: "hr_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  HR_DUE_TICKETS: {
+    value: "hr_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
 
@@ -2249,14 +2279,38 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "INVENTORY",
     type: "read",
   },
-  ADMIN_INVENTORY_SUNTECK_UNITS: {
-    value: "admin_inventory_sunteck_units",
+ ADMIN_OVERALL_INVENTORY_CARD: {
+    value: "admin_overall_inventory_card",
+    title: "OVERALL INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-inventory",
+  },
+  ADMIN_OVERALL_ST_INVENTORY_CARD: {
+    value: "admin_overall_st_inventory_card",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+   route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory",
+  },
+  ADMIN_OVERALL_DTC_INVENTORY_CARD: {
+    value: "admin_overall_dtc_inventory_card",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory",
+  },
+  ADMIN_INVENTORY_CATEGORY_ITEM_CARD: {
+    value: "admin_inventory_category_item_card",
+    title: "CATEGORY & ITEM",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/category",
+  },
+  ADMIN_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "admin_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
-  ADMIN_INVENTORY_DEMPO_UNITS: {
-    value: "admin_inventory_dempo_trade_centre_units",
+  ADMIN_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "admin_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
@@ -2273,11 +2327,35 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
   },
-  ADMIN_INVENTORY_LIST_TAB: {
-    value: "admin_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  ADMIN_OVERALL_INVENTORY_TAB: {
+    value: "admin_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/admin-dashboard/inventory",
+  },
+  ADMIN_OVERALL_ST_INVENTORY_TAB: {
+    value: "admin_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory",
+  },
+  ADMIN_OVERALL_DTC_INVENTORY_TAB: {
+    value: "admin_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory",
+  },
+   ADMIN_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "admin_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  ADMIN_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "admin_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/admin-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
   },
   ADMIN_FINANCE: {
     value: "admin_finance_card",
@@ -2411,6 +2489,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   ADMIN_EXECUTIVE_WISE_DUE_TASKS: {
     value: "admin_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  ADMIN_CATEGORY_WISE_TICKETS: {
+    value: "admin_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  ADMIN_DUE_TICKETS: {
+    value: "admin_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
   ADMIN_TOTAL_DESKS_COMPANY_WISE: {
@@ -2592,15 +2680,41 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "maintenance_inventory_card",
     title: "INVENTORY",
     type: "read",
+     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-  MAINTENANCE_INVENTORY_SUNTECK_UNITS: {
-    value: "maintenance_inventory_sunteck_units",
+  MAINTENANCE_OVERALL_INVENTORY_CARD: {
+    value: "maintenance_overall_inventory_card",
+    title: "OVERALL INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-inventory",
+  },
+  MAINTENANCE_OVERALL_ST_INVENTORY_CARD: {
+    value: "maintenance_overall_st_inventory_card",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory",
+  },
+  MAINTENANCE_OVERALL_DTC_INVENTORY_CARD: {
+    value: "maintenance_overall_dtc_inventory_card",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+     route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory",
+  },
+  MAINTENANCE_INVENTORY_CATEGORY_ITEM_CARD: {
+    value: "maintenance_inventory_category_item_card",
+    title: "CATEGORY & ITEM",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/category",
+  },
+
+  MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "maintenance_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-  MAINTENANCE_INVENTORY_DEMPO_UNITS: {
-    value: "maintenance_inventory_dempo_trade_centre_units",
+  MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "maintenance_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
@@ -2618,13 +2732,36 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-  MAINTENANCE_INVENTORY_LIST_TAB: {
-    value: "maintenance_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  MAINTENANCE_OVERALL_INVENTORY_TAB: {
+    value: "maintenance_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/inventory",
   },
-
+MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
+    value: "maintenance_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory",
+  },
+  MAINTENANCE_OVERALL_DTC_INVENTORY_TAB: {
+    value: "maintenance_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory",
+  },
+  MAINTENANCE_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "maintenance_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  MAINTENANCE_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "maintenance_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
+  },
   MAINTENANCE_FINANCE: {
     value: "maintenance_finance_card",
     title: "FINANCE",
@@ -2697,13 +2834,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
 
   //Pie Charts
   MAINTENANCE_CATEGORY_WISE_MAINTENANCE: {
-    value: "maintenance_category_wise_maintenance_chart",
-    title: "CATEGORY WISE MAINTENANCE",
+    value: "maintenance_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
     type: "read",
   },
   MAINTENANCE_DUE_MAINTENANCE: {
-    value: "maintenance_due_maintenance_chart",
-    title: "DUE MAINTENANCE",
+    value: "maintenance_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
   MAINTENANCE_UNIT_WISE_MAINTENANCE: {
@@ -2863,14 +3000,38 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
-  IT_INVENTORY_SUNTECK_UNITS: {
-    value: "it_inventory_sunteck_units",
+  IT_OVERALL_INVENTORY_CARD: {
+    value: "it_overall_inventory_card",
+    title: "OVERALL INVENTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-inventory",
+  },
+  IT_OVERALL_ST_INVENTORY_CARD: {
+    value: "it_overall_st_inventory_card",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+      route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory",
+  },
+  IT_OVERALL_DTC_INVENTORY_CARD: {
+    value: "it_overall_dtc_inventory_card",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+      route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory",
+  },
+  IT_INVENTORY_CATEGORY_ITEM_CARD: {
+    value: "it_inventory_category_item_card",
+    title: "CATEGORY & ITEM",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/category",
+  },
+  IT_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "it_inventory_sunteck_units_tabs",
     title: "SUNTECK KANAKA UNITS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
-  IT_INVENTORY_DEMPO_UNITS: {
-    value: "it_inventory_dempo_trade_centre_units",
+  IT_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "it_inventory_dempo_trade_centre_units_tabs",
     title: "DEMPO TRADE CENTRE UNITS",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
@@ -2888,11 +3049,36 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
   },
-  IT_INVENTORY_LIST_TAB: {
-    value: "it_inventory_list_tab",
-    title: "INVENTORY LIST TAB",
+  IT_OVERALL_INVENTORY_TAB: {
+    value: "it_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
     type: "read",
     route: "/app/dashboard/IT-dashboard/inventory",
+  },
+  
+  IT_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "it_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  IT_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "it_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
+  },
+   IT_OVERALL_ST_INVENTORY_TAB: {
+    value: "it_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-st-inventory",
+  },
+  IT_OVERALL_DTC_INVENTORY_TAB: {
+    value: "it_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    route: "/app/dashboard/IT-dashboard/inventory/overall-dtc-inventory",
   },
   IT_FINANCE: {
     value: "it_finance_card",
@@ -2986,6 +3172,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   IT_EXECUTIVE_WISE_DUE_TASKS: {
     value: "it_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  IT_CATEGORY_WISE_TICKETS: {
+    value: "it_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  IT_DUE_TICKETS: {
+    value: "it_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
   IT_UNIT_WISE_IT_EXPENSES: {
@@ -3145,6 +3341,16 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
   FRONTEND_EXECUTIVE_WISE_DUE_TASKS: {
     value: "frontend_executive_wise_due_tasks_chart",
     title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  FRONTEND_CATEGORY_WISE_TICKETS: {
+    value: "frontend_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  FRONTEND_DUE_TICKETS: {
+    value: "frontend_due_tickets_chart",
+    title: "DUE TICKETS",
     type: "read",
   },
 
@@ -3366,12 +3572,216 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     type: "read",
     access: "page",
   },
+  // Cafe Finance
   SIDEBAR_CAFE_DASHBOARD: {
     value: "sidebar_cafe_dashboard",
     title: "CAFE DASHBOARD",
     type: "read",
     access: "page",
   },
+ CAFE_FINANCE: {
+    value: "cafe_finance_card",
+    title: "FINANCE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance",
+  },
+  CAFE_INVENTORY: {
+    value: "cafe_inventory_card",
+    title: "INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory",
+  },
+  CAFE_OVERALL_INVENTORY_CARD: {
+    value: "cafe_overall_inventory_card",
+    title: "OVERALL INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-inventory",
+  },
+  CAFE_OVERALL_ST_INVENTORY_CARD: {
+    value: "cafe_overall_st_inventory_card",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-st-inventory",
+  },
+  CAFE_OVERALL_DTC_INVENTORY_CARD: {
+    value: "cafe_overall_dtc_inventory_card",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-dtc-inventory",
+  },
+  CAFE_INVENTORY_CATEGORY_ITEM_CARD: {
+    value: "cafe_inventory_category_item_card",
+    title: "CATEGORY & ITEM",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/category",
+  },
+  CAFE_INVENTORY_SUNTECK_UNITS_TABS: {
+    value: "cafe_inventory_sunteck_units_tabs",
+    title: "SUNTECK KANAKA UNITS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/sunteck-kanaka-units",
+  },
+  CAFE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS: {
+    value: "cafe_inventory_dempo_trade_centre_units_tabs",
+    title: "DEMPO TRADE CENTRE UNITS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/dempo-trade-center",
+  },
+  CAFE_INVENTORY_CATEGORY_TAB: {
+    value: "cafe_inventory_category_tab",
+    title: "INVENTORY CATEGORY TAB",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/category",
+  },
+  CAFE_INVENTORY_ITEM_TAB: {
+    value: "cafe_inventory_item_tab",
+    title: "INVENTORY ITEM TAB",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/item",
+  },
+  CAFE_OVERALL_INVENTORY_TAB: {
+    value: "cafe_overall_inventory_tab",
+    title: "OVERALL INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-inventory",
+  },
+  CAFE_OVERALL_ST_INVENTORY_TAB: {
+    value: "cafe_overall_st_inventory_tab",
+    title: "OVERALL ST INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-st-inventory",
+  },
+  CAFE_OVERALL_DTC_INVENTORY_TAB: {
+    value: "cafe_overall_dtc_inventory_tab",
+    title: "OVERALL DTC INVENTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-dtc-inventory",
+  },
+  CAFE_OVERALL_ST_INVENTORY_ST_UNIT_TAB: {
+    value: "cafe_overall_st_unit_tab",
+    title: "ST UNIT",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-st-inventory/sunteck-kanaka-units",
+  },
+  CAFE_OVERALL_DTC_INVENTORY_DEMPO_UNIT_TAB: {
+    value: "cafe_overall_dtc_unit_tab",
+    title: "DEMPO UNIT",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/inventory/overall-dtc-inventory/dempo-trade-center",
+  },
+  CAFE_MIX_BAG: {
+    value: "cafe_mix_bag_card",
+    title: "MIX BAG",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/mix-bag",
+  },
+  CAFE_DATA: {
+    value: "cafe_data_card",
+    title: "DATA",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/data",
+  },
+  CAFE_ASSET_LIST: {
+    value: "cafe_asset_list_data_tab",
+    title: "ASSET LIST",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/data/asset-list",
+  },
+  CAFE_MONTHLY_BUDGET_REPORT: {
+    value: "cafe_monthly_budget_report_data_tab",
+    title: "MONTHLY BUDGET REPORT",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/data/monthly-budget-report",
+  },
+  CAFE_MONTHLY_INVOICE_REPORTS: {
+    value: "cafe_monthly_invoice_reports_data_tab",
+    title: "MONTHLY INVOICE REPORTS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/data/monthly-invoice-reports",
+  },
+  CAFE_VENDOR: {
+    value: "cafe_vendor_data_tab",
+    title: "VENDOR",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/data/vendor",
+  },
+  CAFE_DEPARTMENT_EXPENSE: {
+    value: "cafe_department_expense_graph",
+    title: "CAFE DEPARTMENT EXPENSE",
+    type: "read",
+    access: "page",
+  },
+  CAFE_BUDGET: {
+    value: "cafe_budget_tab",
+    title: "BUDGET",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/budget",
+  },
+  CAFE_BUDGET_HISTORY: {
+    value: "cafe_budget_history_tab",
+    title: "BUDGET HISTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/budget-history",
+  },
+  CAFE_REQUEST_BUDGET_BUTTON: {
+    value: "cafe_request_budget_button",
+    title: "REQUEST BUDGET BUTTON",
+    type: "write",
+    access: "button",
+    route: "/app/dashboard/cafe-dashboard/finance/budget",
+  },
+  CAFE_PAYMENT_SCHEDULE: {
+    value: "cafe_payment_schedule_tab",
+    title: "PAYMENT SCHEDULE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/payment-schedule",
+  },
+  CAFE_VOUCHER: {
+    value: "cafe_voucher_tab",
+    title: "VOUCHER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/voucher",
+  },
+  CAFE_REJECT_VOUCHER: {
+    value: "cafe_reject_voucher_tab",
+    title: "REJECT VOUCHER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/reject-voucher",
+  },
+  CAFE_VOUCHER_HISTORY: {
+    value: "cafe_voucher_history_tab",
+    title: "VOUCHER HISTORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/cafe-dashboard/finance/voucher-history",
+  },
+
   SIDEBAR_TICKETS: {
     value: "sidebar_tickets",
     title: "TICKETS",

@@ -1135,16 +1135,23 @@ const roundedMax = useMemo(() => {
 
   const frontendTicketChartConfigs = [
     {
+      key: PERMISSIONS.FRONTEND_CATEGORY_WISE_TICKETS.value,
       title: "Category Wise Tickets",
       data: frontendCategoryWiseTicketsData,
       options: frontendCategoryWiseTicketsOptions,
     },
     {
+      key: PERMISSIONS.FRONTEND_DUE_TICKETS.value,
       title: "Due Tickets",
       data: frontendDueTicketsData,
       options: frontendDueTicketsOptions,
     },
   ];
+
+  const allowedFrontendTicketCharts = filterPermissions(
+    frontendTicketChartConfigs,
+    userPermissions,
+  );
 
   const techWidgets = [
     {
@@ -1216,8 +1223,8 @@ const roundedMax = useMemo(() => {
       )),
     },
     {
-      layout: frontendTicketChartConfigs.length,
-      widgets: frontendTicketChartConfigs.map((config) => (
+      layout: allowedFrontendTicketCharts.length,
+      widgets: allowedFrontendTicketCharts.map((config) => (
         <WidgetSection key={config.title} layout={1} border title={config.title}>
           <PieChartMui
             data={config.data}

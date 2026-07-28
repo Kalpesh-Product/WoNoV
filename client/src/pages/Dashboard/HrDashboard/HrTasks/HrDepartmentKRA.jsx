@@ -330,7 +330,7 @@ const HrDepartmentKRA = () => {
       },
     },
     {
-      field: "assignedDate",
+      field: "assignedOn",
       headerName: "Assigned Date",
       flex: 1,
       valueGetter: (params) => formatDateOnly(params.data?.assignedDate),

@@ -11,6 +11,7 @@ const TabLayout = ({
   defaultTabPath,
   hideTabsCondition = () => false,
   hideTabsOnPaths = [], // NEW PROP
+  contentClassName = "py-4",
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -61,8 +62,16 @@ const TabLayout = ({
     }
   }, [isAuthorized, filteredTabs, navigate, basePath]);
 
-  const activeTab = filteredTabs.findIndex((tab) =>
-    location.pathname.includes(tab.path)
+  // const activeTab = filteredTabs.findIndex((tab) =>
+  //   location.pathname.includes(tab.path)
+   const activeTab = filteredTabs.reduce(
+    (activeIndex, tab, index) =>
+      location.pathname.includes(tab.path) &&
+      (activeIndex === -1 ||
+        tab.path.length > filteredTabs[activeIndex].path.length)
+        ? index
+        : activeIndex,
+    -1,
   );
   const tabPercent = 100 / filteredTabs.length;
 
@@ -107,6 +116,7 @@ const TabLayout = ({
               className="border-r-[1px] border-borderGray"
               to={`${basePath}/${tab.path}`}
               state={location.state}
+              end
               style={({ isActive }) => ({
                 textDecoration: "none",
                 color: isActive ? "white" : "#1E3D73",
@@ -123,7 +133,7 @@ const TabLayout = ({
         </Tabs>
       )}
 
-      <div className="py-4">
+      <div className={contentClassName}>
         <Outlet />
       </div>
     </div>

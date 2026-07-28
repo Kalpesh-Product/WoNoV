@@ -1655,6 +1655,7 @@ const SalesDashboard = () => {
 
   const salesTicketChartConfigs = [
     {
+      key: PERMISSIONS.SALES_CATEGORY_WISE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Category Wise Tickets",
@@ -1665,6 +1666,7 @@ const SalesDashboard = () => {
       width: 500,
     },
     {
+      key: PERMISSIONS.SALES_DUE_TICKETS.value,
       type: "PieChartMui",
       border: true,
       title: "Due Tickets",
@@ -1675,6 +1677,11 @@ const SalesDashboard = () => {
       width: 500,
     },
   ];
+
+  const allowedSalesTicketCharts = salesFilterPermissions(
+    salesTicketChartConfigs,
+    userPermissions,
+  );
 
 
   const meetingsWidgets = [
@@ -1838,8 +1845,8 @@ const SalesDashboard = () => {
       )),
     },
     {
-      layout: salesTicketChartConfigs.length,
-      widgets: salesTicketChartConfigs.map((config) => (
+      layout: allowedSalesTicketCharts.length,
+      widgets: allowedSalesTicketCharts.map((config) => (
         <WidgetSection key={config.title} border title={config.title}>
           <PieChartMui
             data={config.data}
@@ -1860,10 +1867,14 @@ const SalesDashboard = () => {
       )),
     },
   ];
+
+  const visibleMeetingsWidgets = meetingsWidgets.filter(
+    (widget) => Array.isArray(widget?.widgets) && widget.widgets.length > 0,
+  );
   return (
     <div>
       <div className="flex flex-col gap-4">
-        {meetingsWidgets.map((widget, index) => (
+        {visibleMeetingsWidgets.map((widget, index) => (
           <LazyDashboardWidget
             key={index}
             layout={widget.layout}

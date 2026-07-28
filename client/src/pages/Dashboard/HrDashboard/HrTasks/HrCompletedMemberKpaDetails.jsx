@@ -113,7 +113,7 @@ const HrCompletedMemberKpaDetails = ({ kpaType, title }) => {
     return Array.from(uniqueRows.values()).map((item, index) => ({
       srno: index + 1,
       taskName: item?.taskName || item?.kpaName || item?.task || "-",
-      assignedDate: item?.assignedDate,
+      assignedDate: item?.assignedDate ? humanDate(item.assignedDate) : "-",
       completionDateRaw:
         item?.completedDate || item?.completionDate || item?.dueDate,
       completionDate: humanDate(

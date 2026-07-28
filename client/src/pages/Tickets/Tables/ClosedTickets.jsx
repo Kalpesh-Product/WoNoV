@@ -116,6 +116,7 @@ const ClosedTickets = ({ title, departmentId }) => {
             };
           })(),
           closedAt: ticket.closedAt ? formatDateTime(ticket.closedAt) : "-",
+          closedAtRaw: ticket.closedAt || null,
           closedBy: ticket?.closedBy
             ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
             : "None",
@@ -273,7 +274,7 @@ const ClosedTickets = ({ title, departmentId }) => {
           />
           <DetalisFormatted
             title="Closed At"
-            detail={formatDateTime(viewTicketDetails.closedAt)}
+            detail={formatDateTime(viewTicketDetails.closedAtRaw)}
           />
           <DetalisFormatted
             title="Closing Remark"
