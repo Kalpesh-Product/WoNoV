@@ -27,6 +27,28 @@ const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const buildDateFilter = require("../../utils/dateFilter");
+
+const getEffectiveEndTime = (meeting) => {
+  const originalEndTime = new Date(meeting?.endTime);
+  const extendedEndTime = meeting?.extendTime
+    ? new Date(meeting.extendTime)
+    : null;
+
+  return extendedEndTime &&
+    !isNaN(extendedEndTime.getTime()) &&
+    extendedEndTime > originalEndTime
+    ? extendedEndTime
+    : originalEndTime;
+};
+
+const calculateCredits = (startTime, endTime, creditPerHour) =>
+  Number(
+    (
+      ((new Date(endTime) - new Date(startTime)) / (1000 * 60 * 60)) *
+      Number(creditPerHour || 0)
+    ).toFixed(2),
+  );
 
 const recalculateAndUpdatePayment = ({
   meeting,
@@ -37,7 +59,7 @@ const recalculateAndUpdatePayment = ({
   paymentMode,
   paymentStatus,
 }) => {
-  const durationInMs = meeting.endTime - meeting.startTime;
+  const durationInMs = getEffectiveEndTime(meeting) - meeting.startTime;
   const durationInHours = Number((durationInMs / (1000 * 60 * 60)).toFixed(2));
   const perHourCost = Number(meeting.bookedRoom?.perHourPrice || 0);
   const calculatedBaseAmount = Number(
@@ -75,6 +97,11 @@ const addMeetings = async (req, res, next) => {
   const logPath = "meetings/MeetingLog";
   const logAction = "Book Meeting";
   const logSourceKey = "meeting";
+
+  let bookingLockToken;
+  let lockedRoomId;
+  let creditDeduction;
+  let meetingWasSaved = false;
 
   try {
     const {
@@ -174,6 +201,37 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
+    bookingLockToken = new mongoose.Types.ObjectId().toString();
+    lockedRoomId = roomAvailable._id;
+    const lockNow = new Date();
+    const lockedRoom = await Room.findOneAndUpdate(
+      {
+        _id: roomAvailable._id,
+        status: "Available",
+        $or: [
+          { bookingLockExpiresAt: { $exists: false } },
+          { bookingLockExpiresAt: { $lte: lockNow } },
+        ],
+      },
+      {
+        $set: {
+          bookingLockToken,
+          bookingLockExpiresAt: new Date(lockNow.getTime() + 5 * 60 * 1000),
+        },
+      },
+      { new: true },
+    );
+
+    if (!lockedRoom) {
+      throw new CustomError(
+        "Room booking is currently being processed. Please try again.",
+        logPath,
+        logAction,
+        logSourceKey,
+        409,
+      );
+    }
+
     let internalUsers = [];
     let users = [];
     let isClient = client ? company.toString() !== client.toString() : false;
@@ -221,29 +279,11 @@ const addMeetings = async (req, res, next) => {
 
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
-      startDate: { $lte: endDateObj },
-      endDate: { $gte: startDateObj },
       status: { $ne: "Cancelled" },
-      $or: [
-        {
-          $and: [
-            { startTime: { $lte: startTimeObj } },
-            { endTime: { $gt: startTimeObj } },
-          ],
-        },
-        {
-          $and: [
-            { startTime: { $lt: endTimeObj } },
-            { endTime: { $gte: endTimeObj } },
-          ],
-        },
-        {
-          $and: [
-            { startTime: { $gte: startTimeObj } },
-            { endTime: { $lte: endTimeObj } },
-          ],
-        },
-      ],
+      startTime: { $lt: endTimeObj },
+      $expr: {
+        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, startTimeObj],
+      },
     });
 
     if (conflictingMeeting) {
@@ -328,7 +368,7 @@ const addMeetings = async (req, res, next) => {
         updateFields.$inc.meetingCreditBalance = -totalCreditsUsed;
       }
 
-      await BookingModel.findOneAndUpdate(
+      const updatedCreditRecord = await BookingModel.findOneAndUpdate(
         {
           _id: client,
           meetingCreditBalanceHistory: {
@@ -346,6 +386,23 @@ const addMeetings = async (req, res, next) => {
         },
         updateFields,
       );
+
+      if (!updatedCreditRecord) {
+        throw new CustomError(
+          "Unable to update meeting credits for the selected month",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      creditDeduction = {
+        BookingModel,
+        client,
+        meetingMonthStart,
+        totalCreditsUsed,
+        isCurrentMonth,
+      };
     }
 
     const meeting = new Meeting({
@@ -373,6 +430,7 @@ const addMeetings = async (req, res, next) => {
     });
 
     const savedMeeting = await meeting.save();
+    meetingWasSaved = true;
     // await Promise.all([
     //   meeting.save(),
     //   Room.findByIdAndUpdate(roomAvailable._id, { status: "Occupied" }),
@@ -424,12 +482,56 @@ const addMeetings = async (req, res, next) => {
       message: "Meeting added successfully",
     });
   } catch (error) {
+    if (creditDeduction && !meetingWasSaved) {
+      const {
+        BookingModel,
+        client: bookingClient,
+        meetingMonthStart,
+        totalCreditsUsed: deductedCredits,
+        isCurrentMonth,
+      } = creditDeduction;
+      const rollbackFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": deductedCredits,
+          "meetingCreditBalanceHistory.$.consumedCredit": -deductedCredits,
+        },
+      };
+      if (isCurrentMonth) {
+        rollbackFields.$inc.meetingCreditBalance = deductedCredits;
+      }
+      await BookingModel.findOneAndUpdate(
+        {
+          _id: bookingClient,
+          meetingCreditBalanceHistory: {
+            $elemMatch: {
+              monthStartDate: {
+                $gte: new Date(
+                  meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                ),
+                $lte: new Date(
+                  meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                ),
+              },
+            },
+          },
+        },
+        rollbackFields,
+      ).catch(() => {});
+    }
+
     if (error instanceof CustomError) {
       next(error);
     } else {
       next(
         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
+    }
+  } finally {
+    if (lockedRoomId && bookingLockToken) {
+      await Room.updateOne(
+        { _id: lockedRoomId, bookingLockToken },
+        { $unset: { bookingLockToken: 1, bookingLockExpiresAt: 1 } },
+      ).catch(() => {});
     }
   }
 };
@@ -460,10 +562,13 @@ const getAvaliableUsers = async (req, res, next) => {
     const meetings = await Meeting.find({
       company: req.company,
       status: { $nin: cancelledStatuses },
-      $and: [{ startTime: { $lte: end } }, { endTime: { $gte: start } }],
+      startTime: { $lt: end },
+      $expr: {
+        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, start],
+      },
     })
       .select(
-        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime",
+        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime extendTime",
       )
       .lean()
       .exec();
@@ -532,11 +637,35 @@ const getAvaliableUsers = async (req, res, next) => {
 
 async function getMeetings(req, res) {
   const { user, company, roles, departments = [] } = req;
+  const requestFilters = req.query?.dateFilter ||
+    req.query?.filters || {
+      startDate:
+        req.query?.["dateFilter[startDate]"] ||
+        req.query?.["filters[startDate]"] ||
+        req.query?.startDate,
+      endDate:
+        req.query?.["dateFilter[endDate]"] ||
+        req.query?.["filters[endDate]"] ||
+        req.query?.endDate,
+    };
+  const hasDateFilter = Boolean(
+    requestFilters?.startDate || requestFilters?.endDate,
+  );
+
   const payload = await fetchMeetingReportService({
     departments,
     roles,
     user,
     company,
+    page: req.query?.page,
+    limit: req.query?.limit,
+    ...(hasDateFilter && {
+      dateFilter: buildDateFilter({
+        startDate: requestFilters.startDate,
+        endDate: requestFilters.endDate,
+        field: "startDate",
+      }),
+    }),
   });
 
   return res.status(200).json(payload);
@@ -893,7 +1022,10 @@ const getMyMeetings = async (req, res, next) => {
         endTime: meeting.endTime,
         extendTime: meeting.extendTime,
         credits: meeting.credits,
-        duration: formatDuration(meeting.startTime, meeting.endTime),
+        duration: formatDuration(
+          meeting.startTime,
+          getEffectiveEndTime(meeting),
+        ),
         meetingStatus: meeting.status,
         action: meeting.extend,
         agenda: meeting.agenda,
@@ -1347,6 +1479,10 @@ const extendMeeting = async (req, res, next) => {
   const logSourceKey = "meeting";
   const { meetingId, newEndTime } = req.body;
   const { user, ip, company } = req;
+  let extensionCreditDeduction;
+  let extensionWasSaved = false;
+  let extensionLockToken;
+  let extensionLockedRoomId;
 
   try {
     if (!meetingId || !newEndTime) {
@@ -1367,7 +1503,50 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const meeting = await Meeting.findById(meetingId).populate([
+    let meeting = await Meeting.findById(meetingId).populate([
+      { path: "bookedRoom" },
+      { path: "bookedBy", select: "firstName lastName" },
+    ]);
+    if (!meeting) {
+      throw new CustomError(
+        "Meeting not found",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    extensionLockToken = new mongoose.Types.ObjectId().toString();
+    extensionLockedRoomId = meeting.bookedRoom._id;
+    const lockNow = new Date();
+    const lockedRoom = await Room.findOneAndUpdate(
+      {
+        _id: extensionLockedRoomId,
+        $or: [
+          { bookingLockExpiresAt: { $exists: false } },
+          { bookingLockExpiresAt: { $lte: lockNow } },
+        ],
+      },
+      {
+        $set: {
+          bookingLockToken: extensionLockToken,
+          bookingLockExpiresAt: new Date(lockNow.getTime() + 5 * 60 * 1000),
+        },
+      },
+      { new: true },
+    );
+
+    if (!lockedRoom) {
+      throw new CustomError(
+        "Room timing is currently being updated. Please try again.",
+        logPath,
+        logAction,
+        logSourceKey,
+        409,
+      );
+    }
+
+    meeting = await Meeting.findById(meetingId).populate([
       { path: "bookedRoom" },
       { path: "bookedBy", select: "firstName lastName" },
     ]);
@@ -1390,15 +1569,10 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
-    const normalizedNewEndTime = new Date(meeting.endTime);
-    normalizedNewEndTime.setHours(
-      newEndTimeObj.getHours(),
-      newEndTimeObj.getMinutes(),
-      newEndTimeObj.getSeconds(),
-      newEndTimeObj.getMilliseconds(),
-    );
+    const normalizedNewEndTime = newEndTimeObj;
+    const currentEffectiveEndTime = getEffectiveEndTime(meeting);
 
-    if (normalizedNewEndTime <= meeting.endTime) {
+    if (normalizedNewEndTime <= currentEffectiveEndTime) {
       throw new CustomError(
         "New end time must be later than the current end time",
         logPath,
@@ -1410,9 +1584,14 @@ const extendMeeting = async (req, res, next) => {
     // Check for conflicting meeting
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: meeting.bookedRoom._id,
-      startDate: meeting.startDate,
+      status: { $ne: "Cancelled" },
       startTime: { $lt: normalizedNewEndTime },
-      endTime: { $gt: meeting.endTime },
+      $expr: {
+        $gt: [
+          { $ifNull: ["$extendTime", "$endTime"] },
+          currentEffectiveEndTime,
+        ],
+      },
       _id: { $ne: meetingId },
     });
     if (conflictingMeeting) {
@@ -1425,103 +1604,139 @@ const extendMeeting = async (req, res, next) => {
     }
 
     // Step 1: Calculate additional duration
-    const oldEndTime = new Date(meeting.endTime);
-    const addedMs = normalizedNewEndTime - oldEndTime;
-    const addedHours = addedMs / (1000 * 60 * 60);
-
     const creditPerHour = meeting.bookedRoom.perHourCredit || 0;
-    const addedCredits = addedHours * creditPerHour;
+    const currentTotalCredits = calculateCredits(
+      meeting.startTime,
+      currentEffectiveEndTime,
+      creditPerHour,
+    );
+    const newTotalCredits = calculateCredits(
+      meeting.startTime,
+      normalizedNewEndTime,
+      creditPerHour,
+    );
+    const addedCredits = Number(
+      (newTotalCredits - currentTotalCredits).toFixed(2),
+    );
 
     // Step 2: Deduct credits from the user
-    const isClient = meeting.client.toString() !== company.toString();
+    const isInternal = meeting.meetingType === "Internal";
+    const isClient =
+      isInternal &&
+      meeting.client &&
+      meeting.client.toString() !== company.toString();
     const bookingUserModel = isClient ? CoworkingClient : Company;
 
-    // Ensure credit records are initialized for the month of the meeting
-    const bookingUserCompany = await resetMeetingCreditsIfNeeded(
-      bookingUserModel,
-      meeting.client,
-      meeting.startTime,
-    );
-
-    if (!bookingUserCompany) {
-      throw new CustomError(
-        "Booking user company not found for credit deduction",
-        logPath,
-        logAction,
-        logSourceKey,
+    if (isInternal) {
+      // Ensure credit records are initialized for the month of the meeting
+      const bookingUserCompany = await resetMeetingCreditsIfNeeded(
+        bookingUserModel,
+        meeting.client,
+        meeting.startTime,
       );
-    }
 
-    // Month-aware credit check
-    const meetingMonthStart = getMonthStartUTC(new Date(meeting.startTime));
-    const monthHistory = bookingUserCompany.meetingCreditBalanceHistory.find(
-      (h) => {
-        const d = new Date(h.monthStartDate);
-        // Robust check: match UTC or Local month to handle legacy/mismatched records
-        return (
-          (d.getUTCFullYear() === meetingMonthStart.getUTCFullYear() &&
-            d.getUTCMonth() === meetingMonthStart.getUTCMonth()) ||
-          (d.getFullYear() === meetingMonthStart.getUTCFullYear() &&
-            d.getMonth() === meetingMonthStart.getUTCMonth())
+      if (!bookingUserCompany) {
+        throw new CustomError(
+          "Booking user company not found for credit deduction",
+          logPath,
+          logAction,
+          logSourceKey,
         );
-      },
-    );
+      }
 
-    const availableCredits = monthHistory
-      ? monthHistory.remainingCredit
-      : bookingUserCompany.meetingCreditBalance;
+      // Month-aware credit check
+      const meetingMonthStart = getMonthStartUTC(new Date(meeting.startTime));
+      const monthHistory = bookingUserCompany.meetingCreditBalanceHistory.find(
+        (h) => {
+          const d = new Date(h.monthStartDate);
+          // Robust check: match UTC or Local month to handle legacy/mismatched records
+          return (
+            (d.getUTCFullYear() === meetingMonthStart.getUTCFullYear() &&
+              d.getUTCMonth() === meetingMonthStart.getUTCMonth()) ||
+            (d.getFullYear() === meetingMonthStart.getUTCFullYear() &&
+              d.getMonth() === meetingMonthStart.getUTCMonth())
+          );
+        },
+      );
 
-    // if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
-    //   throw new CustomError(
-    //     "Insufficient credits to extend this meeting",
-    //     logPath,
-    //     logAction,
-    //     logSourceKey,
-    //   );
-    // }
+      const availableCredits = monthHistory
+        ? monthHistory.remainingCredit
+        : bookingUserCompany.meetingCreditBalance;
 
-    const updateFields = {
-      $inc: {
-        "meetingCreditBalanceHistory.$.remainingCredit": -addedCredits,
-        "meetingCreditBalanceHistory.$.consumedCredit": addedCredits,
-      },
-    };
+      // if (meeting.meetingType === "Internal" && availableCredits < addedCredits) {
+      //   throw new CustomError(
+      //     "Insufficient credits to extend this meeting",
+      //     logPath,
+      //     logAction,
+      //     logSourceKey,
+      //   );
+      // }
 
-    const now = new Date();
-    const currentMonthStart = getMonthStartUTC(now);
-    const isCurrentMonth =
-      meetingMonthStart.getTime() === currentMonthStart.getTime();
+      const updateFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": -addedCredits,
+          "meetingCreditBalanceHistory.$.consumedCredit": addedCredits,
+        },
+      };
 
-    if (isCurrentMonth) {
-      updateFields.$inc.meetingCreditBalance = -addedCredits;
-    }
+      const now = new Date();
+      const currentMonthStart = getMonthStartUTC(now);
+      const isCurrentMonth =
+        meetingMonthStart.getTime() === currentMonthStart.getTime();
 
-    // Atomic deduction across both balances using fuzzy date match for history entry
-    await bookingUserModel.findOneAndUpdate(
-      {
-        _id: meeting.client,
-        meetingCreditBalanceHistory: {
-          $elemMatch: {
-            monthStartDate: {
-              $gte: new Date(meetingMonthStart.getTime() - 12 * 60 * 60 * 1000),
-              $lte: new Date(meetingMonthStart.getTime() + 12 * 60 * 60 * 1000),
+      if (isCurrentMonth) {
+        updateFields.$inc.meetingCreditBalance = -addedCredits;
+      }
+
+      // Atomic deduction across both balances using fuzzy date match for history entry
+      const updatedCreditRecord = await bookingUserModel.findOneAndUpdate(
+        {
+          _id: meeting.client,
+          meetingCreditBalanceHistory: {
+            $elemMatch: {
+              monthStartDate: {
+                $gte: new Date(
+                  meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                ),
+                $lte: new Date(
+                  meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                ),
+              },
             },
           },
         },
-      },
-      updateFields,
-    );
+        updateFields,
+      );
+
+      if (!updatedCreditRecord) {
+        throw new CustomError(
+          "Unable to update meeting credits for the selected month",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      extensionCreditDeduction = {
+        bookingUserModel,
+        client: meeting.client,
+        meetingMonthStart,
+        addedCredits,
+        isCurrentMonth,
+      };
+    }
 
     // Step 3: Update meeting details
     // meeting.endTime = newEndTimeObj;
     // meeting.endDate = newEndTimeObj;
     meeting.extendTime = normalizedNewEndTime;
-    meeting.creditsUsed = (meeting.creditsUsed || 0) + addedCredits;
+    meeting.creditsUsed = isInternal ? newTotalCredits : 0;
     await meeting.save();
+    extensionWasSaved = true;
 
-    const isInternal = meeting.bookedBy;
+    const isInternalBooking = meeting.bookedBy;
 
-    if (isInternal && meeting.internalParticipants.length > 0) {
+    if (isInternalBooking && meeting.internalParticipants.length > 0) {
       const bookedBy = meeting.bookedBy;
       emitter.emit("notification", {
         initiatorData: user,
@@ -1538,12 +1753,61 @@ const extendMeeting = async (req, res, next) => {
       message: "Meeting extended successfully",
     });
   } catch (error) {
+    if (extensionCreditDeduction && !extensionWasSaved) {
+      const {
+        bookingUserModel,
+        client: bookingClient,
+        meetingMonthStart,
+        addedCredits,
+        isCurrentMonth,
+      } = extensionCreditDeduction;
+      const rollbackFields = {
+        $inc: {
+          "meetingCreditBalanceHistory.$.remainingCredit": addedCredits,
+          "meetingCreditBalanceHistory.$.consumedCredit": -addedCredits,
+        },
+      };
+      if (isCurrentMonth) {
+        rollbackFields.$inc.meetingCreditBalance = addedCredits;
+      }
+      await bookingUserModel
+        .findOneAndUpdate(
+          {
+            _id: bookingClient,
+            meetingCreditBalanceHistory: {
+              $elemMatch: {
+                monthStartDate: {
+                  $gte: new Date(
+                    meetingMonthStart.getTime() - 12 * 60 * 60 * 1000,
+                  ),
+                  $lte: new Date(
+                    meetingMonthStart.getTime() + 12 * 60 * 60 * 1000,
+                  ),
+                },
+              },
+            },
+          },
+          rollbackFields,
+        )
+        .catch(() => {});
+    }
+
     if (error instanceof CustomError) {
       next(error);
     } else {
       next(
         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
+    }
+  } finally {
+    if (extensionLockedRoomId && extensionLockToken) {
+      await Room.updateOne(
+        {
+          _id: extensionLockedRoomId,
+          bookingLockToken: extensionLockToken,
+        },
+        { $unset: { bookingLockToken: 1, bookingLockExpiresAt: 1 } },
+      ).catch(() => {});
     }
   }
 };
@@ -1606,7 +1870,7 @@ const updateMeeting = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid meeting Id provided" });
     }
 
-    if (!paymentAmount || !paymentMode || !paymentStatus || !paymentProofFile) {
+    if (!paymentAmount || !paymentMode || !paymentStatus) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -1881,6 +2145,12 @@ const updateMeetingStatus = async (req, res, next) => {
     });
   }
 
+  // if (status === "Completed" && currDate < getEffectiveEndTime(meeting)) {
+  //   return res.status(400).json({
+  //     message: "Meeting cannot be marked completed before its end time",
+  //   });
+  // }
+
   const updatePayload = {
     status,
     ...(status === "Completed" && {
@@ -2111,7 +2381,7 @@ const updateMeetingDetails = async (req, res, next) => {
     const hasSpecialEditWindowAccess = isAdminTimingUser || canEditMeetingDate;
     const isAdminTimingRestrictedUser = isAdminTimingUser;
     const meetingStartTime = new Date(meeting.startTime);
-    const meetingEndTime = new Date(meeting.endTime);
+    const meetingEndTime = getEffectiveEndTime(meeting);
     const isUpcoming = meetingStartTime > currDate;
     const editWindowEndTime = new Date(meetingStartTime.getTime() + 30 * 60000);
     const hasMeetingStarted = meetingStartTime <= currDate;
@@ -2185,28 +2455,11 @@ const updateMeetingDetails = async (req, res, next) => {
     const conflictingMeeting = await Meeting.findOne({
       _id: { $ne: meetingId },
       bookedRoom: meeting.bookedRoom._id,
-      startDate: { $lte: startTimeObj },
-      endDate: { $gte: startTimeObj },
-      $or: [
-        {
-          $and: [
-            { startTime: { $lte: startTimeObj } },
-            { endTime: { $gt: startTimeObj } },
-          ],
-        },
-        {
-          $and: [
-            { startTime: { $lt: endTimeObj } },
-            { endTime: { $gte: endTimeObj } },
-          ],
-        },
-        {
-          $and: [
-            { startTime: { $gte: startTimeObj } },
-            { endTime: { $lte: endTimeObj } },
-          ],
-        },
-      ],
+      status: { $ne: "Cancelled" },
+      startTime: { $lt: endTimeObj },
+      $expr: {
+        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, startTimeObj],
+      },
     });
 
     if (conflictingMeeting) {
@@ -2269,7 +2522,8 @@ const updateMeetingDetails = async (req, res, next) => {
 
     // Recompute old credits from previous timings so credit diffs also stay minute-based
     const oldDurationInMinutes =
-      (new Date(meeting.endTime) - new Date(meeting.startTime)) / (1000 * 60);
+      (getEffectiveEndTime(meeting) - new Date(meeting.startTime)) /
+      (1000 * 60);
     const oldCreditsUsed =
       oldDurationInMinutes > 0
         ? normalizeCredits(oldDurationInMinutes)
@@ -2369,6 +2623,7 @@ const updateMeetingDetails = async (req, res, next) => {
         : {}),
       startTime: startTimeObj,
       endTime: endTimeObj,
+      extendTime: null,
       // creditsUsed: externalParticipants ? newCreditsUsed : 0,
       creditsUsed: isExternal ? 0 : newCreditsUsed,
       internalParticipants: !isClient ? internalUsers : [],
