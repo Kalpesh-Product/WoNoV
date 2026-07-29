@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -38,6 +38,22 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { time } from "motion/react";
 
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};  
+
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -50,6 +66,45 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
+   const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
+  const initialMeetingDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [meetingDateRange, setMeetingDateRange] = useState(
+    initialMeetingDateRange,
+  );
+  const meetingDateRangeRef = useRef(initialMeetingDateRange);
+  const meetingFilters = useMemo(
+    () => ({
+      startDate: toUtcDayBoundary(meetingDateRange.startDate),
+      endDate: toUtcDayBoundary(meetingDateRange.endDate, true),
+    }),
+    [meetingDateRange],
+  );
+  const handleMeetingDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    const currentRange = meetingDateRangeRef.current;
+    const currentStart = new Date(currentRange.startDate).getTime();
+    const currentEnd = new Date(currentRange.endDate).getTime();
+    const nextStart = new Date(selectedRange.startDate).getTime();
+    const nextEnd = new Date(selectedRange.endDate).getTime();
+
+    if (currentStart === nextStart && currentEnd === nextEnd) return;
+
+    meetingDateRangeRef.current = selectedRange;
+    setMeetingDateRange(selectedRange);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const location = useLocation();
   const department = usePageDepartment();
   const isTechDepartment = auth?.user?.departments?.some(
@@ -231,15 +286,31 @@ const ExternalMeetingCLients = () => {
 
   //------------------------------API--------------------------------//
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: [
+      "external-meetings",
+      meetingFilters.startDate,
+      meetingFilters.endDate,
+      pagination.page,
+      pagination.limit,
+    ],  
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
         params: {
-          type: "external",
-          completed: false,
+          filters: meetingFilters,
+          type: "External",
+          page: pagination.page,
+          limit: pagination.limit,
         },
       });
-      return response.data;
+      const responsePagination = response.data.pagination || response.data;
+
+      setPagination((current) => ({
+        page: Number(responsePagination.page) || current.page,
+        limit: Number(responsePagination.limit) || current.limit,
+        total: Number(responsePagination.total) || 0,
+      }));
+
+      return response.data.data || [];
     },
   });
   const filteredMeetings = meetings.filter(
@@ -273,7 +344,7 @@ const ExternalMeetingCLients = () => {
             ? meeting.extendTime
             : meeting.endTime,
         extendTime: meeting.extendTime,
-        srNo: index + 1,
+          srNo: (pagination.page - 1) * pagination.limit + index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
         paymnetDiscountAmount: meeting.discountAmount ?? 0,
         paymentDiscountAmount: meeting.discountAmount ?? 0,
@@ -993,10 +1064,19 @@ const ExternalMeetingCLients = () => {
             key={transformedMeetings.length}
             search
             dateColumn={"date"}
+             initialDateRange={initialMeetingDateRange}
+            onDateFilterChange={handleMeetingDateFilterChange}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
             exportData={shouldShowExportButton}
+            serverPagination
+            paginationPageSize={pagination.limit}
+            paginationPage={pagination.page}
+            paginationTotal={pagination.total}
+            onPaginationPageChange={(page) =>
+              setPagination((current) => ({ ...current, page }))
+            }
           />
         ) : (
           <CircularProgress />
