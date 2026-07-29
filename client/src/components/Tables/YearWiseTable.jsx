@@ -27,6 +27,7 @@ const YearWiseTable = ({
   middleButtonTitle,
   middleButtonDisabled,
   handleMiddleSubmit,
+  headerActions,
   checkbox,
   checkAll,
   key,
@@ -53,6 +54,11 @@ const YearWiseTable = ({
   initialDateRange,
   taskExportDateTimeFormatting = false,
   preserveCurrentMonthRange = false,
+  serverPagination = false,
+  paginationPageSize,
+  paginationPage = 1,
+  paginationTotal = 0,
+  onPaginationPageChange,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -367,6 +373,8 @@ const YearWiseTable = ({
         )}
 
         <div className="flex gap-2 items-center justify-end flex-nowrap ml-auto">
+          {headerActions ? headerActions : null}
+
           {/* ✅ Show calendar only if data is not empty */}
 
           {!hideDateControls && (
@@ -551,6 +559,12 @@ const YearWiseTable = ({
             onSelectionChange={(rows) => setSelectedRows(rows)}
             batchButton={batchButton}
             hideTitle={hideTitle}
+            isPagination={serverPagination}
+            serverPagination={serverPagination}
+            paginationPageSize={paginationPageSize}
+            paginationPage={paginationPage}
+            paginationTotal={paginationTotal}
+            onPaginationPageChange={onPaginationPageChange}
           />
         ) : (
           <div

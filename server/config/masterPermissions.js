@@ -258,6 +258,15 @@ const masterPermissions = [
           { submoduleName: "Voucher History", actions: ["View", "Edit"] },
         ],
       },
+      {
+        name: "Inventory",
+        submodules: [
+          { submoduleName: "Overall Inventory", actions: ["View", "Edit"] },
+          { submoduleName: "Category & Item", actions: ["View", "Edit"] },
+          { submoduleName: "Overall ST Inventory", actions: ["View", "Edit"] },
+          { submoduleName: "Overall DTC Inventory", actions: ["View", "Edit"] },
+        ],
+      },
     ],
   },
 ];

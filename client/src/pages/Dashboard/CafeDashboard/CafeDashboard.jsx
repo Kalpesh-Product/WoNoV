@@ -3,7 +3,8 @@ import dayjs from "dayjs";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
-import { SiCashapp } from "react-icons/si";
+import { MdFormatListBulleted, MdInventory } from "react-icons/md";
+import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { useSidebar } from "../../../context/SideBarContext";
@@ -32,7 +33,7 @@ const CafeDashboardCard = ({ title, icon, route }) => {
   return (
     <div
       onClick={() => navigate(route)}
-      className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:border-[0.2px] hover:border-primary hover:shadow-xl h-60"
+      className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:border-[0.2px] hover:border-primary hover:shadow-xl"
     >
       <span className="absolute right-4 top-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
         <FaArrowRight size={14} />
@@ -63,6 +64,27 @@ const CafeDashboard = () => {
               title: "Finance",
               icon: <SiCashapp />,
               route: "/app/dashboard/cafe-dashboard/finance",
+            }
+          : null,
+        hasPermission(PERMISSIONS.CAFE_INVENTORY.value)
+          ? {
+              title: "Inventory",
+              icon: <MdInventory />,
+              route: "/app/dashboard/cafe-dashboard/inventory",
+            }
+          : null,
+           hasPermission(PERMISSIONS.CAFE_MIX_BAG.value)
+          ? {
+              title: "Mix Bag",
+              icon: <MdFormatListBulleted />,
+              route: "/app/dashboard/cafe-dashboard/mix-bag",
+            }
+          : null,
+           hasPermission(PERMISSIONS.CAFE_DATA.value)
+          ? {
+              title: "Data",
+              icon: <SiGoogleadsense />,
+              route: "/app/dashboard/cafe-dashboard/data",
             }
           : null,
       ].filter(Boolean),
@@ -469,7 +491,9 @@ redrawOnParentResize: false,
       {cafeCards.length > 0 && (
         <div
           className={`grid w-full gap-4 ${
-            cafeCards.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+            cafeCards.length === 1
+              ? "grid-cols-1"
+              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
           }`}
         >
           {cafeCards.map((card) => (

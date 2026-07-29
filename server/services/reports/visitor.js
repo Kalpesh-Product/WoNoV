@@ -111,15 +111,33 @@ const fetchVisitorReportService = async ({
   multipleVisits = false,
   isMeeting = false,
   isOpendDesk = false,
+  page,
+  limit,
+  type = "",
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
     const queryKey = normalizeVisitorQuery(query);
+    const shouldPaginate = page !== undefined || limit !== undefined;
+    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
     let visitors;
+    let total;
     const filter = { company: companyId };
 
     if (visitorFlag) {
       filter.visitorFlag = visitorFlag;
+    }
+
+    if (type === "day-pass") {
+      filter.visitorType = {
+        $in: ["Full-Day Pass", "Half-Day Pass"],
+      };
+    }
+
+    if (type === "internal") {
+      filter.visitorFlag = "Visitor";
     }
 
     if (dateFilter?.checkIn) {
@@ -149,27 +167,6 @@ const fetchVisitorReportService = async ({
       };
     }
 
-    // visitors = await Visitor.aggregate([
-    //   { $match: filter },
-    //   {
-    //     $project: {
-    //       firstName: 1,
-    //       lastName: 1,
-    //       email: 1,
-    //       checkIn: 1,
-    //       checkOut: 1,
-    //       visitorType: 1,
-    //     },
-    //   },
-    // ]);
-
-    //     const result = await Visitor.aggregate([
-    //   { $match: filter },
-    //   { $project: { _id: 1 } },
-    // ]).explain("executionStats");
-
-    // console.dir(result, { depth: null });
-
     switch (queryKey) {
       case "department":
         visitors = await Visitor.aggregate([
@@ -195,7 +192,22 @@ const fetchVisitorReportService = async ({
           },
           { $unwind: "$department" },
           { $project: { department: "$department.name", visitors: 1 } },
+          ...(shouldPaginate
+            ? [
+                { $sort: { department: 1, _id: 1 } },
+                {
+                  $facet: {
+                    data: [{ $skip: skip }, { $limit: parsedLimit }],
+                    metadata: [{ $count: "total" }],
+                  },
+                },
+              ]
+            : []),
         ]);
+        if (shouldPaginate) {
+          total = visitors[0]?.metadata[0]?.total || 0;
+          visitors = visitors[0]?.data || [];
+        }
         break;
 
       case "today":
@@ -205,25 +217,34 @@ const fetchVisitorReportService = async ({
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        visitors = await Visitor.find({
+        const todayFilter = {
           ...filter,
           dateOfVisit: { $gte: startOfDay, $lte: endOfDay },
-        })
+        };
+        let todayVisitorsQuery = Visitor.find(todayFilter)
           .select("-__v")
-          .populate(populateVisitorListFields)
-          .lean()
-          .exec();
-        if (multipleVisits) {
-          visitors = await attachExternalVisits(visitors, companyId);
+          .populate(populateVisitorListFields);
+
+        if (shouldPaginate) {
+          todayVisitorsQuery = todayVisitorsQuery
+            .sort({ checkIn: -1, _id: -1 })
+            .skip(skip)
+            .limit(parsedLimit);
+
+          [visitors, total] = await Promise.all([
+            todayVisitorsQuery.lean().exec(),
+            Visitor.countDocuments(todayFilter).exec(),
+          ]);
+        } else {
+          visitors = await todayVisitorsQuery.lean().exec();
         }
         break;
 
       default:
-        // visitors = await Visitor.find(filter)
-        //   .select("-__v")
-        //   .populate(populateVisitorListFields)
-        //   .lean()
-        //   .exec();
+        const totalPromise = shouldPaginate
+          ? Visitor.countDocuments(filter).exec()
+          : null;
+
         visitors = await Visitor.aggregate([
           {
             $match: filter,
@@ -280,6 +301,13 @@ const fetchVisitorReportService = async ({
               brandName: 1,
             },
           },
+          ...(shouldPaginate
+            ? [
+                { $sort: { checkIn: -1, _id: -1 } },
+                { $skip: skip },
+                { $limit: parsedLimit },
+              ]
+            : []),
 
           ...(dateFilter?.checkIn
             ? [
@@ -491,13 +519,28 @@ const fetchVisitorReportService = async ({
               ]
             : []),
         ]);
-
-        if (multipleVisits) {
-          visitors = await attachExternalVisits(visitors, companyId);
+        if (shouldPaginate) {
+          total = await totalPromise;
         }
     }
 
-    return visitors;
+    if (multipleVisits) {
+      visitors = await attachExternalVisits(visitors, companyId);
+    }
+
+    if (!shouldPaginate) {
+      return visitors;
+    }
+
+    return {
+      data: visitors,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+      },
+    };
   } catch (error) {
     throw error;
   }

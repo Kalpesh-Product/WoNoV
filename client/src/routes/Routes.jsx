@@ -229,6 +229,7 @@ import Inventory from "../pages/Dashboard/MaintainanceDashboard/Inventory";
 import InventoryRecordHistory from "../pages/Dashboard/MaintainanceDashboard/InventoryRecordHistory";
 import MaintenanceFinance from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceFinance";
 import MaintenanceInventoryTabs from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventoryTabs";
+import MaintenanceInventoryCard from "../pages/Dashboard/MaintainanceDashboard/MaintenanceInventorycard";
 import MaintenanceBudget from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenanceBudget";
 import MaintenancePayment from "../pages/Dashboard/MaintainanceDashboard/MaintenanceFinance/MaintenancePayment";
 import MaintenanceData from "../pages/Dashboard/MaintainanceDashboard/MaintenanceData/MaintenanceData";
@@ -349,6 +350,7 @@ import DepartmentWiseTickets from "../pages/Tickets/DepartmentWiseTickets";
 import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 import CafeFinance from "../pages/Dashboard/CafeDashboard/CafeFinance";
+import CafeDataCard from "../pages/Dashboard/CafeDashboard/CafeDataCard";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
@@ -1107,6 +1109,66 @@ export const routes = createBrowserRouter([
                         //element: <Inventory />,
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                           {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
+                          {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                              {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
                           {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,
@@ -1116,11 +1178,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="sunteck" />,
-                          },
-                          {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1132,11 +1190,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="dempo" />,
-                          },
-                          {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1377,6 +1431,66 @@ export const routes = createBrowserRouter([
                         path: "inventory",
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                           {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
+                          {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                                                  {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
                           {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,
@@ -1386,11 +1500,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="sunteck" />,
-                          },
-                          {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1402,11 +1512,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="dempo" />,
-                          },
-                          {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -1589,6 +1695,66 @@ export const routes = createBrowserRouter([
                         //element: <Inventory />,
                         element: <MaintenanceInventoryTabs />,
                         children: [
+                            {
+                            index: true,
+                            element: <MaintenanceInventoryCard />,
+                          },
+                          {
+                            path: "overall-inventory",
+                            element: <Inventory />,
+                          },
+                              {
+                            path: "overall-st-inventory",
+                            element: <Inventory overallBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory",
+                            element: <Inventory overallBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo",
+                            element: <Inventory forcedBuildingTab="sunteck" />,
+                          },
+                          {
+                            path: "overall-st-inventory/sunteck-kanaka-units/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo",
+                            element: <Inventory forcedBuildingTab="dempo" />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/dempo-trade-center/:unitNo/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-st-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "overall-dtc-inventory/:inventoryItemName",
+                            element: <InventoryRecordHistory />,
+                          },
+                          {
+                            path: "category",
+                            element: <Inventory />,
+                          },
+                          {
+                            path: "item",
+                            element: <Inventory />,
+                          },
                           {
                             path: "sunteck-kanaka-units",
                             element: <Inventory forcedBuildingTab="sunteck" />,
@@ -1598,11 +1764,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="sunteck" />,
                           },
                           {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="sunteck" />,
-                          },
-                          {
-                            path: "sunteck-kanaka-units/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "sunteck-kanaka-units/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                           {
@@ -1614,11 +1776,7 @@ export const routes = createBrowserRouter([
                             element: <Inventory forcedBuildingTab="dempo" />,
                           },
                           {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab",
-                            element: <Inventory forcedBuildingTab="dempo" />,
-                          },
-                          {
-                            path: "dempo-trade-center/:unitNo/:inventoryTab/:inventoryItemName",
+                            path: "dempo-trade-center/:unitNo/:inventoryItemName",
                             element: <InventoryRecordHistory />,
                           },
                         ],
@@ -2885,6 +3043,37 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <CafeDashboard />,
+                        },
+                      {
+                        path: "inventory",
+                        element: <MaintenanceInventoryTabs />,
+                        children: [
+                          { index: true, element: <MaintenanceInventoryCard /> },
+                          { path: "overall-inventory", element: <Inventory /> },
+                          { path: "overall-st-inventory", element: <Inventory overallBuildingTab="sunteck" /> },
+                          { path: "overall-dtc-inventory", element: <Inventory overallBuildingTab="dempo" /> },
+                          { path: "overall-inventory/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "overall-st-inventory/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "overall-dtc-inventory/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "category", element: <Inventory /> },
+                          { path: "item", element: <Inventory /> },
+                          { path: "sunteck-kanaka-units", element: <Inventory forcedBuildingTab="sunteck" /> },
+                          { path: "sunteck-kanaka-units/:unitNo", element: <Inventory forcedBuildingTab="sunteck" /> },
+                          { path: "sunteck-kanaka-units/:unitNo/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "dempo-trade-center", element: <Inventory forcedBuildingTab="dempo" /> },
+                          { path: "dempo-trade-center/:unitNo", element: <Inventory forcedBuildingTab="dempo" /> },
+                          { path: "dempo-trade-center/:unitNo/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "overall-st-inventory/sunteck-kanaka-units", element: <Inventory forcedBuildingTab="sunteck" /> },
+                          { path: "overall-st-inventory/sunteck-kanaka-units/:unitNo", element: <Inventory forcedBuildingTab="sunteck" /> },
+                          { path: "overall-st-inventory/sunteck-kanaka-units/:unitNo/:inventoryItemName", element: <InventoryRecordHistory /> },
+                          { path: "overall-dtc-inventory/dempo-trade-center", element: <Inventory forcedBuildingTab="dempo" /> },
+                          { path: "overall-dtc-inventory/dempo-trade-center/:unitNo", element: <Inventory forcedBuildingTab="dempo" /> },
+                          { path: "overall-dtc-inventory/dempo-trade-center/:unitNo/:inventoryItemName", element: <InventoryRecordHistory /> },
+                        ],
+                      },
+                      {
+                        path: "mix-bag",
+                        element: <div />, 
                       },
                        {
                         path: "finance",
@@ -2907,6 +3096,36 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
+                          },
+                        ],
+                      },
+                                            {
+                        path: "data",
+                        element: <CafeDataCard />,
+                        children: [
+                          {
+                            path: "asset-list",
+                            element: <DepartmentAssetCommon />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
+                          },
+                          {
+                            path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
+                            element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
                           },
                         ],
                       },

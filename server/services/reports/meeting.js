@@ -34,8 +34,28 @@ const fetchMeetingReportService = async ({
   user,
   isReport = false,
   type,
+  page,
+  limit,
 }) => {
   try {
+    const shouldPaginate = page !== undefined && limit !== undefined;
+    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
+    let total;
+    const buildResponse = (data) =>
+      shouldPaginate
+        ? {
+            data,
+            pagination: {
+              page: parsedPage,
+              limit: parsedLimit,
+              total,
+              totalPages: Math.ceil(total / parsedLimit),
+            },
+          }
+        : data;
+
     const currentUserId = user?.toString();
     const foundUser = currentUserId
       ? await UserData.findById(currentUserId)
@@ -51,7 +71,8 @@ const fetchMeetingReportService = async ({
     );
 
     if (!canViewAllMeetings && !currentUserId) {
-      return [];
+      total = 0;
+      return buildResponse([]);
     }
 
     const meetingTypeFilter = String(type || "")
@@ -59,9 +80,7 @@ const fetchMeetingReportService = async ({
       .toLowerCase();
     const meetingQuery = {
       company,
-      ...(dateFilter?.startDate && {
-        startDate: dateFilter?.startDate,
-      }),
+      ...(dateFilter?.startDate && { startDate: dateFilter.startDate }),
       ...(isReport &&
         ["internal", "external"].includes(meetingTypeFilter) && {
           meetingType:
@@ -79,7 +98,7 @@ const fetchMeetingReportService = async ({
         }),
     };
 
-    const meetings = await Meeting.find(meetingQuery)
+    let meetingsQuery = Meeting.find(meetingQuery)
       .select(
         "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime meetingType credits creditsUsed paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
       )
@@ -120,9 +139,24 @@ const fetchMeetingReportService = async ({
         // { path: "externalClient", select: "companyName pocName mobileNumber" },
         { path: "internalParticipants", select: "firstName lastName email" },
         { path: "clientParticipants", select: "employeeName email" },
-      ])
-      .lean()
-      .exec();
+      ]);
+
+    if (shouldPaginate) {
+      meetingsQuery = meetingsQuery
+        .sort({ startDate: -1, _id: -1 })
+        .skip(skip)
+        .limit(parsedLimit);
+    }
+
+    let meetings;
+    if (shouldPaginate) {
+      [meetings, total] = await Promise.all([
+        meetingsQuery.lean().exec(),
+        Meeting.countDocuments(meetingQuery).exec(),
+      ]);
+    } else {
+      meetings = await meetingsQuery.lean().exec();
+    }
 
     const meetingIds = meetings.map((meeting) => meeting._id);
     const reviews = meetingIds.length
@@ -193,7 +227,10 @@ const fetchMeetingReportService = async ({
         endTime: meeting.endTime,
         extendTime: meeting.extendTime,
         credits: meeting.credits,
-        duration: formatDuration(meeting.startTime, meeting.endTime),
+        duration: formatDuration(
+          meeting.startTime,
+          getEffectiveEndTime(meeting),
+        ),
         meetingStatus: meeting.status,
         action: meeting.extend,
         agenda: meeting.agenda,
@@ -210,7 +247,7 @@ const fetchMeetingReportService = async ({
     const hostMeetingCreditBalance = meetings[0]?.company?.meetingCreditBalance;
 
     if (isReport) {
-      return meetings.map((meeting) => {
+      const reportMeetings = meetings.map((meeting) => {
         const effectiveEndTime = getEffectiveEndTime(meeting);
 
         const participants =
@@ -270,9 +307,11 @@ const fetchMeetingReportService = async ({
           }),
         };
       });
+
+      return buildResponse(reportMeetings);
     }
 
-    return transformedMeetings;
+    return buildResponse(transformedMeetings);
   } catch (error) {
     throw error;
   }
