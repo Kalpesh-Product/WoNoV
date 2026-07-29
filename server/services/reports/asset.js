@@ -12,6 +12,8 @@ const fetchAssetReportService = async ({
   user: loggedInUser,
   query,
   isReport = false,
+  page,
+  limit,
 }) => {
   const defaultQuery = {
     assigned: null,
@@ -24,6 +26,11 @@ const fetchAssetReportService = async ({
   query = query && Object.keys(query).length ? query : defaultQuery;
 
   try {
+    const shouldPaginate = page !== undefined && limit !== undefined;
+    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
+
     const userId = loggedInUser;
     const user = await UserData.findById(userId)
       .populate("departments")
@@ -64,7 +71,7 @@ const fetchAssetReportService = async ({
     const sortField = sortBy || "purchaseDate";
     const sortOrder = order === "desc" ? -1 : 1;
 
-    const assets = await Asset.find(assetFilter)
+    let assetsQuery = Asset.find(assetFilter)
       .populate([
         { path: "department", select: "name" },
 
@@ -149,6 +156,17 @@ const fetchAssetReportService = async ({
 
       .select("-company")
       .sort({ [sortField]: sortOrder });
+
+    if (shouldPaginate) {
+      assetsQuery = assetsQuery.skip(skip).limit(parsedLimit);
+    }
+
+    const [assets, total] = await Promise.all([
+      assetsQuery.exec(),
+      shouldPaginate
+        ? Asset.countDocuments(assetFilter).exec()
+        : Promise.resolve(null),
+    ]);
 
     const assetIds = assets.map((asset) => asset._id);
     const pendingRequests = await AssignAsset.find({
@@ -300,7 +318,17 @@ const fetchAssetReportService = async ({
       }));
     }
 
-    return result;
+    return shouldPaginate
+      ? {
+          data: result,
+          pagination: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages: Math.ceil(total / parsedLimit),
+          },
+        }
+      : result;
   } catch (error) {
     throw error;
   }
