@@ -50,7 +50,10 @@ function getUnitAssignedDisplayValue(inventory) {
 
   // Use the allocation recorded on this row. A unit-consumption row stores
   // zero, so its closing balance changes without appearing as a new assign.
-  if (inventory.assignedUnits !== undefined && inventory.assignedUnits !== null) {
+  if (
+    inventory.assignedUnits !== undefined &&
+    inventory.assignedUnits !== null
+  ) {
     return Number(inventory.assignedUnits) || 0;
   }
 
@@ -102,7 +105,7 @@ function getUnitInventorySummaryValues(rows = []) {
 }
 
 // const Inventory = ({ forcedBuildingTab = null }) => {
-  const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
+const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,7 +169,8 @@ function getUnitInventorySummaryValues(rows = []) {
 
     return {
       sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
-      dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
+      dempo:
+        PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
     };
   }, [isAdminInventoryPath, isCafeInventoryPath, isItInventoryPath]);
 
@@ -386,12 +390,10 @@ function getUnitInventorySummaryValues(rows = []) {
 
     const isCategoryPath = pathname.endsWith("/category");
     const isItemPath = pathname.endsWith("/item");
-    const isNestedSunteckUnitPath = /\/overall-st-inventory\/sunteck-kanaka-units(?:\/|$)/i.test(
-      pathname,
-    );
-    const isNestedDempoUnitPath = /\/overall-dtc-inventory\/dempo-trade-center(?:\/|$)/i.test(
-      pathname,
-    );
+    const isNestedSunteckUnitPath =
+      /\/overall-st-inventory\/sunteck-kanaka-units(?:\/|$)/i.test(pathname);
+    const isNestedDempoUnitPath =
+      /\/overall-dtc-inventory\/dempo-trade-center(?:\/|$)/i.test(pathname);
     const isStandaloneUnitPath =
       /\/sunteck-kanaka-units(?:\/|$)/i.test(pathname) ||
       /\/dempo-trade-center(?:\/|$)/i.test(pathname);
@@ -401,7 +403,11 @@ function getUnitInventorySummaryValues(rows = []) {
 
     // Unit routes must stay in the building view even though they live under
     // /overall-st-inventory or /overall-dtc-inventory.
-    if (isNestedSunteckUnitPath || isNestedDempoUnitPath || isStandaloneUnitPath) {
+    if (
+      isNestedSunteckUnitPath ||
+      isNestedDempoUnitPath ||
+      isStandaloneUnitPath
+    ) {
       return "building";
     }
 
@@ -420,7 +426,7 @@ function getUnitInventorySummaryValues(rows = []) {
 
   useEffect(() => {
     //setValue("itemName", selectedAsset?.itemName);
-      setValue(
+    setValue(
       "itemName",
       modalMode === "inventoryEdit"
         ? selectedAsset?.itemId || selectedAsset?.itemName?._id || ""
@@ -434,7 +440,7 @@ function getUnitInventorySummaryValues(rows = []) {
     setValue(
       "remainingOpeningInventoryUnits",
       inventoryRootView === "overall"
-        ? selectedAsset?.remainingOpeningInventoryUnits ?? 0
+        ? (selectedAsset?.remainingOpeningInventoryUnits ?? 0)
         : getUnitAssignedDisplayValue(selectedAsset),
     );
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
@@ -445,11 +451,11 @@ function getUnitInventorySummaryValues(rows = []) {
     );
     setValue(
       "newConsumedUnitValue",
-     // selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
+      // selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
     );
     setValue(
       "remainingNewPurchaseInventoryUnits",
-       selectedAsset?.newRemainingUnitValue ??
+      selectedAsset?.newRemainingUnitValue ??
         selectedAsset?.remainingNewPurchaseInventoryUnits ??
         selectedAsset?.remainingUnits ??
         selectedAsset?.closingInventoryUnits ??
@@ -481,15 +487,15 @@ function getUnitInventorySummaryValues(rows = []) {
       "unitNo",
       inventoryRootView === "overall"
         ? selectedAsset?.unitId ||
-          selectedAsset?.unit?._id ||
-          selectedUnit?._id ||
-          ""
+            selectedAsset?.unit?._id ||
+            selectedUnit?._id ||
+            ""
         : selectedAsset?.unit?.unitNo ||
-          selectedAsset?.unitNo ||
-          selectedUnit?.unitNo ||
-          selectedTabConfig?.unitNo ||
-          defaultUnitNo ||
-          "",
+            selectedAsset?.unitNo ||
+            selectedUnit?.unitNo ||
+            selectedTabConfig?.unitNo ||
+            defaultUnitNo ||
+            "",
     );
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
@@ -517,7 +523,7 @@ function getUnitInventorySummaryValues(rows = []) {
     selectedUnit?.unitNo,
     selectedUnit?._id,
     setValue,
-  ]); 
+  ]);
 
   const openingUnits = useWatch({ control, name: "openingInventoryUnits" });
   const openingUnitPrice = useWatch({ control, name: "openingPerUnitPrice" });
@@ -558,7 +564,7 @@ function getUnitInventorySummaryValues(rows = []) {
     control: updateControl,
     name: "unitNo",
   });
-   const selectedCategoryForUpdate = useWatch({
+  const selectedCategoryForUpdate = useWatch({
     control: updateControl,
     name: "category",
   });
@@ -634,8 +640,7 @@ function getUnitInventorySummaryValues(rows = []) {
         ? remainingNewPurchaseUnits
         : 0;
 
-    const computedNewRemainingUnits =
-      safeBaseRemaining - newConsumedUnits;
+    const computedNewRemainingUnits = safeBaseRemaining - newConsumedUnits;
 
     setValue(
       "remainingNewPurchaseInventoryUnits",
@@ -772,10 +777,12 @@ function getUnitInventorySummaryValues(rows = []) {
 
   const inventoryTableData = useMemo(() => {
     if (!Array.isArray(inventoryData)) return [];
-     if (!overallBuildingTab) return inventoryData;
+    if (!overallBuildingTab) return inventoryData;
 
     const scopedBuildingName =
-      overallBuildingTab === "sunteck" ? "Sunteck Kanaka" : "Dempo Trade Center";
+      overallBuildingTab === "sunteck"
+        ? "Sunteck Kanaka"
+        : "Dempo Trade Center";
     const scopedBuildingKey = normalizeBuildingName(scopedBuildingName);
 
     return inventoryData.filter(
@@ -805,12 +812,12 @@ function getUnitInventorySummaryValues(rows = []) {
   });
 
   useEffect(() => {
-     if (
+    if (
       !["edit", "assign", "inventoryEdit"].includes(modalMode) ||
       !selectedAsset ||
       !inventoryCategories.length
     ) {
-   // if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
+      // if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
       return;
     }
 
@@ -866,7 +873,7 @@ function getUnitInventorySummaryValues(rows = []) {
       if (department?._id) {
         searchParams.set("department", department._id);
       }
-       const activeCategory =
+      const activeCategory =
         modalMode === "inventoryEdit"
           ? selectedCategoryForUpdate
           : selectedCategoryForAdd;
@@ -914,7 +921,7 @@ function getUnitInventorySummaryValues(rows = []) {
 
     return Array.from(uniqueById.values());
   }, [inventoryItems, selectedCategoryForAdd]);
-     const updateItemOptions = useMemo(
+  const updateItemOptions = useMemo(
     () =>
       (inventoryItems || [])
         .filter((item) => item?.isActive)
@@ -925,7 +932,8 @@ function getUnitInventorySummaryValues(rows = []) {
   useEffect(() => {
     if (modalMode !== "inventoryEdit" || !selectedAsset) return;
 
-    const selectedItemId = selectedAsset?.itemId || selectedAsset?.itemName?._id;
+    const selectedItemId =
+      selectedAsset?.itemId || selectedAsset?.itemName?._id;
     const selectedItemName = String(
       selectedAsset?.itemName?.name || selectedAsset?.itemName || "",
     )
@@ -1295,44 +1303,41 @@ function getUnitInventorySummaryValues(rows = []) {
       const payload =
         modalMode === "inventoryEdit"
           ? {
-            category: formData.category,
+              category: formData.category,
               itemName: formData.itemName,
-                buildingName: formData.buildingName?.trim() || "",
+              buildingName: formData.buildingName?.trim() || "",
               openingInventoryUnits: Number(formData.openingInventoryUnits),
               openingPerUnitPrice: Number(formData.openingPerUnitPrice),
               newPurchaseUnits: Number(formData.newPurchaseUnits),
-              newPurchasePerUnitPrice: Number(
-                formData.newPurchasePerUnitPrice,
-              ),
+              newPurchasePerUnitPrice: Number(formData.newPurchasePerUnitPrice),
             }
           : inventoryRootView === "overall"
-          ? {
-              unit: formData.unit,
-              buildingName: formData.buildingName,
-              ...(consumedUnits > 0
-                ? {
-                    consumptions: [
-                      {
-                        quantity: consumedUnits,
-                        source: "newPurchase",
-                      },
-                    ],
-                  }
-                : {}),
-            }
-          : {
-              consumptions: [
-                {
-                  quantity:
-                    Number(formData.newConsumedUnitValue) || 0,
-                  source: "newPurchase",
-                },
-              ],
-            };
+            ? {
+                unit: formData.unit,
+                buildingName: formData.buildingName,
+                ...(consumedUnits > 0
+                  ? {
+                      consumptions: [
+                        {
+                          quantity: consumedUnits,
+                          source: "newPurchase",
+                        },
+                      ],
+                    }
+                  : {}),
+              }
+            : {
+                consumptions: [
+                  {
+                    quantity: Number(formData.newConsumedUnitValue) || 0,
+                    source: "newPurchase",
+                  },
+                ],
+              };
 
       const response = await axios.patch(
         // `/api/inventory/update-inventory/${selectedAsset?._id}`,
-         modalMode === "inventoryEdit"
+        modalMode === "inventoryEdit"
           ? `/api/inventory/edit-inventory/${selectedAsset?._id}`
           : `/api/inventory/update-inventory/${selectedAsset?._id}`,
         payload,
@@ -1397,7 +1402,7 @@ function getUnitInventorySummaryValues(rows = []) {
     setIsModalOpen(true);
   };
 
- const handleEditInventory = (asset) => {
+  const handleEditInventory = (asset) => {
     setSelectedAsset(asset);
     setModalMode("inventoryEdit");
     resetUpdateInventory({
@@ -1406,8 +1411,7 @@ function getUnitInventorySummaryValues(rows = []) {
         ? new Date(asset.dateRaw).toISOString().split("T")[0]
         : currentDate,
       buildingName: asset?.buildingName || "",
-      category:
-        asset?.category?._id || asset?.categoryId || "",
+      category: asset?.category?._id || asset?.categoryId || "",
       itemName: asset?.itemId || asset?.itemName?._id || "",
       openingInventoryUnits: asset?.openingInventoryUnits ?? 0,
       openingPerUnitPrice: asset?.openingPerUnitPrice ?? 0,
@@ -1603,7 +1607,7 @@ function getUnitInventorySummaryValues(rows = []) {
   };
 
   const handleUpdateSubmit = (data) => {
-     if (modalMode === "inventoryEdit") {
+    if (modalMode === "inventoryEdit") {
       updateAsset(data);
       return;
     }
@@ -1717,10 +1721,10 @@ function getUnitInventorySummaryValues(rows = []) {
       hide: inventoryRootView === "overall",
     },
     // {
-      //   field: "consumedOpenInventoryUnits",
-      //   headerName: "Consumed Unit Value",
-      //   cellRenderer: (params) => inrFormat(params.value),
-      // },
+    //   field: "consumedOpenInventoryUnits",
+    //   headerName: "Consumed Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
     // {
     //   field: "remainingInventoryUnits",
     //   headerName: "Remaining Unit Value",
@@ -1749,7 +1753,7 @@ function getUnitInventorySummaryValues(rows = []) {
     {
       field: "actions",
       headerName: "Actions",
-      pinned:"right",
+      pinned: "right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id}
@@ -1903,7 +1907,7 @@ function getUnitInventorySummaryValues(rows = []) {
             {
               label: "Assign",
               onClick: () => {
-                 const recordBuildingName = normalizeBuildingName(
+                const recordBuildingName = normalizeBuildingName(
                   params.data?.buildingName || "",
                 );
                 const matchingBuildingTab = tabOptions.find((tab) =>
@@ -2040,7 +2044,11 @@ function getUnitInventorySummaryValues(rows = []) {
 
         const existing = latestByBuildingItemCategory.get(compositeKey);
         const itemDate = new Date(
-          item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+          item?.createdAt ||
+            item?.dateRaw ||
+            item?.date ||
+            item?.updatedAt ||
+            0,
         );
         const existingDate = existing
           ? new Date(
@@ -2061,12 +2069,8 @@ function getUnitInventorySummaryValues(rows = []) {
         latestByBuildingItemCategory.values(),
       ).sort(
         (a, b) =>
-          new Date(
-            b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0,
-          ) -
-          new Date(
-            a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0,
-          ),
+          new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
+          new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
       );
 
       const linkedInventory = dedupedInventories[0] || null;
@@ -2130,21 +2134,24 @@ function getUnitInventorySummaryValues(rows = []) {
       headerName: "New Assigned Unit",
       minWidth: 180,
       flex: 1,
-      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+      cellRenderer: (params) =>
+        Number(params.value || 0).toLocaleString("en-IN"),
     },
     {
       field: "newConsumedUnitTotal",
       headerName: "New Consumed Unit",
       minWidth: 180,
       flex: 1,
-      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+      cellRenderer: (params) =>
+        Number(params.value || 0).toLocaleString("en-IN"),
     },
     {
       field: "newRemainingUnitTotal",
       headerName: "New Remaining Unit",
       minWidth: 180,
       flex: 1,
-      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+      cellRenderer: (params) =>
+        Number(params.value || 0).toLocaleString("en-IN"),
     },
   ];
 
@@ -2199,7 +2206,7 @@ function getUnitInventorySummaryValues(rows = []) {
               existing?.date ||
               existing?.updatedAt ||
               0,
-      )
+          )
         : null;
 
       if (!existing || itemDate > existingDate) {
@@ -2210,7 +2217,7 @@ function getUnitInventorySummaryValues(rows = []) {
     return Array.from(latestByBuildingItemCategory.values()).sort(
       (a, b) =>
         new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
-      new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+        new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
     );
   }, [inventoryTableData, selectedUnit]);
 
@@ -2371,7 +2378,7 @@ function getUnitInventorySummaryValues(rows = []) {
       field: "action",
       headerName: "Action",
       flex: 0.8,
-      pinned:"right",
+      pinned: "right",
       minWidth: 100,
       cellRenderer: (params) => (
         <ThreeDotMenu
@@ -2425,7 +2432,7 @@ function getUnitInventorySummaryValues(rows = []) {
     {
       field: "action",
       headerName: "Action",
-      pinned:"right",
+      pinned: "right",
       width: 130,
       cellRenderer: (params) => (
         <ThreeDotMenu
@@ -2454,11 +2461,11 @@ function getUnitInventorySummaryValues(rows = []) {
       {inventoryRootView === "overall" && (
         <PageFrame>
           <YearWiseTable
-          //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+            //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
             key={isInventoryLoading ? 0 : overallInventoryRows?.length}
             search={true}
-           // tableTitle="Overall Inventory"
-             tableTitle={
+            // tableTitle="Overall Inventory"
+            tableTitle={
               overallBuildingTab === "sunteck"
                 ? "Overall ST Inventory"
                 : overallBuildingTab === "dempo"
@@ -2467,18 +2474,18 @@ function getUnitInventorySummaryValues(rows = []) {
             }
             hideTitle={true}
             buttonTitle={"Add Inventory"}
-              //  data={selectedUnitInventoryRows || []}
-               data={overallInventoryRows}
-                tableHeight={450}
-                dateColumn={"date"}
-                columns={overallInventoryColumns}
-                handleSubmit={handleAddAsset}
-                exportData
-                exportAllColumns={true}
-                taskExportDateTimeFormatting
-              />
-            </PageFrame>
-          )}
+            //  data={selectedUnitInventoryRows || []}
+            data={overallInventoryRows}
+            tableHeight={450}
+            dateColumn={"date"}
+            columns={overallInventoryColumns}
+            handleSubmit={handleAddAsset}
+            exportData
+            exportAllColumns={true}
+            taskExportDateTimeFormatting
+          />
+        </PageFrame>
+      )}
       {inventoryRootView === "category" && (
         <PageFrame>
           <AgTable
@@ -2561,7 +2568,9 @@ function getUnitInventorySummaryValues(rows = []) {
             <>
               <PageFrame>
                 <YearWiseTable
-                  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+                  key={
+                    isInventoryLoading ? 0 : selectedUnitInventoryRows?.length
+                  }
                   search={true}
                   tableTitle={dynamicInventoryTitle}
                   hideTitle={true}
@@ -2961,15 +2970,15 @@ function getUnitInventorySummaryValues(rows = []) {
             ? "View Details"
             : modalMode === "add"
               ? "Add Inventory"
-               : modalMode === "inventoryEdit"
-              ? "Edit Inventory"
-              : inventoryRootView === "overall"
-                ? "Assign Inventory"
-                : `Edit Inventory - ${
-                    selectedAsset?.unit?.unitNo ||
-                    selectedAsset?.unitNo ||
-                    "Unit"
-                  }`
+              : modalMode === "inventoryEdit"
+                ? "Edit Inventory"
+                : inventoryRootView === "overall"
+                  ? "Assign Inventory"
+                  : `Edit Inventory - ${
+                      selectedAsset?.unit?.unitNo ||
+                      selectedAsset?.unitNo ||
+                      "Unit"
+                    }`
         }
       >
         {["add", "inventoryEdit"].includes(modalMode) && (
@@ -2985,7 +2994,9 @@ function getUnitInventorySummaryValues(rows = []) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Controller
                   name="addedByName"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2998,7 +3009,9 @@ function getUnitInventorySummaryValues(rows = []) {
                 />
                 <Controller
                   name="date"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -3013,7 +3026,9 @@ function getUnitInventorySummaryValues(rows = []) {
                 />
                 <Controller
                   name="buildingName"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{ required: "Building name is required" }}
                   render={({ field }) => (
                     <TextField
@@ -3023,15 +3038,24 @@ function getUnitInventorySummaryValues(rows = []) {
                       fullWidth
                       size="small"
                       className="md:col-span-2"
-                       error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName}
-                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName?.message}
+                      error={
+                        !!(
+                          modalMode === "inventoryEdit" ? updateErrors : errors
+                        ).buildingName
+                      }
+                      helperText={
+                        (modalMode === "inventoryEdit" ? updateErrors : errors)
+                          .buildingName?.message
+                      }
                       disabled={
                         modalMode === "add" &&
                         inventoryRootView === "overall" &&
                         Boolean(overallBuildingTab)
                       }
                     >
-                      {!(inventoryRootView === "overall" && overallBuildingTab) && (
+                      {!(
+                        inventoryRootView === "overall" && overallBuildingTab
+                      ) && (
                         <MenuItem value="" disabled>
                           Select building
                         </MenuItem>
@@ -3061,7 +3085,9 @@ function getUnitInventorySummaryValues(rows = []) {
                 /> */}
                 <Controller
                   name="category"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{ required: "Category required" }}
                   render={({ field }) => (
                     <TextField
@@ -3076,8 +3102,15 @@ function getUnitInventorySummaryValues(rows = []) {
                       size="small"
                       fullWidth
                       select
-                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).category}
-                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).category?.message}
+                      error={
+                        !!(
+                          modalMode === "inventoryEdit" ? updateErrors : errors
+                        ).category
+                      }
+                      helperText={
+                        (modalMode === "inventoryEdit" ? updateErrors : errors)
+                          .category?.message
+                      }
                     >
                       <MenuItem value="">Select category</MenuItem>
                       {inventoryCategories
@@ -3090,9 +3123,11 @@ function getUnitInventorySummaryValues(rows = []) {
                     </TextField>
                   )}
                 />
-               <Controller
+                <Controller
                   name="itemName"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{
                     required: "Item name is required",
                   }}
@@ -3103,11 +3138,21 @@ function getUnitInventorySummaryValues(rows = []) {
                       size="small"
                       fullWidth
                       select
-                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).itemName}
-                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).itemName?.message}
+                      error={
+                        !!(
+                          modalMode === "inventoryEdit" ? updateErrors : errors
+                        ).itemName
+                      }
+                      helperText={
+                        (modalMode === "inventoryEdit" ? updateErrors : errors)
+                          .itemName?.message
+                      }
                     >
                       <MenuItem value="">Select item</MenuItem>
-                      {(modalMode === "inventoryEdit" ? updateItemOptions : itemOptions).map((item) => (
+                      {(modalMode === "inventoryEdit"
+                        ? updateItemOptions
+                        : itemOptions
+                      ).map((item) => (
                         <MenuItem key={item.id} value={item.id}>
                           {item.name}
                         </MenuItem>
@@ -3120,10 +3165,15 @@ function getUnitInventorySummaryValues(rows = []) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="openingInventoryUnits"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{
                     required: "Opening units required",
-                    min: { value: 0, message: "Opening units cannot be negative" },
+                    min: {
+                      value: 0,
+                      message: "Opening units cannot be negative",
+                    },
                   }}
                   render={({ field }) => (
                     <TextField
@@ -3141,7 +3191,9 @@ function getUnitInventorySummaryValues(rows = []) {
 
                 <Controller
                   name="openingPerUnitPrice"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{
                     required: "Opening per unit price required",
                     min: { value: 0, message: "Price cannot be negative" },
@@ -3162,7 +3214,9 @@ function getUnitInventorySummaryValues(rows = []) {
 
                 <Controller
                   name="openingInventoryValue"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -3179,7 +3233,9 @@ function getUnitInventorySummaryValues(rows = []) {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="newPurchaseUnits"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{
                     required: "New purchase units required",
                     min: {
@@ -3194,15 +3250,24 @@ function getUnitInventorySummaryValues(rows = []) {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchaseUnits}
-                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchaseUnits?.message}
+                      error={
+                        !!(
+                          modalMode === "inventoryEdit" ? updateErrors : errors
+                        ).newPurchaseUnits
+                      }
+                      helperText={
+                        (modalMode === "inventoryEdit" ? updateErrors : errors)
+                          .newPurchaseUnits?.message
+                      }
                     />
                   )}
                 />
 
                 <Controller
                   name="newPurchasePerUnitPrice"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   rules={{
                     required: "New per unit price required",
                     min: { value: 0, message: "Price cannot be negative" },
@@ -3214,15 +3279,24 @@ function getUnitInventorySummaryValues(rows = []) {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchasePerUnitPrice}
-                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchasePerUnitPrice?.message}
+                      error={
+                        !!(
+                          modalMode === "inventoryEdit" ? updateErrors : errors
+                        ).newPurchasePerUnitPrice
+                      }
+                      helperText={
+                        (modalMode === "inventoryEdit" ? updateErrors : errors)
+                          .newPurchasePerUnitPrice?.message
+                      }
                     />
                   )}
                 />
 
                 <Controller
                   name="newPurchaseInventoryValue"
-                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  control={
+                    modalMode === "inventoryEdit" ? updateControl : control
+                  }
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -3237,7 +3311,11 @@ function getUnitInventorySummaryValues(rows = []) {
               </div>
 
               <PrimaryButton
-                title={modalMode === "inventoryEdit" ? "Save Changes" : "Add Inventory"}
+                title={
+                  modalMode === "inventoryEdit"
+                    ? "Save Changes"
+                    : "Add Inventory"
+                }
                 className="w-full col-span-2"
                 type="submit"
                 disabled={modalMode === "inventoryEdit" && isUpdatingAsset}
@@ -3246,9 +3324,9 @@ function getUnitInventorySummaryValues(rows = []) {
           </div>
         )}
 
-
-        {modalMode === "view" && selectedAsset && (
-          inventoryRootView === "overall" ? (
+        {modalMode === "view" &&
+          selectedAsset &&
+          (inventoryRootView === "overall" ? (
             <div className="px-2 py-4 space-y-8">
               <div>
                 <div className="font-bold mb-4">Item Information</div>
@@ -3342,7 +3420,8 @@ function getUnitInventorySummaryValues(rows = []) {
                   <DetalisFormatted
                     title="New Purchase Value"
                     detail={`INR ${
-                      inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                      inrFormat(selectedAsset.newPurchaseInventoryValue) ??
+                      "N/A"
                     }`}
                   />
                 </div>
@@ -3397,9 +3476,7 @@ function getUnitInventorySummaryValues(rows = []) {
               <DetalisFormatted
                 title="Unit"
                 detail={
-                  selectedAsset.unit?.unitNo ||
-                  selectedAsset.unitNo ||
-                  "N/A"
+                  selectedAsset.unit?.unitNo || selectedAsset.unitNo || "N/A"
                 }
               />
               <br />
@@ -3444,10 +3521,9 @@ function getUnitInventorySummaryValues(rows = []) {
                 detail={selectedAsset.addedByName || "N/A"}
               />
             </div>
-          )
-        )}
+          ))}
 
-         {["edit", "assign"].includes(modalMode) && (
+        {["edit", "assign"].includes(modalMode) && (
           <div>
             <form
               onSubmit={handleUpdate(handleUpdateSubmit)}
@@ -3503,7 +3579,7 @@ function getUnitInventorySummaryValues(rows = []) {
                       ? { required: "Unit No is required" }
                       : undefined
                   }
-                  render={({ field }) => (
+                  render={({ field }) =>
                     inventoryRootView === "overall" ? (
                       <FormControl
                         fullWidth
@@ -3543,7 +3619,7 @@ function getUnitInventorySummaryValues(rows = []) {
                         disabled
                       />
                     )
-                  )}
+                  }
                 />
                 <Controller
                   name="category"
