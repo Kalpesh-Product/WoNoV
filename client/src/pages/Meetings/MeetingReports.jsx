@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { Chip, CircularProgress } from "@mui/material";
@@ -153,6 +153,7 @@ const MeetingReports = () => {
         throw error;
       }
     },
+    placeholderData: keepPreviousData,
   });
 
   const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
@@ -386,7 +387,7 @@ const MeetingReports = () => {
               exportData
               taskExportDateTimeFormatting
               dateColumn={"date"}
-               initialDateRange={initialMeetingDateRange}
+              initialDateRange={meetingDateRange}
               onDateFilterChange={handleMeetingDateFilterChange}
               tableTitle={"Meetings Reports"}
               data={[

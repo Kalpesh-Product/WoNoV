@@ -188,6 +188,7 @@ const YearWiseTable = ({
 
   const filteredData = useMemo(() => {
     if (
+      serverPagination ||
       showDateNavigator ||
       !dateColumn ||
       dateRange.length === 0 ||
@@ -206,7 +207,7 @@ const YearWiseTable = ({
 
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
-  }, [data, dateColumn, dateRange, showDateNavigator]);
+  }, [data, dateColumn, dateRange, serverPagination, showDateNavigator]);
   // }, [data, dateColumn, dateRange]);
 
   useEffect(() => {
@@ -287,7 +288,7 @@ const YearWiseTable = ({
   const finalTableData = useMemo(() => {
     return filteredData.map((item, index) => ({
       ...item,
-      srNo: index + 1,
+      srNo: item.srNo ?? index + 1,
       date: humanDate(item[dateColumn]),
     }));
   }, [filteredData, dateColumn]);
