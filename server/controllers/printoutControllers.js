@@ -1,20 +1,14 @@
 const mongoose = require("mongoose");
 const Printout = require("./../models/Printout");
 const Company = require("../models/hr/Company");
+const buildDateFilter = require("../utils/dateFilter");
+const {
+  fetchPrintoutsService,
+  populatePrintout,
+} = require("../services/printoutService");
 
 const clientModels = ["CoworkingClient", "Company"];
 const requestedByModels = ["CoworkingMember", "UserData"];
-const populatePrintout = [
-  { path: "takenBy", select: "firstName lastName" },
-  { path: "location", select: "buildingName" },
-  {
-    path: "unit",
-    select: "unitName unitNo",
-  },
-  { path: "client", select: "clientName companyName name" },
-  { path: "requestedBy", select: "employeeName firstName lastName name email" },
-  { path: "department", select: "departmentId name" },
-];
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
 
@@ -240,6 +234,24 @@ const getPrintouts = async (req, res) => {
       toDate,
     } = req.query;
     const filters = {};
+    const requestDateFilter =
+      req.query?.dateFilter ||
+      req.query?.filters ||
+      {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate ||
+          fromDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate ||
+          toDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
 
     const filterErrors = [];
     [
@@ -258,26 +270,27 @@ const getPrintouts = async (req, res) => {
       }
     });
 
-    if (fromDate || toDate) {
-      filters.takenAt = {};
-      if (fromDate) {
-        const parsedFromDate = new Date(fromDate);
+    let dateFilter;
+    if (hasDateFilter) {
+      if (requestDateFilter.startDate) {
+        const parsedFromDate = new Date(requestDateFilter.startDate);
         if (isNaN(parsedFromDate.getTime())) {
-          filterErrors.push("Invalid fromDate provided");
-        } else {
-          filters.takenAt.$gte = parsedFromDate;
+          filterErrors.push("Invalid start date provided");
         }
       }
-      if (toDate) {
-        const parsedToDate = new Date(toDate);
+      if (requestDateFilter.endDate) {
+        const parsedToDate = new Date(requestDateFilter.endDate);
         if (isNaN(parsedToDate.getTime())) {
-          filterErrors.push("Invalid toDate provided");
-        } else {
-          filters.takenAt.$lte = parsedToDate;
+          filterErrors.push("Invalid end date provided");
         }
       }
-      if (!Object.keys(filters.takenAt).length) {
-        delete filters.takenAt;
+
+      if (!filterErrors.length) {
+        dateFilter = buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "takenAt",
+        });
       }
     }
 
@@ -288,15 +301,17 @@ const getPrintouts = async (req, res) => {
       });
     }
 
-    const printouts = await Printout.find(filters)
-      .populate(populatePrintout)
-      .sort({ takenAt: -1 })
-      .lean()
-      .exec();
+    const { printouts, pagination } = await fetchPrintoutsService({
+      filters,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(dateFilter && { dateFilter }),
+    });
 
     return res.status(200).json({
       message: "Printouts fetched successfully",
       printouts,
+      ...(pagination && { pagination }),
     });
   } catch (error) {
     return res.status(500).json({

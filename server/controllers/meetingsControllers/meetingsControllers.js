@@ -636,7 +636,7 @@ const getAvaliableUsers = async (req, res, next) => {
 };
 
 async function getMeetings(req, res) {
-  const { user, company, roles, departments = [] } = req;
+  const { user, company, roles, departments = [], type = "" } = req;
   const requestFilters = req.query?.dateFilter ||
     req.query?.filters || {
       startDate:
@@ -657,6 +657,7 @@ async function getMeetings(req, res) {
     roles,
     user,
     company,
+    type,
     page: req.query?.page,
     limit: req.query?.limit,
     ...(hasDateFilter && {
