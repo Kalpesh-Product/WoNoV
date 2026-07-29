@@ -81,12 +81,11 @@ const fetchMeetingReportService = async ({
     const meetingQuery = {
       company,
       ...(dateFilter?.startDate && { startDate: dateFilter.startDate }),
-      ...(isReport &&
-        ["internal", "external"].includes(meetingTypeFilter) && {
-          meetingType:
-            meetingTypeFilter.charAt(0).toUpperCase() +
-            meetingTypeFilter.slice(1),
-        }),
+      ...(["internal", "external"].includes(meetingTypeFilter) && {
+        meetingType:
+          meetingTypeFilter.charAt(0).toUpperCase() +
+          meetingTypeFilter.slice(1),
+      }),
       ...(!canViewAllMeetings &&
         currentUserId && {
           $or: [
