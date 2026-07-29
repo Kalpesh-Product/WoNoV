@@ -54,6 +54,11 @@ const YearWiseTable = ({
   initialDateRange,
   taskExportDateTimeFormatting = false,
   preserveCurrentMonthRange = false,
+  serverPagination = false,
+  paginationPageSize,
+  paginationPage = 1,
+  paginationTotal = 0,
+  onPaginationPageChange,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -554,6 +559,12 @@ const YearWiseTable = ({
             onSelectionChange={(rows) => setSelectedRows(rows)}
             batchButton={batchButton}
             hideTitle={hideTitle}
+            isPagination={serverPagination}
+            serverPagination={serverPagination}
+            paginationPageSize={paginationPageSize}
+            paginationPage={paginationPage}
+            paginationTotal={paginationTotal}
+            onPaginationPageChange={onPaginationPageChange}
           />
         ) : (
           <div

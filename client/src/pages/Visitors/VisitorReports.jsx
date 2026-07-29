@@ -1,7 +1,7 @@
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
@@ -47,6 +47,11 @@ const formatTimeValue = (value) => {
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+   const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
   const axios = useAxiosPrivate();
 
   const initialVisitorDateRange = useMemo(
@@ -60,6 +65,7 @@ const VisitorReports = () => {
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,
   );
+    const visitorDateRangeRef = useRef(initialVisitorDateRange);
   const visitorFilters = useMemo(
     () => ({
       startDate: visitorDateRange?.startDate
@@ -74,22 +80,37 @@ const VisitorReports = () => {
   const handleVisitorDateFilterChange = useCallback(({ selectedRange }) => {
     if (!selectedRange?.startDate || !selectedRange?.endDate) return;
 
-    setVisitorDateRange((currentRange) => {
-      const currentStart = currentRange?.startDate
-        ? new Date(currentRange.startDate).getTime()
-        : null;
-      const currentEnd = currentRange?.endDate
-        ? new Date(currentRange.endDate).getTime()
-        : null;
-      const nextStart = new Date(selectedRange.startDate).getTime();
-      const nextEnd = new Date(selectedRange.endDate).getTime();
+    // setVisitorDateRange((currentRange) => {
+    //   const currentStart = currentRange?.startDate
+    //     ? new Date(currentRange.startDate).getTime()
+    //     : null;
+    //   const currentEnd = currentRange?.endDate
+    //     ? new Date(currentRange.endDate).getTime()
+    //     : null;
+    //   const nextStart = new Date(selectedRange.startDate).getTime();
+    //   const nextEnd = new Date(selectedRange.endDate).getTime();
 
-      if (currentStart === nextStart && currentEnd === nextEnd) {
-        return currentRange;
-      }
+    //   if (currentStart === nextStart && currentEnd === nextEnd) {
+    //     return currentRange;
+    //   }
 
-      return selectedRange;
-    });
+    //   return selectedRange;
+    // });
+     const currentRange = visitorDateRangeRef.current;
+    const currentStart = currentRange?.startDate
+      ? new Date(currentRange.startDate).getTime()
+      : null;
+    const currentEnd = currentRange?.endDate
+      ? new Date(currentRange.endDate).getTime()
+      : null;
+    const nextStart = new Date(selectedRange.startDate).getTime();
+    const nextEnd = new Date(selectedRange.endDate).getTime();
+
+    if (currentStart === nextStart && currentEnd === nextEnd) return;
+
+    visitorDateRangeRef.current = selectedRange;
+    setVisitorDateRange(selectedRange);
+    setPagination((current) => ({ ...current, page: 1 }));
   }, []);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
@@ -97,14 +118,26 @@ const VisitorReports = () => {
       "visitor-reports",
       visitorFilters.startDate,
       visitorFilters.endDate,
+       pagination.page,
+      pagination.limit,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
         params: {
           filters: visitorFilters,
+           page: pagination.page,
+          limit: pagination.limit,
         },
       });
-      return response.data;
+      const responsePagination = response.data.pagination || response.data;
+
+      setPagination((current) => ({
+        page: Number(responsePagination.page) || current.page,
+        limit: Number(responsePagination.limit) || current.limit,
+        total: Number(responsePagination.total) || 0,
+      }));
+
+      return response.data.data || [];
     },
   });
 
@@ -286,7 +319,7 @@ const VisitorReports = () => {
     const unitName = visitor?.unit?.unitName || visitor?.unit || "-";
 
     return {
-      srNo: index + 1,
+      srNo: (pagination.page - 1) * pagination.limit + index + 1,
       firstName: visitor.firstName || "-",
       lastName: visitor.lastName || "-",
       name:
@@ -385,6 +418,13 @@ const VisitorReports = () => {
             data={rows}
             columns={meetingReportsColumn}
             loading={isVisitorsData}
+             serverPagination
+            paginationPageSize={pagination.limit}
+            paginationPage={pagination.page}
+            paginationTotal={pagination.total}
+            onPaginationPageChange={(page) =>
+              setPagination((current) => ({ ...current, page }))
+            }
           />
         </div>
       </PageFrame>

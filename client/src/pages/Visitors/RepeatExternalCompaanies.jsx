@@ -24,6 +24,11 @@ const RepeatExternalCompaanies = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] =
     useState(false);
+const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
@@ -55,8 +60,24 @@ const RepeatExternalCompaanies = () => {
   const fetchRepeatExternalCompanies = useCallback(async () => {
     setLoading(true);
     try {
-      const visitorsResponse = await axios.get("/api/visitors/fetch-visitors?type=day-pass&page=1&limit=10");
+      //const visitorsResponse = await axios.get("/api/visitors/fetch-visitors?type=day-pass&page=1&limit=10");
+       const visitorsResponse = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          type: "day-pass",
+          visitorFlag: "Client",
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
       const visitors = visitorsResponse.data.data || [];
+       const responsePagination =
+        visitorsResponse.data.pagination || visitorsResponse.data;
+
+      setPagination((current) => ({
+        page: Number(responsePagination.page) || current.page,
+        limit: Number(responsePagination.limit) || current.limit,
+        total: Number(responsePagination.total) || 0,
+      }));
       console.log("Fetched visitors:", visitors);
 
       const dayPassVisitors = visitors.filter((visitor) => {
@@ -81,7 +102,7 @@ const RepeatExternalCompaanies = () => {
     } finally {
       setLoading(false);
     }
-  }, [axios]);
+  }, [axios, pagination.page, pagination.limit]);
 
   useEffect(() => {
     fetchRepeatExternalCompanies();
@@ -91,7 +112,7 @@ const RepeatExternalCompaanies = () => {
     () =>
       repeatExternalCompanies.map((item, index) => ({
         ...item,
-        srNo: index + 1,
+        srNo: (pagination.page - 1) * pagination.limit + index + 1,
         mongoId: item._id,
         visitorName:
           `${item.firstName || ""} ${item.lastName || ""}`.trim() || "N/A",
@@ -108,7 +129,7 @@ const RepeatExternalCompaanies = () => {
         unitId:
           item?.unit?._id || (typeof item?.unit === "string" ? item.unit : ""),
       })),
-    [repeatExternalCompanies],
+    [repeatExternalCompanies, pagination.page, pagination.limit], 
   );
 
   const openRepeatClientModal = useCallback(
@@ -229,8 +250,14 @@ const RepeatExternalCompaanies = () => {
             tableTitle="REPEAT EXTERNAL COMPANIES"
             data={tableData}
             columns={columns}
-            paginationPageSize={10}
+          paginationPageSize={pagination.limit}
             isPagination={true}
+            serverPagination
+            paginationPage={pagination.page}
+            paginationTotal={pagination.total}
+            onPaginationPageChange={(page) =>
+              setPagination((current) => ({ ...current, page }))
+            }
           />
         )}
       </PageFrame>
