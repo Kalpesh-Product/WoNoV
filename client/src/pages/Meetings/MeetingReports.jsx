@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import AgTable from "../../components/AgTable";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { Chip, CircularProgress } from "@mui/material";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import MuiModal from "../../components/MuiModal";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -19,6 +19,23 @@ import StatusChip from "../../components/StatusChip";
 import { inrFormat } from "../../utils/currencyFormat";
 import { useSearchParams } from "react-router-dom";
 
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
+
+
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -26,6 +43,58 @@ const MeetingReports = () => {
   const sourceFilter = searchParams.get("source");
   const [openModal, setOpenModal] = useState(false);
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  // const [pagination, setPagination] = useState({
+  //   page: 1,
+  //   limit: 10,
+  //   total: 0,
+  // });
+ const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
+  const initialMeetingDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [meetingDateRange, setMeetingDateRange] = useState(
+    initialMeetingDateRange,
+  );
+  const meetingDateRangeRef = useRef(initialMeetingDateRange);
+  const meetingFilters = useMemo(
+    () => ({
+      startDate: meetingDateRange?.startDate
+        ? toUtcDayBoundary(meetingDateRange.startDate)
+        : undefined,
+      endDate: meetingDateRange?.endDate
+        ? toUtcDayBoundary(meetingDateRange.endDate, true)
+        : undefined,
+    }),
+    [meetingDateRange],
+  );
+  const handleMeetingDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    const currentRange = meetingDateRangeRef.current;
+    const currentStart = currentRange?.startDate
+      ? new Date(currentRange.startDate).getTime()
+      : null;
+    const currentEnd = currentRange?.endDate
+      ? new Date(currentRange.endDate).getTime()
+      : null;
+    const nextStart = new Date(selectedRange.startDate).getTime();
+    const nextEnd = new Date(selectedRange.endDate).getTime();
+
+    if (currentStart === nextStart && currentEnd === nextEnd) return;
+
+    meetingDateRangeRef.current = selectedRange;
+    setMeetingDateRange(selectedRange);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const { isTop } = useTopDepartment({
     additionalTopUserIds: ["67b83885daad0f7bab2f1864"],
     additionalTopDepartmentIds: [
@@ -38,16 +107,53 @@ const MeetingReports = () => {
     isPending: isMeetingsPending,
     error,
   } = useQuery({
-    queryKey: ["meetings"],
+    // queryKey: ["meetings", pagination.page, pagination.limit],
+     queryKey: [
+      "meetings",
+      meetingFilters.startDate,
+      meetingFilters.endDate,
+      pagination.page,
+      pagination.limit,
+    ],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/meetings/get-meetings");
-        return response.data;
+        //  const response = await axios.get("/api/meetings/get-meetings", {
+        //   params: {
+        //     page: pagination.page,
+        //     limit: pagination.limit,
+        //   },
+        // });
+        // const responsePagination = response.data.pagination || response.data;
+
+        // setPagination((current) => ({
+        //   page: Number(responsePagination.page) || current.page,
+        //   limit: Number(responsePagination.limit) || current.limit,
+        //   total: Number(responsePagination.total) || 0,
+        // }));
+
+        // return response.data.data || [];
+          const response = await axios.get("/api/meetings/get-meetings", {
+          params: {
+            filters: meetingFilters,
+            page: pagination.page,
+            limit: pagination.limit,
+          },
+        });
+        const responsePagination = response.data.pagination || response.data;
+
+        setPagination((current) => ({
+          page: Number(responsePagination.page) || current.page,
+          limit: Number(responsePagination.limit) || current.limit,
+          total: Number(responsePagination.total) || 0,
+        }));
+
+        return response.data.data || [];
       } catch (error) {
         toast.error("Failed to fetch meetings");
         throw error;
       }
     },
+    placeholderData: keepPreviousData,
   });
 
   const loggedDeptIds = auth.user?.departments?.map((d) => d._id) || [];
@@ -281,11 +387,14 @@ const MeetingReports = () => {
               exportData
               taskExportDateTimeFormatting
               dateColumn={"date"}
+              initialDateRange={meetingDateRange}
+              onDateFilterChange={handleMeetingDateFilterChange}
               tableTitle={"Meetings Reports"}
               data={[
                 ...displayMeetings.map((item, index) => {
                   return {
-                    srNo: index + 1,
+                     srNo:
+                      (pagination.page - 1) * pagination.limit + index + 1,
                     id: index + 1,
                     client:
                       item?.company?.companyName ||
@@ -356,6 +465,13 @@ const MeetingReports = () => {
                 }),
               ]}
               columns={meetingReportsColumn}
+              serverPagination
+              paginationPageSize={pagination.limit}
+              paginationPage={pagination.page}
+              paginationTotal={pagination.total}
+              onPaginationPageChange={(page) =>
+                setPagination((current) => ({ ...current, page }))
+              }
             />
           ) : (
             <CircularProgress />

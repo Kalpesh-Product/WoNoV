@@ -67,6 +67,14 @@ const roomSchema = new mongoose.Schema({
   perHourGstPrice: {
     type: Number,
   },
+  bookingLockToken: {
+    type: String,
+    select: false,
+  },
+  bookingLockExpiresAt: {
+    type: Date,
+    select: false,
+  },
 });
 
 const Room = mongoose.model("Room", roomSchema);

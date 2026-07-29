@@ -141,6 +141,11 @@ const ConvertInternalVisitors = () => {
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+   const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
 
   const {
     control,
@@ -247,14 +252,31 @@ const ConvertInternalVisitors = () => {
   }, [selectedCountry, selectedState, stateOptions]);
 
   const { data: visitorsData = [], isPending } = useQuery({
-    queryKey: ["mix-bag-convert-internal-visitors", "Visitor"],
+    // queryKey: ["mix-bag-convert-internal-visitors", "Visitor"],
+     queryKey: [
+      "mix-bag-convert-internal-visitors",
+      "Visitor",
+      pagination.page,
+      pagination.limit,
+    ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
         params: {
           visitorFlag: "Visitor", // Fetch only internal visitors
+           type: "internal",
+          page: pagination.page,
+          limit: pagination.limit,
         },
       });
-      return response.data;
+       const responsePagination = response.data.pagination || response.data;
+
+      setPagination((current) => ({
+        page: Number(responsePagination.page) || current.page,
+        limit: Number(responsePagination.limit) || current.limit,
+        total: Number(responsePagination.total) || 0,
+      }));
+
+      return response.data.data || [];
     },
   });
 
@@ -273,7 +295,7 @@ const ConvertInternalVisitors = () => {
           return !parsedDate.startOf("day").isAfter(dayjs().startOf("day"));
         })
         .map((visitor, index) => ({
-          srNo: index + 1,
+          srNo: (pagination.page - 1) * pagination.limit + index + 1,
           id: visitor._id,
           visitorName:
             `${visitor?.firstName || ""} ${visitor?.lastName || ""}`.trim() ||
@@ -281,7 +303,7 @@ const ConvertInternalVisitors = () => {
           company: resolveCompany(visitor),
           raw: visitor,
         })),
-    [visitorsData],
+    [visitorsData, pagination.page, pagination.limit],
   );
 
   const { mutate: convertVisitor, isPending: isConverting } = useMutation({
@@ -460,6 +482,14 @@ const ConvertInternalVisitors = () => {
           tableTitle="Convert Internal Visitors To Clients"
           data={rows}
           columns={columns}
+          paginationPageSize={pagination.limit}
+          isPagination
+          serverPagination
+          paginationPage={pagination.page}
+          paginationTotal={pagination.total}
+          onPaginationPageChange={(page) =>
+            setPagination((current) => ({ ...current, page }))
+          }
         />
       </PageFrame>
 

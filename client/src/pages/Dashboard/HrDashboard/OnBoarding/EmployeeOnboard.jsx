@@ -215,8 +215,8 @@ const EmployeeOnboard = () => {
 
       toast.success(
         response?.message
-          ? `${response.message}. Default password: ${passwordPreview}`
-          : `Employee onboarded successfully. Default password: ${passwordPreview}`,
+          ? `${response.message}`
+          : `Employee onboarded successfully`,
       );
       reset();
       navigate("/app/dashboard/HR-dashboard/employee/employee-list", {
@@ -1189,10 +1189,17 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="Payroll Batch"
+                       select
                       fullWidth
                       helperText={errors?.payrollBatch?.message}
                       error={!!errors.payrollBatch}
-                    />
+                    >
+                      <MenuItem value="" disabled>
+                        Select Payroll Batch
+                      </MenuItem>
+                      <MenuItem value="yes">Yes</MenuItem>
+                      <MenuItem value="no">No</MenuItem>
+                    </TextField>
                   )}
                 />
 

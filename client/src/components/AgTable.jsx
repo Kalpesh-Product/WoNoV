@@ -8,7 +8,7 @@ import React, {
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import { TextField, MenuItem, Chip } from "@mui/material";
+import { TextField, MenuItem, Chip, Pagination } from "@mui/material";
 import MuiAside from "./MuiAside";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
@@ -42,6 +42,11 @@ const AgTableComponent = React.memo(
     hideHeaderDivider,
     tableRef,
     onSelectionChange,
+    isPagination = false,
+    serverPagination,
+    paginationPage = 1,
+    paginationTotal = 0,
+    onPaginationPageChange,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -441,9 +446,10 @@ const AgTableComponent = React.memo(
             rowData={filteredData}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
-            pagination={false}
+           pagination={isPagination && !serverPagination}
             isRowSelectable={isRowSelectable}
             paginationPageSize={paginationPageSize}
+           // paginationPageSize={false}
             suppressCellSelection={false}
             enableCellTextSelection={true}
             rowHeight={50}
@@ -456,9 +462,27 @@ const AgTableComponent = React.memo(
             rowBuffer={20} // ✅ Defines how many extra rows to render outside viewport
             cacheBlockSize={paginationPageSize} // ✅ Controls how many rows to fetch per block
             suppressRowVirtualization={false} // ✅ Ensures row virtualization is active
-            suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
+            suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active     
           />
         </div>
+             {serverPagination && paginationTotal > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">
+            <span className="font-pregular text-sm text-gray-600">
+              {`${(paginationPage - 1) * paginationPageSize + 1}-${Math.min(
+                paginationPage * paginationPageSize,
+                paginationTotal,
+              )} of ${paginationTotal}`}
+            </span>
+            <Pagination
+              page={paginationPage}
+              count={Math.ceil(paginationTotal / paginationPageSize)}
+              onChange={(_, nextPage) => onPaginationPageChange?.(nextPage)}
+              color="primary"
+              showFirstButton
+              showLastButton
+            />
+          </div>
+        )}
 
         {/* Floating Action Button */}
         {/* {selectedRows.length > 0 && isTableInView && (

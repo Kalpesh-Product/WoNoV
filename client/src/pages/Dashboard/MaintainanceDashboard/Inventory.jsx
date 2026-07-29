@@ -4,7 +4,15 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { Box, MenuItem, TextField } from "@mui/material";
+import {
+  Box,
+  FormControl,
+  FormHelperText,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
+} from "@mui/material";
 import { toast } from "sonner";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -21,18 +29,85 @@ import formatDateTime from "../../../utils/formatDateTime";
 import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 
-const Inventory = ({ forcedBuildingTab = null }) => {
-  const normalizeUnitNo = (value) =>
-    String(value || "")
-      .trim()
-      .toUpperCase()
-      .replace(/^ST\s*/i, "")
-      .replace(/\s+/g, " ");
+const normalizeUnitNo = (value) =>
+  String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/^ST\s*/i, "")
+    .replace(/\s+/g, " ");
+
+const normalizeBuildingName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\bunits?\b/g, "")
+    .replace(/\btrade centre\b/g, "trade center")
+    .replace(/\s+/g, " ")
+    .trim();
+const isMongoObjectId = (value) => /^[a-f\d]{24}$/i.test(String(value || ""));
+function getUnitAssignedDisplayValue(inventory) {
+  if (!inventory) return 0;
+
+  // Use the allocation recorded on this row. A unit-consumption row stores
+  // zero, so its closing balance changes without appearing as a new assign.
+  if (inventory.assignedUnits !== undefined && inventory.assignedUnits !== null) {
+    return Number(inventory.assignedUnits) || 0;
+  }
+
+  const hasConsumption = Array.isArray(inventory.consumptions)
+    ? inventory.consumptions.length > 0
+    : false;
+
+  if (hasConsumption) return 0;
+
+  const currentRemaining = Number(
+    inventory.newRemainingUnitValue ??
+      inventory.remainingNewPurchaseInventoryUnits ??
+      inventory.remainingUnits ??
+      inventory.closingInventoryUnits ??
+      0,
+  );
+  const previousRemaining = Number(
+    inventory.lastRemainingUnitValue ??
+      inventory.remainingOpeningInventoryUnits ??
+      0,
+  );
+
+  const assignedValue = currentRemaining - previousRemaining;
+  return assignedValue > 0 ? assignedValue : currentRemaining || 0;
+}
+
+function getUnitInventorySummaryValues(rows = []) {
+  const summaryRows = Array.isArray(rows) ? rows : [];
+
+  return summaryRows.reduce(
+    (acc, row) => {
+      acc.assigned += Number(getUnitAssignedDisplayValue(row) || 0);
+      acc.consumed += Number(
+        row?.newConsumedUnitValue ??
+          row?.consumedNewPurchaseInventoryUnits ??
+          row?.totalConsumed ??
+          0,
+      );
+      acc.remaining += Number(
+        row?.newRemainingUnitValue ??
+          row?.remainingNewPurchaseInventoryUnits ??
+          row?.closingInventoryUnits ??
+          0,
+      );
+      return acc;
+    },
+    { assigned: 0, consumed: 0, remaining: 0 },
+  );
+}
+
+// const Inventory = ({ forcedBuildingTab = null }) => {
+  const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   //const { unitNo: unitNoParam } = useParams();
-  const { unitNo: unitNoParam, inventoryTab: inventoryTabParam } = useParams();
+  const { unitNo: unitNoParam } = useParams();
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
     [auth?.user?.permissions?.permissions],
@@ -63,26 +138,37 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     "/app/dashboard/IT-dashboard/inventory",
   );
 
+  const isCafeInventoryPath = location.pathname.includes(
+    "/app/dashboard/cafe-dashboard/inventory",
+  );
+
   const inventoryTabPermissions = useMemo(() => {
     if (isAdminInventoryPath) {
       return {
-        sunteck: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS.value,
-        dempo: PERMISSIONS.ADMIN_INVENTORY_DEMPO_UNITS.value,
+        sunteck: PERMISSIONS.ADMIN_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.ADMIN_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
       };
     }
 
     if (isItInventoryPath) {
       return {
-        sunteck: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS.value,
-        dempo: PERMISSIONS.IT_INVENTORY_DEMPO_UNITS.value,
+        sunteck: PERMISSIONS.IT_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.IT_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
+      };
+    }
+
+    if (isCafeInventoryPath) {
+      return {
+        sunteck: PERMISSIONS.CAFE_INVENTORY_SUNTECK_UNITS_TABS.value,
+        dempo: PERMISSIONS.CAFE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
       };
     }
 
     return {
-      sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS.value,
-      dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_UNITS.value,
+      sunteck: PERMISSIONS.MAINTENANCE_INVENTORY_SUNTECK_UNITS_TABS.value,
+      dempo: PERMISSIONS.MAINTENANCE_INVENTORY_DEMPO_TRADE_CENTRE_UNITS_TABS.value,
     };
-  }, [isAdminInventoryPath, isItInventoryPath]);
+  }, [isAdminInventoryPath, isCafeInventoryPath, isItInventoryPath]);
 
   const canViewSunteckUnits = userPermissions.includes(
     inventoryTabPermissions.sunteck,
@@ -284,72 +370,62 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     return "";
   }, [selectedBuildingTab]);
 
+  const scopedOverallBuildingName = useMemo(() => {
+    if (overallBuildingTab === "sunteck") return "Sunteck Kanaka";
+    if (overallBuildingTab === "dempo") return "Dempo Trade Center";
+    return "";
+  }, [overallBuildingTab]);
+
   const selectedTabConfig = useMemo(
     () => tabOptions.find((tab) => tab.key === selectedBuildingTab),
     [selectedBuildingTab, tabOptions],
   );
 
-  const unitTabPermissions = useMemo(() => {
-    if (isAdminInventoryPath) {
-      return {
-        category: PERMISSIONS.ADMIN_INVENTORY_CATEGORY_TAB.value,
-        item: PERMISSIONS.ADMIN_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.ADMIN_INVENTORY_LIST_TAB.value,
-      };
+  const inventoryRootView = useMemo(() => {
+    const pathname = location.pathname.toLowerCase();
+
+    const isCategoryPath = pathname.endsWith("/category");
+    const isItemPath = pathname.endsWith("/item");
+    const isNestedSunteckUnitPath = /\/overall-st-inventory\/sunteck-kanaka-units(?:\/|$)/i.test(
+      pathname,
+    );
+    const isNestedDempoUnitPath = /\/overall-dtc-inventory\/dempo-trade-center(?:\/|$)/i.test(
+      pathname,
+    );
+    const isStandaloneUnitPath =
+      /\/sunteck-kanaka-units(?:\/|$)/i.test(pathname) ||
+      /\/dempo-trade-center(?:\/|$)/i.test(pathname);
+
+    if (!unitNoParam && isCategoryPath) return "category";
+    if (!unitNoParam && isItemPath) return "item";
+
+    // Unit routes must stay in the building view even though they live under
+    // /overall-st-inventory or /overall-dtc-inventory.
+    if (isNestedSunteckUnitPath || isNestedDempoUnitPath || isStandaloneUnitPath) {
+      return "building";
     }
 
-    if (isItInventoryPath) {
-      return {
-        category: PERMISSIONS.IT_INVENTORY_CATEGORY_TAB.value,
-        item: PERMISSIONS.IT_INVENTORY_ITEM_TAB.value,
-        inventory: PERMISSIONS.IT_INVENTORY_LIST_TAB.value,
-      };
+    if (/\/overall(?:-st|-dtc)?-inventory(?:\/|$)/i.test(pathname)) {
+      return "overall";
     }
 
-    return {
-      category: PERMISSIONS.MAINTENANCE_INVENTORY_CATEGORY_TAB.value,
-      item: PERMISSIONS.MAINTENANCE_INVENTORY_ITEM_TAB.value,
-      inventory: PERMISSIONS.MAINTENANCE_INVENTORY_LIST_TAB.value,
-    };
-  }, [isAdminInventoryPath, isItInventoryPath]);
-
-  const unitTabOptions = useMemo(
-    () =>
-      [
-        {
-          key: "category",
-          path: "category",
-          label: "Category",
-          permission: unitTabPermissions.category,
-        },
-        {
-          key: "item",
-          path: "item",
-          label: "Item",
-          permission: unitTabPermissions.item,
-        },
-        {
-          key: "inventory",
-          path: "item-inventory",
-          label: "Inventory",
-          permission: unitTabPermissions.inventory,
-        },
-      ].filter((tab) => userPermissions.includes(tab.permission)),
-    [unitTabPermissions, userPermissions],
-  );
-
-  const defaultUnitTabPath = unitTabOptions[0]?.path || "null";
-  const activeUnitTab =
-    unitTabOptions.find(
-      (tab) =>
-        tab.path === inventoryTabParam ||
-        (tab.key === "inventory" && inventoryTabParam === "inventory"),
-    )?.key ||
-    unitTabOptions[0]?.key ||
-    "null";
+    return "building";
+  }, [location.pathname, unitNoParam]);
 
   useEffect(() => {
-    setValue("itemName", selectedAsset?.itemName);
+    if (inventoryRootView !== "building") {
+      setSelectedUnit(null);
+    }
+  }, [inventoryRootView]);
+
+  useEffect(() => {
+    //setValue("itemName", selectedAsset?.itemName);
+      setValue(
+      "itemName",
+      modalMode === "inventoryEdit"
+        ? selectedAsset?.itemId || selectedAsset?.itemName?._id || ""
+        : selectedAsset?.itemName,
+    );
     setValue("department", selectedAsset?.department);
     setValue("openingInventoryUnits", selectedAsset?.openingInventoryUnits);
     setValue("openingPerUnitPrice", selectedAsset?.openingPerUnitPrice);
@@ -357,7 +433,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue("lastConsumed", selectedAsset?.lastConsumed ?? "");
     setValue(
       "remainingOpeningInventoryUnits",
-      selectedAsset?.remainingOpeningInventoryUnits ?? 0,
+      inventoryRootView === "overall"
+        ? selectedAsset?.remainingOpeningInventoryUnits ?? 0
+        : getUnitAssignedDisplayValue(selectedAsset),
     );
     setValue("newPurchaseUnits", selectedAsset?.newPurchaseUnits);
     setValue("newPurchasePerUnitPrice", selectedAsset?.newPurchasePerUnitPrice);
@@ -367,11 +445,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     );
     setValue(
       "newConsumedUnitValue",
-      selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
+     // selectedAsset?.consumedNewPurchaseInventoryUnits ?? "",
     );
     setValue(
       "remainingNewPurchaseInventoryUnits",
-      selectedAsset?.remainingNewPurchaseInventoryUnits ?? 0,
+       selectedAsset?.newRemainingUnitValue ??
+        selectedAsset?.remainingNewPurchaseInventoryUnits ??
+        selectedAsset?.remainingUnits ??
+        selectedAsset?.closingInventoryUnits ??
+        0,
+      //selectedAsset?.remainingNewPurchaseInventoryUnits ?? 0,
     );
     setValue(
       "closingInventoryUnits",
@@ -387,6 +470,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     setValue(
       "buildingName",
       selectedAsset?.buildingName ||
+        selectedAsset?.unit?.building?.buildingName ||
+        selectedAsset?.unit?.buildingName ||
         selectedUnit?.building?.buildingName ||
         selectedUnit?.buildingName ||
         selectedTabConfig?.buildingName ||
@@ -394,7 +479,17 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     );
     setValue(
       "unitNo",
-      selectedAsset?.unitNo || selectedUnit?.unitNo || defaultUnitNo,
+      inventoryRootView === "overall"
+        ? selectedAsset?.unitId ||
+          selectedAsset?.unit?._id ||
+          selectedUnit?._id ||
+          ""
+        : selectedAsset?.unit?.unitNo ||
+          selectedAsset?.unitNo ||
+          selectedUnit?.unitNo ||
+          selectedTabConfig?.unitNo ||
+          defaultUnitNo ||
+          "",
     );
     setValue("categoryName", selectedAsset?.categoryName || "");
     setValue("categoryId", selectedAsset?.categoryId || null);
@@ -410,13 +505,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     currentUserName,
     defaultBuildingName,
     defaultUnitNo,
+    inventoryRootView,
+    modalMode,
     selectedAsset,
+    selectedAsset?.unit?.building?.buildingName,
+    selectedAsset?.unit?.buildingName,
     selectedTabConfig?.buildingName,
+    selectedTabConfig?.unitNo,
     selectedUnit?.building?.buildingName,
     selectedUnit?.buildingName,
     selectedUnit?.unitNo,
+    selectedUnit?._id,
     setValue,
-  ]);
+  ]); 
 
   const openingUnits = useWatch({ control, name: "openingInventoryUnits" });
   const openingUnitPrice = useWatch({ control, name: "openingPerUnitPrice" });
@@ -427,6 +528,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     name: "newPurchasePerUnitPrice",
   });
   const selectedCategoryForAdd = useWatch({ control, name: "category" });
+  const selectedBuildingForAdd = useWatch({ control, name: "buildingName" });
 
   const updateOpeningUnits = useWatch({
     control: updateControl,
@@ -451,6 +553,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const updateNewConsumedUnits = useWatch({
     control: updateControl,
     name: "newConsumedUnitValue",
+  });
+  const updateAssignedUnitNo = useWatch({
+    control: updateControl,
+    name: "unitNo",
+  });
+   const selectedCategoryForUpdate = useWatch({
+    control: updateControl,
+    name: "category",
   });
   const updateRemainingNewPurchaseUnits = useWatch({
     control: updateControl,
@@ -509,70 +619,37 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   }, [setValue, updateLastConsumedUnits, updateOpeningUnits]);
 
   useEffect(() => {
-    const lastRemainingUnits = Number(
-      (Number(updateOpeningUnits) || 0) -
-        (Number(updateLastConsumedUnits) || 0),
-    );
-    const newPurchaseUnitsValue = Number(updateNewPurchaseUnits) || 0;
     const newConsumedUnits = Number(updateNewConsumedUnits) || 0;
-
-    const computedNewRemainingUnits =
-      lastRemainingUnits + newPurchaseUnitsValue - newConsumedUnits;
-
-    setValue(
-      "newRemainingUnitValue",
-      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
-    setValue(
-      "closingInventoryUnits",
-      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
-      {
-        shouldDirty: true,
-        shouldValidate: true,
-      },
-    );
-  }, [
-    setValue,
-    updateLastConsumedUnits,
-    updateNewConsumedUnits,
-    updateNewPurchaseUnits,
-    updateOpeningUnits,
-  ]);
-  useEffect(() => {
     const baseRemainingNewPurchaseUnits = Number(
-      selectedAsset?.remainingNewPurchaseInventoryUnits,
+      // selectedAsset?.remainingNewPurchaseInventoryUnits,
+      selectedAsset?.newRemainingUnitValue ??
+        selectedAsset?.remainingNewPurchaseInventoryUnits ??
+        selectedAsset?.remainingUnits ??
+        selectedAsset?.closingInventoryUnits,
     );
     const remainingNewPurchaseUnits = Number(updateRemainingNewPurchaseUnits);
-    const consumedNewUnits = Number(updateNewConsumedUnits) || 0;
-
     const safeBaseRemaining = Number.isFinite(baseRemainingNewPurchaseUnits)
       ? baseRemainingNewPurchaseUnits
       : Number.isFinite(remainingNewPurchaseUnits)
         ? remainingNewPurchaseUnits
         : 0;
 
-    const computedRemainingNewPurchaseUnits =
-      safeBaseRemaining - consumedNewUnits;
+    const computedNewRemainingUnits =
+      safeBaseRemaining - newConsumedUnits;
 
     setValue(
       "remainingNewPurchaseInventoryUnits",
-      computedRemainingNewPurchaseUnits >= 0
-        ? computedRemainingNewPurchaseUnits
-        : 0,
+      computedNewRemainingUnits >= 0 ? computedNewRemainingUnits : 0,
       {
         shouldDirty: true,
         shouldValidate: true,
       },
     );
   }, [
-    selectedAsset,
     setValue,
     updateNewConsumedUnits,
     updateRemainingNewPurchaseUnits,
+    selectedAsset,
   ]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
@@ -651,6 +728,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           newRemainingUnitValue:
             item?.newRemainingUnitValue ??
             item?.remainingNewPurchaseInventoryUnits ??
+            item?.remainingUnits ??
             item?.closingInventoryUnits ??
             0,
           // Fix: Properly check for addedBy name
@@ -694,8 +772,24 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const inventoryTableData = useMemo(() => {
     if (!Array.isArray(inventoryData)) return [];
-    return inventoryData;
-  }, [inventoryData]);
+     if (!overallBuildingTab) return inventoryData;
+
+    const scopedBuildingName =
+      overallBuildingTab === "sunteck" ? "Sunteck Kanaka" : "Dempo Trade Center";
+    const scopedBuildingKey = normalizeBuildingName(scopedBuildingName);
+
+    return inventoryData.filter(
+      (item) =>
+        normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        ) === scopedBuildingKey,
+    );
+  }, [inventoryData, overallBuildingTab]);
+  //   return inventoryData;
+  // }, [inventoryData]);
 
   const { data: inventoryCategories = [] } = useQuery({
     queryKey: ["inventory-categories", department?._id],
@@ -711,7 +805,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   });
 
   useEffect(() => {
-    if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
+     if (
+      !["edit", "assign", "inventoryEdit"].includes(modalMode) ||
+      !selectedAsset ||
+      !inventoryCategories.length
+    ) {
+   // if (modalMode !== "edit" || !selectedAsset || !inventoryCategories.length) {
       return;
     }
 
@@ -757,7 +856,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     queryKey: [
       "inventory-items",
       department?._id,
-      selectedCategoryForAdd || "",
+      (modalMode === "inventoryEdit"
+        ? selectedCategoryForUpdate
+        : selectedCategoryForAdd) || "",
     ],
     enabled: Boolean(department?._id),
     queryFn: async () => {
@@ -765,8 +866,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       if (department?._id) {
         searchParams.set("department", department._id);
       }
-      if (selectedCategoryForAdd) {
-        searchParams.set("category", selectedCategoryForAdd);
+       const activeCategory =
+        modalMode === "inventoryEdit"
+          ? selectedCategoryForUpdate
+          : selectedCategoryForAdd;
+      // Older inventory rows can expose the category name (for example,
+      // "Stationery") while their populated category id is loading. Never
+      // send that display value to the items API, which only accepts ObjectIds.
+      if (activeCategory && isMongoObjectId(activeCategory)) {
+        searchParams.set("category", activeCategory);
       }
 
       const query = searchParams.toString();
@@ -806,6 +914,36 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
     return Array.from(uniqueById.values());
   }, [inventoryItems, selectedCategoryForAdd]);
+     const updateItemOptions = useMemo(
+    () =>
+      (inventoryItems || [])
+        .filter((item) => item?.isActive)
+        .map((item) => ({ id: item._id, name: item.name })),
+    [inventoryItems],
+  );
+
+  useEffect(() => {
+    if (modalMode !== "inventoryEdit" || !selectedAsset) return;
+
+    const selectedItemId = selectedAsset?.itemId || selectedAsset?.itemName?._id;
+    const selectedItemName = String(
+      selectedAsset?.itemName?.name || selectedAsset?.itemName || "",
+    )
+      .trim()
+      .toLowerCase();
+    const matchedItem = (inventoryItems || []).find(
+      (item) =>
+        (selectedItemId && String(item?._id) === String(selectedItemId)) ||
+        (selectedItemName &&
+          String(item?.name || "")
+            .trim()
+            .toLowerCase() === selectedItemName),
+    );
+
+    if (matchedItem?._id) {
+      setValue("itemName", matchedItem._id, { shouldValidate: true });
+    }
+  }, [inventoryItems, modalMode, selectedAsset, setValue]);
 
   useEffect(() => {
     setAddValue("itemName", "");
@@ -876,6 +1014,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       return;
     }
 
+    const activeBuildingName =
+      selectedBuildingForAdd ||
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName;
+    const activeBuildingKey = normalizeBuildingName(activeBuildingName);
+
     const selectedItemOption = itemOptions.find(
       (item) => String(item.id) === String(selectedItemForAdd),
     );
@@ -890,6 +1036,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
     const matched = [...(inventoryData || [])]
       .filter((item) => {
+        const itemBuildingName = normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        );
         const itemId = String(item?.itemName?._id || item?.itemId || "");
         const categoryId = String(
           item?.category?._id || item?.categoryId || "",
@@ -909,8 +1061,12 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         const isCategoryMatched =
           categoryId === String(selectedCategoryForAdd) ||
           (selectedCategoryName && categoryName === selectedCategoryName);
+        const isBuildingMatched =
+          activeBuildingKey &&
+          itemBuildingName &&
+          itemBuildingName === activeBuildingKey;
 
-        return isItemMatched && isCategoryMatched;
+        return isItemMatched && isCategoryMatched && isBuildingMatched;
       })
       .sort(
         (a, b) =>
@@ -950,7 +1106,13 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     inventoryData,
     itemOptions,
     inventoryCategories,
+    selectedBuildingForAdd,
+    selectedTabConfig?.buildingName,
+    selectedUnit?.building?.buildingName,
+    selectedUnit?.buildingName,
+    defaultBuildingName,
     setAddValue,
+    inventoryRootView,
   ]);
   useEffect(() => {
     const activeBuildingName =
@@ -958,7 +1120,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       selectedUnit?.buildingName ||
       selectedTabConfig?.buildingName ||
       defaultBuildingName;
-    const activeUnitNo = selectedUnit?.unitNo || defaultUnitNo;
+    const activeUnitNo = selectedUnit?.unitNo || "";
 
     setAddValue("addedByName", currentUserName);
     setAddValue("date", currentDate);
@@ -1124,16 +1286,56 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const { mutate: updateAsset, isPending: isUpdatingAsset } = useMutation({
     mutationFn: async (formData) => {
+      const consumedUnits = Number(
+        formData?.newConsumedUnitValue ??
+          formData?.consumedNewPurchaseInventoryUnits ??
+          0,
+      );
+
+      const payload =
+        modalMode === "inventoryEdit"
+          ? {
+            category: formData.category,
+              itemName: formData.itemName,
+                buildingName: formData.buildingName?.trim() || "",
+              openingInventoryUnits: Number(formData.openingInventoryUnits),
+              openingPerUnitPrice: Number(formData.openingPerUnitPrice),
+              newPurchaseUnits: Number(formData.newPurchaseUnits),
+              newPurchasePerUnitPrice: Number(
+                formData.newPurchasePerUnitPrice,
+              ),
+            }
+          : inventoryRootView === "overall"
+          ? {
+              unit: formData.unit,
+              buildingName: formData.buildingName,
+              ...(consumedUnits > 0
+                ? {
+                    consumptions: [
+                      {
+                        quantity: consumedUnits,
+                        source: "newPurchase",
+                      },
+                    ],
+                  }
+                : {}),
+            }
+          : {
+              consumptions: [
+                {
+                  quantity:
+                    Number(formData.newConsumedUnitValue) || 0,
+                  source: "newPurchase",
+                },
+              ],
+            };
+
       const response = await axios.patch(
-        `/api/inventory/update-inventory/${selectedAsset?._id}`,
-        {
-          consumptions: [
-            {
-              quantity: Number(formData.consumedNewPurchaseInventoryUnits) || 0,
-              source: "newPurchase",
-            },
-          ],
-        },
+        // `/api/inventory/update-inventory/${selectedAsset?._id}`,
+         modalMode === "inventoryEdit"
+          ? `/api/inventory/edit-inventory/${selectedAsset?._id}`
+          : `/api/inventory/update-inventory/${selectedAsset?._id}`,
+        payload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -1163,6 +1365,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const handleAddAsset = () => {
+    const defaultAddBuildingName =
+      inventoryRootView === "overall"
+        ? scopedOverallBuildingName
+        : selectedUnit?.building?.buildingName ||
+          selectedUnit?.buildingName ||
+          selectedTabConfig?.buildingName ||
+          defaultBuildingName;
+
     setModalMode("add");
     setSelectedAsset(null);
     resetAddInventory({
@@ -1177,23 +1387,35 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       category: "",
       addedByName: currentUserName,
       date: currentDate,
-      buildingName:
-        selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
+      buildingName: defaultAddBuildingName,
       unitNo: selectedUnit?.unitNo || defaultUnitNo,
     });
     setAddValue("addedByName", currentUserName);
     setAddValue("date", currentDate);
-    setAddValue(
-      "buildingName",
-      selectedUnit?.building?.buildingName ||
-        selectedUnit?.buildingName ||
-        selectedTabConfig?.buildingName ||
-        defaultBuildingName,
-    );
+    setAddValue("buildingName", defaultAddBuildingName);
     setAddValue("unitNo", selectedUnit?.unitNo || defaultUnitNo);
+    setIsModalOpen(true);
+  };
+
+ const handleEditInventory = (asset) => {
+    setSelectedAsset(asset);
+    setModalMode("inventoryEdit");
+    resetUpdateInventory({
+      addedByName: asset?.addedByName || currentUserName,
+      date: asset?.dateRaw
+        ? new Date(asset.dateRaw).toISOString().split("T")[0]
+        : currentDate,
+      buildingName: asset?.buildingName || "",
+      category:
+        asset?.category?._id || asset?.categoryId || "",
+      itemName: asset?.itemId || asset?.itemName?._id || "",
+      openingInventoryUnits: asset?.openingInventoryUnits ?? 0,
+      openingPerUnitPrice: asset?.openingPerUnitPrice ?? 0,
+      openingInventoryValue: asset?.openingInventoryValue ?? 0,
+      newPurchaseUnits: asset?.newPurchaseUnits ?? 0,
+      newPurchasePerUnitPrice: asset?.newPurchasePerUnitPrice ?? 0,
+      newPurchaseInventoryValue: asset?.newPurchaseInventoryValue ?? 0,
+    });
     setIsModalOpen(true);
   };
 
@@ -1249,28 +1471,100 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       toast.error("Department not found. Please refresh and try again.");
       return;
     }
-    if (!selectedUnit?._id) {
+    if (inventoryRootView !== "overall" && !selectedUnit?._id) {
       toast.error("Unit not found. Please reselect the unit and try again.");
       return;
     }
+
+    const submittedBuildingName =
+      data.buildingName ||
+      selectedBuildingForAdd ||
+      selectedUnit?.building?.buildingName ||
+      selectedUnit?.buildingName ||
+      selectedTabConfig?.buildingName ||
+      defaultBuildingName ||
+      "";
+
+    const selectedItemOption = itemOptions.find(
+      (item) => String(item.id) === String(data.itemName),
+    );
+    const selectedCategoryOption = inventoryCategories.find(
+      (category) => String(category._id) === String(data.category),
+    );
+
+    const selectedItemName = selectedItemOption?.name?.trim().toLowerCase();
+    const selectedCategoryName = selectedCategoryOption?.categoryName
+      ?.trim()
+      .toLowerCase();
+    const activeBuildingKey = normalizeBuildingName(submittedBuildingName);
+
+    const matchedInventory = [...(inventoryData || [])]
+      .filter((item) => {
+        const itemBuildingName = normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        );
+        const itemId = String(item?.itemName?._id || item?.itemId || "");
+        const categoryId = String(
+          item?.category?._id || item?.categoryId || "",
+        );
+        const itemName = String(item?.itemName || "")
+          .trim()
+          .toLowerCase();
+        const categoryName = String(
+          item?.categoryName || item?.category || item?.Category || "",
+        )
+          .trim()
+          .toLowerCase();
+
+        const isItemMatched =
+          itemId === String(data.itemName) ||
+          (selectedItemName && itemName === selectedItemName);
+        const isCategoryMatched =
+          categoryId === String(data.category) ||
+          (selectedCategoryName && categoryName === selectedCategoryName);
+        const isBuildingMatched =
+          activeBuildingKey &&
+          itemBuildingName &&
+          itemBuildingName === activeBuildingKey;
+
+        return isItemMatched && isCategoryMatched && isBuildingMatched;
+      })
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt || b.date || b.updatedAt || 0) -
+          new Date(a.createdAt || a.date || a.updatedAt || 0),
+      )[0];
+
+    const resolvedOpeningUnits = matchedInventory
+      ? Number(matchedInventory.newPurchaseUnits || 0)
+      : 0;
+    const resolvedOpeningPerUnitPrice = matchedInventory
+      ? Number(matchedInventory.newPurchasePerUnitPrice || 0)
+      : 0;
+    const resolvedOpeningInventoryValue = matchedInventory
+      ? Number(matchedInventory.newPurchaseInventoryValue || 0)
+      : 0;
+
     addAsset({
       itemName: data.itemName,
       department: department._id,
-      openingInventoryUnits: Number(data.openingInventoryUnits),
-      openingPerUnitPrice: Number(data.openingPerUnitPrice),
-      openingInventoryValue: Number(data.openingInventoryValue),
+      openingInventoryUnits: resolvedOpeningUnits,
+      openingPerUnitPrice: resolvedOpeningPerUnitPrice,
+      openingInventoryValue: resolvedOpeningInventoryValue,
       newPurchaseUnits: Number(data.newPurchaseUnits),
       newPurchasePerUnitPrice: Number(data.newPurchasePerUnitPrice),
       newPurchaseInventoryValue: Number(data.newPurchaseInventoryValue),
       consumedOpenInventoryUnits: 0,
       consumedNewPurchaseInventoryUnits: 0,
       closingInventoryUnits:
-        Number(data.openingInventoryUnits) + Number(data.newPurchaseUnits),
+        resolvedOpeningUnits + Number(data.newPurchaseUnits),
       category: data.category,
-      unit: selectedUnit._id,
+      unit: selectedUnit?._id || null,
       date: data.date,
-      buildingName: data.buildingName,
-      unitNo: data.unitNo,
+      buildingName: submittedBuildingName,
     });
   };
 
@@ -1309,6 +1603,34 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   };
 
   const handleUpdateSubmit = (data) => {
+     if (modalMode === "inventoryEdit") {
+      updateAsset(data);
+      return;
+    }
+
+    if (inventoryRootView === "overall") {
+      const matchedUnit = selectedBuildingUnits.find(
+        (unit) => String(unit?._id) === String(data.unitNo),
+      );
+
+      if (!matchedUnit?._id) {
+        toast.error("Please select a valid unit to assign.");
+        return;
+      }
+
+      updateAsset({
+        ...data,
+        unit: matchedUnit._id,
+        buildingName:
+          matchedUnit?.building?.buildingName ||
+          matchedUnit?.buildingName ||
+          selectedTabConfig?.buildingName ||
+          defaultBuildingName ||
+          "",
+      });
+      return;
+    }
+
     updateAsset({
       ...data,
       openingInventoryUnits: Number(data.openingInventoryUnits) || 0,
@@ -1324,7 +1646,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     });
   };
 
-  const inventoryColumns = [
+  const unitInventoryColumns = [
     {
       field: "id",
       headerName: "Sr No",
@@ -1342,7 +1664,146 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           }}
           className="text-primary cursor-pointer underline"
         >
-          {params.value}
+          {params.value || "-"}
+        </span>
+      ),
+    },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "addedByName",
+      headerName: "Added By",
+      cellRenderer: (params) => params.value || "-",
+    },
+    {
+      field: "departmentName",
+      headerName: "Department",
+      hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
+    },
+    {
+      field: "buildingName",
+      headerName: "Building",
+      hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
+    },
+    {
+      field: "unitNo",
+      headerName: "Unit",
+      hide: true,
+      suppressCsvExport: true,
+      suppressExcelExport: true,
+    },
+    {
+      field: "lastRemainingUnitValue",
+      headerName: "New Assigned Unit",
+      hide: inventoryRootView === "overall",
+      valueGetter: (params) => getUnitAssignedDisplayValue(params.data),
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
+      field: "newConsumedUnitValue",
+      headerName: "New Consumed Unit",
+      hide: inventoryRootView === "overall",
+    },
+    {
+      field: "newRemainingUnitValue",
+      headerName: "New Remaining Units",
+      hide: inventoryRootView === "overall",
+    },
+    // {
+      //   field: "consumedOpenInventoryUnits",
+      //   headerName: "Consumed Unit Value",
+      //   cellRenderer: (params) => inrFormat(params.value),
+      // },
+    // {
+    //   field: "remainingInventoryUnits",
+    //   headerName: "Remaining Unit Value",
+    //   cellRenderer: (params) => inrFormat(params.value),
+    // },
+    {
+      field: "closingUnits",
+      headerName: "Closing Units",
+      valueGetter: (params) =>
+        params.data.newRemainingUnitValue ??
+        params.data.remainingNewPurchaseInventoryUnits ??
+        params.data.closingInventoryUnits ??
+        0,
+      cellRenderer: (params) => {
+        return inrFormat(params.value);
+      },
+    },
+    {
+      field: "dateRaw",
+      headerName: "Date",
+      exportFormat: "datetime-comma",
+      cellRenderer: (params) => {
+        return formatDateTime(params.value);
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned:"right",
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            {
+              label: inventoryRootView === "overall" ? "Assign" : "Edit",
+              onClick: () => {
+                setSelectedAsset(params.data);
+                setModalMode("edit");
+                setIsModalOpen(true);
+              },
+            },
+            {
+              label: "View Records",
+              onClick: () => {
+                const currentPath = location.pathname.endsWith("/")
+                  ? location.pathname.slice(0, -1)
+                  : location.pathname;
+                const recordPath = `${currentPath}/${encodeURIComponent(
+                  params.data.itemName,
+                )}`;
+                navigate(recordPath, {
+                  state: {
+                    inventoryCategory: params.data.categoryName || "",
+                    buildingName: params.data.buildingName || "",
+                  },
+                });
+              },
+            },
+          ]}
+        />
+      ),
+    },
+  ];
+
+  const overallInventoryColumns = [
+    {
+      field: "id",
+      headerName: "Sr No",
+      width: 100,
+      valueGetter: (params) => params.node.rowIndex + 1,
+    },
+    {
+      field: "buildingName",
+      headerName: "Building",
+      cellRenderer: (params) => (
+        <span
+          role="button"
+          onClick={() => {
+            handleDetailsClick(params.data);
+          }}
+          className="text-primary cursor-pointer underline"
+        >
+          {params.value || "-"}
         </span>
       ),
     },
@@ -1350,6 +1811,32 @@ const Inventory = ({ forcedBuildingTab = null }) => {
       field: "departmentName",
       headerName: "Department",
       hide: true,
+    },
+    {
+      headerName: "Remaining Stock",
+      cellRenderer: (params) => {
+        const value =
+          params.data.newRemainingUnitValue ??
+          params.data.remainingNewPurchaseInventoryUnits ??
+          params.data.remainingOpeningInventoryUnits ??
+          0;
+
+        return inrFormat(value);
+      },
+    },
+    {
+      field: "addedByName",
+      headerName: "Added By",
+    },
+    {
+      field: "categoryName",
+      headerName: "Category",
+      cellRenderer: (params) => params.value,
+    },
+    {
+      field: "itemName",
+      headerName: "Item Name",
+      cellRenderer: (params) => <span>{params.value || "-"}</span>,
     },
     {
       field: "openingInventoryUnits",
@@ -1378,80 +1865,58 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     },
     {
       field: "newPurchaseInventoryValue",
-      headerName: "New Purchase Value(INR)",
+      headerName: "New Purchase Value (INR)",
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
-      field: "lastConsumedUnitValue",
-      headerName: "Last Consumed Unit Value",
-      hide: true,
-    },
-    {
-      field: "lastRemainingUnitValue",
-      headerName: "Last Remaining Units",
-      hide: true,
-    },
-    {
-      field: "newConsumedUnitValue",
-      headerName: "New Consumed Unit",
-      hide: true,
-    },
-    {
-      field: "newRemainingUnitValue",
-      headerName: "New Remaining Units",
-      hide: true,
-    },
-    {
-      field: "addedByName",
-      headerName: "Name",
-      hide: true,
-    },
-    // {
-    //   field: "consumedOpenInventoryUnits",
-    //   headerName: "Consumed Unit Value",
-    //   cellRenderer: (params) => inrFormat(params.value),
-    // },
-    // {
-    //   field: "remainingInventoryUnits",
-    //   headerName: "Remaining Unit Value",
-    //   cellRenderer: (params) => inrFormat(params.value),
-    // },
-    {
+      field: "closingUnits",
       headerName: "Closing Units",
-      cellRenderer: (params) => {
-        const value =
-          // (params.data.remainingOpeningInventoryUnits || 0) +
-          params.data.remainingNewPurchaseInventoryUnits || 0;
-
-        return inrFormat(value);
-      },
-    },
-    {
-      field: "categoryName",
-      headerName: "Category",
-      cellRenderer: (params) => params.value,
+      valueGetter: (params) =>
+        params.data.newRemainingUnitValue ??
+        params.data.remainingNewPurchaseInventoryUnits ??
+        params.data.closingInventoryUnits ??
+        0,
+      cellRenderer: (params) => inrFormat(params.value),
     },
     {
       field: "dateRaw",
       headerName: "Date",
       exportFormat: "datetime-comma",
-      cellRenderer: (params) => {
-        return formatDateTime(params.value);
-      },
+      cellRenderer: (params) => formatDateTime(params.value),
     },
     {
       field: "actions",
       headerName: "Actions",
-      pinned:"right",
+      pinned: "right",
       cellRenderer: (params) => (
         <ThreeDotMenu
           rowId={params.data._id}
           menuItems={[
+            ...(!overallBuildingTab
+              ? [
+                  {
+                    label: "Edit",
+                    onClick: () => handleEditInventory(params.data),
+                  },
+                ]
+              : []),
             {
-              label: "Edit",
+              label: "Assign",
               onClick: () => {
+                 const recordBuildingName = normalizeBuildingName(
+                  params.data?.buildingName || "",
+                );
+                const matchingBuildingTab = tabOptions.find((tab) =>
+                  tab.buildingAliases.some((alias) =>
+                    recordBuildingName.includes(normalizeBuildingName(alias)),
+                  ),
+                );
+
+                if (matchingBuildingTab) {
+                  setSelectedBuildingTab(matchingBuildingTab.key);
+                }
                 setSelectedAsset(params.data);
-                setModalMode("edit");
+                setModalMode("assign");
                 setIsModalOpen(true);
               },
             },
@@ -1461,9 +1926,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 const currentPath = location.pathname.endsWith("/")
                   ? location.pathname.slice(0, -1)
                   : location.pathname;
-                const recordPath = `${currentPath}/${encodeURIComponent(params.data.itemName)}`;
+                const recordPath = `${currentPath}/${encodeURIComponent(
+                  params.data.itemName,
+                )}`;
                 navigate(recordPath, {
-                  state: { inventoryCategory: params.data.categoryName || "" },
+                  state: {
+                    inventoryCategory: params.data.categoryName || "",
+                    buildingName: params.data.buildingName || "",
+                  },
                 });
               },
             },
@@ -1525,29 +1995,92 @@ const Inventory = ({ forcedBuildingTab = null }) => {
           alias.toLowerCase(),
         ) || [];
 
-      const linkedInventory = inventoryTableData?.find((inv) => {
+      const matchingInventories = (inventoryTableData || []).filter((inv) => {
         const matchesUnit =
           normalizeUnitNo(inv?.unitNo) === normalizeUnitNo(unit?.unitNo);
 
         if (!matchesUnit) return false;
 
-        const invBuildingName = String(inv?.buildingName || "").toLowerCase();
+        const invBuildingName = String(
+          inv?.buildingName ||
+            inv?.unit?.buildingName ||
+            inv?.unit?.building?.buildingName ||
+            "",
+        ).toLowerCase();
         const matchesByAlias = buildingAliases.some((alias) =>
           invBuildingName.includes(alias),
         );
 
         return (
-          matchesByAlias || invBuildingName.includes(normalizedBuildingName)
+          !invBuildingName ||
+          matchesByAlias ||
+          invBuildingName.includes(normalizedBuildingName)
         );
       });
+
+      const latestByBuildingItemCategory = new Map();
+
+      matchingInventories.forEach((item) => {
+        const itemKey =
+          String(item?.itemId || item?.itemName || "")
+            .trim()
+            .toLowerCase() || "unknown-item";
+        const categoryKey =
+          String(item?.categoryId || item?.categoryName || item?.category || "")
+            .trim()
+            .toLowerCase() || "unknown-category";
+        const buildingKey =
+          normalizeBuildingName(
+            item?.buildingName ||
+              item?.unit?.buildingName ||
+              item?.unit?.building?.buildingName ||
+              "",
+          ) || "unknown-building";
+        const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
+
+        const existing = latestByBuildingItemCategory.get(compositeKey);
+        const itemDate = new Date(
+          item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+        );
+        const existingDate = existing
+          ? new Date(
+              existing?.createdAt ||
+                existing?.dateRaw ||
+                existing?.date ||
+                existing?.updatedAt ||
+                0,
+            )
+          : null;
+
+        if (!existing || itemDate > existingDate) {
+          latestByBuildingItemCategory.set(compositeKey, item);
+        }
+      });
+
+      const dedupedInventories = Array.from(
+        latestByBuildingItemCategory.values(),
+      ).sort(
+        (a, b) =>
+          new Date(
+            b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0,
+          ) -
+          new Date(
+            a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0,
+          ),
+      );
+
+      const linkedInventory = dedupedInventories[0] || null;
+      const unitSummary = getUnitInventorySummaryValues(dedupedInventories);
 
       return {
         id: unit?._id || `${selectedBuildingTab}-${index}`,
         srNo: index + 1,
         unitNo: unit?.unitNo || "-",
-        unitName: unit?.unitName || "-",
         category: linkedInventory?.categoryName || "-",
         itemName: linkedInventory?.itemName || "-",
+        newAssignedUnitTotal: unitSummary.assigned,
+        newConsumedUnitTotal: unitSummary.consumed,
+        newRemainingUnitTotal: unitSummary.remaining,
         rawUnit: unit,
       };
     });
@@ -1592,7 +2125,27 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         </span>
       ),
     },
-    { field: "unitName", headerName: "Unit Name", minWidth: 210, flex: 1 },
+    {
+      field: "newAssignedUnitTotal",
+      headerName: "New Assigned Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
+    {
+      field: "newConsumedUnitTotal",
+      headerName: "New Consumed Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
+    {
+      field: "newRemainingUnitTotal",
+      headerName: "New Remaining Unit",
+      minWidth: 180,
+      flex: 1,
+      cellRenderer: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+    },
   ];
 
   // const selectedUnitInventoryRows = useMemo(() => {
@@ -1615,7 +2168,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         )
       : inventoryTableData || [];
 
-    const latestByItemCategory = new Map();
+    const latestByBuildingItemCategory = new Map();
 
     unitFilteredRows.forEach((item) => {
       const itemKey =
@@ -1626,9 +2179,86 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         String(item?.categoryId || item?.categoryName || item?.category || "")
           .trim()
           .toLowerCase() || "unknown-category";
-      const compositeKey = `${itemKey}__${categoryKey}`;
+      const buildingKey =
+        normalizeBuildingName(
+          item?.buildingName ||
+            item?.unit?.buildingName ||
+            item?.unit?.building?.buildingName ||
+            "",
+        ) || "unknown-building";
+      const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
 
-      const existing = latestByItemCategory.get(compositeKey);
+      const existing = latestByBuildingItemCategory.get(compositeKey);
+      const itemDate = new Date(
+        item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
+      );
+      const existingDate = existing
+        ? new Date(
+            existing?.createdAt ||
+              existing?.dateRaw ||
+              existing?.date ||
+              existing?.updatedAt ||
+              0,
+      )
+        : null;
+
+      if (!existing || itemDate > existingDate) {
+        latestByBuildingItemCategory.set(compositeKey, item);
+      }
+    });
+
+    return Array.from(latestByBuildingItemCategory.values()).sort(
+      (a, b) =>
+        new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
+      new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
+    );
+  }, [inventoryTableData, selectedUnit]);
+
+  const selectedUnitInventorySummaryCards = useMemo(() => {
+    const summary = getUnitInventorySummaryValues(selectedUnitInventoryRows);
+
+    return [
+      {
+        key: "assigned",
+        label: "New Assigned Unit",
+        value: summary.assigned,
+      },
+      {
+        key: "consumed",
+        label: "New Consumed Unit",
+        value: summary.consumed,
+      },
+      {
+        key: "remaining",
+        label: "New Remaining Unit",
+        value: summary.remaining,
+      },
+    ];
+  }, [selectedUnitInventoryRows]);
+
+  const overallInventoryRows = useMemo(() => {
+    // Assigned records belong to a unit and must not replace the overall
+    // record when the table keeps only the newest row for an item/category.
+    // Otherwise assigning 15 from a closing balance of 115 makes the overall
+    // table display the unit's 15 instead of the source balance of 100.
+    const overallRows = (inventoryTableData || []).filter(
+      (item) => !String(item?.unitNo || "").trim(),
+    );
+    const latestByBuildingItemCategory = new Map();
+
+    overallRows.forEach((item) => {
+      const itemKey =
+        String(item?.itemId || item?.itemName || "")
+          .trim()
+          .toLowerCase() || "unknown-item";
+      const categoryKey =
+        String(item?.categoryId || item?.categoryName || item?.category || "")
+          .trim()
+          .toLowerCase() || "unknown-category";
+      const buildingKey =
+        normalizeBuildingName(item?.buildingName || "") || "unknown-building";
+      const compositeKey = `${buildingKey}__${itemKey}__${categoryKey}`;
+      const existing = latestByBuildingItemCategory.get(compositeKey);
       const itemDate = new Date(
         item?.createdAt || item?.dateRaw || item?.date || item?.updatedAt || 0,
       );
@@ -1643,16 +2273,46 @@ const Inventory = ({ forcedBuildingTab = null }) => {
         : null;
 
       if (!existing || itemDate > existingDate) {
-        latestByItemCategory.set(compositeKey, item);
+        latestByBuildingItemCategory.set(compositeKey, item);
       }
     });
 
-    return Array.from(latestByItemCategory.values()).sort(
+    return Array.from(latestByBuildingItemCategory.values()).sort(
       (a, b) =>
         new Date(b?.createdAt || b?.dateRaw || b?.date || b?.updatedAt || 0) -
         new Date(a?.createdAt || a?.dateRaw || a?.date || a?.updatedAt || 0),
     );
-  }, [inventoryTableData, selectedUnit]);
+  }, [inventoryTableData]);
+
+  useEffect(() => {
+    if (inventoryRootView !== "overall") return;
+
+    const matchedUnit = selectedBuildingUnits.find(
+      (unit) => String(unit?._id) === String(updateAssignedUnitNo),
+    );
+
+    if (!matchedUnit) return;
+
+    setValue(
+      "buildingName",
+      matchedUnit?.building?.buildingName ||
+        matchedUnit?.buildingName ||
+        selectedTabConfig?.buildingName ||
+        defaultBuildingName ||
+        "",
+      {
+        shouldDirty: true,
+        shouldValidate: true,
+      },
+    );
+  }, [
+    defaultBuildingName,
+    inventoryRootView,
+    selectedBuildingUnits,
+    selectedTabConfig?.buildingName,
+    setValue,
+    updateAssignedUnitNo,
+  ]);
 
   const projectShortName =
     selectedBuildingTab === "dempo"
@@ -1661,8 +2321,8 @@ const Inventory = ({ forcedBuildingTab = null }) => {
   const selectedUnitHeadingName = selectedUnit?.unitNo || "Unit";
   const dynamicCategoryTitle = `List of Category - ${projectShortName} - ${selectedUnitHeadingName}`;
   const dynamicItemTitle = `List of Item - ${projectShortName} - ${selectedUnitHeadingName}`;
-  const dynamicInventoryTitle = `List of Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
-  const unitWiseHeading = `Unit Wise Inventory - ${selectedTabConfig?.label || ""}`;
+  const dynamicInventoryTitle = `List of Assigned Inventory - ${projectShortName} - ${selectedUnitHeadingName}`;
+  const unitWiseHeading = `Unit Wise Assign Inventory - ${selectedTabConfig?.label || ""}`;
 
   const handleTabChange = (value) => {
     if (forcedBuildingTab || value === selectedBuildingTab) return;
@@ -1672,18 +2332,10 @@ const Inventory = ({ forcedBuildingTab = null }) => {
 
   const handleUnitOpen = (unit) => {
     if (forcedBuildingTab && unit?.unitNo) {
-      navigate(
-        `${location.pathname}/${encodeURIComponent(unit.unitNo)}/category`,
-      );
+      navigate(`${location.pathname}/${encodeURIComponent(unit.unitNo)}`);
       return;
     }
     setSelectedUnit(unit);
-  };
-
-  const handleUnitTabChange = (tabPath) => {
-    if (!forcedBuildingTab || !selectedUnit?.unitNo) return;
-    const rootPath = location.pathname.split("/").slice(0, -1).join("/");
-    navigate(`${rootPath}/${tabPath}`);
   };
 
   const categoryColumns = [
@@ -1797,161 +2449,147 @@ const Inventory = ({ forcedBuildingTab = null }) => {
     status: item?.isActive ? "Active" : "Inactive",
   }));
 
-  useEffect(() => {
-    if (!forcedBuildingTab || !unitNoParam || inventoryTabParam) return;
-    navigate(`${location.pathname}/${defaultUnitTabPath}`, { replace: true });
-  }, [
-    defaultUnitTabPath,
-    forcedBuildingTab,
-    inventoryTabParam,
-    location.pathname,
-    navigate,
-    unitNoParam,
-  ]);
   return (
-    <div className={forcedBuildingTab ? "" : "p-4"}>
-      {!selectedUnit ? (
-        <>
-          {!forcedBuildingTab && (
-            <Box
-              sx={{
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                overflow: "hidden",
-                mb: 3,
-                display: "flex",
-              }}
-            >
-              {tabOptions
-                .filter((tab) => tab.isAllowed)
-                .map((tab, index, arr) => {
-                  const isActive = selectedBuildingTab === tab.key;
-                  return (
-                    <button
-                      key={tab.key}
-                      type="button"
-                      disabled={isActive}
-                      onClick={() => handleTabChange(tab.key)}
-                      className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
-                        arr.length === 1 ? "w-full" : "flex-1"
-                      } ${
-                        isActive
-                          ? "bg-primary text-white cursor-default"
-                          : "bg-white text-primary"
-                      } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
-                    >
-                      {tab.label}
-                    </button>
-                  );
-                })}
-            </Box>
-          )}
-          <PageFrame>
-            <AgTable
-              data={unitListingRows}
-              columns={unitColumns}
-              search={true}
-              hideTitle={false}
-              tableTitle={unitWiseHeading}
-              tableHeight={440}
-              exportData
-            />
-          </PageFrame>
-        </>
-      ) : (
-        // <YearWiseTable
-        //   key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
-        //   search={true}
-        //   tableTitle={dynamicInventoryTitle}
-        //   hideTitle={true}
-        //   buttonTitle={"Add Inventory"}
-        //   secondaryButtonTitle={"Add Category"}
-        //   middleButtonTitle={"Add Item"}
-        //   handleSecondarySubmit={handleOpenCategoryModal}
-        //   handleMiddleSubmit={handleOpenAddItemModal}
-        //   data={selectedUnitInventoryRows || []}
-        //   tableHeight={450}
-        //   dateColumn={"date"}
-        //   columns={inventoryColumns}
-        //   handleSubmit={handleAddAsset}
-        // />
-        <>
-          {forcedBuildingTab && (
-            <Box
-              sx={{
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                overflow: "hidden",
-                mb: 3,
-                display: "flex",
-              }}
-            >
-              {unitTabOptions.map((tab, index) => {
-                const isActive = activeUnitTab === tab.key;
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    disabled={isActive}
-                    onClick={() => handleUnitTabChange(tab.path)}
-                    className={`py-3 px-4 text-center font-normal text-[16px] transition-colors flex-1 ${
-                      isActive
-                        ? "bg-primary text-white cursor-default"
-                        : "bg-white text-primary"
-                    } ${index !== unitTabOptions.length - 1 ? "border-r border-borderGray" : ""}`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </Box>
-          )}
-
-          {activeUnitTab === "category" && (
-            <PageFrame>
-              <AgTable
-                data={categoryRows}
-                columns={categoryColumns}
-                search={true}
-                tableTitle={dynamicCategoryTitle}
-                buttonTitle={"Add Category"}
-                handleClick={handleOpenCategoryModal}
-                tableHeight={450}
-                exportData
-              />
-            </PageFrame>
-          )}
-          {activeUnitTab === "item" && (
-            <PageFrame>
-              <AgTable
-                data={itemRows}
-                columns={itemColumns}
-                search={true}
-                tableTitle={dynamicItemTitle}
-                buttonTitle={"Add Item"}
-                handleClick={handleOpenAddItemModal}
-                tableHeight={450}
-                exportData
-              />
-            </PageFrame>
-          )}
-          {activeUnitTab === "inventory" && (
-            <PageFrame>
-              <YearWiseTable
-                key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
-                search={true}
-                tableTitle={dynamicInventoryTitle}
-                hideTitle={true}
-                buttonTitle={"Add Inventory"}
-                data={selectedUnitInventoryRows || []}
+    <div className="p-0">
+      {inventoryRootView === "overall" && (
+        <PageFrame>
+          <YearWiseTable
+          //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+            key={isInventoryLoading ? 0 : overallInventoryRows?.length}
+            search={true}
+           // tableTitle="Overall Inventory"
+             tableTitle={
+              overallBuildingTab === "sunteck"
+                ? "Overall ST Inventory"
+                : overallBuildingTab === "dempo"
+                  ? "Overall DTC Inventory"
+                  : "Overall Inventory"
+            }
+            hideTitle={true}
+            buttonTitle={"Add Inventory"}
+              //  data={selectedUnitInventoryRows || []}
+               data={overallInventoryRows}
                 tableHeight={450}
                 dateColumn={"date"}
-                columns={inventoryColumns}
+                columns={overallInventoryColumns}
                 handleSubmit={handleAddAsset}
                 exportData
+                exportAllColumns={true}
                 taskExportDateTimeFormatting
               />
             </PageFrame>
+          )}
+      {inventoryRootView === "category" && (
+        <PageFrame>
+          <AgTable
+            data={categoryRows}
+            columns={categoryColumns}
+            search={true}
+            tableTitle="Inventory Category"
+            buttonTitle={"Add Category"}
+            handleClick={handleOpenCategoryModal}
+            tableHeight={450}
+            exportData
+          />
+        </PageFrame>
+      )}
+      {inventoryRootView === "item" && (
+        <PageFrame>
+          <AgTable
+            data={itemRows}
+            columns={itemColumns}
+            search={true}
+            tableTitle="Inventory Item"
+            buttonTitle={"Add Item"}
+            handleClick={handleOpenAddItemModal}
+            tableHeight={450}
+            exportData
+          />
+        </PageFrame>
+      )}
+      {inventoryRootView === "building" && (
+        <>
+          {!selectedUnit ? (
+            <>
+              {!forcedBuildingTab && (
+                <Box
+                  sx={{
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    mb: 3,
+                    display: "flex",
+                  }}
+                >
+                  {tabOptions
+                    .filter((tab) => tab.isAllowed)
+                    .map((tab, index, arr) => {
+                      const isActive = selectedBuildingTab === tab.key;
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          disabled={isActive}
+                          onClick={() => handleTabChange(tab.key)}
+                          className={`py-3 px-4 text-center font-normal text-[16px] transition-colors ${
+                            arr.length === 1 ? "w-full" : "flex-1"
+                          } ${
+                            isActive
+                              ? "bg-primary text-white cursor-default"
+                              : "bg-white text-primary"
+                          } ${index !== arr.length - 1 ? "border-r border-borderGray" : ""}`}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                </Box>
+              )}
+              <PageFrame>
+                <AgTable
+                  data={unitListingRows}
+                  columns={unitColumns}
+                  search={true}
+                  hideTitle={false}
+                  tableTitle={unitWiseHeading}
+                  tableHeight={440}
+                  exportData
+                />
+              </PageFrame>
+            </>
+          ) : (
+            <>
+              <PageFrame>
+                <YearWiseTable
+                  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
+                  search={true}
+                  tableTitle={dynamicInventoryTitle}
+                  hideTitle={true}
+                  data={selectedUnitInventoryRows || []}
+                  tableHeight={450}
+                  dateColumn={"date"}
+                  columns={unitInventoryColumns}
+                  headerActions={
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {selectedUnitInventorySummaryCards.map((card) => (
+                        <StatusChip
+                          key={card.key}
+                          status="Total"
+                          count={Number(card.value || 0)}
+                          variant="count"
+                          label={`${card.label.toUpperCase()} : ${Number(
+                            card.value || 0,
+                          ).toLocaleString("en-IN")}`}
+                        />
+                      ))}
+                    </div>
+                  }
+                  exportData
+                  exportAllColumns={false}
+                  taskExportDateTimeFormatting
+                />
+              </PageFrame>
+            </>
           )}
         </>
       )}
@@ -2323,19 +2961,31 @@ const Inventory = ({ forcedBuildingTab = null }) => {
             ? "View Details"
             : modalMode === "add"
               ? "Add Inventory"
-              : "Edit Inventory"
+               : modalMode === "inventoryEdit"
+              ? "Edit Inventory"
+              : inventoryRootView === "overall"
+                ? "Assign Inventory"
+                : `Edit Inventory - ${
+                    selectedAsset?.unit?.unitNo ||
+                    selectedAsset?.unitNo ||
+                    "Unit"
+                  }`
         }
       >
-        {modalMode === "add" && (
+        {["add", "inventoryEdit"].includes(modalMode) && (
           <div>
             <form
-              onSubmit={handleSubmit(handleFormSubmit)}
+              onSubmit={
+                modalMode === "inventoryEdit"
+                  ? handleUpdate(handleUpdateSubmit)
+                  : handleSubmit(handleFormSubmit)
+              }
               className="flex flex-col gap-4"
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <Controller
                   name="addedByName"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2348,7 +2998,7 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 />
                 <Controller
                   name="date"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2363,43 +3013,71 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 />
                 <Controller
                   name="buildingName"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{ required: "Building name is required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label="Building Name"
+                      select
                       fullWidth
                       size="small"
-                      disabled
-                    />
+                      className="md:col-span-2"
+                       error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).buildingName?.message}
+                      disabled={
+                        modalMode === "add" &&
+                        inventoryRootView === "overall" &&
+                        Boolean(overallBuildingTab)
+                      }
+                    >
+                      {!(inventoryRootView === "overall" && overallBuildingTab) && (
+                        <MenuItem value="" disabled>
+                          Select building
+                        </MenuItem>
+                      )}
+                      {tabOptions
+                        .filter((tab) => tab.isAllowed)
+                        .map((tab) => (
+                          <MenuItem key={tab.key} value={tab.buildingName}>
+                            {tab.buildingName}
+                          </MenuItem>
+                        ))}
+                    </TextField>
                   )}
                 />
-                <Controller
+                {/* <Controller
                   name="unitNo"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   render={({ field }) => (
                     <TextField
                       {...field}
                       label="Unit No"
                       fullWidth
                       size="small"
-                      disabled
+                      disabled={modalMode === "add"}
                     />
                   )}
-                />
+                /> */}
                 <Controller
                   name="category"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   rules={{ required: "Category required" }}
                   render={({ field }) => (
                     <TextField
                       {...field}
+                      onChange={(event) => {
+                        field.onChange(event);
+                        if (modalMode === "inventoryEdit") {
+                          setValue("itemName", "");
+                        }
+                      }}
                       label="Category"
                       size="small"
                       fullWidth
                       select
-                      error={!!errors.category}
-                      helperText={errors.category?.message}
+                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).category}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).category?.message}
                     >
                       <MenuItem value="">Select category</MenuItem>
                       {inventoryCategories
@@ -2412,9 +3090,9 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     </TextField>
                   )}
                 />
-                <Controller
+               <Controller
                   name="itemName"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   rules={{
                     required: "Item name is required",
                   }}
@@ -2425,11 +3103,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       size="small"
                       fullWidth
                       select
-                      error={!!errors.itemName}
-                      helperText={errors.itemName?.message}
+                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).itemName}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).itemName?.message}
                     >
                       <MenuItem value="">Select item</MenuItem>
-                      {itemOptions.map((item) => (
+                      {(modalMode === "inventoryEdit" ? updateItemOptions : itemOptions).map((item) => (
                         <MenuItem key={item.id} value={item.id}>
                           {item.name}
                         </MenuItem>
@@ -2442,7 +3120,11 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="openingInventoryUnits"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{
+                    required: "Opening units required",
+                    min: { value: 0, message: "Opening units cannot be negative" },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2450,14 +3132,20 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      disabled
+                      disabled={modalMode === "add"}
+                      error={!!updateErrors.openingInventoryUnits}
+                      helperText={updateErrors.openingInventoryUnits?.message}
                     />
                   )}
                 />
 
                 <Controller
                   name="openingPerUnitPrice"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{
+                    required: "Opening per unit price required",
+                    min: { value: 0, message: "Price cannot be negative" },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2465,14 +3153,16 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      disabled
+                      disabled={modalMode === "add"}
+                      error={!!updateErrors.openingPerUnitPrice}
+                      helperText={updateErrors.openingPerUnitPrice?.message}
                     />
                   )}
                 />
 
                 <Controller
                   name="openingInventoryValue"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2489,8 +3179,14 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="newPurchaseUnits"
-                  control={control}
-                  rules={{ required: "New purchase units required" }}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{
+                    required: "New purchase units required",
+                    min: {
+                      value: 0,
+                      message: "New purchase units cannot be negative",
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2498,16 +3194,19 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!errors.newPurchaseUnits}
-                      helperText={errors.newPurchaseUnits?.message}
+                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchaseUnits}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchaseUnits?.message}
                     />
                   )}
                 />
 
                 <Controller
                   name="newPurchasePerUnitPrice"
-                  control={control}
-                  rules={{ required: "New per unit price required" }}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
+                  rules={{
+                    required: "New per unit price required",
+                    min: { value: 0, message: "Price cannot be negative" },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2515,15 +3214,15 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                       type="number"
                       size="small"
                       fullWidth
-                      error={!!errors.newPurchasePerUnitPrice}
-                      helperText={errors.newPurchasePerUnitPrice?.message}
+                      error={!!(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchasePerUnitPrice}
+                      helperText={(modalMode === "inventoryEdit" ? updateErrors : errors).newPurchasePerUnitPrice?.message}
                     />
                   )}
                 />
 
                 <Controller
                   name="newPurchaseInventoryValue"
-                  control={control}
+                  control={modalMode === "inventoryEdit" ? updateControl : control}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -2538,146 +3237,217 @@ const Inventory = ({ forcedBuildingTab = null }) => {
               </div>
 
               <PrimaryButton
-                title="Add Inventory"
+                title={modalMode === "inventoryEdit" ? "Save Changes" : "Add Inventory"}
                 className="w-full col-span-2"
                 type="submit"
+                disabled={modalMode === "inventoryEdit" && isUpdatingAsset}
               />
             </form>
           </div>
         )}
 
+
         {modalMode === "view" && selectedAsset && (
-          <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
-            {selectedAsset.image && (
-              <div className="col-span-2 flex justify-center">
-                <img
-                  src={selectedAsset.image}
-                  alt="Asset"
-                  className="max-h-40 object-contain rounded-md shadow-md"
-                />
+          inventoryRootView === "overall" ? (
+            <div className="px-2 py-4 space-y-8">
+              <div>
+                <div className="font-bold mb-4">Item Information</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Item Name"
+                    detail={selectedAsset.itemName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Department"
+                    detail={
+                      selectedAsset.department?.name ||
+                      selectedAsset.departmentName ||
+                      selectedAsset.department ||
+                      "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="Building Name"
+                    detail={selectedAsset.buildingName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Category"
+                    detail={selectedAsset.categoryName || "N/A"}
+                  />
+                  <DetalisFormatted
+                    title="Date"
+                    detail={formatDateTime(selectedAsset.dateRaw)}
+                  />
+                </div>
               </div>
-            )}
-            <div className="font-bold">Item Information</div>
-            <DetalisFormatted
-              title="Item Name"
-              detail={selectedAsset.itemName || "N/A"}
-            />
-            <DetalisFormatted
-              title="Department"
-              detail={
-                selectedAsset.department?.name ||
-                selectedAsset.department ||
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title="Date"
-              detail={formatDateTime(selectedAsset.dateRaw)}
-            />
-            <DetalisFormatted
-              title="Category"
-              detail={selectedAsset.categoryName || "N/A"}
-            />
-            <br />
 
-            <div className="font-bold">Inventory Units</div>
+              <div>
+                <div className="font-bold mb-4">Inventory Units</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Opening Units"
+                    detail={
+                      selectedAsset.openingInventoryUnits !== null &&
+                      selectedAsset.openingInventoryUnits !== undefined
+                        ? selectedAsset.openingInventoryUnits
+                        : "NA"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="Opening Per Unit Price"
+                    detail={
+                      selectedAsset.openingPerUnitPrice != null
+                        ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
+                        : "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Units"
+                    detail={
+                      selectedAsset.newPurchaseUnits !== null &&
+                      selectedAsset.newPurchaseUnits !== undefined
+                        ? selectedAsset.newPurchaseUnits
+                        : "NA"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Per Unit Price"
+                    detail={
+                      selectedAsset.newPurchasePerUnitPrice != null
+                        ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
+                        : "N/A"
+                    }
+                  />
+                  <DetalisFormatted
+                    title="Closing Units"
+                    detail={
+                      selectedAsset.newRemainingUnitValue ??
+                      selectedAsset.remainingNewPurchaseInventoryUnits ??
+                      selectedAsset.closingInventoryUnits ??
+                      "0"
+                    }
+                  />
+                </div>
+              </div>
 
-            <DetalisFormatted
-              title="Opening Units"
-              detail={
-                selectedAsset.openingInventoryUnits !== null &&
-                selectedAsset.openingInventoryUnits !== undefined
-                  ? selectedAsset.openingInventoryUnits
-                  : "NA"
-              }
-            />
-            <DetalisFormatted
-              title="Opening Per Unit Price"
-              detail={
-                selectedAsset.openingPerUnitPrice != null
-                  ? `INR ${inrFormat(selectedAsset.openingPerUnitPrice)}`
-                  : "N/A"
-              }
-            />
-            {/* <DetalisFormatted
-              title="New Purchase Units"
-              detail={selectedAsset.newPurchaseUnits ?? "0"}
-            /> */}
-            <DetalisFormatted
-              title="New Purchase Units"
-              detail={
-                selectedAsset.newPurchaseUnits !== null &&
-                selectedAsset.newPurchaseUnits !== undefined
-                  ? selectedAsset.newPurchaseUnits
-                  : "NA"
-              }
-            />
-            <DetalisFormatted
-              title="New Purchase Per Unit Price"
-              detail={
-                selectedAsset.newPurchasePerUnitPrice != null
-                  ? `INR ${inrFormat(selectedAsset.newPurchasePerUnitPrice)}`
-                  : "N/A"
-              }
-            />
-            {/* <DetalisFormatted
-              title="Closing Units"
-              detail={
-                // (selectedAsset?.remainingOpeningInventoryUnits || 0) +
-                selectedAsset?.remainingNewPurchaseInventoryUnits || 0
-              }
-            /> */}
-            <DetalisFormatted
-              title="Last Consumed Unit"
-              detail={
-                selectedAsset.lastConsumed ??
-                // selectedAsset.lastConsumedUnitValue ??
-                //  selectedAsset.consumedOpenInventoryUnits ??
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title="Last Remaining Units"
-              detail={selectedAsset.remainingOpeningInventoryUnits ?? "0"}
-            />
-            <DetalisFormatted
-              title="New Consumed Units"
-              detail={
-                selectedAsset.totalConsumed ??
-                //selectedAsset.consumedNewPurchaseInventoryUnits ??
-                "0"
-              }
-            />
-            <DetalisFormatted
-              title="New Remaining Units"
-              detail={selectedAsset.remainingNewPurchaseInventoryUnits ?? "0"}
-            />
-            <br />
-            <div className="font-bold">Inventory Value</div>
-            <DetalisFormatted
-              title="Opening Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
-              }`}
-            />
+              <div>
+                <div className="font-bold mb-4">Inventory Value</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Opening Value"
+                    detail={`INR ${
+                      inrFormat(selectedAsset.openingInventoryValue) ?? "N/A"
+                    }`}
+                  />
+                  <DetalisFormatted
+                    title="New Purchase Value"
+                    detail={`INR ${
+                      inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
+                    }`}
+                  />
+                </div>
+              </div>
 
-            <DetalisFormatted
-              title="New Purchase Value"
-              detail={`INR ${
-                inrFormat(selectedAsset.newPurchaseInventoryValue) ?? "N/A"
-              }`}
-            />
+              <div>
+                <div className="font-bold mb-4">Inventory Added By</div>
+                <div className="space-y-4">
+                  <DetalisFormatted
+                    title="Name"
+                    detail={selectedAsset.addedByName || "N/A"}
+                  />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
+              {selectedAsset.image && (
+                <div className="col-span-2 flex justify-center">
+                  <img
+                    src={selectedAsset.image}
+                    alt="Asset"
+                    className="max-h-40 object-contain rounded-md shadow-md"
+                  />
+                </div>
+              )}
+              <div className="font-bold">Item Information</div>
+              <DetalisFormatted
+                title="Item Name"
+                detail={selectedAsset.itemName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Department"
+                detail={
+                  selectedAsset.department?.name ||
+                  selectedAsset.department ||
+                  "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Date"
+                detail={formatDateTime(selectedAsset.dateRaw)}
+              />
+              <DetalisFormatted
+                title="Category"
+                detail={selectedAsset.categoryName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Building"
+                detail={selectedAsset.buildingName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Unit"
+                detail={
+                  selectedAsset.unit?.unitNo ||
+                  selectedAsset.unitNo ||
+                  "N/A"
+                }
+              />
+              <br />
 
-            <br />
-            <div className="font-bold">Inventory Added By</div>
-            <DetalisFormatted
-              title="Name"
-              detail={selectedAsset.addedByName || "N/A"}
-            />
-          </div>
+              <div className="font-bold">Inventory Units</div>
+
+              <DetalisFormatted
+                title="New Assigned Unit"
+                detail={getUnitAssignedDisplayValue(selectedAsset)}
+              />
+              <DetalisFormatted
+                title="New Consumed Units"
+                detail={
+                  selectedAsset.totalConsumed ??
+                  selectedAsset.consumedNewPurchaseInventoryUnits ??
+                  "0"
+                }
+              />
+              <DetalisFormatted
+                title="New Remaining Units"
+                detail={
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
+                  "0"
+                }
+              />
+              <DetalisFormatted
+                title="Closing Units"
+                detail={
+                  selectedAsset.newRemainingUnitValue ??
+                  selectedAsset.remainingNewPurchaseInventoryUnits ??
+                  selectedAsset.closingInventoryUnits ??
+                  "0"
+                }
+              />
+
+              <br />
+              <div className="font-bold">Inventory Added By</div>
+              <DetalisFormatted
+                title="Name"
+                detail={selectedAsset.addedByName || "N/A"}
+              />
+            </div>
+          )
         )}
 
-        {modalMode === "edit" && (
+         {["edit", "assign"].includes(modalMode) && (
           <div>
             <form
               onSubmit={handleUpdate(handleUpdateSubmit)}
@@ -2728,14 +3498,51 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 <Controller
                   name="unitNo"
                   control={updateControl}
+                  rules={
+                    inventoryRootView === "overall"
+                      ? { required: "Unit No is required" }
+                      : undefined
+                  }
                   render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Unit No"
-                      fullWidth
-                      size="small"
-                      disabled
-                    />
+                    inventoryRootView === "overall" ? (
+                      <FormControl
+                        fullWidth
+                        size="small"
+                        error={!!updateErrors.unitNo}
+                      >
+                        <InputLabel id="assign-unit-no-label">
+                          Assign Unit No
+                        </InputLabel>
+                        <Select
+                          {...field}
+                          labelId="assign-unit-no-label"
+                          label="Assign Unit No"
+                          value={field.value ?? ""}
+                          onChange={(event) =>
+                            field.onChange(event.target.value)
+                          }
+                        >
+                          <MenuItem value="">Select unit</MenuItem>
+                          {selectedBuildingUnits.map((unit) => (
+                            <MenuItem key={unit?._id} value={unit?._id}>
+                              {unit?.unitNo}
+                            </MenuItem>
+                          ))}
+                        </Select>
+                        <FormHelperText>
+                          {updateErrors.unitNo?.message}
+                        </FormHelperText>
+                      </FormControl>
+                    ) : (
+                      <TextField
+                        {...field}
+                        value={field.value ?? ""}
+                        label="Unit No"
+                        fullWidth
+                        size="small"
+                        disabled
+                      />
+                    )
                   )}
                 />
                 <Controller
@@ -2788,164 +3595,138 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                 />
               </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  name="openingInventoryUnits"
-                  control={updateControl}
-                  rules={{ required: "Opening units required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.openingInventoryUnits}
-                      // helperText={updateErrors.openingInventoryUnits?.message}
+              {inventoryRootView === "overall" && (
+                <>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      name="openingInventoryUnits"
+                      control={updateControl}
+                      rules={{ required: "Opening units required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Units"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.openingInventoryUnits}
+                          // helperText={updateErrors.openingInventoryUnits?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="openingPerUnitPrice"
-                  control={updateControl}
-                  // rules={{ required: "Per unit price required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Per Unit Price"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.openingPerUnitPrice}
-                      // helperText={updateErrors.openingPerUnitPrice?.message}
+                    <Controller
+                      name="openingPerUnitPrice"
+                      control={updateControl}
+                      // rules={{ required: "Per unit price required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Per Unit Price"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.openingPerUnitPrice}
+                          // helperText={updateErrors.openingPerUnitPrice?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="openingInventoryValue"
-                  control={updateControl}
-                  rules={{ required: "Opening value required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Opening Value"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
+                    <Controller
+                      name="openingInventoryValue"
+                      control={updateControl}
+                      rules={{ required: "Opening value required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Opening Value"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Controller
-                  name="newPurchaseUnits"
-                  control={updateControl}
-                  // rules={{ required: "New purchase units required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.newPurchaseUnits}
-                      // helperText={updateErrors.newPurchaseUnits?.message}
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                    <Controller
+                      name="newPurchaseUnits"
+                      control={updateControl}
+                      // rules={{ required: "New purchase units required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Units"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.newPurchaseUnits}
+                          // helperText={updateErrors.newPurchaseUnits?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="newPurchasePerUnitPrice"
-                  control={updateControl}
-                  // rules={{ required: "New per unit price required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Per Unit Price"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.newPurchasePerUnitPrice}
-                      // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                    <Controller
+                      name="newPurchasePerUnitPrice"
+                      control={updateControl}
+                      // rules={{ required: "New per unit price required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Per Unit Price"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                          // error={!!updateErrors.newPurchasePerUnitPrice}
+                          // helperText={updateErrors.newPurchasePerUnitPrice?.message}
+                        />
+                      )}
                     />
-                  )}
-                />
 
-                <Controller
-                  name="newPurchaseInventoryValue"
-                  control={updateControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Purchase Value"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
+                    <Controller
+                      name="newPurchaseInventoryValue"
+                      control={updateControl}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="New Purchase Value"
+                          type="number"
+                          size="small"
+                          fullWidth
+                          disabled
+                        />
+                      )}
                     />
-                  )}
-                />
-              </div>
+                  </div>
+                </>
+              )}
 
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Controller
-                  name="lastConsumed"
-                  control={updateControl}
-                  // rules={{ required: "Last consumed unit value is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Last Consumed Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                      // error={!!updateErrors.lastConsumedUnitValue}
-                      // helperText={updateErrors.lastConsumedUnitValue?.message}
-                    />
-                  )}
-                />
-                <Controller
-                  name="remainingOpeningInventoryUnits"
-                  control={updateControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Last Remaining Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      disabled
-                    />
-                  )}
-                />
-              </div>
+              {inventoryRootView !== "overall" && (
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Controller
+                    name="remainingOpeningInventoryUnits"
+                    control={updateControl}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        label="New Assigned Unit"
+                        type="number"
+                        size="small"
+                        fullWidth
+                        disabled
+                        className="md:col-span-2"
+                      />
+                    )}
+                  />
+                </div>
+              )}
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <Controller
-                  name="newConsumedUnitValue"
-                  control={updateControl}
-                  rules={{ required: "New consumed unit value is required" }}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="New Consumed Units"
-                      type="number"
-                      size="small"
-                      fullWidth
-                      error={!!updateErrors.newConsumedUnitValue}
-                      helperText={updateErrors.newConsumedUnitValue?.message}
-                    />
-                  )}
-                />
                 <Controller
                   name="remainingNewPurchaseInventoryUnits"
                   control={updateControl}
@@ -2960,10 +3741,34 @@ const Inventory = ({ forcedBuildingTab = null }) => {
                     />
                   )}
                 />
+                <Controller
+                  name="newConsumedUnitValue"
+                  control={updateControl}
+                  rules={{ required: "New consumed unit value is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label={
+                        inventoryRootView === "overall"
+                          ? "Assigned Unit Value"
+                          : "New Consumed Units"
+                      }
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!updateErrors.newConsumedUnitValue}
+                      helperText={updateErrors.newConsumedUnitValue?.message}
+                    />
+                  )}
+                />
               </div>
 
               <PrimaryButton
-                title="Update Inventory"
+                title={
+                  inventoryRootView === "overall"
+                    ? "Assign "
+                    : "Update Inventory"
+                }
                 className="w-full col-span-2"
                 type="submit"
               />
