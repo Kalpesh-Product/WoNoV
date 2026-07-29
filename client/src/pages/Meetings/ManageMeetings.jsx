@@ -341,6 +341,7 @@ const ManageMeetings = () => {
         params: {
           filters: meetingFilters,
           type: "internal",
+          completed: false,
           page: pagination.page,
           limit: pagination.limit,
         },
