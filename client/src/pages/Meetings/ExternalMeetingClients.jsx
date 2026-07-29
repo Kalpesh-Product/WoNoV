@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
 import {
@@ -294,6 +294,7 @@ const ExternalMeetingCLients = () => {
       pagination.page,
       pagination.limit,
     ],  
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
         params: {
@@ -1055,12 +1056,13 @@ const ExternalMeetingCLients = () => {
   return (
     <div className="flex-col gap-4">
       <PageFrame>
-        {!isMeetingsLoading ? (
+        {isMeetingsLoading && meetings.length === 0 ? (
+          <CircularProgress />
+        ) : (
           <YearWiseTable
-            key={transformedMeetings.length}
             search
             dateColumn={"date"}
-             initialDateRange={initialMeetingDateRange}
+            initialDateRange={initialMeetingDateRange}
             onDateFilterChange={handleMeetingDateFilterChange}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
@@ -1074,8 +1076,6 @@ const ExternalMeetingCLients = () => {
               setPagination((current) => ({ ...current, page }))
             }
           />
-        ) : (
-          <CircularProgress />
         )}
       </PageFrame>
 
