@@ -290,14 +290,17 @@ const ExternalMeetingCLients = () => {
       "external-meetings",
       meetingFilters.startDate,
       meetingFilters.endDate,
+      "false",
       pagination.page,
       pagination.limit,
     ],  
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
         params: {
-          filters: meetingFilters,
+          startDate: meetingFilters.startDate,
+          endDate: meetingFilters.endDate,
           type: "External",
+          completed: "false",
           page: pagination.page,
           limit: pagination.limit,
         },
@@ -313,14 +316,7 @@ const ExternalMeetingCLients = () => {
       return response.data.data || [];
     },
   });
-  const filteredMeetings = meetings.filter(
-    // (item) => item.meetingStatus !== "Completed",
-     (item) =>
-      item.meetingStatus !== "Completed" &&
-      item.meetingStatus !== "Cancelled",
-  );
-
-  const transformedMeetings = filteredMeetings
+  const transformedMeetings = meetings
     .filter((m) => m.meetingType === "External")
     .map((meeting, index) => {
       return {
