@@ -1,7 +1,6 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const mongoose = require("mongoose");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
 const { corsConfig } = require("./config/corsConfig");
@@ -67,8 +66,6 @@ const app = express();
 const PORT = process.env.PORT || 5009;
 app.set("trust proxy", true);
 
-connectDb(process.env.DB_URL);
-
 app.use(credentials);
 app.use(cors(corsConfig));
 app.use(cookieParser());
@@ -86,6 +83,17 @@ app.use("/api", (req, res, next) => {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
   next();
+});
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDb(process.env.DB_URL);
+    next();
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+    return res.status(503).json({
+      message: "Database temporarily unavailable. Please retry.",
+    });
+  }
 });
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -159,13 +167,24 @@ app.all("*", (req, res) => {
 });
 
 app.use(errorHandler);
-// test
+const startServer = async () => {
+  try {
+    await connectDb(process.env.DB_URL);
+    app.listen(PORT, () => {
+      console.log("Connected to MongoDB");
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error.message);
+    process.exitCode = 1;
+  }
+};
 
-mongoose.connection.once("open", () => {
-  console.log("Connected to MongoDB");
-  app.listen(PORT);
-  console.log(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
 
 // For Generating hashed password for testing
 // (async () => {
