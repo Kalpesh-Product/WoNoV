@@ -66,8 +66,26 @@ const fetchCoworkingClientReportService = async ({
   dateFilter,
   user,
   isReport = false,
+  page,
+  limit,
 }) => {
   const { coworkingclientid, unitId, active } = query;
+  const shouldPaginate = page !== undefined && limit !== undefined;
+  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+  const skip = (parsedPage - 1) * parsedLimit;
+  const buildResponse = (data, total = 0) =>
+    shouldPaginate
+      ? {
+          data,
+          pagination: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages: Math.ceil(total / parsedLimit),
+          },
+        }
+      : data;
 
   if (
     coworkingclientid &&
@@ -86,7 +104,7 @@ const fetchCoworkingClientReportService = async ({
   });
 
   if (!units?.length) {
-    return [];
+    return buildResponse([]);
   }
 
   let clientQuery = { company };
@@ -99,8 +117,7 @@ const fetchCoworkingClientReportService = async ({
     clientQuery.isActive = active === "true";
   }
 
-  // Add date filtering if applicable
-  if (dateFilter) {
+  if (dateFilter?.startDate) {
     clientQuery.startDate = dateFilter.startDate;
   }
 
@@ -119,17 +136,14 @@ const fetchCoworkingClientReportService = async ({
     },
   ];
 
-  const clients = await CoworkingClient.find(clientQuery)
-    .populate(populateOptions)
-    .lean()
-    .exec();
-
   let hostCompanyData = [];
 
-  if (
-    !coworkingclientid ||
-    coworkingclientid.toString() === company.toString()
-  ) {
+  const shouldIncludeHost =
+    !isReport &&
+    (!coworkingclientid ||
+      coworkingclientid.toString() === company.toString());
+
+  if (shouldIncludeHost) {
     const hostCompany = await Company.findById(company)
       .select(
         "companyName totalMeetingCredits meetingCreditBalance meetingCreditBalanceHistory",
@@ -153,13 +167,41 @@ const fetchCoworkingClientReportService = async ({
     }
   }
 
-  const allEntities = [...(isReport ? [] : hostCompanyData), ...clients];
+  const hostCount = hostCompanyData.length;
+  let clientsQuery = CoworkingClient.find(clientQuery).populate(populateOptions);
+  let total = 0;
 
-  if (!allEntities.length) {
-    return [];
+  if (shouldPaginate) {
+    const clientSkip = Math.max(skip - hostCount, 0);
+    const includedHostCount = skip < hostCount ? hostCount - skip : 0;
+    const clientLimit = Math.max(parsedLimit - includedHostCount, 0);
+
+    clientsQuery = clientsQuery
+      .sort({ _id: 1 })
+      .skip(clientSkip)
+      .limit(clientLimit);
+
+    total = hostCount + (await CoworkingClient.countDocuments(clientQuery));
   }
 
-  const members = await CoworkingMembers.find({ company })
+  const clients = await clientsQuery.lean().exec();
+  const paginatedHostData =
+    !shouldPaginate || skip < hostCount ? hostCompanyData : [];
+  const allEntities = [...paginatedHostData, ...clients];
+
+  if (!allEntities.length) {
+    return buildResponse([], total);
+  }
+
+  const clientObjectIds = allEntities
+    .map((entity) => entity?._id)
+    .filter((id) => mongoose.Types.ObjectId.isValid(id))
+    .map((id) => new mongoose.Types.ObjectId(id));
+
+  const members = await CoworkingMembers.find({
+    company,
+    client: { $in: clientObjectIds },
+  })
     .populate([
       {
         path: "client",
@@ -174,11 +216,6 @@ const fetchCoworkingClientReportService = async ({
     .exec();
 
   const visibleMembers = filterVisibleMembers(members, { user });
-
-  const clientObjectIds = allEntities
-    .map((entity) => entity?._id)
-    .filter((id) => mongoose.Types.ObjectId.isValid(id))
-    .map((id) => new mongoose.Types.ObjectId(id));
 
   const shouldIncludeDeletedMembers = canViewDeletedMembers({ user });
 
@@ -212,7 +249,7 @@ const fetchCoworkingClientReportService = async ({
     return acc;
   }, {});
 
-  return allEntities.map((entity) => {
+  const result = allEntities.map((entity) => {
     const entityId = entity?._id?.toString();
 
     const {
@@ -254,6 +291,8 @@ const fetchCoworkingClientReportService = async ({
       },
     };
   });
+
+  return buildResponse(result, total);
 };
 
 const fetchVirtualOfficeClientsReportService = async ({
