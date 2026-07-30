@@ -1,15 +1,57 @@
-import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useCallback, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
+import dayjs from "dayjs";
+
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
 
 const AssetReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const initialDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [dateRange, setDateRange] = useState(initialDateRange);
+
+  const handleDateFilterChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+    setDateRange((current) => {
+      const isSameRange =
+        dayjs(current.startDate).isSame(selectedRange.startDate, "day") &&
+        dayjs(current.endDate).isSame(selectedRange.endDate, "day");
+
+      return isSameRange ? current : selectedRange;
+    });
+    setPagination((current) =>
+      current.page === 1 ? current : { ...current, page: 1 },
+    );
+  }, []);
 
   const formatDateTime = (value) => {
     if (!value) return "N/A";
@@ -35,10 +77,33 @@ const AssetReports = () => {
   );
 
   const { data: groupedAssets = [], isLoading } = useQuery({
-    queryKey: ["asset-reports", userDepartmentIds],
+     queryKey: [
+      "asset-reports",
+      userDepartmentIds,
+      dateRange.startDate,
+      dateRange.endDate,
+      pagination.page,
+      pagination.limit,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const response = await axios.get("/api/assets/get-assets");
-      return Array.isArray(response.data) ? response.data : [];
+     const response = await axios.get("/api/assets/get-assets", {
+        params: {
+          startDate: toUtcDayBoundary(dateRange.startDate),
+          endDate: toUtcDayBoundary(dateRange.endDate, true),
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      const responsePagination = response.data.pagination;
+
+      setPagination((current) => ({
+        page: Number(responsePagination?.page) || current.page,
+        limit: Number(responsePagination?.limit) || current.limit,
+        total: Number(responsePagination?.total) || 0,
+      }));
+
+      return response.data.data || [];
     },
   });
 
@@ -94,8 +159,7 @@ const AssetReports = () => {
           userDepartmentIds.includes(departmentGroup?.departmentId?.toString()),
         )
         .flatMap((departmentGroup) =>
-          (departmentGroup?.assets || []).map((asset, index) => ({
-            srNo: index + 1,
+          (departmentGroup?.assets || []).map((asset) => ({
             assetNumber: asset?.assetId || "N/A",
             secondaryId: asset?.secondaryId || "N/A",
             assetName: asset?.name || "N/A",
@@ -158,8 +222,12 @@ const AssetReports = () => {
             assetImage: asset?.assetImage?.url || "N/A",
             warrantyDocument: asset?.warrantyDocument?.link || "N/A",
           })),
-        ),
-    [groupedAssets, userDepartmentIds, auth],
+         )
+        .map((asset, index) => ({
+          ...asset,
+          srNo: (pagination.page - 1) * pagination.limit + index + 1,
+        })),
+    [auth, groupedAssets, pagination.limit, pagination.page, userDepartmentIds],
   );
 
   return (
@@ -171,11 +239,20 @@ const AssetReports = () => {
           exportAllColumns
           taskExportDateTimeFormatting
           dateColumn="purchaseDate"
+           initialDateRange={initialDateRange}
+          onDateFilterChange={handleDateFilterChange}
           tableTitle="Asset Reports"
           data={isLoading ? [] : reportData}
           columns={assetReportsColumns}
           dropdownColumns={[]}
           hideTitle={true}
+          serverPagination
+          paginationPageSize={pagination.limit}
+          paginationPage={pagination.page}
+          paginationTotal={pagination.total}
+          onPaginationPageChange={(page) =>
+            setPagination((current) => ({ ...current, page }))
+          }
         />
       </PageFrame>
     </div>
