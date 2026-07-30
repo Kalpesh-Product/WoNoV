@@ -1,14 +1,15 @@
 require("dotenv").config();
-const mongoose = require("mongoose");
 const connectDb = require("../config/db");
 
-connectDb(process.env.DB_URL);
+const startWorker = async () => {
+  try {
+    await connectDb(process.env.DB_URL);
+    require("./report.worker");
+    console.log("Worker started");
+  } catch (error) {
+    console.error("MongoDB connection error (worker):", error.message);
+    process.exitCode = 1;
+  }
+};
 
-mongoose.connection.once("open", () => {
-  require("./report.worker");
-  console.log("Worker started ✅");
-});
-
-mongoose.connection.on("error", (err) => {
-  console.error("MongoDB connection error (worker):", err.message);
-});
+startWorker();
