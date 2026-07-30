@@ -33,6 +33,23 @@ const getFinancialYearLabel = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const normalizeAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsed = Number(value.replace(/,/g, ""));
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
+};
+
+const sumParticularAmounts = (particulars = []) => {
+  if (!Array.isArray(particulars)) return 0;
+  return particulars.reduce(
+    (sum, item) => sum + normalizeAmount(item?.particularAmount),
+    0,
+  );
+};
+
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
@@ -40,8 +57,12 @@ const BudgetPage = () => {
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
+  const fyFromQuery = useMemo(
+    () => new URLSearchParams(location.search).get("fy"),
+    [location.search],
+  );
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(
-    getCurrentFinancialYearLabel(),
+    fyFromQuery || getCurrentFinancialYearLabel(),
   );
  
   const requestBudgetPermissionByDepartment = {
@@ -94,6 +115,37 @@ const BudgetPage = () => {
     },
     enabled: !!department?._id,
   });
+
+  const availableFiscalYears = useMemo(() => {
+    return [...new Set(
+      (hrFinance || [])
+        .map((item) => getFinancialYearLabel(item?.dueDate))
+        .filter(Boolean),
+    )].sort(
+      (fyA, fyB) =>
+        Number(fyA.match(/\d{4}/)?.[0] || 0) -
+        Number(fyB.match(/\d{4}/)?.[0] || 0),
+    );
+  }, [hrFinance]);
+
+  useEffect(() => {
+    if (fyFromQuery && availableFiscalYears.includes(fyFromQuery)) {
+      if (selectedFiscalYear !== fyFromQuery) {
+        setSelectedFiscalYear(fyFromQuery);
+      }
+      return;
+    }
+
+    const latestAvailableFY =
+      availableFiscalYears[availableFiscalYears.length - 1];
+
+    if (
+      latestAvailableFY &&
+      !availableFiscalYears.includes(selectedFiscalYear)
+    ) {
+      setSelectedFiscalYear(latestAvailableFY);
+    }
+  }, [availableFiscalYears, fyFromQuery, selectedFiscalYear]);
 
   const {
     data: units = [],
@@ -298,11 +350,20 @@ const BudgetPage = () => {
   }, [hrFinance]);
 
   const budgetGraphData = useMemo(() => {
+    const isCafeDepartment = department?.name?.toLowerCase() === "cafe";
+
     return (hrFinance || []).flatMap((item) => {
       const dueDate = item?.dueDate;
-      const projectedAmount = Number(item?.projectedAmount || 0);
-      const actualAmount = Number(item?.actualAmount || 0);
-      const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+      const projectedAmount =
+        normalizeAmount(item?.projectedAmount) ||
+        (isCafeDepartment
+          ? sumParticularAmounts(item?.particulars) ||
+            sumParticularAmounts(item?.finance?.particulars)
+          : 0);
+      const actualAmount = normalizeAmount(item?.actualAmount);
+      const projectedSeriesAmount = isCafeDepartment
+        ? projectedAmount
+        : Math.max(projectedAmount - actualAmount, 0);
 
       const series = [
         {
@@ -312,12 +373,12 @@ const BudgetPage = () => {
         },
       ];
 
-      const shouldShowProjectedAmount = remainingProjectedAmount > 0;
+      const shouldShowProjectedAmount = projectedSeriesAmount > 0;
 
       if (shouldShowProjectedAmount) {
         series.push({
           dueDate,
-          amount: remainingProjectedAmount,
+          amount: projectedSeriesAmount,
           vertical: "Projected Amount",
         });
       }

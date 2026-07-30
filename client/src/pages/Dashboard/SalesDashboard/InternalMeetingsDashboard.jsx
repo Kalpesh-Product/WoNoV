@@ -50,9 +50,14 @@ const InternalMeetingsDashboard = () => {
     const axios = useAxiosPrivate();
 
     const { data: meetings = [] } = useQuery({
-        queryKey: ["all-meetings"],
-        queryFn: async () => {
-            const response = await axios.get("/api/meetings/get-meetings");
+    queryKey: ["all-meetings"],
+    queryFn: async () => {
+            const response = await axios.get("/api/meetings/get-meetings", {
+                params: {
+                    type: "internal",
+                    completed: false,
+                },
+            });
             return response.data;
         },
     });

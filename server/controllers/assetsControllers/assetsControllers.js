@@ -18,6 +18,7 @@ const AssignAsset = require("../../models/assets/AssignAsset");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Unit = require("../../models/locations/Unit");
+const buildDateFilter = require("../../utils/dateFilter");
 
 const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
   const parsedBaseDate = new Date(baseDate);
@@ -88,6 +89,20 @@ const getAssetsWithDepartments = async (req, res, next) => {
 };
 
 async function getAssets(req, res) {
+  const requestDateFilter = req.query?.dateFilter || req.query?.filters || {
+    startDate:
+      req.query?.["dateFilter[startDate]"] ||
+      req.query?.["filters[startDate]"] ||
+      req.query?.startDate,
+    endDate:
+      req.query?.["dateFilter[endDate]"] ||
+      req.query?.["filters[endDate]"] ||
+      req.query?.endDate,
+  };
+  const hasDateFilter = Boolean(
+    requestDateFilter?.startDate || requestDateFilter?.endDate,
+  );
+
   const payload = await fetchAssetReportService({
     departmentId: req.body?.department,
     departments: req.departments || [],
@@ -95,6 +110,15 @@ async function getAssets(req, res) {
     company: req?.company || null,
     user: req?.user || null,
     query: req?.query || {},
+    page: req.query?.page,
+    limit: req.query?.limit,
+    ...(hasDateFilter && {
+      dateFilter: buildDateFilter({
+        startDate: requestDateFilter.startDate,
+        endDate: requestDateFilter.endDate,
+        field: "createdAt",
+      }),
+    }),
   });
 
   return res.status(200).json(payload);

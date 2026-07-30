@@ -34,6 +34,8 @@ const fetchMeetingReportService = async ({
   user,
   isReport = false,
   type,
+  completed,
+ 
   page,
   limit,
 }) => {
@@ -78,15 +80,23 @@ const fetchMeetingReportService = async ({
     const meetingTypeFilter = String(type || "")
       .trim()
       .toLowerCase();
+    const normalizedCompletedFilter = String(completed ?? "")
+      .trim()
+      .toLowerCase();
+ 
+    const shouldHideCompleted =
+      normalizedCompletedFilter === "false"  ;
     const meetingQuery = {
       company,
       ...(dateFilter?.startDate && { startDate: dateFilter.startDate }),
-      ...(isReport &&
-        ["internal", "external"].includes(meetingTypeFilter) && {
-          meetingType:
-            meetingTypeFilter.charAt(0).toUpperCase() +
-            meetingTypeFilter.slice(1),
-        }),
+      ...(["internal", "external"].includes(meetingTypeFilter) && {
+        meetingType:
+          meetingTypeFilter.charAt(0).toUpperCase() +
+          meetingTypeFilter.slice(1),
+      }),
+      ...(shouldHideCompleted && {
+        status: { $nin: ["Completed", "Cancelled"] },
+      }),
       ...(!canViewAllMeetings &&
         currentUserId && {
           $or: [
