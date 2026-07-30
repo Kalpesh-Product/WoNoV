@@ -639,6 +639,7 @@ async function getMeetings(req, res) {
   const { user, company, roles, departments = [] } = req;
   const type = req.query?.type || req.type || "";
   const completed = req.query?.completed;
+  const includeTotal = req.query?.includeTotal === "true";
   
   const requestFilters = req.query?.dateFilter ||
     req.query?.filters || {
@@ -662,6 +663,7 @@ async function getMeetings(req, res) {
     company,
     type,
     completed,
+    includeTotal,
     page: req.query?.page,
     limit: req.query?.limit,
     ...(hasDateFilter && {

@@ -16,13 +16,17 @@ import dayjs from "dayjs";
 
 import MuiModal from "../../components/MuiModal";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import humanDate from "../../utils/humanDateForamt";
 import { useSelector } from "react-redux";
 import { setMeetings } from "../../redux/slices/meetingSlice";
 import humanTime from "../../utils/humanTime";
 import useAuth from "../../hooks/useAuth";
+const getMonthRange = (value = dayjs()) => ({
+  startDate: value.startOf("month").toDate(),
+  endDate: value.endOf("month").toDate(),
+});
 const Calender = () => {
   const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -40,13 +44,33 @@ const Calender = () => {
     "upcoming",
     "completed", // ⬅ change "Completed" to "completed"
   ]);
+  const [calendarRange, setCalendarRange] = useState(() => getMonthRange());
+  const calendarFilters = useMemo(
+    () => ({
+      startDate: dayjs(calendarRange.startDate).format(
+        "YYYY-MM-DDTHH:mm:ssZ",
+      ),
+      endDate: dayjs(calendarRange.endDate).format("YYYY-MM-DDTHH:mm:ssZ"),
+    }),
+    [calendarRange],
+  );
 
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
-    queryKey: ["meetings-calendar"],
+    queryKey: [
+      "meetings-calendar",
+      calendarFilters.startDate,
+      calendarFilters.endDate,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       try {
-        const respone = await axios.get("/api/meetings/get-meetings");
-        return respone.data;
+        const respone = await axios.get("/api/meetings/get-meetings", {
+          params: {
+            ...calendarFilters,
+            includeTotal: "true",
+          },
+        });
+        return respone.data.data || respone.data || [];
       } catch (error) {
         console.error(error);
       }
@@ -138,6 +162,10 @@ const Calender = () => {
   );
 
   const currentUserId = auth?.user?._id?.toString();
+  const allowedMeetingStatuses = useMemo(
+    () => new Set(["upcoming", "completed"]),
+    [],
+  );
 
   const visibleMeetings = useMemo(() => {
     if (!Array.isArray(meetings)) return [];
@@ -151,13 +179,18 @@ const Calender = () => {
       const meetingDepartmentIds = (meeting?.department || [])
         .map((dept) => dept?._id?.toString())
         .filter(Boolean);
+      const meetingStatus = meeting?.meetingStatus?.toLowerCase?.();
 
-       const isCurrentUserParticipant =
+      const isCurrentUserParticipant =
         bookedById?.toString() === currentUserId ||
         meeting?.clientBookedBy?._id?.toString() === currentUserId ||
         (meeting?.participants || []).some(
           (participant) => participant?._id?.toString() === currentUserId
         );  
+
+      if (!allowedMeetingStatuses.has(meetingStatus)) {
+        return false;
+      }
 
       if (isFinanceEmployee) {
         //return bookedById?.toString() === currentUserId;
@@ -183,6 +216,7 @@ const Calender = () => {
     isManager,
     userDepartmentIds,
     currentUserId,
+    allowedMeetingStatuses,
   ]);
 
   const transformedMeetings = useMemo(() => {
@@ -378,12 +412,22 @@ const Calender = () => {
                   eventContent={(meeting) => (
                     <span className="text-content">{meeting.event.title}</span>
                   )}
-                  eventClick={handleEventClick}
-                  contentHeight={520}
-                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                  initialView="dayGridMonth"
-                  events={filteredEvents}
-                />
+                eventClick={handleEventClick}
+                contentHeight={520}
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                datesSet={(dateInfo) =>
+                  setCalendarRange({
+                    startDate: dayjs(dateInfo.view.calendar.getDate())
+                      .startOf("month")
+                      .toDate(),
+                    endDate: dayjs(dateInfo.view.calendar.getDate())
+                      .endOf("month")
+                      .toDate(),
+                  })
+                }
+                events={filteredEvents}
+              />
               </div>
             </div>
           </>
