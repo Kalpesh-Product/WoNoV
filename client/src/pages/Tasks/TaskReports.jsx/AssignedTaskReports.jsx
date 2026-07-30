@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import humanDate from "../../../utils/humanDateForamt";
@@ -17,6 +17,22 @@ import dayjs from "dayjs";
 import useAuth from "../../../hooks/useAuth";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
+
 const AssignedTaskReports = () => {
   const axios = useAxiosPrivate();
   const dispatch = useDispatch();
@@ -27,26 +43,60 @@ const AssignedTaskReports = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
-  const [selectedTaskRange, setSelectedTaskRange] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const initialDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
+  const [selectedTaskRange, setSelectedTaskRange] = useState(initialDateRange);
   React.useEffect(() => {
     if (!deptId && currentDepartmentId) {
       dispatch(setSelectedDepartment(currentDepartmentId));
     }
   }, [currentDepartmentId, deptId, dispatch]);
+  React.useEffect(() => {
+    setPagination((current) =>
+      current.page === 1 ? current : { ...current, page: 1 },
+    );
+  }, [effectiveDeptId]);
 
   const { data: taskList = [], isLoading } = useQuery({
-    queryKey: ["department-tasks", effectiveDeptId],
+    queryKey: [
+      "department-tasks",
+      "report",
+      effectiveDeptId,
+      selectedTaskRange.startDate,
+      selectedTaskRange.endDate,
+      pagination.page,
+      pagination.limit,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!effectiveDeptId) return [];
 
-      const [pendingTasks, completedTasks] = await Promise.all([
-        axios.get(`/api/tasks/get-tasks?dept=${effectiveDeptId}`),
-        axios.get(`/api/tasks/get-completed-tasks/${effectiveDeptId}`),
-      ]);
+       const response = await axios.get("/api/tasks/get-tasks", {
+        params: {
+          dept: effectiveDeptId,
+          report: true,
+          startDate: toUtcDayBoundary(selectedTaskRange.startDate),
+          endDate: toUtcDayBoundary(selectedTaskRange.endDate, true),
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      const responsePagination = response.data.pagination;
 
-      return [...pendingTasks.data, ...completedTasks.data].filter(
-        (task) => task.taskType === "Department"
-      );
+      setPagination((current) => ({
+        page: Number(responsePagination?.page) || current.page,
+        limit: Number(responsePagination?.limit) || current.limit,
+        total: Number(responsePagination?.total) || 0,
+      }));
+
+     return response.data.data || [];
     },
     enabled: Boolean(effectiveDeptId),
   });
@@ -170,7 +220,8 @@ const AssignedTaskReports = () => {
     selectedTaskRange?.startDate ? dayjs(selectedTaskRange.startDate) : dayjs()
   ).format("MMMM");
 
-  const handleTaskRangeChange = ({ selectedRange }) => {
+   const handleTaskRangeChange = useCallback(({ selectedRange }) => {
+    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
     setSelectedTaskRange((prev) => {
       const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
       const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
@@ -187,7 +238,10 @@ const AssignedTaskReports = () => {
 
       return selectedRange;
     });
-  };
+  setPagination((current) =>
+      current.page === 1 ? current : { ...current, page: 1 },
+    );
+  }, []);
 
   return (
     <div className="flex flex-col gap-8">
@@ -197,12 +251,13 @@ const AssignedTaskReports = () => {
           taskExportDateTimeFormatting
           search={true}
           dateColumn={"assignedDate"}
+         initialDateRange={initialDateRange}
           tableTitle={`Department Tasks Reports - ${currentMonthLabel}`}
           data={
             isLoading
               ? []
               : taskList.map((task, index) => ({
-                srNo: index + 1,
+                srNo: (pagination.page - 1) * pagination.limit + index + 1,
                 ...task,
                 taskName: task.taskName,
                 startDate: task.assignedDate,
@@ -231,6 +286,13 @@ const AssignedTaskReports = () => {
           }
           columns={myTaskReportsColumns}
           onDateFilterChange={handleTaskRangeChange}
+          serverPagination
+          paginationPageSize={pagination.limit}
+          paginationPage={pagination.page}
+          paginationTotal={pagination.total}
+          onPaginationPageChange={(page) =>
+            setPagination((current) => ({ ...current, page }))
+          }
         />
       </PageFrame>
 
