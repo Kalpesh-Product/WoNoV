@@ -9,6 +9,83 @@ const Task = require("../../models/tasks/Task");
 //)
 const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
 
+const fetchAllTasksService = async ({
+  dateFilter,
+  departments = [],
+  roles = [],
+  company,
+  page,
+  limit,
+}) => {
+  const shouldPaginate = page !== undefined && limit !== undefined;
+  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+  const skip = (parsedPage - 1) * parsedLimit;
+  const hasGlobalAccess =
+    roles.includes("Master Admin") || roles.includes("Super Admin");
+  const queryObj = {
+    company,
+    isDeleted: { $ne: true },
+    ...(!hasGlobalAccess && { department: { $in: departments } }),
+    ...(dateFilter?.assignedDate && {
+      assignedDate: dateFilter.assignedDate,
+    }),
+  };
+
+  let tasksQuery = Task.find(queryObj)
+    .populate("assignedBy", "firstName lastName")
+    .populate("assignedTo", "firstName lastName")
+    .populate("completedBy", "firstName lastName")
+    .populate("department", "name")
+    .populate({
+      path: "location",
+      select: "unitNo unitName",
+      populate: { path: "building", select: "buildingName" },
+    })
+    .select("-company");
+
+  if (shouldPaginate) {
+    tasksQuery = tasksQuery.sort({ _id: 1 }).skip(skip).limit(parsedLimit);
+  }
+
+  const [tasks, total] = await Promise.all([
+    tasksQuery.lean().exec(),
+    shouldPaginate
+      ? Task.countDocuments(queryObj).exec()
+      : Promise.resolve(null),
+  ]);
+
+  const transformedTasks = tasks.map((task) => {
+    const completedBy = task.completedBy
+      ? [
+          task.completedBy.firstName,
+          task.completedBy.middleName,
+          task.completedBy.lastName,
+        ]
+          .filter(Boolean)
+          .join(" ")
+      : "";
+
+    return {
+      ...task,
+      department: task.department.name,
+      completedBy,
+    };
+  });
+
+  return shouldPaginate
+    ? {
+        data: transformedTasks,
+        pagination: {
+          page: parsedPage,
+          limit: parsedLimit,
+          total,
+          totalPages: Math.ceil(total / parsedLimit),
+        },
+      }
+    : transformedTasks;
+};
+
 const fetchDeptTaskReportService = async ({
   dateFilter,
   departments = [],
@@ -159,6 +236,7 @@ const fetchMyTasksReportService = async ({
 };
 
 module.exports = {
+  fetchAllTasksService,
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
 };
