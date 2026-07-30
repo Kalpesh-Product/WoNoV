@@ -10,15 +10,21 @@ const fetchUsersReportService = async ({
   isReport = false,
   type = "currentEmployees",
 } = {}) => {
-  const { deptId, status = "true" } = query;
+  const { deptId, status } = query;
+  const resolvedStatus =
+    typeof status === "string" && status.trim() !== ""
+      ? status
+      : type === "pastEmployees"
+        ? "false"
+        : "true";
 
-  if (status && !["true", "false"].includes(status)) {
+  if (!["true", "false"].includes(resolvedStatus)) {
     throw new Error("Status must be true/false");
   }
 
   const filter = {
     company,
-    isActive: type === "pastEmployees" ? false : true,
+    isActive: resolvedStatus === "true",
   };
 
   if (deptId) {

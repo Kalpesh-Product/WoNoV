@@ -96,6 +96,7 @@ export default function CompletedLeaveRequests() {
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"
+          taskExportDateTimeFormatting
           tableTitle="Completed Leave Requests"
           exportData
         />
