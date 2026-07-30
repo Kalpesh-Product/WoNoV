@@ -7,10 +7,19 @@ const fetchTicketReportService = async ({
   departmentId,
   roles,
   departments,
+  company,
+  isReport = true,
+  page,
+  limit,
 }) => {
   let query = {};
 
   try {
+    const shouldPaginate = page !== undefined && limit !== undefined;
+    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+    const skip = (parsedPage - 1) * parsedLimit;
+
     if (departmentId && !mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new Error("Invalid department ID provided");
     }
@@ -32,6 +41,7 @@ const fetchTicketReportService = async ({
         : [];
 
     query = {
+      ...(company ? { company } : {}),
       ...(isMasterAdmin
         ? {}
         : { raisedToDepartment: { $in: selectedDepartments } }),
@@ -54,37 +64,70 @@ const fetchTicketReportService = async ({
       };
     }
 
-    const tickets = await Ticket.find(query)
-      .populate([
-        {
-          path: "raisedBy",
-          select: "firstName lastName departments",
-          populate: {
-            path: "departments",
-            select: "name",
-            model: "Department",
-          },
+    let ticketsQuery = Ticket.find(query).populate([
+      {
+        path: "raisedBy",
+        select: "firstName lastName departments",
+        populate: {
+          path: "departments",
+          select: "name",
+          model: "Department",
         },
-        { path: "raisedToDepartment", select: "name" },
-        { path: "acceptedBy", select: "firstName lastName email" },
-        { path: "closedBy", select: "firstName lastName email" },
-        { path: "assignees", select: "firstName lastName" },
-        { path: "assignedTo.assignee", select: "firstName lastName" },
-        {
-          path: "escalatedTo",
-          select: "status raisedToDepartment createdAt",
-          populate: {
-            path: "raisedToDepartment",
-            select: "name",
-          },
+      },
+      { path: "raisedToDepartment", select: "name" },
+      {
+        path: "acceptedBy",
+        select: isReport
+          ? "firstName lastName email"
+          : "firstName middleName lastName",
+      },
+      {
+        path: "closedBy",
+        select: isReport
+          ? "firstName lastName email"
+          : "firstName middleName lastName",
+      },
+      {
+        path: "assignees",
+        select: isReport
+          ? "firstName lastName"
+          : "firstName middleName lastName",
+      },
+      { path: "assignedTo.assignee", select: "firstName lastName" },
+      {
+        path: "escalatedTo",
+        select: isReport
+          ? "status raisedToDepartment createdAt"
+          : "status raisedToDepartment createdAt description",
+        populate: {
+          path: "raisedToDepartment",
+          select: "name",
         },
-        { path: "company", select: "companyName" },
-        { path: "reject.rejectedBy", select: "firstName lastName" },
-      ])
-      .lean()
-      .exec();
+      },
+      ...(isReport ? [{ path: "company", select: "companyName" }] : []),
+      {
+        path: "reject.rejectedBy",
+        select: isReport
+          ? "firstName lastName"
+          : "firstName lastName email",
+      },
+    ]);
 
-    const foundCompany = await Company.findOne()
+    if (shouldPaginate) {
+      ticketsQuery = ticketsQuery
+        .sort({ _id: 1 })
+        .skip(skip)
+        .limit(parsedLimit);
+    }
+
+    const [tickets, total] = await Promise.all([
+      ticketsQuery.lean().exec(),
+      shouldPaginate
+        ? Ticket.countDocuments(query).exec()
+        : Promise.resolve(null),
+    ]);
+
+    const foundCompany = await Company.findOne(company ? { _id: company } : {})
       .select("selectedDepartments")
       .lean()
       .exec();
@@ -94,6 +137,14 @@ const fetchTicketReportService = async ({
     // Extract the ticket priority from the company's selected departments
     const updatedTickets = tickets.map((ticket) => {
       let updatedTicket = { ...ticket };
+
+      if (!isReport && updatedTicket.status === "Rejected") {
+        updatedTicket.reject = {
+          ...(updatedTicket.reject || {}),
+          rejectedAt:
+            updatedTicket.reject?.rejectedAt || updatedTicket.updatedAt,
+        };
+      }
 
       (foundCompany.selectedDepartments || []).forEach((dept) => {
         dept?.ticketIssues?.forEach((issue) => {
@@ -106,7 +157,17 @@ const fetchTicketReportService = async ({
       return updatedTicket;
     });
 
-    return updatedTickets || [];
+    return shouldPaginate
+      ? {
+          data: updatedTickets,
+          pagination: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages: Math.ceil(total / parsedLimit),
+          },
+        }
+      : updatedTickets || [];
   } catch (error) {
     throw error;
   }

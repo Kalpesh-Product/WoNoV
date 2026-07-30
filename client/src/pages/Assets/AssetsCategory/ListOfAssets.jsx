@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import AssetModal from "./AssetModal";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -68,6 +68,7 @@ const ListOfAssets = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
   const location = useLocation();
@@ -87,6 +88,11 @@ const ListOfAssets = () => {
     selectedAssetCardConfig?.tableTitle ||
     location.state?.assetListTitle ||
     "List of Assets";
+  useEffect(() => {
+    setPagination((current) =>
+      current.page === 1 ? current : { ...current, page: 1 },
+    );
+  }, [assetOwnershipTypeFilter, assetStatusFilter, departmentId]);  
 
   //---------------------Forms----------------------//
   const {
@@ -186,14 +192,36 @@ const ListOfAssets = () => {
 
   //-----------------------API----------------------//
   const { data: assetsList = [], isPending: isAssetsListPending } = useQuery({
-    queryKey: ["assetsList", departmentId],
+    queryKey: [
+      "assetsList",
+      departmentId,
+      assetOwnershipTypeFilter,
+      assetStatusFilter,
+      pagination.page,
+      pagination.limit,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/assets/get-assets?departmentId=${departmentId}`,
-        );
-        const filtered = Array.isArray(response.data)
-          ? response.data.flatMap((item) => item?.assets || [])
+       const response = await axios.get("/api/assets/get-assets", {
+          params: {
+            departmentId,
+            ownershipType: assetOwnershipTypeFilter,
+            statusFilter: assetStatusFilter,
+            page: pagination.page,
+            limit: pagination.limit,
+          },
+        });
+        const responsePagination = response.data.pagination;
+
+        setPagination((current) => ({
+          page: Number(responsePagination?.page) || current.page,
+          limit: Number(responsePagination?.limit) || current.limit,
+          total: Number(responsePagination?.total) || 0,
+        }));
+
+        const filtered = Array.isArray(response.data.data)
+          ? response.data.data.flatMap((item) => item?.assets || [])
           : [];
         return filtered;
       } catch (error) {
@@ -688,9 +716,13 @@ const ListOfAssets = () => {
                   ? item?.isExtra === true
                   : true,
           )
-          .map((item) => {
+          .map((item, index) => {
           return {
             ...item,
+            srNo:
+              (pagination.page - 1) * pagination.limit +
+              index +
+              1,
             assetMongoId: item?.asset?._id,
             department: item?.department?.name || "N/A",
             subCategory: item?.subCategory?.subCategoryName || "N/A",
@@ -746,6 +778,13 @@ const ListOfAssets = () => {
         exportData={!isAssetCardView}
         exportButtonTitle="Export"
         taskExportDateTimeFormatting
+         serverPagination
+        paginationPageSize={pagination.limit}
+        paginationPage={pagination.page}
+        paginationTotal={pagination.total}
+        onPaginationPageChange={(page) =>
+          setPagination((current) => ({ ...current, page }))
+        }
       />
 
       <MuiModal

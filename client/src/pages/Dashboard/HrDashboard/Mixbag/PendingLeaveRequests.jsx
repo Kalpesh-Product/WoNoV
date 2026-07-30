@@ -126,6 +126,7 @@ export default function PendingLeaveRequests() {
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"
+          taskExportDateTimeFormatting
           tableTitle="Pending Leave Requests"
           exportData
         />

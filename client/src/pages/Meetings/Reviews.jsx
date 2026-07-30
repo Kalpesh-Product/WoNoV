@@ -5,7 +5,7 @@ import DataCard from "../../components/DataCard";
 import AgTable from "../../components/AgTable";
 import MuiModal from "../../components/MuiModal";
 import TextField from "@mui/material/TextField";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../hooks/useAuth";
@@ -45,6 +45,11 @@ const Reviews = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
+   const [creditPagination, setCreditPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+  });
   const openCalendar = Boolean(anchorEl);
 
   const handleOpenCalendar = (event) => {
@@ -54,6 +59,11 @@ const Reviews = () => {
   const handleCloseCalendar = () => {
     setAnchorEl(null);
   };
+  const handleCreditDateRangeChange = (item) => {
+    setDateRange([item.selection]);
+    setCreditPagination((current) => ({ ...current, page: 1 }));
+  };
+
 
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
@@ -156,10 +166,30 @@ const Reviews = () => {
   });
 
   const { data: clientsData = [], isLoading: isClientsLoading } = useQuery({
-    queryKey: ["co-working-clients"],
+     queryKey: [
+      "co-working-clients",
+      "client-credit",
+      creditPagination.page,
+      creditPagination.limit,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return response.data.filter((client) => client.isActive);
+      const response = await axios.get("/api/sales/co-working-clients", {
+        params: {
+          active: true,
+          page: creditPagination.page,
+          limit: creditPagination.limit,
+        },
+      });
+      const responsePagination = response.data.pagination;
+
+      setCreditPagination((current) => ({
+        page: Number(responsePagination?.page) || current.page,
+        limit: Number(responsePagination?.limit) || current.limit,
+        total: Number(responsePagination?.total) || 0,
+      }));
+
+      return response.data.data || [];
     },
     enabled: activeTabKey === "clientCredit",
   });
@@ -429,9 +459,15 @@ const Reviews = () => {
       })
       .map((row, index) => ({
         ...row,
-        srNo: index + 1,
+       srNo: (creditPagination.page - 1) * creditPagination.limit + index + 1,
       }));
-  }, [clientsData, dateRange, meetingsData]);
+   }, [
+    clientsData,
+    creditPagination.limit,
+    creditPagination.page,
+    dateRange,
+    meetingsData,
+  ]);
 
 
   const clientCreditColumns = [
@@ -596,7 +632,7 @@ const Reviews = () => {
                 >
                   <DateRangePicker
                     ranges={dateRange}
-                    onChange={(item) => setDateRange([item.selection])}
+                   onChange={handleCreditDateRangeChange}
                     moveRangeOnFirstSelection={false}
                   />
                 </Popover>
@@ -610,6 +646,13 @@ const Reviews = () => {
                 columns={clientCreditColumns}
                 loading={isClientsLoading}
                 hideTitle={true}
+                serverPagination
+                paginationPageSize={creditPagination.limit}
+                paginationPage={creditPagination.page}
+                paginationTotal={creditPagination.total}
+                onPaginationPageChange={(page) =>
+                  setCreditPagination((current) => ({ ...current, page }))
+                }
               />
             </PageFrame>
           </div>

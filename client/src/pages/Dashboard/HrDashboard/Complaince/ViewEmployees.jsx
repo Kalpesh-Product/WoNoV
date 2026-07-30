@@ -41,6 +41,13 @@ const ViewEmployees = () => {
 
     return value || "";
   };
+   const getAgreementValue = (employee, agreementName) => {
+    const agreement = employee.agreements?.find(
+      ({ name, isActive }) => name === agreementName && isActive !== false
+    );
+
+    return agreement?.type || agreement?.url || "";
+  };
 
   const { data: employees, isLoading } = useQuery({
     queryKey: ["employees"],
@@ -51,31 +58,34 @@ const ViewEmployees = () => {
           (employee) => employee.isActive
         );
 
-        const employeesWithDetails = await Promise.all(
-          filteredData.map(async (employee) => {
-            try {
-              const detailResponse = await axios.get(
-                `/api/users/fetch-single-user/${employee.empId}`
-              );
-              return {
-                ...detailResponse.data,
-                _id: employee._id,
-                empId: employee.empId,
-                isActive: employee.isActive,
-              };
-            } catch (detailError) {
-              return employee;
-            }
-          })
-        );
+        // const employeesWithDetails = await Promise.all(
+        //   filteredData.map(async (employee) => {
+        //     try {
+        //       const detailResponse = await axios.get(
+        //         `/api/users/fetch-single-user/${employee.empId}`
+        //       );
+        //       return {
+        //         ...detailResponse.data,
+        //         _id: employee._id,
+        //         empId: employee.empId,
+        //         isActive: employee.isActive,
+        //       };
+        //     } catch (detailError) {
+        //       return employee;
+        //     }
+        //   })
+        // );
 
-        return employeesWithDetails;
+        // return employeesWithDetails;
+         return filteredData;
+
       } catch (error) {
         throw new Error(
           error.response?.data?.message || "Failed to fetch employees"
         );
       }
     },
+    staleTime: 5 * 60 * 1000,
   });
 
   const viewEmployeeColumns = [
@@ -212,16 +222,28 @@ const ViewEmployees = () => {
                       dob: formatDateValue(employee.dob || employee.dateOfBirth),
                       mobilePhone: employee.mobilePhone || employee.phone || "",
                       startDate: formatDateValue(employee.startDate),
-                      workLocation: employee.workLocation || "",
+                       workLocation:
+                        normalizeTextValue(employee.workLocation) ||
+                        employee.workLocation?.unitName ||
+                        employee.workLocation?.unitNo ||
+                        employee.workLocation?.building?.buildingName ||
+                        "",
                       employeeType: normalizeTextValue(employee.employeeType),
                       reportsTo: normalizeTextValue(employee.reportsTo),
                       jobTitle: employee.jobTitle || employee.designation || "",
                       shift: employee.shift || "",
                       workSchedulePolicy:
-                        employee.workSchedulePolicy || employee.shift || "",
+                        employee.workSchedulePolicy ||
+                        getAgreementValue(employee, "Work Schedule Policy") ||
+                        employee.shift ||
+                        "",
                       attendanceSource: employee.attendanceSource || "",
-                      leavePolicy: employee.leavePolicy || "",
-                      holidayPolicy: employee.holidayPolicy || "",
+                      leavePolicy:
+                        employee.leavePolicy ||
+                        getAgreementValue(employee, "Leave Policy"),
+                      holidayPolicy:
+                        employee.holidayPolicy ||
+                        getAgreementValue(employee, "Holiday Policy"),
                       aadharID: employee.aadharID || employee.aadhaarID || "",
                       pan: employee.pan || "",
                       pfAcNo: employee.pfAcNo || employee.pfAccountNumber || "",

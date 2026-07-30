@@ -5,6 +5,7 @@ const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
 const { handleFileUpload } = require("../../config/s3Config");
 const { fetchTicketReportService } = require("../../services/reports/ticket");
+const buildDateFilter = require("../../utils/dateFilter");
 // const sharp = require("sharp");
 const {
   filterCloseTickets,
@@ -573,85 +574,44 @@ const getTeamMemberTickets = async (req, res, next) => {
 
 const getAllTickets = async (req, res, next) => {
   try {
-    const { user, roles, departments, company } = req;
-
-    const query = { company };
-    const departmentIds = departments.map(
-      (dept) => new mongoose.Types.ObjectId(dept._id),
+    const { roles, departments, company } = req;
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
     );
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
-      query.raisedToDepartment = { $in: departmentIds };
-    }
+    const payload = await fetchTicketReportService({
+      company,
+      roles,
+      departments,
+      isReport: false,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "createdAt",
+        }),
+      }),
+    });
+    const tickets = Array.isArray(payload) ? payload : payload.data;
 
-    matchingTickets = await Tickets.find(query)
-      .populate([
-        {
-          path: "raisedBy",
-          select: "firstName lastName departments",
-          populate: {
-            path: "departments",
-            select: "name",
-            model: "Department",
-          },
-        },
-        { path: "raisedToDepartment", select: "name" },
-        { path: "acceptedBy", select: "firstName middleName lastName" },
-        {
-          path: "assignedTo.assignee",
-          select: "firstName lastName",
-        },
-        {
-          path: "escalatedTo",
-          select: "status raisedToDepartment createdAt description",
-          populate: {
-            path: "raisedToDepartment",
-            select: "name",
-          },
-        },
-        { path: "closedBy", select: "firstName middleName lastName" },
-        { path: "reject.rejectedBy", select: "firstName lastName email" },
-        { path: "assignees", select: "firstName middleName lastName" },
-      ])
-      .lean()
-      .exec();
-
-    if (!matchingTickets.length) {
+    if (!tickets.length) {
       return res.status(400).json({ message: "No tickets found" });
     }
 
-    //Get pre-defined tickets
-    const foundCompany = await Company.findOne({ _id: company })
-      .select("selectedDepartments")
-      .lean()
-      .exec();
-
-    if (!foundCompany) {
-      return res.status(400).josn({ message: "Company not found" });
-    }
-
-    // Extract the ticket priority from the company's selected departments
-    const updatedTickets = matchingTickets.map((ticket) => {
-      let updatedTicket = { ...ticket };
-       if (updatedTicket.status === "Rejected") {
-        updatedTicket.reject = {
-          ...(updatedTicket.reject || {}),
-          rejectedAt: updatedTicket.reject?.rejectedAt || updatedTicket.updatedAt,
-        };
-      }
-
-      foundCompany.selectedDepartments.forEach((dept) => {
-        dept?.ticketIssues?.forEach((issue) => {
-          if (issue.title.toLowerCase() === ticket.ticket.toLowerCase()) {
-            updatedTicket.priority = issue.priority;
-          }
-        });
-      });
-
-      return updatedTicket;
-    });
-
-    return res.status(200).json(updatedTickets);
+    return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }

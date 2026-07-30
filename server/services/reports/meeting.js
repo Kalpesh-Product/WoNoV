@@ -35,7 +35,7 @@ const fetchMeetingReportService = async ({
   isReport = false,
   type,
   completed,
- 
+  includeTotal = false,
   page,
   limit,
 }) => {
@@ -56,6 +56,11 @@ const fetchMeetingReportService = async ({
               totalPages: Math.ceil(total / parsedLimit),
             },
           }
+        : includeTotal
+          ? {
+              data,
+              total,
+            }
         : data;
 
     const currentUserId = user?.toString();
@@ -83,9 +88,17 @@ const fetchMeetingReportService = async ({
     const normalizedCompletedFilter = String(completed ?? "")
       .trim()
       .toLowerCase();
- 
     const shouldHideCompleted =
       normalizedCompletedFilter === "false"  ;
+    const calendarVisibleStatusQuery =
+      includeTotal && !shouldPaginate
+        ? {
+            status: {
+              $in: ["Upcoming", "Completed"],
+            },
+          }
+        : {};
+
     const meetingQuery = {
       company,
       ...(dateFilter?.startDate && { startDate: dateFilter.startDate }),
@@ -94,6 +107,7 @@ const fetchMeetingReportService = async ({
           meetingTypeFilter.charAt(0).toUpperCase() +
           meetingTypeFilter.slice(1),
       }),
+      ...calendarVisibleStatusQuery,
       ...(shouldHideCompleted && {
         status: { $nin: ["Completed", "Cancelled"] },
       }),
@@ -105,8 +119,12 @@ const fetchMeetingReportService = async ({
             { internalParticipants: currentUserId },
             { clientParticipants: currentUserId },
           ],
-        }),
+      }),
     };
+
+    if (includeTotal && !shouldPaginate) {
+      total = await Meeting.countDocuments(meetingQuery).exec();
+    }
 
     let meetingsQuery = Meeting.find(meetingQuery)
       .select(

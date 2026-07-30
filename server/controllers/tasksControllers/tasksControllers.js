@@ -1,7 +1,9 @@
 const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
+  fetchAllTasksService,
 } = require("../../services/reports/task");
+const buildDateFilter = require("../../utils/dateFilter");
 const { default: mongoose } = require("mongoose");
 const User = require("../../models/hr/UserData");
 const Task = require("../../models/tasks/Task");
@@ -676,45 +678,37 @@ const updateTask = async (req, res, next) => {
 const getAllTasks = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
-
-    // let query = { company };
-    let query = { company, isDeleted: { $ne: true } };
-
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
-      query.department = { $in: departments };
-    }
-
-    const tasks = await Task.find(query)
-      .populate("assignedBy", "firstName lastName")
-      .populate("assignedTo", "firstName lastName")
-      .populate("completedBy", "firstName lastName")
-      .populate("department", "name")
-      .populate({
-        path: "location",
-        select: "unitNo unitName",
-        populate: { path: "building", select: "buildingName" },
-      })
-      .select("-company")
-      .lean();
-
-    const transformedTasks = tasks.map((task) => {
-      const completedBy = task.completedBy
-        ? [
-            task.completedBy.firstName,
-            task.completedBy.middleName,
-            task.completedBy.lastName,
-          ]
-            .filter(Boolean)
-            .join(" ")
-        : "";
-      return {
-        ...task,
-        department: task.department.name,
-        completedBy,
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
       };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
+
+    const payload = await fetchAllTasksService({
+      company,
+      departments,
+      roles,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "assignedDate",
+        }),
+      }),
     });
 
-    return res.status(200).json(transformedTasks);
+    return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }

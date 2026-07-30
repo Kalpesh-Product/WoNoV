@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
 import {
@@ -329,19 +329,21 @@ const ManageMeetings = () => {
 
   //------------------------------API--------------------------------//
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
-     queryKey: [
+    queryKey: [
       "internal-meetings",
       meetingFilters.startDate,
       meetingFilters.endDate,
       pagination.page,
       pagination.limit,
     ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
         params: {
-          filters: meetingFilters,
+          startDate: meetingFilters.startDate,
+          endDate: meetingFilters.endDate,
           type: "internal",
-          completed: false,
+          completed: "false",
           page: pagination.page,
           limit: pagination.limit,
         },
@@ -873,7 +875,9 @@ const ManageMeetings = () => {
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
-        {!isMeetingsLoading ? (
+        {isMeetingsLoading && meetings.length === 0 ? (
+          <CircularProgress />
+        ) : (
           <YearWiseTable
             search
             dateColumn={"date"}
@@ -890,8 +894,6 @@ const ManageMeetings = () => {
               setPagination((current) => ({ ...current, page }))
             }
           />
-        ) : (
-          <CircularProgress />
         )}
       </PageFrame>
 
