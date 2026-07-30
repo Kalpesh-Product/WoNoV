@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { CircularProgress, Popover } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday, MdOutlineRemoveRedEye } from "react-icons/md";
@@ -14,6 +14,21 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
 const joinName = (...parts) => parts.filter(Boolean).join(" ");
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
 
 const getUserName = (user) =>
   user?.employeeName ||
@@ -60,12 +75,35 @@ const ReportPrintout = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const openCalendar = Boolean(anchorEl);
 
   const { data: printouts = [], isLoading: isPrintoutsLoading } = useQuery({
-    queryKey: ["printouts"],
+     queryKey: [
+      "printouts",
+      "report",
+      dateRange[0]?.startDate,
+      dateRange[0]?.endDate,
+      pagination.page,
+      pagination.limit,
+    ],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
-      const response = await axios.get("/api/printout");
+     const response = await axios.get("/api/printout", {
+        params: {
+          startDate: toUtcDayBoundary(dateRange[0].startDate),
+          endDate: toUtcDayBoundary(dateRange[0].endDate, true),
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      const responsePagination = response.data.pagination;
+
+      setPagination((current) => ({
+        page: Number(responsePagination?.page) || current.page,
+        limit: Number(responsePagination?.limit) || current.limit,
+        total: Number(responsePagination?.total) || 0,
+      }));
       return response.data?.printouts || [];
     },
   });
@@ -89,9 +127,9 @@ const ReportPrintout = () => {
 
   const tableRows = useMemo(
     () =>
-      filteredPrintouts.map((printout, index) => ({
+     printouts.map((printout, index) => ({
         rawPrintout: printout,
-        srNo: index + 1,
+        srNo: (pagination.page - 1) * pagination.limit + index + 1,
         takenBy: getTableValue(getUserName(printout.takenBy)),
         takenAt: getTableValue(formatDateTime(printout.takenAt)),
         location: getTableValue(getLocationName(printout.location, printout.unit)),
@@ -102,7 +140,7 @@ const ReportPrintout = () => {
         printoutCount: printout.printoutCount,
         remarks: getTableValue(printout?.remark),
       })),
-    [filteredPrintouts]
+     [pagination.limit, pagination.page, printouts]
   );
 
   const columns = [
@@ -150,6 +188,12 @@ const ReportPrintout = () => {
 
   const handleCloseCalendar = () => {
     setAnchorEl(null);
+  };
+  const handleDateRangeChange = (item) => {
+    setDateRange([item.selection]);
+    setPagination((current) =>
+      current.page === 1 ? current : { ...current, page: 1 },
+    );
   };
 
   const handleExport = () => {
@@ -222,7 +266,7 @@ const ReportPrintout = () => {
           >
             <DateRangePicker
               ranges={dateRange}
-              onChange={(item) => setDateRange([item.selection])}
+              onChange={handleDateRangeChange}
               moveRangeOnFirstSelection={false}
             />
           </Popover>
@@ -234,7 +278,13 @@ const ReportPrintout = () => {
             tableHeight={500}
             //hideFilter
             //hideTitle
-            paginationPageSize={10}
+            serverPagination
+            paginationPageSize={pagination.limit}
+            paginationPage={pagination.page}
+            paginationTotal={pagination.total}
+            onPaginationPageChange={(page) =>
+              setPagination((current) => ({ ...current, page }))
+            }
           />
           {isPrintoutsLoading ? (
             <div className="flex justify-center p-4">
