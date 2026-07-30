@@ -57,11 +57,14 @@ const TicketReports = () => {
         dayjs(current.startDate).isSame(selectedRange.startDate, "day") &&
         dayjs(current.endDate).isSame(selectedRange.endDate, "day");
 
-      return isSameRange ? current : selectedRange;
+      if (isSameRange) return current;
+
+      setPagination((currentPage) =>
+        currentPage.page === 1 ? currentPage : { ...currentPage, page: 1 },
+      );
+
+      return selectedRange;
     });
-    setPagination((current) =>
-      current.page === 1 ? current : { ...current, page: 1 },
-    );
   }, []);
   const handleSelectedMeeting = (meeting) => {
     setSelectedMeeting(meeting);
