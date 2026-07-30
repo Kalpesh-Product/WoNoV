@@ -27,6 +27,21 @@ const getMonthRange = (value = dayjs()) => ({
   startDate: value.startOf("month").toDate(),
   endDate: value.endOf("month").toDate(),
 });
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
 const Calender = () => {
   const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -47,10 +62,8 @@ const Calender = () => {
   const [calendarRange, setCalendarRange] = useState(() => getMonthRange());
   const calendarFilters = useMemo(
     () => ({
-      startDate: dayjs(calendarRange.startDate).format(
-        "YYYY-MM-DDTHH:mm:ssZ",
-      ),
-      endDate: dayjs(calendarRange.endDate).format("YYYY-MM-DDTHH:mm:ssZ"),
+      startDate: toUtcDayBoundary(calendarRange.startDate),
+      endDate: toUtcDayBoundary(calendarRange.endDate, true),
     }),
     [calendarRange],
   );

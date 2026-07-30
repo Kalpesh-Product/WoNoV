@@ -94,7 +94,7 @@ const fetchMeetingReportService = async ({
       includeTotal && !shouldPaginate
         ? {
             status: {
-              $ne: "Cancelled",
+              $in: ["Upcoming", "Completed"],
             },
           }
         : {};
