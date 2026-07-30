@@ -1,19 +1,26 @@
+import type { Request, Response } from "express";
 const mongoose = require("mongoose");
 const Printout = require("./../models/Printout");
-const Company = require("../models/hr/Company");
 const buildDateFilter = require("../utils/dateFilter");
 const {
   fetchPrintoutsService,
   populatePrintout,
 } = require("../services/printoutService");
 
-const clientModels = ["CoworkingClient", "Company"];
-const requestedByModels = ["CoworkingMember", "UserData"];
+type PrintoutPayload = Record<string, unknown>;
 
-const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const isValidObjectId = (value: unknown): boolean =>
+  mongoose.Types.ObjectId.isValid(value);
+const getErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : "Unknown error";
+const getQueryString = (value: unknown): string | undefined =>
+  typeof value === "string" ? value : undefined;
 
-const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
-  const errors = [];
+const validatePrintoutPayload = (
+  payload: PrintoutPayload,
+  { isUpdate = false }: { isUpdate?: boolean } = {},
+): string[] => {
+  const errors: string[] = [];
   const requiredFields = [
     "takenAt",
     "location",
@@ -55,7 +62,7 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
 
   if (
     payload.takenAt !== undefined &&
-    isNaN(new Date(payload.takenAt).getTime())
+    isNaN(new Date(payload.takenAt as string).getTime())
   ) {
     errors.push("Invalid takenAt provided");
   }
@@ -70,7 +77,11 @@ const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
   return errors;
 };
 
-const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
+const buildPrintoutPayload = (
+  body: PrintoutPayload,
+  company: string,
+  { isUpdate = false }: { isUpdate?: boolean } = {},
+): PrintoutPayload => {
   const allowedFields = [
     "takenBy",
     "takenAt",
@@ -85,7 +96,7 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
     "remark",
   ];
 
-  const payload = {};
+  const payload: PrintoutPayload = {};
 
   if (body.client !== undefined && body.client !== null && body.client !== "") {
     const isClient = company.toString() !== body.client.toString();
@@ -100,7 +111,7 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
   });
 
   if (payload.takenAt !== undefined) {
-    payload.takenAt = new Date(payload.takenAt);
+    payload.takenAt = new Date(payload.takenAt as string);
   }
   if (payload.printoutCount !== undefined) {
     payload.printoutCount = Number(payload.printoutCount);
@@ -112,9 +123,15 @@ const buildPrintoutPayload = (body, company, { isUpdate = false } = {}) => {
   return payload;
 };
 
-const addPrintout = async (req, res) => {
+export const addPrintout = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { user, company } = req;
+    if (!user || !company) {
+      return res.status(400).json({ message: "User and company are required" });
+    }
     const errors = validatePrintoutPayload(req.body);
     if (errors.length) {
       return res.status(400).json({
@@ -141,18 +158,24 @@ const addPrintout = async (req, res) => {
       message: "Printout added successfully",
       printout: populatedPrintout,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     return res.status(500).json({
       message: "An error occurred while adding the printout",
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
 };
 
-const editPrintout = async (req, res) => {
+export const editPrintout = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { id } = req.params;
     const { company } = req;
+    if (!company) {
+      return res.status(400).json({ message: "Company is required" });
+    }
 
     if (!isValidObjectId(id)) {
       return res.status(400).json({ message: "Invalid printout ID provided" });
@@ -191,15 +214,18 @@ const editPrintout = async (req, res) => {
       message: "Printout updated successfully",
       printout,
     });
-  } catch (error) {
+  } catch (error: unknown) {
     return res.status(500).json({
       message: "An error occurred while updating the printout",
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
 };
 
-const getPrintouts = async (req, res) => {
+export const getPrintouts = async (
+  req: Request,
+  res: Response,
+): Promise<Response> => {
   try {
     const { id } = req.params;
     if (id) {
@@ -233,11 +259,9 @@ const getPrintouts = async (req, res) => {
       fromDate,
       toDate,
     } = req.query;
-    const filters = {};
-    const requestDateFilter =
-      req.query?.dateFilter ||
-      req.query?.filters ||
-      {
+    const filters: PrintoutPayload = {};
+    const requestDateFilter = (req.query?.dateFilter ||
+      req.query?.filters || {
         startDate:
           req.query?.["dateFilter[startDate]"] ||
           req.query?.["filters[startDate]"] ||
@@ -248,19 +272,20 @@ const getPrintouts = async (req, res) => {
           req.query?.["filters[endDate]"] ||
           req.query?.endDate ||
           toDate,
-      };
+      }) as { startDate?: string; endDate?: string };
     const hasDateFilter = Boolean(
       requestDateFilter?.startDate || requestDateFilter?.endDate,
     );
 
-    const filterErrors = [];
-    [
+    const filterErrors: string[] = [];
+    const idFilters: Array<[string, unknown]> = [
       ["location", location],
       ["unit", unit],
       ["client", client],
       ["requestedBy", requestedBy],
       ["department", department],
-    ].forEach(([key, value]) => {
+    ];
+    idFilters.forEach(([key, value]) => {
       if (value) {
         if (!isValidObjectId(value)) {
           filterErrors.push(`Invalid ${key} ID provided`);
@@ -303,8 +328,8 @@ const getPrintouts = async (req, res) => {
 
     const { printouts, pagination } = await fetchPrintoutsService({
       filters,
-      page: req.query?.page,
-      limit: req.query?.limit,
+      page: getQueryString(req.query?.page),
+      limit: getQueryString(req.query?.limit),
       ...(dateFilter && { dateFilter }),
     });
 
@@ -313,16 +338,10 @@ const getPrintouts = async (req, res) => {
       printouts,
       ...(pagination && { pagination }),
     });
-  } catch (error) {
+  } catch (error: unknown) {
     return res.status(500).json({
       message: "An error occurred while fetching printouts",
-      error: error.message,
+      error: getErrorMessage(error),
     });
   }
-};
-
-module.exports = {
-  addPrintout,
-  editPrintout,
-  getPrintouts,
 };

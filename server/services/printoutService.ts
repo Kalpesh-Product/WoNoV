@@ -1,6 +1,7 @@
-const Printout = require("../models/Printout");
+import type { PopulateOptions, FilterQuery } from "mongoose";
+import Printout, { type IPrintout } from "../models/Printout";
 
-const populatePrintout = [
+export const populatePrintout: PopulateOptions[] = [
   { path: "takenBy", select: "firstName lastName" },
   { path: "location", select: "buildingName" },
   { path: "unit", select: "unitName unitNo" },
@@ -9,17 +10,24 @@ const populatePrintout = [
   { path: "department", select: "departmentId name" },
 ];
 
-const fetchPrintoutsService = async ({
+interface FetchPrintoutsOptions {
+  filters?: FilterQuery<IPrintout>;
+  dateFilter?: FilterQuery<IPrintout>;
+  page?: string;
+  limit?: string;
+}
+
+export const fetchPrintoutsService = async ({
   filters = {},
   dateFilter,
   page,
   limit,
-}) => {
+}: FetchPrintoutsOptions) => {
   const shouldPaginate = page !== undefined && limit !== undefined;
-  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
+  const parsedPage = Math.max(Number.parseInt(page || "", 10) || 1, 1);
+  const parsedLimit = Math.max(Number.parseInt(limit || "", 10) || 10, 1);
   const skip = (parsedPage - 1) * parsedLimit;
-  const printoutFilters = {
+  const printoutFilters: FilterQuery<IPrintout> = {
     ...filters,
     ...(dateFilter || {}),
   };
@@ -45,14 +53,9 @@ const fetchPrintoutsService = async ({
       pagination: {
         page: parsedPage,
         limit: parsedLimit,
-        total,
-        totalPages: Math.ceil(total / parsedLimit),
+        total: total as number,
+        totalPages: Math.ceil((total as number) / parsedLimit),
       },
     }),
   };
-};
-
-module.exports = {
-  fetchPrintoutsService,
-  populatePrintout,
 };

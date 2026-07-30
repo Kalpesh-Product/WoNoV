@@ -66,6 +66,7 @@ require("./listeners/logEventListener");
 const app = express();
 const PORT = process.env.PORT || 5009;
 app.set("trust proxy", true);
+app.disable("etag");
 
 connectDb(process.env.DB_URL);
 
@@ -74,6 +75,17 @@ app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+app.use("/api", (req, res, next) => {
+  res.setHeader(
+    "Cache-Control",
+    "private, no-store, no-cache, must-revalidate, max-age=0",
+  );
+  res.setHeader("CDN-Cache-Control", "private, no-store, max-age=0");
+  res.setHeader("Vercel-CDN-Cache-Control", "private, no-store, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  next();
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/", (req, res) => {

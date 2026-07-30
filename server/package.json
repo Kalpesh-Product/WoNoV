@@ -4,12 +4,14 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "start": "node server.js",
+    "dev": "tsx watch server.js",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
     "structure": "node generateStructure.js > structure.txt",
     "migrate:externalvisits": "node scripts/migrateExternalVisits.js",
     "start:worker": "node workers/index.js",
-    "dev:api": "nodemon server.js",
+    "dev:api": "tsx watch server.js",
     "dev:worker": "nodemon workers/index.js",
     "scaffold:report": "node scripts/scaffoldReportAutomation.js",
     "report-cycle:leads": "node scripts/reportAutomation.js --name leads --aliases unique-leads --serviceName fetchLeadReportService --serviceFile services/reports/lead.js --controller controllers/salesControllers/leadsControllers.js --controllerFn getLeads --dateField dateOfContact --contextKeys company,query --emptyMessage \"No leads found\"",
@@ -47,5 +49,11 @@
     "sharp": "^0.33.5",
     "socket.io": "^4.8.1",
     "yup": "^1.7.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.1",
+    "typescript": "^7.0.2"
   }
 }

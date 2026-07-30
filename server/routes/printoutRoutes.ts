@@ -1,13 +1,14 @@
-const {
+import { Router } from "express";
+import {
   addPrintout,
   editPrintout,
   getPrintouts,
-} = require("../controllers/printoutControllers");
+} from "../controllers/printoutControllers";
 
-const router = require("express").Router();
+const router = Router();
 
 router.post("/", addPrintout);
 router.patch("/:id", editPrintout);
 router.get("/:id?", getPrintouts);
 
-module.exports = router;
+export default router;
