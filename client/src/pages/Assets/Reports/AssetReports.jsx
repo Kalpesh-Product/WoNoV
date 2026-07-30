@@ -41,17 +41,17 @@ const AssetReports = () => {
   const handleDateFilterChange = useCallback(({ selectedRange }) => {
     if (!selectedRange?.startDate || !selectedRange?.endDate) return;
 
-    setDateRange((current) => {
-      const isSameRange =
-        dayjs(current.startDate).isSame(selectedRange.startDate, "day") &&
-        dayjs(current.endDate).isSame(selectedRange.endDate, "day");
+    const isSameRange =
+      dayjs(dateRange.startDate).isSame(selectedRange.startDate, "day") &&
+      dayjs(dateRange.endDate).isSame(selectedRange.endDate, "day");
 
-      return isSameRange ? current : selectedRange;
-    });
+    if (isSameRange) return;
+
+    setDateRange(selectedRange);
     setPagination((current) =>
       current.page === 1 ? current : { ...current, page: 1 },
     );
-  }, []);
+  }, [dateRange]);
 
   const formatDateTime = (value) => {
     if (!value) return "N/A";
