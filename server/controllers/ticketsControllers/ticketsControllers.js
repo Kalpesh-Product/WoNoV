@@ -608,7 +608,17 @@ const getAllTickets = async (req, res, next) => {
     const tickets = Array.isArray(payload) ? payload : payload.data;
 
     if (!tickets.length) {
-      return res.status(400).json({ message: "No tickets found" });
+      return res.status(200).json({
+        message: "No tickets found",
+        data: [],
+        pagination:
+          payload?.pagination || {
+            page: Number(req.query?.page) || 1,
+            limit: Number(req.query?.limit) || 10,
+            total: 0,
+            totalPages: 0,
+          },
+      });
     }
 
     return res.status(200).json(payload);
