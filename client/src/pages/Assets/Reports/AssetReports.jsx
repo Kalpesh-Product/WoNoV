@@ -4,6 +4,7 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import useAuth from "../../../hooks/useAuth";
+import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import dayjs from "dayjs";
@@ -27,6 +28,7 @@ const toUtcDayBoundary = (value, endOfDay = false) => {
 const AssetReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const { isTop } = useTopDepartment();
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const initialDateRange = useMemo(
     () => ({
@@ -156,7 +158,11 @@ const AssetReports = () => {
     () =>
       (Array.isArray(groupedAssets) ? groupedAssets : [])
         .filter((departmentGroup) =>
-          userDepartmentIds.includes(departmentGroup?.departmentId?.toString()),
+          isTop
+            ? true
+            : userDepartmentIds.includes(
+                departmentGroup?.departmentId?.toString(),
+              ),
         )
         .flatMap((departmentGroup) =>
           (departmentGroup?.assets || []).map((asset) => ({
@@ -227,7 +233,7 @@ const AssetReports = () => {
           ...asset,
           srNo: (pagination.page - 1) * pagination.limit + index + 1,
         })),
-    [auth, groupedAssets, pagination.limit, pagination.page, userDepartmentIds],
+    [auth, groupedAssets, isTop, pagination.limit, pagination.page, userDepartmentIds],
   );
 
   return (
