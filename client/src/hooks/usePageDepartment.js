@@ -68,6 +68,23 @@ const usePageDepartment = () => {
   }
 
   const userDepartments = auth?.user?.departments || [];
+  const allDepartments = Array.isArray(fetchedDepartments)
+    ? fetchedDepartments.map((item) => item?.department).filter(Boolean)
+    : [];
+
+  if (section === "cafe") {
+    const cafeDepartment =
+      allDepartments.find((dept) =>
+        dept?.name?.toLowerCase()?.includes("cafe"),
+      ) ||
+      userDepartments.find((dept) =>
+        dept?.name?.toLowerCase()?.includes("cafe"),
+      );
+
+    if (cafeDepartment) {
+      return cafeDepartment;
+    }
+  }
 
   const managementAccessDepartments = [
     { _id: "67b2cf85b9b6ed5cedeb9a2e", name: "top management" },

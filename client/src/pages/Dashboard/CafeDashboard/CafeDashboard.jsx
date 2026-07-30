@@ -133,10 +133,7 @@ const CafeDashboard = () => {
       const actualAmount = toAmount(budget.actualAmount);
       const projectedAmount = toAmount(budget.projectedAmount);
       fiscalYearData[fiscalYear].actual[monthIndex] += actualAmount;
-      fiscalYearData[fiscalYear].projected[monthIndex] += Math.max(
-        projectedAmount - actualAmount,
-        0,
-      );
+      fiscalYearData[fiscalYear].projected[monthIndex] += projectedAmount;
     });
 
     return Object.entries(fiscalYearData).flatMap(([fiscalYear, data]) => [
