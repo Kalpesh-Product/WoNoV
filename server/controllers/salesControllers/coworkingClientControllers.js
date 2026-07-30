@@ -17,6 +17,7 @@ const { normalizeClientName } = require("../../utils/dataSheetFormatters");
 const {
   fetchCoworkingClientReportService,
 } = require("../../services/reports/client");
+const buildDateFilter = require("../../utils/dateFilter");
 
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
@@ -294,10 +295,35 @@ const createCoworkingClient = async (req, res, next) => {
 
 const getCoworkingClients = async (req, res, next) => {
   try {
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
+
     const payload = await fetchCoworkingClientReportService({
       query: { ...req.query },
       params: req.params || {},
       company: req.company,
+      user: req.user,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "startDate",
+        }),
+      }),
     });
 
     return res.status(200).json(payload);
