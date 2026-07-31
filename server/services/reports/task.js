@@ -8,6 +8,7 @@ const Task = require("../../models/tasks/Task");
 //       !["Master Admin", "Super Admin"].includes(role),
 //)
 const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
+const { getPagination } = require("../../utils/pagination");
 
 const fetchAllTasksService = async ({
   dateFilter,
@@ -17,10 +18,12 @@ const fetchAllTasksService = async ({
   page,
   limit,
 }) => {
-  const shouldPaginate = page !== undefined && limit !== undefined;
-  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-  const skip = (parsedPage - 1) * parsedLimit;
+  const {
+    shouldPaginate,
+    page: parsedPage,
+    limit: parsedLimit,
+    skip,
+  } = getPagination({ page, limit });
   const hasGlobalAccess =
     roles.includes("Master Admin") || roles.includes("Super Admin");
   const queryObj = {

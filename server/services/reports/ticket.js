@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Ticket = require("../../models/tickets/Tickets");
 const Company = require("../../models/hr/Company");
+const { getPagination } = require("../../utils/pagination");
 
 const fetchTicketReportService = async ({
   dateFilter,
@@ -15,10 +16,12 @@ const fetchTicketReportService = async ({
   let query = {};
 
   try {
-    const shouldPaginate = page !== undefined && limit !== undefined;
-    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-    const skip = (parsedPage - 1) * parsedLimit;
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
 
     if (departmentId && !mongoose.Types.ObjectId.isValid(departmentId)) {
       throw new Error("Invalid department ID provided");

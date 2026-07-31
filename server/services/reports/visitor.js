@@ -1,6 +1,7 @@
 const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
+const { getPagination } = require("../../utils/pagination");
 
 const normalizeVisitorQuery = (query) =>
   typeof query === "string" ? query : query?.query;
@@ -118,10 +119,12 @@ const fetchVisitorReportService = async ({
   try {
     const companyId = new mongoose.Types.ObjectId(company);
     const queryKey = normalizeVisitorQuery(query);
-    const shouldPaginate = page !== undefined || limit !== undefined;
-    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-    const skip = (parsedPage - 1) * parsedLimit;
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
     let visitors;
     let total;
     const filter = { company: companyId };

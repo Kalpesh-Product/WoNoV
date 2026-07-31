@@ -3,6 +3,7 @@ const Review = require("../../models/meetings/Reviews");
 const UserData = require("../../models/hr/UserData");
 const { formatDuration } = require("../../utils/formatDateTime");
 const Company = require("../../models/hr/Company");
+const { getPagination } = require("../../utils/pagination");
 
 const formatPersonName = (person) =>
   [person?.firstName, person?.lastName].filter(Boolean).join(" ");
@@ -40,10 +41,12 @@ const fetchMeetingReportService = async ({
   limit,
 }) => {
   try {
-    const shouldPaginate = page !== undefined && limit !== undefined;
-    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-    const skip = (parsedPage - 1) * parsedLimit;
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
     let total;
     const buildResponse = (data) =>
       shouldPaginate
@@ -61,7 +64,7 @@ const fetchMeetingReportService = async ({
               data,
               total,
             }
-        : data;
+          : data;
 
     const currentUserId = user?.toString();
     const foundUser = currentUserId
@@ -88,8 +91,7 @@ const fetchMeetingReportService = async ({
     const normalizedCompletedFilter = String(completed ?? "")
       .trim()
       .toLowerCase();
-    const shouldHideCompleted =
-      normalizedCompletedFilter === "false"  ;
+    const shouldHideCompleted = normalizedCompletedFilter === "false";
     const calendarVisibleStatusQuery =
       includeTotal && !shouldPaginate
         ? {
@@ -119,7 +121,7 @@ const fetchMeetingReportService = async ({
             { internalParticipants: currentUserId },
             { clientParticipants: currentUserId },
           ],
-      }),
+        }),
     };
 
     if (includeTotal && !shouldPaginate) {
@@ -309,6 +311,7 @@ const fetchMeetingReportService = async ({
           duration: formatDuration(meeting.startTime, effectiveEndTime),
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
+          meetingType: meeting.meetingType,
           housekeepingStatus: meeting.houeskeepingStatus,
           ...(meetingTypeFilter === "internal" && {
             department: (meeting?.bookedBy?.departments || [])
