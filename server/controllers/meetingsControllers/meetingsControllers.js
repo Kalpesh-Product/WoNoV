@@ -672,6 +672,7 @@ async function getMeetings(req, res, next) {
           startDate: requestFilters.startDate,
           endDate: requestFilters.endDate,
           field: "startDate",
+          endExclusive: true,
         }),
       }),
     });
