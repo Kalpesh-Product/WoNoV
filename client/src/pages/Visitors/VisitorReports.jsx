@@ -43,6 +43,22 @@ const formatTimeValue = (value) => {
     ? "-"
     : formattedValue;
 };
+const toUtcDayBoundary = (value, endOfDay = false) => {
+  const date = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      date.year(),
+      date.month(),
+      date.date(),
+      endOfDay ? 23 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 59 : 0,
+      endOfDay ? 999 : 0,
+    ),
+  ).toISOString();
+};
+
 
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -68,11 +84,11 @@ const VisitorReports = () => {
     const visitorDateRangeRef = useRef(initialVisitorDateRange);
   const visitorFilters = useMemo(
     () => ({
-      startDate: visitorDateRange?.startDate
-        ? dayjs(visitorDateRange.startDate).startOf("day").toISOString()
+     startDate: visitorDateRange?.startDate
+        ? toUtcDayBoundary(visitorDateRange.startDate)
         : undefined,
       endDate: visitorDateRange?.endDate
-        ? dayjs(visitorDateRange.endDate).endOf("day").toISOString()
+        ? toUtcDayBoundary(visitorDateRange.endDate, true)
         : undefined,
     }),
     [visitorDateRange],
@@ -96,7 +112,7 @@ const VisitorReports = () => {
 
     //   return selectedRange;
     // });
-     const currentRange = visitorDateRangeRef.current;
+   const currentRange = visitorDateRangeRef.current;
     const currentStart = currentRange?.startDate
       ? new Date(currentRange.startDate).getTime()
       : null;
@@ -370,8 +386,10 @@ const VisitorReports = () => {
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
-      date: visitor.dateOfVisit || visitor.checkIn,
-      dateOfVisit: formatDateValue(visitor.dateOfVisit || visitor.checkInDate),
+     date: visitor.checkIn,
+      // The report is queried and paginated by check-in, so show that same DB
+      // value instead of a separately scheduled visit date.
+      dateOfVisit: formatDateValue(visitor.checkIn),
       scheduledDate: formatDateValue(visitor.scheduledDate),
       gstFile: visitor?.gstFile?.link,
       otherFile: visitor?.otherFile?.link,
