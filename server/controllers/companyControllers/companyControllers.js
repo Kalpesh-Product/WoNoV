@@ -13,9 +13,10 @@ const CustomError = require("../../utils/customErrorlogs");
 const buildHierarchy = require("../../utils/generateHierarchy");
 const UserData = require("../../models/hr/UserData");
 const Unit = require("../../models/locations/Unit");
-const Attandance = require("../../models/hr/Attendance");
-const Events = require("../../models/events/Events");
-const Leaves = require("../../models/hr/Leaves");
+const buildDateFilter = require("../../utils/dateFilter");
+const {
+  getCompanyAttandancesService,
+} = require("../../services/companyAttendance");
 
 const addCompany = async (req, res, next) => {
   const logPath = "hr/HrLog";
@@ -445,54 +446,36 @@ const getHierarchy = async (req, res, next) => {
 const getCompanyAttandances = async (req, res, next) => {
   try {
     const { company } = req;
-    const activeEmployees = await UserData.find({ company, isActive: true })
-      .select("firstName lastName empId startDate isActive")
-      .lean()
-      .exec();
-    const companyAttandances = await Attandance.find({ company })
-      .populate({
-        path: "user",
-        select: "firstName lastName empId startDate isActive",
-      })
-      .lean()
-      .exec();
-
-    let sundays = 0;
-    let year = new Date().getFullYear().toString();
-    for (let month = 0; month < 12; month++) {
-      for (let day = 1; day <= 31; day++) {
-        const date = new Date(year, month, day);
-        if (date.getMonth() !== month) break; // invalid date
-        if (date.getDay() === 0) sundays++; // 0 = Sunday
-      }
-    }
-    const holidays = await Events.find({ company, type: "Holiday" })
-      .lean()
-      .exec();
-
-    const allLeaves = await Leaves.find({ company })
-      .populate({
-        path: "takenBy",
-        select: "firstName lastName empId startDate isActive",
-      })
-      .lean()
-      .exec();
-    const workingDays = 365 - (holidays.length + sundays);
-    res.status(200).json({
-      activeEmployees,
-      companyAttandances,
-      workingDays,
-      holidays,
-      allLeaves,
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
+    const payload = await getCompanyAttandancesService({
+      company,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "inTime",
+        }),
+      }),
     });
+
+    return res.status(200).json(payload);
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
-    }
+    return next(error);
   }
 };
 
