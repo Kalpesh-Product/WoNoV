@@ -714,30 +714,86 @@ const getAllTasks = async (req, res, next) => {
   }
 };
 
-async function getTasks(req, res) {
-  const payload = await fetchDeptTaskReportService({
-    departmentId: req.body?.department,
-    departments: req.body?.departments || req?.departments || [],
-    roles: req?.roles || [],
-    company: req?.company || null,
-    user: req?.user || null,
-    query: req?.query,
-  });
+async function getTasks(req, res, next) {
+  try {
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
 
-  return res.status(200).json(payload);
+    const payload = await fetchDeptTaskReportService({
+      departmentId: req.body?.department,
+      departments: req.body?.departments || req?.departments || [],
+      roles: req?.roles || [],
+      company: req?.company || null,
+      user: req?.user || null,
+      query: req?.query,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "assignedDate",
+        }),
+      }),
+    });
+
+    return res.status(200).json(payload);
+  } catch (error) {
+    return next(error);
+  }
 }
 
-const getMyTasks = async (req, res) => {
-  const payload = await fetchMyTasksReportService({
-    departmentId: req.body?.department,
-    departments: req.body?.departments || req?.departments || [],
-    roles: req?.roles || [],
-    company: req?.company || null,
-    user: req?.user || null,
-    query: req?.query,
-  });
+const getMyTasks = async (req, res, next) => {
+  try {
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
 
-  return res.status(200).json(payload);
+    const payload = await fetchMyTasksReportService({
+      departmentId: req.body?.department,
+      departments: req.body?.departments || req?.departments || [],
+      roles: req?.roles || [],
+      company: req?.company || null,
+      user: req?.user || null,
+      query: req?.query,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "assignedDate",
+        }),
+      }),
+    });
+
+    return res.status(200).json(payload);
+  } catch (error) {
+    return next(error);
+  }
 };
 
 const getMyAssignedTasks = async (req, res, next) => {

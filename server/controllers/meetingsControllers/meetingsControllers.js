@@ -635,47 +635,52 @@ const getAvaliableUsers = async (req, res, next) => {
   }
 };
 
-async function getMeetings(req, res) {
-  const { user, company, roles, departments = [] } = req;
-  const type = req.query?.type || req.type || "";
-  const completed = req.query?.completed;
-  const includeTotal = req.query?.includeTotal === "true";
-  
-  const requestFilters = req.query?.dateFilter ||
-    req.query?.filters || {
-      startDate:
-        req.query?.["dateFilter[startDate]"] ||
-        req.query?.["filters[startDate]"] ||
-        req.query?.startDate,
-      endDate:
-        req.query?.["dateFilter[endDate]"] ||
-        req.query?.["filters[endDate]"] ||
-        req.query?.endDate,
-    };
-  const hasDateFilter = Boolean(
-    requestFilters?.startDate || requestFilters?.endDate,
-  );
+async function getMeetings(req, res, next) {
+  try {
+    const { user, company, roles, departments = [] } = req;
+    const type = req.query?.type || req.type || "";
+    const completed = req.query?.completed;
+    const includeTotal = req.query?.includeTotal === "true";
 
-  const payload = await fetchMeetingReportService({
-    departments,
-    roles,
-    user,
-    company,
-    type,
-    completed,
-    includeTotal,
-    page: req.query?.page,
-    limit: req.query?.limit,
-    ...(hasDateFilter && {
-      dateFilter: buildDateFilter({
-        startDate: requestFilters.startDate,
-        endDate: requestFilters.endDate,
-        field: "startDate",
+    const requestFilters = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestFilters?.startDate || requestFilters?.endDate,
+    );
+
+    const payload = await fetchMeetingReportService({
+      departments,
+      roles,
+      user,
+      company,
+      type,
+      completed,
+      includeTotal,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestFilters.startDate,
+          endDate: requestFilters.endDate,
+          field: "startDate",
+          endExclusive: true,
+        }),
       }),
-    }),
-  });
+    });
 
-  return res.status(200).json(payload);
+    return res.status(200).json(payload);
+  } catch (error) {
+    return next(error);
+  }
 }
 
 // const getMeetings = async (req, res, next) => {

@@ -6,6 +6,11 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const buildDateFilter = require("../../utils/dateFilter");
+const {
+  fetchCompletedPerformanceTasksService,
+  fetchPerformanceTasksService,
+} = require("../../services/reports/performance");
 
 const REQUIRED_BULK_TASK_FIELDS = [
   "task",
@@ -421,9 +426,7 @@ const deleteTaskRecurrence = async (req, res, next) => {
 const getKraKpaTasks = async (req, res, next) => {
   try {
     const { company } = req;
-    const { type, dept, duration, date } = req.query;
-
-    const query = { company };
+    const { type, dept, duration, date, status } = req.query;
 
     // if (!dept) {
     //   return res.status(400).json({ message: "Missing department ID" });
@@ -431,132 +434,41 @@ const getKraKpaTasks = async (req, res, next) => {
     if (!type) {
       return res.status(400).json({ message: "Missing task type" });
     }
-    if (duration) {
-      query.kpaDuration = duration;
-    }
-
-    const targetDay = date ? new Date(date) : new Date();
-    const startOfDay = new Date(targetDay);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(targetDay);
-    endOfDay.setUTCHours(23, 59, 59, 999);
-
-    // query.department = dept;
-    if (type === "INDIVIDUALKRA") {
-      query.taskType = { $in: ["INDIVIDUALKRA", "TEAMKRA"] };
-    } else if (type === "INDIVIDUALKPA") {
-      query.taskType = { $in: ["INDIVIDUALKPA", "TEAMKPA"] };
-    } else {
-      query.taskType = type;
-    }
-
     const { roles, departments: userDepts } = req;
-
-    const isHrOrSuperAdmin =
-      roles.includes("Master Admin") ||
-      roles.includes("Super Admin") ||
-      roles.includes("HR Admin") ||
-      roles.includes("HR Employee");
-
-    const isManager = isHrOrSuperAdmin || userDepts.includes(dept);
-
-    const tasks = await kraKpaRole
-      .find({
-        ...query,
-        department: dept,
-        isDeleted: { $ne: true },
-        completedDate: {
-          $not: {
-            $elemMatch: {
-              $gte: startOfDay,
-              $lte: endOfDay,
-            },
-          },
-        },
-      })
-      .populate([
-        { path: "department", select: "name" },
-        { path: "assignTo", select: "firstName lastName" },
-      ])
-      .select("-company");
-
-    const uniqueTasks = Array.from(
-      new Map(tasks.map((task) => [task._id.toString(), task])).values(),
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
     );
-
-    const dedupedByTaskName =
-      type === "KRA"
-        ? Array.from(
-            uniqueTasks
-              .reduce((map, task) => {
-                const key = (task.task || "").toString().trim().toLowerCase();
-                const previous = map.get(key);
-                if (!previous) {
-                  map.set(key, task);
-                  return map;
-                }
-
-                const previousDate = new Date(
-                  previous.assignedDate || previous.createdAt || 0,
-                );
-                const currentDate = new Date(
-                  task.assignedDate || task.createdAt || 0,
-                );
-                if (currentDate > previousDate) {
-                  map.set(key, task);
-                }
-                return map;
-              }, new Map())
-              .values(),
-          )
-        : uniqueTasks;
-
-    const transformedTasks = dedupedByTaskName
-      .filter((task) => {
-        // Department KRA/KPA: Everyone in dept sees
-        if (type === "KRA" || type === "KPA") {
-          return task.taskType === type;
-        }
-
-        // Team KRA/KPA: Only managers see
-        if (type === "TEAMKRA" || type === "TEAMKPA") {
-          return task.taskType === type;
-        }
-
-        // Individual KRA/KPA: User sees own (including from Team assignments)
-        if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
-          const isOwnTask =
-            task.assignTo?._id.toString() === req.user.toString();
-
-          // If the task type matches exactly (Individual)
-          if (task.taskType === type) {
-            if (isManager) return true;
-            return isOwnTask;
-          }
-
-          // If it's a Team task assigned to this user, show it in their Individual tab
-          const mappedType = type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
-          if (task.taskType === mappedType) {
-            return isOwnTask;
-          }
-        }
-
-        return false;
-      })
-      .map((task) => {
-        return {
-          id: task._id,
-          taskName: task.task,
-          dueDate: task.dueDate,
-          assignedDate: task.assignedDate,
-          dueTime: "6:30 PM",
-          status: task.status ? task.status : "Pending",
-          assignedTo: task.assignTo
-            ? `${task.assignTo.firstName} ${task.assignTo.lastName}`
-            : "N/A",
-          assignToId: task.assignTo?._id,
-        };
-      });
+    const payload = await fetchPerformanceTasksService({
+      company,
+      type,
+      dept,
+      duration,
+      date,
+      status,
+      roles,
+      userDepts,
+      user: req.user,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "assignedDate",
+        }),
+      }),
+    });
 
     // const completedTasks = await kraKpaTask
     //   .find({ company, status: "Completed" })
@@ -606,9 +518,9 @@ const getKraKpaTasks = async (req, res, next) => {
     //         });
 
     // const allTasks = [...transformedTasks, ...transformedCompletedTasks];
-    return res.status(200).json(transformedTasks);
+    return res.status(200).json(payload);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
@@ -718,136 +630,45 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
     if (!type) {
       return res.status(400).json({ message: "Missing task type" });
     }
-
-    const completedTasks = await kraKpaTask
-      .find({ company, status: "Completed" })
-      .populate([
-        {
-          path: "task",
-          select: "",
-          populate: [
-            { path: "department", select: "name" },
-            { path: "assignTo", select: "firstName lastName" },
-          ],
-        },
-        {
-          path: "completedBy",
-          select: "firstName middleName lastName empId",
-        },
-      ])
-      .select("-company");
-    const isHrOrSuperAdmin =
-      roles.includes("Master Admin") ||
-      roles.includes("Super Admin") ||
-      roles.includes("HR Admin") ||
-      roles.includes("HR Employee");
-
-    const isManager = isHrOrSuperAdmin || userDepts.includes(dept);
-
-    const uniqueCompletedTasks = Array.from(
-      new Map(
-        completedTasks.map((task) => {
-          const taskId =
-            task?.task?._id?.toString?.() || task?._id?.toString?.();
-          const completionKey = `${taskId || "unknown"}-${new Date(task.completionDate).toISOString().slice(0, 10)}`;
-          return [completionKey, task];
-        }),
-      ).values(),
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
     );
+    const payload = await fetchCompletedPerformanceTasksService({
+      company,
+      type,
+      dept,
+      duration,
+      empId,
+      month,
+      year,
+      roles,
+      userDepts,
+      user: req.user,
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "completionDate",
+        }),
+      }),
+    });
 
-    const transformedCompletedTasks = !uniqueCompletedTasks.length
-      ? []
-      : uniqueCompletedTasks
-          .filter((task) => {
-            if (!task.task || task.task.isDeleted) return false;
-            if (duration && duration !== task.task.kpaDuration) return;
-            if (empId && task.completedBy.empId !== empId) return;
-            if (task.task.department._id.toString() !== dept) return false;
-            if (month) {
-              const monthIndex = [
-                "january",
-                "february",
-                "march",
-                "april",
-                "may",
-                "june",
-                "july",
-                "august",
-                "september",
-                "october",
-                "november",
-                "december",
-              ].indexOf(String(month).trim().toLowerCase());
-
-              if (monthIndex === -1) return false;
-
-              const completionDate = new Date(task.completionDate);
-              if (Number.isNaN(completionDate.getTime())) return false;
-
-              if (completionDate.getMonth() !== monthIndex) return false;
-            }
-
-            if (year) {
-              const completionDate = new Date(task.completionDate);
-              if (Number.isNaN(completionDate.getTime())) return false;
-
-              if (completionDate.getFullYear() !== Number(year)) return false;
-            }
-
-            // Department KRA/KPA
-            if (type === "KRA" || type === "KPA") {
-              return task.task.taskType === type;
-            }
-
-            // Team KRA/KPA
-            if (type === "TEAMKRA" || type === "TEAMKPA") {
-              return task.task.taskType === type;
-            }
-
-            // Individual KRA/KPA also includes own Team assignments
-            if (type === "INDIVIDUALKRA" || type === "INDIVIDUALKPA") {
-              const isOwnTask =
-                task.task.assignTo?._id.toString() === req.user.toString();
-
-              if (task.task.taskType === type) {
-                if (isManager) return true;
-                return isOwnTask;
-              }
-
-              const mappedType =
-                type === "INDIVIDUALKRA" ? "TEAMKRA" : "TEAMKPA";
-              if (task.task.taskType === mappedType) {
-                return isOwnTask;
-              }
-            }
-
-            return false;
-          })
-          .map((task) => {
-            const completedBy = `${task.completedBy.firstName} ${
-              task.completedBy.middleName || ""
-            } ${task.completedBy.lastName}`;
-
-            return {
-              id: task._id,
-              taskId: task.task?._id?.toString?.() || "",
-              taskName: task.task.task,
-              department: task.task.department.name,
-              completedBy: completedBy,
-              completedById: task.completedBy?._id?.toString?.() || "",
-              completedByName: completedBy,
-              assignedDate: task.task.assignedDate,
-              dueDate: task.task.dueDate,
-              dueTime: "6:30 PM",
-              completionDate: task.completionDate ? task.completionDate : "N/A",
-              status: task.status,
-              comment: task.comment || "",
-            };
-          });
-
-    return res.status(200).json(transformedCompletedTasks);
+    return res.status(200).json(payload);
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

@@ -3,6 +3,7 @@ const AssignAsset = require("../../models/assets/AssignAsset");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const { hasGlobalReportAccess } = require("./access");
+const { getPagination } = require("../../utils/pagination");
 
 const fetchAssetReportService = async ({
   dateFilter,
@@ -26,10 +27,12 @@ const fetchAssetReportService = async ({
   query = query && Object.keys(query).length ? query : defaultQuery;
 
   try {
-    const shouldPaginate = page !== undefined && limit !== undefined;
-    const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-    const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-    const skip = (parsedPage - 1) * parsedLimit;
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
 
     const userId = loggedInUser;
     const user = await UserData.findById(userId)

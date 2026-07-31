@@ -314,9 +314,8 @@ const getPrintouts = async (req, res) => {
       ...(pagination && { pagination }),
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "An error occurred while fetching printouts",
-      error: error.message,
+    return res.status(error.statusCode || 500).json({
+      message: error.message,
     });
   }
 };

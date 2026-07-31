@@ -1,4 +1,5 @@
 const Printout = require("../models/Printout");
+const { getPagination } = require("../utils/pagination");
 
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
@@ -15,10 +16,12 @@ const fetchPrintoutsService = async ({
   page,
   limit,
 }) => {
-  const shouldPaginate = page !== undefined && limit !== undefined;
-  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-  const skip = (parsedPage - 1) * parsedLimit;
+  const {
+    shouldPaginate,
+    page: parsedPage,
+    limit: parsedLimit,
+    skip,
+  } = getPagination({ page, limit });
   const printoutFilters = {
     ...filters,
     ...(dateFilter || {}),
