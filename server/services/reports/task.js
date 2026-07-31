@@ -97,8 +97,16 @@ const fetchDeptTaskReportService = async ({
   user,
   query,
   isReport = false,
+  page,
+  limit,
 }) => {
   try {
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
     const hasGlobalAccess = hasGlobalReportAccess(roles);
     const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
 
@@ -126,7 +134,7 @@ const fetchDeptTaskReportService = async ({
       }),
     };
 
-    const tasks = await Task.find(queryObj)
+    let tasksQuery = Task.find(queryObj)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("assignedTo", "firstName lastName")
@@ -137,8 +145,18 @@ const fetchDeptTaskReportService = async ({
         select: "unitName unitNo",
         populate: { path: "building", select: "buildingName" },
       })
-      .select("-company")
-      .lean();
+      .select("-company");
+
+    if (shouldPaginate) {
+      tasksQuery = tasksQuery.sort({ _id: 1 }).skip(skip).limit(parsedLimit);
+    }
+
+    const [tasks, total] = await Promise.all([
+      tasksQuery.lean().exec(),
+      shouldPaginate
+        ? Task.countDocuments(queryObj).exec()
+        : Promise.resolve(null),
+    ]);
 
     const transformedTasks = tasks.map((task) => {
       const completedBy = task.completedBy
@@ -161,7 +179,17 @@ const fetchDeptTaskReportService = async ({
       };
     });
 
-    return transformedTasks;
+    return shouldPaginate
+      ? {
+          data: transformedTasks,
+          pagination: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages: Math.ceil(total / parsedLimit),
+          },
+        }
+      : transformedTasks;
   } catch (error) {
     throw error;
   }
@@ -175,8 +203,16 @@ const fetchMyTasksReportService = async ({
   user,
   query = {},
   isReport = false,
+  page,
+  limit,
 }) => {
   try {
+    const {
+      shouldPaginate,
+      page: parsedPage,
+      limit: parsedLimit,
+      skip,
+    } = getPagination({ page, limit });
     const hasGlobalAccess = hasGlobalReportAccess(roles);
     const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
 
@@ -199,7 +235,7 @@ const fetchMyTasksReportService = async ({
       }),
     };
 
-    const tasks = await Task.find(queryObj)
+    let tasksQuery = Task.find(queryObj)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
       .populate("completedBy", "firstName lastName")
@@ -209,8 +245,18 @@ const fetchMyTasksReportService = async ({
         select: "unitName unitNo",
         populate: { path: "building", select: "buildingName" },
       })
-      .select("-company")
-      .lean();
+      .select("-company");
+
+    if (shouldPaginate) {
+      tasksQuery = tasksQuery.sort({ _id: 1 }).skip(skip).limit(parsedLimit);
+    }
+
+    const [tasks, total] = await Promise.all([
+      tasksQuery.lean().exec(),
+      shouldPaginate
+        ? Task.countDocuments(queryObj).exec()
+        : Promise.resolve(null),
+    ]);
 
     const transformedTasks = tasks.map((task) => {
       const completedBy = task.completedBy
@@ -232,7 +278,17 @@ const fetchMyTasksReportService = async ({
       };
     });
 
-    return transformedTasks;
+    return shouldPaginate
+      ? {
+          data: transformedTasks,
+          pagination: {
+            page: parsedPage,
+            limit: parsedLimit,
+            total,
+            totalPages: Math.ceil(total / parsedLimit),
+          },
+        }
+      : transformedTasks;
   } catch (error) {
     throw error;
   }
