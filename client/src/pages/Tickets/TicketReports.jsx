@@ -14,6 +14,7 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
 import formatDateTime from "../../utils/formatDateTime";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const toUtcDayBoundary = (value, endOfDay = false) => {
   const date = dayjs(value);
@@ -38,7 +39,7 @@ const TicketReports = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
 
-   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),

@@ -26,6 +26,7 @@ import { Popover } from "@mui/material";
 import { MdCalendarToday } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -47,7 +48,7 @@ const Reviews = () => {
   const [anchorEl, setAnchorEl] = useState(null);
    const [creditPagination, setCreditPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const openCalendar = Boolean(anchorEl);

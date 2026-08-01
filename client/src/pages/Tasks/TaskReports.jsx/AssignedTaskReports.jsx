@@ -14,6 +14,7 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 import StatusChip from "../../../components/StatusChip";
 import dayjs from "dayjs";
+import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
 import useAuth from "../../../hooks/useAuth";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
@@ -43,7 +44,7 @@ const AssignedTaskReports = () => {
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),

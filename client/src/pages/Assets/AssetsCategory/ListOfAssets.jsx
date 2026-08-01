@@ -28,6 +28,7 @@ import { useMemo } from "react";
 import UploadFileInput from "../../../components/UploadFileInput";
 import { queryClient } from "../../../main";
 import dayjs from "dayjs";
+import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useLocation, useNavigate , useParams } from "react-router-dom" ;
@@ -68,7 +69,7 @@ const ListOfAssets = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
   const location = useLocation();

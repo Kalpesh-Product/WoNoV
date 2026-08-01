@@ -15,6 +15,7 @@ import formatDateTime, {
 } from "../../utils/formatDateTime";
 import { State } from "country-state-city";
 import dayjs from "dayjs";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "-";
@@ -63,9 +64,9 @@ const toUtcDayBoundary = (value, endOfDay = false) => {
 const VisitorReports = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
-   const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const axios = useAxiosPrivate();

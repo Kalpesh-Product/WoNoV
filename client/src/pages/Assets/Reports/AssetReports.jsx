@@ -8,6 +8,7 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import dayjs from "dayjs";
+import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
 
 const toUtcDayBoundary = (value, endOfDay = false) => {
   const date = dayjs(value);
@@ -29,7 +30,7 @@ const AssetReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { isTop } = useTopDepartment();
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),

@@ -12,6 +12,7 @@ import PrimaryButton from "../../components/PrimaryButton";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const joinName = (...parts) => parts.filter(Boolean).join(" ");
 const toUtcDayBoundary = (value, endOfDay = false) => {
@@ -75,7 +76,7 @@ const ReportPrintout = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const openCalendar = Boolean(anchorEl);
 
   const { data: printouts = [], isLoading: isPrintoutsLoading } = useQuery({

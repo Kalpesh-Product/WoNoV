@@ -8,6 +8,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import { DEFAULT_PAGE_SIZE } from "../../../../constants/pagination";
 const getLocalMonthBoundary = (value, endOfMonth = false) => {
   const month = dayjs(value);
   const boundary = endOfMonth ? month.endOf("month") : month.startOf("month");
@@ -38,7 +39,7 @@ const HrAttendance = () => {
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const extendedFyOptions = useMemo(
     () =>
       Array.from({ length: 11 }, (_, index) => {

@@ -15,6 +15,7 @@ import formatDateTime, {
   formatDateTimeFields,
 } from "../../../utils/formatDateTime";
 import dayjs from "dayjs";
+import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
 
 const toUtcDayBoundary = (value, endOfDay = false) => {
   const date = dayjs(value);
@@ -37,7 +38,7 @@ const MyTaskReports = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
