@@ -19,6 +19,7 @@ import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanTime from "../../utils/humanTime";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const PURPOSE_OPTIONS = ["Meeting", "Full Day Pass", "Half Day Pass"];
 
@@ -143,7 +144,7 @@ const ConvertInternalVisitors = () => {
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
    const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
 

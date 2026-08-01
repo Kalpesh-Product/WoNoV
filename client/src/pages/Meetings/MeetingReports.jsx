@@ -18,7 +18,8 @@ import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
 import { inrFormat } from "../../utils/currencyFormat";
 import { useSearchParams } from "react-router-dom";
-import { toUtcDayBoundary } from "../../utils/dateRange";
+import { toLocalDayBoundary } from "../../utils/dateRange";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 
 const MeetingReports = () => {
@@ -35,7 +36,7 @@ const MeetingReports = () => {
   // });
  const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const initialMeetingDateRange = useMemo(
@@ -53,10 +54,10 @@ const MeetingReports = () => {
   const meetingFilters = useMemo(
     () => ({
       startDate: meetingDateRange?.startDate
-        ? toUtcDayBoundary(meetingDateRange.startDate)
+        ? toLocalDayBoundary(meetingDateRange.startDate)
         : undefined,
       endDate: meetingDateRange?.endDate
-        ? toUtcDayBoundary(meetingDateRange.endDate, true)
+        ? toLocalDayBoundary(meetingDateRange.endDate, true)
         : undefined,
     }),
     [meetingDateRange],
@@ -100,7 +101,7 @@ const MeetingReports = () => {
       pagination.page,
       pagination.limit,
     ],
-    queryFn: async () => {
+      queryFn: async () => {
       try {
         //  const response = await axios.get("/api/meetings/get-meetings", {
         //   params: {
@@ -117,13 +118,13 @@ const MeetingReports = () => {
         // }));
 
         // return response.data.data || [];
-          const response = await axios.get("/api/meetings/get-meetings", {
+        const response = await axios.get("/api/meetings/get-meetings", {
           params: {
             filters: meetingFilters,
             page: pagination.page,
             limit: pagination.limit,
-          },
-        });
+        },
+      });
         const responsePagination = response.data.pagination || response.data;
 
         setPagination((current) => ({
