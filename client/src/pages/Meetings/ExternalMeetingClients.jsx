@@ -37,22 +37,7 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { time } from "motion/react";
-
-const toUtcDayBoundary = (value, endOfDay = false) => {
-  const date = dayjs(value);
-
-  return new Date(
-    Date.UTC(
-      date.year(),
-      date.month(),
-      date.date(),
-      endOfDay ? 23 : 0,
-      endOfDay ? 59 : 0,
-      endOfDay ? 59 : 0,
-      endOfDay ? 999 : 0,
-    ),
-  ).toISOString();
-};  
+import { toUtcDayBoundary } from "../../utils/dateRange";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();

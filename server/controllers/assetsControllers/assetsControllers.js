@@ -88,40 +88,44 @@ const getAssetsWithDepartments = async (req, res, next) => {
   }
 };
 
-async function getAssets(req, res) {
-  const requestDateFilter = req.query?.dateFilter || req.query?.filters || {
-    startDate:
-      req.query?.["dateFilter[startDate]"] ||
-      req.query?.["filters[startDate]"] ||
-      req.query?.startDate,
-    endDate:
-      req.query?.["dateFilter[endDate]"] ||
-      req.query?.["filters[endDate]"] ||
-      req.query?.endDate,
-  };
-  const hasDateFilter = Boolean(
-    requestDateFilter?.startDate || requestDateFilter?.endDate,
-  );
+async function getAssets(req, res, next) {
+  try {
+    const requestDateFilter = req.query?.dateFilter || req.query?.filters || {
+      startDate:
+        req.query?.["dateFilter[startDate]"] ||
+        req.query?.["filters[startDate]"] ||
+        req.query?.startDate,
+      endDate:
+        req.query?.["dateFilter[endDate]"] ||
+        req.query?.["filters[endDate]"] ||
+        req.query?.endDate,
+    };
+    const hasDateFilter = Boolean(
+      requestDateFilter?.startDate || requestDateFilter?.endDate,
+    );
 
-  const payload = await fetchAssetReportService({
-    departmentId: req.body?.department,
-    departments: req.departments || [],
-    roles: req?.roles || [],
-    company: req?.company || null,
-    user: req?.user || null,
-    query: req?.query || {},
-    page: req.query?.page,
-    limit: req.query?.limit,
-    ...(hasDateFilter && {
-      dateFilter: buildDateFilter({
-        startDate: requestDateFilter.startDate,
-        endDate: requestDateFilter.endDate,
-        field: "createdAt",
+    const payload = await fetchAssetReportService({
+      departmentId: req.body?.department,
+      departments: req.departments || [],
+      roles: req?.roles || [],
+      company: req?.company || null,
+      user: req?.user || null,
+      query: req?.query || {},
+      page: req.query?.page,
+      limit: req.query?.limit,
+      ...(hasDateFilter && {
+        dateFilter: buildDateFilter({
+          startDate: requestDateFilter.startDate,
+          endDate: requestDateFilter.endDate,
+          field: "createdAt",
+        }),
       }),
-    }),
-  });
+    });
 
-  return res.status(200).json(payload);
+    return res.status(200).json(payload);
+  } catch (error) {
+    return next(error);
+  }
 }
 
 // const getAssets = async (req, res, next) => {

@@ -116,6 +116,7 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                 params: {
                     dept: activeDepartmentId,
                     type: activeTypeTab,
+                    status: activeStatusTab,
                 },
             });
 

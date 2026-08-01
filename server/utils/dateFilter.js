@@ -1,4 +1,9 @@
-const buildDateFilter = ({ startDate, endDate, field = "createdAt" }) => {
+const buildDateFilter = ({
+  startDate,
+  endDate,
+  field = "createdAt",
+  endExclusive = false,
+}) => {
   if (!startDate && !endDate) return {};
 
   const filter = {};
@@ -8,7 +13,7 @@ const buildDateFilter = ({ startDate, endDate, field = "createdAt" }) => {
   }
 
   if (endDate) {
-    filter.$lte = new Date(endDate);
+    filter[endExclusive ? "$lt" : "$lte"] = new Date(endDate);
   }
 
   return { [field]: filter };

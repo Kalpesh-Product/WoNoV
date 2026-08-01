@@ -6,6 +6,7 @@ const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const WorkationClient = require("../../models/sales/WorkationClients");
 const { formatDate } = require("../../utils/formatDateTime");
+const { getPagination } = require("../../utils/pagination");
 
 const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
 
@@ -70,10 +71,12 @@ const fetchCoworkingClientReportService = async ({
   limit,
 }) => {
   const { coworkingclientid, unitId, active } = query;
-  const shouldPaginate = page !== undefined && limit !== undefined;
-  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-  const skip = (parsedPage - 1) * parsedLimit;
+  const {
+    shouldPaginate,
+    page: parsedPage,
+    limit: parsedLimit,
+    skip,
+  } = getPagination({ page, limit });
   const buildResponse = (data, total = 0) =>
     shouldPaginate
       ? {

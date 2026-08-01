@@ -43,6 +43,12 @@ const staticReportModules = [
     route: "../reports-section/performance",
     permission: PERMISSIONS.REPORTS_PERFORMANCE?.value,
   },
+  {
+    title: "PRINTOUT",
+    subtitle: "Printout Reports",
+    route: "../reports-section/printout",
+    permission: PERMISSIONS.REPORTS_PRINTOUT?.value,
+  },
 ];
 
 const ReportsSection = () => {

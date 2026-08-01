@@ -1,4 +1,5 @@
 const Printout = require("../models/Printout");
+const { getPagination } = require("../utils/pagination");
 
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
@@ -6,19 +7,44 @@ const populatePrintout = [
   { path: "unit", select: "unitName unitNo" },
   { path: "client", select: "clientName companyName name" },
   { path: "requestedBy", select: "employeeName firstName lastName name email" },
-  { path: "department", select: "departmentId name" },
+  { path: "department", select: "name -_id" },
 ];
 
-const fetchPrintoutsService = async ({
+const sanitizePrintout = (printout) => {
+  if (!printout) return printout;
+
+  const sanitizedPrintout = { ...printout };
+  delete sanitizedPrintout.clientModel;
+  delete sanitizedPrintout.requestedByModel;
+
+  if (
+    sanitizedPrintout.department &&
+    typeof sanitizedPrintout.department === "object"
+  ) {
+    const department = { ...sanitizedPrintout.department };
+    delete department._id;
+    delete department.departmentId;
+    sanitizedPrintout.department = department;
+  } else if (sanitizedPrintout.department) {
+    delete sanitizedPrintout.department;
+  }
+
+  return sanitizedPrintout;
+};
+
+const fetchPrintoutReportService = async ({
   filters = {},
   dateFilter,
   page,
   limit,
+  isReport = false,
 }) => {
-  const shouldPaginate = page !== undefined && limit !== undefined;
-  const parsedPage = Math.max(Number.parseInt(page, 10) || 1, 1);
-  const parsedLimit = Math.max(Number.parseInt(limit, 10) || 10, 1);
-  const skip = (parsedPage - 1) * parsedLimit;
+  const {
+    shouldPaginate,
+    page: parsedPage,
+    limit: parsedLimit,
+    skip,
+  } = getPagination({ page, limit });
   const printoutFilters = {
     ...filters,
     ...(dateFilter || {}),
@@ -32,14 +58,15 @@ const fetchPrintoutsService = async ({
     printoutsQuery = printoutsQuery.skip(skip).limit(parsedLimit);
   }
 
-  const [printouts, total] = await Promise.all([
+  const [foundPrintouts, total] = await Promise.all([
     printoutsQuery.lean().exec(),
     shouldPaginate
       ? Printout.countDocuments(printoutFilters).exec()
       : Promise.resolve(null),
   ]);
+  const printouts = foundPrintouts.map(sanitizePrintout);
 
-  return {
+  const result = {
     printouts,
     ...(shouldPaginate && {
       pagination: {
@@ -50,9 +77,12 @@ const fetchPrintoutsService = async ({
       },
     }),
   };
+
+  return isReport ? result.printouts : result;
 };
 
 module.exports = {
-  fetchPrintoutsService,
+  fetchPrintoutReportService,
   populatePrintout,
+  sanitizePrintout,
 };

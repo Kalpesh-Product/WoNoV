@@ -50,6 +50,7 @@ const { fetchLeadReportService } = require("./lead");
 const { fetchUnitReportService } = require("./unit");
 const { fetchHolidayAndEventsService } = require("./holidayEvent");
 const { fetchInventoryService } = require("./inventory");
+const { fetchPrintoutReportService } = require("../printoutService");
 const {
   fetchWeeklyScheduleReportService,
   fetchHousekeepingScheduleReportService,
@@ -117,6 +118,9 @@ const createPerformanceReportService = (type) =>
  */
 
 const reportServiceRegistry = {
+  printout: createReportService(fetchPrintoutReportService, {
+    dateField: "takenAt",
+  }),
   inventory: createReportService(fetchInventoryService, {
     dateField: "createdAt",
   }),

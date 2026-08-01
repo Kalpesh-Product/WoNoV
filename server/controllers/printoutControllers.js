@@ -3,8 +3,9 @@ const Printout = require("./../models/Printout");
 const Company = require("../models/hr/Company");
 const buildDateFilter = require("../utils/dateFilter");
 const {
-  fetchPrintoutsService,
+  fetchPrintoutReportService,
   populatePrintout,
+  sanitizePrintout,
 } = require("../services/printoutService");
 
 const clientModels = ["CoworkingClient", "Company"];
@@ -139,7 +140,7 @@ const addPrintout = async (req, res) => {
 
     return res.status(201).json({
       message: "Printout added successfully",
-      printout: populatedPrintout,
+      printout: sanitizePrintout(populatedPrintout),
     });
   } catch (error) {
     return res.status(500).json({
@@ -189,7 +190,7 @@ const editPrintout = async (req, res) => {
 
     return res.status(200).json({
       message: "Printout updated successfully",
-      printout,
+      printout: sanitizePrintout(printout),
     });
   } catch (error) {
     return res.status(500).json({
@@ -220,7 +221,7 @@ const getPrintouts = async (req, res) => {
 
       return res.status(200).json({
         message: "Printout fetched successfully",
-        printout,
+        printout: sanitizePrintout(printout),
       });
     }
 
@@ -301,7 +302,7 @@ const getPrintouts = async (req, res) => {
       });
     }
 
-    const { printouts, pagination } = await fetchPrintoutsService({
+    const { printouts, pagination } = await fetchPrintoutReportService({
       filters,
       page: req.query?.page,
       limit: req.query?.limit,
@@ -314,9 +315,8 @@ const getPrintouts = async (req, res) => {
       ...(pagination && { pagination }),
     });
   } catch (error) {
-    return res.status(500).json({
-      message: "An error occurred while fetching printouts",
-      error: error.message,
+    return res.status(error.statusCode || 500).json({
+      message: error.message,
     });
   }
 };
