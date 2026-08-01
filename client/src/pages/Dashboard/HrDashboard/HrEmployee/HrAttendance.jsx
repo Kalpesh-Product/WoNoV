@@ -8,20 +8,11 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PageFrame from "../../../../components/Pages/PageFrame";
-const getUtcMonthBoundary = (value, endOfMonth = false) => {
+const getLocalMonthBoundary = (value, endOfMonth = false) => {
   const month = dayjs(value);
+  const boundary = endOfMonth ? month.endOf("month") : month.startOf("month");
 
-  return new Date(
-    Date.UTC(
-      month.year(),
-      month.month(),
-      endOfMonth ? month.daysInMonth() : 1,
-      endOfMonth ? 23 : 0,
-      endOfMonth ? 59 : 0,
-      endOfMonth ? 59 : 0,
-      endOfMonth ? 999 : 0,
-    ),
-  ).toISOString();
+  return boundary.format("YYYY-MM-DDTHH:mm:ss.SSSZ");
 };
 
 const HrAttendance = () => {
@@ -93,8 +84,8 @@ const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
     queryFn: async () => {
      const response = await axios.get("/api/company/company-attandances", {
         params: {
-          startDate: getUtcMonthBoundary(currentMonth),
-          endDate: getUtcMonthBoundary(currentMonth, true),
+          startDate: getLocalMonthBoundary(currentMonth),
+          endDate: getLocalMonthBoundary(currentMonth, true),
           page: pagination.page,
           limit: pagination.limit,
         },
