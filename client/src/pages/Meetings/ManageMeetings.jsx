@@ -33,7 +33,8 @@ import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
-import { toUtcDayBoundary } from "../../utils/dateRange";
+import { toLocalDayBoundary } from "../../utils/dateRange";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -56,7 +57,7 @@ const ManageMeetings = () => {
   const [submittedChecklists, setSubmittedChecklists] = useState({});
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
   const initialMeetingDateRange = useMemo(
@@ -73,8 +74,8 @@ const ManageMeetings = () => {
   const meetingDateRangeRef = useRef(initialMeetingDateRange);
   const meetingFilters = useMemo(
     () => ({
-      startDate: toUtcDayBoundary(meetingDateRange.startDate),
-      endDate: toUtcDayBoundary(meetingDateRange.endDate, true),
+      startDate: toLocalDayBoundary(meetingDateRange.startDate),
+      endDate: toLocalDayBoundary(meetingDateRange.endDate, true),
     }),
     [meetingDateRange],
   );

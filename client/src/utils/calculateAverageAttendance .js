@@ -1,7 +1,7 @@
 // utils/attendanceUtils.js
 import { format } from "date-fns";
 
-export const calculateAverageAttendance = (attendances, workingDays) => {
+export const calculateAverageAttendance = (attendances = [], workingDays) => {
   const userDayMap = {};
   const totalWorkingDays =
     Number.isFinite(Number(workingDays)) && Number(workingDays) > 0
@@ -9,8 +9,12 @@ export const calculateAverageAttendance = (attendances, workingDays) => {
       : 220;
 
   attendances.forEach((entry) => {
-    const userId = entry.user;
-    const day = format(new Date(entry.inTime), "yyyy-MM-dd");
+    const userId = String(entry?.user?._id || entry?.user || "").trim();
+    const inTime = new Date(entry?.inTime);
+
+    if (!userId || Number.isNaN(inTime.getTime())) return;
+
+    const day = format(inTime, "yyyy-MM-dd");
 
     if (!userDayMap[userId]) userDayMap[userId] = new Set();
     userDayMap[userId].add(day); // Set ensures unique days

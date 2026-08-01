@@ -17,33 +17,48 @@ const getCompanyAttandancesService = async ({
     skip,
   } = getPagination({ page, limit });
 
-  const activeEmployees = await UserData.find({ company, isActive: true })
-    .select("firstName lastName empId startDate isActive")
-    .lean()
-    .exec();
+ const employeeQuery = { company, isActive: true };
+  let activeEmployeesQuery = UserData.find(employeeQuery).select(
+    "firstName lastName empId startDate isActive",
+  );
+
+  if (shouldPaginate) {
+    activeEmployeesQuery = activeEmployeesQuery
+      .sort({ firstName: 1, lastName: 1, _id: 1 })
+      .skip(skip)
+      .limit(parsedLimit);
+  }
+
+  const [activeEmployees, total] = await Promise.all([
+    activeEmployeesQuery.lean().exec(),
+    shouldPaginate
+      ? UserData.countDocuments(employeeQuery)
+      : Promise.resolve(0),
+  ]);
   const activeEmployeeIds = activeEmployees.map((employee) => employee._id);
   const attendanceQuery = {
     company,
     user: { $in: activeEmployeeIds },
     ...(dateFilter?.inTime && { inTime: dateFilter.inTime }),
   };
-  let attendanceFindQuery = Attandance.find(attendanceQuery).populate({
+    const attendanceFindQuery = Attandance.find(attendanceQuery).populate({
     path: "user",
     select: "firstName lastName empId startDate isActive",
   });
 
-  if (shouldPaginate) {
-    attendanceFindQuery = attendanceFindQuery
-      .sort({ inTime: -1, _id: -1 })
-      .skip(skip)
-      .limit(parsedLimit);
-  }
+  // if (shouldPaginate) {
+  //   attendanceFindQuery = attendanceFindQuery
+  //     .sort({ inTime: -1, _id: -1 })
+  //     .skip(skip)
+  //     .limit(parsedLimit);
+  // }
 
-  const [companyAttandances, total, holidays, allLeaves] = await Promise.all([
-    attendanceFindQuery.lean().exec(),
-    shouldPaginate
-      ? Attandance.countDocuments(attendanceQuery)
-      : Promise.resolve(0),
+  // const [companyAttandances, total, holidays, allLeaves] = await Promise.all([
+  //   attendanceFindQuery.lean().exec(),
+  //   shouldPaginate
+  //     ? Attandance.countDocuments(attendanceQuery)
+  //     : Promise.resolve(0),
+   const [companyAttandances, holidays, allLeaves] = await Promise.all([
     Events.find({ company, type: "Holiday" }).lean().exec(),
     Leaves.find({ company, takenBy: { $in: activeEmployeeIds } })
       .populate({
