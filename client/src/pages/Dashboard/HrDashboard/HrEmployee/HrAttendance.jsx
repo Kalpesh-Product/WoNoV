@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
 import dayjs from "dayjs";
@@ -8,6 +8,21 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import PageFrame from "../../../../components/Pages/PageFrame";
+const getUtcMonthBoundary = (value, endOfMonth = false) => {
+  const month = dayjs(value);
+
+  return new Date(
+    Date.UTC(
+      month.year(),
+      month.month(),
+      endOfMonth ? month.daysInMonth() : 1,
+      endOfMonth ? 23 : 0,
+      endOfMonth ? 59 : 0,
+      endOfMonth ? 59 : 0,
+      endOfMonth ? 999 : 0,
+    ),
+  ).toISOString();
+};
 
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
@@ -32,7 +47,7 @@ const HrAttendance = () => {
 
   const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-
+const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
   const extendedFyOptions = useMemo(
     () =>
       Array.from({ length: 11 }, (_, index) => {
@@ -60,6 +75,7 @@ const HrAttendance = () => {
 
   useEffect(() => {
     setSelectedFY(defaultFY);
+       setPagination((current) => ({ ...current, page: 1 }));
     setCurrentMonth(
       dayjs().isBetween(dayjs(defaultFY.start), dayjs(defaultFY.end), "month", "[]")
         ? new Date()
@@ -68,11 +84,31 @@ const HrAttendance = () => {
   }, [defaultFY]);
 
   const { data: attendanceData = {}, isLoading } = useQuery({
-    queryKey: ["attendance"],
+     queryKey: [
+      "hr-attendance",
+      currentMonth,
+      pagination.page,
+      pagination.limit,
+    ],
     queryFn: async () => {
-      const response = await axios.get("/api/company/company-attandances");
+     const response = await axios.get("/api/company/company-attandances", {
+        params: {
+          startDate: getUtcMonthBoundary(currentMonth),
+          endDate: getUtcMonthBoundary(currentMonth, true),
+          page: pagination.page,
+          limit: pagination.limit,
+        },
+      });
+      const responsePagination = response.data?.pagination;
+
+      setPagination((current) => ({
+        page: Number(responsePagination?.page) || current.page,
+        limit: Number(responsePagination?.limit) || current.limit,
+        total: Number(responsePagination?.total) || 0,
+      }));
       return response.data;
     },
+     placeholderData: keepPreviousData,
   });
 
   const formattedMonth = dayjs(currentMonth).format("MMMM YYYY");
@@ -226,7 +262,13 @@ const HrAttendance = () => {
       .filter(Boolean);
 
     return finalRows;
-  }, [attendanceData, currentMonth]);
+  }, [
+    attendanceData,
+    currentMonthNum,
+    currentYearNum,
+    daysInMonth,
+    workingDaysInMonth,
+  ]);
 
   const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
     const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
@@ -391,6 +433,7 @@ const HrAttendance = () => {
                   );
                   setSelectedFY(fy);
                   setCurrentMonth(fy.start);
+                  setPagination((current) => ({ ...current, page: 1 }));
                 }}
                 className="min-w-[140px]"
                 sx={{
@@ -425,6 +468,7 @@ const HrAttendance = () => {
                   const [year, month] = e.target.value.split("-");
                   const newDate = dayjs(`${year}-${month}-01`).toDate();
                   setCurrentMonth(newDate);
+                   setPagination((current) => ({ ...current, page: 1 }));
                 }}
                 className="min-w-[160px]"
                 SelectProps={{
@@ -461,13 +505,20 @@ const HrAttendance = () => {
           isMonthWithinFY ? (
             <AgTable
               data={tableData.map((data, index) => ({
-                srNo: index + 1,
+                srNo: (pagination.page - 1) * pagination.limit + index + 1,
                 ...data,
               }))}
               columns={columns}
               search={true}
               searchColumn="empName"
               exportData
+              serverPagination
+              paginationPageSize={pagination.limit}
+              paginationPage={pagination.page}
+              paginationTotal={pagination.total}
+              onPaginationPageChange={(page) =>
+                setPagination((current) => ({ ...current, page }))
+              }
             />
           ) : (
             <div className="text-center text-gray-500 py-8 text-lg">
