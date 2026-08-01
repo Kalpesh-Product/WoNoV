@@ -905,6 +905,11 @@ export const PERMISSIONS = {
     title: "PERFORMANCE",
     type: "read",
   },
+  REPORTS_PRINTOUT: {
+    value: "reports_printout",
+    title: "PRINTOUT",
+    type: "read",
+  },
 
   // Finance Module
   FINANCE_CASHFLOW: {

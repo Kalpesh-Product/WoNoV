@@ -23,7 +23,9 @@ const getCountryName = (countryValue) => {
   if (!countryValue) return countryValue;
 
   const normalizedCountryValue = String(countryValue).trim();
-  const country = Country.getCountryByCode(normalizedCountryValue.toUpperCase());
+  const country = Country.getCountryByCode(
+    normalizedCountryValue.toUpperCase(),
+  );
 
   return country?.name || normalizedCountryValue;
 };
@@ -32,7 +34,7 @@ const getStateName = (stateValue, countryValue = "IN") => {
   if (!stateValue) return stateValue;
 
   const normalizedStateValue = String(stateValue).trim();
- const normalizedCountryValue = String(countryValue || "IN")
+  const normalizedCountryValue = String(countryValue || "IN")
     .trim()
     .toUpperCase();
   const stateCode = normalizedStateValue.toUpperCase();
@@ -48,7 +50,7 @@ const REPORT_MODULE_MAP = {
     title: "Ticket Report",
     module: "Ticket",
     reportType: "app",
-     permission: "reports_tickets",
+    permission: "reports_tickets",
   },
 
   meeting: {
@@ -83,6 +85,12 @@ const REPORT_MODULE_MAP = {
     reportType: "app",
     permission: "reports_performance",
   },
+  printout: {
+    title: "Printout Report",
+    module: "Printout",
+    reportType: "app",
+    permission: "reports_printout",
+  },
 };
 
 const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
@@ -90,7 +98,7 @@ const RETRY_COOLDOWN_STORAGE_KEY = "department-report-retry-cooldown";
 const DepartmentReportCommon = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-   const { permissions } = useUserPermissions();
+  const { permissions } = useUserPermissions();
   const location = useLocation();
   const { moduleKey = "" } = useParams();
   const normalizedModuleKey = String(moduleKey).trim().toLowerCase();
@@ -257,7 +265,7 @@ const DepartmentReportCommon = () => {
         : [];
     },
     //enabled: Boolean(selectedModule?.module),
-   enabled:
+    enabled:
       Boolean(selectedModule?.module) &&
       hasRequiredPermission &&
       (!isDepartmentReportRoute || !isDepartmentsLoading),
@@ -620,7 +628,8 @@ const DepartmentReportCommon = () => {
       const rejectReason = String(
         row?.reject?.reason || row?.["reject.reason"] || "",
       ).trim();
-      const rejectAt = row?.reject?.rejectedAt || row?.["reject.rejectedAt"] || "";
+      const rejectAt =
+        row?.reject?.rejectedAt || row?.["reject.rejectedAt"] || "";
 
       const nextRow = { ...row };
 
@@ -723,7 +732,10 @@ const DepartmentReportCommon = () => {
   const mergeTaskCsvFields = (rows = [], reportName = "") => {
     if (normalizedModuleKey !== "task") return rows;
 
-    const isMyTaskReport = String(reportName).trim().toLowerCase().includes("my task");
+    const isMyTaskReport = String(reportName)
+      .trim()
+      .toLowerCase()
+      .includes("my task");
     const isDepartmentTaskReport = String(reportName)
       .trim()
       .toLowerCase()
@@ -749,7 +761,10 @@ const DepartmentReportCommon = () => {
         if (Array.isArray(row?.assignedTo)) {
           return row.assignedTo
             .map((person) =>
-              [person?.firstName, person?.lastName].filter(Boolean).join(" ").trim(),
+              [person?.firstName, person?.lastName]
+                .filter(Boolean)
+                .join(" ")
+                .trim(),
             )
             .filter(Boolean)
             .join(", ");
@@ -778,13 +793,11 @@ const DepartmentReportCommon = () => {
           row?.["location.building.buildingName"] ||
           "",
       ).trim();
-      const formattedDueTime = formatTaskTime(
-        row?.dueTime || row?.["dueTime"],
-      );
+      const formattedDueTime = formatTaskTime(row?.dueTime || row?.["dueTime"]);
       const formattedCompletedTime =
         isMyTaskReport || isDepartmentTaskReport
-        ? formatTaskTime(row?.completedDate || row?.["completedDate"])
-        : "";
+          ? formatTaskTime(row?.completedDate || row?.["completedDate"])
+          : "";
 
       if (
         !assignedByName &&
@@ -868,112 +881,115 @@ const DepartmentReportCommon = () => {
     }));
   };
 
-const mergeVisitorLikeCsvFields = (row = {}) => {
-  const nextRow = { ...row };
+  const mergeVisitorLikeCsvFields = (row = {}) => {
+    const nextRow = { ...row };
 
-  const checkedInByName = [
-    row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
-    row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+    const checkedInByName = [
+      row?.checkedInBy?.firstName || row?.["checkedInBy.firstName"] || "",
+      row?.checkedInBy?.lastName || row?.["checkedInBy.lastName"] || "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
-  const checkedOutByName = [
-    row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
-    row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+    const checkedOutByName = [
+      row?.checkedOutBy?.firstName || row?.["checkedOutBy.firstName"] || "",
+      row?.checkedOutBy?.lastName || row?.["checkedOutBy.lastName"] || "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
-  const toMeetName = [
-    row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
-    row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .trim();
+    const toMeetName = [
+      row?.toMeet?.firstName || row?.["toMeet.firstName"] || "",
+      row?.toMeet?.lastName || row?.["toMeet.lastName"] || "",
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
 
-  const toMeetCompanyClientName = String(
-    row?.["toMeetCompany.clientName"] ||
-      row?.toMeetCompany?.clientName ||
-      row?.toMeetCompany?.companyName ||
-      row?.toMeetCompany?.name ||
-      row?.toMeetCompany ||
-      "",
-  ).trim();
+    const toMeetCompanyClientName = String(
+      row?.["toMeetCompany.clientName"] ||
+        row?.toMeetCompany?.clientName ||
+        row?.toMeetCompany?.companyName ||
+        row?.toMeetCompany?.name ||
+        row?.toMeetCompany ||
+        "",
+    ).trim();
 
-  const clientToMeetEmployeeName = String(
-    row?.["clientToMeet.employeeName"] ||
-      row?.clientToMeet?.employeeName ||
-      row?.clientToMeet ||
-      "",
-  ).trim();
+    const clientToMeetEmployeeName = String(
+      row?.["clientToMeet.employeeName"] ||
+        row?.clientToMeet?.employeeName ||
+        row?.clientToMeet ||
+        "",
+    ).trim();
 
-  const departmentName = String(
-    row?.["department.name"] || row?.department?.name || row?.department || "",
-  ).trim();
+    const departmentName = String(
+      row?.["department.name"] ||
+        row?.department?.name ||
+        row?.department ||
+        "",
+    ).trim();
 
-  const unitNo = String(
-    row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
-  ).trim();
+    const unitNo = String(
+      row?.["unit.unitNo"] || row?.unit?.unitNo || row?.unitNo || "",
+    ).trim();
 
-  const unitName = String(
-    row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
-  ).trim();
+    const unitName = String(
+      row?.["unit.unitName"] || row?.unit?.unitName || row?.unitName || "",
+    ).trim();
 
-  const buildingName = String(
-    row?.["unit.building.buildingName"] ||
-      row?.unit?.building?.buildingName ||
-      row?.building?.buildingName ||
-      row?.buildingName ||
-      "",
-  ).trim();
+    const buildingName = String(
+      row?.["unit.building.buildingName"] ||
+        row?.unit?.building?.buildingName ||
+        row?.building?.buildingName ||
+        row?.buildingName ||
+        "",
+    ).trim();
 
-  const stateName = getStateName(row?.state);
+    const stateName = getStateName(row?.state);
 
-  if (checkedInByName) nextRow.checkedInBy = checkedInByName;
-  if (checkedOutByName) nextRow.checkedOutBy = checkedOutByName;
-  if (toMeetName) nextRow.toMeet = toMeetName;
+    if (checkedInByName) nextRow.checkedInBy = checkedInByName;
+    if (checkedOutByName) nextRow.checkedOutBy = checkedOutByName;
+    if (toMeetName) nextRow.toMeet = toMeetName;
 
-  if (toMeetCompanyClientName) {
-    nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
-  }
+    if (toMeetCompanyClientName) {
+      nextRow["toMeetCompany.clientName"] = toMeetCompanyClientName;
+    }
 
-  if (clientToMeetEmployeeName) {
-    nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
-  }
+    if (clientToMeetEmployeeName) {
+      nextRow["clientToMeet.employeeName"] = clientToMeetEmployeeName;
+    }
 
-  if (departmentName) {
-    nextRow["department.name"] = departmentName;
-  }
+    if (departmentName) {
+      nextRow["department.name"] = departmentName;
+    }
 
-  if (unitNo) nextRow.unitNo = unitNo;
-  if (unitName) nextRow.unitName = unitName;
-  if (buildingName) nextRow.buildingName = buildingName;
-  if (stateName) nextRow.state = stateName;
+    if (unitNo) nextRow.unitNo = unitNo;
+    if (unitName) nextRow.unitName = unitName;
+    if (buildingName) nextRow.buildingName = buildingName;
+    if (stateName) nextRow.state = stateName;
 
-  delete nextRow["checkedInBy.firstName"];
-  delete nextRow["checkedInBy.lastName"];
-  delete nextRow["checkedOutBy.firstName"];
-  delete nextRow["checkedOutBy.lastName"];
-  delete nextRow["toMeet.firstName"];
-  delete nextRow["toMeet.lastName"];
-  delete nextRow["unit.unitNo"];
-  delete nextRow["unit.unitName"];
-  delete nextRow["unit.building.buildingName"];
-  delete nextRow.toMeetCompany;
-  delete nextRow.clientToMeet;
-  delete nextRow.meeting;
-  delete nextRow.department;
+    delete nextRow["checkedInBy.firstName"];
+    delete nextRow["checkedInBy.lastName"];
+    delete nextRow["checkedOutBy.firstName"];
+    delete nextRow["checkedOutBy.lastName"];
+    delete nextRow["toMeet.firstName"];
+    delete nextRow["toMeet.lastName"];
+    delete nextRow["unit.unitNo"];
+    delete nextRow["unit.unitName"];
+    delete nextRow["unit.building.buildingName"];
+    delete nextRow.toMeetCompany;
+    delete nextRow.clientToMeet;
+    delete nextRow.meeting;
+    delete nextRow.department;
 
-  return nextRow;
-};
+    return nextRow;
+  };
 
- const mergeVisitorCsvFields = (rows = [], reportName = "") => {
+  const mergeVisitorCsvFields = (rows = [], reportName = "") => {
     if (normalizedModuleKey !== "visitor") return rows;
-        return rows.map(mergeVisitorLikeCsvFields);
+    return rows.map(mergeVisitorLikeCsvFields);
     // return rows.map((row) => {
     //   const nextRow = { ...row };
     //   const checkedInByName = [
@@ -1141,151 +1157,150 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
     });
   };
 
- const mergeSalesCsvFields = (rows = [], reportName = "") => {
-  if (normalizedModuleKey !== "sales") return rows;
+  const mergeSalesCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "sales") return rows;
 
-  const normalizedReportName = String(reportName)
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "-")
-    .replace(/[^a-z0-9-]/g, "")
-    .replace(/-report$/, "");
-  const hasSalesLocationFields = rows.some(
-    (row) =>
-      row?.unit ||
-      row?.location ||
-      row?.building ||
-      row?.["unit.unitNo"] ||
-      row?.["unit.unitName"] ||
-      row?.["unit.building.buildingName"] ||
-      row?.["location.unitNo"] ||
-      row?.["location.unitName"] ||
-      row?.["location.building.buildingName"] ||
-      row?.["building.buildingName"] ||
-      row?.unitNo ||
-      row?.unitName ||
-      row?.buildingName,
-  );
-  const isCoworkingOrVirtualOfficeClientsReport =
-    normalizedReportName.includes("coworking-clients") ||
-    normalizedReportName.includes("virtual-office-clients");
-  const hasDeskCountFields = rows.some(
-    (row) =>
-      row?.openDesks !== undefined ||
-      row?.cabinDesks !== undefined ||
-      row?.["openDesks"] !== undefined ||
-      row?.["cabinDesks"] !== undefined,
-  );
-  const isInventoryBuildingUnitwiseReport =
-    normalizedReportName.includes("inventorybuildingunitwise") ||
-    normalizedReportName.includes("inventory-building-unitwise") ||
-    normalizedReportName.includes("inventory-unitwise") ||
-    (normalizedReportName.includes("inventory") &&
-      normalizedReportName.includes("unitwise"));
-  const hasInventoryDeskSummaryFields = rows.some(
-    (row) =>
-      (row?.totalDesks !== undefined ||
-        row?.occupiedDesks !== undefined ||
-        row?.freeDesks !== undefined ||
-        row?.sqft !== undefined) &&
-      (row?.openDesks !== undefined ||
+    const normalizedReportName = String(reportName)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "")
+      .replace(/-report$/, "");
+    const hasSalesLocationFields = rows.some(
+      (row) =>
+        row?.unit ||
+        row?.location ||
+        row?.building ||
+        row?.["unit.unitNo"] ||
+        row?.["unit.unitName"] ||
+        row?.["unit.building.buildingName"] ||
+        row?.["location.unitNo"] ||
+        row?.["location.unitName"] ||
+        row?.["location.building.buildingName"] ||
+        row?.["building.buildingName"] ||
+        row?.unitNo ||
+        row?.unitName ||
+        row?.buildingName,
+    );
+    const isCoworkingOrVirtualOfficeClientsReport =
+      normalizedReportName.includes("coworking-clients") ||
+      normalizedReportName.includes("virtual-office-clients");
+    const hasDeskCountFields = rows.some(
+      (row) =>
+        row?.openDesks !== undefined ||
         row?.cabinDesks !== undefined ||
         row?.["openDesks"] !== undefined ||
-        row?.["cabinDesks"] !== undefined),
-  );
-  const shouldAddDeskColumns =
-    hasDeskCountFields &&
-    (isCoworkingOrVirtualOfficeClientsReport ||
-      isInventoryBuildingUnitwiseReport ||
-      hasInventoryDeskSummaryFields);
-  const isVirtualOfficeClientsReport = normalizedReportName.includes(
-    "virtual-office-clients",
-  );
-  const isUniqueLeadsReport =
-    normalizedReportName.includes("unique-leads") ||
-    normalizedReportName.includes("unique-lead");
-  const isVirtualOfficeRevenueReport = normalizedReportName.includes(
-    "virtual-office-revenue",
-  );
-  const shouldAddSalesUnitFields =
-    hasSalesLocationFields ||
-    isCoworkingOrVirtualOfficeClientsReport ||
-    shouldAddDeskColumns;
+        row?.["cabinDesks"] !== undefined,
+    );
+    const isInventoryBuildingUnitwiseReport =
+      normalizedReportName.includes("inventorybuildingunitwise") ||
+      normalizedReportName.includes("inventory-building-unitwise") ||
+      normalizedReportName.includes("inventory-unitwise") ||
+      (normalizedReportName.includes("inventory") &&
+        normalizedReportName.includes("unitwise"));
+    const hasInventoryDeskSummaryFields = rows.some(
+      (row) =>
+        (row?.totalDesks !== undefined ||
+          row?.occupiedDesks !== undefined ||
+          row?.freeDesks !== undefined ||
+          row?.sqft !== undefined) &&
+        (row?.openDesks !== undefined ||
+          row?.cabinDesks !== undefined ||
+          row?.["openDesks"] !== undefined ||
+          row?.["cabinDesks"] !== undefined),
+    );
+    const shouldAddDeskColumns =
+      hasDeskCountFields &&
+      (isCoworkingOrVirtualOfficeClientsReport ||
+        isInventoryBuildingUnitwiseReport ||
+        hasInventoryDeskSummaryFields);
+    const isVirtualOfficeClientsReport = normalizedReportName.includes(
+      "virtual-office-clients",
+    );
+    const isUniqueLeadsReport =
+      normalizedReportName.includes("unique-leads") ||
+      normalizedReportName.includes("unique-lead");
+    const isVirtualOfficeRevenueReport = normalizedReportName.includes(
+      "virtual-office-revenue",
+    );
+    const shouldAddSalesUnitFields =
+      hasSalesLocationFields ||
+      isCoworkingOrVirtualOfficeClientsReport ||
+      shouldAddDeskColumns;
 
-  const isOpenDeskClientsReport =
-    normalizedReportName.includes("open-desk-clients") ||
-    normalizedReportName.includes("open-desk-client") ||
-    normalizedReportName.includes("open-desk");
+    const isOpenDeskClientsReport =
+      normalizedReportName.includes("open-desk-clients") ||
+      normalizedReportName.includes("open-desk-client") ||
+      normalizedReportName.includes("open-desk");
 
-   const isExternalClientsReport =
-    normalizedReportName.includes("external-clients") ||
-    normalizedReportName.includes("external-client");
+    const isExternalClientsReport =
+      normalizedReportName.includes("external-clients") ||
+      normalizedReportName.includes("external-client");
 
-  const shouldMergeVisitorLikeFields =
-    isOpenDeskClientsReport || isExternalClientsReport;
+    const shouldMergeVisitorLikeFields =
+      isOpenDeskClientsReport || isExternalClientsReport;
 
-  if (!shouldAddSalesUnitFields && !shouldMergeVisitorLikeFields) return rows;  
+    if (!shouldAddSalesUnitFields && !shouldMergeVisitorLikeFields) return rows;
 
-
-  return rows.map((row) => {
-    let nextRow = { ...row };
+    return rows.map((row) => {
+      let nextRow = { ...row };
 
       if (shouldMergeVisitorLikeFields) {
-      nextRow = mergeVisitorLikeCsvFields(nextRow);
-    }
-     if (shouldAddSalesUnitFields || shouldAddDeskColumns) {
-      const unitNo = String(
-        row?.["unit.unitNo"] ||
-          row?.unit?.unitNo ||
-          row?.["location.unitNo"] ||
-          row?.location?.unitNo ||
-          row?.unitNo ||
-          "",
-      ).trim();
-      const unitName = String(
-        row?.["unit.unitName"] ||
-          row?.unit?.unitName ||
-          row?.["location.unitName"] ||
-          row?.location?.unitName ||
-          row?.unitName ||
-          "",
-      ).trim();
-     const buildingName = String(
-        row?.["unit.building.buildingName"] ||
-          row?.unit?.building?.buildingName ||
-          row?.["location.building.buildingName"] ||
-          row?.location?.building?.buildingName ||
-          row?.["building.buildingName"] ||
-          row?.building?.buildingName ||
-          row?.buildingName ||
-          "",
-      ).trim();
-      const hoState = String(
-        row?.hoState || row?.["hoState"] || row?.["HO State"] || "",
-      ).trim();
-      const hoCountry = String(
-        row?.hoCountry || row?.["hoCountry"] || row?.["HO Country"] || "IN",
-      ).trim();
-      const hoStateName = getStateName(hoState, hoCountry);
-
-      if (shouldAddDeskColumns) {
-        nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
-        nextRow["Open Desk"] = row?.openDesks ?? "";
+        nextRow = mergeVisitorLikeCsvFields(nextRow);
       }
-      if (isCoworkingOrVirtualOfficeClientsReport) {
-        if (hoStateName) {
-          nextRow.hoState = hoStateName;
+      if (shouldAddSalesUnitFields || shouldAddDeskColumns) {
+        const unitNo = String(
+          row?.["unit.unitNo"] ||
+            row?.unit?.unitNo ||
+            row?.["location.unitNo"] ||
+            row?.location?.unitNo ||
+            row?.unitNo ||
+            "",
+        ).trim();
+        const unitName = String(
+          row?.["unit.unitName"] ||
+            row?.unit?.unitName ||
+            row?.["location.unitName"] ||
+            row?.location?.unitName ||
+            row?.unitName ||
+            "",
+        ).trim();
+        const buildingName = String(
+          row?.["unit.building.buildingName"] ||
+            row?.unit?.building?.buildingName ||
+            row?.["location.building.buildingName"] ||
+            row?.location?.building?.buildingName ||
+            row?.["building.buildingName"] ||
+            row?.building?.buildingName ||
+            row?.buildingName ||
+            "",
+        ).trim();
+        const hoState = String(
+          row?.hoState || row?.["hoState"] || row?.["HO State"] || "",
+        ).trim();
+        const hoCountry = String(
+          row?.hoCountry || row?.["hoCountry"] || row?.["HO Country"] || "IN",
+        ).trim();
+        const hoStateName = getStateName(hoState, hoCountry);
+
+        if (shouldAddDeskColumns) {
+          nextRow["Cabin Desk"] = row?.cabinDesks ?? "";
+          nextRow["Open Desk"] = row?.openDesks ?? "";
+        }
+        if (isCoworkingOrVirtualOfficeClientsReport) {
+          if (hoStateName) {
+            nextRow.hoState = hoStateName;
+          }
+        }
+        if (isVirtualOfficeClientsReport) {
+          nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
+        }
+        if (!isVirtualOfficeRevenueReport && !isUniqueLeadsReport) {
+          nextRow["Unit No"] = unitNo;
+          nextRow["Unit Name"] = unitName;
+          nextRow["Building Name"] = buildingName;
         }
       }
-      if (isVirtualOfficeClientsReport) {
-        nextRow["Total Term"] = row?.totalTerm ?? row?.["totalTerm"] ?? "";
-      }
-      if (!isVirtualOfficeRevenueReport && !isUniqueLeadsReport) {
-        nextRow["Unit No"] = unitNo;
-        nextRow["Unit Name"] = unitName;
-        nextRow["Building Name"] = buildingName;
-      }
-     }
 
       delete nextRow.unit;
       delete nextRow.building;
@@ -1316,252 +1331,251 @@ const mergeVisitorLikeCsvFields = (row = {}) => {
     });
   };
 
+  const mergeHrCsvFields = (rows = [], reportName = "") => {
+    if (normalizedModuleKey !== "hr") return rows;
+    const normalizedReportName = String(reportName || "")
+      .trim()
+      .toLowerCase();
+    const isHousekeepingStaffReport = normalizedReportName.includes(
+      "housekeeping staff report",
+    );
 
-const mergeHrCsvFields = (rows = [], reportName = "") => {
-  if (normalizedModuleKey !== "hr") return rows;
-  const normalizedReportName = String(reportName || "").trim().toLowerCase();
-  const isHousekeepingStaffReport = normalizedReportName.includes(
-    "housekeeping staff report",
-  );
+    const formatHrTime = (value) => {
+      if (!value) return "";
 
-  const formatHrTime = (value) => {
-    if (!value) return "";
+      const formattedTime = humanTime(value);
 
-    const formattedTime = humanTime(value);
+      if (!formattedTime || formattedTime === "Invalid date") {
+        return value;
+      }
 
-    if (!formattedTime || formattedTime === "Invalid date") {
-      return value;
-    }
+      return formattedTime;
+    };
 
-    return formattedTime;
-  };
+    const formatHrNamedValues = (value, nameKey) => {
+      const values = Array.isArray(value) ? value : value ? [value] : [];
 
-  const formatHrNamedValues = (value, nameKey) => {
-    const values = Array.isArray(value) ? value : value ? [value] : [];
+      return values
+        .map((item) => {
+          if (item && typeof item === "object") {
+            return item?.[nameKey] || "";
+          }
 
-    return values
-      .map((item) => {
-        if (item && typeof item === "object") {
-          return item?.[nameKey] || "";
+          return item || "";
+        })
+        .map((item) => String(item).trim())
+        .filter(Boolean)
+        .join(", ");
+    };
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const staffFullName = [
+        row?.firstName || row?.["firstName"] || "",
+        row?.middleName || row?.["middleName"] || "",
+        row?.lastName || row?.["lastName"] || "",
+      ]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+        .join(" ");
+
+      const userFirstName = String(
+        row?.user?.firstName || row?.["user.firstName"] || "",
+      ).trim();
+
+      const userLastName = String(
+        row?.user?.lastName || row?.["user.lastName"] || "",
+      ).trim();
+
+      const userName = [userFirstName, userLastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const userEmpId = String(
+        row?.user?.empId || row?.["user.empId"] || "",
+      ).trim();
+
+      const addedByFirstName = String(
+        row?.addedBy?.firstName || row?.["addedBy.firstName"] || "",
+      ).trim();
+
+      const addedByLastName = String(
+        row?.addedBy?.lastName || row?.["addedBy.lastName"] || "",
+      ).trim();
+
+      const addedByName = [addedByFirstName, addedByLastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const takenByFirstName = String(
+        row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
+      ).trim();
+
+      const takenByLastName = String(
+        row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
+      ).trim();
+
+      const takenByName = [takenByFirstName, takenByLastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const takenByEmpId = String(
+        row?.takenBy?.empId || row?.["takenBy.empId"] || "",
+      ).trim();
+
+      const approvByFirstName = String(
+        row?.approvedBy?.firstName || row?.["approvedBy.firstName"] || "",
+      ).trim();
+
+      const approvByLastName = String(
+        row?.approvedBy?.lastName || row?.["approvedBy.lastName"] || "",
+      ).trim();
+
+      const approvedByName = [approvByFirstName, approvByLastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const rejectedByFirstName = String(
+        row?.rejectedBy?.firstName || row?.["rejectedBy.firstName"] || "",
+      ).trim();
+
+      const rejectedByLastName = String(
+        row?.rejectedBy?.lastName || row?.["rejectedBy.lastName"] || "",
+      ).trim();
+
+      const rejectedByName = [rejectedByFirstName, rejectedByLastName]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
+      const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
+
+      const homeAddressCountry = String(
+        row?.homeAddress?.country || row?.["homeAddress.country"] || "",
+      ).trim();
+      const homeAddressState = String(
+        row?.homeAddress?.state || row?.["homeAddress.state"] || "",
+      ).trim();
+      const homeAddressCountryName = getCountryName(homeAddressCountry);
+      const homeAddressStateName = getStateName(
+        homeAddressState,
+        homeAddressCountry,
+      );
+      const departmentNames = formatHrNamedValues(
+        row?.departments ?? row?.["departments.name"],
+        "name",
+      );
+      const roleTitles = formatHrNamedValues(
+        row?.role ?? row?.["role.roleTitle"],
+        "roleTitle",
+      );
+
+      if (
+        row?.departments !== undefined ||
+        row?.["departments.name"] !== undefined
+      ) {
+        nextRow.departments = departmentNames;
+      }
+
+      if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
+        nextRow.role = roleTitles;
+      }
+
+      if (isHousekeepingStaffReport && staffFullName) {
+        nextRow.name = staffFullName;
+        delete nextRow.firstName;
+        delete nextRow.middleName;
+        delete nextRow.lastName;
+      }
+
+      delete nextRow["departments.name"];
+      delete nextRow["role.roleTitle"];
+
+      if (row?.homeAddress && typeof row.homeAddress === "object") {
+        nextRow.homeAddress = {
+          ...row.homeAddress,
+          country: homeAddressCountryName,
+          state: homeAddressStateName,
+        };
+      } else {
+        if (homeAddressCountryName) {
+          nextRow["homeAddress.country"] = homeAddressCountryName;
         }
 
-        return item || "";
-      })
-      .map((item) => String(item).trim())
-      .filter(Boolean)
-      .join(", ");
+        if (homeAddressStateName) {
+          nextRow["homeAddress.state"] = homeAddressStateName;
+        }
+      }
+
+      if (userName) {
+        nextRow.userName = userName;
+      }
+
+      if (userEmpId) {
+        nextRow.empId = userEmpId;
+      }
+
+      if (addedByName) {
+        nextRow.addedByName = addedByName;
+      }
+
+      if (takenByName) {
+        nextRow.takenByName = takenByName;
+      }
+
+      if (takenByEmpId) {
+        nextRow.takenByEmpId = takenByEmpId;
+      }
+
+      if (approvedByName) {
+        nextRow.approvedByName = approvedByName;
+      }
+
+      if (rejectedByName) {
+        nextRow.rejectedByName = rejectedByName;
+      }
+
+      if (formattedInTime) {
+        nextRow.inTime = formattedInTime;
+      }
+
+      if (formattedOutTime) {
+        nextRow.outTime = formattedOutTime;
+      }
+
+      delete nextRow.user;
+      delete nextRow["user.firstName"];
+      delete nextRow["user.lastName"];
+      delete nextRow["user.empId"];
+      delete nextRow.addedBy;
+      delete nextRow["addedBy.firstName"];
+      delete nextRow["addedBy.lastName"];
+      delete nextRow.takenBy;
+      delete nextRow["takenBy.firstName"];
+      delete nextRow["takenBy.lastName"];
+      delete nextRow["takenBy.empId"];
+      delete nextRow.approvedBy;
+      delete nextRow["approvedBy.firstName"];
+      delete nextRow["approvedBy.lastName"];
+      delete nextRow.rejectedBy;
+      delete nextRow["rejectedBy.firstName"];
+      delete nextRow["rejectedBy.lastName"];
+
+      return nextRow;
+    });
   };
-
-
-  return rows.map((row) => {
-    const nextRow = { ...row };
-    const staffFullName = [
-      row?.firstName || row?.["firstName"] || "",
-      row?.middleName || row?.["middleName"] || "",
-      row?.lastName || row?.["lastName"] || "",
-    ]
-      .map((value) => String(value || "").trim())
-      .filter(Boolean)
-      .join(" ");
-
-    const userFirstName = String(
-      row?.user?.firstName || row?.["user.firstName"] || "",
-    ).trim();
-
-    const userLastName = String(
-      row?.user?.lastName || row?.["user.lastName"] || "",
-    ).trim();
-
-    const userName = [userFirstName, userLastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const userEmpId = String(
-      row?.user?.empId || row?.["user.empId"] || "",
-    ).trim();
-
-     const addedByFirstName = String(
-      row?.addedBy?.firstName || row?.["addedBy.firstName"] || "",
-    ).trim();
-
-    const addedByLastName = String(
-      row?.addedBy?.lastName || row?.["addedBy.lastName"] || "",
-    ).trim();
-
-    const addedByName = [addedByFirstName, addedByLastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const takenByFirstName = String(
-      row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
-    ).trim();
-
-    const takenByLastName = String(
-      row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
-    ).trim();
-
-    const takenByName = [takenByFirstName, takenByLastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const takenByEmpId = String(
-      row?.takenBy?.empId || row?.["takenBy.empId"] || "",
-    ).trim();
-
-    const approvByFirstName = String(
-      row?.approvedBy?.firstName || row?.["approvedBy.firstName"] || "",
-    ).trim();
-
-    const approvByLastName = String(
-      row?.approvedBy?.lastName || row?.["approvedBy.lastName"] || "",
-    ).trim();
-
-    const approvedByName = [approvByFirstName, approvByLastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const rejectedByFirstName = String(
-      row?.rejectedBy?.firstName || row?.["rejectedBy.firstName"] || "",
-    ).trim();
-
-    const rejectedByLastName = String(
-      row?.rejectedBy?.lastName || row?.["rejectedBy.lastName"] || "",
-    ).trim();
-
-    const rejectedByName = [rejectedByFirstName, rejectedByLastName]
-      .filter(Boolean)
-      .join(" ")
-      .trim();
-
-    const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
-    const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
-   
-     const homeAddressCountry = String(
-      row?.homeAddress?.country || row?.["homeAddress.country"] || "",
-    ).trim();
-    const homeAddressState = String(
-      row?.homeAddress?.state || row?.["homeAddress.state"] || "",
-    ).trim();
-    const homeAddressCountryName = getCountryName(homeAddressCountry);
-    const homeAddressStateName = getStateName(
-      homeAddressState,
-      homeAddressCountry,
-    );
-    const departmentNames = formatHrNamedValues(
-      row?.departments ?? row?.["departments.name"],
-      "name",
-    );
-    const roleTitles = formatHrNamedValues(
-      row?.role ?? row?.["role.roleTitle"],
-      "roleTitle",
-    );
-
-    if (
-      row?.departments !== undefined ||
-      row?.["departments.name"] !== undefined
-    ) {
-      nextRow.departments = departmentNames;
-    }
-
-    if (row?.role !== undefined || row?.["role.roleTitle"] !== undefined) {
-      nextRow.role = roleTitles;
-    }
-
-    if (isHousekeepingStaffReport && staffFullName) {
-      nextRow.name = staffFullName;
-      delete nextRow.firstName;
-      delete nextRow.middleName;
-      delete nextRow.lastName;
-    }
-
-    delete nextRow["departments.name"];
-    delete nextRow["role.roleTitle"];
-
-    if (row?.homeAddress && typeof row.homeAddress === "object") {
-      nextRow.homeAddress = {
-        ...row.homeAddress,
-        country: homeAddressCountryName,
-        state: homeAddressStateName,
-      };
-    } else {
-      if (homeAddressCountryName) {
-        nextRow["homeAddress.country"] = homeAddressCountryName;
-      }
-
-      if (homeAddressStateName) {
-        nextRow["homeAddress.state"] = homeAddressStateName;
-      }
-    }
-
-    if (userName) {
-      nextRow.userName = userName;
-    }
-
-    if (userEmpId) {
-      nextRow.empId = userEmpId;
-    }
-
-    if(addedByName) {
-      nextRow.addedByName = addedByName;
-    }
-
-    if(takenByName) {
-      nextRow.takenByName = takenByName;
-    }
-
-    if(takenByEmpId) {
-      nextRow.takenByEmpId = takenByEmpId;
-    }
-
-    if(approvedByName) {
-      nextRow.approvedByName = approvedByName;
-    }
-
-    if(rejectedByName) {
-      nextRow.rejectedByName = rejectedByName;
-    }
-
-    if (formattedInTime) {
-      nextRow.inTime = formattedInTime;
-    }
-
-    if (formattedOutTime) {
-      nextRow.outTime = formattedOutTime;
-    }
-
-    delete nextRow.user;
-    delete nextRow["user.firstName"];
-    delete nextRow["user.lastName"];
-    delete nextRow["user.empId"];
-    delete nextRow.addedBy;
-    delete nextRow["addedBy.firstName"];
-    delete nextRow["addedBy.lastName"];
-    delete nextRow.takenBy;
-    delete nextRow["takenBy.firstName"];
-    delete nextRow["takenBy.lastName"];
-    delete nextRow["takenBy.empId"];
-    delete nextRow.approvedBy;
-    delete nextRow["approvedBy.firstName"];
-    delete nextRow["approvedBy.lastName"];
-    delete nextRow.rejectedBy;
-    delete nextRow["rejectedBy.firstName"];
-    delete nextRow["rejectedBy.lastName"];
-
-
-    return nextRow;
-  });
-};
 
   const mergeAssetCsvFields = (rows = []) => {
     if (normalizedModuleKey !== "asset") return rows;
 
     return rows.map((row) => {
       const nextRow = { ...row };
-       const assignedAssetApprovedByName = [
+      const assignedAssetApprovedByName = [
         row?.assignedAsset?.approvedBy?.firstName ||
           row?.["assignedAsset.approvedBy.firstName"] ||
           "",
@@ -1572,7 +1586,7 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
         .filter(Boolean)
         .join(" ")
         .trim();
-       const assignedAssetAssignedByName = [
+      const assignedAssetAssignedByName = [
         row?.assignedAsset?.assignedBy?.firstName ||
           row?.["assignedAsset.assignedBy.firstName"] ||
           "",
@@ -1582,7 +1596,7 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
       ]
         .filter(Boolean)
         .join(" ")
-        .trim();  
+        .trim();
       const assignedAssetRejectededByName = [
         row?.assignedAsset?.rejectededBy?.firstName ||
           row?.["assignedAsset.rejectededBy.firstName"] ||
@@ -1636,13 +1650,21 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
         nextRow.assetName = row.name;
       }
 
-      if (row?.warranty !== undefined && row?.warranty !== null && row?.warranty !== "") {
+      if (
+        row?.warranty !== undefined &&
+        row?.warranty !== null &&
+        row?.warranty !== ""
+      ) {
         nextRow.warrantyMonth = row.warranty;
       }
 
       const addedByName = [
-        row?.createdBy?.firstName || row?.["createdBy.firstName"] || auth?.user?.firstName,
-        row?.createdBy?.lastName || row?.["createdBy.lastName"] || auth?.user?.lastName,
+        row?.createdBy?.firstName ||
+          row?.["createdBy.firstName"] ||
+          auth?.user?.firstName,
+        row?.createdBy?.lastName ||
+          row?.["createdBy.lastName"] ||
+          auth?.user?.lastName,
       ]
         .filter(Boolean)
         .join(" ")
@@ -1668,7 +1690,9 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
           : 1;
 
       const subCategoryName = String(
-        row?.subCategory?.subCategoryName || row?.["subCategory.subCategoryName"] || "",
+        row?.subCategory?.subCategoryName ||
+          row?.["subCategory.subCategoryName"] ||
+          "",
       ).trim();
 
       if (subCategoryName) {
@@ -1706,7 +1730,7 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
         if (assignedAssetApprovedByName) {
           nextRow.assignedAsset.approvedBy = assignedAssetApprovedByName;
         }
-         if (assignedAssetAssignedByName) {
+        if (assignedAssetAssignedByName) {
           nextRow.assignedAsset.assignedBy = assignedAssetAssignedByName;
         }
 
@@ -1768,7 +1792,7 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
       delete nextRow.assetId;
       delete nextRow.name;
       delete nextRow.warranty;
-     // delete nextRow.departmentAssetId;
+      // delete nextRow.departmentAssetId;
       delete nextRow["vendor.departmentId.name"];
       delete nextRow["assignedAsset.asset"];
       delete nextRow["assignedAsset.approvedBy.firstName"];
@@ -1792,13 +1816,15 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
     if (normalizedModuleKey !== "performance") return rows;
 
     const normalizedReportName = String(reportName).trim().toLowerCase();
-    const isIndividualKpaReport =
-      normalizedReportName.includes("individual kpa report");
+    const isIndividualKpaReport = normalizedReportName.includes(
+      "individual kpa report",
+    );
     const isDepartmentKpaReport =
       normalizedReportName.includes("department kpa report") ||
       normalizedReportName.includes("departments kpa report");
-    const isIndividualKraReport =
-      normalizedReportName.includes("individual kra report");
+    const isIndividualKraReport = normalizedReportName.includes(
+      "individual kra report",
+    );
     const isDepartmentKraReport =
       normalizedReportName.includes("department kra report") ||
       normalizedReportName.includes("departments kra report");
@@ -1886,7 +1912,11 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
 
         reorderedEntries.push([key, value]);
 
-        if (key === "dueDate" && !dueTimeInserted && dueTimeValue !== undefined) {
+        if (
+          key === "dueDate" &&
+          !dueTimeInserted &&
+          dueTimeValue !== undefined
+        ) {
           reorderedEntries.push(["dueTime", dueTimeValue]);
           dueTimeInserted = true;
         }
@@ -1942,7 +1972,9 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
   };
 
   const triggerDataDownload = (reportData, reportName) => {
-    const normalizedReportName = String(reportName || "").trim().toLowerCase();
+    const normalizedReportName = String(reportName || "")
+      .trim()
+      .toLowerCase();
     const hiddenFields = [];
     let exportData = appendReportSerialNumbers(reportData, reportName);
     const formatSubstitutions = (substitutions = []) =>
@@ -2065,12 +2097,17 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
           ? row.substitutions
           : [];
 
-        if (!location || typeof location !== "object" || Array.isArray(location)) {
+        if (
+          !location ||
+          typeof location !== "object" ||
+          Array.isArray(location)
+        ) {
           return {
             ...row,
             employeeName:
-              [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
-              "",
+              [employee?.firstName, employee?.lastName]
+                .filter(Boolean)
+                .join(" ") || "",
             substitutions: formatSubstitutions(substitutions),
           };
         }
@@ -2085,11 +2122,14 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
           ...row,
           ...restLocation,
           employeeName:
-            [employee?.firstName, employee?.lastName].filter(Boolean).join(" ") ||
-            "",
+            [employee?.firstName, employee?.lastName]
+              .filter(Boolean)
+              .join(" ") || "",
           substitutions: formatSubstitutions(substitutions),
           ...(buildingName !== undefined ? { buildingName } : {}),
-          ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
+          ...(Object.keys(restBuilding).length
+            ? { building: restBuilding }
+            : {}),
           location: undefined,
         };
       };
@@ -2140,7 +2180,9 @@ const mergeHrCsvFields = (rows = [], reportName = "") => {
               .join(" ") || "",
           substitutions: formatSubstitutions(substitutions),
           ...(buildingName !== undefined ? { buildingName } : {}),
-          ...(Object.keys(restBuilding).length ? { building: restBuilding } : {}),
+          ...(Object.keys(restBuilding).length
+            ? { building: restBuilding }
+            : {}),
           unit: undefined,
         };
       };
