@@ -13,6 +13,7 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
+import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
 
 const RepeatExternalCompaanies = () => {
   const { auth } = useAuth();
@@ -26,7 +27,7 @@ const RepeatExternalCompaanies = () => {
     useState(false);
 const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
 
