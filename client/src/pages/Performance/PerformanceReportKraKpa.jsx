@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { Chip, Tab, Tabs } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import WidgetSection from "../../components/WidgetSection";
@@ -12,6 +12,23 @@ import PageFrame from "../../components/Pages/PageFrame";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import dayjs from "dayjs";
+
+const toUtcDayBoundary = (value, endOfDay = false) => {
+    const date = dayjs(value);
+
+    return new Date(
+        Date.UTC(
+            date.year(),
+            date.month(),
+            date.date(),
+            endOfDay ? 23 : 0,
+            endOfDay ? 59 : 0,
+            endOfDay ? 59 : 0,
+            endOfDay ? 999 : 0,
+        ),
+    ).toISOString();
+};
 
 const tabSx = {
     backgroundColor: "white",
@@ -37,7 +54,31 @@ const PerformanceReportKraKpa = () => {
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
     const [completedTaskView, setCompletedTaskView] = useState(null);
+    const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0 });
+    const initialDateRange = useMemo(
+        () => ({
+            startDate: dayjs().startOf("month").toDate(),
+            endDate: dayjs().endOf("month").toDate(),
+            key: "selection",
+        }),
+        [],
+    );
+    const [dateRange, setDateRange] = useState(initialDateRange);
     const { departmentName: routeDepartmentName, reportType: routeReportType, reportStatus: routeReportStatus } = useParams();
+    const handleDateFilterChange = useCallback(({ selectedRange }) => {
+        if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+
+        const isSameRange =
+            dayjs(dateRange.startDate).isSame(selectedRange.startDate, "day") &&
+            dayjs(dateRange.endDate).isSame(selectedRange.endDate, "day");
+
+        if (isSameRange) return;
+
+        setDateRange(selectedRange);
+        setPagination((current) =>
+            current.page === 1 ? current : { ...current, page: 1 },
+        );
+    }, [dateRange]);
 
     const { data: departmentMembers = [] } = useQuery({
         queryKey: ["performanceAccessibleDepartments"],
@@ -96,7 +137,12 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
         () => departments.find((department) => department.id === activeDepartmentId),
         [departments, activeDepartmentId]
     );
-
+const navigateToReport = (departmentName, type, status) => {
+        setPagination((current) =>
+            current.page === 1 ? current : { ...current, page: 1 },
+        );
+        navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(departmentName)}/${type}/${status}`);
+    };
 
     const endpoint =
         activeStatusTab === "Completed"
@@ -109,18 +155,35 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
             activeTypeTab,
             activeStatusTab,
             activeDepartmentId,
+             dateRange.startDate,
+            dateRange.endDate,
+            pagination.page,
+            pagination.limit,
         ],
         enabled: Boolean(activeDepartmentId),
+          placeholderData: keepPreviousData,
         queryFn: async () => {
             const response = await axios.get(endpoint, {
                 params: {
                     dept: activeDepartmentId,
                     type: activeTypeTab,
                     status: activeStatusTab,
+                     startDate: toUtcDayBoundary(dateRange.startDate),
+                    endDate: toUtcDayBoundary(dateRange.endDate, true),
+                    page: pagination.page,
+                    limit: pagination.limit,
                 },
             });
 
-            return (response.data || []).sort(
+            const responsePagination = response.data?.pagination;
+
+            setPagination((current) => ({
+                page: Number(responsePagination?.page) || current.page,
+                limit: Number(responsePagination?.limit) || current.limit,
+                total: Number(responsePagination?.total) || 0,
+            }));
+
+            return (response.data?.data || []).sort(
                 (a, b) => new Date(b.completionDate || b.assignedDate) - new Date(a.completionDate || a.assignedDate)
             );
         },
@@ -203,7 +266,7 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
 
     const tableData = reportData.map((item, index) => ({
         ...item,
-        srNo: index + 1,
+        srNo: (pagination.page - 1) * pagination.limit + index + 1,
         department: item?.department || selectedDepartment?.name || "N/A",
         status: item?.status || activeStatusTab,
     }));
@@ -212,7 +275,8 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
         <div className="flex flex-col gap-4">
             <Tabs
                 value={activeDepartmentId}
-                onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(departments.find((department) => department.id === newValue)?.name)}/${activeTypeTab}/${activeStatusTab}`) }
+                 onChange={(_, newValue) => navigateToReport(departments.find((department) => department.id === newValue)?.name, activeTypeTab, activeStatusTab)}
+                //onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(departments.find((department) => department.id === newValue)?.name)}/${activeTypeTab}/${activeStatusTab}`) }
                 variant="fullWidth"
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={tabSx}
@@ -226,7 +290,8 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
 
             <Tabs
                 value={activeTypeTab}
-                onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${newValue}/${activeStatusTab}`) }
+                  onChange={(_, newValue) => navigateToReport(selectedDepartment?.name, newValue, activeStatusTab)}
+               // onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${newValue}/${activeStatusTab}`) }
                 variant="fullWidth"
                 TabIndicatorProps={{ style: { display: "none" } }}
                 sx={tabSx}
@@ -239,8 +304,9 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                 <div className="pt-2">
                     <Tabs
                         value={activeStatusTab}
+                         onChange={(_, newValue) => navigateToReport(selectedDepartment?.name, activeTypeTab, newValue)}
                         //onChange={(_, newValue) => setActiveStatusTab(newValue)}
-                       onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${activeTypeTab}/${newValue}`) }
+                       //onChange={(_, newValue) => navigate(`/app/performance/report-KRA-KPA/${getDepartmentPathSegment(selectedDepartment?.name)}/${activeTypeTab}/${newValue}`) }
                         variant="fullWidth"
                         TabIndicatorProps={{ style: { display: "none" } }}
                         sx={tabSx}
@@ -253,11 +319,20 @@ const getDepartmentPathSegment = (departmentName) => encodeURIComponent(departme
                         data={tableData}
                         columns={reportColumns}
                         dateColumn="assignedDate"
+                         initialDateRange={initialDateRange}
+                        onDateFilterChange={handleDateFilterChange}
                         search
                         tableTitle={`${activeStatusTab} ${selectedDepartment?.name} ${activeTypeTab} REPORT`}
                         exportData
                         taskExportDateTimeFormatting
                         loading={isPending}
+                         serverPagination
+                        paginationPageSize={pagination.limit}
+                        paginationPage={pagination.page}
+                        paginationTotal={pagination.total}
+                        onPaginationPageChange={(page) =>
+                            setPagination((current) => ({ ...current, page }))
+                        }
                     />
                 </div>
             </PageFrame>
