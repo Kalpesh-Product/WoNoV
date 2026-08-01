@@ -82,6 +82,8 @@ const BudgetPage = () => {
      requestBudgetPermissionByDepartment[department?._id] ||
     (department?.name?.toLowerCase() === "cafe"
       ? PERMISSIONS.CAFE_REQUEST_BUDGET_BUTTON.value
+      : department?.name?.toLowerCase() === "legal"
+      ? PERMISSIONS.LEGAL_REQUEST_BUDGET_BUTTON.value
       : undefined);
   const canRequestBudget = requestBudgetPermission
     ? hasPermission(requestBudgetPermission)

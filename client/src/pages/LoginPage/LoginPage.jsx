@@ -87,6 +87,12 @@ const LoginPage = () => {
           codeName: "Cafe",
           route: "/app/dashboard",
         },
+          {
+          id: 10,
+          title: "Legal Dashboard",
+          codeName: "Legal",
+          route: "/app/dashboard/legal-dashboard",
+        },
       ],
     },
   ];

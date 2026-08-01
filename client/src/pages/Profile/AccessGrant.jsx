@@ -196,6 +196,25 @@ const AccessGrant = () => {
         },
       ],
     },
+     {
+      departmentId: "legal",
+      departmentName: "Legal",
+      modules: [
+        {
+          name: "UI",
+          submodules: [
+            {
+              submoduleName: "UI Updates",
+              grantedActions: ["View", "Edit"],
+            },
+            {
+              submoduleName: "Frontend Testing",
+              grantedActions: ["View"],
+            },
+          ],
+        },
+      ],
+    },
   ];
   const appsSection = [
     {

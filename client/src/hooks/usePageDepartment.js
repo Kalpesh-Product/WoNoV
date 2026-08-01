@@ -72,17 +72,17 @@ const usePageDepartment = () => {
     ? fetchedDepartments.map((item) => item?.department).filter(Boolean)
     : [];
 
-  if (section === "cafe") {
-    const cafeDepartment =
+    if (section === "cafe" || section === "legal") {
+      const dashboardDepartment =
       allDepartments.find((dept) =>
-        dept?.name?.toLowerCase()?.includes("cafe"),
+        dept?.name?.toLowerCase()?.includes(section),
       ) ||
       userDepartments.find((dept) =>
-        dept?.name?.toLowerCase()?.includes("cafe"),
+        dept?.name?.toLowerCase()?.includes(section),
       );
 
-    if (cafeDepartment) {
-      return cafeDepartment;
+    if (dashboardDepartment) {
+      return dashboardDepartment;
     }
   }
 
