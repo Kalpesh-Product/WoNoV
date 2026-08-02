@@ -33,7 +33,7 @@ const LegalDashboardCard = ({ title, icon, route }) => {
   return (
     <div
       onClick={() => navigate(route)}
-      className="group relative flex w-full cursor-pointer flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:border-[0.2px] hover:border-primary hover:shadow-xl"
+      className="group relative flex h-full w-full cursor-pointer flex-col items-center justify-center rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:border-[0.2px] hover:border-primary hover:shadow-xl"
     >
       <span className="absolute right-4 top-4 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
         <FaArrowRight size={14} />
@@ -81,6 +81,15 @@ const LegalDashboard = () => {
     (card) =>
       !card.permission || userPermissions.includes(card.permission),
   );
+  const allowedCardCount = allowedCards.length;
+  const cardGridColumns =
+    allowedCardCount <= 1
+      ? "grid-cols-1"
+      : allowedCardCount === 2
+        ? "grid-cols-1 sm:grid-cols-2"
+        : allowedCardCount === 3
+          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4";
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     formatFiscalYear(getFiscalYearStart()),
   );
@@ -214,12 +223,10 @@ const LegalDashboard = () => {
 
 redrawOnWindowResize: false,
 redrawOnParentResize: false,
-         events: {
+      events: {
     dataPointSelection: () => {
       navigate(
-        `/app/dashboard/legal-dashboard/finance/budget?title=${encodeURIComponent(
-          "BIZ Nest LEGAL DEPARTMENT EXPENSE",
-        )}&fy=${encodeURIComponent(selectedFiscalYear)}`,
+        "/app/dashboard/legal-dashboard/finance/budget",
       );
     },
   },
@@ -470,20 +477,14 @@ redrawOnParentResize: false,
             chartId="bargraph-legal-expense"
             data={expenseSeries}
             options={expenseOptions}
-            title="BIZ Nest LEGAL DEPARTMENT EXPENSE"
+            title="Legal Dashboard"
             titleAmount={`INR ${inrFormat(totalExpense)}`}
             onYearChange={setSelectedFiscalYear}
           />
         </div>
       )}
       {allowedCards.length > 0 && (
-        <div
-          className={`grid w-full gap-4 ${
-            allowedCards.length === 1
-              ? "grid-cols-1"
-              : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
-          }`}
-        >
+        <div className={`grid w-full gap-4 ${cardGridColumns}`}>
           {allowedCards.map((card) => (
             <LegalDashboardCard
               key={card.title}
