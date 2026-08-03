@@ -28,7 +28,10 @@ import { useMemo } from "react";
 import UploadFileInput from "../../../components/UploadFileInput";
 import { queryClient } from "../../../main";
 import dayjs from "dayjs";
-import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../../constants/pagination";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useLocation, useNavigate , useParams } from "react-router-dom" ;
@@ -779,12 +782,20 @@ const ListOfAssets = () => {
         exportData={!isAssetCardView}
         exportButtonTitle="Export"
         taskExportDateTimeFormatting
-         serverPagination
+        serverPagination
+        pageSizeOptions={PAGE_SIZE_OPTIONS}
         paginationPageSize={pagination.limit}
         paginationPage={pagination.page}
         paginationTotal={pagination.total}
         onPaginationPageChange={(page) =>
           setPagination((current) => ({ ...current, page }))
+        }
+        onPaginationPageSizeChange={(limit) =>
+          setPagination((current) =>
+            current.limit === limit
+              ? current
+              : { ...current, page: 1, limit },
+          )
         }
       />
 

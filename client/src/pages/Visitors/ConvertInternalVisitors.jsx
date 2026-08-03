@@ -19,7 +19,10 @@ import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { queryClient } from "../../main";
 import humanTime from "../../utils/humanTime";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const PURPOSE_OPTIONS = ["Meeting", "Full Day Pass", "Half Day Pass"];
 
@@ -483,6 +486,7 @@ const ConvertInternalVisitors = () => {
           tableTitle="Convert Internal Visitors To Clients"
           data={rows}
           columns={columns}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           paginationPageSize={pagination.limit}
           isPagination
           serverPagination
@@ -490,6 +494,13 @@ const ConvertInternalVisitors = () => {
           paginationTotal={pagination.total}
           onPaginationPageChange={(page) =>
             setPagination((current) => ({ ...current, page }))
+          }
+          onPaginationPageSizeChange={(limit) =>
+            setPagination((current) =>
+              current.limit === limit
+                ? current
+                : { ...current, page: 1, limit },
+            )
           }
         />
       </PageFrame>

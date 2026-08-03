@@ -14,7 +14,10 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
 import formatDateTime from "../../utils/formatDateTime";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const toUtcDayBoundary = (value, endOfDay = false) => {
   const date = dayjs(value);
@@ -457,11 +460,19 @@ const TicketReports = () => {
               onDateFilterChange={handleDateFilterChange}
               columns={kraColumn}
               serverPagination
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
               paginationPageSize={pagination.limit}
               paginationPage={pagination.page}
               paginationTotal={pagination.total}
               onPaginationPageChange={(page) =>
                 setPagination((current) => ({ ...current, page }))
+              }
+              onPaginationPageSizeChange={(limit) =>
+                setPagination((current) =>
+                  current.limit === limit
+                    ? current
+                    : { ...current, page: 1, limit },
+                )
               }
             />
           ) : (

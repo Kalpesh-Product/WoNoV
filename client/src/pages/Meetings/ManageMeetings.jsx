@@ -34,7 +34,10 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { toLocalDayBoundary } from "../../utils/dateRange";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -874,11 +877,19 @@ const ManageMeetings = () => {
             data={transformedMeetings || []}
             columns={columns}
             serverPagination  
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
             paginationPageSize={pagination.limit}
             paginationPage={pagination.page}
             paginationTotal={pagination.total}
             onPaginationPageChange={(page) =>
               setPagination((current) => ({ ...current, page }))
+            }
+            onPaginationPageSizeChange={(limit) =>
+              setPagination((current) =>
+                current.limit === limit
+                  ? current
+                  : { ...current, page: 1, limit },
+              )
             }
           />
         )}

@@ -47,6 +47,8 @@ const AgTableComponent = React.memo(
     paginationPage = 1,
     paginationTotal = 0,
     onPaginationPageChange,
+    pageSizeOptions = [],
+    onPaginationPageSizeChange,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -268,6 +270,9 @@ const AgTableComponent = React.memo(
       ];
     }, [columns, enableCheckbox, checkAll]);
 
+    const effectivePageSize =
+      paginationPageSize || pageSizeOptions?.[0] || 1;
+
     return (
       <div className="border-b-[1px] border-borderGray">
         <div className=" flex gap-4 items-center">
@@ -465,17 +470,43 @@ const AgTableComponent = React.memo(
             suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active     
           />
         </div>
-             {serverPagination && paginationTotal > 0 && (
+        {serverPagination && paginationTotal > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">
-            <span className="font-pregular text-sm text-gray-600">
-              {`${(paginationPage - 1) * paginationPageSize + 1}-${Math.min(
-                paginationPage * paginationPageSize,
-                paginationTotal,
-              )} of ${paginationTotal}`}
-            </span>
+            <div className="flex flex-wrap items-center gap-3">
+              {pageSizeOptions?.length > 0 && onPaginationPageSizeChange && (
+                <TextField
+                  select
+                  size="small"
+                  value={paginationPageSize || pageSizeOptions[0]}
+                  onChange={(e) =>
+                    onPaginationPageSizeChange?.(Number(e.target.value))
+                  }
+                  sx={{
+                    minWidth: 88,
+                    "& .MuiOutlinedInput-input": {
+                      py: 1,
+                    },
+                  }}
+                >
+                  {pageSizeOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+
+              <span className="font-pregular text-sm text-gray-600">
+                {`${(paginationPage - 1) * effectivePageSize + 1}-${Math.min(
+                  paginationPage * effectivePageSize,
+                  paginationTotal,
+                )} of ${paginationTotal}`}
+              </span>
+            </div>
+
             <Pagination
               page={paginationPage}
-              count={Math.ceil(paginationTotal / paginationPageSize)}
+              count={Math.ceil(paginationTotal / effectivePageSize)}
               onChange={(_, nextPage) => onPaginationPageChange?.(nextPage)}
               color="primary"
               showFirstButton
