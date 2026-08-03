@@ -8,7 +8,10 @@ const {
 } = require("./finance");
 const { fetchTicketReportService } = require("./ticket");
 const { fetchVendorReportService } = require("./vendor");
-const { fetchPerformanceReportService } = require("./performance");
+const {
+  fetchPerformanceReportService,
+  fetchDepartmentWiseKpaOverviewReportService,
+} = require("./performance");
 const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
@@ -274,6 +277,12 @@ const reportServiceRegistry = {
   }),
 
   "dept-kpa": createPerformanceReportService("KPA"),
+  "dept-wise-kpa-overview": createReportService(
+    fetchDepartmentWiseKpaOverviewReportService,
+    {
+      dateField: "assignedDate",
+    },
+  ),
   "dept-kra": createPerformanceReportService("KRA"),
   "individual-kra": createPerformanceReportService("INDIVIDUALKRA"),
   "individual-kpa": createPerformanceReportService("INDIVIDUALKPA"),

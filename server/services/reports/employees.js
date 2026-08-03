@@ -226,6 +226,7 @@ const fetchAttendanceReportService = async ({
 } = {}) => {
   const matchStage = {
     "user.isActive": true,
+    ...(company && { company }),
   };
 
   if (type) {
@@ -247,6 +248,119 @@ const fetchAttendanceReportService = async ({
     },
     { $unwind: "$user" },
     { $match: matchStage },
+
+    {
+      $lookup: {
+        from: "attendancecorrections",
+        let: {
+          attendanceUser: "$user._id",
+          attendanceInTime: "$inTime",
+        },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$user", "$$attendanceUser"] },
+                  {
+                    $or: [
+                      { $eq: ["$originalInTime", "$$attendanceInTime"] },
+                      { $eq: ["$inTime", "$$attendanceInTime"] },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+          { $sort: { createdAt: -1 } },
+          { $limit: 1 },
+          {
+            $lookup: {
+              from: "userdatas",
+              localField: "addedBy",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    firstName: 1,
+
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: "addedBy",
+            },
+          },
+          {
+            $lookup: {
+              from: "userdatas",
+              localField: "approvedBy",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    firstName: 1,
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: "approvedBy",
+            },
+          },
+          {
+            $lookup: {
+              from: "userdatas",
+              localField: "rejectedBy",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    firstName: 1,
+                    lastName: 1,
+                  },
+                },
+              ],
+              as: "rejectedBy",
+            },
+          },
+
+          {
+            $set: {
+              addedBy: {
+                $ifNull: [{ $arrayElemAt: ["$addedBy", 0] }, null],
+              },
+              approvedBy: {
+                $ifNull: [{ $arrayElemAt: ["$approvedBy", 0] }, null],
+              },
+              rejectedBy: {
+                $ifNull: [{ $arrayElemAt: ["$rejectedBy", 0] }, null],
+              },
+            },
+          },
+          {
+            $project: {
+              _id: 1,
+              inTime: 1,
+              outTime: 1,
+              reason: 1,
+              addedBy: 1,
+              status: 1,
+              approvedBy: 1,
+              rejectedBy: 1,
+              requestedAt: "$createdAt",
+            },
+          },
+        ],
+        as: "attendanceCorrection",
+      },
+    },
+    {
+      $set: {
+        attendanceCorrection: {
+          $ifNull: [{ $arrayElemAt: ["$attendanceCorrection", 0] }, null],
+        },
+      },
+    },
 
     // ── Step 0: normalize breaks to always be an array ────────────────────
     {
@@ -417,6 +531,14 @@ const fetchAttendanceReportService = async ({
   const formatted = attendances.map((att, idx) => {
     const result = {
       ...att,
+      Date: att.createdAt,
+      attendanceCorrection: att.attendanceCorrection
+        ? {
+            ...att.attendanceCorrection,
+            inTime: formatClockTime(att.attendanceCorrection.inTime),
+            outTime: formatClockTime(att.attendanceCorrection.outTime),
+          }
+        : null,
       breakDuration: formatDuration(att.totalBreakSecs),
       workDuration: formatDuration(att.workSecs),
       breakCount: att.breakCount ?? 0,

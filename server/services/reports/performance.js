@@ -255,7 +255,8 @@ const fetchCompletedPerformanceTasksService = async ({
   if (shouldPaginate) {
     completedTasks.sort((firstTask, secondTask) => {
       const dateDifference =
-        new Date(secondTask.completionDate) - new Date(firstTask.completionDate);
+        new Date(secondTask.completionDate) -
+        new Date(firstTask.completionDate);
 
       return (
         dateDifference ||
@@ -274,8 +275,7 @@ const fetchCompletedPerformanceTasksService = async ({
   const uniqueCompletedTasks = Array.from(
     new Map(
       completedTasks.map((task) => {
-        const taskId =
-          task?.task?._id?.toString?.() || task?._id?.toString?.();
+        const taskId = task?.task?._id?.toString?.() || task?._id?.toString?.();
         const completionKey = `${taskId || "unknown"}-${new Date(
           task.completionDate,
         )
@@ -497,8 +497,150 @@ const fetchPerformanceReportService = async ({
   }
 };
 
+const ALL_DEPARTMENT_KPA_ROLES = new Set([
+  "HR Admin",
+  "HR Employee",
+  "Master Admin",
+  "Super Admin",
+]);
+
+const fetchDepartmentKpaDataService = async ({
+  company,
+  dateFilter = {},
+  departmentIds,
+  departments = [],
+  roles = [],
+}) => {
+  const hasAllDepartmentAccess = roles.some((role) =>
+    ALL_DEPARTMENT_KPA_ROLES.has(role),
+  );
+  const scopedDepartmentIds = departmentIds?.length
+    ? departmentIds
+    : departments;
+
+  const roleQuery = {
+    company,
+    taskType: "KPA",
+    isDeleted: false,
+    // ...(!hasAllDepartmentAccess && {
+    //   department: { $in: scopedDepartmentIds || [] },
+    // }),
+  };
+
+  const allRoleTasks = await kraKpaRole
+    .find(roleQuery)
+    .populate({ path: "department", select: "name" })
+    .lean();
+
+  const assignedDateFilter = dateFilter.assignedDate;
+  const roleTasks = assignedDateFilter
+    ? allRoleTasks.filter((task) => {
+        const assignedDate = new Date(task.assignedDate);
+        return (
+          (!assignedDateFilter.$gte ||
+            assignedDate >= assignedDateFilter.$gte) &&
+          (!assignedDateFilter.$lte || assignedDate <= assignedDateFilter.$lte)
+        );
+      })
+    : allRoleTasks;
+
+  const roleTaskIds = roleTasks.map((task) => task._id);
+  const completedTasks = roleTaskIds.length
+    ? await kraKpaTask
+        .find({ company, task: { $in: roleTaskIds } })
+        .populate({
+          path: "task",
+          populate: { path: "department", select: "name" },
+        })
+        .populate({
+          path: "completedBy",
+          select: "firstName middleName lastName",
+        })
+        .select("-company")
+        .lean()
+    : [];
+
+  const groupedTasks = new Map();
+  const completedTaskIds = new Set();
+
+  allRoleTasks.forEach((roleTask) => {
+    const department = roleTask.department?.name;
+    if (department && !groupedTasks.has(department)) {
+      groupedTasks.set(department, { department, tasks: [] });
+    }
+  });
+
+  const addTask = (department, task) => {
+    if (!groupedTasks.has(department)) {
+      groupedTasks.set(department, { department, tasks: [] });
+    }
+    groupedTasks.get(department).tasks.push(task);
+  };
+
+  completedTasks.forEach((completion) => {
+    const roleTask = completion.task;
+    const department = roleTask?.department?.name;
+    if (!roleTask?._id || !department) return;
+
+    completedTaskIds.add(roleTask._id.toString());
+    addTask(department, {
+      taskName: roleTask.task,
+      assignedTo: formatName(completion.completedBy),
+      assignedDate: roleTask.assignedDate,
+      dueDate: roleTask.dueDate,
+      status: completion.status,
+      comment: completion.comment || "",
+    });
+  });
+
+  roleTasks.forEach((roleTask) => {
+    const department = roleTask.department?.name;
+    if (!department || completedTaskIds.has(roleTask._id.toString())) return;
+
+    addTask(department, {
+      taskName: roleTask.task,
+      assignedTo: null,
+      assignedDate: roleTask.assignedDate,
+      dueDate: roleTask.dueDate,
+      status: "Pending",
+    });
+  });
+
+  return Array.from(groupedTasks.values()).map((group) => ({
+    ...group,
+    total: group.tasks.length,
+    achieved: group.tasks.filter((task) => task.status === "Completed").length,
+  }));
+};
+
+const fetchDepartmentWiseKpaOverviewReportService = async ({
+  company,
+  dateFilter,
+  departmentId,
+  departments = [],
+  roles = [],
+}) => {
+  const departmentData = await fetchDepartmentKpaDataService({
+    company,
+    dateFilter,
+    departmentIds: departmentId ? [departmentId] : undefined,
+    departments,
+    roles,
+  });
+
+  return departmentData.map(({ department, total, achieved }) => ({
+    department,
+    totalTasks: total,
+    achievedTasks: achieved,
+    achievedPercent: `${total ? ((achieved / total) * 100).toFixed(0) : "0"}%`,
+    shortFall: `${total ? (((total - achieved) / total) * 100).toFixed(0) : "0"}%`,
+  }));
+};
+
 module.exports = {
   fetchCompletedPerformanceTasksService,
   fetchPerformanceTasksService,
   fetchPerformanceReportService,
+  fetchDepartmentKpaDataService,
+  fetchDepartmentWiseKpaOverviewReportService,
 };
