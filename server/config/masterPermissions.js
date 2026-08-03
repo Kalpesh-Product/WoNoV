@@ -242,33 +242,130 @@ const masterPermissions = [
       },
     ],
   },
+   {
+  departmentId: "67b2ceb6b9b6ed5cedeb9a2c",
+  departmentName: "Cafe",
+  modules: [
     {
-    departmentId: "67b2ceb6b9b6ed5cedeb9a2c",
-    departmentName: "Cafe",
-    modules: [
-      {
-        name: "Finance",
-        submodules: [
-          { submoduleName: "Department Expense", actions: ["View"] },
-          { submoduleName: "Budget", actions: ["View", "Edit"] },
-          { submoduleName: "Budget History", actions: ["View", "Edit"] },
-          { submoduleName: "Payment Schedule", actions: ["View", "Edit"] },
-          { submoduleName: "Voucher", actions: ["View", "Edit"] },
-          { submoduleName: "Reject Voucher", actions: ["View", "Edit"] },
-          { submoduleName: "Voucher History", actions: ["View", "Edit"] },
-        ],
-      },
-      {
-        name: "Inventory",
-        submodules: [
-          { submoduleName: "Overall Inventory", actions: ["View", "Edit"] },
-          { submoduleName: "Category & Item", actions: ["View", "Edit"] },
-          { submoduleName: "Overall ST Inventory", actions: ["View", "Edit"] },
-          { submoduleName: "Overall DTC Inventory", actions: ["View", "Edit"] },
-        ],
-      },
-    ],
-  },
+      name: "Finance",
+      submodules: [
+        {
+          submoduleName: "Department Expense",
+          actions: ["View"],
+        },
+        {
+          submoduleName: "Budget",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Budget History",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Payment Schedule",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Voucher",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Reject Voucher",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Voucher History",
+          actions: ["View", "Edit"],
+        },
+      ],
+    },
+    {
+      name: "Inventory",
+      submodules: [
+        {
+          submoduleName: "Overall Inventory",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Category & Item",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Overall ST Inventory",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Overall DTC Inventory",
+          actions: ["View", "Edit"],
+        },
+      ],
+    },
+  ],
+},
+  {
+  departmentId: "68515de7532761a75fd0b389",
+  departmentName: "Legal",
+  modules: [
+    {
+      name: "Finance",
+      submodules: [
+        {
+          submoduleName: "Department Expense",
+          actions: ["View"],
+        },
+        {
+          submoduleName: "Budget",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Budget History",
+          actions: ["View"],
+        },
+        {
+          submoduleName: "Payment Schedule",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Voucher",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Reject Voucher",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Voucher History",
+          actions: ["View"],
+        },
+      ],
+    },
+    {
+      name: "Data",
+      submodules: [
+        {
+          submoduleName: "Asset List",
+          actions: ["View", "Edit"],
+        },
+        {
+          submoduleName: "Monthly Budget Report",
+          actions: ["View"],
+        },
+        {
+          submoduleName: "Monthly Invoice Reports",
+          actions: ["View"],
+        },
+        {
+          submoduleName: "Vendor",
+          actions: ["View", "Edit"],
+        },
+      ],
+    },
+    {
+      name: "Mix Bag",
+      submodules: [],
+    },
+  ],
+},
 ];
 
 module.exports = masterPermissions;

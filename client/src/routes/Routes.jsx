@@ -351,6 +351,10 @@ import CafeLayout from "../pages/Dashboard/CafeDashboard/CafeLayout";
 import CafeDashboard from "../pages/Dashboard/CafeDashboard/CafeDashboard";
 import CafeFinance from "../pages/Dashboard/CafeDashboard/CafeFinance";
 import CafeDataCard from "../pages/Dashboard/CafeDashboard/CafeDataCard";
+import LegalLayout from "../pages/Dashboard/LegalDashboard/LegalLayout";
+import LegalDashboard from "../pages/Dashboard/LegalDashboard/LegalDashboard";
+import LegalFinance from "../pages/Dashboard/LegalDashboard/LegalFinance/LegalFinance";
+import LegalDataCard from "../pages/Dashboard/LegalDashboard/LegalData/LegalDataCard";
 import DeptWiseBudgetDetails from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudgetDetails";
 import LandlordPaymentLocation from "../pages/Dashboard/FinanceDashboard/Finance/LandlordPaymentLocation";
 import CollectionsLayout from "../pages/Dashboard/FinanceDashboard/Finance/CollectionsLayout";
@@ -3131,6 +3135,80 @@ export const routes = createBrowserRouter([
                       },
                     ],
                   },
+                  {
+                  path: "legal-dashboard",
+                  element: <LegalLayout />,
+                  children: [
+                    {
+                      index: true,
+                      element: <LegalDashboard />,
+                    },
+                    {
+                      path: "mix-bag",
+                      element: <div />,
+                    },
+                    {
+                      path: "finance",
+                      element: <LegalFinance />,
+                      children: [
+                        {
+                          path: "budget",
+                          element: <BudgetPage />,
+                        },
+                        {
+                          path: "budget-history",
+                          element: <DepartmentBudgetHistory />,
+                        },
+                        {
+                          path: "payment-schedule",
+                          element: <PaymentScheduleCommon />,
+                        },
+                        {
+                          path: "voucher",
+                          element: <Reimbursement />,
+                        },
+                        {
+                          path: "reject-voucher",
+                          element: <DepartmentRejectedVoucher />,
+                        },
+                        {
+                          path: "voucher-history",
+                          element: <DepartmentVoucherHistory />,
+                        },
+                      ],
+                    },
+                    {
+                      path: "data",
+                      element: <LegalDataCard />,
+                      children: [
+                        {
+                          path: "asset-list",
+                          element: <DepartmentAssetCommon />,
+                        },
+                        {
+                          path: "monthly-budget-report",
+                          element: <MonthlyBudgetCommon />,
+                        },
+                        {
+                          path: "monthly-invoice-reports",
+                          element: <MonthlyInvoiceCommon />,
+                        },
+                        {
+                          path: "vendor",
+                          element: <VendorTable />,
+                        },
+                        {
+                          path: "vendor/vendor-onboard",
+                          element: <Vendor />,
+                        },
+                        {
+                          path: "vendor/:id",
+                          element: <ViewVendor />,
+                        },
+                      ],
+                    },
+                  ],
+                },
                 ],
               },
 
