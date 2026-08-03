@@ -37,7 +37,7 @@ const onboardVendor = async (req, res, next) => {
       companyName,
     } = req.body;
 
-    if (!name || !mobile || !departmentId) {
+    if (!name || !email || !mobile || !departmentId) {
       throw new CustomError(
         "Missing required fields",
         logPath,
@@ -46,23 +46,18 @@ const onboardVendor = async (req, res, next) => {
       );
     }
 
-    // const existingDetails = [
-    //   email,
-    //   panIdNo,
-    //   gstIn,
-    //   ifscCode,
-    //   bankName,
-    //   branchName,
-    //   nameOnAccount,
-    //   accountNumber,
-    // ];
+    const existingDetails = [
+      email,
+      panIdNo,
+      gstIn,
+      ifscCode,
+      bankName,
+      branchName,
+      nameOnAccount,
+      accountNumber,
+    ];
 
-    // const emailExists = await Vendor.findOne({ email });
-
-    const normalizedEmail = email?.trim().toLowerCase() || undefined;
-    const emailExists = normalizedEmail
-      ? await Vendor.findOne({ email: normalizedEmail })
-      : null;
+    const emailExists = await Vendor.findOne({ email });
 
     if (emailExists) {
       throw new CustomError(
@@ -127,7 +122,7 @@ const onboardVendor = async (req, res, next) => {
     // Create and save the vendor
     const newVendor = new Vendor({
       name,
-      email: normalizedEmail,
+      email,
       mobile,
       address,
       departmentId, // Validated department
