@@ -106,6 +106,8 @@ const Vendor = () => {
   const handleReset = () => {
     reset();
   };
+   const validateOptional = (validator) => (value) =>
+    !value || validator(value);
 
   return (
     <div className="flex flex-col gap-8">
@@ -361,10 +363,14 @@ const Vendor = () => {
                     name="pinCode"
                     control={control}
                     defaultValue=""
-                    rules={{
-                      required: "Pin Code is required",
+                    // rules={{
+                    //   required: "Pin Code is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //   },
+                   rules={{ 
                       validate: {
-                        noOnlyWhitespace,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
                       },
                       pattern: {
                         value: /^[1-9][0-9]{5}$/,
@@ -505,10 +511,16 @@ const Vendor = () => {
                     name="gstIn"
                     control={control}
                     defaultValue=""
-                    rules={{
+                    // rules={{
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isValidGSTIN,
+                    //   },
+                    // }}
+                     rules={{
                       validate: {
-                        noOnlyWhitespace,
-                        isValidGSTIN,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isValidGSTIN: validateOptional(isValidGSTIN),
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -526,9 +538,13 @@ const Vendor = () => {
                     name="panIdNo"
                     control={control}
                     defaultValue=""
-                    rules={{
+                    // rules={{
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //   },
+                     rules={{
                       validate: {
-                        noOnlyWhitespace,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
                       },
                       pattern: {
                         value: /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
@@ -558,13 +574,19 @@ const Vendor = () => {
                     name="ifscCode"
                     control={control}
                     defaultValue=""
-                    rules={{
-                      required: "IFSC Code is required",
+                    // rules={{
+                    //   required: "IFSC Code is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isValidIFSC,
+                    //   },
+                    // }}
+                     rules={{
                       validate: {
-                        noOnlyWhitespace,
-                        isValidIFSC,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isValidIFSC: validateOptional(isValidIFSC),
                       },
-                    }}
+                    }} 
                     render={({ field, fieldState: { error } }) => (
                       <TextField
                         {...field}
@@ -580,11 +602,17 @@ const Vendor = () => {
                     name="bankName"
                     control={control}
                     defaultValue=""
+                    // rules={{
+                    //   required: "Bank Name is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isAlphanumeric,
+                    //   },
+                    // }}
                     rules={{
-                      required: "Bank Name is required",
                       validate: {
-                        noOnlyWhitespace,
-                        isAlphanumeric,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isAlphanumeric: validateOptional(isAlphanumeric),
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -602,11 +630,17 @@ const Vendor = () => {
                     name="branchName"
                     control={control}
                     defaultValue=""
+                    // rules={{
+                    //   required: "Branch Name is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isAlphanumeric,
+                    //   },
+                    // }}
                     rules={{
-                      required: "Branch Name is required",
                       validate: {
-                        noOnlyWhitespace,
-                        isAlphanumeric,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isAlphanumeric: validateOptional(isAlphanumeric),
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -625,11 +659,17 @@ const Vendor = () => {
                     name="nameOnAccount"
                     control={control}
                     defaultValue=""
-                    rules={{
-                      required: "Name On Account is required",
+                    // rules={{
+                    //   required: "Name On Account is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isAlphanumeric,
+                    //   },
+                    // }}
+                     rules={{
                       validate: {
-                        noOnlyWhitespace,
-                        isAlphanumeric,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isAlphanumeric: validateOptional(isAlphanumeric),
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
@@ -647,11 +687,18 @@ const Vendor = () => {
                     name="accountNumber"
                     control={control}
                     defaultValue=""
-                    rules={{
-                      required: "Account Number is required",
+                    // rules={{
+                    //   required: "Account Number is required",
+                    //   validate: {
+                    //     noOnlyWhitespace,
+                    //     isValidBankAccount,
+                    //   },
+                    // }}
+                     rules={{
                       validate: {
-                        noOnlyWhitespace,
-                        isValidBankAccount,
+                        noOnlyWhitespace: validateOptional(noOnlyWhitespace),
+                        isValidBankAccount:
+                          validateOptional(isValidBankAccount),
                       },
                     }}
                     render={({ field, fieldState: { error } }) => (
