@@ -59,6 +59,8 @@ const YearWiseTable = ({
   paginationPage = 1,
   paginationTotal = 0,
   onPaginationPageChange,
+  pageSizeOptions = [],
+  onPaginationPageSizeChange,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -566,6 +568,8 @@ const YearWiseTable = ({
             paginationPage={paginationPage}
             paginationTotal={paginationTotal}
             onPaginationPageChange={onPaginationPageChange}
+            pageSizeOptions={pageSizeOptions}
+            onPaginationPageSizeChange={onPaginationPageSizeChange}
           />
         ) : (
           <div

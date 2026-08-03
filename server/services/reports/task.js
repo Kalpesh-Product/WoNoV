@@ -294,8 +294,82 @@ const fetchMyTasksReportService = async ({
   }
 };
 
+const fetchDepartmentTaskDataService = async ({
+  company,
+  dateFilter = {},
+}) => {
+  const allTasks = await Task.find({
+    company,
+    isDeleted: { $ne: true },
+  })
+    .populate("department", "name")
+    .populate("assignedBy", "firstName middleName lastName")
+    .populate("assignedTo", "firstName middleName lastName")
+    .populate("completedBy", "firstName middleName lastName")
+    .select("-company")
+    .lean();
+
+  const assignedDateFilter = dateFilter.assignedDate;
+  const departmentTasks = allTasks.filter((task) => {
+    if (task.taskType !== "Department") return false;
+    if (!assignedDateFilter) return true;
+
+    const assignedDate = new Date(task.assignedDate);
+    return (
+      (!assignedDateFilter.$gte || assignedDate >= assignedDateFilter.$gte) &&
+      (!assignedDateFilter.$lte || assignedDate <= assignedDateFilter.$lte)
+    );
+  });
+
+  const groupedTasks = new Map();
+
+  allTasks.forEach((task) => {
+    const department = task.department?.name;
+    if (department && !groupedTasks.has(department)) {
+      groupedTasks.set(department, { department, tasks: [] });
+    }
+  });
+
+  departmentTasks.forEach((task) => {
+    const department = task.department?.name;
+    if (!department) return;
+
+    if (!groupedTasks.has(department)) {
+      groupedTasks.set(department, { department, tasks: [] });
+    }
+
+    groupedTasks.get(department).tasks.push(task);
+  });
+
+  return Array.from(groupedTasks.values()).map((group) => ({
+    ...group,
+    total: group.tasks.length,
+    achieved: group.tasks.filter((task) => task.status === "Completed").length,
+  }));
+};
+
+const fetchDepartmentWiseTasksOverviewReportService = async ({
+  company,
+  dateFilter,
+}) => {
+  const departmentData = await fetchDepartmentTaskDataService({
+    company,
+    dateFilter,
+  });
+
+  return departmentData.map(({ department, total, achieved }) => ({
+    department,
+    totalTasks: total,
+    achievedTasks: achieved,
+    achievedPercent: `${total ? ((achieved / total) * 100).toFixed(0) : "0"}%`,
+    shortFall: `${total ? (((total - achieved) / total) * 100).toFixed(0) : "0"}%`,
+  }));
+};
+
 module.exports = {
   fetchAllTasksService,
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
+  fetchDepartmentTaskDataService,
+  fetchDepartmentWiseTasksOverviewReportService,
 };

@@ -2,7 +2,7 @@ const CustomError = require("./customErrorlogs");
 
 const DEFAULT_PAGE = 1;
 const DEFAULT_LIMIT = 25;
-const MAX_LIMIT = 100;
+const MAX_LIMIT = 500;
 
 const parsePositiveInteger = (value, fallback) => {
   const parsedValue = Number.parseInt(value, 10);

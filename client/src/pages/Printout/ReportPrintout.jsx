@@ -12,7 +12,10 @@ import PrimaryButton from "../../components/PrimaryButton";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const joinName = (...parts) => parts.filter(Boolean).join(" ");
 const toUtcDayBoundary = (value, endOfDay = false) => {
@@ -280,11 +283,19 @@ const ReportPrintout = () => {
             //hideFilter
             //hideTitle
             serverPagination
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
             paginationPageSize={pagination.limit}
             paginationPage={pagination.page}
             paginationTotal={pagination.total}
             onPaginationPageChange={(page) =>
               setPagination((current) => ({ ...current, page }))
+            }
+            onPaginationPageSizeChange={(limit) =>
+              setPagination((current) =>
+                current.limit === limit
+                  ? current
+                  : { ...current, page: 1, limit },
+              )
             }
           />
           {isPrintoutsLoading ? (

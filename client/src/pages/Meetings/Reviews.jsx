@@ -26,7 +26,10 @@ import { Popover } from "@mui/material";
 import { MdCalendarToday } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const Reviews = () => {
   const axios = useAxiosPrivate();
@@ -644,17 +647,25 @@ const Reviews = () => {
                 tableTitle="Client Credits"
                 searchColumn={"clientName"}
                 data={clientCreditRows}
-                columns={clientCreditColumns}
-                loading={isClientsLoading}
-                hideTitle={true}
-                serverPagination
-                paginationPageSize={creditPagination.limit}
-                paginationPage={creditPagination.page}
-                paginationTotal={creditPagination.total}
-                onPaginationPageChange={(page) =>
-                  setCreditPagination((current) => ({ ...current, page }))
-                }
-              />
+              columns={clientCreditColumns}
+              loading={isClientsLoading}
+              hideTitle={true}
+              serverPagination
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              paginationPageSize={creditPagination.limit}
+              paginationPage={creditPagination.page}
+              paginationTotal={creditPagination.total}
+              onPaginationPageChange={(page) =>
+                setCreditPagination((current) => ({ ...current, page }))
+              }
+              onPaginationPageSizeChange={(limit) =>
+                setCreditPagination((current) =>
+                  current.limit === limit
+                    ? current
+                    : { ...current, page: 1, limit },
+                )
+              }
+            />
             </PageFrame>
           </div>
         ) : null}

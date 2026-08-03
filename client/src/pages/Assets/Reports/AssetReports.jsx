@@ -8,7 +8,10 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import dayjs from "dayjs";
-import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../../constants/pagination";
 
 const toUtcDayBoundary = (value, endOfDay = false) => {
   const date = dayjs(value);
@@ -55,6 +58,17 @@ const AssetReports = () => {
       current.page === 1 ? current : { ...current, page: 1 },
     );
   }, [dateRange]);
+
+  const handlePageSizeChange = useCallback((nextLimit) => {
+    setPagination((current) => {
+      if (current.limit === nextLimit) return current;
+      return {
+        ...current,
+        page: 1,
+        limit: nextLimit,
+      };
+    });
+  }, []);
 
   const formatDateTime = (value) => {
     if (!value) return "N/A";
@@ -257,9 +271,11 @@ const AssetReports = () => {
           paginationPageSize={pagination.limit}
           paginationPage={pagination.page}
           paginationTotal={pagination.total}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           onPaginationPageChange={(page) =>
             setPagination((current) => ({ ...current, page }))
           }
+          onPaginationPageSizeChange={handlePageSizeChange}
         />
       </PageFrame>
     </div>

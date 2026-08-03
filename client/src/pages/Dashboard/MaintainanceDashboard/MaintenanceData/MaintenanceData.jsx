@@ -60,6 +60,7 @@ const MaintenanceData = () => {
       defaultTabPath="amc-records"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("amc-records/")}
+      hideTabsOnPaths={["vendor/"]}
     />
   );
 };
