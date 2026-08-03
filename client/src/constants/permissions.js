@@ -3786,6 +3786,133 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/cafe-dashboard/finance/voucher-history",
   },
+  
+// LEGAL DASHBOARD
+SIDEBAR_LEGAL_DASHBOARD: {
+  value: "sidebar_legal_dashboard",
+  title: "LEGAL DASHBOARD",
+  type: "read",
+  access: "page",
+},
+
+LEGAL_DEPARTMENT_EXPENSE: {
+  value: "legal_department_expense_graph",
+  title: "LEGAL DEPARTMENT EXPENSE",
+  type: "read",
+  access: "page",
+},
+
+LEGAL_FINANCE: {
+  value: "legal_finance_card",
+  title: "FINANCE",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance",
+},
+
+LEGAL_MIX_BAG: {
+  value: "legal_mix_bag_card",
+  title: "MIX BAG",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/mix-bag",
+},
+
+LEGAL_DATA: {
+  value: "legal_data_card",
+  title: "DATA",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/data",
+},
+
+LEGAL_BUDGET: {
+  value: "legal_budget_tab",
+  title: "BUDGET",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/budget",
+},
+
+LEGAL_BUDGET_HISTORY: {
+  value: "legal_budget_history_tab",
+  title: "BUDGET HISTORY",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/budget-history",
+},
+
+LEGAL_REQUEST_BUDGET_BUTTON: {
+  value: "legal_request_budget_button",
+  title: "REQUEST BUDGET BUTTON",
+  type: "write",
+  access: "button",
+  route: "/app/dashboard/legal-dashboard/finance/budget",
+},
+
+LEGAL_PAYMENT_SCHEDULE: {
+  value: "legal_payment_schedule_tab",
+  title: "PAYMENT SCHEDULE",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/payment-schedule",
+},
+
+LEGAL_VOUCHER: {
+  value: "legal_voucher_tab",
+  title: "VOUCHER",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/voucher",
+},
+
+LEGAL_REJECT_VOUCHER: {
+  value: "legal_reject_voucher_tab",
+  title: "REJECT VOUCHER",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/reject-voucher",
+},
+
+LEGAL_VOUCHER_HISTORY: {
+  value: "legal_voucher_history_tab",
+  title: "VOUCHER HISTORY",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/finance/voucher-history",
+},
+
+LEGAL_ASSET_LIST: {
+  value: "legal_asset_list_data_tab",
+  title: "ASSET LIST",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/data/asset-list",
+},
+
+LEGAL_MONTHLY_BUDGET_REPORT: {
+  value: "legal_monthly_budget_report_data_tab",
+  title: "MONTHLY BUDGET REPORT",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/data/monthly-budget-report",
+},
+
+LEGAL_MONTHLY_INVOICE_REPORTS: {
+  value: "legal_monthly_invoice_reports_data_tab",
+  title: "MONTHLY INVOICE REPORTS",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/data/monthly-invoice-reports",
+},
+
+LEGAL_VENDOR: {
+  value: "legal_vendor_data_tab",
+  title: "VENDOR",
+  type: "read",
+  access: "page",
+  route: "/app/dashboard/legal-dashboard/data/vendor",
+},
 
   SIDEBAR_TICKETS: {
     value: "sidebar_tickets",

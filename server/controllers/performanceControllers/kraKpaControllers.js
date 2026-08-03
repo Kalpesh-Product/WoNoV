@@ -10,6 +10,7 @@ const buildDateFilter = require("../../utils/dateFilter");
 const {
   fetchCompletedPerformanceTasksService,
   fetchPerformanceTasksService,
+  fetchDepartmentKpaDataService,
 } = require("../../services/reports/performance");
 
 const REQUIRED_BULK_TASK_FIELDS = [
@@ -795,105 +796,13 @@ const getAllDeptTasks = async (req, res, next) => {
 
 const getAllKpaTasks = async (req, res, next) => {
   try {
-    const { company } = req;
+    const { company, departments = [], roles = [] } = req;
 
-    const pendingTasks = await kraKpaRole
-      .find({ company, isDeleted: false })
-      .populate(
-        { path: "department", select: "name" },
-        // { path: "assignedBy", select: "firstName middleName lastName" },
-      );
-
-    const completedTasks = await kraKpaTask
-      .find({
-        company,
-      })
-      .populate({
-        path: "task",
-        populate: [
-          { path: "department", select: "name" },
-          // { path: "assignedBy", select: "firstName middleName lastName" },
-        ],
-      })
-      .populate({
-        path: "completedBy",
-        select: "firstName middleName lastName",
-      })
-      .select("-company")
-      .lean();
-
-    const transformedByDepartment = {};
-    const completedTaskIds = new Set();
-
-    // Step 1: Handle Completed Tasks
-    completedTasks.forEach((task) => {
-      if (task?.task?.taskType !== "KPA") return;
-      if (!task?.task?._id || !task?.task?.department?.name) return;
-
-      completedTaskIds.add(String(task.task._id));
-
-      const departmentName = task.task.department.name;
-      const assignee = `${task.completedBy.firstName} ${
-        task.completedBy.middleName || ""
-      } ${task.completedBy.lastName}`.trim();
-
-      const transformedTask = {
-        taskName: task.task.task,
-        assignedTo: assignee,
-        assignedDate: task.task.assignedDate,
-        dueDate: task.task.dueDate,
-        status: task.status,
-        comment: task.comment || "",
-      };
-
-      if (!transformedByDepartment[departmentName]) {
-        transformedByDepartment[departmentName] = {
-          department: departmentName,
-          total: 0,
-          achieved: 0,
-          tasks: [],
-        };
-      }
-
-      transformedByDepartment[departmentName].tasks.push(transformedTask);
-      transformedByDepartment[departmentName].total += 1;
-
-      if (task.status === "Completed") {
-        transformedByDepartment[departmentName].achieved += 1;
-      }
+    const transformedDeptTasks = await fetchDepartmentKpaDataService({
+      company,
+      departments,
+      roles,
     });
-
-    // Step 2: Handle Pending Tasks
-    pendingTasks.forEach((task) => {
-      if (task.taskType !== "KPA") return;
-      if (!task?.department?.name) return;
-      if (completedTaskIds.has(String(task._id))) return;
-
-      const departmentName = task.department.name;
-
-      const transformedTask = {
-        taskName: task.task,
-        assignedTo: null, // or "Unassigned", depending on your need
-        assignedDate: task.assignedDate,
-        dueDate: task.dueDate,
-        status: "Pending",
-      };
-
-      if (!transformedByDepartment[departmentName]) {
-        transformedByDepartment[departmentName] = {
-          department: departmentName,
-          total: 0,
-          achieved: 0,
-          tasks: [],
-        };
-      }
-
-      transformedByDepartment[departmentName].tasks.push(transformedTask);
-      transformedByDepartment[departmentName].total += 1;
-    });
-
-    // Step 3: Final Result
-    const transformedDeptTasks = Object.values(transformedByDepartment);
 
     return res.status(200).json(transformedDeptTasks);
   } catch (error) {

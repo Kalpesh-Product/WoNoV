@@ -25,6 +25,7 @@ import { FaUserTie } from "react-icons/fa6";
 import { MdMeetingRoom } from "react-icons/md";
 import { GiAutoRepair } from "react-icons/gi";
 import { GrCafeteria } from "react-icons/gr";
+import { MdGavel } from "react-icons/md";
 import { TiTicket } from "react-icons/ti";
 import SeperatorUnderline from "./SeperatorUnderline";
 import { VscPersonAdd } from "react-icons/vsc";
@@ -240,6 +241,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           route: "/app/dashboard/cafe-dashboard",
           icon: <GrCafeteria />,
           permission: PERMISSIONS.SIDEBAR_CAFE_DASHBOARD.value,
+        },
+        {
+          id: 10,
+          title: "Legal Dashboard",
+          codeName: "Legal",
+          route: "/app/dashboard/legal-dashboard",
+          icon: <MdGavel />,
+          permission: PERMISSIONS.SIDEBAR_LEGAL_DASHBOARD.value,
         },
       ],
     },
