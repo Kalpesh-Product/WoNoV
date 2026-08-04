@@ -3,6 +3,13 @@ const Review = require("../../models/meetings/Reviews");
 const UserData = require("../../models/hr/UserData");
 const { formatDuration } = require("../../utils/formatDateTime");
 const Company = require("../../models/hr/Company");
+const Department = require("../../models/Departments");
+const Room = require("../../models/meetings/Rooms");
+const Unit = require("../../models/locations/Unit");
+const Building = require("../../models/locations/Building");
+const CoworkingClient = require("../../models/sales/CoworkingClient");
+const CoworkingMember = require("../../models/sales/CoworkingMembers");
+const Visitor = require("../../models/visitor/Visitor");
 const { getPagination } = require("../../utils/pagination");
 
 const formatPersonName = (person) =>
@@ -27,6 +34,338 @@ const getEffectiveEndTime = (meeting) => {
     : meeting.endTime;
 };
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const idsFrom = (documents) => documents.map(({ _id }) => _id);
+
+const buildMeetingSearchConditions = async ({
+  company,
+  search,
+  searchContext,
+}) => {
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  if (!normalizedSearch) return [];
+
+  const escapedSearch = escapeRegex(normalizedSearch);
+  const searchRegex = new RegExp(escapedSearch, "i");
+
+  const [departments, buildings, clients, members, visitors] =
+    await Promise.all([
+      Department.find({ name: searchRegex }).select("_id").lean(),
+      Building.find({ company, buildingName: searchRegex })
+        .select("_id")
+        .lean(),
+      CoworkingClient.find({
+        $or: [
+          { clientName: searchRegex },
+          { clientInvoiceName: searchRegex },
+          { brandName: searchRegex },
+          { email: searchRegex },
+          { phone: searchRegex },
+        ],
+      })
+        .select("_id")
+        .lean(),
+      CoworkingMember.find({
+        company,
+        $or: [
+          { employeeName: searchRegex },
+          { email: searchRegex },
+          { mobileNo: searchRegex },
+        ],
+      })
+        .select("_id")
+        .lean(),
+      Visitor.find({
+        company,
+        $or: [
+          { firstName: searchRegex },
+          { middleName: searchRegex },
+          { lastName: searchRegex },
+          { email: searchRegex },
+          { phoneNumber: searchRegex },
+          { registeredClientCompany: searchRegex },
+          { visitorCompany: searchRegex },
+        ],
+      })
+        .select("_id")
+        .lean(),
+    ]);
+
+  const departmentIds = idsFrom(departments);
+  const buildingIds = idsFrom(buildings);
+  const clientIds = idsFrom(clients);
+  const memberIds = idsFrom(members);
+  const visitorIds = idsFrom(visitors);
+
+  const [users, units] = await Promise.all([
+    UserData.find({
+      company,
+      $or: [
+        { firstName: searchRegex },
+        { middleName: searchRegex },
+        { lastName: searchRegex },
+        { email: searchRegex },
+        { empId: searchRegex },
+        ...(departmentIds.length
+          ? [{ departments: { $in: departmentIds } }]
+          : []),
+      ],
+    })
+      .select("_id")
+      .lean(),
+    Unit.find({
+      company,
+      $or: [
+        { unitName: searchRegex },
+        { unitNo: searchRegex },
+        ...(buildingIds.length ? [{ building: { $in: buildingIds } }] : []),
+      ],
+    })
+      .select("_id")
+      .lean(),
+  ]);
+
+  const userIds = idsFrom(users);
+  const unitIds = idsFrom(units);
+  const rooms = await Room.find({
+    company,
+    $or: [
+      { name: searchRegex },
+      { roomId: searchRegex },
+      ...(unitIds.length ? [{ location: { $in: unitIds } }] : []),
+    ],
+  })
+    .select("_id")
+    .lean();
+  const roomIds = idsFrom(rooms);
+
+  const numericSearch = Number(normalizedSearch.replace(/,/g, ""));
+  const durationMatch = normalizedSearch.match(
+    /^(\d+)\s*(?:min|minute|minutes)?$/i,
+  );
+  const durationMinutes = durationMatch ? Number(durationMatch[1]) : null;
+  const compactSearch = normalizedSearch
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+  const durationConditions =
+    durationMinutes !== null
+      ? [
+          {
+            $expr: {
+              $eq: [
+                {
+                  $divide: [
+                    {
+                      $subtract: [
+                        {
+                          $max: [
+                            "$endTime",
+                            { $ifNull: ["$extendTime", "$endTime"] },
+                          ],
+                        },
+                        "$startTime",
+                      ],
+                    },
+                    60000,
+                  ],
+                },
+                durationMinutes,
+              ],
+            },
+          },
+        ]
+      : [];
+  const bookedByConditions = [
+    ...(userIds.length ? [{ bookedBy: { $in: userIds } }] : []),
+    ...(memberIds.length ? [{ clientBookedBy: { $in: memberIds } }] : []),
+    ...(visitorIds.length ? [{ externalBookedBy: { $in: visitorIds } }] : []),
+  ];
+  const venueConditions = roomIds.length
+    ? [{ bookedRoom: { $in: roomIds } }]
+    : [];
+  const clientConditions = [
+    ...(clientIds.length ? [{ client: { $in: clientIds } }] : []),
+    ...(visitorIds.length ? [{ externalClient: { $in: visitorIds } }] : []),
+  ];
+  const normalizedLowerSearch = normalizedSearch.toLowerCase();
+
+  if (searchContext === "internal-table") {
+    return [
+      { status: searchRegex },
+      { houeskeepingStatus: searchRegex },
+      ...bookedByConditions,
+      ...venueConditions,
+      ...clientConditions,
+      ...(compactSearch && "biznest".includes(compactSearch)
+        ? [
+            { meetingType: "Internal", client: company },
+            { meetingType: "Internal", client: null, externalClient: null },
+          ]
+        : []),
+      ...(!Number.isNaN(numericSearch)
+        ? [{ credits: numericSearch }, { creditsUsed: numericSearch }]
+        : []),
+    ];
+  }
+
+  if (searchContext === "external-table") {
+    return [
+      { subject: searchRegex },
+      { agenda: searchRegex },
+      { meetingType: searchRegex },
+      { status: searchRegex },
+      { houeskeepingStatus: searchRegex },
+      { paymentMode: searchRegex },
+      { paymentVerification: searchRegex },
+      { "paymentProof.link": searchRegex },
+      ...bookedByConditions,
+      ...(userIds.length ? [{ receptionist: { $in: userIds } }] : []),
+      ...venueConditions,
+      ...clientConditions,
+      ...durationConditions,
+      ...(!Number.isNaN(numericSearch)
+        ? [
+            { paymentAmount: numericSearch },
+            { discountAmount: numericSearch },
+          ]
+        : []),
+      ...("paid".includes(normalizedLowerSearch)
+        ? [{ paymentStatus: true }]
+        : []),
+      ...("unpaid".includes(normalizedLowerSearch)
+        ? [{ paymentStatus: false }]
+        : []),
+      ...(normalizedLowerSearch &&
+      "wait for payment".includes(normalizedLowerSearch)
+        ? [{ paymentStatus: false }]
+        : []),
+      ...(normalizedLowerSearch &&
+      "verify payment".includes(normalizedLowerSearch)
+        ? [{ paymentStatus: true, paymentVerification: "Under Review" }]
+        : []),
+      ...(normalizedLowerSearch &&
+      "completed".includes(normalizedLowerSearch)
+        ? [{ paymentStatus: true, paymentVerification: "Verified" }]
+        : []),
+      ...(normalizedLowerSearch &&
+      "review payment".includes(normalizedLowerSearch)
+        ? [
+            {
+              paymentStatus: true,
+              paymentVerification: { $nin: ["Under Review", "Verified"] },
+            },
+          ]
+        : []),
+    ];
+  }
+
+  return [
+    { subject: searchRegex },
+    { agenda: searchRegex },
+    { meetingType: searchRegex },
+    { status: searchRegex },
+    { houeskeepingStatus: searchRegex },
+    { paymentMode: searchRegex },
+    { paymentVerification: searchRegex },
+    { "paymentProof.link": searchRegex },
+    { "externalParticipants.name": searchRegex },
+    { "externalParticipants.mobileNumber": searchRegex },
+    {
+      $expr: {
+        $regexMatch: {
+          input: { $toString: "$startTime" },
+          regex: escapedSearch,
+          options: "i",
+        },
+      },
+    },
+    {
+      $expr: {
+        $regexMatch: {
+          input: {
+            $toString: {
+              $max: [
+                "$endTime",
+                { $ifNull: ["$extendTime", "$endTime"] },
+              ],
+            },
+          },
+          regex: escapedSearch,
+          options: "i",
+        },
+      },
+    },
+    ...(userIds.length
+      ? [
+          { bookedBy: { $in: userIds } },
+          { receptionist: { $in: userIds } },
+          { internalParticipants: { $in: userIds } },
+        ]
+      : []),
+    ...(memberIds.length
+      ? [
+          { clientBookedBy: { $in: memberIds } },
+          { clientParticipants: { $in: memberIds } },
+        ]
+      : []),
+    ...(visitorIds.length
+      ? [
+          { externalBookedBy: { $in: visitorIds } },
+          { externalClient: { $in: visitorIds } },
+        ]
+      : []),
+    ...(clientIds.length ? [{ client: { $in: clientIds } }] : []),
+    ...(roomIds.length ? [{ bookedRoom: { $in: roomIds } }] : []),
+    ...(durationMinutes !== null
+      ? [
+          {
+            $expr: {
+              $eq: [
+                {
+                  $divide: [
+                    {
+                      $subtract: [
+                        {
+                          $max: [
+                            "$endTime",
+                            { $ifNull: ["$extendTime", "$endTime"] },
+                          ],
+                        },
+                        "$startTime",
+                      ],
+                    },
+                    60000,
+                  ],
+                },
+                durationMinutes,
+              ],
+            },
+          },
+        ]
+      : []),
+    ...(!Number.isNaN(numericSearch)
+      ? [
+          { paymentAmount: numericSearch },
+          { discountAmount: numericSearch },
+          { creditsUsed: numericSearch },
+        ]
+      : []),
+    ...("paid".includes(normalizedSearch.toLowerCase())
+      ? [{ paymentStatus: true }]
+      : []),
+    ...("unpaid".includes(normalizedSearch.toLowerCase())
+      ? [{ paymentStatus: false }]
+      : []),
+    ...(compactSearch && "biznest".includes(compactSearch)
+      ? [
+          { meetingType: "Internal", client: company },
+          { meetingType: "Internal", client: null, externalClient: null },
+        ]
+      : []),
+  ];
+};
+
 const fetchMeetingReportService = async ({
   dateFilter,
   departments = [],
@@ -39,6 +378,8 @@ const fetchMeetingReportService = async ({
   includeTotal = false,
   page,
   limit,
+  search,
+  searchContext,
 }) => {
   try {
     const {
@@ -92,6 +433,11 @@ const fetchMeetingReportService = async ({
       .trim()
       .toLowerCase();
     const shouldHideCompleted = normalizedCompletedFilter === "false";
+    const searchConditions = await buildMeetingSearchConditions({
+      company,
+      search,
+      searchContext,
+    });
     const calendarVisibleStatusQuery =
       includeTotal && !shouldPaginate
         ? {
@@ -112,6 +458,9 @@ const fetchMeetingReportService = async ({
       ...calendarVisibleStatusQuery,
       ...(shouldHideCompleted && {
         status: { $nin: ["Completed", "Cancelled"] },
+      }),
+      ...(searchConditions.length && {
+        $and: [{ $or: searchConditions }],
       }),
       ...(!canViewAllMeetings &&
         currentUserId && {
@@ -161,7 +510,24 @@ const fetchMeetingReportService = async ({
           select: "firstName lastName departments",
           populate: { path: "departments", select: "name" },
         },
-        { path: "client", select: "clientName meetingCreditBalance" },
+        {
+          path: "client",
+          select: "clientName meetingCreditBalance",
+          transform: (clientDocument, clientId) => {
+            const isHostCompany =
+              clientId?.toString() === company?.toString();
+
+            if (isHostCompany) {
+              return {
+                _id: clientId,
+                clientName: "BIZNest",
+                isHostCompany: true,
+              };
+            }
+
+            return clientDocument;
+          },
+        },
         {
           path: "externalClient",
           select: "registeredClientCompany visitorCompany",

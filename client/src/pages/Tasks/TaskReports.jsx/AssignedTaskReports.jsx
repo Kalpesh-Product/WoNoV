@@ -14,7 +14,10 @@ import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
 import StatusChip from "../../../components/StatusChip";
 import dayjs from "dayjs";
-import { DEFAULT_PAGE_SIZE } from "../../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../../constants/pagination";
 import useAuth from "../../../hooks/useAuth";
 import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 
@@ -288,11 +291,19 @@ const AssignedTaskReports = () => {
           columns={myTaskReportsColumns}
           onDateFilterChange={handleTaskRangeChange}
           serverPagination
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
           paginationPageSize={pagination.limit}
           paginationPage={pagination.page}
           paginationTotal={pagination.total}
           onPaginationPageChange={(page) =>
             setPagination((current) => ({ ...current, page }))
+          }
+          onPaginationPageSizeChange={(limit) =>
+            setPagination((current) =>
+              current.limit === limit
+                ? current
+                : { ...current, page: 1, limit },
+            )
           }
         />
       </PageFrame>

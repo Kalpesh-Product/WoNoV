@@ -10,7 +10,6 @@ import { FormControl, MenuItem, Select, TextField } from "@mui/material";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
-import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
@@ -20,7 +19,6 @@ import usePageDepartment from "../../../../hooks/usePageDepartment";
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
-  const location = useLocation();
   const department = usePageDepartment();
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -333,7 +331,6 @@ const expenseRawSeries = useMemo(() => {
 
   const totalUtilised =
     budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
-  const navigate = useNavigate();
   // BUDGET NEW END
 
   return (

@@ -33,6 +33,12 @@ const getFinancialYearLabel = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getFiscalMonthIndex = (dateValue) => {
+  const date = dayjs(dateValue);
+  if (!date.isValid()) return null;
+  return date.month() >= 3 ? date.month() - 3 : date.month() + 9;
+};
+
 const normalizeAmount = (value) => {
   if (typeof value === "number") return value;
   if (typeof value === "string") {
@@ -353,9 +359,17 @@ const BudgetPage = () => {
 
   const budgetGraphData = useMemo(() => {
     const isCafeDepartment = department?.name?.toLowerCase() === "cafe";
+    const monthlySummary = new Map();
 
-    return (hrFinance || []).flatMap((item) => {
+    (hrFinance || []).forEach((item) => {
       const dueDate = item?.dueDate;
+      const date = dayjs(dueDate);
+      if (!date.isValid()) return;
+
+      const fiscalYearLabel = getFinancialYearLabel(dueDate);
+      const bucketIndex = getFiscalMonthIndex(dueDate);
+      if (!fiscalYearLabel || bucketIndex === null) return;
+
       const projectedAmount =
         normalizeAmount(item?.projectedAmount) ||
         (isCafeDepartment
@@ -363,31 +377,52 @@ const BudgetPage = () => {
             sumParticularAmounts(item?.finance?.particulars)
           : 0);
       const actualAmount = normalizeAmount(item?.actualAmount);
-      const projectedSeriesAmount = isCafeDepartment
-        ? projectedAmount
-        : Math.max(projectedAmount - actualAmount, 0);
+      const key = `${fiscalYearLabel}-${bucketIndex}`;
 
-      const series = [
-        {
-          dueDate,
-          amount: actualAmount,
-          vertical: "Actual Amount",
-        },
-      ];
-
-      const shouldShowProjectedAmount = projectedSeriesAmount > 0;
-
-      if (shouldShowProjectedAmount) {
-        series.push({
-          dueDate,
-          amount: projectedSeriesAmount,
-          vertical: "Projected Amount",
+      if (!monthlySummary.has(key)) {
+        monthlySummary.set(key, {
+          dueDate: date.startOf("month").toISOString(),
+          fiscalYearLabel,
+          bucketIndex,
+          actualAmount: 0,
+          projectedAmount: 0,
         });
       }
 
-      return series;
+      const entry = monthlySummary.get(key);
+      entry.actualAmount += actualAmount;
+      entry.projectedAmount += projectedAmount;
     });
-  }, [hrFinance]);
+
+    return Array.from(monthlySummary.values()).flatMap((entry) => {
+      const hasActual = entry.actualAmount > 0;
+      const actualSeriesAmount = hasActual ? entry.actualAmount : 0;
+      const projectedSeriesAmount = hasActual ? 0 : entry.projectedAmount;
+
+      return [
+        {
+          dueDate: entry.dueDate,
+          amount: actualSeriesAmount,
+          actualAmount: entry.actualAmount,
+          projectedAmount: entry.projectedAmount,
+          displayAmount: actualSeriesAmount,
+          vertical: "Actual Amount",
+          fiscalYearLabel: entry.fiscalYearLabel,
+          bucketIndex: entry.bucketIndex,
+        },
+        {
+          dueDate: entry.dueDate,
+          amount: projectedSeriesAmount,
+          actualAmount: entry.actualAmount,
+          projectedAmount: entry.projectedAmount,
+          displayAmount: projectedSeriesAmount,
+          vertical: "Projected Amount",
+          fiscalYearLabel: entry.fiscalYearLabel,
+          bucketIndex: entry.bucketIndex,
+        },
+      ];
+    });
+  }, [hrFinance, department?.name]);
 
   const { roundedMax, tickAmount } = useMemo(() => {
     const monthlyTotals = budgetGraphData.reduce((acc, item) => {
@@ -450,14 +485,6 @@ const BudgetPage = () => {
               color: "#000000",
             },
             formatter: (_, config) => {
-              const currentMonthLabel = dayjs().format("MMM-YY");
-              const monthLabel =
-                config?.w?.globals?.labels?.[config?.dataPointIndex];
-
-              if (monthLabel === currentMonthLabel) {
-                return "";
-              }
-
               const total =
                 config?.w?.globals?.stackedSeriesTotals?.[
                   config?.dataPointIndex
@@ -503,8 +530,9 @@ const BudgetPage = () => {
 
     tooltip: {
       enabled: true,
-      shared: false,
-      intersect: true,
+      shared: true,
+      intersect: false,
+      inverseOrder: true,
       y: {
         formatter: (value) => `INR ${inrFormat(Number(value || 0))}`,
       },
@@ -533,6 +561,28 @@ const BudgetPage = () => {
     [hrFinance, selectedFiscalYear],
   );
 
+  const selectedFYProjectedAmount = useMemo(
+    () =>
+      (hrFinance || []).reduce(
+        (acc, item) => {
+          if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
+            return acc;
+          }
+
+          const projectedAmount =
+            normalizeAmount(item?.projectedAmount) ||
+            (department?.name?.toLowerCase() === "cafe"
+              ? sumParticularAmounts(item?.particulars) ||
+                sumParticularAmounts(item?.finance?.particulars)
+              : 0);
+
+          return acc + projectedAmount;
+        },
+        0,
+      ),
+    [hrFinance, selectedFiscalYear, department?.name],
+  );
+
   const navigate = useNavigate();
   // BUDGET NEW END
 
@@ -544,9 +594,17 @@ const BudgetPage = () => {
         valueKey="amount"
         chartOptions={expenseOptions}
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        //titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
         selectedFY={selectedFiscalYear}
         onSelectedFYChange={setSelectedFiscalYear}
+        includePointMeta
+        tooltipValueMode="meta"
+        disableHoverCrosshair
+        TitleAmountGreen={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        TitleAmountTotal={`INR ${inrFormat(selectedFYProjectedAmount || 0)}`}
+        greenTitle="Actual"
+        totalTitle="Projected"
+        summaryChipVariant="budget"
       />
 
       {canRequestBudget && (
@@ -560,7 +618,7 @@ const BudgetPage = () => {
         </div>
       )}
 
-       <AllocatedBudget
+      <AllocatedBudget
         financialData={financialData}
         noInvoice={false}
         enableActionMenu

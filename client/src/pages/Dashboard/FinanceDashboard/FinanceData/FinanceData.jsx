@@ -36,6 +36,7 @@ const FinanceData = () => {
         defaultTabPath={"asset-list"}
         tabs={tabs}
         hideTabsCondition={(pathname) => pathname.includes("asset-list/")}
+        hideTabsOnPaths={["vendor/"]}
       />
     </div>
   );

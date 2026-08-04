@@ -11,10 +11,12 @@ const { fetchVendorReportService } = require("./vendor");
 const {
   fetchPerformanceReportService,
   fetchDepartmentWiseKpaOverviewReportService,
+  fetchDepartmentWiseKraOverviewReportService,
 } = require("./performance");
 const {
   fetchDeptTaskReportService,
   fetchMyTasksReportService,
+  fetchDepartmentWiseTasksOverviewReportService,
 } = require("./task");
 const {
   fetchAssetReportService,
@@ -284,6 +286,12 @@ const reportServiceRegistry = {
     },
   ),
   "dept-kra": createPerformanceReportService("KRA"),
+  "dept-wise-kra-overview": createReportService(
+    fetchDepartmentWiseKraOverviewReportService,
+    {
+      dateField: "assignedDate",
+    },
+  ),
   "individual-kra": createPerformanceReportService("INDIVIDUALKRA"),
   "individual-kpa": createPerformanceReportService("INDIVIDUALKPA"),
 
@@ -293,6 +301,12 @@ const reportServiceRegistry = {
   "department-task": createReportService(fetchDeptTaskReportService, {
     dateField: "assignedDate",
   }),
+  "dept-wise-tasks-overview": createReportService(
+    fetchDepartmentWiseTasksOverviewReportService,
+    {
+      dateField: "assignedDate",
+    },
+  ),
 
   asset: createReportService(fetchAssignedAssetReportService, {
     dateField: "createdAt",
