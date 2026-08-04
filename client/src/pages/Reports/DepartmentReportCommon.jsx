@@ -2031,6 +2031,92 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const mergePrintoutCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "printout") return rows;
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const takenByName = [
+        row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
+        row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const requestedByName = String(
+        row?.requestedBy?.employeeName ||
+          row?.requestedBy?.name ||
+          row?.requestedBy?.firstName ||
+          row?.["requestedBy.employeeName"] ||
+          row?.["requestedBy.name"] ||
+          row?.["requestedBy.firstName"] ||
+          "",
+      )
+        .trim()
+        || [
+          row?.requestedBy?.firstName || row?.["requestedBy.firstName"] || "",
+          row?.requestedBy?.lastName || row?.["requestedBy.lastName"] || "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      const buildingName = String(
+        row?.location?.buildingName ||
+          row?.location?.name ||
+          row?.["location.buildingName"] ||
+          row?.["location.name"] ||
+          row?.buildingName ||
+          "",
+      ).trim();
+      const unitNo = String(
+        row?.unit?.unitNo || row?.["unit.unitNo"] || row?.unitNo || "",
+      ).trim();
+      const unitName = String(
+        row?.unit?.unitName || row?.["unit.unitName"] || row?.unitName || "",
+      ).trim();
+
+      delete nextRow.takenBy;
+      delete nextRow["takenBy.firstName"];
+      delete nextRow["takenBy.lastName"];
+      delete nextRow.requestedBy;
+      delete nextRow["requestedBy.employeeName"];
+      delete nextRow["requestedBy.firstName"];
+      delete nextRow["requestedBy.lastName"];
+      delete nextRow["requestedBy.name"];
+      delete nextRow["requestedBy.email"];
+      delete nextRow.location;
+      delete nextRow["location.buildingName"];
+      delete nextRow["location.name"];
+      delete nextRow.unit;
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit._id"];
+      delete nextRow["location._id"];
+
+      if (takenByName) {
+        nextRow.takenBy = takenByName;
+      }
+
+      if (requestedByName) {
+        nextRow.requestedBy = requestedByName;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      return nextRow;
+    });
+  };
+
   const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
@@ -2042,7 +2128,9 @@ const DepartmentReportCommon = () => {
             mergeAssetCsvFields(
               mergeMeetingCsvFields(
                 mergePerformanceCsvFields(
-                  mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  mergePrintoutCsvFields(
+                    mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  ),
                   reportName,
                 ),
               ),
