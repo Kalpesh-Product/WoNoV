@@ -14,6 +14,18 @@ const sanitizePrintout = (printout) => {
   if (!printout) return printout;
 
   const sanitizedPrintout = { ...printout };
+
+  if (
+    sanitizedPrintout.clientModel === "CoworkingClient" &&
+    sanitizedPrintout.client &&
+    typeof sanitizedPrintout.client === "object"
+  ) {
+    const client = { ...sanitizedPrintout.client };
+    client.companyName = client.clientName;
+    delete client.clientName;
+    sanitizedPrintout.client = client;
+  }
+
   delete sanitizedPrintout.clientModel;
   delete sanitizedPrintout.requestedByModel;
 
