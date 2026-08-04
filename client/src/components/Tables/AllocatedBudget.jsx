@@ -18,7 +18,7 @@ import { addDays, isWithinInterval } from "date-fns";
 import { inrFormat } from "../../utils/currencyFormat";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
-import { parseAmount } from "../../utils/parseAmount";
+//import { parseAmount } from "../../utils/parseAmount";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -86,6 +86,14 @@ const AllocatedBudget = ({
   });
 
   const department = usePageDepartment();
+  const normalizeBudgetAmount = (value) => {
+    if (typeof value === "number") return value;
+    if (typeof value === "string") {
+      const parsed = Number(value.replace(/,/g, ""));
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
+    return 0;
+  };
   const onUpload = (data, row) => {
     const file = data.invoiceImage;
     if (!file || !row?.id) {
@@ -356,7 +364,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
 
   const totalActualAmount = useMemo(() => {
     return filteredRows.reduce(
-      (sum, r) => sum + Number((r.actualAmount || "0").replace(/,/g, "")),
+      (sum, r) => sum + normalizeBudgetAmount(r.actualAmount),
+      0
+    );
+  }, [filteredRows]);
+
+  const totalProjectedAmount = useMemo(() => {
+    return filteredRows.reduce(
+      (sum, r) => sum + normalizeBudgetAmount(r.projectedAmount),
       0
     );
   }, [filteredRows]);
@@ -400,7 +415,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             ? "Annual Expenses"
             : newTitle || "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
         }
-        TitleAmount={`INR ${inrFormat(totalActualAmount)}`}
+        // TitleAmount={`INR ${inrFormat(totalActualAmount)}`}
+        TitleAmountGreen={`INR ${inrFormat(totalActualAmount)}`}
+        greenTitle="Actual"
+        TitleAmountTotal={`INR ${inrFormat(totalProjectedAmount)}`}
+        totalTitle="Projected"
+        summaryChipVariant="budget"
         border
       >
         <div className="flex flex-col gap-4 rounded-md">

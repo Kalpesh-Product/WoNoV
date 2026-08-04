@@ -34,7 +34,10 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { toLocalDayBoundary } from "../../utils/dateRange";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const ManageMeetings = () => {
   const axios = useAxiosPrivate();
@@ -407,7 +410,7 @@ const ManageMeetings = () => {
         ? meeting.extendTime
         : meeting.endTime,
     extendTime: meeting.extendTime,
-        srNo: (pagination.page - 1) * pagination.limit + index + 1, 
+    srNo: (pagination.page - 1) * pagination.limit + index + 1,
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
     building: meeting.location?.building?.buildingName || "",
@@ -891,12 +894,20 @@ const ManageMeetings = () => {
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
-            serverPagination  
+            serverPagination
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
             paginationPageSize={pagination.limit}
             paginationPage={pagination.page}
             paginationTotal={pagination.total}
             onPaginationPageChange={(page) =>
               setPagination((current) => ({ ...current, page }))
+            }
+            onPaginationPageSizeChange={(limit) =>
+              setPagination((current) =>
+                current.limit === limit
+                  ? current
+                  : { ...current, page: 1, limit },
+              )
             }
             serverSearch
             searchValue={meetingSearch}
@@ -1475,8 +1486,7 @@ const ManageMeetings = () => {
               />
               {isAdminTimingBufferExpired && !editErrors.startTime?.message && (
                 <div className="col-span-2 -mt-2 text-[12px] text-[#d32f2f]">
-                  You have exceeded the 30 min buffer to Edit the timings.
-                  {" "}
+                  You have exceeded the 30 min buffer to Edit the timings.{" "}
                   "Please Raise a Ticket" to fix
                 </div>
               )}

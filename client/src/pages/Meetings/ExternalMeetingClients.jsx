@@ -38,7 +38,10 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import { time } from "motion/react";
 import { toLocalDayBoundary } from "../../utils/dateRange";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const ExternalMeetingCLients = () => {
   const axios = useAxiosPrivate();
@@ -52,7 +55,7 @@ const ExternalMeetingCLients = () => {
   const [selectedMeeting, setSelectedMeeting] = useState([]);
   const [detailsModal, setDetailsModal] = useState(false);
   const [submittedChecklists, setSubmittedChecklists] = useState({});
-   const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
@@ -143,10 +146,9 @@ const ExternalMeetingCLients = () => {
   );
   const hasSpecialEditWindowAccess = isAdminTimingUser || canEditMeetingDate;
   const isAdminTimingRestrictedUser = isAdminTimingUser;
-  const shouldShowExportButton =
-    location.pathname.includes(
-      "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
-    );
+  const shouldShowExportButton = location.pathname.includes(
+    "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+  );
 
   const paymentModes = [
     "UPI",
@@ -295,7 +297,7 @@ const ExternalMeetingCLients = () => {
       pagination.page,
       pagination.limit,
       debouncedMeetingSearch,
-    ],  
+    ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
@@ -345,7 +347,7 @@ const ExternalMeetingCLients = () => {
             ? meeting.extendTime
             : meeting.endTime,
         extendTime: meeting.extendTime,
-          srNo: (pagination.page - 1) * pagination.limit + index + 1,
+        srNo: (pagination.page - 1) * pagination.limit + index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
         paymnetDiscountAmount: meeting.discountAmount ?? 0,
         paymentDiscountAmount: meeting.discountAmount ?? 0,
@@ -353,21 +355,24 @@ const ExternalMeetingCLients = () => {
         paymentProofUrl: meeting?.paymentProof ?? "",
         paymentStatus: meeting.paymentStatus ?? false,
         paymentVerification: meeting.paymentVerification || "Under Review",
-          client:
-            meeting.client ||
-            meeting.externalClient?.companyName ||
-            meeting.externalClient ||
-            "",
-          companyName:
-            meeting.client ||
-            meeting.externalClient?.companyName ||
-            meeting.externalClient ||
-            "",
+        client:
+          meeting.client ||
+          meeting.externalClient?.companyName ||
+          meeting.externalClient ||
+          "",
+        companyName:
+          meeting.client ||
+          meeting.externalClient?.companyName ||
+          meeting.externalClient ||
+          "",
         building: meeting.location?.building?.buildingName || "",
         duration: meeting.duration || "",
         receptionist: meeting.receptionist || "",
         departmentLabel: Array.isArray(meeting.department)
-          ? meeting.department.map((item) => item?.name).filter(Boolean).join(", ")
+          ? meeting.department
+              .map((item) => item?.name)
+              .filter(Boolean)
+              .join(", ")
           : meeting.department?.name || "",
         locationLabel: `${meeting.location?.unitNo || ""}${
           meeting.location?.unitName ? ` (${meeting.location.unitName})` : ""
@@ -794,7 +799,8 @@ const ExternalMeetingCLients = () => {
   ]);
   //---------------------------------Event handlers----------------------------------------//
   const getFinanceStatus = (rowData = {}) => {
-    const isPaid = rowData?.paymentStatus === "Paid" || rowData?.paymentStatus === true;
+    const isPaid =
+      rowData?.paymentStatus === "Paid" || rowData?.paymentStatus === true;
     const paymentVerificationStatus = String(
       rowData?.paymentVerification || "Pending",
     ).toLowerCase();
@@ -840,7 +846,7 @@ const ExternalMeetingCLients = () => {
       headerName: "End Time",
       cellRenderer: (params) => humanTime(params.value),
     },
-     {
+    {
       field: "paymentAmount",
       headerName: "Amount (INR)",
     },
@@ -851,7 +857,7 @@ const ExternalMeetingCLients = () => {
     {
       field: "paymentStatus",
       headerName: "Payment Status",
-      pinned:"right",
+      pinned: "right",
       cellRenderer: (params) => (
         <Chip
           label={params.value === "Paid" ? "Paid" : "Unpaid"}
@@ -869,7 +875,7 @@ const ExternalMeetingCLients = () => {
           {
             field: "financeStatus",
             headerName: "Finance Status",
-            pinned:"right",
+            pinned: "right",
             cellRenderer: (params) => {
               const status = getFinanceStatus(params.data);
               const chipStyle = getFinanceStatusChipStyle(status);
@@ -887,7 +893,7 @@ const ExternalMeetingCLients = () => {
           },
         ]
       : []),
-      {
+    {
       field: "meetingStatus",
       headerName: "Meeting Status",
       sort: "desc",
@@ -902,7 +908,7 @@ const ExternalMeetingCLients = () => {
         />
       ),
     },
-     {
+    {
       field: "housekeepingStatus",
       headerName: "Housekeeping Status",
       cellRenderer: (params) => {
@@ -920,32 +926,29 @@ const ExternalMeetingCLients = () => {
     },
     { field: "title", headerName: "Title", hide: true },
     { field: "agenda", headerName: "Agenda", hide: true },
-   
-    {field: "time", headerName: "Time", hide: true },
+
+    { field: "time", headerName: "Time", hide: true },
     { field: "duration", headerName: "Duration", hide: true },
-   
-    {field: "meetingType", headerName: "Meeting Type", hide: true },
-    {field: "companyName", headerName: "Company Name", hide: true },
-   
+
+    { field: "meetingType", headerName: "Meeting Type", hide: true },
+    { field: "companyName", headerName: "Company Name", hide: true },
+
     { field: "receptionist", headerName: "Receptionist", hide: true },
-   // { field: "departmentLabel", headerName: "Department", hide: true },
-    { field: "client", headerName: "Client Name",hide: true },
-  
+    // { field: "departmentLabel", headerName: "Department", hide: true },
+    { field: "client", headerName: "Client Name", hide: true },
+
     { field: "locationLabel", headerName: "Location", hide: true },
-   
-    
-   
+
     {
       field: "paymentDiscountAmount",
       headerName: "Discount (INR)",
       hide: true,
       valueFormatter: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
-    
+
     { field: "paymentVerification", headerName: "Verification", hide: true },
     { field: "paymentProofUrl", headerName: "Proof URL", hide: true },
-    
-    
+
     // {
     //   field: "extendTime",
     //   headerName: "Extended Time",
@@ -1028,7 +1031,7 @@ const ExternalMeetingCLients = () => {
                   onClick: () => handleCompleted("complete", params.data._id),
                 },
                 // !isCancelled && {
-                  isUpcoming && {
+                isUpcoming && {
                   label: "Cancel",
                   onClick: () => handleSelectedMeeting("cancel", params.data),
                 },
@@ -1073,11 +1076,19 @@ const ExternalMeetingCLients = () => {
             columns={columns}
             exportData={shouldShowExportButton}
             serverPagination
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
             paginationPageSize={pagination.limit}
             paginationPage={pagination.page}
             paginationTotal={pagination.total}
             onPaginationPageChange={(page) =>
               setPagination((current) => ({ ...current, page }))
+            }
+            onPaginationPageSizeChange={(limit) =>
+              setPagination((current) =>
+                current.limit === limit
+                  ? current
+                  : { ...current, page: 1, limit },
+              )
             }
             serverSearch
             searchValue={meetingSearch}
@@ -1695,8 +1706,7 @@ const ExternalMeetingCLients = () => {
               />
               {isAdminTimingBufferExpired && !editErrors.startTime?.message && (
                 <div className="col-span-2 -mt-2 text-[12px] text-[#d32f2f]">
-                  You have exceeded the 30 min buffer to Edit the timings.
-                  {" "}
+                  You have exceeded the 30 min buffer to Edit the timings.{" "}
                   "Please Raise a Ticket" to fix
                 </div>
               )}

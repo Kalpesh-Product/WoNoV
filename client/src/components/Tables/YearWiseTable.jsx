@@ -59,6 +59,8 @@ const YearWiseTable = ({
   paginationPage = 1,
   paginationTotal = 0,
   onPaginationPageChange,
+  pageSizeOptions = [],
+  onPaginationPageSizeChange,
   serverSearch = false,
   searchValue = "",
   onSearchChange,
@@ -569,6 +571,8 @@ const YearWiseTable = ({
             paginationPage={paginationPage}
             paginationTotal={paginationTotal}
             onPaginationPageChange={onPaginationPageChange}
+            pageSizeOptions={pageSizeOptions}
+            onPaginationPageSizeChange={onPaginationPageSizeChange}
             serverSearch={serverSearch}
             searchValue={searchValue}
             onSearchChange={onSearchChange}

@@ -61,6 +61,7 @@ const AdminData = () => {
       defaultTabPath="electricity-expenses"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("electricity-expenses/")}
+      hideTabsOnPaths={["vendor/"]}
     />
   );
 };

@@ -19,8 +19,10 @@ import StatusChip from "../../components/StatusChip";
 import { inrFormat } from "../../utils/currencyFormat";
 import { useSearchParams } from "react-router-dom";
 import { toLocalDayBoundary } from "../../utils/dateRange";
-import { DEFAULT_PAGE_SIZE } from "../../constants/pagination";
-
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
@@ -34,7 +36,7 @@ const MeetingReports = () => {
   //   limit: 10,
   //   total: 0,
   // });
- const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
@@ -110,7 +112,7 @@ const MeetingReports = () => {
     error,
   } = useQuery({
     // queryKey: ["meetings", pagination.page, pagination.limit],
-     queryKey: [
+    queryKey: [
       "meetings",
       meetingFilters.startDate,
       meetingFilters.endDate,
@@ -118,7 +120,7 @@ const MeetingReports = () => {
       pagination.limit,
       debouncedMeetingSearch,
     ],
-      queryFn: async () => {
+    queryFn: async () => {
       try {
         //  const response = await axios.get("/api/meetings/get-meetings", {
         //   params: {
@@ -141,8 +143,8 @@ const MeetingReports = () => {
             page: pagination.page,
             limit: pagination.limit,
             search: debouncedMeetingSearch || undefined,
-        },
-      });
+          },
+        });
         const responsePagination = response.data.pagination || response.data;
 
         setPagination((current) => ({
@@ -397,8 +399,7 @@ const MeetingReports = () => {
               data={[
                 ...displayMeetings.map((item, index) => {
                   return {
-                     srNo:
-                      (pagination.page - 1) * pagination.limit + index + 1,
+                    srNo: (pagination.page - 1) * pagination.limit + index + 1,
                     id: index + 1,
                     client:
                       item?.company?.companyName ||
@@ -470,11 +471,19 @@ const MeetingReports = () => {
               ]}
               columns={meetingReportsColumn}
               serverPagination
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
               paginationPageSize={pagination.limit}
               paginationPage={pagination.page}
               paginationTotal={pagination.total}
               onPaginationPageChange={(page) =>
                 setPagination((current) => ({ ...current, page }))
+              }
+              onPaginationPageSizeChange={(limit) =>
+                setPagination((current) =>
+                  current.limit === limit
+                    ? current
+                    : { ...current, page: 1, limit },
+                )
               }
               serverSearch
               searchValue={meetingSearch}

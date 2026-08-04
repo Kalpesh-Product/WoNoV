@@ -46,10 +46,15 @@ const WidgetSection = ({
   );
 
   const useTicketSummaryChipStyle = summaryChipVariant === "ticket";
+  const useBudgetSummaryChipStyle = summaryChipVariant === "budget";
   const totalChipClasses = useTicketSummaryChipStyle
     ? "flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]"
+    : useBudgetSummaryChipStyle
+    ? "flex gap-1 justify-center items-center uppercase bg-[#e5e7eb] text-sm text-[#4b5563] font-pmedium px-3 py-1.5 rounded-lg border border-[#cbd5e1]"
     : "flex gap-2 justify-center items-center uppercase bg-[#dbe4ff] p-2 rounded-lg";
   const greenChipClasses = useTicketSummaryChipStyle
+    ? "flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]"
+    : useBudgetSummaryChipStyle
     ? "flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]"
     : "flex gap-2 justify-center items-center uppercase bg-[#54c4a657] p-2 rounded-lg";
   const redChipClasses = useTicketSummaryChipStyle

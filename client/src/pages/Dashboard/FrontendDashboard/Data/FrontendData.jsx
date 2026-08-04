@@ -58,11 +58,12 @@ const tabs = [
   );
 
   return (
-      <TabLayout
+    <TabLayout
       basePath="/app/dashboard/frontend-dashboard/data"
       defaultTabPath="leads"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("leads/")}
+      hideTabsOnPaths={["vendor/"]}
     />
   );
 };

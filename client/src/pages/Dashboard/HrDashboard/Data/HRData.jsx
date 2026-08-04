@@ -64,6 +64,7 @@ const Data = () => {
       hideTabsCondition={(pathname) =>
         pathname.includes("job-application-list/")
       }
+      hideTabsOnPaths={["vendor/"]}
     />
   );
 };
