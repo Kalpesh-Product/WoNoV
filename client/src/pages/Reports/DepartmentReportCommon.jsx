@@ -1339,6 +1339,9 @@ const DepartmentReportCommon = () => {
     const isHousekeepingStaffReport = normalizedReportName.includes(
       "housekeeping staff report",
     );
+    const isPastEmployeesReport =
+      normalizedReportName.includes("past employees report") ||
+      normalizedReportName.includes("past employee report");
 
     const formatHrTime = (value) => {
       if (!value) return "";
@@ -1364,6 +1367,25 @@ const DepartmentReportCommon = () => {
           return item || "";
         })
         .map((item) => String(item).trim())
+        .filter(Boolean)
+        .join(", ");
+    };
+
+    const formatEmployeeLeavesCount = (value) => {
+      const entries = Array.isArray(value) ? value : value ? [value] : [];
+
+      return entries
+        .map((item) => {
+          if (!item || typeof item !== "object") {
+            return String(item || "").trim();
+          }
+
+          const leaveType = String(item.leaveType || item.name || "").trim();
+          const count = String(item.count ?? "").trim();
+
+          if (leaveType && count) return `${leaveType}: ${count}`;
+          return leaveType || count;
+        })
         .filter(Boolean)
         .join(", ");
     };
@@ -1554,7 +1576,7 @@ const DepartmentReportCommon = () => {
         nextRow.role = roleTitles;
       }
 
-      if (isHousekeepingStaffReport && staffFullName) {
+      if ((isHousekeepingStaffReport || isPastEmployeesReport) && staffFullName) {
         nextRow.name = staffFullName;
         delete nextRow.firstName;
         delete nextRow.middleName;
@@ -1652,6 +1674,9 @@ const DepartmentReportCommon = () => {
       delete nextRow.rejectedBy;
       delete nextRow["rejectedBy.firstName"];
       delete nextRow["rejectedBy.lastName"];
+      delete nextRow.employeeType;
+      delete nextRow["employeeType.name"];
+      delete nextRow["employeeType.leavesCount"];
       delete nextRow.attendanceCorrection;
       delete nextRow["attendanceCorrection._id"];
       delete nextRow["attendanceCorrection.inTime"];
@@ -1680,6 +1705,23 @@ const DepartmentReportCommon = () => {
 
       if (correctionRejectedByName || rejectedByName) {
         nextRow.rejectedBy = correctionRejectedByName || rejectedByName;
+      }
+
+      if (isPastEmployeesReport) {
+        const employeeTypeName = String(
+          row?.employeeType?.name || row?.["employeeType.name"] || "",
+        ).trim();
+        const employeeLeavesCount = formatEmployeeLeavesCount(
+          row?.employeeType?.leavesCount || row?.["employeeType.leavesCount"],
+        );
+
+        if (employeeTypeName) {
+          nextRow.employeeType = employeeTypeName;
+        }
+
+        if (employeeLeavesCount) {
+          nextRow.employeeLeavesCount = employeeLeavesCount;
+        }
       }
 
       return nextRow;
