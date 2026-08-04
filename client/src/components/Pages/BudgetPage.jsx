@@ -575,6 +575,9 @@ const BudgetPage = () => {
         titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
         selectedFY={selectedFiscalYear}
         onSelectedFYChange={setSelectedFiscalYear}
+        includePointMeta
+        tooltipValueMode="meta"
+        disableHoverCrosshair
       />
 
       {canRequestBudget && (

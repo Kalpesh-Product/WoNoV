@@ -69,7 +69,10 @@ const FyBarGraph = ({
   selectedFY: controlledSelectedFY,
   onSelectedFYChange,
   responsiveResize = true,
-  chartId = "bargraph"
+  chartId = "bargraph",
+  includePointMeta = false,
+  tooltipValueMode = "raw",
+  disableHoverCrosshair = false,
 }) => {
   const [internalSelectedFY, setInternalSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
@@ -122,37 +125,48 @@ const FyBarGraph = ({
       const vertical = item?.vertical || "Unknown";
 
       if (!base[vertical]) base[vertical] = {};
-      if (!base[vertical][label]) {
-        base[vertical][label] = {
-          y: 0,
-          actualAmount: 0,
-          projectedAmount: 0,
-          displayAmount: 0,
-        };
+      if (includePointMeta) {
+        if (!base[vertical][label]) {
+          base[vertical][label] = {
+            y: 0,
+            actualAmount: 0,
+            projectedAmount: 0,
+            displayAmount: 0,
+          };
+        }
+
+        base[vertical][label].y += parseFloat(item?.[valueKey]) || 0;
+        base[vertical][label].actualAmount +=
+          parseFloat(item?.actualAmount) || 0;
+        base[vertical][label].projectedAmount +=
+          parseFloat(item?.projectedAmount) || 0;
+        base[vertical][label].displayAmount +=
+          parseFloat(item?.displayAmount) || 0;
+        return;
       }
 
-      base[vertical][label].y += parseFloat(item?.[valueKey]) || 0;
-      base[vertical][label].actualAmount += parseFloat(item?.actualAmount) || 0;
-      base[vertical][label].projectedAmount +=
-        parseFloat(item?.projectedAmount) || 0;
-      base[vertical][label].displayAmount +=
-        parseFloat(item?.displayAmount) || 0;
+      base[vertical][label] =
+        (base[vertical][label] || 0) + (parseFloat(item?.[valueKey]) || 0);
     });
 
     return Object.entries(base).map(([vertical, monthData]) => ({
       name: vertical,
-      data: months.map(({ label }) => ({
-        x: label,
-        y: monthData[label]?.y || 0,
-        meta: monthData[label] || {
-          y: 0,
-          actualAmount: 0,
-          projectedAmount: 0,
-          displayAmount: 0,
-        },
-      })),
+      data: months.map(({ label }) =>
+        includePointMeta
+          ? {
+              x: label,
+              y: monthData[label]?.y || 0,
+              meta: monthData[label] || {
+                y: 0,
+                actualAmount: 0,
+                projectedAmount: 0,
+                displayAmount: 0,
+              },
+            }
+          : monthData[label] || 0,
+      ),
     }));
-  }, [filteredData, selectedFY, valueKey, dateKey]);
+  }, [filteredData, selectedFY, valueKey, dateKey, includePointMeta]);
 
   const mergedChartOptions = useMemo(() => {
     const userTooltipFormatter = chartOptions?.tooltip?.y?.formatter;
@@ -164,18 +178,20 @@ const FyBarGraph = ({
 
       let displayValue = Number(value || 0);
 
-      if (
-        seriesName === "Projected Amount" &&
-        Number(meta.projectedAmount || 0) > 0
-      ) {
-        displayValue = Number(meta.projectedAmount || 0);
-      } else if (
-        seriesName === "Actual Amount" &&
-        Number(meta.actualAmount || 0) > 0
-      ) {
-        displayValue = Number(meta.actualAmount || 0);
-      } else if (Number(meta.displayAmount || 0) > 0) {
-        displayValue = Number(meta.displayAmount || 0);
+      if (includePointMeta && tooltipValueMode === "meta") {
+        if (
+          seriesName === "Projected Amount" &&
+          Number(meta.projectedAmount || 0) > 0
+        ) {
+          displayValue = Number(meta.projectedAmount || 0);
+        } else if (
+          seriesName === "Actual Amount" &&
+          Number(meta.actualAmount || 0) > 0
+        ) {
+          displayValue = Number(meta.actualAmount || 0);
+        } else if (Number(meta.displayAmount || 0) > 0) {
+          displayValue = Number(meta.displayAmount || 0);
+        }
       }
 
       if (typeof userTooltipFormatter === "function") {
@@ -213,12 +229,16 @@ const FyBarGraph = ({
       xaxis: {
         ...chartOptions?.xaxis,
         categories: monthsWithLabels.map((m) => m.label),
-        crosshairs: {
-          show: false,
-        },
-        tooltip: {
-          enabled: false,
-        },
+        ...(disableHoverCrosshair
+          ? {
+              crosshairs: {
+                show: false,
+              },
+              tooltip: {
+                enabled: false,
+              },
+            }
+          : {}),
       },
       yaxis: {
         ...chartOptions?.yaxis,
@@ -242,12 +262,21 @@ const FyBarGraph = ({
         },
       },
     };
-  }, [monthsWithLabels, chartOptions]);
+  }, [
+    monthsWithLabels,
+    chartOptions,
+    includePointMeta,
+    tooltipValueMode,
+    disableHoverCrosshair,
+  ]);
   const fyTotal = useMemo(() => {
     return stackedSeries.reduce((total, vertical) => {
       return (
         total +
-        vertical.data.reduce((sum, val) => sum + (parseFloat(val?.y) || 0), 0)
+        vertical.data.reduce(
+          (sum, val) => sum + (parseFloat(val?.y ?? val) || 0),
+          0,
+        )
       );
     }, 0);
   }, [stackedSeries]);
