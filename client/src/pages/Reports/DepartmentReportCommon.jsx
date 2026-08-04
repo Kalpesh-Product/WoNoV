@@ -1452,6 +1452,74 @@ const DepartmentReportCommon = () => {
         .join(" ")
         .trim();
 
+      const correctionInTime = formatHrTime(
+        row?.attendanceCorrection?.inTime ||
+          row?.["attendanceCorrection.inTime"] ||
+          "",
+      );
+
+      const correctionOutTime = formatHrTime(
+        row?.attendanceCorrection?.outTime ||
+          row?.["attendanceCorrection.outTime"] ||
+          "",
+      );
+
+      const correctionReason = String(
+        row?.attendanceCorrection?.reason ||
+          row?.["attendanceCorrection.reason"] ||
+          "",
+      ).trim();
+
+      const correctionStatus = String(
+        row?.attendanceCorrection?.status ||
+          row?.["attendanceCorrection.status"] ||
+          row?.status ||
+          "",
+      ).trim();
+
+      const correctionRequestedAt =
+        row?.attendanceCorrection?.requestedAt ||
+        row?.["attendanceCorrection.requestedAt"] ||
+        row?.["attendanceCorrection.createdAt"] ||
+        row?.requestedAt ||
+        "";
+
+      const correctionAddedByName = [
+        row?.attendanceCorrection?.addedBy?.firstName ||
+          row?.["attendanceCorrection.addedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.addedBy?.lastName ||
+          row?.["attendanceCorrection.addedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const correctionApprovedByName = [
+        row?.attendanceCorrection?.approvedBy?.firstName ||
+          row?.["attendanceCorrection.approvedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.approvedBy?.lastName ||
+          row?.["attendanceCorrection.approvedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const correctionRejectedByName = [
+        row?.attendanceCorrection?.rejectedBy?.firstName ||
+          row?.["attendanceCorrection.rejectedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.rejectedBy?.lastName ||
+          row?.["attendanceCorrection.rejectedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
       const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
       const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
 
@@ -1540,6 +1608,25 @@ const DepartmentReportCommon = () => {
         nextRow.rejectedByName = rejectedByName;
       }
 
+      if (correctionInTime || correctionOutTime) {
+        nextRow.correction = {
+          ...(correctionInTime ? { inTime: correctionInTime } : {}),
+          ...(correctionOutTime ? { outTime: correctionOutTime } : {}),
+        };
+      }
+
+      if (correctionReason) {
+        nextRow.reason = correctionReason;
+      }
+
+      if (correctionStatus) {
+        nextRow.status = correctionStatus;
+      }
+
+      if (correctionRequestedAt) {
+        nextRow.requestedAt = correctionRequestedAt;
+      }
+
       if (formattedInTime) {
         nextRow.inTime = formattedInTime;
       }
@@ -1565,6 +1652,35 @@ const DepartmentReportCommon = () => {
       delete nextRow.rejectedBy;
       delete nextRow["rejectedBy.firstName"];
       delete nextRow["rejectedBy.lastName"];
+      delete nextRow.attendanceCorrection;
+      delete nextRow["attendanceCorrection._id"];
+      delete nextRow["attendanceCorrection.inTime"];
+      delete nextRow["attendanceCorrection.outTime"];
+      delete nextRow["attendanceCorrection.reason"];
+      delete nextRow["attendanceCorrection.status"];
+      delete nextRow["attendanceCorrection.requestedAt"];
+      delete nextRow["attendanceCorrection.createdAt"];
+      delete nextRow["attendanceCorrection.addedBy"];
+      delete nextRow["attendanceCorrection.addedBy.firstName"];
+      delete nextRow["attendanceCorrection.addedBy.lastName"];
+      delete nextRow["attendanceCorrection.approvedBy"];
+      delete nextRow["attendanceCorrection.approvedBy.firstName"];
+      delete nextRow["attendanceCorrection.approvedBy.lastName"];
+      delete nextRow["attendanceCorrection.rejectedBy"];
+      delete nextRow["attendanceCorrection.rejectedBy.firstName"];
+      delete nextRow["attendanceCorrection.rejectedBy.lastName"];
+
+      if (correctionAddedByName || addedByName) {
+        nextRow.addedBy = correctionAddedByName || addedByName;
+      }
+
+      if (correctionApprovedByName || approvedByName) {
+        nextRow.approvedBy = correctionApprovedByName || approvedByName;
+      }
+
+      if (correctionRejectedByName || rejectedByName) {
+        nextRow.rejectedBy = correctionRejectedByName || rejectedByName;
+      }
 
       return nextRow;
     });
