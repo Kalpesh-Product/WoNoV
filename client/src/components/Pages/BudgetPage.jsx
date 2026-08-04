@@ -503,8 +503,9 @@ const BudgetPage = () => {
 
     tooltip: {
       enabled: true,
-      shared: false,
-      intersect: true,
+      shared: true,
+      intersect: false,
+      inverseOrder: true,
       y: {
         formatter: (value) => `INR ${inrFormat(Number(value || 0))}`,
       },
