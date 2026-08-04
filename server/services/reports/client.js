@@ -15,6 +15,8 @@ const normalizeRoleValue = (value) =>
     .trim()
     .toLowerCase();
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const getUserRoleTitles = (context) =>
   (Array.isArray(context?.roles) ? context.roles : [])
     .map((role) => normalizeRoleValue(role?.roleTitle || role))
@@ -70,7 +72,7 @@ const fetchCoworkingClientReportService = async ({
   page,
   limit,
 }) => {
-  const { coworkingclientid, unitId, active } = query;
+  const { coworkingclientid, unitId, active, search } = query;
   const {
     shouldPaginate,
     page: parsedPage,
@@ -110,6 +112,10 @@ const fetchCoworkingClientReportService = async ({
     return buildResponse([]);
   }
 
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const escapedSearch = escapeRegex(normalizedSearch);
+  const searchRegex = escapedSearch ? new RegExp(escapedSearch, "i") : null;
+  const numericSearch = Number(normalizedSearch.replace(/,/g, ""));
   let clientQuery = { company };
 
   if (coworkingclientid) {
@@ -122,6 +128,64 @@ const fetchCoworkingClientReportService = async ({
 
   if (dateFilter?.startDate) {
     clientQuery.startDate = dateFilter.startDate;
+  }
+
+  if (searchRegex && !coworkingclientid) {
+    clientQuery.$or = [
+      { clientName: searchRegex },
+      ...(!Number.isNaN(numericSearch)
+        ? [
+            { totalMeetingCredits: numericSearch },
+            { "meetingCreditBalanceHistory.consumedCredit": numericSearch },
+            { "meetingCreditBalanceHistory.remainingCredit": numericSearch },
+          ]
+        : []),
+      {
+        $expr: {
+          $regexMatch: {
+            input: { $toString: { $ifNull: ["$totalMeetingCredits", ""] } },
+            regex: escapedSearch,
+            options: "i",
+          },
+        },
+      },
+      {
+        $expr: {
+          $anyElementTrue: {
+            $map: {
+              input: { $ifNull: ["$meetingCreditBalanceHistory", []] },
+              as: "history",
+              in: {
+                $or: [
+                  {
+                    $regexMatch: {
+                      input: {
+                        $toString: {
+                          $ifNull: ["$$history.consumedCredit", ""],
+                        },
+                      },
+                      regex: escapedSearch,
+                      options: "i",
+                    },
+                  },
+                  {
+                    $regexMatch: {
+                      input: {
+                        $toString: {
+                          $ifNull: ["$$history.remainingCredit", ""],
+                        },
+                      },
+                      regex: escapedSearch,
+                      options: "i",
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+    ];
   }
 
   const populateOptions = [
@@ -155,18 +219,33 @@ const fetchCoworkingClientReportService = async ({
       .exec();
 
     if (hostCompany) {
-      hostCompanyData = [
-        {
-          _id: hostCompany._id,
-          clientName: "BIZNest",
-          totalMeetingCredits: hostCompany.totalMeetingCredits,
-          meetingCreditBalance: hostCompany.meetingCreditBalance,
-          meetingCreditBalanceHistory:
-            hostCompany.meetingCreditBalanceHistory || [],
-          isActive: true,
-          isHost: true,
-        },
+      const hostEntity = {
+        _id: hostCompany._id,
+        clientName: "BIZNest",
+        totalMeetingCredits: hostCompany.totalMeetingCredits,
+        meetingCreditBalance: hostCompany.meetingCreditBalance,
+        meetingCreditBalanceHistory:
+          hostCompany.meetingCreditBalanceHistory || [],
+        isActive: true,
+        isHost: true,
+      };
+      const hostSearchValues = [
+        hostEntity.clientName,
+        hostEntity.totalMeetingCredits,
+        ...hostEntity.meetingCreditBalanceHistory.flatMap((history) => [
+          history?.consumedCredit,
+          history?.remainingCredit,
+        ]),
       ];
+      const hostMatchesSearch =
+        !searchRegex ||
+        hostSearchValues.some(
+          (value) =>
+            searchRegex.test(String(value ?? "")) ||
+            (!Number.isNaN(numericSearch) && Number(value) === numericSearch),
+        );
+
+      if (hostMatchesSearch) hostCompanyData = [hostEntity];
     }
   }
 
@@ -254,6 +333,7 @@ const fetchCoworkingClientReportService = async ({
 
   const result = allEntities.map((entity) => {
     const entityId = entity?._id?.toString();
+    const isHostCompany = entityId === company?.toString();
 
     const {
       meetingCreditBalanceHistory,
@@ -270,6 +350,7 @@ const fetchCoworkingClientReportService = async ({
 
     return {
       ...restEntity,
+      clientName: isHostCompany ? "BIZNest" : restEntity.clientName,
       memberCount: entityId ? memberCountByClientId[entityId] || 0 : 0,
       ...(!isReport && {
         members: visibleMembers.filter(
@@ -281,7 +362,7 @@ const fetchCoworkingClientReportService = async ({
         service,
         lastManualCreditResetAt,
         documents,
-        isHost,
+        isHost: isHost || isHostCompany,
         building,
       }),
       unit: {

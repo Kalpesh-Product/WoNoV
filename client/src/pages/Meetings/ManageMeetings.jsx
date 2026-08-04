@@ -63,6 +63,21 @@ const ManageMeetings = () => {
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debouncedMeetingSearch, setDebouncedMeetingSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedMeetingSearch(meetingSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [meetingSearch]);
+
+  const handleMeetingSearchChange = useCallback((value) => {
+    setMeetingSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const initialMeetingDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -325,6 +340,7 @@ const ManageMeetings = () => {
       meetingFilters.endDate,
       pagination.page,
       pagination.limit,
+      debouncedMeetingSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -336,6 +352,8 @@ const ManageMeetings = () => {
           completed: "false",
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedMeetingSearch || undefined,
+          searchContext: "internal-table",
         },
       });
       const responsePagination = response.data.pagination || response.data;
@@ -392,7 +410,7 @@ const ManageMeetings = () => {
         ? meeting.extendTime
         : meeting.endTime,
     extendTime: meeting.extendTime,
-        srNo: (pagination.page - 1) * pagination.limit + index + 1, 
+    srNo: (pagination.page - 1) * pagination.limit + index + 1,
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
     building: meeting.location?.building?.buildingName || "",
@@ -876,7 +894,7 @@ const ManageMeetings = () => {
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
             columns={columns}
-            serverPagination  
+            serverPagination
             pageSizeOptions={PAGE_SIZE_OPTIONS}
             paginationPageSize={pagination.limit}
             paginationPage={pagination.page}
@@ -891,6 +909,9 @@ const ManageMeetings = () => {
                   : { ...current, page: 1, limit },
               )
             }
+            serverSearch
+            searchValue={meetingSearch}
+            onSearchChange={handleMeetingSearchChange}
           />
         )}
       </PageFrame>
@@ -1465,8 +1486,7 @@ const ManageMeetings = () => {
               />
               {isAdminTimingBufferExpired && !editErrors.startTime?.message && (
                 <div className="col-span-2 -mt-2 text-[12px] text-[#d32f2f]">
-                  You have exceeded the 30 min buffer to Edit the timings.
-                  {" "}
+                  You have exceeded the 30 min buffer to Edit the timings.{" "}
                   "Please Raise a Ticket" to fix
                 </div>
               )}

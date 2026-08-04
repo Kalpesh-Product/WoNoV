@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import MuiModal from "../../components/MuiModal";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -24,7 +24,6 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-
 const MeetingReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -37,11 +36,27 @@ const MeetingReports = () => {
   //   limit: 10,
   //   total: 0,
   // });
- const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debouncedMeetingSearch, setDebouncedMeetingSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedMeetingSearch(meetingSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [meetingSearch]);
+
+  const handleMeetingSearchChange = useCallback((value) => {
+    setMeetingSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const initialMeetingDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -97,14 +112,15 @@ const MeetingReports = () => {
     error,
   } = useQuery({
     // queryKey: ["meetings", pagination.page, pagination.limit],
-     queryKey: [
+    queryKey: [
       "meetings",
       meetingFilters.startDate,
       meetingFilters.endDate,
       pagination.page,
       pagination.limit,
+      debouncedMeetingSearch,
     ],
-      queryFn: async () => {
+    queryFn: async () => {
       try {
         //  const response = await axios.get("/api/meetings/get-meetings", {
         //   params: {
@@ -126,8 +142,9 @@ const MeetingReports = () => {
             filters: meetingFilters,
             page: pagination.page,
             limit: pagination.limit,
-        },
-      });
+            search: debouncedMeetingSearch || undefined,
+          },
+        });
         const responsePagination = response.data.pagination || response.data;
 
         setPagination((current) => ({
@@ -382,8 +399,7 @@ const MeetingReports = () => {
               data={[
                 ...displayMeetings.map((item, index) => {
                   return {
-                     srNo:
-                      (pagination.page - 1) * pagination.limit + index + 1,
+                    srNo: (pagination.page - 1) * pagination.limit + index + 1,
                     id: index + 1,
                     client:
                       item?.company?.companyName ||
@@ -469,6 +485,9 @@ const MeetingReports = () => {
                     : { ...current, page: 1, limit },
                 )
               }
+              serverSearch
+              searchValue={meetingSearch}
+              onSearchChange={handleMeetingSearchChange}
             />
           ) : (
             <CircularProgress />

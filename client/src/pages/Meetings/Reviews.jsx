@@ -49,11 +49,26 @@ const Reviews = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
-   const [creditPagination, setCreditPagination] = useState({
+  const [creditPagination, setCreditPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [creditSearch, setCreditSearch] = useState("");
+  const [debouncedCreditSearch, setDebouncedCreditSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedCreditSearch(creditSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [creditSearch]);
+
+  const handleCreditSearchChange = (value) => {
+    setCreditSearch(value);
+    setCreditPagination((current) => ({ ...current, page: 1 }));
+  };
   const openCalendar = Boolean(anchorEl);
 
   const handleOpenCalendar = (event) => {
@@ -68,10 +83,9 @@ const Reviews = () => {
     setCreditPagination((current) => ({ ...current, page: 1 }));
   };
 
-
   const userPermissions = useMemo(
     () => auth?.user?.permissions?.permissions || [],
-    [auth?.user?.permissions?.permissions]
+    [auth?.user?.permissions?.permissions],
   );
 
   const tabItems = useMemo(
@@ -89,17 +103,17 @@ const Reviews = () => {
         permission: PERMISSIONS.MEETINGS_CLIENT_REVIEW.value,
       },
     ],
-    []
+    [],
   );
 
   const visibleTabs = useMemo(
     () => tabItems.filter((tab) => userPermissions.includes(tab.permission)),
-    [tabItems, userPermissions]
+    [tabItems, userPermissions],
   );
 
   const activeTabIndex = Math.max(
     visibleTabs.findIndex((tab) => tab.path === location.pathname),
-    0
+    0,
   );
 
   const activeTabKey = visibleTabs[activeTabIndex]?.key || null;
@@ -107,7 +121,9 @@ const Reviews = () => {
   useEffect(() => {
     if (visibleTabs.length === 0) return;
 
-    const isPathAllowed = visibleTabs.some((tab) => tab.path === location.pathname);
+    const isPathAllowed = visibleTabs.some(
+      (tab) => tab.path === location.pathname,
+    );
     if (!isPathAllowed) {
       navigate(visibleTabs[0].path, { replace: true });
     }
@@ -170,11 +186,12 @@ const Reviews = () => {
   });
 
   const { data: clientsData = [], isLoading: isClientsLoading } = useQuery({
-     queryKey: [
+    queryKey: [
       "co-working-clients",
       "client-credit",
       creditPagination.page,
       creditPagination.limit,
+      debouncedCreditSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -183,6 +200,7 @@ const Reviews = () => {
           active: true,
           page: creditPagination.page,
           limit: creditPagination.limit,
+          search: debouncedCreditSearch || undefined,
         },
       });
       const responsePagination = response.data.pagination;
@@ -227,7 +245,6 @@ const Reviews = () => {
     },
   });
 
-
   const submitCreditEdit = (formValues) => {
     const monthlyCredit = Number(formValues.monthlyCredit);
     const consumedCredit = Number(formValues.consumedCredit);
@@ -255,7 +272,10 @@ const Reviews = () => {
       headerName: "Rating",
       cellRenderer: (params) => (
         <div>
-          ⭐ {typeof params.value === "number" ? params.value.toFixed(2) : params.value}{" "}
+          ⭐{" "}
+          {typeof params.value === "number"
+            ? params.value.toFixed(2)
+            : params.value}{" "}
           <small>Out of 5</small>
         </div>
       ),
@@ -336,7 +356,7 @@ const Reviews = () => {
       ...exportRows.map((row) =>
         headers
           .map((header) => `"${String(row[header] ?? "").replace(/"/g, '""')}"`)
-          .join(",")
+          .join(","),
       ),
     ].join("\n");
 
@@ -368,9 +388,13 @@ const Reviews = () => {
         .toLowerCase();
     const meetingCreditsByClientMonth = meetingsData.reduce((acc, meeting) => {
       const isInternalMeeting =
-        String(meeting?.meetingType || "").trim().toLowerCase() === "internal";
+        String(meeting?.meetingType || "")
+          .trim()
+          .toLowerCase() === "internal";
       const isCancelledMeeting =
-        String(meeting?.meetingStatus || "").trim().toLowerCase() === "cancelled";
+        String(meeting?.meetingStatus || "")
+          .trim()
+          .toLowerCase() === "cancelled";
       const meetingClientName = normalizeClientKey(meeting?.client);
       const meetingMonthDate =
         meeting?.date || meeting?.startDate || meeting?.startTime;
@@ -401,7 +425,10 @@ const Reviews = () => {
     // Generate all months in selected range
     const monthsArray = [];
     let tempMonth = startMonth;
-    while (tempMonth.isBefore(endMonth) || tempMonth.isSame(endMonth, "month")) {
+    while (
+      tempMonth.isBefore(endMonth) ||
+      tempMonth.isSame(endMonth, "month")
+    ) {
       monthsArray.push(tempMonth);
       tempMonth = tempMonth.add(1, "month");
     }
@@ -463,16 +490,15 @@ const Reviews = () => {
       })
       .map((row, index) => ({
         ...row,
-       srNo: (creditPagination.page - 1) * creditPagination.limit + index + 1,
+        srNo: (creditPagination.page - 1) * creditPagination.limit + index + 1,
       }));
-   }, [
+  }, [
     clientsData,
     creditPagination.limit,
     creditPagination.page,
     dateRange,
     meetingsData,
   ]);
-
 
   const clientCreditColumns = [
     { field: "srNo", headerName: "Sr No", width: 90 },
@@ -513,8 +539,8 @@ const Reviews = () => {
   const averageRatings =
     reviews.length > 0
       ? (
-        reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
-      ).toFixed(2)
+          reviews.reduce((acc, curr) => acc + curr.rate, 0) / reviews.length
+        ).toFixed(2)
       : "0.00";
 
   return (
@@ -542,7 +568,11 @@ const Reviews = () => {
           }}
         >
           {visibleTabs.map((tab) => (
-            <Tab key={tab.key} label={tab.label} onClick={() => navigate(tab.path)} />
+            <Tab
+              key={tab.key}
+              label={tab.label}
+              onClick={() => navigate(tab.path)}
+            />
           ))}
         </Tabs>
       )}
@@ -551,8 +581,16 @@ const Reviews = () => {
         {activeTabKey === "clientReview" ? (
           <>
             <WidgetSection layout={2}>
-              <DataCard data={reviews.length} title="Total" description="Reviews Count" />
-              <DataCard data={`${averageRatings} ⭐`} title="Average" description=" Ratings" />
+              <DataCard
+                data={reviews.length}
+                title="Total"
+                description="Reviews Count"
+              />
+              <DataCard
+                data={`${averageRatings} ⭐`}
+                title="Average"
+                description=" Ratings"
+              />
             </WidgetSection>
 
             <div className="pt-4">
@@ -636,7 +674,7 @@ const Reviews = () => {
                 >
                   <DateRangePicker
                     ranges={dateRange}
-                   onChange={handleCreditDateRangeChange}
+                    onChange={handleCreditDateRangeChange}
                     moveRangeOnFirstSelection={false}
                   />
                 </Popover>
@@ -647,25 +685,28 @@ const Reviews = () => {
                 tableTitle="Client Credits"
                 searchColumn={"clientName"}
                 data={clientCreditRows}
-              columns={clientCreditColumns}
-              loading={isClientsLoading}
-              hideTitle={true}
-              serverPagination
-              pageSizeOptions={PAGE_SIZE_OPTIONS}
-              paginationPageSize={creditPagination.limit}
-              paginationPage={creditPagination.page}
-              paginationTotal={creditPagination.total}
-              onPaginationPageChange={(page) =>
-                setCreditPagination((current) => ({ ...current, page }))
-              }
-              onPaginationPageSizeChange={(limit) =>
-                setCreditPagination((current) =>
-                  current.limit === limit
-                    ? current
-                    : { ...current, page: 1, limit },
-                )
-              }
-            />
+                columns={clientCreditColumns}
+                loading={isClientsLoading}
+                hideTitle={true}
+                serverPagination
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                paginationPageSize={creditPagination.limit}
+                paginationPage={creditPagination.page}
+                paginationTotal={creditPagination.total}
+                onPaginationPageChange={(page) =>
+                  setCreditPagination((current) => ({ ...current, page }))
+                }
+                onPaginationPageSizeChange={(limit) =>
+                  setCreditPagination((current) =>
+                    current.limit === limit
+                      ? current
+                      : { ...current, page: 1, limit },
+                  )
+                }
+                serverSearch
+                searchValue={creditSearch}
+                onSearchChange={handleCreditSearchChange}
+              />
             </PageFrame>
           </div>
         ) : null}
@@ -697,21 +738,31 @@ const Reviews = () => {
               }
             />
             <DetalisFormatted title="Review" detail={selectedData.Reviews} />
-            <DetalisFormatted title="Reply" detail={selectedData.replyText || "No reply yet"} />
+            <DetalisFormatted
+              title="Reply"
+              detail={selectedData.replyText || "No reply yet"}
+            />
           </div>
         )}
 
         {modalType === "reviewReply" && (
           <div className="space-y-5">
             <div className="p-2 space-y-6">
-              <p className="font-pmedium text-subtitle">{selectedData.nameofreview || "—"}</p>
+              <p className="font-pmedium text-subtitle">
+                {selectedData.nameofreview || "—"}
+              </p>
               <p>
                 ⭐ {selectedData.rate} <small> out of 5</small>
               </p>
-              <p className="text-sm text-content">{selectedData.Reviews || "—"}</p>
+              <p className="text-sm text-content">
+                {selectedData.Reviews || "—"}
+              </p>
             </div>
 
-            <form onSubmit={handleSubmit(replyReview)} className="flex flex-col gap-4">
+            <form
+              onSubmit={handleSubmit(replyReview)}
+              className="flex flex-col gap-4"
+            >
               <Controller
                 name="reply"
                 control={control}
@@ -747,16 +798,31 @@ const Reviews = () => {
 
         {modalType === "creditView" && (
           <div className="space-y-4">
-            <DetalisFormatted title="Client Name" detail={selectedData.clientName} />
+            <DetalisFormatted
+              title="Client Name"
+              detail={selectedData.clientName}
+            />
             <DetalisFormatted title="Month" detail={selectedData.monthLabel} />
-            <DetalisFormatted title="Monthly Credit" detail={selectedData.monthlyCredit} />
-            <DetalisFormatted title="Consumed Credit" detail={selectedData.consumedCredit} />
-            <DetalisFormatted title="Remaining Credit" detail={selectedData.remainingCredit} />
+            <DetalisFormatted
+              title="Monthly Credit"
+              detail={selectedData.monthlyCredit}
+            />
+            <DetalisFormatted
+              title="Consumed Credit"
+              detail={selectedData.consumedCredit}
+            />
+            <DetalisFormatted
+              title="Remaining Credit"
+              detail={selectedData.remainingCredit}
+            />
           </div>
         )}
 
         {modalType === "creditEdit" && (
-          <form onSubmit={handleSubmit(submitCreditEdit)} className="flex flex-col gap-4">
+          <form
+            onSubmit={handleSubmit(submitCreditEdit)}
+            className="flex flex-col gap-4"
+          >
             <Controller
               name="monthlyCredit"
               control={control}
@@ -793,7 +859,6 @@ const Reviews = () => {
           </form>
         )}
       </MuiModal>
-
     </div>
   );
 };

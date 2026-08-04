@@ -49,6 +49,9 @@ const AgTableComponent = React.memo(
     onPaginationPageChange,
     pageSizeOptions = [],
     onPaginationPageSizeChange,
+    serverSearch = false,
+    searchValue = "",
+    onSearchChange,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +64,10 @@ const AgTableComponent = React.memo(
     useEffect(() => {
       setFilteredData(data || []);
     }, [data]);
+
+    useEffect(() => {
+      if (serverSearch) setSearchQuery(searchValue || "");
+    }, [searchValue, serverSearch]);
 
     useEffect(() => {
       if (tableRef && gridRef.current) {
@@ -84,16 +91,21 @@ const AgTableComponent = React.memo(
     }, [data, dropdownColumns]);
 
     const handleSearch = (event) => {
-      const query = event.target.value.toLowerCase();
+      const rawQuery = event.target.value;
+      const query = rawQuery.toLowerCase();
       setSearchQuery(query);
+      if (serverSearch) {
+        onSearchChange?.(rawQuery);
+        return;
+      }
       if (!query) {
         setFilteredData(data);
         return;
       }
       const filtered = data.filter((row) =>
         Object.values(row).some((value) =>
-          value?.toString().toLowerCase().includes(query)
-        )
+          value?.toString().toLowerCase().includes(query),
+        ),
       );
       setFilteredData(filtered);
     };
@@ -169,6 +181,7 @@ const AgTableComponent = React.memo(
       setFilters({});
       setAppliedFilters({});
       setSearchQuery("");
+      if (serverSearch) onSearchChange?.("");
       setFilteredData(data);
     };
 
@@ -180,7 +193,7 @@ const AgTableComponent = React.memo(
           onSelectionChange(rows);
         }
       },
-      [onSelectionChange]
+      [onSelectionChange],
     );
 
     const handleActionClick = () => {
@@ -226,7 +239,7 @@ const AgTableComponent = React.memo(
         ""
       );
 
-     const getExportColumnKeys = useCallback(() => {
+    const getExportColumnKeys = useCallback(() => {
       if (!gridRef.current?.api) return undefined;
 
       return gridRef.current.api
@@ -253,7 +266,7 @@ const AgTableComponent = React.memo(
           const fieldName = column.field?.toString().toLowerCase();
           return fieldName && !fieldName.includes("action");
         }),
-      [columns]
+      [columns],
     );
 
     const modifiedColumns = useMemo(() => {
@@ -270,17 +283,17 @@ const AgTableComponent = React.memo(
       ];
     }, [columns, enableCheckbox, checkAll]);
 
-    const effectivePageSize =
-      paginationPageSize || pageSizeOptions?.[0] || 1;
+    const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
     return (
       <div className="border-b-[1px] border-borderGray">
         <div className=" flex gap-4 items-center">
           <div
-            className={`flex items-center ${tableTitle
-              ? "justify-between w-full items-center"
-              : "justify-end w-full"
-              } `}
+            className={`flex items-center ${
+              tableTitle
+                ? "justify-between w-full items-center"
+                : "justify-end w-full"
+            } `}
           >
             {!hideTitle && (
               <div className="flex items-center justify-between pb-4">
@@ -290,7 +303,7 @@ const AgTableComponent = React.memo(
               </div>
             )}
             <div className="flex items-center gap-4">
-                {/* {buttonTitle ? (
+              {/* {buttonTitle ? (
                 <PrimaryButton
                   title={buttonTitle}
                   handleSubmit={handleClick}
@@ -299,7 +312,7 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )} */}
-               {buttonTitle ? (
+              {buttonTitle ? (
                 <PrimaryButton
                   title={buttonTitle}
                   handleSubmit={handleClick}
@@ -311,7 +324,7 @@ const AgTableComponent = React.memo(
               {headerActions ? headerActions : ""}
               {hideFilter ? renderExportButton() : ""}
 
-               {/* {buttonTitle ? (
+              {/* {buttonTitle ? (
                 <PrimaryButton
                   title={buttonTitle}
                   handleSubmit={handleClick}
@@ -340,8 +353,9 @@ const AgTableComponent = React.memo(
         {!hideHeaderDivider && <hr className="my-2" />}
 
         <div
-          className={`flex ${search ? "justify-between" : "justify-end"
-            }  items-center py-2`}
+          className={`flex ${
+            search ? "justify-between" : "justify-end"
+          }  items-center py-2`}
         >
           {search ? (
             <TextField
@@ -387,7 +401,7 @@ const AgTableComponent = React.memo(
                 label={`${field}: ${appliedFilters[field]}`}
                 onDelete={() => removeFilter(field)}
               />
-            ) : null
+            ) : null,
           )}
         </div>
 
@@ -430,7 +444,7 @@ const AgTableComponent = React.memo(
                   handleFilterChange(column.field, e.target.value)
                 }
               />
-            )
+            ),
           )}
           <div className="flex items-center gap-4 justify-center py-4">
             <PrimaryButton title="Apply Filters" handleSubmit={applyFilters} />
@@ -451,10 +465,10 @@ const AgTableComponent = React.memo(
             rowData={filteredData}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
-           pagination={isPagination && !serverPagination}
+            pagination={isPagination && !serverPagination}
             isRowSelectable={isRowSelectable}
             paginationPageSize={paginationPageSize}
-           // paginationPageSize={false}
+            // paginationPageSize={false}
             suppressCellSelection={false}
             enableCellTextSelection={true}
             rowHeight={50}
@@ -467,7 +481,7 @@ const AgTableComponent = React.memo(
             rowBuffer={20} // ✅ Defines how many extra rows to render outside viewport
             cacheBlockSize={paginationPageSize} // ✅ Controls how many rows to fetch per block
             suppressRowVirtualization={false} // ✅ Ensures row virtualization is active
-            suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active     
+            suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
           />
         </div>
         {serverPagination && paginationTotal > 0 && (
@@ -525,7 +539,7 @@ const AgTableComponent = React.memo(
         )} */}
       </div>
     );
-  }
+  },
 );
 
 AgTableComponent.displayName = "AgTable";
