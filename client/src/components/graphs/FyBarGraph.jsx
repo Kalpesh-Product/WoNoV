@@ -86,9 +86,14 @@ const FyBarGraph = ({
 
   useEffect(() => {
     if (!selectedFY) {
-      updateSelectedFY(getCurrentFinancialYearLabel());
+      const fallbackFY = getCurrentFinancialYearLabel();
+      if (onSelectedFYChange) {
+        onSelectedFYChange(fallbackFY);
+        return;
+      }
+      setInternalSelectedFY(fallbackFY);
     }
-  }, [selectedFY]);
+  }, [selectedFY, onSelectedFYChange]);
 
   const monthsWithLabels = useMemo(() => {
     return getMonthsWithYearLabels(selectedFY);
@@ -117,54 +122,132 @@ const FyBarGraph = ({
       const vertical = item?.vertical || "Unknown";
 
       if (!base[vertical]) base[vertical] = {};
-      base[vertical][label] =
-        (base[vertical][label] || 0) + (parseFloat(item?.[valueKey]) || 0);
+      if (!base[vertical][label]) {
+        base[vertical][label] = {
+          y: 0,
+          actualAmount: 0,
+          projectedAmount: 0,
+          displayAmount: 0,
+        };
+      }
+
+      base[vertical][label].y += parseFloat(item?.[valueKey]) || 0;
+      base[vertical][label].actualAmount += parseFloat(item?.actualAmount) || 0;
+      base[vertical][label].projectedAmount +=
+        parseFloat(item?.projectedAmount) || 0;
+      base[vertical][label].displayAmount +=
+        parseFloat(item?.displayAmount) || 0;
     });
 
     return Object.entries(base).map(([vertical, monthData]) => ({
       name: vertical,
-      data: months.map(({ label }) => monthData[label] || 0),
+      data: months.map(({ label }) => ({
+        x: label,
+        y: monthData[label]?.y || 0,
+        meta: monthData[label] || {
+          y: 0,
+          actualAmount: 0,
+          projectedAmount: 0,
+          displayAmount: 0,
+        },
+      })),
     }));
   }, [filteredData, selectedFY, valueKey, dateKey]);
 
   const mergedChartOptions = useMemo(() => {
+    const userTooltipFormatter = chartOptions?.tooltip?.y?.formatter;
+
+    const tooltipFormatter = (value, { seriesIndex, dataPointIndex, w } = {}) => {
+      const seriesName = w?.config?.series?.[seriesIndex]?.name;
+      const point = w?.config?.series?.[seriesIndex]?.data?.[dataPointIndex];
+      const meta = point?.meta || {};
+
+      let displayValue = Number(value || 0);
+
+      if (
+        seriesName === "Projected Amount" &&
+        Number(meta.projectedAmount || 0) > 0
+      ) {
+        displayValue = Number(meta.projectedAmount || 0);
+      } else if (
+        seriesName === "Actual Amount" &&
+        Number(meta.actualAmount || 0) > 0
+      ) {
+        displayValue = Number(meta.actualAmount || 0);
+      } else if (Number(meta.displayAmount || 0) > 0) {
+        displayValue = Number(meta.displayAmount || 0);
+      }
+
+      if (typeof userTooltipFormatter === "function") {
+        return userTooltipFormatter(displayValue, {
+          seriesIndex,
+          dataPointIndex,
+          w,
+        });
+      }
+
+      return typeof displayValue === "number"
+        ? displayValue.toLocaleString("en-IN")
+        : "0";
+    };
+
     return {
+      ...chartOptions,
       chart: {
         type: "bar",
         stacked: true,
         height: 350,
         toolbar: { show: false },
         fontFamily: "Poppins-Regular",
+        ...chartOptions?.chart,
       },
       plotOptions: {
         bar: {
+          ...chartOptions?.plotOptions?.bar,
           borderRadius: 4,
           horizontal: false,
           columnWidth: "40%",
         },
       },
-      dataLabels: { enabled: false },
+      dataLabels: { enabled: false, ...chartOptions?.dataLabels },
       xaxis: {
+        ...chartOptions?.xaxis,
         categories: monthsWithLabels.map((m) => m.label),
-      },
-      yaxis: {
-        labels: {
-          formatter: (val) =>
-            typeof val === "number" ? val.toLocaleString("en-IN") : "0",
+        crosshairs: {
+          show: false,
+        },
+        tooltip: {
+          enabled: false,
         },
       },
+      yaxis: {
+        ...chartOptions?.yaxis,
+      },
       legend: {
+        ...chartOptions?.legend,
         position: "top",
       },
-      colors: ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
-      ...chartOptions,
+      colors: chartOptions?.colors || [
+        "#1E3D73",
+        "#4CAF50",
+        "#FF9800",
+        "#9C27B0",
+        "#F44336",
+      ],
+      tooltip: {
+        ...chartOptions?.tooltip,
+        y: {
+          ...chartOptions?.tooltip?.y,
+          formatter: tooltipFormatter,
+        },
+      },
     };
   }, [monthsWithLabels, chartOptions]);
   const fyTotal = useMemo(() => {
     return stackedSeries.reduce((total, vertical) => {
       return (
         total +
-        vertical.data.reduce((sum, val) => sum + (parseFloat(val) || 0), 0)
+        vertical.data.reduce((sum, val) => sum + (parseFloat(val?.y) || 0), 0)
       );
     }, 0);
   }, [stackedSeries]);
