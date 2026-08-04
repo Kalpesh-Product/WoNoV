@@ -66,6 +66,13 @@ const FyBarGraph = ({
   chartOptions = {},
   graphTitle = "",
   titleAmount,
+  TitleAmountGreen,
+  TitleAmountRed,
+  TitleAmountTotal,
+  greenTitle,
+  redTitle,
+  totalTitle,
+  summaryChipVariant,
   selectedFY: controlledSelectedFY,
   onSelectedFYChange,
   responsiveResize = true,
@@ -281,11 +288,23 @@ const FyBarGraph = ({
     }, 0);
   }, [stackedSeries]);
 
+  const hasSummaryChips =
+    TitleAmountGreen !== undefined ||
+    TitleAmountRed !== undefined ||
+    TitleAmountTotal !== undefined;
+
   return (
     <WidgetSection
       border
       title={`${graphTitle} ${selectedFY}`}
-      TitleAmount={titleAmount || `INR ${inrFormat(fyTotal)}`}
+      TitleAmount={hasSummaryChips ? "" : titleAmount || `INR ${inrFormat(fyTotal)}`}
+      TitleAmountGreen={TitleAmountGreen}
+      TitleAmountRed={TitleAmountRed}
+      TitleAmountTotal={TitleAmountTotal}
+      greenTitle={greenTitle}
+      redTitle={redTitle}
+      totalTitle={totalTitle}
+      summaryChipVariant={summaryChipVariant}
     >
       <div className="flex flex-col gap-4 rounded-md">
         <BarGraph

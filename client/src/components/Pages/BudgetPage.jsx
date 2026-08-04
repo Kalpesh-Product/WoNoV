@@ -561,6 +561,28 @@ const BudgetPage = () => {
     [hrFinance, selectedFiscalYear],
   );
 
+  const selectedFYProjectedAmount = useMemo(
+    () =>
+      (hrFinance || []).reduce(
+        (acc, item) => {
+          if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
+            return acc;
+          }
+
+          const projectedAmount =
+            normalizeAmount(item?.projectedAmount) ||
+            (department?.name?.toLowerCase() === "cafe"
+              ? sumParticularAmounts(item?.particulars) ||
+                sumParticularAmounts(item?.finance?.particulars)
+              : 0);
+
+          return acc + projectedAmount;
+        },
+        0,
+      ),
+    [hrFinance, selectedFiscalYear, department?.name],
+  );
+
   const navigate = useNavigate();
   // BUDGET NEW END
 
@@ -572,12 +594,17 @@ const BudgetPage = () => {
         valueKey="amount"
         chartOptions={expenseOptions}
         graphTitle={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        //titleAmount={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
         selectedFY={selectedFiscalYear}
         onSelectedFYChange={setSelectedFiscalYear}
         includePointMeta
         tooltipValueMode="meta"
         disableHoverCrosshair
+        TitleAmountGreen={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        TitleAmountTotal={`INR ${inrFormat(selectedFYProjectedAmount || 0)}`}
+        greenTitle="Actual"
+        totalTitle="Projected"
+        summaryChipVariant="budget"
       />
 
       {canRequestBudget && (
@@ -591,7 +618,7 @@ const BudgetPage = () => {
         </div>
       )}
 
-       <AllocatedBudget
+      <AllocatedBudget
         financialData={financialData}
         noInvoice={false}
         enableActionMenu
