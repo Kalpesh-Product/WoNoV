@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import MuiModal from "../../components/MuiModal";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -39,6 +39,22 @@ const MeetingReports = () => {
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debouncedMeetingSearch, setDebouncedMeetingSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedMeetingSearch(meetingSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [meetingSearch]);
+
+  const handleMeetingSearchChange = useCallback((value) => {
+    setMeetingSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const initialMeetingDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -100,6 +116,7 @@ const MeetingReports = () => {
       meetingFilters.endDate,
       pagination.page,
       pagination.limit,
+      debouncedMeetingSearch,
     ],
       queryFn: async () => {
       try {
@@ -123,6 +140,7 @@ const MeetingReports = () => {
             filters: meetingFilters,
             page: pagination.page,
             limit: pagination.limit,
+            search: debouncedMeetingSearch || undefined,
         },
       });
         const responsePagination = response.data.pagination || response.data;
@@ -458,6 +476,9 @@ const MeetingReports = () => {
               onPaginationPageChange={(page) =>
                 setPagination((current) => ({ ...current, page }))
               }
+              serverSearch
+              searchValue={meetingSearch}
+              onSearchChange={handleMeetingSearchChange}
             />
           ) : (
             <CircularProgress />

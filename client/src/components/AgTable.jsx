@@ -47,6 +47,9 @@ const AgTableComponent = React.memo(
     paginationPage = 1,
     paginationTotal = 0,
     onPaginationPageChange,
+    serverSearch = false,
+    searchValue = "",
+    onSearchChange,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -59,6 +62,10 @@ const AgTableComponent = React.memo(
     useEffect(() => {
       setFilteredData(data || []);
     }, [data]);
+
+    useEffect(() => {
+      if (serverSearch) setSearchQuery(searchValue || "");
+    }, [searchValue, serverSearch]);
 
     useEffect(() => {
       if (tableRef && gridRef.current) {
@@ -82,8 +89,13 @@ const AgTableComponent = React.memo(
     }, [data, dropdownColumns]);
 
     const handleSearch = (event) => {
-      const query = event.target.value.toLowerCase();
+      const rawQuery = event.target.value;
+      const query = rawQuery.toLowerCase();
       setSearchQuery(query);
+      if (serverSearch) {
+        onSearchChange?.(rawQuery);
+        return;
+      }
       if (!query) {
         setFilteredData(data);
         return;
@@ -167,6 +179,7 @@ const AgTableComponent = React.memo(
       setFilters({});
       setAppliedFilters({});
       setSearchQuery("");
+      if (serverSearch) onSearchChange?.("");
       setFilteredData(data);
     };
 

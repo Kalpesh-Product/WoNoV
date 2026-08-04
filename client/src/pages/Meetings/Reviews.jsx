@@ -46,11 +46,26 @@ const Reviews = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
-   const [creditPagination, setCreditPagination] = useState({
+  const [creditPagination, setCreditPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [creditSearch, setCreditSearch] = useState("");
+  const [debouncedCreditSearch, setDebouncedCreditSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedCreditSearch(creditSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [creditSearch]);
+
+  const handleCreditSearchChange = (value) => {
+    setCreditSearch(value);
+    setCreditPagination((current) => ({ ...current, page: 1 }));
+  };
   const openCalendar = Boolean(anchorEl);
 
   const handleOpenCalendar = (event) => {
@@ -172,6 +187,7 @@ const Reviews = () => {
       "client-credit",
       creditPagination.page,
       creditPagination.limit,
+      debouncedCreditSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -180,6 +196,7 @@ const Reviews = () => {
           active: true,
           page: creditPagination.page,
           limit: creditPagination.limit,
+          search: debouncedCreditSearch || undefined,
         },
       });
       const responsePagination = response.data.pagination;
@@ -654,6 +671,9 @@ const Reviews = () => {
                 onPaginationPageChange={(page) =>
                   setCreditPagination((current) => ({ ...current, page }))
                 }
+                serverSearch
+                searchValue={creditSearch}
+                onSearchChange={handleCreditSearchChange}
               />
             </PageFrame>
           </div>

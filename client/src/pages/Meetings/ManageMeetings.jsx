@@ -60,6 +60,21 @@ const ManageMeetings = () => {
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [meetingSearch, setMeetingSearch] = useState("");
+  const [debouncedMeetingSearch, setDebouncedMeetingSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedMeetingSearch(meetingSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [meetingSearch]);
+
+  const handleMeetingSearchChange = useCallback((value) => {
+    setMeetingSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
   const initialMeetingDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -322,6 +337,7 @@ const ManageMeetings = () => {
       meetingFilters.endDate,
       pagination.page,
       pagination.limit,
+      debouncedMeetingSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -333,6 +349,8 @@ const ManageMeetings = () => {
           completed: "false",
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedMeetingSearch || undefined,
+          searchContext: "internal-table",
         },
       });
       const responsePagination = response.data.pagination || response.data;
@@ -880,6 +898,9 @@ const ManageMeetings = () => {
             onPaginationPageChange={(page) =>
               setPagination((current) => ({ ...current, page }))
             }
+            serverSearch
+            searchValue={meetingSearch}
+            onSearchChange={handleMeetingSearchChange}
           />
         )}
       </PageFrame>

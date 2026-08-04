@@ -667,6 +667,8 @@ async function getMeetings(req, res, next) {
       includeTotal,
       page: req.query?.page,
       limit: req.query?.limit,
+      search: req.query?.search,
+      searchContext: req.query?.searchContext,
       ...(hasDateFilter && {
         dateFilter: buildDateFilter({
           startDate: requestFilters.startDate,

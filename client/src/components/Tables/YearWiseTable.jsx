@@ -59,6 +59,9 @@ const YearWiseTable = ({
   paginationPage = 1,
   paginationTotal = 0,
   onPaginationPageChange,
+  serverSearch = false,
+  searchValue = "",
+  onSearchChange,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -541,7 +544,7 @@ const YearWiseTable = ({
       {/* Table */}
 
       <>
-        {finalTableData.length > 0 ? (
+        {finalTableData.length > 0 || (serverPagination && serverSearch) ? (
           <AgTable
             key={key}
             enableCheckbox={checkbox}
@@ -566,6 +569,9 @@ const YearWiseTable = ({
             paginationPage={paginationPage}
             paginationTotal={paginationTotal}
             onPaginationPageChange={onPaginationPageChange}
+            serverSearch={serverSearch}
+            searchValue={searchValue}
+            onSearchChange={onSearchChange}
           />
         ) : (
           <div
