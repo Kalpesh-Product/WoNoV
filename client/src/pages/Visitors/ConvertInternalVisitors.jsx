@@ -145,11 +145,26 @@ const ConvertInternalVisitors = () => {
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
-   const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [debouncedVisitorSearch, setDebouncedVisitorSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedVisitorSearch(visitorSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [visitorSearch]);
+
+  const handleVisitorSearchChange = (value) => {
+    setVisitorSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  };
 
   const {
     control,
@@ -262,6 +277,7 @@ const ConvertInternalVisitors = () => {
       "Visitor",
       pagination.page,
       pagination.limit,
+      debouncedVisitorSearch,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
@@ -270,6 +286,8 @@ const ConvertInternalVisitors = () => {
            type: "internal",
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedVisitorSearch || undefined,
+          searchContext: "convert-internal-visitors",
         },
       });
        const responsePagination = response.data.pagination || response.data;
@@ -502,6 +520,9 @@ const ConvertInternalVisitors = () => {
                 : { ...current, page: 1, limit },
             )
           }
+          serverSearch
+          searchValue={visitorSearch}
+          onSearchChange={handleVisitorSearchChange}
         />
       </PageFrame>
 

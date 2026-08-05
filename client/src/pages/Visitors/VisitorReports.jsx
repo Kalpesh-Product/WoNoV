@@ -1,7 +1,7 @@
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
@@ -63,8 +63,8 @@ const toUtcDayBoundary = (value, endOfDay = false) => {
   ).toISOString();
 };
 
-
 const VisitorReports = () => {
+  const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [pagination, setPagination] = useState({
@@ -72,7 +72,14 @@ const VisitorReports = () => {
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
-  const axios = useAxiosPrivate();
+
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [debouncedVisitorSearch, setDebouncedVisitorSearch] = useState("");
+
+  const handleVisitorSearchChange = (value) => {
+    setVisitorSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  };
 
   const initialVisitorDateRange = useMemo(
     () => ({
@@ -85,10 +92,10 @@ const VisitorReports = () => {
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,
   );
-    const visitorDateRangeRef = useRef(initialVisitorDateRange);
+  const visitorDateRangeRef = useRef(initialVisitorDateRange);
   const visitorFilters = useMemo(
     () => ({
-     startDate: visitorDateRange?.startDate
+      startDate: visitorDateRange?.startDate
         ? toUtcDayBoundary(visitorDateRange.startDate)
         : undefined,
       endDate: visitorDateRange?.endDate
@@ -116,7 +123,7 @@ const VisitorReports = () => {
 
     //   return selectedRange;
     // });
-   const currentRange = visitorDateRangeRef.current;
+    const currentRange = visitorDateRangeRef.current;
     const currentStart = currentRange?.startDate
       ? new Date(currentRange.startDate).getTime()
       : null;
@@ -133,20 +140,31 @@ const VisitorReports = () => {
     setPagination((current) => ({ ...current, page: 1 }));
   }, []);
 
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedVisitorSearch(visitorSearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [visitorSearch]);
+
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
     queryKey: [
       "visitor-reports",
       visitorFilters.startDate,
       visitorFilters.endDate,
-       pagination.page,
+      pagination.page,
       pagination.limit,
+      debouncedVisitorSearch,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
         params: {
           filters: visitorFilters,
-           page: pagination.page,
+          page: pagination.page,
           limit: pagination.limit,
+          search: debouncedVisitorSearch || undefined,
+          searchContext: "visitor-reports",
         },
       });
       const responsePagination = response.data.pagination || response.data;
@@ -390,7 +408,7 @@ const VisitorReports = () => {
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
-     date: visitor.checkIn,
+      date: visitor.checkIn,
       // The report is queried and paginated by check-in, so show that same DB
       // value instead of a separately scheduled visit date.
       dateOfVisit: formatDateValue(visitor.checkIn),
@@ -455,6 +473,9 @@ const VisitorReports = () => {
                   : { ...current, page: 1, limit },
               )
             }
+            serverSearch
+            searchValue={visitorSearch}
+            onSearchChange={handleVisitorSearchChange}
           />
         </div>
       </PageFrame>
