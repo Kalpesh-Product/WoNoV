@@ -536,9 +536,6 @@ const BudgetPage = () => {
     legend: {
       show: true,
       position: "top",
-      onItemClick: {
-        toggleDataSeries: false,
-      },
     },
 
     tooltip: {
