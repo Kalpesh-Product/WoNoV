@@ -93,7 +93,10 @@ const LegalDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     formatFiscalYear(getFiscalYearStart()),
   );
-
+const [hiddenLegalExpenseSeries, setHiddenLegalExpenseSeries] = useState({
+  actual: false,
+  projected: false,
+});
   useEffect(() => {
     setIsSidebarOpen(true);
   }, [setIsSidebarOpen]);
@@ -111,48 +114,127 @@ const LegalDashboard = () => {
     },
   });
 
-  const expenseSeries = useMemo(() => {
-    const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
-    const fiscalYearData = {
-      [currentFiscalYear]: {
-        actual: Array(12).fill(0),
-        projected: Array(12).fill(0),
-      },
-    };
+  const legalExpenseByFiscalYear = useMemo(() => {
+  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 
-    budgets.forEach((budget) => {
-      if (!budget?.dueDate || !dayjs(budget.dueDate).isValid()) return;
+  const fiscalYearData = {
+    [currentFiscalYear]: {
+      actual: Array(12).fill(0),
+      projected: Array(12).fill(0),
+    },
+  };
 
-      const fiscalYear = formatFiscalYear(getFiscalYearStart(budget.dueDate));
-      const monthIndex = getFiscalMonthIndex(budget.dueDate);
-      fiscalYearData[fiscalYear] ||= {
+  (budgets || []).forEach((budget) => {
+    if (!budget?.dueDate || !dayjs(budget.dueDate).isValid()) {
+      return;
+    }
+
+    const fiscalYear = formatFiscalYear(
+      getFiscalYearStart(budget.dueDate),
+    );
+
+    const monthIndex = getFiscalMonthIndex(budget.dueDate);
+
+    if (!fiscalYearData[fiscalYear]) {
+      fiscalYearData[fiscalYear] = {
         actual: Array(12).fill(0),
         projected: Array(12).fill(0),
       };
+    }
 
-      const actualAmount = toAmount(budget.actualAmount);
-      const projectedAmount = toAmount(budget.projectedAmount);
-      fiscalYearData[fiscalYear].actual[monthIndex] += actualAmount;
-      fiscalYearData[fiscalYear].projected[monthIndex] += projectedAmount;
+    const actualAmount = toAmount(budget.actualAmount);
+    const projectedAmount = toAmount(budget.projectedAmount);
+
+    fiscalYearData[fiscalYear].actual[monthIndex] += actualAmount;
+    fiscalYearData[fiscalYear].projected[monthIndex] += projectedAmount;
+  });
+
+  return fiscalYearData;
+}, [budgets]);
+
+const expenseSeries = useMemo(() => {
+  return Object.entries(legalExpenseByFiscalYear)
+    .sort(([firstFiscalYear], [secondFiscalYear]) => {
+      const firstStartYear = Number(
+        firstFiscalYear.match(/\d{4}/)?.[0] || 0,
+      );
+
+      const secondStartYear = Number(
+        secondFiscalYear.match(/\d{4}/)?.[0] || 0,
+      );
+
+      return firstStartYear - secondStartYear;
+    })
+    .flatMap(([fiscalYear, data]) => {
+      /*
+       * Actual legend hidden hai to Actual series 0.
+       * Visible hai to original Actual values.
+       */
+      const actualForGraph = data.actual.map((actualAmount) =>
+        hiddenLegalExpenseSeries.actual ? 0 : actualAmount,
+      );
+
+      const projectedForGraph = data.projected.map(
+        (projectedAmount, monthIndex) => {
+          /*
+           * Projected legend hidden hai to
+           * Projected graph se poori tarah hide.
+           */
+          if (hiddenLegalExpenseSeries.projected) {
+            return 0;
+          }
+
+          /*
+           * Actual legend hidden hai to
+           * sab months ke original Projected dikhao.
+           */
+          if (hiddenLegalExpenseSeries.actual) {
+            return projectedAmount;
+          }
+
+          /*
+           * Default:
+           * Actual available hai to Projected hide.
+           * Actual nahi hai to Projected show.
+           */
+          const actualAmount = data.actual[monthIndex] || 0;
+
+          return actualAmount > 0 ? 0 : projectedAmount;
+        },
+      );
+
+      return [
+        {
+          name: "Actual Amount",
+          group: fiscalYear,
+          data: actualForGraph,
+        },
+        {
+          name: "Projected Amount",
+          group: fiscalYear,
+          data: projectedForGraph,
+        },
+      ];
     });
+}, [
+  legalExpenseByFiscalYear,
+  hiddenLegalExpenseSeries.actual,
+  hiddenLegalExpenseSeries.projected,
+]);
 
-    return Object.entries(fiscalYearData).flatMap(([fiscalYear, data]) => [
-      { name: "Actual Amount", group: fiscalYear, data: data.actual },
-      { name: "Projected Amount", group: fiscalYear, data: data.projected },
-    ]);
-  }, [budgets]);
-
-  const totalExpense = useMemo(
-    () =>
-      expenseSeries
-        .find(
-          (series) =>
-            series.group === selectedFiscalYear &&
-            series.name === "Actual Amount",
-        )
-        ?.data.reduce((total, amount) => total + amount, 0) || 0,
-    [expenseSeries, selectedFiscalYear],
+ const selectedLegalActualAmounts = useMemo(() => {
+  return (
+    legalExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
+    Array(12).fill(0)
   );
+}, [legalExpenseByFiscalYear, selectedFiscalYear]);
+
+const totalExpense = useMemo(() => {
+  return selectedLegalActualAmounts.reduce(
+    (total, amount) => total + (Number(amount) || 0),
+    0,
+  );
+}, [selectedLegalActualAmounts]);
 
  const expenseOptions = useMemo(
   () => {
@@ -223,13 +305,36 @@ const LegalDashboard = () => {
 
 redrawOnWindowResize: false,
 redrawOnParentResize: false,
-      events: {
-    dataPointSelection: () => {
-      navigate(
-        "/app/dashboard/legal-dashboard/finance/budget",
-      );
-    },
+     events: {
+  legendClick: (_chartContext, seriesIndex) => {
+    setHiddenLegalExpenseSeries((currentState) => {
+      // Series index 0 = Actual Amount
+      if (seriesIndex === 0) {
+        return {
+          ...currentState,
+          actual: !currentState.actual,
+        };
+      }
+
+      // Series index 1 = Projected Amount
+      if (seriesIndex === 1) {
+        return {
+          ...currentState,
+          projected: !currentState.projected,
+        };
+      }
+
+      return currentState;
+    });
   },
+
+  // Purana navigation same rahega
+  dataPointSelection: () => {
+    navigate(
+      "/app/dashboard/legal-dashboard/finance/budget",
+    );
+  },
+},
       },
 
       colors: ["#54C4A7", "#c4c4c4"],
@@ -376,97 +481,173 @@ redrawOnParentResize: false,
         },
       },
 
-      legend: {
-        show: true,
-        position: "top",
-        fontFamily:
-          "Poppins-Regular, Arial, sans-serif",
-      },
+     legend: {
+  show: true,
+  position: "top",
+  fontFamily: "Poppins-Regular, Arial, sans-serif",
 
-      tooltip: {
-        enabled: true,
-        shared: false,
-        intersect: true,
+  /*
+   * ApexCharts ka built-in toggle disable.
+   * React state hide/show manage karegi.
+   */
+  onItemClick: {
+    toggleDataSeries: false,
+  },
 
-        custom: ({
-          seriesIndex,
-          dataPointIndex,
-          w,
-        }) => {
-          const seriesName =
-            w.globals.seriesNames?.[seriesIndex] || "";
+  labels: {
+    colors: [
+      // Actual legend text
+      hiddenLegalExpenseSeries.actual
+        ? "#D5D5D5"
+        : "#4B4B4B",
 
-          const amount = Number(
-            w.globals.initialSeries?.[seriesIndex]?.data?.[
-              dataPointIndex
-            ] || 0,
-          );
+      // Projected legend text
+      hiddenLegalExpenseSeries.projected
+        ? "#D5D5D5"
+        : "#4B4B4B",
+    ],
+  },
 
-          const monthLabel =
-            w.globals.labels?.[dataPointIndex] ||
-            `Month ${dataPointIndex + 1}`;
+  markers: {
+    fillColors: [
+      // Actual marker
+      hiddenLegalExpenseSeries.actual
+        ? "#E1F5EF"
+        : "#54C4A7",
 
-          const color =
-            seriesName === "Actual Amount"
-              ? "#54C4A7"
-              : "#c4c4c4";
+      // Projected marker
+      hiddenLegalExpenseSeries.projected
+        ? "#E2E2E2"
+        : "#C4C4C4",
+    ],
+  },
+},
 
-          return `
-            <div
-              class="apexcharts-tooltip-title"
+    tooltip: {
+  enabled: true,
+  shared: true,
+  intersect: false,
+
+  custom: ({ dataPointIndex, w }) => {
+    const selectedYearData =
+      legalExpenseByFiscalYear?.[selectedFiscalYear];
+
+    const actualAmount =
+      selectedYearData?.actual?.[dataPointIndex] || 0;
+
+    const projectedAmount =
+      selectedYearData?.projected?.[dataPointIndex] || 0;
+
+    const monthLabel =
+      w?.globals?.labels?.[dataPointIndex] ||
+      `Month ${dataPointIndex + 1}`;
+
+    return `
+      <div
+        class="apexcharts-tooltip-title"
+        style="
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          padding: 6px 10px;
+          margin-bottom: 0;
+        "
+      >
+        ${monthLabel}
+      </div>
+
+      <div
+        style="
+          padding: 8px 10px;
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          background: #ffffff;
+          min-width: 230px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 7px;
+            white-space: nowrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
               style="
-                font-family: Poppins-Regular;
-                font-size: 12px;
-                padding: 6px 10px;
-                margin-bottom: 0;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #54C4A7;
+                display: inline-block;
+                flex-shrink: 0;
               "
-            >
-              ${monthLabel}
-            </div>
+            ></span>
 
-            <div
+            <span>Actual Amount:</span>
+          </div>
+
+          <span style="font-weight: 600;">
+            INR ${Math.round(actualAmount).toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            white-space: nowrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
               style="
-                padding: 8px 10px;
-                font-family: Poppins-Regular;
-                font-size: 12px;
-                background: #ffffff;
-                min-width: 220px;
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #C4C4C4;
+                display: inline-block;
+                flex-shrink: 0;
               "
-            >
-              <div
-                style="
-                  display: flex;
-                  align-items: center;
-                  gap: 6px;
-                  white-space: nowrap;
-                "
-              >
-                <span
-                  style="
-                    width: 12px;
-                    height: 12px;
-                    border-radius: 50%;
-                    background: ${color};
-                    display: inline-block;
-                    flex-shrink: 0;
-                  "
-                ></span>
+            ></span>
 
-                <span>${seriesName}:</span>
+            <span>Projected Amount:</span>
+          </div>
 
-                <span style="font-weight: 600;">
-                  INR ${Math.round(
-                    amount,
-                  ).toLocaleString("en-IN")}
-                </span>
-              </div>
-            </div>
-          `;
-        },
-      },
+          <span style="font-weight: 600;">
+            INR ${Math.round(projectedAmount).toLocaleString("en-IN")}
+          </span>
+        </div>
+      </div>
+    `;
+  },
+},
     };
   },
-  [expenseSeries, selectedFiscalYear,navigate],
+ [
+  expenseSeries,
+  legalExpenseByFiscalYear,
+  selectedFiscalYear,
+  navigate,
+  hiddenLegalExpenseSeries.actual,
+  hiddenLegalExpenseSeries.projected,
+],
 );
 
   return (
@@ -477,7 +658,7 @@ redrawOnParentResize: false,
             chartId="bargraph-legal-expense"
             data={expenseSeries}
             options={expenseOptions}
-            title="Legal Dashboard"
+            title="BIZ Nest LEGAL DEPARTMENT EXPENSE"
             titleAmount={`INR ${inrFormat(totalExpense)}`}
             onYearChange={setSelectedFiscalYear}
           />
