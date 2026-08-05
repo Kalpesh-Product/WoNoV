@@ -473,11 +473,13 @@ const department = usePageDepartment();
 
   //-------------------HR Expense graph start--------------------//
 
-  const expenseRawSeries = useMemo(() => {
+  const hrExpenseByFiscalYear = useMemo(() => {
   const fyData = {};
 
-  hrFinance.forEach((item) => {
-    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+  (hrFinance || []).forEach((item) => {
+    if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+      return;
+    }
 
     const fiscalYearStart = getFiscalYearStart(item.dueDate);
     const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
@@ -486,33 +488,48 @@ const department = usePageDepartment();
     if (!fyData[fiscalYearLabel]) {
       fyData[fiscalYearLabel] = {
         actual: Array(12).fill(0),
-        projectedBalance: Array(12).fill(0),
+        projected: Array(12).fill(0),
       };
     }
 
-    const actualAmount = getAmount(item.actualAmount);
-    const projectedAmount = getAmount(item.projectedAmount);
-    const remainingProjectedAmount = Math.max(projectedAmount - actualAmount, 0);
+    const actualAmount = getAmount(item?.actualAmount);
+    const projectedAmount = getAmount(item?.projectedAmount);
 
     fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projectedBalance[monthIndex] +=
-      remainingProjectedAmount;
+    fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
   });
 
   if (!fyData[currentFiscalYear]) {
     fyData[currentFiscalYear] = {
       actual: Array(12).fill(0),
-      projectedBalance: Array(12).fill(0),
+      projected: Array(12).fill(0),
     };
   }
 
-  return Object.entries(fyData)
+  return fyData;
+}, [hrFinance, currentFiscalYear]);
+
+const expenseRawSeries = useMemo(() => {
+  return Object.entries(hrExpenseByFiscalYear)
     .sort(([fyA], [fyB]) => {
       const startA = Number(fyA.slice(3, 7));
       const startB = Number(fyB.slice(3, 7));
+
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
+      /*
+       * Jis month mein Actual amount aa gaya,
+       * us month mein Projected bar 0 rahega.
+       */
+      const projectedForGraph = data.projected.map(
+        (projectedAmount, monthIndex) => {
+          const actualAmount = data.actual[monthIndex] || 0;
+
+          return actualAmount > 0 ? 0 : projectedAmount;
+        },
+      );
+
       return [
         {
           name: "Actual Amount",
@@ -522,11 +539,11 @@ const department = usePageDepartment();
         {
           name: "Projected Amount",
           group: fiscalYear,
-          data: data.projectedBalance,
+          data: projectedForGraph,
         },
       ];
     });
-}, [hrFinance, currentFiscalYear]);
+}, [hrExpenseByFiscalYear]);
 
 const roundedMax = useMemo(() => {
   const fiscalYears = [
@@ -562,10 +579,16 @@ const roundedMax = useMemo(() => {
     item.group === selectedHrFiscalYear && item.name === "Actual Amount"
 );
 
-const selectedHrProjectedSeries = expenseRawSeries.find(
-  (item) =>
-    item.group === selectedHrFiscalYear && item.name === "Projected Amount"
-);
+// const selectedHrProjectedSeries = expenseRawSeries.find(
+//   (item) =>
+//     item.group === selectedHrFiscalYear && item.name === "Projected Amount"
+// );
+const selectedHrProjectedAmounts = useMemo(() => {
+  return (
+    hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.projected ||
+    Array(12).fill(0)
+  );
+}, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
 
 const totalUtilised = useMemo(() => {
   if (!selectedHrExpenseSeries) return 0;
@@ -598,8 +621,11 @@ const previousMonthActualExpense = Math.round(
   selectedHrExpenseSeries?.data?.[previousFiscalMonthIndexForCard] || 0
 );
 
+// const previousMonthProjectedExpense = Math.round(
+//   selectedHrProjectedSeries?.data?.[previousFiscalMonthIndexForCard] || 0
+// );
 const previousMonthProjectedExpense = Math.round(
-  selectedHrProjectedSeries?.data?.[previousFiscalMonthIndexForCard] || 0
+  selectedHrProjectedAmounts?.[previousFiscalMonthIndexForCard] || 0
 );
 
 const averageActualAmount = useMemo(() => {
@@ -613,16 +639,28 @@ const averageActualAmount = useMemo(() => {
   return totalActual / selectedHrExpenseSeries.data.length;
 }, [selectedHrExpenseSeries]);
 
-const averageProjectedAmount = useMemo(() => {
-  if (!selectedHrProjectedSeries?.data?.length) return 0;
+// const averageProjectedAmount = useMemo(() => {
+//   if (!selectedHrProjectedSeries?.data?.length) return 0;
 
-  const totalProjected = selectedHrProjectedSeries.data.reduce(
+//   const totalProjected = selectedHrProjectedSeries.data.reduce(
+//     (sum, value) => sum + (Number(value) || 0),
+//     0
+//   );
+
+//   return totalProjected / selectedHrProjectedSeries.data.length;
+// }, [selectedHrProjectedSeries]);
+const averageProjectedAmount = useMemo(() => {
+  if (!selectedHrProjectedAmounts?.length) {
+    return 0;
+  }
+
+  const totalProjected = selectedHrProjectedAmounts.reduce(
     (sum, value) => sum + (Number(value) || 0),
-    0
+    0,
   );
 
-  return totalProjected / selectedHrProjectedSeries.data.length;
-}, [selectedHrProjectedSeries]);
+  return totalProjected / selectedHrProjectedAmounts.length;
+}, [selectedHrProjectedAmounts]);
 
 const activeHeadCount = usersQuery.isLoading
   ? 0
@@ -763,73 +801,119 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     position: "top",
   },
   tooltip: {
-    enabled: true,
-    custom: function ({ seriesIndex, dataPointIndex, w }) {
-      const seriesName = w.globals.seriesNames?.[seriesIndex];
+  enabled: true,
+  shared: true,
+  intersect: false,
 
-      const actualSeries = w.globals.initialSeries.find(
-        (item) => item.name === "Actual Amount"
-      );
+  custom: function ({ dataPointIndex, w }) {
+    const selectedYearData =
+      hrExpenseByFiscalYear?.[selectedHrFiscalYear];
 
-      const projectedSeries = w.globals.initialSeries.find(
-        (item) => item.name === "Projected Amount"
-      );
+    const actualAmount =
+      selectedYearData?.actual?.[dataPointIndex] || 0;
 
-      const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
-      const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
+    const projectedAmount =
+      selectedYearData?.projected?.[dataPointIndex] || 0;
 
-      const monthLabel =
-        w.globals.labels && w.globals.labels[dataPointIndex]
-          ? w.globals.labels[dataPointIndex]
-          : `Month ${dataPointIndex + 1}`;
+    const monthLabel =
+      w?.globals?.labels?.[dataPointIndex] ||
+      fiscalMonths[dataPointIndex] ||
+      `Month ${dataPointIndex + 1}`;
 
-      const isActual = seriesName === "Actual Amount";
-
-      const label = isActual ? "Actual Amount" : "Projected Amount";
-      const amount = isActual ? actualAmount : projectedBalance;
-      const color = isActual ? "#54C4A7" : "#c4c4c4";
-
-      return `
-        <div class="apexcharts-tooltip-title" style="
+    return `
+      <div
+        class="apexcharts-tooltip-title"
+        style="
           font-family: Poppins-Regular;
           font-size: 12px;
           padding: 6px 10px;
           margin-bottom: 0;
-        ">
-          ${monthLabel}
-        </div>
+        "
+      >
+        ${monthLabel}
+      </div>
 
-        <div style="
+      <div
+        style="
           padding: 8px 10px;
           font-family: Poppins-Regular;
           font-size: 12px;
-          background: #fff;
+          background: #ffffff;
           min-width: 230px;
-        ">
-          <div style="
+        "
+      >
+        <div
+          style="
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 7px;
             white-space: nowrap;
-          ">
-            <span style="
-              width: 12px;
-              height: 12px;
-              border-radius: 50%;
-              background: ${color};
-              display: inline-block;
-            "></span>
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
+              style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #54C4A7;
+                display: inline-block;
+              "
+            ></span>
 
-            <span>${label}:</span>
-
-            <span style="font-weight: 600;">
-              INR ${Math.round(amount).toLocaleString("en-IN")}
-            </span>
+            <span>Actual Amount:</span>
           </div>
+
+          <span style="font-weight: 600;">
+            INR ${Math.round(actualAmount).toLocaleString("en-IN")}
+          </span>
         </div>
-      `;
-    },
+
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            white-space: nowrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
+              style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #C4C4C4;
+                display: inline-block;
+              "
+            ></span>
+
+            <span>Projected Amount:</span>
+          </div>
+
+          <span style="font-weight: 600;">
+            INR ${Math.round(projectedAmount).toLocaleString("en-IN")}
+          </span>
+        </div>
+      </div>
+    `;
   },
+},
 };
 
   //-------------------HR Expense graph end--------------------//
