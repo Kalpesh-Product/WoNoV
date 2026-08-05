@@ -303,6 +303,7 @@ const BudgetPage = () => {
   // BUDGET NEW START
 
   const [isReady, setIsReady] = useState(false);
+  const [budgetLegendMode, setBudgetLegendMode] = useState("actual");
 
   // const [openModal, setOpenModal] = useState(false);
 
@@ -392,8 +393,14 @@ const BudgetPage = () => {
 
     return Array.from(monthlySummary.values()).flatMap((entry) => {
       const hasActual = entry.actualAmount > 0;
-      const actualSeriesAmount = hasActual ? entry.actualAmount : 0;
-      const projectedSeriesAmount = hasActual ? 0 : entry.projectedAmount;
+      const actualSeriesAmount =
+        budgetLegendMode === "actual" && hasActual ? entry.actualAmount : 0;
+      const projectedSeriesAmount =
+        budgetLegendMode === "projected"
+          ? entry.projectedAmount
+          : hasActual
+          ? 0
+          : entry.projectedAmount;
 
       return [
         {
@@ -418,7 +425,7 @@ const BudgetPage = () => {
         },
       ];
     });
-  }, [hrFinance, department?.name]);
+  }, [hrFinance, department?.name, budgetLegendMode]);
 
   const { roundedMax, tickAmount } = useMemo(() => {
     const monthlyTotals = budgetGraphData.reduce((acc, item) => {
@@ -458,6 +465,13 @@ const BudgetPage = () => {
     chart: {
       type: "bar",
       toolbar: { show: false },
+      events: {
+        legendClick: () => {
+          setBudgetLegendMode((currentMode) =>
+            currentMode === "actual" ? "projected" : "actual",
+          );
+        },
+      },
 
       stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
@@ -522,6 +536,9 @@ const BudgetPage = () => {
     legend: {
       show: true,
       position: "top",
+      onItemClick: {
+        toggleDataSeries: false,
+      },
     },
 
     tooltip: {
