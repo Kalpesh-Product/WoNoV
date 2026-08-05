@@ -144,14 +144,10 @@ const BudgetPage = () => {
       return;
     }
 
-    const latestAvailableFY =
-      availableFiscalYears[availableFiscalYears.length - 1];
-
-    if (
-      latestAvailableFY &&
-      !availableFiscalYears.includes(selectedFiscalYear)
-    ) {
-      setSelectedFiscalYear(latestAvailableFY);
+    if (!selectedFiscalYear && availableFiscalYears.length > 0) {
+      setSelectedFiscalYear(
+        availableFiscalYears[availableFiscalYears.length - 1],
+      );
     }
   }, [availableFiscalYears, fyFromQuery, selectedFiscalYear]);
 
