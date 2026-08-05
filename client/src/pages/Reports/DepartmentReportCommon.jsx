@@ -2060,6 +2060,9 @@ const DepartmentReportCommon = () => {
           .filter(Boolean)
           .join(" ")
           .trim();
+      const requestedByEmail = String(
+        row?.requestedBy?.email || row?.["requestedBy.email"] || "",
+      ).trim();
       const buildingName = String(
         row?.location?.buildingName ||
           row?.location?.name ||
@@ -2099,6 +2102,10 @@ const DepartmentReportCommon = () => {
 
       if (requestedByName) {
         nextRow.requestedBy = requestedByName;
+      }
+
+      if (requestedByEmail) {
+        nextRow.requestedByEmail = requestedByEmail;
       }
 
       if (buildingName) {
