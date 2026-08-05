@@ -281,37 +281,24 @@ const expenseRawSeries = useMemo(() => {
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
-      /*
-       * Actual hidden hai to Actual series zero.
-       * Visible hai to original Actual values.
-       */
+     
       const actualForGraph = data.actual.map((actualAmount) =>
         hiddenFrontendExpenseSeries.actual ? 0 : actualAmount,
       );
 
       const projectedForGraph = data.projected.map(
         (projectedAmount, monthIndex) => {
-          /*
-           * Projected legend hidden hai:
-           * Projected series poori tarah hide.
-           */
+          
           if (hiddenFrontendExpenseSeries.projected) {
             return 0;
           }
 
-          /*
-           * Actual hidden aur Projected visible hai:
-           * Har month ka original Projected show.
-           */
+        
           if (hiddenFrontendExpenseSeries.actual) {
             return projectedAmount;
           }
 
-          /*
-           * Dono legends visible hain:
-           * Actual available hai to Projected hide.
-           * Actual nahi hai to Projected show.
-           */
+          
           const actualAmount = data.actual[monthIndex] || 0;
 
           return actualAmount > 0 ? 0 : projectedAmount;
@@ -395,7 +382,7 @@ const roundedMax = useMemo(() => {
     });
   },
 
-  // Purana navigation logic same rahega
+  
   dataPointSelection: () => {
     navigate("finance/budget");
   },
@@ -472,10 +459,7 @@ const roundedMax = useMemo(() => {
   show: true,
   position: "top",
 
-  /*
-   * ApexCharts ka built-in hide/show disable.
-   * React state se graph control hoga.
-   */
+ 
   onItemClick: {
     toggleDataSeries: false,
   },
