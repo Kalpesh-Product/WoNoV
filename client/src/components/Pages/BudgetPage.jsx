@@ -144,14 +144,10 @@ const BudgetPage = () => {
       return;
     }
 
-    const latestAvailableFY =
-      availableFiscalYears[availableFiscalYears.length - 1];
-
-    if (
-      latestAvailableFY &&
-      !availableFiscalYears.includes(selectedFiscalYear)
-    ) {
-      setSelectedFiscalYear(latestAvailableFY);
+    if (!selectedFiscalYear && availableFiscalYears.length > 0) {
+      setSelectedFiscalYear(
+        availableFiscalYears[availableFiscalYears.length - 1],
+      );
     }
   }, [availableFiscalYears, fyFromQuery, selectedFiscalYear]);
 
@@ -306,7 +302,12 @@ const BudgetPage = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
+ const [isReady, setIsReady] = useState(false);
+
+const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
+  actual: false,
+  projected: false,
+});
 
   // const [openModal, setOpenModal] = useState(false);
 
@@ -394,35 +395,70 @@ const BudgetPage = () => {
       entry.projectedAmount += projectedAmount;
     });
 
-    return Array.from(monthlySummary.values()).flatMap((entry) => {
-      const hasActual = entry.actualAmount > 0;
-      const actualSeriesAmount = hasActual ? entry.actualAmount : 0;
-      const projectedSeriesAmount = hasActual ? 0 : entry.projectedAmount;
+  return Array.from(monthlySummary.values()).flatMap((entry) => {
+  const hasActualAmount = entry.actualAmount > 0;
 
-      return [
-        {
-          dueDate: entry.dueDate,
-          amount: actualSeriesAmount,
-          actualAmount: entry.actualAmount,
-          projectedAmount: entry.projectedAmount,
-          displayAmount: actualSeriesAmount,
-          vertical: "Actual Amount",
-          fiscalYearLabel: entry.fiscalYearLabel,
-          bucketIndex: entry.bucketIndex,
-        },
-        {
-          dueDate: entry.dueDate,
-          amount: projectedSeriesAmount,
-          actualAmount: entry.actualAmount,
-          projectedAmount: entry.projectedAmount,
-          displayAmount: projectedSeriesAmount,
-          vertical: "Projected Amount",
-          fiscalYearLabel: entry.fiscalYearLabel,
-          bucketIndex: entry.bucketIndex,
-        },
-      ];
-    });
-  }, [hrFinance, department?.name]);
+  const actualHidden = hiddenBudgetSeries.actual;
+  const projectedHidden = hiddenBudgetSeries.projected;
+
+  let actualSeriesAmount = 0;
+  let projectedSeriesAmount = 0;
+
+ 
+  if (!actualHidden && !projectedHidden) {
+    actualSeriesAmount = hasActualAmount
+      ? entry.actualAmount
+      : 0;
+
+    projectedSeriesAmount = hasActualAmount
+      ? 0
+      : entry.projectedAmount;
+  }
+
+ 
+  else if (actualHidden && !projectedHidden) {
+    actualSeriesAmount = 0;
+    projectedSeriesAmount = entry.projectedAmount;
+  }
+
+  else if (!actualHidden && projectedHidden) {
+    actualSeriesAmount = hasActualAmount
+      ? entry.actualAmount
+      : 0;
+
+    projectedSeriesAmount = 0;
+  }
+
+
+  return [
+    {
+      dueDate: entry.dueDate,
+      amount: actualSeriesAmount,
+      actualAmount: entry.actualAmount,
+      projectedAmount: entry.projectedAmount,
+      displayAmount: actualSeriesAmount,
+      vertical: "Actual Amount",
+      fiscalYearLabel: entry.fiscalYearLabel,
+      bucketIndex: entry.bucketIndex,
+    },
+    {
+      dueDate: entry.dueDate,
+      amount: projectedSeriesAmount,
+      actualAmount: entry.actualAmount,
+      projectedAmount: entry.projectedAmount,
+      displayAmount: projectedSeriesAmount,
+      vertical: "Projected Amount",
+      fiscalYearLabel: entry.fiscalYearLabel,
+      bucketIndex: entry.bucketIndex,
+    },
+  ];
+});
+}, [
+  hrFinance,
+  department?.name,
+  hiddenBudgetSeries.actual,
+  hiddenBudgetSeries.projected,
+]);
 
   const { roundedMax, tickAmount } = useMemo(() => {
     const monthlyTotals = budgetGraphData.reduce((acc, item) => {
@@ -459,13 +495,37 @@ const BudgetPage = () => {
   }, [budgetGraphData]);
 
   const expenseOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
+   chart: {
+  type: "bar",
+  toolbar: { show: false },
 
-      stacked: true,
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-    },
+  events: {
+  legendClick: (_chartContext, seriesIndex) => {
+    setHiddenBudgetSeries((currentState) => {
+      // Series index 0 = Actual Amount
+      if (seriesIndex === 0) {
+        return {
+          ...currentState,
+          actual: !currentState.actual,
+        };
+      }
+
+      // Series index 1 = Projected Amount
+      if (seriesIndex === 1) {
+        return {
+          ...currentState,
+          projected: !currentState.projected,
+        };
+      }
+
+      return currentState;
+    });
+  },
+},
+
+  stacked: true,
+  fontFamily: "Poppins-Regular, Arial, sans-serif",
+},
     colors: ["#54C4A7", "#C4C4C4"],
     plotOptions: {
       bar: {
@@ -523,11 +583,51 @@ const BudgetPage = () => {
         },
       },
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
+//   legend: {
+//   show: true,
+//   position: "top",
 
+//   // ApexCharts ka default series hide/show band karo.
+//   // Hum custom state se graph switch kar rahe hain.
+//   onItemClick: {
+//     toggleDataSeries: false,
+//   },
+// },
+legend: {
+  show: true,
+  position: "top",
+  onItemClick: {
+    toggleDataSeries: false,
+  },
+
+  labels: {
+    colors: [
+      // Actual legend text
+      hiddenBudgetSeries.actual
+        ? "#D5D5D5"
+        : "#4B4B4B",
+
+      // Projected legend text
+      hiddenBudgetSeries.projected
+        ? "#D5D5D5"
+        : "#4B4B4B",
+    ],
+  },
+
+  markers: {
+    fillColors: [
+      // Actual marker
+      hiddenBudgetSeries.actual
+        ? "#E1F5EF"
+        : "#54C4A7",
+
+      // Projected marker
+      hiddenBudgetSeries.projected
+        ? "#E2E2E2"
+        : "#C4C4C4",
+    ],
+  },
+},
     tooltip: {
       enabled: true,
       shared: true,
