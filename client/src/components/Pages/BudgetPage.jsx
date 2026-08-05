@@ -302,8 +302,12 @@ const BudgetPage = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-  const [budgetLegendMode, setBudgetLegendMode] = useState("mixed");
+ const [isReady, setIsReady] = useState(false);
+
+const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
+  actual: false,
+  projected: false,
+});
 
   // const [openModal, setOpenModal] = useState(false);
 
@@ -391,30 +395,40 @@ const BudgetPage = () => {
       entry.projectedAmount += projectedAmount;
     });
 
-   return Array.from(monthlySummary.values()).flatMap((entry) => {
+  return Array.from(monthlySummary.values()).flatMap((entry) => {
   const hasActualAmount = entry.actualAmount > 0;
+
+  const actualHidden = hiddenBudgetSeries.actual;
+  const projectedHidden = hiddenBudgetSeries.projected;
 
   let actualSeriesAmount = 0;
   let projectedSeriesAmount = 0;
 
-  if (budgetLegendMode === "actual") {
-    // Projected legend click hua:
-    // keval Actual values dikhengi
-    actualSeriesAmount = hasActualAmount ? entry.actualAmount : 0;
-    projectedSeriesAmount = 0;
-  } else if (budgetLegendMode === "projected") {
-    // Actual legend click hua:
-    // Actual ki jagah Projected values dikhengi
-    actualSeriesAmount = 0;
-    projectedSeriesAmount = entry.projectedAmount;
-  } else {
-    // Default mixed view:
-    // Actual available hai to Actual, warna Projected
-    actualSeriesAmount = hasActualAmount ? entry.actualAmount : 0;
+ 
+  if (!actualHidden && !projectedHidden) {
+    actualSeriesAmount = hasActualAmount
+      ? entry.actualAmount
+      : 0;
+
     projectedSeriesAmount = hasActualAmount
       ? 0
       : entry.projectedAmount;
   }
+
+ 
+  else if (actualHidden && !projectedHidden) {
+    actualSeriesAmount = 0;
+    projectedSeriesAmount = entry.projectedAmount;
+  }
+
+  else if (!actualHidden && projectedHidden) {
+    actualSeriesAmount = hasActualAmount
+      ? entry.actualAmount
+      : 0;
+
+    projectedSeriesAmount = 0;
+  }
+
 
   return [
     {
@@ -442,7 +456,8 @@ const BudgetPage = () => {
 }, [
   hrFinance,
   department?.name,
-  budgetLegendMode,
+  hiddenBudgetSeries.actual,
+  hiddenBudgetSeries.projected,
 ]);
 
   const { roundedMax, tickAmount } = useMemo(() => {
@@ -485,22 +500,28 @@ const BudgetPage = () => {
   toolbar: { show: false },
 
   events: {
-    legendClick: (_chartContext, seriesIndex) => {
+  legendClick: (_chartContext, seriesIndex) => {
+    setHiddenBudgetSeries((currentState) => {
       // Series index 0 = Actual Amount
       if (seriesIndex === 0) {
-        setBudgetLegendMode((currentMode) =>
-          currentMode === "projected" ? "mixed" : "projected",
-        );
+        return {
+          ...currentState,
+          actual: !currentState.actual,
+        };
       }
 
       // Series index 1 = Projected Amount
       if (seriesIndex === 1) {
-        setBudgetLegendMode((currentMode) =>
-          currentMode === "actual" ? "mixed" : "actual",
-        );
+        return {
+          ...currentState,
+          projected: !currentState.projected,
+        };
       }
-    },
+
+      return currentState;
+    });
   },
+},
 
   stacked: true,
   fontFamily: "Poppins-Regular, Arial, sans-serif",
@@ -575,7 +596,6 @@ const BudgetPage = () => {
 legend: {
   show: true,
   position: "top",
-
   onItemClick: {
     toggleDataSeries: false,
   },
@@ -583,12 +603,12 @@ legend: {
   labels: {
     colors: [
       // Actual legend text
-      budgetLegendMode === "projected"
+      hiddenBudgetSeries.actual
         ? "#D5D5D5"
         : "#4B4B4B",
 
       // Projected legend text
-      budgetLegendMode === "actual"
+      hiddenBudgetSeries.projected
         ? "#D5D5D5"
         : "#4B4B4B",
     ],
@@ -597,18 +617,17 @@ legend: {
   markers: {
     fillColors: [
       // Actual marker
-      budgetLegendMode === "projected"
+      hiddenBudgetSeries.actual
         ? "#E1F5EF"
         : "#54C4A7",
 
       // Projected marker
-      budgetLegendMode === "actual"
+      hiddenBudgetSeries.projected
         ? "#E2E2E2"
         : "#C4C4C4",
     ],
   },
 },
-
     tooltip: {
       enabled: true,
       shared: true,
