@@ -6,6 +6,8 @@ const { getPagination } = require("../../utils/pagination");
 const normalizeVisitorQuery = (query) =>
   typeof query === "string" ? query : query?.query;
 
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 const populateVisitorListFields = [
   {
     path: "department",
@@ -115,6 +117,8 @@ const fetchVisitorReportService = async ({
   page,
   limit,
   type = "",
+  search,
+  searchContext,
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
@@ -128,6 +132,42 @@ const fetchVisitorReportService = async ({
     let visitors;
     let total;
     const filter = { company: companyId };
+    const normalizedSearch = String(search || "").trim().slice(0, 100);
+
+    if (
+      searchContext === "repeat-external-companies" &&
+      normalizedSearch
+    ) {
+      const escapedSearch = escapeRegex(normalizedSearch);
+      const searchRegex = new RegExp(escapedSearch, "i");
+
+      filter.$or = [
+        { firstName: searchRegex },
+        { lastName: searchRegex },
+        { visitorCompany: searchRegex },
+        { brandName: searchRegex },
+        { registeredClientCompany: searchRegex },
+        {
+          $expr: {
+            $regexMatch: {
+              input: {
+                $trim: {
+                  input: {
+                    $concat: [
+                      { $ifNull: ["$firstName", ""] },
+                      " ",
+                      { $ifNull: ["$lastName", ""] },
+                    ],
+                  },
+                },
+              },
+              regex: escapedSearch,
+              options: "i",
+            },
+          },
+        },
+      ];
+    }
 
     if (visitorFlag) {
       filter.visitorFlag = visitorFlag;

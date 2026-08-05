@@ -9,6 +9,7 @@ const buildInventoryMatch = ({ company, department }) => ({
 });
 
 const fetchInventoryService = async ({ company, department }) => {
+  console.log("inventory service");
   const inventories = await Inventory.aggregate([
     {
       $match: buildInventoryMatch({ company, department }),
@@ -171,7 +172,7 @@ const fetchInventoryService = async ({ company, department }) => {
         unit: {
           unitNo: "$unit.unitNo",
           unitName: "$unit.unitName",
-          buildingName: "$unit.buildingName",
+          buildingName: "$building.buildingName",
         },
 
         addedBy: {
@@ -185,6 +186,8 @@ const fetchInventoryService = async ({ company, department }) => {
         company: 0,
         item: 0,
         itemCategory: 0,
+        building: 0,
+        buildingName: 0,
         consumptionUsers: 0,
         prevUnits: 0,
         prevPrice: 0,
@@ -198,7 +201,16 @@ const fetchInventoryService = async ({ company, department }) => {
     },
   ]);
 
-  return inventories;
+  return inventories.map((inventory) => ({
+    ...inventory,
+    unit: inventory.unit
+      ? {
+          unitNo: inventory.unit.unitNo,
+          unitName: inventory.unit.unitName,
+          buildingName: inventory.unit.buildingName,
+        }
+      : null,
+  }));
 };
 
 module.exports = {
