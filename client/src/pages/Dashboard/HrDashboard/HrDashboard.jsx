@@ -87,7 +87,10 @@ const [selectedFiscalYear, setSelectedFiscalYear] =
 
 const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
   useState(currentFiscalYear);
-
+const [hiddenHrExpenseSeries, setHiddenHrExpenseSeries] = useState({
+  actual: false,
+  projected: false,
+});
 const department = usePageDepartment();
 
   const [budgetData, setBudgetData] = useState({});
@@ -518,12 +521,24 @@ const expenseRawSeries = useMemo(() => {
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
-      /*
-       * Jis month mein Actual amount aa gaya,
-       * us month mein Projected bar 0 rahega.
-       */
+     
+      const actualForGraph = data.actual.map((actualAmount) =>
+        hiddenHrExpenseSeries.actual ? 0 : actualAmount,
+      );
+
       const projectedForGraph = data.projected.map(
         (projectedAmount, monthIndex) => {
+          
+          if (hiddenHrExpenseSeries.projected) {
+            return 0;
+          }
+
+          
+          if (hiddenHrExpenseSeries.actual) {
+            return projectedAmount;
+          }
+
+         
           const actualAmount = data.actual[monthIndex] || 0;
 
           return actualAmount > 0 ? 0 : projectedAmount;
@@ -534,7 +549,7 @@ const expenseRawSeries = useMemo(() => {
         {
           name: "Actual Amount",
           group: fiscalYear,
-          data: data.actual,
+          data: actualForGraph,
         },
         {
           name: "Projected Amount",
@@ -543,7 +558,11 @@ const expenseRawSeries = useMemo(() => {
         },
       ];
     });
-}, [hrExpenseByFiscalYear]);
+}, [
+  hrExpenseByFiscalYear,
+  hiddenHrExpenseSeries.actual,
+  hiddenHrExpenseSeries.projected,
+]);
 
 const roundedMax = useMemo(() => {
   const fiscalYears = [
@@ -574,10 +593,12 @@ const roundedMax = useMemo(() => {
   return Math.ceil((maxValue + 100000) / 100000) * 100000;
 }, [expenseRawSeries]);
 
-  const selectedHrExpenseSeries = expenseRawSeries.find(
-  (item) =>
-    item.group === selectedHrFiscalYear && item.name === "Actual Amount"
-);
+  const selectedHrActualAmounts = useMemo(() => {
+  return (
+    hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.actual ||
+    Array(12).fill(0)
+  );
+}, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
 
 // const selectedHrProjectedSeries = expenseRawSeries.find(
 //   (item) =>
@@ -591,10 +612,11 @@ const selectedHrProjectedAmounts = useMemo(() => {
 }, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
 
 const totalUtilised = useMemo(() => {
-  if (!selectedHrExpenseSeries) return 0;
-
-  return selectedHrExpenseSeries.data.reduce((sum, val) => sum + val, 0);
-}, [selectedHrExpenseSeries]);
+  return selectedHrActualAmounts.reduce(
+    (sum, value) => sum + (Number(value) || 0),
+    0,
+  );
+}, [selectedHrActualAmounts]);
 
 const currentFiscalMonthIndexForCard =
   dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
@@ -618,7 +640,7 @@ const previousExpenseMonthLabel = Number.isFinite(selectedHrFiscalStartYear)
   : "";
 
 const previousMonthActualExpense = Math.round(
-  selectedHrExpenseSeries?.data?.[previousFiscalMonthIndexForCard] || 0
+  selectedHrActualAmounts?.[previousFiscalMonthIndexForCard] || 0,
 );
 
 // const previousMonthProjectedExpense = Math.round(
@@ -629,15 +651,17 @@ const previousMonthProjectedExpense = Math.round(
 );
 
 const averageActualAmount = useMemo(() => {
-  if (!selectedHrExpenseSeries?.data?.length) return 0;
+  if (!selectedHrActualAmounts?.length) {
+    return 0;
+  }
 
-  const totalActual = selectedHrExpenseSeries.data.reduce(
+  const totalActual = selectedHrActualAmounts.reduce(
     (sum, value) => sum + (Number(value) || 0),
-    0
+    0,
   );
 
-  return totalActual / selectedHrExpenseSeries.data.length;
-}, [selectedHrExpenseSeries]);
+  return totalActual / selectedHrActualAmounts.length;
+}, [selectedHrActualAmounts]);
 
 // const averageProjectedAmount = useMemo(() => {
 //   if (!selectedHrProjectedSeries?.data?.length) return 0;
@@ -720,11 +744,34 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     toolbar: { show: false },
     stacked: true,
     fontFamily: "Poppins-Regular, Arial, sans-serif",
-    events: {
-      dataPointSelection: () => {
-        navigate("finance/budget");
-      },
-    },
+   events: {
+  legendClick: (_chartContext, seriesIndex) => {
+    setHiddenHrExpenseSeries((currentState) => {
+      // Series index 0 = Actual Amount
+      if (seriesIndex === 0) {
+        return {
+          ...currentState,
+          actual: !currentState.actual,
+        };
+      }
+
+      // Series index 1 = Projected Amount
+      if (seriesIndex === 1) {
+        return {
+          ...currentState,
+          projected: !currentState.projected,
+        };
+      }
+
+      return currentState;
+    });
+  },
+
+ 
+  dataPointSelection: () => {
+    navigate("finance/budget");
+  },
+},
   },
   colors: ["#54C4A7", "#c4c4c4"],
   plotOptions: {
@@ -796,10 +843,43 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       },
     },
   },
-  legend: {
-    show: true,
-    position: "top",
+ legend: {
+  show: true,
+  position: "top",
+
+ 
+  onItemClick: {
+    toggleDataSeries: false,
   },
+
+  labels: {
+    colors: [
+      // Actual legend text
+      hiddenHrExpenseSeries.actual
+        ? "#D5D5D5"
+        : "#4B4B4B",
+
+      // Projected legend text
+      hiddenHrExpenseSeries.projected
+        ? "#D5D5D5"
+        : "#4B4B4B",
+    ],
+  },
+
+  markers: {
+    fillColors: [
+      // Actual legend marker
+      hiddenHrExpenseSeries.actual
+        ? "#E1F5EF"
+        : "#54C4A7",
+
+      // Projected legend marker
+      hiddenHrExpenseSeries.projected
+        ? "#E2E2E2"
+        : "#C4C4C4",
+    ],
+  },
+},
   tooltip: {
   enabled: true,
   shared: true,
