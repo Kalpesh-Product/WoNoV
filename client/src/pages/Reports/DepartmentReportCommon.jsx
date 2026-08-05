@@ -2224,7 +2224,18 @@ const DepartmentReportCommon = () => {
     });
   };
 
-  const triggerDataDownload = (reportData, reportName) => {
+  const triggerDataDownload = (reportData, reportRowOrName) => {
+    const reportName =
+      typeof reportRowOrName === "string"
+        ? reportRowOrName
+        : reportRowOrName?.reportName || "";
+    const reportKey = String(
+      typeof reportRowOrName === "object"
+        ? reportRowOrName?.reportKey || reportRowOrName?.module || ""
+        : "",
+    )
+      .trim()
+      .toLowerCase();
     const normalizedReportName = String(reportName || "")
       .trim()
       .toLowerCase();
@@ -2300,6 +2311,144 @@ const DepartmentReportCommon = () => {
       normalizedReportName.includes("open desk clients report")
     ) {
       hiddenFields.push(/^unit$/);
+    }
+
+    const isInventoryReport =
+      reportKey === "inventory" ||
+      normalizedReportName === "inventory report" ||
+      normalizedReportName === "inventory" ||
+      normalizedReportName.includes("overall inventory");
+
+    if (isInventoryReport) {
+      const reshapeInventoryFields = (row = {}) => {
+        if (!row || typeof row !== "object" || Array.isArray(row)) {
+          return row;
+        }
+
+        const nextRow = { ...row };
+        const itemName = String(
+          row?.itemNamee || row?.itemName?.name || row?.itemName || "",
+        ).trim();
+        const categoryName = String(
+          row?.categoryName ||
+            row?.category?.categoryName ||
+            row?.category ||
+            "",
+        ).trim();
+        const addedByName = [
+          row?.addedBy?.firstName || row?.["addedBy.firstName"] || "",
+          row?.addedBy?.lastName || row?.["addedBy.lastName"] || "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+        const unitNo = String(
+          row?.unit?.unitNo || row?.["unit.unitNo"] || row?.unitNo || "",
+        ).trim();
+        const unitName = String(
+          row?.unit?.unitName || row?.["unit.unitName"] || row?.unitName || "",
+        ).trim();
+        const buildingName = String(
+          row?.unit?.buildingName ||
+            row?.unit?.building?.buildingName ||
+            row?.["unit.buildingName"] ||
+            row?.["unit.building.buildingName"] ||
+            row?.buildingName ||
+            "",
+        ).trim();
+        const consumptionSummary = Array.isArray(row?.consumptions)
+          ? row.consumptions
+              .map((consumption) => {
+                if (!consumption || typeof consumption !== "object") {
+                  return String(consumption || "").trim();
+                }
+
+                const quantity = String(consumption?.quantity ?? "").trim();
+                const source = String(consumption?.source || "").trim();
+                const date = consumption?.date
+                  ? dayjs(consumption.date).isValid()
+                    ? dayjs(consumption.date).format("DD-MM-YYYY")
+                    : String(consumption.date).trim()
+                  : "";
+                const addedBy = [
+                  consumption?.addedBy?.firstName ||
+                    consumption?.addedBy?.name ||
+                    consumption?.addedBy?.email ||
+                    "",
+                  consumption?.addedBy?.lastName || "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")
+                  .trim();
+
+                return [
+                  quantity ? `Qty: ${quantity}` : "",
+                  source ? `Source: ${source}` : "",
+                  date ? `Date: ${date}` : "",
+                  addedBy ? `Added By: ${addedBy}` : "",
+                ]
+                  .filter(Boolean)
+                  .join(", ");
+              })
+              .filter(Boolean)
+              .join(" | ")
+          : "";
+
+        if (itemName) {
+          nextRow["Item Name"] = itemName;
+        }
+
+        if (categoryName) {
+          nextRow["Category Name"] = categoryName;
+        }
+
+        if (addedByName) {
+          nextRow["Added By"] = addedByName;
+        }
+
+        if (unitNo) {
+          nextRow["Unit No"] = unitNo;
+        }
+
+        if (unitName) {
+          nextRow["Unit Name"] = unitName;
+        }
+
+        if (buildingName) {
+          nextRow["Building Name"] = buildingName;
+        }
+
+        if (consumptionSummary) {
+          nextRow.Consumptions = consumptionSummary;
+        }
+
+        if (row?.totalConsumed !== undefined && row?.totalConsumed !== null) {
+          nextRow["Total Consumed"] = row.totalConsumed;
+        }
+
+        delete nextRow.itemName;
+        delete nextRow.itemNamee;
+        delete nextRow.category;
+        delete nextRow.categoryName;
+        delete nextRow.addedBy;
+        delete nextRow.consumptions;
+        delete nextRow.totalConsumed;
+        delete nextRow["addedBy.firstName"];
+        delete nextRow["addedBy.lastName"];
+        delete nextRow["itemName._id"];
+        delete nextRow["unit.unitNo"];
+        delete nextRow["unit.unitName"];
+        delete nextRow["unit.buildingName"];
+        delete nextRow["unit.building.buildingName"];
+        delete nextRow.unit;
+        delete nextRow["unit._id"];
+
+        return nextRow;
+      };
+
+      exportData = Array.isArray(exportData)
+        ? exportData.map(reshapeInventoryFields)
+        : reshapeInventoryFields(exportData);
     }
 
     if (normalizedReportName.includes("housekeeping staff report")) {
@@ -2511,7 +2660,7 @@ const DepartmentReportCommon = () => {
 
     const downloadStarted =
       (hasDataPayload &&
-        triggerDataDownload(reportData, reportRow?.reportName)) ||
+      triggerDataDownload(reportData, reportRow)) ||
       triggerReportDownload(downloadUrl);
 
     setDownloadedByReportId((prev) => ({
