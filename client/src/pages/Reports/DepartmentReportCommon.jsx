@@ -1339,6 +1339,9 @@ const DepartmentReportCommon = () => {
     const isHousekeepingStaffReport = normalizedReportName.includes(
       "housekeeping staff report",
     );
+    const isPastEmployeesReport =
+      normalizedReportName.includes("past employees report") ||
+      normalizedReportName.includes("past employee report");
 
     const formatHrTime = (value) => {
       if (!value) return "";
@@ -1364,6 +1367,25 @@ const DepartmentReportCommon = () => {
           return item || "";
         })
         .map((item) => String(item).trim())
+        .filter(Boolean)
+        .join(", ");
+    };
+
+    const formatEmployeeLeavesCount = (value) => {
+      const entries = Array.isArray(value) ? value : value ? [value] : [];
+
+      return entries
+        .map((item) => {
+          if (!item || typeof item !== "object") {
+            return String(item || "").trim();
+          }
+
+          const leaveType = String(item.leaveType || item.name || "").trim();
+          const count = String(item.count ?? "").trim();
+
+          if (leaveType && count) return `${leaveType}: ${count}`;
+          return leaveType || count;
+        })
         .filter(Boolean)
         .join(", ");
     };
@@ -1452,6 +1474,74 @@ const DepartmentReportCommon = () => {
         .join(" ")
         .trim();
 
+      const correctionInTime = formatHrTime(
+        row?.attendanceCorrection?.inTime ||
+          row?.["attendanceCorrection.inTime"] ||
+          "",
+      );
+
+      const correctionOutTime = formatHrTime(
+        row?.attendanceCorrection?.outTime ||
+          row?.["attendanceCorrection.outTime"] ||
+          "",
+      );
+
+      const correctionReason = String(
+        row?.attendanceCorrection?.reason ||
+          row?.["attendanceCorrection.reason"] ||
+          "",
+      ).trim();
+
+      const correctionStatus = String(
+        row?.attendanceCorrection?.status ||
+          row?.["attendanceCorrection.status"] ||
+          row?.status ||
+          "",
+      ).trim();
+
+      const correctionRequestedAt =
+        row?.attendanceCorrection?.requestedAt ||
+        row?.["attendanceCorrection.requestedAt"] ||
+        row?.["attendanceCorrection.createdAt"] ||
+        row?.requestedAt ||
+        "";
+
+      const correctionAddedByName = [
+        row?.attendanceCorrection?.addedBy?.firstName ||
+          row?.["attendanceCorrection.addedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.addedBy?.lastName ||
+          row?.["attendanceCorrection.addedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const correctionApprovedByName = [
+        row?.attendanceCorrection?.approvedBy?.firstName ||
+          row?.["attendanceCorrection.approvedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.approvedBy?.lastName ||
+          row?.["attendanceCorrection.approvedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
+      const correctionRejectedByName = [
+        row?.attendanceCorrection?.rejectedBy?.firstName ||
+          row?.["attendanceCorrection.rejectedBy.firstName"] ||
+          "",
+        row?.attendanceCorrection?.rejectedBy?.lastName ||
+          row?.["attendanceCorrection.rejectedBy.lastName"] ||
+          "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+
       const formattedInTime = formatHrTime(row?.inTime || row?.["inTime"]);
       const formattedOutTime = formatHrTime(row?.outTime || row?.["outTime"]);
 
@@ -1486,7 +1576,7 @@ const DepartmentReportCommon = () => {
         nextRow.role = roleTitles;
       }
 
-      if (isHousekeepingStaffReport && staffFullName) {
+      if ((isHousekeepingStaffReport || isPastEmployeesReport) && staffFullName) {
         nextRow.name = staffFullName;
         delete nextRow.firstName;
         delete nextRow.middleName;
@@ -1540,6 +1630,25 @@ const DepartmentReportCommon = () => {
         nextRow.rejectedByName = rejectedByName;
       }
 
+      if (correctionInTime || correctionOutTime) {
+        nextRow.correction = {
+          ...(correctionInTime ? { inTime: correctionInTime } : {}),
+          ...(correctionOutTime ? { outTime: correctionOutTime } : {}),
+        };
+      }
+
+      if (correctionReason) {
+        nextRow.reason = correctionReason;
+      }
+
+      if (correctionStatus) {
+        nextRow.status = correctionStatus;
+      }
+
+      if (correctionRequestedAt) {
+        nextRow.requestedAt = correctionRequestedAt;
+      }
+
       if (formattedInTime) {
         nextRow.inTime = formattedInTime;
       }
@@ -1565,6 +1674,55 @@ const DepartmentReportCommon = () => {
       delete nextRow.rejectedBy;
       delete nextRow["rejectedBy.firstName"];
       delete nextRow["rejectedBy.lastName"];
+      delete nextRow.employeeType;
+      delete nextRow["employeeType.name"];
+      delete nextRow["employeeType.leavesCount"];
+      delete nextRow.attendanceCorrection;
+      delete nextRow["attendanceCorrection._id"];
+      delete nextRow["attendanceCorrection.inTime"];
+      delete nextRow["attendanceCorrection.outTime"];
+      delete nextRow["attendanceCorrection.reason"];
+      delete nextRow["attendanceCorrection.status"];
+      delete nextRow["attendanceCorrection.requestedAt"];
+      delete nextRow["attendanceCorrection.createdAt"];
+      delete nextRow["attendanceCorrection.addedBy"];
+      delete nextRow["attendanceCorrection.addedBy.firstName"];
+      delete nextRow["attendanceCorrection.addedBy.lastName"];
+      delete nextRow["attendanceCorrection.approvedBy"];
+      delete nextRow["attendanceCorrection.approvedBy.firstName"];
+      delete nextRow["attendanceCorrection.approvedBy.lastName"];
+      delete nextRow["attendanceCorrection.rejectedBy"];
+      delete nextRow["attendanceCorrection.rejectedBy.firstName"];
+      delete nextRow["attendanceCorrection.rejectedBy.lastName"];
+
+      if (correctionAddedByName || addedByName) {
+        nextRow.addedBy = correctionAddedByName || addedByName;
+      }
+
+      if (correctionApprovedByName || approvedByName) {
+        nextRow.approvedBy = correctionApprovedByName || approvedByName;
+      }
+
+      if (correctionRejectedByName || rejectedByName) {
+        nextRow.rejectedBy = correctionRejectedByName || rejectedByName;
+      }
+
+      if (isPastEmployeesReport) {
+        const employeeTypeName = String(
+          row?.employeeType?.name || row?.["employeeType.name"] || "",
+        ).trim();
+        const employeeLeavesCount = formatEmployeeLeavesCount(
+          row?.employeeType?.leavesCount || row?.["employeeType.leavesCount"],
+        );
+
+        if (employeeTypeName) {
+          nextRow.employeeType = employeeTypeName;
+        }
+
+        if (employeeLeavesCount) {
+          nextRow.employeeLeavesCount = employeeLeavesCount;
+        }
+      }
 
       return nextRow;
     });
@@ -1873,6 +2031,99 @@ const DepartmentReportCommon = () => {
     });
   };
 
+  const mergePrintoutCsvFields = (rows = []) => {
+    if (normalizedModuleKey !== "printout") return rows;
+
+    return rows.map((row) => {
+      const nextRow = { ...row };
+      const takenByName = [
+        row?.takenBy?.firstName || row?.["takenBy.firstName"] || "",
+        row?.takenBy?.lastName || row?.["takenBy.lastName"] || "",
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .trim();
+      const requestedByName = String(
+        row?.requestedBy?.employeeName ||
+          row?.requestedBy?.name ||
+          row?.requestedBy?.firstName ||
+          row?.["requestedBy.employeeName"] ||
+          row?.["requestedBy.name"] ||
+          row?.["requestedBy.firstName"] ||
+          "",
+      )
+        .trim()
+        || [
+          row?.requestedBy?.firstName || row?.["requestedBy.firstName"] || "",
+          row?.requestedBy?.lastName || row?.["requestedBy.lastName"] || "",
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .trim();
+      const requestedByEmail = String(
+        row?.requestedBy?.email || row?.["requestedBy.email"] || "",
+      ).trim();
+      const buildingName = String(
+        row?.location?.buildingName ||
+          row?.location?.name ||
+          row?.["location.buildingName"] ||
+          row?.["location.name"] ||
+          row?.buildingName ||
+          "",
+      ).trim();
+      const unitNo = String(
+        row?.unit?.unitNo || row?.["unit.unitNo"] || row?.unitNo || "",
+      ).trim();
+      const unitName = String(
+        row?.unit?.unitName || row?.["unit.unitName"] || row?.unitName || "",
+      ).trim();
+
+      delete nextRow.takenBy;
+      delete nextRow["takenBy.firstName"];
+      delete nextRow["takenBy.lastName"];
+      delete nextRow.requestedBy;
+      delete nextRow["requestedBy.employeeName"];
+      delete nextRow["requestedBy.firstName"];
+      delete nextRow["requestedBy.lastName"];
+      delete nextRow["requestedBy.name"];
+      delete nextRow["requestedBy.email"];
+      delete nextRow.location;
+      delete nextRow["location.buildingName"];
+      delete nextRow["location.name"];
+      delete nextRow.unit;
+      delete nextRow["unit.unitNo"];
+      delete nextRow["unit.unitName"];
+      delete nextRow["unit._id"];
+      delete nextRow["location._id"];
+
+      if (takenByName) {
+        nextRow.takenBy = takenByName;
+      }
+
+      if (requestedByName) {
+        nextRow.requestedBy = requestedByName;
+      }
+
+      if (requestedByEmail) {
+        nextRow.requestedByEmail = requestedByEmail;
+      }
+
+      if (buildingName) {
+        nextRow.buildingName = buildingName;
+      }
+
+      if (unitNo) {
+        nextRow.unitNo = unitNo;
+      }
+
+      if (unitName) {
+        nextRow.unitName = unitName;
+      }
+
+      return nextRow;
+    });
+  };
+
   const appendReportSerialNumbers = (reportData, reportName = "") => {
     const rows = Array.isArray(reportData)
       ? reportData
@@ -1884,7 +2135,9 @@ const DepartmentReportCommon = () => {
             mergeAssetCsvFields(
               mergeMeetingCsvFields(
                 mergePerformanceCsvFields(
-                  mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  mergePrintoutCsvFields(
+                    mergeTaskCsvFields(mergeTicketCsvFields(rows), reportName),
+                  ),
                   reportName,
                 ),
               ),
