@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { CircularProgress, Popover } from "@mui/material";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
@@ -63,7 +63,8 @@ const getTableValue = (value) => {
 };
 
 const csvEscape = (value) => {
-  const stringValue = value === null || value === undefined ? "" : String(value);
+  const stringValue =
+    value === null || value === undefined ? "" : String(value);
   return `"${stringValue.replace(/"/g, '""')}"`;
 };
 
@@ -79,26 +80,53 @@ const ReportPrintout = () => {
     },
   ]);
   const [anchorEl, setAnchorEl] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+  const [printoutSearch, setPrintoutSearch] = useState("");
+  const [debouncedPrintoutSearch, setDebouncedPrintoutSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedPrintoutSearch(printoutSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [printoutSearch]);
+
+  const handlePrintoutSearchChange = (value) => {
+    setPrintoutSearch(value);
+
+    setPagination((current) => ({
+      ...current,
+      page: 1,
+    }));
+  };
+
   const openCalendar = Boolean(anchorEl);
 
   const { data: printouts = [], isLoading: isPrintoutsLoading } = useQuery({
-     queryKey: [
+    queryKey: [
       "printouts",
       "report",
       dateRange[0]?.startDate,
       dateRange[0]?.endDate,
       pagination.page,
       pagination.limit,
+      debouncedPrintoutSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-     const response = await axios.get("/api/printout", {
+      const response = await axios.get("/api/printout", {
         params: {
           startDate: toUtcDayBoundary(dateRange[0].startDate),
           endDate: toUtcDayBoundary(dateRange[0].endDate, true),
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedPrintoutSearch || undefined,
         },
       });
       const responsePagination = response.data.pagination;
@@ -131,12 +159,14 @@ const ReportPrintout = () => {
 
   const tableRows = useMemo(
     () =>
-     printouts.map((printout, index) => ({
+      printouts.map((printout, index) => ({
         rawPrintout: printout,
         srNo: (pagination.page - 1) * pagination.limit + index + 1,
         takenBy: getTableValue(getUserName(printout.takenBy)),
         takenAt: getTableValue(formatDateTime(printout.takenAt)),
-        location: getTableValue(getLocationName(printout.location, printout.unit)),
+        location: getTableValue(
+          getLocationName(printout.location, printout.unit),
+        ),
         unit: getTableValue(getUnitName(printout.unit)),
         client: getTableValue(getCompanyName(printout.client)),
         requestedBy: getTableValue(getUserName(printout.requestedBy)),
@@ -144,19 +174,19 @@ const ReportPrintout = () => {
         printoutCount: printout.printoutCount,
         remarks: getTableValue(printout?.remark),
       })),
-     [pagination.limit, pagination.page, printouts]
+    [pagination.limit, pagination.page, printouts],
   );
 
   const columns = [
     { field: "srNo", headerName: "Sr. No.", width: 110 },
-    { field: "takenBy", headerName: "Taken By",flex:1},
-    { field: "takenAt", headerName: "Taken At",flex:1},
-    { field: "location", headerName: "Building",flex:1},
-    { field: "unit", headerName: "Unit",flex:1},
-    { field: "client", headerName: "Company",flex:1},
-    { field: "requestedBy", headerName: "Person",flex:1},
-    { field: "department", headerName: "Department",flex:1},
-    { field: "printoutCount", headerName: "Quantity",flex:1},
+    { field: "takenBy", headerName: "Taken By", flex: 1 },
+    { field: "takenAt", headerName: "Taken At", flex: 1 },
+    { field: "location", headerName: "Building", flex: 1 },
+    { field: "unit", headerName: "Unit", flex: 1 },
+    { field: "client", headerName: "Company", flex: 1 },
+    { field: "requestedBy", headerName: "Person", flex: 1 },
+    { field: "department", headerName: "Department", flex: 1 },
+    { field: "printoutCount", headerName: "Quantity", flex: 1 },
     { field: "remarks", headerName: "Remarks", flex: 1 },
     // {
     //   field: "actions",
@@ -205,7 +235,9 @@ const ReportPrintout = () => {
     const fields = columns.map((column) => column.field);
     const csvRows = [
       headers.map(csvEscape).join(","),
-      ...tableRows.map((row) => fields.map((field) => csvEscape(row[field])).join(",")),
+      ...tableRows.map((row) =>
+        fields.map((field) => csvEscape(row[field])).join(","),
+      ),
     ];
     const blob = new Blob([csvRows.join("\n")], {
       type: "text/csv;charset=utf-8;",
@@ -279,6 +311,10 @@ const ReportPrintout = () => {
             data={tableRows}
             columns={columns}
             search
+            loading={isPrintoutsLoading}
+            serverSearch
+            searchValue={printoutSearch}
+            onSearchChange={handlePrintoutSearchChange}
             tableHeight={500}
             //hideFilter
             //hideTitle
@@ -322,7 +358,10 @@ const ReportPrintout = () => {
           />
           <DetalisFormatted
             title="Building"
-            detail={getLocationName(selectedPrintout?.location, selectedPrintout?.unit)}
+            detail={getLocationName(
+              selectedPrintout?.location,
+              selectedPrintout?.unit,
+            )}
           />
           <DetalisFormatted
             title="Unit"
@@ -344,10 +383,7 @@ const ReportPrintout = () => {
             title="Quantity"
             detail={selectedPrintout?.printoutCount}
           />
-          <DetalisFormatted
-            title="Remarks"
-            detail={selectedPrintout?.remark}
-          />
+          <DetalisFormatted title="Remarks" detail={selectedPrintout?.remark} />
         </div>
       </MuiModal>
     </div>

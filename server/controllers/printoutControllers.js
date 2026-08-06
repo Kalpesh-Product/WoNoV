@@ -233,12 +233,12 @@ const getPrintouts = async (req, res) => {
       department,
       fromDate,
       toDate,
+      search,
+      searchContext,
     } = req.query;
     const filters = {};
-    const requestDateFilter =
-      req.query?.dateFilter ||
-      req.query?.filters ||
-      {
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
         startDate:
           req.query?.["dateFilter[startDate]"] ||
           req.query?.["filters[startDate]"] ||
@@ -306,6 +306,8 @@ const getPrintouts = async (req, res) => {
       filters,
       page: req.query?.page,
       limit: req.query?.limit,
+      search,
+      searchContext,
       ...(dateFilter && { dateFilter }),
     });
 
