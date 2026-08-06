@@ -399,6 +399,28 @@ const { roundedMax, tickAmount } = useMemo(() => {
   };
 }, [expenseRawSeries, selectedFiscalYear]);
 
+const selectedYearTotals = useMemo(() => {
+  const selectedYearData =
+    departmentExpenseByFiscalYear?.[selectedFiscalYear] || {};
+
+  const actualTotal =
+    (selectedYearData.actual || []).reduce(
+      (sum, amount) => sum + Number(amount || 0),
+      0,
+    ) || 0;
+
+  const projectedTotal =
+    (selectedYearData.projected || []).reduce(
+      (sum, amount) => sum + Number(amount || 0),
+      0,
+    ) || 0;
+
+  return {
+    actualTotal,
+    projectedTotal,
+  };
+}, [departmentExpenseByFiscalYear, selectedFiscalYear]);
+
 
   const expenseOptions = {
   chart: {
@@ -728,8 +750,12 @@ const totalUtilised =
       <YearlyGraph
         data={expenseRawSeries}
         options={expenseOptions}
-        title={"BIZ Nest DEPARTMENT WISE EXPENSE"}
-        titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
+        title={"BIZ NEST DEPARTMENT WISE EXPENSE DETAILS"}
+        TitleAmountTotal={`INR ${inrFormat(selectedYearTotals.projectedTotal)}`}
+        TitleAmountGreen={`INR ${inrFormat(selectedYearTotals.actualTotal)}`}
+        totalTitle="PROJECTED"
+        greenTitle="ACTUAL"
+        summaryChipVariant="budget"
         onYearChange={setSelectedFiscalYear}
       />
 
