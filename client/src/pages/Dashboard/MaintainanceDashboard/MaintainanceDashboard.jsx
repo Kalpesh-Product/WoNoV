@@ -702,8 +702,20 @@ const { roundedMax, tickAmount } = useMemo(() => {
     enabled: false,
   },
   xaxis: {
-    categories: fiscalMonths,
+  categories: fiscalMonths,
+  title: {
+    text: "  ",
   },
+  crosshairs: {
+    show: false,
+    fill: {
+      opacity: 0,
+    },
+    stroke: {
+      opacity: 0,
+    },
+  },
+},
   yaxis: {
   min: 0,
   max: roundedMax,

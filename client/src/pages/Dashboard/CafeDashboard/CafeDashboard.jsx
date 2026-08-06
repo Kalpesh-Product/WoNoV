@@ -370,13 +370,18 @@ redrawOnParentResize: false,
   },
 
  
+  // dataPointSelection: () => {
+  //   navigate(
+  //     `/app/dashboard/cafe-dashboard/finance/budget?title=${encodeURIComponent(
+  //       "BIZ Nest CAFE DEPARTMENT EXPENSE",
+  //     )}&fy=${encodeURIComponent(selectedFiscalYear)}`,
+  //   );
+  // },
   dataPointSelection: () => {
-    navigate(
-      `/app/dashboard/cafe-dashboard/finance/budget?title=${encodeURIComponent(
-        "BIZ Nest CAFE DEPARTMENT EXPENSE",
-      )}&fy=${encodeURIComponent(selectedFiscalYear)}`,
-    );
-  },
+  navigate(
+    "/app/dashboard/cafe-dashboard/finance/budget",
+  );
+},
 },
       },
 
@@ -480,18 +485,30 @@ redrawOnParentResize: false,
   },
 },
 
-      xaxis: {
-        title: {
-          text: "  ",
-        },
+    xaxis: {
+  title: {
+    text: "  ",
+  },
 
-        labels: {
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
-      },
+  labels: {
+    style: {
+      fontFamily:
+        "Poppins-Regular, Arial, sans-serif",
+    },
+  },
+
+  crosshairs: {
+    show: false,
+
+    fill: {
+      opacity: 0,
+    },
+
+    stroke: {
+      opacity: 0,
+    },
+  },
+},
 
      yaxis: {
   min: 0,

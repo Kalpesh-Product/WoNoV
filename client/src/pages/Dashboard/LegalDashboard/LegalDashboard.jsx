@@ -485,18 +485,30 @@ redrawOnParentResize: false,
   },
 },
 
-      xaxis: {
-        title: {
-          text: "  ",
-        },
+    xaxis: {
+  title: {
+    text: "  ",
+  },
 
-        labels: {
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
-      },
+  labels: {
+    style: {
+      fontFamily:
+        "Poppins-Regular, Arial, sans-serif",
+    },
+  },
+
+  crosshairs: {
+    show: false,
+
+    fill: {
+      opacity: 0,
+    },
+
+    stroke: {
+      opacity: 0,
+    },
+  },
+},
 
      yaxis: {
   min: 0,

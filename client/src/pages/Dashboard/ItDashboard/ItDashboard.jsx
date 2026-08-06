@@ -615,6 +615,17 @@ const { roundedMax, tickAmount } = useMemo(() => {
   dataLabels: {
     enabled: false,
   },
+  xaxis: {
+  crosshairs: {
+    show: false,
+    fill: {
+      opacity: 0,
+    },
+    stroke: {
+      opacity: 0,
+    },
+  },
+},
  yaxis: {
   min: 0,
   max: roundedMax,
