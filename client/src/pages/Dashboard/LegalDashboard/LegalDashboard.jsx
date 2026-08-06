@@ -236,60 +236,144 @@ const totalExpense = useMemo(() => {
   );
 }, [selectedLegalActualAmounts]);
 
+const { roundedMax, tickAmount } = useMemo(() => {
+  /*
+   * Graph display series ke bajay original selected FY data use kar rahe hain.
+   * Isse legend click karne par Y-axis scale change nahi hogi.
+   */
+  const selectedYearData =
+    legalExpenseByFiscalYear?.[selectedFiscalYear] || {
+      actual: Array(12).fill(0),
+      projected: Array(12).fill(0),
+    };
+
+  const monthlyValues = Array.from(
+    { length: 12 },
+    (_, monthIndex) => {
+      const actualAmount = Number(
+        selectedYearData?.actual?.[monthIndex] || 0,
+      );
+
+      const projectedAmount = Number(
+        selectedYearData?.projected?.[monthIndex] || 0,
+      );
+
+      /*
+       * Default graph logic:
+       * Actual hai to Actual consider hoga,
+       * warna Projected.
+       */
+      return actualAmount > 0
+        ? actualAmount
+        : projectedAmount;
+    },
+  );
+
+  const maximumValue = Math.max(...monthlyValues, 0);
+
+  if (maximumValue <= 0) {
+    return {
+      roundedMax: 40000,
+      tickAmount: 4,
+    };
+  }
+
+  /*
+   * BudgetPage jaisa dynamic readable scale.
+   */
+  const targetTickAmount = 5;
+  const roughStep = maximumValue / targetTickAmount;
+
+  const magnitude =
+    10 ** Math.floor(Math.log10(roughStep));
+
+  const normalizedStep = roughStep / magnitude;
+
+  let niceStepMultiplier;
+
+  if (normalizedStep <= 1) {
+    niceStepMultiplier = 1;
+  } else if (normalizedStep <= 2) {
+    niceStepMultiplier = 2;
+  } else if (normalizedStep <= 5) {
+    niceStepMultiplier = 5;
+  } else {
+    niceStepMultiplier = 10;
+  }
+
+  const niceStep =
+    niceStepMultiplier * magnitude;
+
+  // const dynamicRoundedMax =
+  //   Math.ceil(maximumValue / niceStep) * niceStep;
+  const dynamicRoundedMax =
+  (Math.ceil(maximumValue / niceStep) + 1) * niceStep;
+
+  const dynamicTickAmount = Math.max(
+    Math.round(dynamicRoundedMax / niceStep),
+    1,
+  );
+
+  return {
+    roundedMax: dynamicRoundedMax,
+    tickAmount: dynamicTickAmount,
+  };
+}, [legalExpenseByFiscalYear, selectedFiscalYear]);
+
  const expenseOptions = useMemo(
   () => {
-    const selectedSeries = expenseSeries.filter(
-      (series) => series.group === selectedFiscalYear,
-    );
+    // const selectedSeries = expenseSeries.filter(
+    //   (series) => series.group === selectedFiscalYear,
+    // );
 
-    const actualData =
-      selectedSeries.find(
-        (series) => series.name === "Actual Amount",
-      )?.data || [];
+    // const actualData =
+    //   selectedSeries.find(
+    //     (series) => series.name === "Actual Amount",
+    //   )?.data || [];
 
-    const projectedData =
-      selectedSeries.find(
-        (series) => series.name === "Projected Amount",
-      )?.data || [];
+    // const projectedData =
+    //   selectedSeries.find(
+    //     (series) => series.name === "Projected Amount",
+    //   )?.data || [];
 
-    const highestMonthlyAmount = Math.max(
-      ...Array.from({ length: 12 }, (_, index) => {
-        const actualAmount = Number(actualData[index] || 0);
-        const projectedAmount = Number(projectedData[index] || 0);
+    // const highestMonthlyAmount = Math.max(
+    //   ...Array.from({ length: 12 }, (_, index) => {
+    //     const actualAmount = Number(actualData[index] || 0);
+    //     const projectedAmount = Number(projectedData[index] || 0);
 
-        return actualAmount + projectedAmount;
-      }),
-      0,
-    );
+    //     return actualAmount + projectedAmount;
+    //   }),
+    //   0,
+    // );
 
-    const highestAmountInLakhs = highestMonthlyAmount / 100000;
+    // const highestAmountInLakhs = highestMonthlyAmount / 100000;
 
-    let yAxisMaximumInLakhs = 5;
+    // let yAxisMaximumInLakhs = 5;
 
-    if (highestAmountInLakhs > 0) {
-      const magnitude =
-        10 ** Math.floor(Math.log10(highestAmountInLakhs));
+    // if (highestAmountInLakhs > 0) {
+    //   const magnitude =
+    //     10 ** Math.floor(Math.log10(highestAmountInLakhs));
 
-      const normalizedValue =
-        highestAmountInLakhs / magnitude;
+    //   const normalizedValue =
+    //     highestAmountInLakhs / magnitude;
 
-      let niceNormalizedMaximum;
+    //   let niceNormalizedMaximum;
 
-      if (normalizedValue <= 1) {
-        niceNormalizedMaximum = 1;
-      } else if (normalizedValue <= 2) {
-        niceNormalizedMaximum = 2;
-      } else if (normalizedValue <= 3) {
-        niceNormalizedMaximum = 3;
-      } else if (normalizedValue <= 5) {
-        niceNormalizedMaximum = 5;
-      } else {
-        niceNormalizedMaximum = 10;
-      }
+    //   if (normalizedValue <= 1) {
+    //     niceNormalizedMaximum = 1;
+    //   } else if (normalizedValue <= 2) {
+    //     niceNormalizedMaximum = 2;
+    //   } else if (normalizedValue <= 3) {
+    //     niceNormalizedMaximum = 3;
+    //   } else if (normalizedValue <= 5) {
+    //     niceNormalizedMaximum = 5;
+    //   } else {
+    //     niceNormalizedMaximum = 10;
+    //   }
 
-      yAxisMaximumInLakhs =
-        niceNormalizedMaximum * magnitude;
-    }
+    //   yAxisMaximumInLakhs =
+    //     niceNormalizedMaximum * magnitude;
+    // }
 
     return {
       chart: {
@@ -352,29 +436,15 @@ redrawOnParentResize: false,
             total: {
               enabled: true,
 
-              formatter: (value, options) => {
-                const currentFiscalYear = formatFiscalYear(
-                  getFiscalYearStart(dayjs()),
-                );
+             formatter: (value) => {
+  const totalAmount = Number(value || 0);
 
-                const currentMonthIndex =
-                  getFiscalMonthIndex(dayjs());
+  if (totalAmount <= 0) {
+    return "";
+  }
 
-                const isCurrentMonth =
-                  selectedFiscalYear === currentFiscalYear &&
-                  options.dataPointIndex ===
-                    currentMonthIndex;
-
-                if (isCurrentMonth) return "";
-
-                const totalAmount = Number(value || 0);
-
-                if (totalAmount <= 0) return "";
-
-                return Math.round(
-                  totalAmount,
-                ).toLocaleString("en-IN");
-              },
+  return Math.round(totalAmount).toLocaleString("en-IN");
+},
 
               offsetY: -10,
 
@@ -428,14 +498,14 @@ redrawOnParentResize: false,
         },
       },
 
-      grid: {
-        padding: {
-          top: 8,
-          right: 10,
-          bottom: 0,
-          left: 10,
-        },
-      },
+     grid: {
+  padding: {
+    top: 20,
+    right: 10,
+    bottom: 0,
+    left: 0,
+  },
+},
 
       xaxis: {
         title: {
@@ -450,46 +520,44 @@ redrawOnParentResize: false,
         },
       },
 
-      yaxis: {
-        min: 0,
+     yaxis: {
+  min: 0,
+  max: roundedMax,
+  tickAmount,
+  forceNiceScale: false,
 
-        max: yAxisMaximumInLakhs * 100000,
+  title: {
+    text: "Amount In Lakhs (INR)",
+  },
 
-        tickAmount: 4,
+  labels: {
+    minWidth: 25,
+    maxWidth: 35,
 
-        forceNiceScale: false,
+    formatter: (value) => {
+     
+      const axisValue = Number(value || 0) / 10000;
 
-        title: {
-          text: "Amount In Lakhs (INR)",
+      if (Number.isInteger(axisValue)) {
+        return String(axisValue);
+      }
 
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
+      return Number(axisValue.toFixed(2)).toString();
+    },
 
-        labels: {
-          formatter: (value) =>
-            `${Math.round(
-              Number(value || 0) / 100000,
-            )}`,
-
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
-      },
+    style: {
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      fontSize: "11px",
+    },
+  },
+},
 
      legend: {
   show: true,
   position: "top",
   fontFamily: "Poppins-Regular, Arial, sans-serif",
 
-  /*
-   * ApexCharts ka built-in toggle disable.
-   * React state hide/show manage karegi.
-   */
+  
   onItemClick: {
     toggleDataSeries: false,
   },
@@ -640,11 +708,13 @@ redrawOnParentResize: false,
 },
     };
   },
- [
+[
   expenseSeries,
   legalExpenseByFiscalYear,
   selectedFiscalYear,
   navigate,
+  roundedMax,
+  tickAmount,
   hiddenLegalExpenseSeries.actual,
   hiddenLegalExpenseSeries.projected,
 ],
