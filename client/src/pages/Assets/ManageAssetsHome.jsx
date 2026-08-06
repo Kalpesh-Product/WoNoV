@@ -30,6 +30,7 @@ const ManageAssetsHome = () => {
       "67b83885daad0f7bab2f188b",
       "67b83885daad0f7bab2f1852",
       "681a10b13fc9dc666ede401c",
+      "6a3a564490d8669786f9e431", //Shruti Admin
     ], //Mac//Kashif//Nigel
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
