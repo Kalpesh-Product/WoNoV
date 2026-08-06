@@ -597,6 +597,7 @@ const getAllTickets = async (req, res, next) => {
       isReport: false,
       page: req.query?.page,
       limit: req.query?.limit,
+      search: req.query?.search,
       ...(hasDateFilter && {
         dateFilter: buildDateFilter({
           startDate: requestDateFilter.startDate,
@@ -611,13 +612,12 @@ const getAllTickets = async (req, res, next) => {
       return res.status(200).json({
         message: "No tickets found",
         data: [],
-        pagination:
-          payload?.pagination || {
-            page: Number(req.query?.page) || 1,
-            limit: Number(req.query?.limit) || 10,
-            total: 0,
-            totalPages: 0,
-          },
+        pagination: payload?.pagination || {
+          page: Number(req.query?.page) || 1,
+          limit: Number(req.query?.limit) || 10,
+          total: 0,
+          totalPages: 0,
+        },
       });
     }
 
