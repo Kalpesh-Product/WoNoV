@@ -95,6 +95,7 @@ const AssetsHome = () => {
       "67b83885daad0f7bab2f188b",
       "67b83885daad0f7bab2f1852",
       "681a10b13fc9dc666ede401c",
+      "6a3a564490d8669786f9e431", 
     ], //Mac//Kashif//Nigel
     onNotTop: () => {
       if (isGlobalAssetsUser) return;

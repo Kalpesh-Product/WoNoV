@@ -210,6 +210,59 @@ const expenseSeries = useMemo(() => {
   hiddenCafeExpenseSeries.projected,
 ]);
 
+const { roundedMax, tickAmount } = useMemo(() => {
+  const selectedYearSeries = expenseSeries.filter(
+    (series) => series.group === selectedFiscalYear,
+  );
+
+  const monthlyTotals = Array.from({ length: 12 }, (_, monthIndex) => {
+    return selectedYearSeries.reduce((total, series) => {
+      return total + Number(series?.data?.[monthIndex] || 0);
+    }, 0);
+  });
+
+  const maximumValue = Math.max(...monthlyTotals, 0);
+
+  if (maximumValue <= 0) {
+    return {
+      roundedMax: 10000,
+      tickAmount: 1,
+    };
+  }
+
+  const targetTicks = 5;
+  const roughStep = maximumValue / targetTicks;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalizedStep = roughStep / magnitude;
+
+  let niceStepMultiplier;
+
+  if (normalizedStep <= 1) {
+    niceStepMultiplier = 1;
+  } else if (normalizedStep <= 2) {
+    niceStepMultiplier = 2;
+  } else if (normalizedStep <= 5) {
+    niceStepMultiplier = 5;
+  } else {
+    niceStepMultiplier = 10;
+  }
+
+  const step = niceStepMultiplier * magnitude;
+
+  const roundedMaximum =
+    (Math.ceil(maximumValue / step) + 1) * step;
+
+  const dynamicTickAmount = Math.max(
+    Math.round(roundedMaximum / step),
+    1,
+  );
+
+  return {
+    roundedMax: roundedMaximum,
+    tickAmount: dynamicTickAmount,
+  };
+}, [expenseSeries, selectedFiscalYear]);
+
  const selectedCafeActualAmounts = useMemo(() => {
   return (
     cafeExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
@@ -418,14 +471,14 @@ redrawOnParentResize: false,
         },
       },
 
-      grid: {
-        padding: {
-          top: 8,
-          right: 10,
-          bottom: 0,
-          left: 10,
-        },
-      },
+   grid: {
+  padding: {
+    top: 20,
+    right: 10,
+    bottom: 0,
+    left: 0,
+  },
+},
 
       xaxis: {
         title: {
@@ -440,36 +493,48 @@ redrawOnParentResize: false,
         },
       },
 
-      yaxis: {
-        min: 0,
+     yaxis: {
+  min: 0,
+  max: roundedMax,
+  tickAmount,
+  forceNiceScale: false,
 
-        max: yAxisMaximumInLakhs * 100000,
+//   title: {
+//   text: "Amount In Lakhs (INR)",
+//   rotate: -90,
+//   offsetX: 0,
 
-        tickAmount: 4,
+//   style: {
+//     fontFamily: "Poppins-Regular, Arial, sans-serif",
+//     fontSize: "12px",
+//     fontWeight: 500,
+//     color: "#000000",
+//   },
+// },
+title: {
+  text: "Amount In Lakhs (INR)",
+},
 
-        forceNiceScale: false,
+  labels: {
+  minWidth: 25,
+  maxWidth: 35,
 
-        title: {
-          text: "Amount In Lakhs (INR)",
+  formatter: (value) => {
+    const formattedValue = Number(value || 0) / 10000;
 
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
+    if (Number.isInteger(formattedValue)) {
+      return String(formattedValue);
+    }
 
-        labels: {
-          formatter: (value) =>
-            `${Math.round(
-              Number(value || 0) / 100000,
-            )}`,
+    return Number(formattedValue.toFixed(2)).toString();
+  },
 
-          style: {
-            fontFamily:
-              "Poppins-Regular, Arial, sans-serif",
-          },
-        },
-      },
+  style: {
+    fontFamily: "Poppins-Regular, Arial, sans-serif",
+    fontSize: "11px",
+  },
+},
+},
 
     legend: {
   show: true,
