@@ -298,6 +298,74 @@ const projectedAmount = getAmount(item.projectedAmount);
     });
 }, [hrFinance]);
 
+const { roundedMax, tickAmount } = useMemo(() => {
+  /*
+   * Sirf selected financial year ki series use karo.
+   */
+  const selectedYearSeries = expenseRawSeries.filter(
+    (series) => series.group === selectedFiscalYear,
+  );
+
+  /*
+   * Har month ka stacked total:
+   * Actual Amount + Projected balance
+   */
+  const monthlyTotals = Array.from(
+    { length: 12 },
+    (_, monthIndex) =>
+      selectedYearSeries.reduce(
+        (total, series) =>
+          total + Number(series?.data?.[monthIndex] || 0),
+        0,
+      ),
+  );
+
+  const maxExpenseValue = Math.max(...monthlyTotals, 0);
+
+  if (maxExpenseValue <= 0) {
+    return {
+      roundedMax: 10000,
+      tickAmount: 1,
+    };
+  }
+
+  /*
+   * BudgetPage wala same dynamic scale formula.
+   */
+  const bufferedMax = maxExpenseValue * 1.1;
+  const roughStep = bufferedMax / 6;
+
+  const magnitude =
+    10 ** Math.floor(Math.log10(roughStep));
+
+  const normalizedStep = roughStep / magnitude;
+
+  let step;
+
+  if (normalizedStep <= 1) {
+    step = magnitude;
+  } else if (normalizedStep <= 2) {
+    step = 2 * magnitude;
+  } else if (normalizedStep <= 5) {
+    step = 5 * magnitude;
+  } else {
+    step = 10 * magnitude;
+  }
+
+  const safeRoundedMax =
+    Math.ceil(bufferedMax / step) * step;
+
+  const safeTickAmount = Math.max(
+    Math.round(safeRoundedMax / step),
+    1,
+  );
+
+  return {
+    roundedMax: safeRoundedMax,
+    tickAmount: safeTickAmount,
+  };
+}, [expenseRawSeries, selectedFiscalYear]);
+
 
   const expenseOptions = {
     chart: {
@@ -338,13 +406,46 @@ const projectedAmount = getAmount(item.projectedAmount);
   enabled: false,
 },
 
+    // yaxis: {
+    //   max: 7000000,
+    //   title: { text: "Amount In Lakhs (INR)" },
+    //   labels: {
+    //     formatter: (val) => `${val / 100000}`,
+    //   },
+    // },
     yaxis: {
-      max: 7000000,
-      title: { text: "Amount In Lakhs (INR)" },
-      labels: {
-        formatter: (val) => `${val / 100000}`,
-      },
+  min: 0,
+  max: roundedMax,
+  tickAmount,
+  forceNiceScale: false,
+
+  title: {
+    text: "Amount In Lakhs (INR)",
+  },
+
+  labels: {
+    minWidth: 25,
+    maxWidth: 35,
+
+    formatter: (value) => {
+      const axisValue =
+        Number(value || 0) / 10000;
+
+      if (Number.isInteger(axisValue)) {
+        return String(axisValue);
+      }
+
+      return Number(
+        axisValue.toFixed(2),
+      ).toString();
     },
+
+    style: {
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      fontSize: "11px",
+    },
+  },
+},
    fill: {
   opacity: 1,
 },
