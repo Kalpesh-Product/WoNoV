@@ -460,39 +460,107 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
   hiddenBudgetSeries.projected,
 ]);
 
+  // const { roundedMax, tickAmount } = useMemo(() => {
+  //   const monthlyTotals = budgetGraphData.reduce((acc, item) => {
+  //     const dueDate = item?.dueDate;
+  //     if (!dueDate) return acc;
+
+  //     const monthKey = dayjs(dueDate).format("YYYY-MM");
+  //     acc[monthKey] = (acc[monthKey] || 0) + Number(item?.amount || 0);
+  //     return acc;
+  //   }, {});
+
+  //   const maxExpenseValue = Math.max(...Object.values(monthlyTotals), 0);
+  //   if (maxExpenseValue <= 0) {
+  //     return { roundedMax: 10000, tickAmount: 5 };
+  //   }
+
+  //   const bufferedMax = maxExpenseValue * 1.1;
+  //   const roughStep = bufferedMax / 6;
+  //   const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  //   const normalizedStep = roughStep / magnitude;
+
+  //   let step = magnitude;
+  //   if (normalizedStep <= 1) step = magnitude;
+  //   else if (normalizedStep <= 2) step = 2 * magnitude;
+  //   else if (normalizedStep <= 5) step = 5 * magnitude;
+  //   else step = 10 * magnitude;
+
+  //   const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
+  //   return {
+  //     roundedMax: safeRoundedMax,
+  //     tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
+  //   };
+  // }, [budgetGraphData]);
+
   const { roundedMax, tickAmount } = useMemo(() => {
-    const monthlyTotals = budgetGraphData.reduce((acc, item) => {
-      const dueDate = item?.dueDate;
-      if (!dueDate) return acc;
+ 
+  const selectedFYGraphData = budgetGraphData.filter(
+    (item) => item?.fiscalYearLabel === selectedFiscalYear,
+  );
 
-      const monthKey = dayjs(dueDate).format("YYYY-MM");
-      acc[monthKey] = (acc[monthKey] || 0) + Number(item?.amount || 0);
+  const monthlyTotals = selectedFYGraphData.reduce((acc, item) => {
+    const monthIndex = Number(item?.bucketIndex);
+
+    if (!Number.isInteger(monthIndex)) {
       return acc;
-    }, {});
-
-    const maxExpenseValue = Math.max(...Object.values(monthlyTotals), 0);
-    if (maxExpenseValue <= 0) {
-      return { roundedMax: 10000, tickAmount: 5 };
     }
 
-    const bufferedMax = maxExpenseValue * 1.1;
-    const roughStep = bufferedMax / 6;
-    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
-    const normalizedStep = roughStep / magnitude;
+    acc[monthIndex] =
+      (acc[monthIndex] || 0) + Number(item?.amount || 0);
 
-    let step = magnitude;
-    if (normalizedStep <= 1) step = magnitude;
-    else if (normalizedStep <= 2) step = 2 * magnitude;
-    else if (normalizedStep <= 5) step = 5 * magnitude;
-    else step = 10 * magnitude;
+    return acc;
+  }, {});
 
-    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+  const maxExpenseValue = Math.max(
+    ...Object.values(monthlyTotals),
+    0,
+  );
 
+  if (maxExpenseValue <= 0) {
     return {
-      roundedMax: safeRoundedMax,
-      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
+      roundedMax: 10000,
+      tickAmount: 1,
     };
-  }, [budgetGraphData]);
+  }
+
+ 
+  const bufferedMax = maxExpenseValue * 1.1;
+
+  
+  const roughStep = bufferedMax / 6;
+
+  const magnitude =
+    10 ** Math.floor(Math.log10(roughStep));
+
+  const normalizedStep = roughStep / magnitude;
+
+  let step;
+
+  if (normalizedStep <= 1) {
+    step = magnitude;
+  } else if (normalizedStep <= 2) {
+    step = 2 * magnitude;
+  } else if (normalizedStep <= 5) {
+    step = 5 * magnitude;
+  } else {
+    step = 10 * magnitude;
+  }
+
+  const safeRoundedMax =
+    Math.ceil(bufferedMax / step) * step;
+
+  const safeTickAmount = Math.max(
+    Math.round(safeRoundedMax / step),
+    1,
+  );
+
+  return {
+    roundedMax: safeRoundedMax,
+    tickAmount: safeTickAmount,
+  };
+}, [budgetGraphData, selectedFiscalYear]);
 
   const expenseOptions = {
    chart: {

@@ -579,34 +579,92 @@ const expenseRawSeries = useMemo(() => {
   hiddenAdminExpenseSeries.projected,
 ]);
 
-const roundedMax = useMemo(() => {
-  const fiscalYears = [
-    ...new Set(expenseRawSeries.map((series) => series.group)),
-  ];
+// const roundedMax = useMemo(() => {
+//   const fiscalYears = [
+//     ...new Set(expenseRawSeries.map((series) => series.group)),
+//   ];
 
-  const maxValue = fiscalYears.reduce((max, fiscalYear) => {
-    const actualSeries = expenseRawSeries.find(
-      (series) =>
-        series.group === fiscalYear && series.name === "Actual Amount"
-    );
+//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+//     const actualSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Actual Amount"
+//     );
 
-    const projectedSeries = expenseRawSeries.find(
-      (series) =>
-        series.group === fiscalYear && series.name === "Projected Amount"
-    );
+//     const projectedSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Projected Amount"
+//     );
 
-    const monthlyMax = Array.from({ length: 12 }, (_, index) => {
-      const actual = actualSeries?.data?.[index] || 0;
-      const projectedBalance = projectedSeries?.data?.[index] || 0;
+//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+//       const actual = actualSeries?.data?.[index] || 0;
+//       const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-      return actual + projectedBalance;
-    });
+//       return actual + projectedBalance;
+//     });
 
-    return Math.max(max, ...monthlyMax);
-  }, 0);
+//     return Math.max(max, ...monthlyMax);
+//   }, 0);
 
-  return Math.ceil((maxValue + 100000) / 100000) * 100000;
-}, [expenseRawSeries]);
+//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+// }, [expenseRawSeries]);
+const { roundedMax, tickAmount } = useMemo(() => {
+ 
+  const selectedYearSeries = expenseRawSeries.filter(
+    (series) => series.group === selectedFiscalYear,
+  );
+
+ 
+  const monthlyTotals = Array.from(
+    { length: 12 },
+    (_, monthIndex) =>
+      selectedYearSeries.reduce(
+        (total, series) =>
+          total + Number(series?.data?.[monthIndex] || 0),
+        0,
+      ),
+  );
+
+  const maxExpenseValue = Math.max(...monthlyTotals, 0);
+
+  if (maxExpenseValue <= 0) {
+    return {
+      roundedMax: 10000,
+      tickAmount: 5,
+    };
+  }
+
+ 
+  const bufferedMax = maxExpenseValue * 1.1;
+  const roughStep = bufferedMax / 6;
+
+  const magnitude =
+    10 ** Math.floor(Math.log10(roughStep));
+
+  const normalizedStep = roughStep / magnitude;
+
+  let step = magnitude;
+
+  if (normalizedStep <= 1) {
+    step = magnitude;
+  } else if (normalizedStep <= 2) {
+    step = 2 * magnitude;
+  } else if (normalizedStep <= 5) {
+    step = 5 * magnitude;
+  } else {
+    step = 10 * magnitude;
+  }
+
+  const safeRoundedMax =
+    Math.ceil(bufferedMax / step) * step;
+
+  return {
+    roundedMax: safeRoundedMax,
+    tickAmount: Math.max(
+      Math.round(safeRoundedMax / step),
+      1,
+    ),
+  };
+}, [expenseRawSeries, selectedFiscalYear]);
 
   const expenseOptions = {
   chart: {
@@ -661,56 +719,96 @@ const roundedMax = useMemo(() => {
   dataLabels: {
     enabled: true,
     formatter: (val, opts) => {
-      if (!val) return "";
-      const isCurrentFiscalYearSelected =
-        selectedFiscalYear === currentFiscalYear;
-      const isCurrentFiscalMonth =
-        opts.dataPointIndex === currentFiscalMonthIndexForCard;
+  if (!val || Number(val) <= 0) {
+    return "";
+  }
 
-      if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) return "";
+  const seriesName =
+    opts?.w?.globals?.seriesNames?.[opts.seriesIndex];
 
-      const seriesName = opts.w.globals.seriesNames[opts.seriesIndex];
+  const actualSeries =
+    opts?.w?.globals?.initialSeries?.find(
+      (item) => item.name === "Actual Amount",
+    );
 
-      const actualSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Actual Amount"
-      );
+  const projectedSeries =
+    opts?.w?.globals?.initialSeries?.find(
+      (item) => item.name === "Projected Amount",
+    );
 
-      const projectedSeries = opts.w.globals.initialSeries.find(
-        (item) => item.name === "Projected Amount"
-      );
+  const actualAmount =
+    Number(
+      actualSeries?.data?.[opts.dataPointIndex] || 0,
+    );
 
-      const actualAmount = actualSeries?.data?.[opts.dataPointIndex] || 0;
-      const projectedBalance =
-        projectedSeries?.data?.[opts.dataPointIndex] || 0;
+  const projectedAmount =
+    Number(
+      projectedSeries?.data?.[opts.dataPointIndex] || 0,
+    );
 
-      if (seriesName === "Projected Amount") {
-        return inrFormat(actualAmount + projectedBalance);
-      }
+  if (seriesName === "Projected Amount") {
+    return inrFormat(
+      actualAmount + projectedAmount,
+    );
+  }
 
-      if (seriesName === "Actual Amount" && projectedBalance === 0) {
-        return inrFormat(actualAmount);
-      }
+  if (
+    seriesName === "Actual Amount" &&
+    projectedAmount === 0
+  ) {
+    return inrFormat(actualAmount);
+  }
 
-      return "";
-    },
+  return "";
+},
     style: {
       fontSize: "12px",
       colors: ["#000"],
     },
     offsetY: -22,
   },
-  xaxis: {
-    categories: fiscalMonths,
+ xaxis: {
+  categories: fiscalMonths,
+  title: {
+    text: "  ",
   },
-  yaxis: {
-    min: 0,
-    max: roundedMax,
-    tickAmount: 4,
-    title: { text: "Amount In Lakhs (INR)" },
-    labels: {
-      formatter: (val) => `${val / 100000}`,
+  crosshairs: {
+    show: false,
+  },
+},
+ yaxis: {
+  min: 0,
+  max: roundedMax,
+  tickAmount,
+  forceNiceScale: false,
+
+  title: {
+    text: "Amount In Lakhs (INR)",
+  },
+
+  labels: {
+    minWidth: 25,
+    maxWidth: 35,
+
+    formatter: (value) => {
+      const axisValue =
+        Number(value || 0) / 10000;
+
+      if (Number.isInteger(axisValue)) {
+        return String(axisValue);
+      }
+
+      return Number(
+        axisValue.toFixed(2),
+      ).toString();
+    },
+
+    style: {
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      fontSize: "11px",
     },
   },
+},
   fill: {
     opacity: 1,
   },
