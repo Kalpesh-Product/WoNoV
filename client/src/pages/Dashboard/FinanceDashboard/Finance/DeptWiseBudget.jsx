@@ -34,6 +34,11 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
   formatFiscalYear(getFiscalYearStart())
 );
   
+const [hiddenDepartmentExpenseSeries, setHiddenDepartmentExpenseSeries] =
+  useState({
+    actual: false,
+    projected: false,
+  });
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["allBudgets"],
     queryFn: async () => {
@@ -191,41 +196,6 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
 
-// const expenseRawSeries = useMemo(() => {
-//   const fyData = {};
-
-//   hrFinance.forEach((item) => {
-//     if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
-
-//     const fiscalYearStart = getFiscalYearStart(item.dueDate);
-//     const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
-//     const monthIndex = getFiscalMonthIndex(item.dueDate);
-
-//     if (!fyData[fiscalYearLabel]) {
-//       fyData[fiscalYearLabel] = Array(12).fill(0);
-//     }
-
-//     fyData[fiscalYearLabel][monthIndex] += Number(item.actualAmount || 0);
-//   });
-
-//   const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
-
-//   if (!fyData[currentFiscalYear]) {
-//     fyData[currentFiscalYear] = Array(12).fill(0);
-//   }
-
-//   return Object.entries(fyData)
-//     .sort(([fyA], [fyB]) => {
-//       const startA = Number(fyA.slice(3, 7));
-//       const startB = Number(fyB.slice(3, 7));
-//       return startA - startB;
-//     })
-//     .map(([fiscalYear, data]) => ({
-//       name: "total",
-//       group: fiscalYear,
-//       data,
-//     }));
-// }, [hrFinance]);
 
 const getAmount = (value) => {
   if (typeof value === "number") return value;
@@ -238,65 +208,128 @@ const getAmount = (value) => {
   return 0;
 };
 
-const expenseRawSeries = useMemo(() => {
+const departmentExpenseByFiscalYear = useMemo(() => {
   const fyData = {};
 
-  hrFinance.forEach((item) => {
-    if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+  (hrFinance || []).forEach((item) => {
+    if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+      return;
+    }
 
-    const fiscalYearStart = getFiscalYearStart(item.dueDate);
-    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
-    const monthIndex = getFiscalMonthIndex(item.dueDate);
+    const fiscalYearStart =
+      getFiscalYearStart(item.dueDate);
+
+    const fiscalYearLabel =
+      formatFiscalYear(fiscalYearStart);
+
+    const monthIndex =
+      getFiscalMonthIndex(item.dueDate);
 
     if (!fyData[fiscalYearLabel]) {
       fyData[fiscalYearLabel] = {
         actual: Array(12).fill(0),
-        projectedTotal: Array(12).fill(0),
+        projected: Array(12).fill(0),
       };
     }
 
-    const actualAmount = getAmount(item.actualAmount);
-const projectedAmount = getAmount(item.projectedAmount);
+    const actualAmount =
+      getAmount(item?.actualAmount);
 
-    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projectedTotal[monthIndex] += projectedAmount;
+    const projectedAmount =
+      getAmount(item?.projectedAmount);
+
+    fyData[fiscalYearLabel].actual[monthIndex] +=
+      actualAmount;
+
+    fyData[fiscalYearLabel].projected[monthIndex] +=
+      projectedAmount;
   });
 
-  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+  const currentFiscalYear =
+    formatFiscalYear(getFiscalYearStart());
 
   if (!fyData[currentFiscalYear]) {
     fyData[currentFiscalYear] = {
       actual: Array(12).fill(0),
-      projectedTotal: Array(12).fill(0),
+      projected: Array(12).fill(0),
     };
   }
 
-  return Object.entries(fyData)
+  return fyData;
+}, [hrFinance]);
+
+const expenseRawSeries = useMemo(() => {
+  return Object.entries(departmentExpenseByFiscalYear)
     .sort(([fyA], [fyB]) => {
       const startA = Number(fyA.slice(3, 7));
       const startB = Number(fyB.slice(3, 7));
+
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
-      const projectedBalance = data.projectedTotal.map((projected, index) => {
-        const actual = data.actual[index] || 0;
-        return Math.max(projected - actual, 0);
+      /*
+       * Actual legend hidden hai to Actual series zero.
+       */
+      const actualForGraph = data.actual.map((actualAmount) => {
+        if (hiddenDepartmentExpenseSeries.actual) {
+          return 0;
+        }
+
+        return Number(actualAmount || 0);
       });
+
+      const projectedForGraph = data.projected.map(
+        (projectedAmount, monthIndex) => {
+          /*
+           * Projected legend hidden hai to Projected zero.
+           * Dono legends hidden hone par bhi yahi zero return karega.
+           */
+          if (hiddenDepartmentExpenseSeries.projected) {
+            return 0;
+          }
+
+          /*
+           * Actual legend hide hua:
+           * raw Projected sab months mein show hoga,
+           * including un months mein jahan Actual available hai.
+           */
+          if (hiddenDepartmentExpenseSeries.actual) {
+            return Number(projectedAmount || 0);
+          }
+
+          /*
+           * Default:
+           * Actual available hai to Projected hide.
+           * Actual zero hai to Projected show.
+           */
+          const actualAmount =
+            Number(data.actual?.[monthIndex] || 0);
+
+          return actualAmount > 0
+            ? 0
+            : Number(projectedAmount || 0);
+        },
+      );
 
       return [
         {
           name: "Actual Amount",
           group: fiscalYear,
-          data: data.actual,
+          data: actualForGraph,
         },
         {
           name: "Projected Amount",
           group: fiscalYear,
-          data: projectedBalance,
+          data: projectedForGraph,
         },
       ];
     });
-}, [hrFinance]);
+}, [
+  departmentExpenseByFiscalYear,
+  hiddenDepartmentExpenseSeries.actual,
+  hiddenDepartmentExpenseSeries.projected,
+]);
+
 
 const { roundedMax, tickAmount } = useMemo(() => {
   /*
@@ -368,11 +401,41 @@ const { roundedMax, tickAmount } = useMemo(() => {
 
 
   const expenseOptions = {
-    chart: {
+  chart: {
   type: "bar",
-  toolbar: { show: false },
+  toolbar: {
+    show: false,
+  },
   stacked: true,
   fontFamily: "Poppins-Regular, Arial, sans-serif",
+
+  events: {
+    legendClick: (_chartContext, seriesIndex) => {
+      setHiddenDepartmentExpenseSeries((currentState) => {
+        /*
+         * Series index 0 = Actual Amount
+         */
+        if (seriesIndex === 0) {
+          return {
+            ...currentState,
+            actual: !currentState.actual,
+          };
+        }
+
+        /*
+         * Series index 1 = Projected Amount
+         */
+        if (seriesIndex === 1) {
+          return {
+            ...currentState,
+            projected: !currentState.projected,
+          };
+        }
+
+        return currentState;
+      });
+    },
+  },
 },
   colors: ["#54C4A7", "#c4c4c4"],
    plotOptions: {
@@ -413,6 +476,19 @@ const { roundedMax, tickAmount } = useMemo(() => {
     //     formatter: (val) => `${val / 100000}`,
     //   },
     // },
+  xaxis: {
+  crosshairs: {
+    show: false,
+
+    fill: {
+      opacity: 0,
+    },
+
+    stroke: {
+      opacity: 0,
+    },
+  },
+},  
     yaxis: {
   min: 0,
   max: roundedMax,
@@ -464,73 +540,161 @@ states: {
 legend: {
   show: true,
   position: "top",
+
+  /*
+   * ApexCharts ka default hide/show disable.
+   * Series ko React state se control kar rahe hain.
+   */
+  onItemClick: {
+    toggleDataSeries: false,
+  },
+
+  labels: {
+    colors: [
+      hiddenDepartmentExpenseSeries.actual
+        ? "#D5D5D5"
+        : "#4B4B4B",
+
+      hiddenDepartmentExpenseSeries.projected
+        ? "#D5D5D5"
+        : "#4B4B4B",
+    ],
+  },
+
+  markers: {
+    fillColors: [
+      hiddenDepartmentExpenseSeries.actual
+        ? "#E1F5EF"
+        : "#54C4A7",
+
+      hiddenDepartmentExpenseSeries.projected
+        ? "#E2E2E2"
+        : "#C4C4C4",
+    ],
+  },
 },
 
   tooltip: {
   enabled: true,
-  custom: function ({ seriesIndex, dataPointIndex, w }) {
-    const seriesName = w.globals.seriesNames?.[seriesIndex];
+  shared: true,
+  intersect: false,
 
-    const actualSeries = w.globals.initialSeries.find(
-      (item) => item.name === "Actual Amount"
+  custom: function ({ dataPointIndex, w }) {
+    const selectedYearData =
+      departmentExpenseByFiscalYear?.[
+        selectedFiscalYear
+      ];
+
+    const actualAmount = Number(
+      selectedYearData?.actual?.[
+        dataPointIndex
+      ] || 0,
     );
 
-    const projectedSeries = w.globals.initialSeries.find(
-      (item) => item.name === "Projected Amount"
+    const projectedAmount = Number(
+      selectedYearData?.projected?.[
+        dataPointIndex
+      ] || 0,
     );
-
-    const actualAmount = actualSeries?.data?.[dataPointIndex] || 0;
-    const projectedBalance = projectedSeries?.data?.[dataPointIndex] || 0;
-
-    // Projected series me balance store hai, tooltip me total projected dikhana hai
-    const projectedTotal = actualAmount + projectedBalance;
 
     const monthLabel =
-      w.globals.labels && w.globals.labels[dataPointIndex]
-        ? w.globals.labels[dataPointIndex]
-        : `Month ${dataPointIndex + 1}`;
-
-    const isActual = seriesName === "Actual Amount";
-
-    const label = isActual ? "Actual Amount" : "Projected Amount";
-    const amount = isActual ? actualAmount : projectedTotal;
-    const color = isActual ? "#54C4A7" : "#c4c4c4";
+      w?.globals?.labels?.[dataPointIndex] ||
+      `Month ${dataPointIndex + 1}`;
 
     return `
-      <div class="apexcharts-tooltip-title" style="
-        font-family: Poppins-Regular;
-        font-size: 12px;
-        padding: 6px 10px;
-        margin-bottom: 0;
-      ">
+      <div
+        class="apexcharts-tooltip-title"
+        style="
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          padding: 6px 10px;
+          margin-bottom: 0;
+        "
+      >
         ${monthLabel}
       </div>
 
-      <div style="
-        padding: 8px 10px;
-        font-family: Poppins-Regular;
-        font-size: 12px;
-        background: #fff;
-        min-width: 230px;
-      ">
-        <div style="
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          white-space: nowrap;
-        ">
-          <span style="
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: ${color};
-            display: inline-block;
-          "></span>
+      <div
+        style="
+          padding: 8px 10px;
+          font-family: Poppins-Regular;
+          font-size: 12px;
+          background: #ffffff;
+          min-width: 230px;
+        "
+      >
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 7px;
+            white-space: nowrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
+              style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #C4C4C4;
+                display: inline-block;
+                flex-shrink: 0;
+              "
+            ></span>
 
-          <span>${label}:</span>
+            <span>Projected Amount:</span>
+          </div>
 
           <span style="font-weight: 600;">
-            INR ${Math.round(amount).toLocaleString("en-IN")}
+            INR ${Math.round(
+              projectedAmount,
+            ).toLocaleString("en-IN")}
+          </span>
+        </div>
+
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            white-space: nowrap;
+          "
+        >
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 6px;
+            "
+          >
+            <span
+              style="
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                background: #54C4A7;
+                display: inline-block;
+                flex-shrink: 0;
+              "
+            ></span>
+
+            <span>Actual Amount:</span>
+          </div>
+
+          <span style="font-weight: 600;">
+            INR ${Math.round(
+              actualAmount,
+            ).toLocaleString("en-IN")}
           </span>
         </div>
       </div>
