@@ -166,37 +166,24 @@ const expenseSeries = useMemo(() => {
       return firstStartYear - secondStartYear;
     })
     .flatMap(([fiscalYear, data]) => {
-      /*
-       * Actual legend hidden hai to Actual series 0.
-       * Visible hai to original Actual values.
-       */
+     
       const actualForGraph = data.actual.map((actualAmount) =>
         hiddenLegalExpenseSeries.actual ? 0 : actualAmount,
       );
 
       const projectedForGraph = data.projected.map(
         (projectedAmount, monthIndex) => {
-          /*
-           * Projected legend hidden hai to
-           * Projected graph se poori tarah hide.
-           */
+         
           if (hiddenLegalExpenseSeries.projected) {
             return 0;
           }
 
-          /*
-           * Actual legend hidden hai to
-           * sab months ke original Projected dikhao.
-           */
+        
           if (hiddenLegalExpenseSeries.actual) {
             return projectedAmount;
           }
 
-          /*
-           * Default:
-           * Actual available hai to Projected hide.
-           * Actual nahi hai to Projected show.
-           */
+         
           const actualAmount = data.actual[monthIndex] || 0;
 
           return actualAmount > 0 ? 0 : projectedAmount;
@@ -237,10 +224,7 @@ const totalExpense = useMemo(() => {
 }, [selectedLegalActualAmounts]);
 
 const { roundedMax, tickAmount } = useMemo(() => {
-  /*
-   * Graph display series ke bajay original selected FY data use kar rahe hain.
-   * Isse legend click karne par Y-axis scale change nahi hogi.
-   */
+ 
   const selectedYearData =
     legalExpenseByFiscalYear?.[selectedFiscalYear] || {
       actual: Array(12).fill(0),
@@ -258,11 +242,7 @@ const { roundedMax, tickAmount } = useMemo(() => {
         selectedYearData?.projected?.[monthIndex] || 0,
       );
 
-      /*
-       * Default graph logic:
-       * Actual hai to Actual consider hoga,
-       * warna Projected.
-       */
+     
       return actualAmount > 0
         ? actualAmount
         : projectedAmount;
@@ -278,9 +258,7 @@ const { roundedMax, tickAmount } = useMemo(() => {
     };
   }
 
-  /*
-   * BudgetPage jaisa dynamic readable scale.
-   */
+  
   const targetTickAmount = 5;
   const roughStep = maximumValue / targetTickAmount;
 
@@ -412,7 +390,7 @@ redrawOnParentResize: false,
     });
   },
 
-  // Purana navigation same rahega
+ 
   dataPointSelection: () => {
     navigate(
       "/app/dashboard/legal-dashboard/finance/budget",

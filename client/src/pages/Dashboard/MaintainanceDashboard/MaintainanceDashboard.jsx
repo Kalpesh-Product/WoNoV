@@ -536,34 +536,99 @@ const expenseRawSeries = useMemo(() => {
   hiddenMaintenanceExpenseSeries.projected,
 ]);
 
-const roundedMax = useMemo(() => {
-  const fiscalYears = [
-    ...new Set(expenseRawSeries.map((series) => series.group)),
-  ];
+// const roundedMax = useMemo(() => {
+//   const fiscalYears = [
+//     ...new Set(expenseRawSeries.map((series) => series.group)),
+//   ];
 
-  const maxValue = fiscalYears.reduce((max, fiscalYear) => {
-    const actualSeries = expenseRawSeries.find(
-      (series) =>
-        series.group === fiscalYear && series.name === "Actual Amount"
-    );
+//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+//     const actualSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Actual Amount"
+//     );
 
-    const projectedSeries = expenseRawSeries.find(
-      (series) =>
-        series.group === fiscalYear && series.name === "Projected Amount"
-    );
+//     const projectedSeries = expenseRawSeries.find(
+//       (series) =>
+//         series.group === fiscalYear && series.name === "Projected Amount"
+//     );
 
-    const monthlyMax = Array.from({ length: 12 }, (_, index) => {
-      const actual = actualSeries?.data?.[index] || 0;
-      const projectedBalance = projectedSeries?.data?.[index] || 0;
+//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+//       const actual = actualSeries?.data?.[index] || 0;
+//       const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-      return actual + projectedBalance;
-    });
+//       return actual + projectedBalance;
+//     });
 
-    return Math.max(max, ...monthlyMax);
-  }, 0);
+//     return Math.max(max, ...monthlyMax);
+//   }, 0);
 
-  return Math.ceil((maxValue + 100000) / 100000) * 100000;
-}, [expenseRawSeries]);
+//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+// }, [expenseRawSeries]);
+const { roundedMax, tickAmount } = useMemo(() => {
+  /*
+   * Sirf selected FY ki currently visible series use hogi.
+   * Doosre financial year ka data scale ko affect nahi karega.
+   */
+  const selectedYearSeries = expenseRawSeries.filter(
+    (series) => series.group === selectedFiscalYear,
+  );
+
+  /*
+   * Har month ka currently displayed Actual + Projected total.
+   */
+  const monthlyTotals = Array.from(
+    { length: 12 },
+    (_, monthIndex) =>
+      selectedYearSeries.reduce(
+        (total, series) =>
+          total + Number(series?.data?.[monthIndex] || 0),
+        0,
+      ),
+  );
+
+  const maxExpenseValue = Math.max(...monthlyTotals, 0);
+
+  if (maxExpenseValue <= 0) {
+    return {
+      roundedMax: 10000,
+      tickAmount: 5,
+    };
+  }
+
+  /*
+   * Maintenance BudgetPage wala exact dynamic-scale formula.
+   */
+  const bufferedMax = maxExpenseValue * 1.1;
+  const roughStep = bufferedMax / 6;
+
+  const magnitude =
+    10 ** Math.floor(Math.log10(roughStep));
+
+  const normalizedStep = roughStep / magnitude;
+
+  let step = magnitude;
+
+  if (normalizedStep <= 1) {
+    step = magnitude;
+  } else if (normalizedStep <= 2) {
+    step = 2 * magnitude;
+  } else if (normalizedStep <= 5) {
+    step = 5 * magnitude;
+  } else {
+    step = 10 * magnitude;
+  }
+
+  const safeRoundedMax =
+    Math.ceil(bufferedMax / step) * step;
+
+  return {
+    roundedMax: safeRoundedMax,
+    tickAmount: Math.max(
+      Math.round(safeRoundedMax / step),
+      1,
+    ),
+  };
+}, [expenseRawSeries, selectedFiscalYear]);
 
   const expenseOptions = {
   chart: {
@@ -611,22 +676,18 @@ const roundedMax = useMemo(() => {
         position: "top",
         total: {
           enabled: true,
-          formatter: (_, config) => {
-            const isCurrentFiscalYearSelected =
-              selectedFiscalYear === currentFiscalYear;
-            const isCurrentFiscalMonth =
-              config?.dataPointIndex === currentFiscalMonthIndexForCard;
+         formatter: (_, config) => {
+  const total =
+    config?.w?.globals?.stackedSeriesTotals?.[
+      config?.dataPointIndex
+    ] || 0;
 
-            if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
-              return "";
-            }
+  if (Number(total) <= 0) {
+    return "";
+  }
 
-            const total =
-              config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
-              0;
-
-            return total ? inrFormat(Number(total)) : "";
-          },
+  return inrFormat(Number(total));
+},
           style: {
             fontSize: "12px",
             fontWeight: 600,
@@ -644,14 +705,43 @@ const roundedMax = useMemo(() => {
     categories: fiscalMonths,
   },
   yaxis: {
-    min: 0,
-    tickAmount: 4,
-    max: roundedMax,
-    title: { text: "Amount In Lakhs (INR)" },
-    labels: {
-      formatter: (val) => `${val / 100000}`,
+  min: 0,
+  max: roundedMax,
+  tickAmount,
+  forceNiceScale: false,
+
+  title: {
+    text: "Amount In Lakhs (INR)",
+  },
+
+  labels: {
+    minWidth: 25,
+    maxWidth: 35,
+
+    /*
+     * BudgetPage ke current display ke bilkul same:
+     * ₹50,000   -> 5
+     * ₹1,00,000 -> 10
+     */
+    formatter: (value) => {
+      const axisValue =
+        Number(value || 0) / 10000;
+
+      if (Number.isInteger(axisValue)) {
+        return String(axisValue);
+      }
+
+      return Number(
+        axisValue.toFixed(2),
+      ).toString();
+    },
+
+    style: {
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      fontSize: "11px",
     },
   },
+},
   fill: {
     opacity: 1,
   },
