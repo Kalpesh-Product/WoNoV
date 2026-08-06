@@ -612,13 +612,27 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
               fontWeight: 600,
               color: "#000000",
             },
+            // formatter: (_, config) => {
+            //   const total =
+            //     config?.w?.globals?.stackedSeriesTotals?.[
+            //       config?.dataPointIndex
+            //     ] || 0;
+            //   return inrFormat(Number(total || 0));
+            // },
             formatter: (_, config) => {
-              const total =
-                config?.w?.globals?.stackedSeriesTotals?.[
-                  config?.dataPointIndex
-                ] || 0;
-              return inrFormat(Number(total || 0));
-            },
+  const total =
+    Number(
+      config?.w?.globals?.stackedSeriesTotals?.[
+        config?.dataPointIndex
+      ] || 0,
+    );
+
+  if (total <= 0) {
+    return "";
+  }
+
+  return inrFormat(total);
+},
           },
         },
       },
