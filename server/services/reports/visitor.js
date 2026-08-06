@@ -2,9 +2,78 @@ const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
 const { getPagination } = require("../../utils/pagination");
+const {
+  buildSearchRegex,
+  resolveReferenceIds,
+} = require("../../utils/referenceSearch");
+const UserData = require("../../models/hr/UserData");
+const CoworkingClient = require("../../models/sales/CoworkingClient");
+const CoworkingMember = require("../../models/sales/CoworkingMembers");
+
+const buildVisitorSearchConditions = async ({ company, search }) => {
+  const searchRegex = buildSearchRegex(search);
+  if (!searchRegex) return [];
+
+  const { users, members, clients } = await resolveReferenceIds(searchRegex, [
+    {
+      key: "users",
+      model: UserData,
+      fields: ["firstName", "lastName", "email"],
+      extraFilter: { company },
+    },
+    {
+      key: "members",
+      model: CoworkingMember,
+      fields: ["employeeName", "email"],
+      extraFilter: { company },
+    },
+    {
+      key: "clients",
+      model: CoworkingClient,
+      fields: ["clientName", "companyName", "name"],
+    },
+  ]);
+  return [
+    { firstName: searchRegex },
+    { lastName: searchRegex },
+    { visitorCompany: searchRegex },
+    { brandName: searchRegex },
+    { registeredClientCompany: searchRegex },
+    { purposeOfVisit: searchRegex },
+    { visitorType: searchRegex },
+    { email: searchRegex },
+    { phoneNumber: searchRegex },
+    {
+      $expr: {
+        $regexMatch: {
+          input: {
+            $trim: {
+              input: {
+                $concat: [
+                  { $ifNull: ["$firstName", ""] },
+                  " ",
+                  { $ifNull: ["$lastName", ""] },
+                ],
+              },
+            },
+          },
+          regex: searchRegex.source,
+          options: "i",
+        },
+      },
+    },
+    ...(users.length ? [{ toMeet: { $in: users } }] : []),
+    ...(users.length ? [{ checkedInBy: { $in: users } }] : []),
+    ...(users.length ? [{ checkedOutBy: { $in: users } }] : []),
+    ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
+    ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
+  ];
+};
 
 const normalizeVisitorQuery = (query) =>
   typeof query === "string" ? query : query?.query;
+
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 const populateVisitorListFields = [
   {
@@ -115,6 +184,8 @@ const fetchVisitorReportService = async ({
   page,
   limit,
   type = "",
+  search,
+  searchContext,
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
@@ -128,6 +199,61 @@ const fetchVisitorReportService = async ({
     let visitors;
     let total;
     const filter = { company: companyId };
+    const normalizedSearch = String(search || "")
+      .trim()
+      .slice(0, 100);
+
+    const supportsVisitorCompanySearch = [
+      "repeat-external-companies",
+      "convert-internal-visitors",
+      "visitor-reports",
+    ].includes(searchContext);
+
+    // if (supportsVisitorCompanySearch && normalizedSearch) {
+    //   const escapedSearch = escapeRegex(normalizedSearch);
+    //   const searchRegex = new RegExp(escapedSearch, "i");
+
+    //   filter.$or = [
+    //     { firstName: searchRegex },
+    //     { lastName: searchRegex },
+    //     { visitorCompany: searchRegex },
+    //     { brandName: searchRegex },
+    //     { registeredClientCompany: searchRegex },
+    //     { purpose: searchRegex },
+    //     { visitorType: searchRegex },
+    //     // { clientToMeet: searchRegex },
+    //     // { toMeet: searchRegex },
+    //     // { toMeetCompany: searchRegex },
+    //     { email: searchRegex },
+    //     { phoneNumber: searchRegex },
+    //     {
+    //       $expr: {
+    //         $regexMatch: {
+    //           input: {
+    //             $trim: {
+    //               input: {
+    //                 $concat: [
+    //                   { $ifNull: ["$firstName", ""] },
+    //                   " ",
+    //                   { $ifNull: ["$lastName", ""] },
+    //                 ],
+    //               },
+    //             },
+    //           },
+    //           regex: escapedSearch,
+    //           options: "i",
+    //         },
+    //       },
+    //     },
+    //   ];
+    // }
+
+    if (supportsVisitorCompanySearch && normalizedSearch) {
+      filter.$or = await buildVisitorSearchConditions({
+        company: companyId,
+        search,
+      });
+    }
 
     if (visitorFlag) {
       filter.visitorFlag = visitorFlag;

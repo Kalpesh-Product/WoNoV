@@ -28,11 +28,26 @@ const RepeatExternalCompaanies = () => {
   const [selectedRow, setSelectedRow] = useState(null);
   const [isSubmittingRepeatClient, setIsSubmittingRepeatClient] =
     useState(false);
-const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
     total: 0,
   });
+  const [companySearch, setCompanySearch] = useState("");
+  const [debouncedCompanySearch, setDebouncedCompanySearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedCompanySearch(companySearch.trim()),
+      400,
+    );
+    return () => clearTimeout(timeoutId);
+  }, [companySearch]);
+
+  const handleCompanySearchChange = useCallback((value) => {
+    setCompanySearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
@@ -71,6 +86,8 @@ const [pagination, setPagination] = useState({
           visitorFlag: "Client",
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedCompanySearch || undefined,
+          searchContext: "repeat-external-companies",
         },
       });
       const visitors = visitorsResponse.data.data || [];
@@ -106,7 +123,12 @@ const [pagination, setPagination] = useState({
     } finally {
       setLoading(false);
     }
-  }, [axios, pagination.page, pagination.limit]);
+  }, [
+    axios,
+    pagination.page,
+    pagination.limit,
+    debouncedCompanySearch,
+  ]);
 
   useEffect(() => {
     fetchRepeatExternalCompanies();
@@ -270,6 +292,9 @@ const [pagination, setPagination] = useState({
                   : { ...current, page: 1, limit },
               )
             }
+            serverSearch
+            searchValue={companySearch}
+            onSearchChange={handleCompanySearchChange}
           />
         )}
       </PageFrame>

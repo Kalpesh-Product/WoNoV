@@ -42,7 +42,35 @@ const TicketReports = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [detailsModal, setDetailsModal] = useState(false);
 
-   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+  const [ticketSearch, setTicketSearch] = useState("");
+  const [debouncedTicketSearch, setDebouncedTicketSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedTicketSearch(ticketSearch.trim());
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [ticketSearch]);
+
+  const handleTicketSearchChange = (value) => {
+    setTicketSearch(value);
+
+    setPagination((current) =>
+      current.page === 1
+        ? current
+        : {
+            ...current,
+            page: 1,
+          },
+    );
+  };
+
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -75,13 +103,14 @@ const TicketReports = () => {
     setDetailsModal(true);
   };
   const { data: ticketsData = [], isLoading } = useQuery({
-      queryKey: [
+    queryKey: [
       "tickets-data",
       "report",
       dateRange.startDate,
       dateRange.endDate,
       pagination.page,
       pagination.limit,
+      debouncedTicketSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -92,6 +121,7 @@ const TicketReports = () => {
             endDate: toUtcDayBoundary(dateRange.endDate, true),
             page: pagination.page,
             limit: pagination.limit,
+            search: debouncedTicketSearch || undefined,
           },
         });
         const responsePagination = response.data.pagination;
@@ -102,13 +132,13 @@ const TicketReports = () => {
           total: Number(responsePagination?.total) || 0,
         }));
 
-    // queryKey: ["tickets-data", departmentId],
-    // enabled: Boolean(departmentId),
-    // queryFn: async () => {
-    //   try {
-    //     const response = await axios.get(
-    //       `/api/tickets/department-tickets/${departmentId}`,
-    //     );
+        // queryKey: ["tickets-data", departmentId],
+        // enabled: Boolean(departmentId),
+        // queryFn: async () => {
+        //   try {
+        //     const response = await axios.get(
+        //       `/api/tickets/department-tickets/${departmentId}`,
+        //     );
         // const response = await axios.get(
         //   `/api/tickets/get-all-tickets`
         // );
@@ -163,7 +193,7 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
-      cellRenderer: (params) => <StatusChip status={params.value } />,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "actions",
@@ -190,7 +220,7 @@ const TicketReports = () => {
     //{ field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
     { field: "assignedAtDate", headerName: "Assign At", hide: true },
-   // { field: "acceptedBy", headerName: "Accepted By", hide: true },
+    // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
       // field: "acceptedAtDate",
       field: "acceptedAt",
@@ -270,8 +300,8 @@ const TicketReports = () => {
     //   )
     //   .join(", ");
     const assignedToDisplay = assignmentDetails
-  .map(({ assigneeName }) => assigneeName)
-  .join(", ");
+      .map(({ assigneeName }) => assigneeName)
+      .join(", ");
 
     return { assignedToDisplay, assignmentDetails };
   };
@@ -381,7 +411,9 @@ const TicketReports = () => {
                   srNo: (pagination.page - 1) * pagination.limit + index + 1,
                   ticket: item.ticket || "",
                   fromDepartment: getFromDepartment(item),
-                  raisedToDepartment: getDepartmentName(item.raisedToDepartment),
+                  raisedToDepartment: getDepartmentName(
+                    item.raisedToDepartment,
+                  ),
                   raisedBy: getFullName(item.raisedBy),
                   description: item.description || "",
                   status: item.status || "",
@@ -411,8 +443,8 @@ const TicketReports = () => {
                   acceptedAtDate: item.acceptedAt || "",
                   acceptedAtTime: item.acceptedAt || "",
                   acceptedAt: item.acceptedAt
-  ? formatDateTime(item.acceptedAt)
-  : "",
+                    ? formatDateTime(item.acceptedAt)
+                    : "",
                   assignedAt:
                     item.assignedAt ||
                     (Array.isArray(item.assignedTo) &&
@@ -456,7 +488,7 @@ const TicketReports = () => {
                 })),
               ]}
               dateColumn={"createdAt"}
-               initialDateRange={initialDateRange}
+              initialDateRange={initialDateRange}
               onDateFilterChange={handleDateFilterChange}
               columns={kraColumn}
               serverPagination
@@ -474,6 +506,9 @@ const TicketReports = () => {
                     : { ...current, page: 1, limit },
                 )
               }
+              serverSearch
+              searchValue={ticketSearch}
+              onSearchChange={handleTicketSearchChange}
             />
           ) : (
             // <MonthWiseTable
@@ -492,14 +527,14 @@ const TicketReports = () => {
       >
         {!isLoading && selectedMeeting ? (
           <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
-              <DetalisFormatted
-                title={"Ticket Title"}
-                detail={selectedMeeting?.ticket || ""}
-              />
-              <DetalisFormatted
-                title={"Description"}
-                detail={selectedMeeting?.description || ""}
-              />
+            <DetalisFormatted
+              title={"Ticket Title"}
+              detail={selectedMeeting?.ticket || ""}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedMeeting?.description || ""}
+            />
             <DetalisFormatted
               title={"From Department"}
               detail={selectedMeeting?.fromDepartment || ""}
@@ -512,18 +547,18 @@ const TicketReports = () => {
               title={"Raised At"}
               detail={`${formatDateTime(selectedMeeting?.createdAt) || ""}`}
             />
-              <DetalisFormatted
-                title={"Raised To Department"}
-                detail={selectedMeeting?.raisedToDepartment || ""}
-              />
-              <DetalisFormatted
-                title={"Priority"}
-                detail={selectedMeeting?.priority || ""}
-              />
-              <DetalisFormatted
-                title={"Status"}
-                detail={selectedMeeting?.status || ""}
-              />
+            <DetalisFormatted
+              title={"Raised To Department"}
+              detail={selectedMeeting?.raisedToDepartment || ""}
+            />
+            <DetalisFormatted
+              title={"Priority"}
+              detail={selectedMeeting?.priority || ""}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedMeeting?.status || ""}
+            />
             {/* <DetalisFormatted
               title={"Assignees"}
               detail={
@@ -535,10 +570,10 @@ const TicketReports = () => {
                   : "None"
               }
             /> */}
-              <DetalisFormatted
-                title={"Accepted By"}
-                detail={selectedMeeting.acceptedBy || ""}
-              />
+            <DetalisFormatted
+              title={"Accepted By"}
+              detail={selectedMeeting.acceptedBy || ""}
+            />
             <DetalisFormatted
               title={"Accepted At"}
               detail={formatDateTime(selectedMeeting?.acceptedAt) || ""}

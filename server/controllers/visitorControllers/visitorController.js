@@ -35,6 +35,8 @@ async function fetchVisitors(req, res, next) {
       limit: req.query?.limit,
       type: req.query?.type,
       visitorFlag: req.query?.visitorFlag,
+      search: req.query?.search,
+      searchContext: req.query?.searchContext,
       multipleVisits: req.query?.multipleVisits === "true",
       dateFilter: buildDateFilter({
         startDate: requestFilters?.startDate,
