@@ -251,13 +251,38 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
         item.group === selectedFiscalYear && item.name === "Projected Amount"
     )?.data || [];
 
-  const selectedYearAxisMax = getRoundedAxisMax(
-    selectedActualSeries.reduce((maxValue, actualAmount, index) => {
-      const stackedTotal =
-        actualAmount + (selectedProjectedSeries[index] || 0);
-      return Math.max(maxValue, stackedTotal);
-    }, 0)
+const selectedYearAxisMax = getRoundedAxisMax(
+  selectedActualSeries.reduce((maxValue, actualAmount, index) => {
+    const stackedTotal =
+      actualAmount + (selectedProjectedSeries[index] || 0);
+    return Math.max(maxValue, stackedTotal);
+  }, 0)
+);
+
+const selectedYearTotals = useMemo(() => {
+  const selectedYearData = expenseRawSeries.filter(
+    (series) => series.group === selectedFiscalYear,
   );
+
+  const selectedActualSeries = selectedYearData.find(
+    (series) => series.name === "Actual Amount",
+  )?.data || [];
+
+  const selectedProjectedSeries = selectedYearData.find(
+    (series) => series.name === "Projected Amount",
+  )?.data || [];
+
+  return {
+    actualTotal: selectedActualSeries.reduce(
+      (sum, amount) => sum + getAmount(amount),
+      0,
+    ),
+    projectedTotal: selectedProjectedSeries.reduce(
+      (sum, amount) => sum + getAmount(amount),
+      0,
+    ),
+  };
+}, [expenseRawSeries, selectedFiscalYear]);
 
   const expenseOptions = {
   chart: {
@@ -411,7 +436,11 @@ const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
         data={expenseRawSeries}
         options={expenseOptions}
         title={`BIZ Nest ${deptName.toUpperCase()} DEPARTMENT EXPENSE`}
-        titleAmount={`INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`}
+        TitleAmountTotal={`INR ${inrFormat(selectedYearTotals.projectedTotal)}`}
+        TitleAmountGreen={`INR ${inrFormat(selectedYearTotals.actualTotal)}`}
+        totalTitle="PROJECTED"
+        greenTitle="ACTUAL"
+        summaryChipVariant="budget"
         onYearChange={setSelectedFiscalYear}
       />
 
