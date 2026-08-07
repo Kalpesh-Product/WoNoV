@@ -469,6 +469,7 @@ const getKraKpaTasks = async (req, res, next) => {
           field: "assignedDate",
         }),
       }),
+      search: req.query?.search,
     });
 
     // const completedTasks = await kraKpaTask
@@ -665,6 +666,7 @@ const getCompletedKraKpaTasks = async (req, res, next) => {
           field: "completionDate",
         }),
       }),
+      search: req.query?.search,
     });
 
     return res.status(200).json(payload);
