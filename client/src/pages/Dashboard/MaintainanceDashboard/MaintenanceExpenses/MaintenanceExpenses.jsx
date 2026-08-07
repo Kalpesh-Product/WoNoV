@@ -972,7 +972,7 @@ const stackedExpenseOptions = {
       {/* <YearlyGraph
         data={stackedExpenseRawSeries}
         options={stackedExpenseOptions}
-        title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+        title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
         titleAmount={`INR ${inrFormat(stackedTotalUtilised)}`}
         currentYear={currentFiscalYear}
         onYearChange={setSelectedFiscalYear}
@@ -981,7 +981,7 @@ const stackedExpenseOptions = {
       <YearlyGraph
   data={stackedExpenseRawSeries}
   options={stackedExpenseOptions}
-  title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+  title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}
   TitleAmountTotal={`INR ${inrFormat(
     selectedMaintenanceYearTotals.projectedTotal,
   )}`}
