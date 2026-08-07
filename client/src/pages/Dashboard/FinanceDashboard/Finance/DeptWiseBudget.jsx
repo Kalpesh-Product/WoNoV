@@ -267,9 +267,7 @@ const expenseRawSeries = useMemo(() => {
       return startA - startB;
     })
     .flatMap(([fiscalYear, data]) => {
-      /*
-       * Actual legend hidden hai to Actual series zero.
-       */
+      
       const actualForGraph = data.actual.map((actualAmount) => {
         if (hiddenDepartmentExpenseSeries.actual) {
           return 0;
@@ -280,28 +278,17 @@ const expenseRawSeries = useMemo(() => {
 
       const projectedForGraph = data.projected.map(
         (projectedAmount, monthIndex) => {
-          /*
-           * Projected legend hidden hai to Projected zero.
-           * Dono legends hidden hone par bhi yahi zero return karega.
-           */
+         
           if (hiddenDepartmentExpenseSeries.projected) {
             return 0;
           }
 
-          /*
-           * Actual legend hide hua:
-           * raw Projected sab months mein show hoga,
-           * including un months mein jahan Actual available hai.
-           */
+          
           if (hiddenDepartmentExpenseSeries.actual) {
             return Number(projectedAmount || 0);
           }
 
-          /*
-           * Default:
-           * Actual available hai to Projected hide.
-           * Actual zero hai to Projected show.
-           */
+         
           const actualAmount =
             Number(data.actual?.[monthIndex] || 0);
 
@@ -332,17 +319,12 @@ const expenseRawSeries = useMemo(() => {
 
 
 const { roundedMax, tickAmount } = useMemo(() => {
-  /*
-   * Sirf selected financial year ki series use karo.
-   */
+ 
   const selectedYearSeries = expenseRawSeries.filter(
     (series) => series.group === selectedFiscalYear,
   );
 
-  /*
-   * Har month ka stacked total:
-   * Actual Amount + Projected balance
-   */
+ 
   const monthlyTotals = Array.from(
     { length: 12 },
     (_, monthIndex) =>
@@ -362,9 +344,7 @@ const { roundedMax, tickAmount } = useMemo(() => {
     };
   }
 
-  /*
-   * BudgetPage wala same dynamic scale formula.
-   */
+  
   const bufferedMax = maxExpenseValue * 1.1;
   const roughStep = bufferedMax / 6;
 
@@ -563,10 +543,7 @@ legend: {
   show: true,
   position: "top",
 
-  /*
-   * ApexCharts ka default hide/show disable.
-   * Series ko React state se control kar rahe hain.
-   */
+ 
   onItemClick: {
     toggleDataSeries: false,
   },
