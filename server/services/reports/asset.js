@@ -4,6 +4,300 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const { hasGlobalReportAccess } = require("./access");
 const { getPagination } = require("../../utils/pagination");
+const {
+  buildSearchRegex,
+  resolveReferenceIds,
+} = require("../../utils/referenceSearch");
+
+const getRegisteredRefModel = (schema, path) => {
+  const refName = schema.path(path)?.options?.ref;
+
+  if (!refName) return null;
+
+  return Asset.db.models[refName] || null;
+};
+
+const stringifiedSearchCondition = (field, searchRegex) => ({
+  $expr: {
+    $regexMatch: {
+      input: {
+        $convert: {
+          input: `$${field}`,
+          to: "string",
+          onError: "",
+          onNull: "",
+        },
+      },
+      regex: searchRegex.source,
+      options: "i",
+    },
+  },
+});
+
+const buildAssetSearchConditions = async ({ search, company }) => {
+  const searchRegex = buildSearchRegex(search);
+
+  if (!searchRegex) return [];
+
+  const normalizedSearch = String(search || "").trim();
+
+  const Vendor = getRegisteredRefModel(Asset.schema, "vendor");
+  const SubCategory = getRegisteredRefModel(Asset.schema, "subCategory");
+  const Unit = getRegisteredRefModel(Asset.schema, "location");
+
+  const lookups = [
+    {
+      key: "departments",
+      model: Department,
+      fields: ["name"],
+    },
+    {
+      key: "users",
+      model: UserData,
+      fields: ["firstName", "lastName", "email"],
+      extraFilter: company ? { company } : {},
+    },
+  ];
+
+  if (Vendor) {
+    lookups.push({
+      key: "vendors",
+      model: Vendor,
+      fields: [
+        "name",
+        "vendorName",
+        "companyName",
+        "email",
+        "mobile",
+        "status",
+      ],
+      extraFilter: company ? { company } : {},
+    });
+  }
+
+  if (SubCategory) {
+    lookups.push({
+      key: "subCategories",
+      model: SubCategory,
+      fields: ["subCategoryName"],
+    });
+  }
+
+  if (Unit) {
+    lookups.push({
+      key: "locations",
+      model: Unit,
+      fields: ["unitNo", "unitName"],
+    });
+  }
+
+  const referenceIds = await resolveReferenceIds(searchRegex, lookups);
+
+  const departments = referenceIds.departments || [];
+  const users = referenceIds.users || [];
+  const vendors = referenceIds.vendors || [];
+  let subCategories = referenceIds.subCategories || [];
+  let locations = referenceIds.locations || [];
+
+  /*
+   * Category is nested inside subCategory.
+   */
+  if (SubCategory) {
+    const categoryRefName = SubCategory.schema.path("category")?.options?.ref;
+
+    const Category = categoryRefName ? Asset.db.models[categoryRefName] : null;
+
+    if (Category) {
+      const { categories = [] } = await resolveReferenceIds(searchRegex, [
+        {
+          key: "categories",
+          model: Category,
+          fields: ["categoryName"],
+        },
+      ]);
+
+      if (categories.length) {
+        const matchingSubCategories = await SubCategory.find({
+          category: { $in: categories },
+        })
+          .select("_id")
+          .lean();
+
+        subCategories = [
+          ...subCategories,
+          ...matchingSubCategories.map(({ _id }) => _id),
+        ];
+      }
+    }
+  }
+
+  /*
+   * Building is nested inside location/unit.
+   */
+  if (Unit) {
+    const buildingRefName = Unit.schema.path("building")?.options?.ref;
+
+    const Building = buildingRefName ? Asset.db.models[buildingRefName] : null;
+
+    if (Building) {
+      const { buildings = [] } = await resolveReferenceIds(searchRegex, [
+        {
+          key: "buildings",
+          model: Building,
+          fields: ["buildingName"],
+        },
+      ]);
+
+      if (buildings.length) {
+        const matchingUnits = await Unit.find({
+          building: { $in: buildings },
+        })
+          .select("_id")
+          .lean();
+
+        locations = [...locations, ...matchingUnits.map(({ _id }) => _id)];
+      }
+    }
+  }
+
+  /*
+   * Search assignment-related report fields:
+   * assignee, approvedBy, assignedBy, departments,
+   * assignment status and assignment location.
+   */
+  const assignmentConditions = [{ status: searchRegex }];
+
+  if (users.length) {
+    assignmentConditions.push(
+      { assignee: { $in: users } },
+      { approvedBy: { $in: users } },
+      { assignedBy: { $in: users } },
+      { rejectededBy: { $in: users } },
+    );
+  }
+
+  if (departments.length) {
+    assignmentConditions.push(
+      { fromDepartment: { $in: departments } },
+      { toDepartment: { $in: departments } },
+    );
+  }
+
+  if (locations.length) {
+    assignmentConditions.push({
+      location: { $in: locations },
+    });
+  }
+
+  const matchingAssignments = assignmentConditions.length
+    ? await AssignAsset.find({
+        $or: assignmentConditions,
+      })
+        .select("_id")
+        .lean()
+    : [];
+
+  const assignmentIds = matchingAssignments.map(({ _id }) => _id);
+
+  const isNumericSearch =
+    normalizedSearch !== "" && Number.isFinite(Number(normalizedSearch));
+
+  const booleanConditions = [];
+
+  const lowerSearch = normalizedSearch.toLowerCase();
+
+  if (["yes", "true"].includes(lowerSearch)) {
+    booleanConditions.push(
+      { tangable: true },
+      { isDamaged: true },
+      { isUnderMaintenance: true },
+      { isAssigned: true },
+      { isExtra: true },
+    );
+  }
+
+  if (["no", "false"].includes(lowerSearch)) {
+    booleanConditions.push(
+      { tangable: false },
+      { isDamaged: false },
+      { isUnderMaintenance: false },
+      { isAssigned: false },
+      { isExtra: false },
+    );
+  }
+
+  return [
+    /*
+     * Direct string fields
+     */
+    { assetType: searchRegex },
+    { assetId: searchRegex },
+    { secondaryId: searchRegex },
+    { departmentAssetId: searchRegex },
+    { name: searchRegex },
+    { serialNumber: searchRegex },
+    { description: searchRegex },
+    { brand: searchRegex },
+    { ownershipType: searchRegex },
+    { status: searchRegex },
+
+    /*
+     * Embedded string fields
+     */
+    { "assetImage.url": searchRegex },
+    { "assetImage.id": searchRegex },
+    { "warrantyDocument.link": searchRegex },
+    { "warrantyDocument.documentId": searchRegex },
+
+    /*
+     * Number fields.
+     * Exact match + string conversion allows both 2000 and partial "200".
+     */
+    ...(isNumericSearch
+      ? [
+          { price: Number(normalizedSearch) },
+          { warranty: Number(normalizedSearch) },
+          { rentedMonths: Number(normalizedSearch) },
+          { quantity: Number(normalizedSearch) },
+        ]
+      : []),
+
+    stringifiedSearchCondition("price", searchRegex),
+    stringifiedSearchCondition("warranty", searchRegex),
+    stringifiedSearchCondition("rentedMonths", searchRegex),
+    stringifiedSearchCondition("quantity", searchRegex),
+
+    /*
+     * Dates / ObjectId fields
+     */
+    stringifiedSearchCondition("_id", searchRegex),
+    stringifiedSearchCondition("purchaseDate", searchRegex),
+    stringifiedSearchCondition("warrantyExpiryDate", searchRegex),
+    stringifiedSearchCondition("rentedExpirationDate", searchRegex),
+    stringifiedSearchCondition("createdAt", searchRegex),
+    stringifiedSearchCondition("updatedAt", searchRegex),
+
+    /*
+     * Boolean fields displayed as Yes / No
+     */
+    ...booleanConditions,
+
+    /*
+     * Populated/reference fields
+     */
+    ...(departments.length ? [{ department: { $in: departments } }] : []),
+
+    ...(vendors.length ? [{ vendor: { $in: vendors } }] : []),
+
+    ...(subCategories.length ? [{ subCategory: { $in: subCategories } }] : []),
+
+    ...(locations.length ? [{ location: { $in: locations } }] : []),
+
+    ...(assignmentIds.length
+      ? [{ assignedAsset: { $in: assignmentIds } }]
+      : []),
+  ];
+};
 
 const fetchAssetReportService = async ({
   dateFilter,
@@ -15,6 +309,7 @@ const fetchAssetReportService = async ({
   isReport = false,
   page,
   limit,
+  search,
 }) => {
   const defaultQuery = {
     assigned: null,
@@ -70,6 +365,15 @@ const fetchAssetReportService = async ({
     if (vendorId) assetFilter.vendor = vendorId;
     if (assigned === "true") assetFilter.assignedTo = { $ne: null };
     else if (assigned === "false") assetFilter.assignedTo = null;
+
+    const searchConditions = await buildAssetSearchConditions({
+      search,
+      company: companyId,
+    });
+
+    if (searchConditions.length) {
+      assetFilter.$or = searchConditions;
+    }
 
     const sortField = sortBy || "purchaseDate";
     const sortOrder = order === "desc" ? -1 : 1;

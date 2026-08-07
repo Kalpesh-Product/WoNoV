@@ -90,16 +90,17 @@ const getAssetsWithDepartments = async (req, res, next) => {
 
 async function getAssets(req, res, next) {
   try {
-    const requestDateFilter = req.query?.dateFilter || req.query?.filters || {
-      startDate:
-        req.query?.["dateFilter[startDate]"] ||
-        req.query?.["filters[startDate]"] ||
-        req.query?.startDate,
-      endDate:
-        req.query?.["dateFilter[endDate]"] ||
-        req.query?.["filters[endDate]"] ||
-        req.query?.endDate,
-    };
+    const requestDateFilter = req.query?.dateFilter ||
+      req.query?.filters || {
+        startDate:
+          req.query?.["dateFilter[startDate]"] ||
+          req.query?.["filters[startDate]"] ||
+          req.query?.startDate,
+        endDate:
+          req.query?.["dateFilter[endDate]"] ||
+          req.query?.["filters[endDate]"] ||
+          req.query?.endDate,
+      };
     const hasDateFilter = Boolean(
       requestDateFilter?.startDate || requestDateFilter?.endDate,
     );
@@ -113,6 +114,7 @@ async function getAssets(req, res, next) {
       query: req?.query || {},
       page: req.query?.page,
       limit: req.query?.limit,
+      search: req.query?.search,
       ...(hasDateFilter && {
         dateFilter: buildDateFilter({
           startDate: requestDateFilter.startDate,
@@ -706,8 +708,8 @@ const editAsset = async (req, res, next) => {
           : foundAsset.isUnderMaintenance,
       isExtra:
         normalizedIsExtra !== undefined
-          ? normalizedIsExtra 
-          : foundAsset.isExtra,    
+          ? normalizedIsExtra
+          : foundAsset.isExtra,
       warranty,
       warrantyDocument: warrantyDocInfo,
       brand: brand?.trim(),

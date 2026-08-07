@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useEffect, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -33,7 +33,35 @@ const AssetReports = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const { isTop } = useTopDepartment();
-  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+  const [assetSearch, setAssetSearch] = useState("");
+  const [debouncedAssetSearch, setDebouncedAssetSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedAssetSearch(assetSearch.trim());
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [assetSearch]);
+
+  const handleAssetSearchChange = (value) => {
+    setAssetSearch(value);
+
+    setPagination((current) =>
+      current.page === 1
+        ? current
+        : {
+            ...current,
+            page: 1,
+          },
+    );
+  };
+
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -44,20 +72,23 @@ const AssetReports = () => {
   );
   const [dateRange, setDateRange] = useState(initialDateRange);
 
-  const handleDateFilterChange = useCallback(({ selectedRange }) => {
-    if (!selectedRange?.startDate || !selectedRange?.endDate) return;
+  const handleDateFilterChange = useCallback(
+    ({ selectedRange }) => {
+      if (!selectedRange?.startDate || !selectedRange?.endDate) return;
 
-    const isSameRange =
-      dayjs(dateRange.startDate).isSame(selectedRange.startDate, "day") &&
-      dayjs(dateRange.endDate).isSame(selectedRange.endDate, "day");
+      const isSameRange =
+        dayjs(dateRange.startDate).isSame(selectedRange.startDate, "day") &&
+        dayjs(dateRange.endDate).isSame(selectedRange.endDate, "day");
 
-    if (isSameRange) return;
+      if (isSameRange) return;
 
-    setDateRange(selectedRange);
-    setPagination((current) =>
-      current.page === 1 ? current : { ...current, page: 1 },
-    );
-  }, [dateRange]);
+      setDateRange(selectedRange);
+      setPagination((current) =>
+        current.page === 1 ? current : { ...current, page: 1 },
+      );
+    },
+    [dateRange],
+  );
 
   const handlePageSizeChange = useCallback((nextLimit) => {
     setPagination((current) => {
@@ -94,22 +125,24 @@ const AssetReports = () => {
   );
 
   const { data: groupedAssets = [], isLoading } = useQuery({
-     queryKey: [
+    queryKey: [
       "asset-reports",
       userDepartmentIds,
       dateRange.startDate,
       dateRange.endDate,
       pagination.page,
       pagination.limit,
+      debouncedAssetSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-     const response = await axios.get("/api/assets/get-assets", {
+      const response = await axios.get("/api/assets/get-assets", {
         params: {
           startDate: toUtcDayBoundary(dateRange.startDate),
           endDate: toUtcDayBoundary(dateRange.endDate, true),
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedAssetSearch || undefined,
         },
       });
       const responsePagination = response.data.pagination;
@@ -131,7 +164,12 @@ const AssetReports = () => {
     { field: "category", headerName: "Category", flex: 1 },
     { field: "brand", headerName: "Brand", flex: 1 },
     { field: "price", headerName: "Price", flex: 1 },
-    { field: "purchaseDate", headerName: "Purchase Date", flex: 1, exportFormat: "date" },
+    {
+      field: "purchaseDate",
+      headerName: "Purchase Date",
+      flex: 1,
+      exportFormat: "date",
+    },
     { field: "warranty", headerName: "Warranty", flex: 1 },
     { field: "location", headerName: "Location", flex: 1 },
 
@@ -140,17 +178,36 @@ const AssetReports = () => {
     { field: "assetName", headerName: "Asset Name", hide: true },
     { field: "serialNumber", headerName: "Serial Number", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    { field: "addedAt", headerName: "Added At", hide: true, exportFormat: "datetime-comma" },
+    {
+      field: "addedAt",
+      headerName: "Added At",
+      hide: true,
+      exportFormat: "datetime-comma",
+    },
     { field: "addedBy", headerName: "Added By", hide: true },
     { field: "assetType", headerName: "Asset Type", hide: true },
     { field: "department", headerName: "Department", hide: true },
-    { field: "departmentAssetId", headerName: "Department Asset ID", hide: true },
+    {
+      field: "departmentAssetId",
+      headerName: "Department Asset ID",
+      hide: true,
+    },
     { field: "unitNo", headerName: "Unit No", hide: true },
     { field: "ownershipType", headerName: "Ownership Type", hide: true },
     { field: "quantity", headerName: "Quantity", hide: true },
-    { field: "warrantyExpiryDate", headerName: "Warranty Expiry Date", hide: true, exportFormat: "date" },
+    {
+      field: "warrantyExpiryDate",
+      headerName: "Warranty Expiry Date",
+      hide: true,
+      exportFormat: "date",
+    },
     { field: "warrantyMonths", headerName: "Warranty (Months)", hide: true },
-    { field: "rentedExpirationDate", headerName: "Rental Expiry Date", hide: true, exportFormat: "date" },
+    {
+      field: "rentedExpirationDate",
+      headerName: "Rental Expiry Date",
+      hide: true,
+      exportFormat: "date",
+    },
     { field: "subCategory", headerName: "Sub Category", hide: true },
     { field: "tangible", headerName: "Tangible", hide: true },
     { field: "status", headerName: "Status", hide: true },
@@ -203,7 +260,8 @@ const AssetReports = () => {
             ownershipType: asset?.ownershipType || "N/A",
             price: `INR ${inrFormat(asset?.price || 0)}`,
             quantity:
-              Number.isFinite(Number(asset?.quantity)) && Number(asset?.quantity) > 0
+              Number.isFinite(Number(asset?.quantity)) &&
+              Number(asset?.quantity) > 0
                 ? Number(asset.quantity)
                 : 1,
             purchaseDate: asset?.purchaseDate || null,
@@ -229,7 +287,8 @@ const AssetReports = () => {
               ? `${asset.assignedAsset.assignedBy.firstName || ""} ${asset.assignedAsset.assignedBy.lastName || ""}`.trim()
               : "N/A",
             approvedAt:
-              asset?.assignedAsset?.approvedBy && asset?.assignedAsset?.updatedAt
+              asset?.assignedAsset?.approvedBy &&
+              asset?.assignedAsset?.updatedAt
                 ? formatDateTime(asset.assignedAsset.updatedAt)
                 : "N/A",
             assignedAt: asset?.assignedAsset?.assignedAt
@@ -243,12 +302,19 @@ const AssetReports = () => {
             assetImage: asset?.assetImage?.url || "N/A",
             warrantyDocument: asset?.warrantyDocument?.link || "N/A",
           })),
-         )
+        )
         .map((asset, index) => ({
           ...asset,
           srNo: (pagination.page - 1) * pagination.limit + index + 1,
         })),
-    [auth, groupedAssets, isTop, pagination.limit, pagination.page, userDepartmentIds],
+    [
+      auth,
+      groupedAssets,
+      isTop,
+      pagination.limit,
+      pagination.page,
+      userDepartmentIds,
+    ],
   );
 
   return (
@@ -260,7 +326,7 @@ const AssetReports = () => {
           exportAllColumns
           taskExportDateTimeFormatting
           dateColumn="purchaseDate"
-           initialDateRange={initialDateRange}
+          initialDateRange={initialDateRange}
           onDateFilterChange={handleDateFilterChange}
           tableTitle="Asset Reports"
           data={isLoading ? [] : reportData}
@@ -276,6 +342,9 @@ const AssetReports = () => {
             setPagination((current) => ({ ...current, page }))
           }
           onPaginationPageSizeChange={handlePageSizeChange}
+          serverSearch
+          searchValue={assetSearch}
+          onSearchChange={handleAssetSearchChange}
         />
       </PageFrame>
     </div>
@@ -283,9 +352,6 @@ const AssetReports = () => {
 };
 
 export default AssetReports;
-
-
-
 
 // import React from "react";
 // import { useQuery } from "@tanstack/react-query";
