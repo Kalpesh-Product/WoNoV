@@ -2,6 +2,12 @@ const kraKpaRole = require("../../models/performances/kraKpaRole");
 const kraKpaTask = require("../../models/performances/kraKpaTask");
 const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
 const { getPagination } = require("../../utils/pagination");
+const {
+  buildSearchRegex,
+  resolveReferenceIds,
+} = require("../../utils/referenceSearch");
+const UserData = require("../../models/hr/UserData");
+const Department = require("../../models/Departments");
 
 // const isDepartmentAdmin = (roles) =>
 //   roles.some(
@@ -10,6 +16,200 @@ const { getPagination } = require("../../utils/pagination");
 //       role.endsWith(" Admin") &&
 //       !["Master Admin", "Super Admin"].includes(role),
 //   );
+
+const stringifiedSearchCondition = (field, searchRegex) => ({
+  $expr: {
+    $regexMatch: {
+      input: {
+        $convert: {
+          input: `$${field}`,
+          to: "string",
+          onError: "",
+          onNull: "",
+        },
+      },
+      regex: searchRegex.source,
+      options: "i",
+    },
+  },
+});
+
+const resolvePerformanceSearchReferences = async ({ company, search }) => {
+  const searchRegex = buildSearchRegex(search);
+
+  if (!searchRegex) {
+    return {
+      searchRegex: null,
+      users: [],
+      departments: [],
+    };
+  }
+
+  const { users = [], departments = [] } = await resolveReferenceIds(
+    searchRegex,
+    [
+      {
+        key: "users",
+        model: UserData,
+        fields: ["firstName", "middleName", "lastName", "email", "empId"],
+        extraFilter: company ? { company } : {},
+      },
+      {
+        key: "departments",
+        model: Department,
+        fields: ["name"],
+      },
+    ],
+  );
+
+  /*
+   * resolveReferenceIds matches individual name fields.
+   * This additionally supports "John Smith".
+   */
+  const fullNameUsers = await UserData.find({
+    ...(company ? { company } : {}),
+    $expr: {
+      $regexMatch: {
+        input: {
+          $trim: {
+            input: {
+              $concat: [
+                { $ifNull: ["$firstName", ""] },
+                " ",
+                { $ifNull: ["$middleName", ""] },
+                " ",
+                { $ifNull: ["$lastName", ""] },
+              ],
+            },
+          },
+        },
+        regex: searchRegex.source,
+        options: "i",
+      },
+    },
+  })
+    .select("_id")
+    .lean();
+
+  return {
+    searchRegex,
+    users: uniqueIds([...users, ...fullNameUsers.map(({ _id }) => _id)]),
+    departments,
+  };
+};
+
+const buildPerformanceRoleSearchConditions = async ({ company, search }) => {
+  const { searchRegex, users, departments } =
+    await resolvePerformanceSearchReferences({
+      company,
+      search,
+    });
+
+  if (!searchRegex) return [];
+
+  return [
+    // Task/model fields
+    { task: searchRegex },
+    { taskType: searchRegex },
+    { status: searchRegex },
+
+    stringifiedSearchCondition("_id", searchRegex),
+    stringifiedSearchCondition("kpaDuration", searchRegex),
+    stringifiedSearchCondition("assignedDate", searchRegex),
+    stringifiedSearchCondition("dueDate", searchRegex),
+
+    // Reference fields
+    ...(departments.length
+      ? [
+          {
+            department: {
+              $in: departments,
+            },
+          },
+        ]
+      : []),
+
+    ...(users.length
+      ? [
+          {
+            assignTo: {
+              $in: users,
+            },
+          },
+        ]
+      : []),
+  ];
+};
+
+const buildCompletedPerformanceSearchConditions = async ({
+  company,
+  search,
+}) => {
+  const { searchRegex, users } = await resolvePerformanceSearchReferences({
+    company,
+    search,
+  });
+
+  if (!searchRegex) return [];
+
+  /*
+   * Find KRA/KPA role tasks matching task name,
+   * department, assigned user, dates, etc.
+   */
+  const roleSearchConditions = await buildPerformanceRoleSearchConditions({
+    company,
+    search,
+  });
+
+  const matchingRoleTasks = roleSearchConditions.length
+    ? await kraKpaRole
+        .find({
+          company,
+          isDeleted: { $ne: true },
+          $or: roleSearchConditions,
+        })
+        .select("_id")
+        .lean()
+    : [];
+
+  const matchingRoleTaskIds = matchingRoleTasks.map(({ _id }) => _id);
+
+  return [
+    // Fields stored directly in kraKpaTask
+    { status: searchRegex },
+    { comment: searchRegex },
+
+    stringifiedSearchCondition("_id", searchRegex),
+    stringifiedSearchCondition("completionDate", searchRegex),
+
+    // Completed By
+    ...(users.length
+      ? [
+          {
+            completedBy: {
+              $in: users,
+            },
+          },
+        ]
+      : []),
+
+    // Task name / department / Assigned To / dates
+    ...(matchingRoleTaskIds.length
+      ? [
+          {
+            task: {
+              $in: matchingRoleTaskIds,
+            },
+          },
+        ]
+      : []),
+  ];
+};
+
+const uniqueIds = (ids = []) =>
+  Array.from(
+    new Map(ids.filter(Boolean).map((id) => [id.toString(), id])).values(),
+  );
 
 const REPORT_TYPE_CONFIG = {
   KPA: ["KPA"],
@@ -55,6 +255,7 @@ const fetchPerformanceTasksService = async ({
   dateFilter,
   page,
   limit,
+  search,
 }) => {
   const {
     shouldPaginate,
@@ -94,6 +295,15 @@ const fetchPerformanceTasksService = async ({
       },
     },
   };
+
+  const searchConditions = await buildPerformanceRoleSearchConditions({
+    company,
+    search,
+  });
+
+  if (searchConditions.length) {
+    taskQuery.$or = searchConditions;
+  }
 
   const tasks = await kraKpaRole
     .find(taskQuery)
@@ -218,6 +428,7 @@ const fetchCompletedPerformanceTasksService = async ({
   dateFilter,
   page,
   limit,
+  search,
 }) => {
   const {
     shouldPaginate,
@@ -232,6 +443,16 @@ const fetchCompletedPerformanceTasksService = async ({
       completionDate: dateFilter.completionDate,
     }),
   };
+
+  const completedSearchConditions =
+    await buildCompletedPerformanceSearchConditions({
+      company,
+      search,
+    });
+
+  if (completedSearchConditions.length) {
+    completedTaskQuery.$or = completedSearchConditions;
+  }
 
   const completedTasks = await kraKpaTask
     .find(completedTaskQuery)

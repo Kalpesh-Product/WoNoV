@@ -2783,6 +2783,30 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     type: "read",
     route: "/app/dashboard/maintenance-dashboard/mix-bag/team-members-schedule",
   },
+  MAINTENANCE_ST_ENERGY_DAILY_READING: {
+    value: "maintenance_st_energy_daily_reading_card",
+    title: "ST ENERGY – DAILY READING",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/mix-bag/st-energy-daily-reading",
+  },
+  MAINTENANCE_DTC_ENERGY_DAILY_READING: {
+    value: "maintenance_dtc_energy_daily_reading_card",
+    title: "DTC ENERGY – DAILY READING",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/mix-bag/dtc-energy-daily-reading",
+  },
+  MAINTENANCE_ST_ENERGY_MONTHLY_READING: {
+    value: "maintenance_st_energy_monthly_reading_card",
+    title: "ST ENERGY – MONTHLY READING",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/mix-bag/st-energy-monthly-reading",
+  },
+  MAINTENANCE_DTC_ENERGY_MONTHLY_READING: {
+    value: "maintenance_dtc_energy_monthly_reading_card",
+    title: "DTC ENERGY – MONTHLY READING",
+    type: "read",
+    route: "/app/dashboard/maintenance-dashboard/mix-bag/dtc-energy-monthly-reading",
+  },
   MAINTENANCE_DATA: {
     value: "maintenance_data_card",
     title: "DATA",
