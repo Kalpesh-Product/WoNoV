@@ -414,6 +414,10 @@ import LandlordAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/La
 import ClientAgreementData from "../pages/Dashboard/FinanceDashboard/MixBag/ClientAgreementData";
 import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
+import MaintainanceStEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingDaily";
+import MaintainanceDtcEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingDaily";
+import MaintainanceStEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingMonthly";
+import MaintainanceDtcEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingMonthly";
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
@@ -1565,6 +1569,22 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <MaintenanceMixBag />,
+                      },
+                      {
+                        path: "mix-bag/st-energy-daily-reading",
+                        element: <MaintainanceStEnergyReadingDaily />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-daily-reading",
+                        element: <MaintainanceDtcEnergyReadingDaily />,
+                      },
+                      {
+                        path: "mix-bag/st-energy-monthly-reading",
+                        element: <MaintainanceStEnergyReadingMonthly />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading",
+                        element: <MaintainanceDtcEnergyReadingMonthly />,
                       },
                       {
                         path: "team-members-schedule",
