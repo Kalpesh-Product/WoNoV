@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FaChevronLeft, FaChevronRight, FaEye } from "react-icons/fa";
-import { IconButton, MenuItem, TextField } from "@mui/material";
+import { IconButton, MenuItem, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
+import { AnimatePresence, motion } from "motion/react";
+import { IoMdClose } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -107,70 +109,130 @@ const emptyFormValues = {
 
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
 
+const modalFieldSx = {
+  "& .MuiInputLabel-root": {
+    fontSize: "0.8rem",
+    color: "#7a8497",
+    top: "-2px",
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#1f3f7a",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "12px",
+    backgroundColor: "#fafafa",
+    minHeight: "48px",
+    "& fieldset": {
+      borderColor: "#d6dbe6",
+    },
+    "&:hover fieldset": {
+      borderColor: "#9aa7bd",
+    },
+    "&.Mui-disabled": {
+      backgroundColor: "#f8fafc",
+    },
+  },
+  "& .MuiInputBase-input": {
+    padding: "13px 14px",
+    fontSize: "0.96rem",
+  },
+  "& .MuiInputBase-input.Mui-disabled": {
+    WebkitTextFillColor: "#6b7280",
+  },
+};
+
+const currentReadingFieldSx = {
+  ...modalFieldSx,
+  position: "relative",
+  "& .MuiFormHelperText-root": {
+    position: "absolute",
+    left: 0,
+    bottom: "-15px",
+    margin: 0,
+    lineHeight: 1,
+    fontSize: "0.72rem",
+    whiteSpace: "nowrap",
+  },
+};
+
+const DailyReadingModal = ({ open, onClose, title, children }) => {
+  return (
+    <AnimatePresence>
+      <Modal open={open} onClose={onClose}>
+        <div className="fixed inset-0 flex items-center justify-center px-3 py-5">
+          <motion.div
+            initial={{ y: 26, opacity: 0, scale: 0.985 }}
+            animate={{ y: 0, opacity: 1, scale: 1 }}
+            exit={{ y: 26, opacity: 0, scale: 0.985 }}
+            className="flex max-h-[92vh] w-[88vw] max-w-[820px] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_28px_80px_rgba(15,23,42,0.28)] outline-none"
+          >
+            <div className="relative flex items-center justify-center border-b border-slate-200 bg-white px-4 py-2.5 md:px-5">
+              <div className="text-center text-[1.05rem] font-medium uppercase tracking-[0.03em] text-[#1f3f7a]">
+                {title}
+              </div>
+
+              <IconButton
+                onClick={onClose}
+                sx={{ position: "absolute", right: 14, top: "50%", p: 0 }}
+                style={{ transform: "translateY(-50%)" }}
+                aria-label="close-modal"
+              >
+                <IoMdClose className="text-[22px] text-black" />
+              </IconButton>
+            </div>
+
+            <div className="overflow-y-auto px-4 pb-4 pt-3 md:px-5">
+              {children}
+            </div>
+          </motion.div>
+        </div>
+      </Modal>
+    </AnimatePresence>
+  );
+};
+
 const MaintainanceStEnergyReadingDaily = () => {
   const [readings, setReadings] = useState(SEED_READINGS);
   const [filterDate, setFilterDate] = useState(
-  dayjs().format("YYYY-MM-DD")
-);
+    dayjs().format("YYYY-MM-DD"),
+  );
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedReading, setSelectedReading] = useState(null);
   const [readingName, setReadingName] = useState("Kalpesh Naik");
-
-const [readingDate, setReadingDate] = useState(
-  dayjs().format("YYYY-MM-DD")
-);
-
-const [dailyReadings, setDailyReadings] = useState(
-  ENERGY_METER_ROWS.map((row) => ({
-    ...row,
-    currentReading: "",
-    consumption: 0,
-  }))
-);
-
- const {
-  control,
-  handleSubmit,
-  reset,
-  watch,
-} = useForm({
-  defaultValues: emptyFormValues,
-});
-
-const editCurrentReading = watch("currentReading");
-
-  const currentDateLabel = useMemo(
-    () => dayjs().format("DD MMM YYYY"),
-    [],
+  const [readingDate, setReadingDate] = useState(dayjs().format("YYYY-MM-DD"));
+  const [currentReadingErrors, setCurrentReadingErrors] = useState({});
+  const [dailyReadings, setDailyReadings] = useState(
+    ENERGY_METER_ROWS.map((row) => ({
+      ...row,
+      currentReading: "",
+      consumption: 0,
+    })),
   );
+
+  const { control, handleSubmit, reset } = useForm({
+    defaultValues: emptyFormValues,
+  });
 
   const handlePreviousDate = () => {
-  setFilterDate((prev) =>
-    dayjs(prev).subtract(1, "day").format("YYYY-MM-DD")
-  );
-};
-
-const handleNextDate = () => {
-  setFilterDate((prev) =>
-    dayjs(prev).add(1, "day").format("YYYY-MM-DD")
-  );
-};
-
-const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
-  const tableTitle = `Sunteck Building - Energy Reading`;
-
-const filteredReadings = useMemo(() => {
-  return readings
-    .filter((row) =>
-      dayjs(row.date).isSame(dayjs(filterDate), "day")
-    )
-    .sort(
-      (a, b) =>
-        dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
+    setFilterDate((prev) =>
+      dayjs(prev).subtract(1, "day").format("YYYY-MM-DD"),
     );
-}, [filterDate, readings]);
+  };
+
+  const handleNextDate = () => {
+    setFilterDate((prev) => dayjs(prev).add(1, "day").format("YYYY-MM-DD"));
+  };
+
+  const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
+  const tableTitle = "Sunteck Building - Energy Reading";
+
+  const filteredReadings = useMemo(() => {
+    return readings
+      .filter((row) => dayjs(row.date).isSame(dayjs(filterDate), "day"))
+      .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
+  }, [filterDate, readings]);
 
   const tableData = useMemo(
     () =>
@@ -184,74 +246,89 @@ const filteredReadings = useMemo(() => {
   );
 
   const openAddModal = () => {
-  setModalMode("add");
-  setSelectedReading(null);
-
-  setReadingDate(filterDate);
-
-  setDailyReadings(
-    ENERGY_METER_ROWS.map((row) => ({
-      ...row,
-      currentReading: "",
-      consumption: 0,
-    }))
-  );
-
-  setModalOpen(true);
-};
-
-const handleDailyReadingChange = (index, value) => {
-  setDailyReadings((prev) =>
-    prev.map((row, rowIndex) => {
-      if (rowIndex !== index) return row;
-
-      const previousReading = Number(row.previousReading) || 0;
-      const currentReading = value === "" ? "" : Number(value);
-
-      const consumption =
-        currentReading === ""
-          ? 0
-          : currentReading - previousReading;
-
-      return {
+    setModalMode("add");
+    setSelectedReading(null);
+    setReadingDate(filterDate);
+    setCurrentReadingErrors({});
+    setDailyReadings(
+      ENERGY_METER_ROWS.map((row) => ({
         ...row,
-        currentReading: value,
-        consumption,
-      };
-    })
-  );
-};
+        currentReading: "",
+        consumption: 0,
+      })),
+    );
+    setModalOpen(true);
+  };
 
-const handleAddDailyReadings = () => {
-  const enteredReadings = dailyReadings.filter(
-    (row) => row.currentReading !== ""
-  );
+  const handleDailyReadingChange = (index, value) => {
+    setCurrentReadingErrors((prev) => {
+      if (!prev[index]) return prev;
 
-  if (!enteredReadings.length) return;
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
 
-  setReadings((current) => {
-    let nextId =
-      current.length > 0
-        ? Math.max(...current.map((row) => row.id)) + 1
-        : 1;
+    setDailyReadings((prev) =>
+      prev.map((row, rowIndex) => {
+        if (rowIndex !== index) return row;
 
-    const newRows = enteredReadings.map((row) => ({
-      id: nextId++,
-      meterNo: row.meterNo,
-      unitNo: row.unitNo,
-      previousReading: Number(row.previousReading),
-      currentReading: Number(row.currentReading),
-      consumption: Number(row.consumption),
-      date: readingDate,
-      addedBy: readingName,
-    }));
+        const previousReading = Number(row.previousReading) || 0;
+        const currentReading = value === "" ? "" : Number(value);
+        const consumption =
+          currentReading === "" ? 0 : currentReading - previousReading;
 
-    return [...newRows, ...current];
-  });
+        return {
+          ...row,
+          currentReading: value,
+          consumption,
+        };
+      }),
+    );
+  };
 
-  setFilterDate(readingDate);
-  setModalOpen(false);
-};
+  const handleAddDailyReadings = () => {
+    const nextErrors = {};
+    dailyReadings.forEach((row, index) => {
+      if (row.currentReading === "") {
+        nextErrors[index] = "Current reading is required";
+      }
+    });
+
+    setCurrentReadingErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    const enteredReadings = dailyReadings.filter(
+      (row) => row.currentReading !== "",
+    );
+
+    if (!enteredReadings.length) return;
+
+    setReadings((current) => {
+      let nextId =
+        current.length > 0 ? Math.max(...current.map((row) => row.id)) + 1 : 1;
+
+      const newRows = enteredReadings.map((row) => ({
+        id: nextId++,
+        meterNo: row.meterNo,
+        unitNo: row.unitNo,
+        previousReading: Number(row.previousReading),
+        currentReading: Number(row.currentReading),
+        consumption: Number(row.consumption),
+        date: readingDate,
+        addedBy: readingName,
+      }));
+
+      return [...newRows, ...current];
+    });
+
+    setFilterDate(readingDate);
+    setModalOpen(false);
+    setCurrentReadingErrors({});
+  };
 
   const openEditModal = (row) => {
     setModalMode("edit");
@@ -374,563 +451,352 @@ const handleAddDailyReadings = () => {
     },
   ];
 
-  const filteredCountLabel = filterDate
-    ? `${filteredReadings.length} records`
-    : `${readings.length} records`;
-
   return (
     <div className="p-4">
-{/* <PageFrame>
-  <div className="flex flex-col gap-5">
+      <PageFrame>
+        <div className="flex flex-col gap-5">
+          <AgTable
+            data={tableData}
+            columns={columns}
+            tableTitle={tableTitle}
+            buttonTitle="Add Reading"
+            handleClick={openAddModal}
+            exportData
+            hideFilter
+            headerBottomContent={
+              <div className="flex w-full justify-center pt-2 pb-4">
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePreviousDate}
+                    className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
+                  >
+                    <FaChevronLeft size={14} />
+                  </button>
 
-    <div className="flex items-center justify-center gap-3">
-      <button
-        type="button"
-        onClick={handlePreviousDate}
-        className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
-      >
-        <FaChevronLeft size={14} />
-      </button>
+                  <div className="flex h-10 min-w-[140px] items-center justify-center rounded-lg border border-primary bg-white px-5 text-sm font-medium text-slate-600">
+                    {selectedDateLabel}
+                  </div>
 
-      <div className="flex h-10 min-w-[140px] items-center justify-center rounded-lg border border-primary bg-white px-5 text-sm font-medium text-slate-600">
-        {selectedDateLabel}
-      </div>
+                  <button
+                    type="button"
+                    onClick={handleNextDate}
+                    className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
+                  >
+                    <FaChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </PageFrame>
 
-      <button
-        type="button"
-        onClick={handleNextDate}
-        className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
-      >
-        <FaChevronRight size={14} />
-      </button>
-    </div>
+      {modalMode === "add" && (
+        <DailyReadingModal
+          open={modalOpen}
+          onClose={closeModal}
+          title="ADD ST ENERGY READING - DAILY"
+        >
+          <div className="w-full space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <TextField
+                label="Name"
+                size="small"
+                fullWidth
+                disabled
+                value={readingName}
+                onChange={(e) => setReadingName(e.target.value)}
+                sx={modalFieldSx}
+              />
 
-    <AgTable
-      data={tableData}
-      columns={columns}
-      tableTitle={tableTitle}
-      buttonTitle="Add Reading"
-      handleClick={openAddModal}
-      exportData
-      hideFilter
-    />
-
-  </div> 
-</PageFrame>*/}
-<PageFrame>
-  <div className="flex flex-col gap-5">
-    <AgTable
-      data={tableData}
-      columns={columns}
-      tableTitle="Sunteck Building - Energy Reading"
-      buttonTitle="Add Reading"
-      handleClick={openAddModal}
-      exportData
-      hideFilter
-      headerBottomContent={
-        <div className="flex w-full justify-center pt-2 pb-4">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={handlePreviousDate}
-              className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
-            >
-              <FaChevronLeft size={14} />
-            </button>
-
-            <div className="flex h-10 min-w-[140px] items-center justify-center rounded-lg border border-primary bg-white px-5 text-sm font-medium text-slate-600">
-              {selectedDateLabel}
+              <TextField
+                label="Date"
+                type="date"
+                size="small"
+                disabled
+                fullWidth
+                value={readingDate}
+                onChange={(e) => setReadingDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                sx={modalFieldSx}
+              />
             </div>
 
-            <button
-              type="button"
-              onClick={handleNextDate}
-              className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
-            >
-              <FaChevronRight size={14} />
-            </button>
-          </div>
-        </div>
-      }
-    />
-  </div>
-</PageFrame>
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-[0_12px_30px_rgba(15,23,42,0.08)]">
+              <table className="w-full table-fixed border-collapse">
+                <colgroup>
+                  <col className="w-[12%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[20%]" />
+                  <col className="w-[23%]" />
+                  <col className="w-[23%]" />
+                </colgroup>
 
-      {/* <MuiModal
-        open={modalOpen}
-        onClose={closeModal}
-        title={modalMode === "edit" ? "Edit Reading" : "Add Reading"}
-      >
-        <form className="space-y-4" onSubmit={handleSubmit(handleAddOrUpdate)}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Controller
-              name="meterNo"
-              control={control}
-              rules={{ required: "Meter No is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Meter No"
-                  fullWidth
-                  size="small"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
+                <thead>
+                  <tr className="bg-[#1f3f7a] text-white">
+                    <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
+                      Unit No.
+                    </th>
+                    <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
+                      Meter No.
+                    </th>
+                    <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
+                      Previous Reading
+                    </th>
+                    <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
+                      Current Reading
+                    </th>
+                    <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
+                      Consumption (Units)
+                    </th>
+                  </tr>
+                </thead>
 
-            <Controller
-              name="unitNo"
-              control={control}
-              rules={{ required: "Unit No is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Unit No"
-                  fullWidth
-                  size="small"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  <MenuItem value="" disabled>
-                    Select Unit
-                  </MenuItem>
-                  {UNIT_OPTIONS.map((unitNo) => (
-                    <MenuItem key={unitNo} value={unitNo}>
-                      {unitNo}
-                    </MenuItem>
+                <tbody>
+                  {dailyReadings.map((row, index) => (
+                    <tr
+                      key={row.unitNo}
+                      className="border-b border-slate-200 last:border-b-0 even:bg-slate-50/50"
+                    >
+                      <td className="border-r border-slate-200 px-3 py-2.5 text-center">
+                        <span className="text-sm font-medium text-slate-800">
+                          {row.unitNo}
+                        </span>
+                      </td>
+
+                      <td className="border-r border-slate-200 px-2 py-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={row.meterNo}
+                          disabled
+                          sx={modalFieldSx}
+                        />
+                      </td>
+
+                      <td className="border-r border-slate-200 px-2 py-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={row.previousReading}
+                          disabled
+                          sx={modalFieldSx}
+                        />
+                      </td>
+
+                      <td className="border-r border-slate-200 px-2 py-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          type="number"
+                          value={row.currentReading}
+                          placeholder="Enter reading"
+                          onChange={(e) =>
+                            handleDailyReadingChange(index, e.target.value)
+                          }
+                          error={Boolean(currentReadingErrors[index])}
+                          helperText={currentReadingErrors[index]}
+                          inputProps={{
+                            min: row.previousReading,
+                          }}
+                          sx={currentReadingFieldSx}
+                        />
+                      </td>
+
+                      <td className="px-2 py-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          value={row.consumption}
+                          disabled
+                          sx={modalFieldSx}
+                        />
+                      </td>
+                    </tr>
                   ))}
-                </TextField>
-              )}
-            />
+                </tbody>
+              </table>
+            </div>
 
-            <Controller
-              name="previousReading"
-              control={control}
-              rules={{ required: "Previous Reading is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Previous Reading"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-
-            <Controller
-              name="currentReading"
-              control={control}
-              rules={{ required: "Current Reading is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Current Reading"
-                  type="number"
-                  fullWidth
-                  size="small"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-
-            <Controller
-              name="date"
-              control={control}
-              rules={{ required: "Date is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Date"
-                  type="date"
-                  fullWidth
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-
-            <Controller
-              name="addedBy"
-              control={control}
-              rules={{ required: "Added By is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  label="Added By"
-                  fullWidth
-                  size="small"
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                />
-              )}
-            />
-          </div>
-
-          <div className="flex justify-end gap-3">
-            <SecondaryButton title="Cancel" handleSubmit={closeModal} />
-            <PrimaryButton
-              type="submit"
-              title={modalMode === "edit" ? "Save Changes" : "Add Reading"}
-            />
-          </div>
-        </form>
-      </MuiModal> */}
-      <MuiModal
-  open={modalOpen}
-  onClose={closeModal}
-  title={
-    modalMode === "edit"
-      ? "EDIT READING"
-      : " ADD ENERGY READING"
-  }
->
-  {modalMode === "add" ? (
-    <div className="w-full">
-
-      {/* Name and Date */}
-      <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-        <TextField
-          label="Name"
-          size="small"
-          fullWidth
-          disabled
-          value={readingName}
-          onChange={(e) => setReadingName(e.target.value)}
-        />
-
-        <TextField
-          label="Date"
-          type="date"
-          size="small"
-          disabled
-          fullWidth
-          value={readingDate}
-          onChange={(e) => setReadingDate(e.target.value)}
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-      </div>
-
-      {/* Daily Reading Table */}
-      <div className="overflow-x-auto rounded-md border border-borderGray">
-        <table className="w-full border-collapse">
-
-          <thead>
-            <tr className="bg-primary text-white">
-              <th className="px-3 py-3 text-center text-sm font-medium">
-                Unit No.
-              </th>
-
-              <th className="px-3 py-3 text-center text-sm font-medium">
-                Meter No.
-              </th>
-
-              <th className="px-3 py-3 text-center text-sm font-medium">
-                Previous Reading
-              </th>
-
-              <th className="px-3 py-3 text-center text-sm font-medium">
-                Current Reading
-              </th>
-
-              <th className="px-3 py-3 text-center text-sm font-medium">
-                Consumption (Units)
-              </th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {dailyReadings.map((row, index) => (
-              <tr
-                key={row.unitNo}
-                className="border-b border-borderGray last:border-b-0"
+            <div className="pt-1">
+              <motion.button
+                type="button"
+                onClick={handleAddDailyReadings}
+                whileHover={{
+                  scale: 1.035,
+                  y: -4,
+                  boxShadow: "0 18px 38px rgba(31, 63, 122, 0.38)",
+                }}
+                whileTap={{ scale: 0.97, y: 0 }}
+                transition={{ type: "spring", stiffness: 650, damping: 24 }}
+                className="w-full rounded-xl bg-primary py-3 text-base font-medium text-white shadow-[0_10px_20px_rgba(31,63,122,0.22)] transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                {/* Unit No */}
-                <td className="border-r border-borderGray px-3 py-2 text-center">
-                  <span className="text-sm font-medium">
-                    {row.unitNo}
-                  </span>
-                </td>
+                Add Reading
+              </motion.button>
+            </div>
+          </div>
+        </DailyReadingModal>
+      )}
 
-                {/* Meter No */}
-                <td className="border-r border-borderGray px-2 py-2">
+      {modalMode === "edit" && (
+        <MuiModal open={modalOpen} onClose={closeModal} title="EDIT READING">
+          <form className="space-y-4" onSubmit={handleSubmit(handleAddOrUpdate)}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <Controller
+                name="meterNo"
+                control={control}
+                rules={{ required: "Meter No is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
-                    size="small"
+                    {...field}
+                    label="Meter No"
                     fullWidth
-                    value={row.meterNo}
-                    disabled
+                    size="small"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   />
-                </td>
+                )}
+              />
 
-                {/* Previous Reading */}
-                <td className="border-r border-borderGray px-2 py-2">
+              <Controller
+                name="unitNo"
+                control={control}
+                rules={{ required: "Unit No is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
-                    size="small"
+                    {...field}
+                    select
+                    label="Unit No"
                     fullWidth
-                    value={row.previousReading}
-                    disabled
-                  />
-                </td>
+                    size="small"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="" disabled>
+                      Select Unit
+                    </MenuItem>
 
-                {/* Current Reading */}
-                <td className="border-r border-borderGray px-2 py-2">
+                    {UNIT_OPTIONS.map((unitNo) => (
+                      <MenuItem key={unitNo} value={unitNo}>
+                        {unitNo}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
+              <Controller
+                name="previousReading"
+                control={control}
+                rules={{ required: "Previous Reading is required" }}
+                render={({ field, fieldState }) => (
                   <TextField
-                    size="small"
-                    fullWidth
+                    {...field}
+                    label="Previous Reading"
                     type="number"
-                    value={row.currentReading}
-                    placeholder="Enter reading"
-                    onChange={(e) =>
-                      handleDailyReadingChange(
-                        index,
-                        e.target.value
-                      )
-                    }
-                    inputProps={{
-                      min: row.previousReading,
-                    }}
-                  />
-                </td>
-
-                {/* Consumption */}
-                <td className="px-2 py-2">
-                  <TextField
-                    size="small"
                     fullWidth
-                    value={row.consumption}
-                    disabled
+                    size="small"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
                   />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                )}
+              />
 
-      {/* Add Readings Button */}
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={handleAddDailyReadings}
-          className="w-full rounded-md bg-primary py-3 text-sm font-medium text-white transition hover:opacity-90"
-        >
-          Add Readings
-        </button>
-      </div>
-    </div>
-  ) : (
-    /* EDIT MODAL */
-    <form
-      className="space-y-4"
-      onSubmit={handleSubmit(handleAddOrUpdate)}
-    >
-      <div className="grid gap-4 md:grid-cols-2">
+              <Controller
+                name="currentReading"
+                control={control}
+                rules={{ required: "Current Reading is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Current Reading"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
 
-        <Controller
-          name="meterNo"
-          control={control}
-          rules={{
-            required: "Meter No is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              label="Meter No"
-              fullWidth
-              size="small"
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            />
-          )}
-        />
+              <Controller
+                name="date"
+                control={control}
+                rules={{ required: "Date is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Date"
+                    type="date"
+                    fullWidth
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
 
-        <Controller
-          name="unitNo"
-          control={control}
-          rules={{
-            required: "Unit No is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              select
-              label="Unit No"
-              fullWidth
-              size="small"
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            >
-              <MenuItem value="" disabled>
-                Select Unit
-              </MenuItem>
+              <Controller
+                name="addedBy"
+                control={control}
+                rules={{ required: "Added By is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Added By"
+                    fullWidth
+                    size="small"
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </div>
 
-              {UNIT_OPTIONS.map((unitNo) => (
-                <MenuItem key={unitNo} value={unitNo}>
-                  {unitNo}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
-        />
+            <div className="flex justify-end gap-3">
+              <SecondaryButton title="Cancel" handleSubmit={closeModal} />
+              <PrimaryButton type="submit" title="Save Changes" />
+            </div>
+          </form>
+        </MuiModal>
+      )}
 
-        <Controller
-          name="previousReading"
-          control={control}
-          rules={{
-            required: "Previous Reading is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              label="Previous Reading"
-              type="number"
-              fullWidth
-              size="small"
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="currentReading"
-          control={control}
-          rules={{
-            required: "Current Reading is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              label="Current Reading"
-              type="number"
-              fullWidth
-              size="small"
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="date"
-          control={control}
-          rules={{
-            required: "Date is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              label="Date"
-              type="date"
-              fullWidth
-              size="small"
-              InputLabelProps={{
-                shrink: true,
-              }}
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            />
-          )}
-        />
-
-        <Controller
-          name="addedBy"
-          control={control}
-          rules={{
-            required: "Added By is required",
-          }}
-          render={({ field, fieldState }) => (
-            <TextField
-              {...field}
-              label="Added By"
-              fullWidth
-              size="small"
-              error={!!fieldState.error}
-              helperText={fieldState.error?.message}
-            />
-          )}
-        />
-      </div>
-
-      <div className="flex justify-end gap-3">
-        <SecondaryButton
-          title="Cancel"
-          handleSubmit={closeModal}
-        />
-
-        <PrimaryButton
-          type="submit"
-          title="Save Changes"
-        />
-      </div>
-    </form>
-  )}
-</MuiModal>
-
-    <MuiModal
-  open={detailOpen}
-  onClose={closeDetailModal}
-  title="VIEW READING DETAILS"
->
-  {selectedReading && (
-    <div className="px-2 py-2">
-      <div className="flex flex-col gap-4">
-        <DetalisFormatted
-          title="Sr. No"
-          detail={selectedReading.id ?? "-"}
-        />
-
-        <DetalisFormatted
-          title="Meter No"
-          detail={selectedReading.meterNo || "-"}
-        />
-
-        <DetalisFormatted
-          title="Unit No"
-          detail={selectedReading.unitNo || "-"}
-        />
-
-        <DetalisFormatted
-          title="Previous Reading"
-          detail={selectedReading.previousReading ?? "-"}
-        />
-
-        <DetalisFormatted
-          title="Current Reading"
-          detail={selectedReading.currentReading ?? "-"}
-        />
-
-        <DetalisFormatted
-          title="Consumption (KWH)"
-          detail={selectedReading.consumption ?? "-"}
-        />
-
-        <DetalisFormatted
-          title="Date"
-          detail={
-            selectedReading.date
-              ? formatDate(selectedReading.date)
-              : "-"
-          }
-        />
-
-        <DetalisFormatted
-          title="Added By"
-          detail={selectedReading.addedBy || "-"}
-        />
-      </div>
-    </div>
-  )}
-</MuiModal>
+      <MuiModal
+        open={detailOpen}
+        onClose={closeDetailModal}
+        title="VIEW READING DETAILS"
+      >
+        {selectedReading && (
+          <div className="px-2 py-2">
+            <div className="flex flex-col gap-4">
+              <DetalisFormatted title="Sr. No" detail={selectedReading.id ?? "-"} />
+              <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
+              <DetalisFormatted title="Unit No" detail={selectedReading.unitNo || "-"} />
+              <DetalisFormatted
+                title="Previous Reading"
+                detail={selectedReading.previousReading ?? "-"}
+              />
+              <DetalisFormatted
+                title="Current Reading"
+                detail={selectedReading.currentReading ?? "-"}
+              />
+              <DetalisFormatted
+                title="Consumption (KWH)"
+                detail={selectedReading.consumption ?? "-"}
+              />
+              <DetalisFormatted
+                title="Date"
+                detail={selectedReading.date ? formatDate(selectedReading.date) : "-"}
+              />
+              <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
+            </div>
+          </div>
+        )}
+      </MuiModal>
     </div>
   );
 };
