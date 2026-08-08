@@ -153,6 +153,12 @@ app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
 app.use("/api/reports", verifyJwt, auditLogger, reportRoutes);
 app.use("/api/printout", verifyJwt, auditLogger, printoutRoutes);
 app.use(
+  "/api/maintenance",
+  verifyJwt,
+  auditLogger,
+  maintenanceEnergyReadingRoutes,
+);
+app.use(
   "/api/maintenance/st-energy-daily",
   verifyJwt,
   auditLogger,

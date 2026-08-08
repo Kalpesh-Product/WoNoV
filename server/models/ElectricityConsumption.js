@@ -20,9 +20,9 @@ const readingSchema = new mongoose.Schema({
 const electricityConsumptionSchema = new mongoose.Schema(
   {
     meterNo: {
-      type: Number,
+      type: String,
       required: true,
-      min: 0,
+      trim: true,
     },
     readings: {
       type: [readingSchema],

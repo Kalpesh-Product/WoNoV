@@ -4,9 +4,33 @@ const Unit = require("../../models/locations/Unit");
 
 const dayBounds = (value) => {
   const dateValue = value || new Date().toISOString().slice(0, 10);
-  const start = new Date(`${dateValue}T00:00:00.000Z`);
+  const start = new Date(`${dateValue}T00:00:00+05:30`);
   if (Number.isNaN(start.getTime())) return null;
-  return { start, end: new Date(start.getTime() + 86400000) };
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+};
+
+const getTodayDateString = () =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(
+    new Date(),
+  );
+
+const isFutureDate = (value) => String(value || "").slice(0, 10) > getTodayDateString();
+
+const ST_UNIT_PREFIX = /^ST/i;
+
+const buildReadingTimestamp = (dateValue) => {
+  const currentTime = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Kolkata",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(new Date());
+
+  const readingAt = new Date(`${dateValue}T${currentTime}+05:30`);
+  return readingAt;
 };
 
 const sortedReadings = (meter) =>
@@ -21,11 +45,13 @@ const readingContext = (meter, readingId) => {
   );
   if (index < 0) return null;
   const reading = readings[index];
-  const previousReading = index > 0 ? Number(readings[index - 1].value) : 0;
+  const hasPreviousReading = index > 0;
+  const previousReading = hasPreviousReading ? Number(readings[index - 1].value) : 0;
   return {
     reading,
     previousReading,
-    consumption: Number(reading.value) - previousReading,
+    hasPreviousReading,
+    consumption: hasPreviousReading ? Number(reading.value) - previousReading : 0,
   };
 };
 
@@ -33,7 +59,7 @@ const previousReadingBefore = (meter, date) => {
   const previous = sortedReadings(meter)
     .filter((reading) => new Date(reading.readingAt) < date)
     .at(-1);
-  return Number(previous?.value || 0);
+  return previous ? Number(previous.value) : null;
 };
 
 const serialize = (unit, meter, context) => ({
@@ -42,6 +68,7 @@ const serialize = (unit, meter, context) => ({
   unitNo: unit.unitNo,
   unitId: unit._id,
   previousReading: context.previousReading,
+  hasPreviousReading: context.hasPreviousReading,
   currentReading: Number(context.reading.value),
   consumption: context.consumption,
   date: context.reading.readingAt,
@@ -51,7 +78,7 @@ const serialize = (unit, meter, context) => ({
 });
 
 const getCompanyUnits = (company) =>
-  Unit.find({ company, isActive: true })
+  Unit.find({ company, isActive: true, unitNo: ST_UNIT_PREFIX })
     .select("unitNo unitName ElectricityConsumption")
     .populate({
       path: "ElectricityConsumption",
@@ -71,10 +98,11 @@ const getStEnergyFormData = async (req, res, next) => {
         unitNo: unit.unitNo,
         unitName: unit.unitName,
         meterNo: unit.ElectricityConsumption?.meterNo ?? "",
-        previousReading: previousReadingBefore(
-          unit.ElectricityConsumption,
-          bounds.start,
-        ),
+        previousReading:
+          previousReadingBefore(unit.ElectricityConsumption, bounds.start) ?? 0,
+        hasPreviousReading:
+          previousReadingBefore(unit.ElectricityConsumption, bounds.start) !==
+          null,
       })),
     });
   } catch (error) {
@@ -111,6 +139,11 @@ const addStEnergyReadings = async (req, res, next) => {
     if (!bounds || !Array.isArray(readings) || readings.length === 0) {
       return res.status(400).json({ message: "Date and readings are required" });
     }
+    if (isFutureDate(req.body.date)) {
+      return res
+        .status(400)
+        .json({ message: "Reading cannot be added for a future date" });
+    }
 
     const unitIds = readings.map((row) => row.unitId);
     if (
@@ -123,24 +156,31 @@ const addStEnergyReadings = async (req, res, next) => {
       _id: { $in: unitIds },
       company: req.company,
       isActive: true,
+      unitNo: ST_UNIT_PREFIX,
     }).populate("ElectricityConsumption");
     if (units.length !== unitIds.length) {
       return res.status(400).json({ message: "One or more units are invalid" });
     }
 
-    const meterNumbers = readings.map((row) => Number(row.meterNo));
+    const meterNumbers = readings.map((row) => String(row.meterNo || "").trim());
     if (
-      meterNumbers.some((meterNo) => !Number.isFinite(meterNo)) ||
+      meterNumbers.some((meterNo) => !meterNo) ||
       new Set(meterNumbers).size !== meterNumbers.length
     ) {
-      return res.status(400).json({ message: "Each unit requires a unique numeric Meter No." });
+      return res.status(400).json({ message: "Each unit requires a unique Meter No." });
     }
 
     const unitMap = new Map(units.map((unit) => [String(unit._id), unit]));
     for (const row of readings) {
       const unit = unitMap.get(String(row.unitId));
-      const meterNo = Number(row.meterNo);
+      const meterNo = String(row.meterNo || "").trim();
       const currentReading = Number(row.currentReading);
+      const readingAt = buildReadingTimestamp(req.body.date);
+
+      if (!readingAt) {
+        return res.status(400).json({ message: "Invalid date" });
+      }
+
       if (!Number.isFinite(currentReading) || currentReading < 0) {
         return res.status(400).json({ message: "A valid current reading is required" });
       }
@@ -154,7 +194,7 @@ const addStEnergyReadings = async (req, res, next) => {
         });
         unit.ElectricityConsumption = meter._id;
         await unit.save();
-      } else if (Number(meter.meterNo) !== meterNo) {
+      } else if (String(meter.meterNo || "").trim() !== meterNo) {
         meter.meterNo = meterNo;
       }
 
@@ -168,17 +208,18 @@ const addStEnergyReadings = async (req, res, next) => {
         });
       }
       const previousReading = previousReadingBefore(meter, bounds.start);
-      if (currentReading < previousReading) {
+      if (previousReading !== null && currentReading < previousReading) {
         return res.status(400).json({
           message: `Current reading for meter ${meterNo} cannot be less than ${previousReading}`,
         });
       }
       meter.readings.push({
         value: currentReading,
-        readingAt: bounds.start,
+        readingAt,
         addedBy: req.user,
       });
-      meter.consumption = currentReading - previousReading;
+      meter.consumption =
+        previousReading === null ? 0 : currentReading - previousReading;
       await meter.save();
     }
 
@@ -195,6 +236,8 @@ const editStEnergyReading = async (req, res, next) => {
     }
     const unit = await Unit.findOne({
       company: req.company,
+      isActive: true,
+      unitNo: ST_UNIT_PREFIX,
       ElectricityConsumption: {
         $in: await ElectricityConsumption.find({
           "readings._id": req.params.id,
@@ -209,15 +252,15 @@ const editStEnergyReading = async (req, res, next) => {
     }
 
     const meter = unit.ElectricityConsumption;
-    const meterNo = Number(req.body.meterNo);
+    const meterNo = String(req.body.meterNo || "").trim();
     const currentReading = Number(req.body.currentReading);
-    if (!Number.isFinite(meterNo) || !Number.isFinite(currentReading) || currentReading < 0) {
+    if (!meterNo || !Number.isFinite(currentReading) || currentReading < 0) {
       return res.status(400).json({
-        message: "A numeric Meter No. and valid Current Reading are required",
+        message: "A Meter No. and valid Current Reading are required",
       });
     }
     const context = readingContext(meter, req.params.id);
-    if (currentReading < context.previousReading) {
+    if (context.hasPreviousReading && currentReading < context.previousReading) {
       return res.status(400).json({
         message: `Current reading cannot be less than ${context.previousReading}`,
       });
@@ -234,8 +277,8 @@ const editStEnergyReading = async (req, res, next) => {
     meter.meterNo = meterNo;
     context.reading.value = currentReading;
     const latest = sortedReadings(meter).at(-1);
-    const latestContext = readingContext(meter, latest._id);
-    meter.consumption = latestContext.consumption;
+    const latestContext = latest ? readingContext(meter, latest._id) : null;
+    meter.consumption = latestContext?.consumption ?? 0;
     await meter.save();
     await meter.populate("readings.addedBy", "firstName lastName");
 

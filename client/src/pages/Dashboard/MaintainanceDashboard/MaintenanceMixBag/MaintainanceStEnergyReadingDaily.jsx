@@ -15,7 +15,11 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import useAuth from "../../../../hooks/useAuth";
 import { toast } from "sonner";
 
-const ST_ENERGY_DAILY_API = "/api/maintenance/st-energy-daily";
+const ST_ENERGY_DAILY_API = "/api/maintenance";
+const ST_ENERGY_DAILY_GET_API = `${ST_ENERGY_DAILY_API}/get-st-energy-daily`;
+const ST_ENERGY_DAILY_FORM_API = `${ST_ENERGY_DAILY_GET_API}/form-data`;
+const ST_ENERGY_DAILY_ADD_API = `${ST_ENERGY_DAILY_API}/add-st-energy-daily`;
+const ST_ENERGY_DAILY_EDIT_API = `${ST_ENERGY_DAILY_API}/edit-st-energy-daily`;
 
 const emptyFormValues = {
   meterNo: "",
@@ -27,6 +31,7 @@ const emptyFormValues = {
 };
 
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
+const formatDateTime = (value) => dayjs(value).format("DD-MM-YYYY, hh:mm A");
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -174,14 +179,16 @@ const MaintainanceStEnergyReadingDaily = () => {
   const editPreviousReading = watch("previousReading");
   const editCurrentReading = watch("currentReading");
   const editConsumption = Math.max(
-    Number(editCurrentReading || 0) - Number(editPreviousReading || 0),
+    selectedReading?.hasPreviousReading
+      ? Number(editCurrentReading || 0) - Number(editPreviousReading || 0)
+      : 0,
     0,
   );
 
   useEffect(() => {
     let active = true;
     axiosPrivate
-      .get(ST_ENERGY_DAILY_API, { params: { date: filterDate } })
+      .get(ST_ENERGY_DAILY_GET_API, { params: { date: filterDate } })
       .then(({ data }) => active && setReadings(data.data || []))
       .catch((error) => toast.error(error.response?.data?.message || "Unable to load readings"));
     return () => {
@@ -200,7 +207,7 @@ const MaintainanceStEnergyReadingDaily = () => {
   };
 
   const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
-  const tableTitle = "Sunteck Building - Energy Reading";
+  const tableTitle = "Sunteck Kanaka Building - Energy Reading";
 
   const filteredReadings = useMemo(() => {
     return readings
@@ -213,7 +220,7 @@ const MaintainanceStEnergyReadingDaily = () => {
       filteredReadings.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        dateDisplay: formatDate(row.date),
+        dateDisplay: formatDateTime(row.date),
         meterNoDisplay: row.meterNo,
       })),
     [filteredReadings],
@@ -226,11 +233,15 @@ const MaintainanceStEnergyReadingDaily = () => {
     setCurrentReadingErrors({});
     try {
       const { data } = await axiosPrivate.get(
-        `${ST_ENERGY_DAILY_API}/form-data`,
+        ST_ENERGY_DAILY_FORM_API,
         { params: { date: filterDate } },
       );
       setDailyReadings(
-        (data.data || []).map((row) => ({ ...row, currentReading: "", consumption: 0 })),
+        (data.data || []).map((row) => ({
+          ...row,
+          currentReading: "",
+          consumption: 0,
+        })),
       );
       setModalOpen(true);
     } catch (error) {
@@ -262,7 +273,11 @@ const MaintainanceStEnergyReadingDaily = () => {
         const previousReading = Number(row.previousReading) || 0;
         const currentReading = value === "" ? "" : Number(value);
         const consumption =
-          currentReading === "" ? 0 : currentReading - previousReading;
+          currentReading === ""
+            ? 0
+            : row.hasPreviousReading
+              ? currentReading - previousReading
+              : 0;
 
         return {
           ...row,
@@ -291,7 +306,7 @@ const MaintainanceStEnergyReadingDaily = () => {
 
      try {
       setSaving(true);
-      await axiosPrivate.post(ST_ENERGY_DAILY_API, {
+      await axiosPrivate.post(ST_ENERGY_DAILY_ADD_API, {
         date: readingDate,
         readings: dailyReadings.map(({ unitId, meterNo, currentReading }) => ({
           unitId,
@@ -303,7 +318,7 @@ const MaintainanceStEnergyReadingDaily = () => {
       setModalOpen(false);
       setCurrentReadingErrors({});
       toast.success("ST energy readings added");
-      const { data } = await axiosPrivate.get(ST_ENERGY_DAILY_API, {
+      const { data } = await axiosPrivate.get(ST_ENERGY_DAILY_GET_API, {
         params: { date: readingDate },
       });
       setReadings(data.data || []);
@@ -324,6 +339,7 @@ const MaintainanceStEnergyReadingDaily = () => {
       currentReading: row.currentReading,
       date: row.date,
       addedBy: row.addedBy,
+      hasPreviousReading: row.hasPreviousReading,
     });
     setModalOpen(true);
   };
@@ -345,7 +361,7 @@ const MaintainanceStEnergyReadingDaily = () => {
     try {
       setSaving(true);
       const { data } = await axiosPrivate.patch(
-        `${ST_ENERGY_DAILY_API}/${selectedReading.id}`,
+        `${ST_ENERGY_DAILY_EDIT_API}/${selectedReading.id}`,
         { meterNo: formValues.meterNo, currentReading: Number(formValues.currentReading) },
       );
       setReadings((current) =>
@@ -540,9 +556,10 @@ const MaintainanceStEnergyReadingDaily = () => {
                           size="small"
                           fullWidth
                           value={row.meterNo}
-                           placeholder="Enter meter no."
-                          type="number"
+                          placeholder="Enter meter no."
+                          type="text"
                           onChange={(event) => handleMeterChange(index, event.target.value)}
+                          inputProps={{ inputMode: "text" }}
                           sx={modalFieldSx}
                         />
                       </td>
@@ -643,10 +660,10 @@ const MaintainanceStEnergyReadingDaily = () => {
                   <TextField
                     {...field}
                     label="Date"
-                    type="date"
                     fullWidth
                     size="small"
                     disabled
+                    value={field.value ? formatDateTime(field.value) : ""}
                     InputLabelProps={{ shrink: true }}
                     sx={editFieldSx}
                   />
@@ -678,7 +695,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                   <TextField
                     {...field}
                     label="Meter No"
-                      type="number"
+                    type="text"
                     fullWidth
                     size="small"
                     InputLabelProps={{ shrink: true }}
@@ -757,7 +774,7 @@ const MaintainanceStEnergyReadingDaily = () => {
         {selectedReading && (
           <div className="px-2 py-2">
             <div className="flex flex-col gap-4">
-              <DetalisFormatted title="Sr. No" detail={selectedReading.id ?? "-"} />
+              <DetalisFormatted title="Sr. No" detail={selectedReading.srNo ?? "-"} />
               <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted title="Unit No" detail={selectedReading.unitNo || "-"} />
               <DetalisFormatted
@@ -774,7 +791,7 @@ const MaintainanceStEnergyReadingDaily = () => {
               />
               <DetalisFormatted
                 title="Date"
-                detail={selectedReading.date ? formatDate(selectedReading.date) : "-"}
+                detail={selectedReading.date ? formatDateTime(selectedReading.date) : "-"}
               />
               <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
             </div>

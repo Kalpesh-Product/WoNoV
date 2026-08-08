@@ -260,7 +260,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   };
 
   const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
-  const tableTitle = "DTC Energy Reading";
+  const tableTitle = "Dempo Trade Centre Energy Reading";
 
   const filteredReadings = useMemo(() => {
     return readings
@@ -741,9 +741,11 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                   <TextField
                     {...field}
                     label="Meter No"
+                    type="text"
                     fullWidth
                     size="small"
                     InputLabelProps={{ shrink: true }}
+                    inputProps={{ inputMode: "text" }}
                     sx={editFieldSx}
                   />
                 )}
