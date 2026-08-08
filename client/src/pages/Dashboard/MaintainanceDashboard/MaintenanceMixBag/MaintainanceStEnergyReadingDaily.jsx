@@ -7,8 +7,6 @@ import { AnimatePresence, motion } from "motion/react";
 import { IoMdClose } from "react-icons/io";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import PrimaryButton from "../../../../components/PrimaryButton";
-import SecondaryButton from "../../../../components/SecondaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -155,6 +153,44 @@ const currentReadingFieldSx = {
   },
 };
 
+const editFieldSx = {
+  "& .MuiInputLabel-root": {
+    fontSize: "0.88rem",
+    color: "#8f8f8f",
+    top: "0px",
+    fontWeight: 400,
+  },
+  "& .MuiInputLabel-root.Mui-focused": {
+    color: "#1f3f7a",
+  },
+  "& .MuiInputLabel-root.MuiInputLabel-shrink": {
+    backgroundColor: "#fff",
+    padding: "0 4px",
+  },
+  "& .MuiOutlinedInput-root": {
+    borderRadius: "4px",
+    backgroundColor: "#ffffff",
+    minHeight: "40px",
+    "& fieldset": {
+      borderColor: "#cfcfcf",
+    },
+    "&:hover fieldset": {
+      borderColor: "#b8b8b8",
+    },
+    "&.Mui-disabled": {
+      backgroundColor: "#ffffff",
+    },
+  },
+  "& .MuiInputBase-input": {
+    padding: "10px 12px",
+    fontSize: "0.95rem",
+    color: "#4b4b4b",
+  },
+  "& .MuiInputBase-input.Mui-disabled": {
+    WebkitTextFillColor: "#8e8e8e",
+  },
+};
+
 const DailyReadingModal = ({ open, onClose, title, children }) => {
   return (
     <AnimatePresence>
@@ -211,9 +247,16 @@ const MaintainanceStEnergyReadingDaily = () => {
     })),
   );
 
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: emptyFormValues,
   });
+
+  const editPreviousReading = watch("previousReading");
+  const editCurrentReading = watch("currentReading");
+  const editConsumption = Math.max(
+    Number(editCurrentReading || 0) - Number(editPreviousReading || 0),
+    0,
+  );
 
   const handlePreviousDate = () => {
     setFilterDate((prev) =>
@@ -642,82 +685,25 @@ const MaintainanceStEnergyReadingDaily = () => {
       )}
 
       {modalMode === "edit" && (
-        <MuiModal open={modalOpen} onClose={closeModal} title="EDIT READING">
-          <form className="space-y-4" onSubmit={handleSubmit(handleAddOrUpdate)}>
-            <div className="grid gap-4 md:grid-cols-2">
+        <DailyReadingModal
+          open={modalOpen}
+          onClose={closeModal}
+          title="EDIT ST ENERGY READING - DAILY"
+        >
+          <form className="space-y-3.5" onSubmit={handleSubmit(handleAddOrUpdate)}>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <Controller
-                name="meterNo"
+                name="addedBy"
                 control={control}
-                rules={{ required: "Meter No is required" }}
-                render={({ field, fieldState }) => (
+                render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Meter No"
+                    label="Name"
                     fullWidth
                     size="small"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="unitNo"
-                control={control}
-                rules={{ required: "Unit No is required" }}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    select
-                    label="Unit No"
-                    fullWidth
-                    size="small"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                  >
-                    <MenuItem value="" disabled>
-                      Select Unit
-                    </MenuItem>
-
-                    {UNIT_OPTIONS.map((unitNo) => (
-                      <MenuItem key={unitNo} value={unitNo}>
-                        {unitNo}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-
-              <Controller
-                name="previousReading"
-                control={control}
-                rules={{ required: "Previous Reading is required" }}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    label="Previous Reading"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                  />
-                )}
-              />
-
-              <Controller
-                name="currentReading"
-                control={control}
-                rules={{ required: "Current Reading is required" }}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    label="Current Reading"
-                    type="number"
-                    fullWidth
-                    size="small"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    sx={editFieldSx}
                   />
                 )}
               />
@@ -725,44 +711,112 @@ const MaintainanceStEnergyReadingDaily = () => {
               <Controller
                 name="date"
                 control={control}
-                rules={{ required: "Date is required" }}
-                render={({ field, fieldState }) => (
+                render={({ field }) => (
                   <TextField
                     {...field}
                     label="Date"
                     type="date"
                     fullWidth
                     size="small"
+                    disabled
                     InputLabelProps={{ shrink: true }}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    sx={editFieldSx}
+                  />
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <Controller
+                name="unitNo"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Unit No"
+                    fullWidth
+                    size="small"
+                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    sx={editFieldSx}
                   />
                 )}
               />
 
               <Controller
-                name="addedBy"
+                name="meterNo"
                 control={control}
-                rules={{ required: "Added By is required" }}
-                render={({ field, fieldState }) => (
+                render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Added By"
+                    label="Meter No"
                     fullWidth
                     size="small"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
+                    InputLabelProps={{ shrink: true }}
+                    sx={editFieldSx}
                   />
                 )}
               />
             </div>
 
-            <div className="flex justify-end gap-3">
-              <SecondaryButton title="Cancel" handleSubmit={closeModal} />
-              <PrimaryButton type="submit" title="Save Changes" />
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <Controller
+                name="previousReading"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Previous Reading"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    disabled
+                    InputLabelProps={{ shrink: true }}
+                    sx={editFieldSx}
+                  />
+                )}
+              />
+
+              <Controller
+                name="currentReading"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Current Reading"
+                    type="number"
+                    fullWidth
+                    size="small"
+                    InputLabelProps={{ shrink: true }}
+                    sx={editFieldSx}
+                  />
+                )}
+              />
+
+              <TextField
+                label="Consumption (KWH)"
+                value={editConsumption}
+                fullWidth
+                size="small"
+                disabled
+                InputLabelProps={{ shrink: true }}
+                sx={editFieldSx}
+              />
+            </div>
+
+            <div className="pt-1">
+              <motion.button
+                type="submit"
+                whileHover={{ scale: 1.01, y: -1 }}
+                whileTap={{ scale: 0.99, y: 0 }}
+                transition={{ type: "spring", stiffness: 500, damping: 26 }}
+                className="w-full rounded-[4px] bg-primary py-[10px] text-[14px] font-medium text-white shadow-[0_10px_18px_rgba(31,63,122,0.18)] transition-[filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_14px_24px_rgba(31,63,122,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                Save Changes
+              </motion.button>
             </div>
           </form>
-        </MuiModal>
+        </DailyReadingModal>
       )}
 
       <MuiModal
