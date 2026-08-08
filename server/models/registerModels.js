@@ -10,6 +10,7 @@ require("./roles/Roles");
 require("./hr/Agreements");
 //Finance
 require("./budget/Budget");
+require("./ElectricityConsumption");
 
 //Revenue
 require("./sales/CoworkingRevenue");
