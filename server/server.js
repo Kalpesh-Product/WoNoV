@@ -47,6 +47,7 @@ const agreementRoutes = require("./routes/agreementRoutes");
 const logRoutes = require("./routes/logRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const printoutRoutes = require("./routes/printoutRoutes");
+const maintenanceEnergyReadingRoutes = require("./routes/maintenanceEnergyReadingRoutes");
 const auditLogger = require("./middlewares/auditLogger");
 const CoworkingRevenue = require("./models/sales/CoworkingRevenue");
 const CoworkingClient = require("./models/sales/CoworkingClient");
@@ -151,6 +152,12 @@ app.use("/api/finance", verifyJwt, auditLogger, financeRoutes);
 app.use("/api/weekly-unit", verifyJwt, auditLogger, weeklyUnitRoutes);
 app.use("/api/reports", verifyJwt, auditLogger, reportRoutes);
 app.use("/api/printout", verifyJwt, auditLogger, printoutRoutes);
+app.use(
+  "/api/maintenance/st-energy-daily",
+  verifyJwt,
+  auditLogger,
+  maintenanceEnergyReadingRoutes,
+);
 app.use("/api/logs", verifyJwt, logRoutes);
 if (bullBoardAdapter) {
   app.use("/admin/queues", bullBoardAdapter.getRouter());

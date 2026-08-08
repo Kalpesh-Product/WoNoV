@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FaChevronLeft, FaChevronRight, FaEye } from "react-icons/fa";
 import { IconButton, MenuItem, Modal, TextField } from "@mui/material";
@@ -11,90 +11,11 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
-const UNIT_OPTIONS = [
-  "ST 701A",
-  "ST 701B",
-  "ST 601A",
-  "ST 601B",
-  "ST 501A",
-  "ST 501B",
-];
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAuth from "../../../../hooks/useAuth";
+import { toast } from "sonner";
 
-const ENERGY_METER_ROWS = [
-  {
-    unitNo: "ST 501A",
-    meterNo: "MTR-501A-001",
-    previousReading: 12580,
-  },
-  {
-    unitNo: "ST 501B",
-    meterNo: "MTR-501B-001",
-    previousReading: 11240,
-  },
-  {
-    unitNo: "ST 601A",
-    meterNo: "MTR-601A-001",
-    previousReading: 15890,
-  },
-  {
-    unitNo: "ST 601B",
-    meterNo: "MTR-601B-001",
-    previousReading: 13450,
-  },
-  {
-    unitNo: "ST 701A",
-    meterNo: "MTR-701A-001",
-    previousReading: 17560,
-  },
-  {
-    unitNo: "ST 701B",
-    meterNo: "MTR-701B-001",
-    previousReading: 14230,
-  },
-];
-
-const SEED_READINGS = [
-  {
-    id: 1,
-    meterNo: "MTR-ST-001",
-    unitNo: "ST-701A",
-    previousReading: 12480,
-    currentReading: 12640,
-    consumption: 160,
-    date: "2026-08-07",
-    addedBy: "Rajesh Sawant",
-  },
-  {
-    id: 2,
-    meterNo: "MTR-ST-002",
-    unitNo: "ST-701B",
-    previousReading: 15210,
-    currentReading: 15350,
-    consumption: 140,
-    date: "2026-08-07",
-    addedBy: "Nilesh Patil",
-  },
-  {
-    id: 3,
-    meterNo: "MTR-ST-003",
-    unitNo: "ST-601A",
-    previousReading: 9800,
-    currentReading: 9965,
-    consumption: 165,
-    date: "2026-08-06",
-    addedBy: "Shubham Jadhav",
-  },
-  {
-    id: 4,
-    meterNo: "MTR-ST-004",
-    unitNo: "G-1",
-    previousReading: 17640,
-    currentReading: 17755,
-    consumption: 115,
-    date: "2026-08-05",
-    addedBy: "Sneha Desai",
-  },
-];
+const ST_ENERGY_DAILY_API = "/api/maintenance/st-energy-daily";
 
 const emptyFormValues = {
   meterNo: "",
@@ -228,7 +149,9 @@ const DailyReadingModal = ({ open, onClose, title, children }) => {
 };
 
 const MaintainanceStEnergyReadingDaily = () => {
-  const [readings, setReadings] = useState(SEED_READINGS);
+   const axiosPrivate = useAxiosPrivate();
+  const { auth } = useAuth();
+  const [readings, setReadings] = useState([]);
   const [filterDate, setFilterDate] = useState(
     dayjs().format("YYYY-MM-DD"),
   );
@@ -236,16 +159,13 @@ const MaintainanceStEnergyReadingDaily = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedReading, setSelectedReading] = useState(null);
-  const [readingName, setReadingName] = useState("Kalpesh Naik");
+   const readingName = auth?.user
+    ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim()
+    : "";
   const [readingDate, setReadingDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [currentReadingErrors, setCurrentReadingErrors] = useState({});
-  const [dailyReadings, setDailyReadings] = useState(
-    ENERGY_METER_ROWS.map((row) => ({
-      ...row,
-      currentReading: "",
-      consumption: 0,
-    })),
-  );
+    const [dailyReadings, setDailyReadings] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: emptyFormValues,
@@ -257,6 +177,17 @@ const MaintainanceStEnergyReadingDaily = () => {
     Number(editCurrentReading || 0) - Number(editPreviousReading || 0),
     0,
   );
+
+  useEffect(() => {
+    let active = true;
+    axiosPrivate
+      .get(ST_ENERGY_DAILY_API, { params: { date: filterDate } })
+      .then(({ data }) => active && setReadings(data.data || []))
+      .catch((error) => toast.error(error.response?.data?.message || "Unable to load readings"));
+    return () => {
+      active = false;
+    };
+  }, [axiosPrivate, filterDate]);
 
   const handlePreviousDate = () => {
     setFilterDate((prev) =>
@@ -288,19 +219,31 @@ const MaintainanceStEnergyReadingDaily = () => {
     [filteredReadings],
   );
 
-  const openAddModal = () => {
+  const openAddModal = async () => {
     setModalMode("add");
     setSelectedReading(null);
     setReadingDate(filterDate);
     setCurrentReadingErrors({});
-    setDailyReadings(
-      ENERGY_METER_ROWS.map((row) => ({
-        ...row,
-        currentReading: "",
-        consumption: 0,
-      })),
+    try {
+      const { data } = await axiosPrivate.get(
+        `${ST_ENERGY_DAILY_API}/form-data`,
+        { params: { date: filterDate } },
+      );
+      setDailyReadings(
+        (data.data || []).map((row) => ({ ...row, currentReading: "", consumption: 0 })),
+      );
+      setModalOpen(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load ST units");
+    }
+  };
+
+  const handleMeterChange = (index, value) => {
+    setDailyReadings((current) =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, meterNo: value } : row,
+      ),
     );
-    setModalOpen(true);
   };
 
   const handleDailyReadingChange = (index, value) => {
@@ -330,11 +273,13 @@ const MaintainanceStEnergyReadingDaily = () => {
     );
   };
 
-  const handleAddDailyReadings = () => {
+  const handleAddDailyReadings = async () => {
     const nextErrors = {};
     dailyReadings.forEach((row, index) => {
-      if (row.currentReading === "") {
-        nextErrors[index] = "Current reading is required";
+      if (!row.meterNo.trim() || row.currentReading === "") {
+        nextErrors[index] = "Meter No. and current reading are required";
+      } else if (Number(row.currentReading) < Number(row.previousReading)) {
+        nextErrors[index] = "Must be at least the previous reading";
       }
     });
 
@@ -344,33 +289,29 @@ const MaintainanceStEnergyReadingDaily = () => {
       return;
     }
 
-    const enteredReadings = dailyReadings.filter(
-      (row) => row.currentReading !== "",
-    );
-
-    if (!enteredReadings.length) return;
-
-    setReadings((current) => {
-      let nextId =
-        current.length > 0 ? Math.max(...current.map((row) => row.id)) + 1 : 1;
-
-      const newRows = enteredReadings.map((row) => ({
-        id: nextId++,
-        meterNo: row.meterNo,
-        unitNo: row.unitNo,
-        previousReading: Number(row.previousReading),
-        currentReading: Number(row.currentReading),
-        consumption: Number(row.consumption),
+     try {
+      setSaving(true);
+      await axiosPrivate.post(ST_ENERGY_DAILY_API, {
         date: readingDate,
-        addedBy: readingName,
-      }));
-
-      return [...newRows, ...current];
-    });
-
-    setFilterDate(readingDate);
-    setModalOpen(false);
-    setCurrentReadingErrors({});
+        readings: dailyReadings.map(({ unitId, meterNo, currentReading }) => ({
+          unitId,
+          meterNo,
+          currentReading: Number(currentReading),
+        })),
+      });
+      setFilterDate(readingDate);
+      setModalOpen(false);
+      setCurrentReadingErrors({});
+      toast.success("ST energy readings added");
+      const { data } = await axiosPrivate.get(ST_ENERGY_DAILY_API, {
+        params: { date: readingDate },
+      });
+      setReadings(data.data || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to add readings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEditModal = (row) => {
@@ -400,40 +341,24 @@ const MaintainanceStEnergyReadingDaily = () => {
     setDetailOpen(false);
   };
 
-  const handleAddOrUpdate = (formValues) => {
-    const previousReading = Number(formValues.previousReading || 0);
-    const currentReading = Number(formValues.currentReading || 0);
-    const payload = {
-      meterNo: formValues.meterNo,
-      unitNo: formValues.unitNo,
-      previousReading,
-      currentReading,
-      consumption: Math.max(currentReading - previousReading, 0),
-      date: formValues.date,
-      addedBy: formValues.addedBy,
-    };
-
-    setReadings((current) => {
-      if (modalMode === "edit" && selectedReading) {
-        return current.map((row) =>
-          row.id === selectedReading.id ? { ...row, ...payload } : row,
-        );
-      }
-
-      const nextId =
-        current.length > 0 ? Math.max(...current.map((row) => row.id)) + 1 : 1;
-
-      return [
-        {
-          id: nextId,
-          ...payload,
-        },
-        ...current,
-      ];
-    });
-
-    closeModal();
-    reset(emptyFormValues);
+  const handleAddOrUpdate = async (formValues) => {
+    try {
+      setSaving(true);
+      const { data } = await axiosPrivate.patch(
+        `${ST_ENERGY_DAILY_API}/${selectedReading.id}`,
+        { meterNo: formValues.meterNo, currentReading: Number(formValues.currentReading) },
+      );
+      setReadings((current) =>
+        current.map((row) => (row.id === selectedReading.id ? data.data : row)),
+      );
+      closeModal();
+      reset(emptyFormValues);
+      toast.success("ST energy reading updated");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to update reading");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const columns = [
@@ -549,7 +474,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                 fullWidth
                 disabled
                 value={readingName}
-                onChange={(e) => setReadingName(e.target.value)}
+               // onChange={(e) => setReadingName(e.target.value)}
                 sx={modalFieldSx}
               />
 
@@ -615,7 +540,9 @@ const MaintainanceStEnergyReadingDaily = () => {
                           size="small"
                           fullWidth
                           value={row.meterNo}
-                          disabled
+                           placeholder="Enter meter no."
+                          type="number"
+                          onChange={(event) => handleMeterChange(index, event.target.value)}
                           sx={modalFieldSx}
                         />
                       </td>
@@ -668,6 +595,7 @@ const MaintainanceStEnergyReadingDaily = () => {
               <motion.button
                 type="button"
                 onClick={handleAddDailyReadings}
+                disabled={saving}
                 whileHover={{
                   scale: 1.035,
                   y: -4,
@@ -677,7 +605,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                 transition={{ type: "spring", stiffness: 650, damping: 24 }}
                 className="w-full rounded-xl bg-primary py-3 text-base font-medium text-white shadow-[0_10px_20px_rgba(31,63,122,0.22)] transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Add Reading
+                    {saving ? "Saving..." : "Add Reading"}
               </motion.button>
             </div>
           </div>
@@ -750,6 +678,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                   <TextField
                     {...field}
                     label="Meter No"
+                      type="number"
                     fullWidth
                     size="small"
                     InputLabelProps={{ shrink: true }}
@@ -807,12 +736,13 @@ const MaintainanceStEnergyReadingDaily = () => {
             <div className="pt-1">
               <motion.button
                 type="submit"
+                 disabled={saving}
                 whileHover={{ scale: 1.01, y: -1 }}
                 whileTap={{ scale: 0.99, y: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 26 }}
                 className="w-full rounded-[4px] bg-primary py-[10px] text-[14px] font-medium text-white shadow-[0_10px_18px_rgba(31,63,122,0.18)] transition-[filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_14px_24px_rgba(31,63,122,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Save Changes
+                {saving ? "Saving..." : "Save Changes"}
               </motion.button>
             </div>
           </form>
