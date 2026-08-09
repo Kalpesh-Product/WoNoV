@@ -116,15 +116,31 @@ const getStEnergyReadings = async (req, res, next) => {
     if (!bounds) return res.status(400).json({ message: "Invalid date" });
 
     const units = await getCompanyUnits(req.company);
-    const data = units.flatMap((unit) => {
+    const data = units.map((unit) => {
       const meter = unit.ElectricityConsumption;
-      if (!meter) return [];
-      const reading = meter.readings.find((item) => {
+      const currentReading = meter?.readings.find((item) => {
         const readingAt = new Date(item.readingAt);
         return readingAt >= bounds.start && readingAt < bounds.end;
       });
-      const context = reading && readingContext(meter, reading._id);
-      return context ? [serialize(unit, meter, context)] : [];
+
+      if (currentReading) {
+        const context = readingContext(meter, currentReading._id);
+        return serialize(unit, meter, context);
+      }
+
+      const previousReading = previousReadingBefore(meter, bounds.start);
+      return {
+        id: null,
+        meterNo: meter?.meterNo ?? "",
+        unitNo: unit.unitNo,
+        unitId: unit._id,
+        previousReading: previousReading ?? 0,
+        hasPreviousReading: previousReading !== null,
+        currentReading: "",
+        consumption: "",
+        date: null,
+        addedBy: "",
+      };
     });
     res.json({ data });
   } catch (error) {

@@ -31,7 +31,8 @@ const emptyFormValues = {
 };
 
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
-const formatDateTime = (value) => dayjs(value).format("DD-MM-YYYY, hh:mm A");
+const formatDateTime = (value) =>
+  value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "";
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -209,21 +210,15 @@ const MaintainanceStEnergyReadingDaily = () => {
   const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
   const tableTitle = "Sunteck Kanaka Building - Energy Reading";
 
-  const filteredReadings = useMemo(() => {
-    return readings
-      .filter((row) => dayjs(row.date).isSame(dayjs(filterDate), "day"))
-      .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
-  }, [filterDate, readings]);
-
   const tableData = useMemo(
     () =>
-      filteredReadings.map((row, index) => ({
+      readings.map((row, index) => ({
         ...row,
         srNo: index + 1,
         dateDisplay: formatDateTime(row.date),
         meterNoDisplay: row.meterNo,
       })),
-    [filteredReadings],
+    [readings],
   );
 
   const openAddModal = async () => {
@@ -408,29 +403,31 @@ const MaintainanceStEnergyReadingDaily = () => {
       minWidth: 160,
       pinned: "right",
       cellRenderer: (params) => (
-        <div className="flex items-center gap-1">
-          <IconButton
-            size="small"
-            onClick={() => openViewModal(params.data)}
-            aria-label="view-reading"
-          >
-            <FaEye />
-          </IconButton>
+        params.data.id ? (
+          <div className="flex items-center gap-1">
+            <IconButton
+              size="small"
+              onClick={() => openViewModal(params.data)}
+              aria-label="view-reading"
+            >
+              <FaEye />
+            </IconButton>
 
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => openEditModal(params.data),
-              },
-              {
-                label: "View Record",
-                onClick: () => openViewModal(params.data),
-              },
-            ]}
-          />
-        </div>
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => openEditModal(params.data),
+                },
+                {
+                  label: "View Record",
+                  onClick: () => openViewModal(params.data),
+                },
+              ]}
+            />
+          </div>
+        ) : null
       ),
     },
   ];
