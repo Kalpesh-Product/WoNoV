@@ -19,6 +19,7 @@ const getTodayDateString = () =>
 const isFutureDate = (value) => String(value || "").slice(0, 10) > getTodayDateString();
 
 const ST_UNIT_PREFIX = /^ST/i;
+const DTC_UNIT_PREFIX = /^DTC/i;
 
 const buildReadingTimestamp = (dateValue) => {
   const currentTime = new Intl.DateTimeFormat("en-GB", {
@@ -307,9 +308,244 @@ const editStEnergyReading = async (req, res, next) => {
   }
 };
 
+const getDtcCompanyUnits = (company) =>
+  Unit.find({ company, isActive: true, unitNo: DTC_UNIT_PREFIX })
+    .select("unitNo unitName ElectricityConsumption")
+    .populate({
+      path: "ElectricityConsumption",
+      populate: { path: "readings.addedBy", select: "firstName lastName" },
+    })
+    .sort({ unitNo: 1 });
+
+const getDtcEnergyFormData = async (req, res, next) => {
+  try {
+    const bounds = dayBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+
+    const units = await getDtcCompanyUnits(req.company);
+    res.json({
+      data: units.map((unit) => ({
+        unitId: unit._id,
+        unitNo: unit.unitNo,
+        unitName: unit.unitName,
+        meterNo: unit.ElectricityConsumption?.meterNo ?? "",
+        previousReading:
+          previousReadingBefore(unit.ElectricityConsumption, bounds.start) ?? 0,
+        hasPreviousReading:
+          previousReadingBefore(unit.ElectricityConsumption, bounds.start) !==
+          null,
+      })),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDtcEnergyReadings = async (req, res, next) => {
+  try {
+    const bounds = dayBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+
+    const units = await getDtcCompanyUnits(req.company);
+    const data = units.map((unit) => {
+      const meter = unit.ElectricityConsumption;
+      const currentReading = meter?.readings.find((item) => {
+        const readingAt = new Date(item.readingAt);
+        return readingAt >= bounds.start && readingAt < bounds.end;
+      });
+
+      if (currentReading) {
+        const context = readingContext(meter, currentReading._id);
+        return serialize(unit, meter, context);
+      }
+
+      const previousReading = previousReadingBefore(meter, bounds.start);
+      return {
+        id: null,
+        meterNo: meter?.meterNo ?? "",
+        unitNo: unit.unitNo,
+        unitId: unit._id,
+        previousReading: previousReading ?? 0,
+        hasPreviousReading: previousReading !== null,
+        currentReading: "",
+        consumption: "",
+        date: null,
+        addedBy: "",
+      };
+    });
+    res.json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addDtcEnergyReadings = async (req, res, next) => {
+  try {
+    const bounds = dayBounds(req.body.date);
+    const readings = req.body.readings;
+    if (!bounds || !Array.isArray(readings) || readings.length === 0) {
+      return res.status(400).json({ message: "Date and readings are required" });
+    }
+    if (isFutureDate(req.body.date)) {
+      return res
+        .status(400)
+        .json({ message: "Reading cannot be added for a future date" });
+    }
+
+    const unitIds = readings.map((row) => row.unitId);
+    if (
+      unitIds.some((id) => !mongoose.isValidObjectId(id)) ||
+      new Set(unitIds).size !== unitIds.length
+    ) {
+      return res.status(400).json({ message: "Each valid unit can occur only once" });
+    }
+    const units = await Unit.find({
+      _id: { $in: unitIds },
+      company: req.company,
+      isActive: true,
+      unitNo: DTC_UNIT_PREFIX,
+    }).populate("ElectricityConsumption");
+    if (units.length !== unitIds.length) {
+      return res.status(400).json({ message: "One or more units are invalid" });
+    }
+
+    const meterNumbers = readings.map((row) => String(row.meterNo || "").trim());
+    if (
+      meterNumbers.some((meterNo) => !meterNo) ||
+      new Set(meterNumbers).size !== meterNumbers.length
+    ) {
+      return res.status(400).json({ message: "Each unit requires a unique Meter No." });
+    }
+
+    const unitMap = new Map(units.map((unit) => [String(unit._id), unit]));
+    for (const row of readings) {
+      const unit = unitMap.get(String(row.unitId));
+      const meterNo = String(row.meterNo || "").trim();
+      const currentReading = Number(row.currentReading);
+      const readingAt = buildReadingTimestamp(req.body.date);
+
+      if (!readingAt) {
+        return res.status(400).json({ message: "Invalid date" });
+      }
+
+      if (!Number.isFinite(currentReading) || currentReading < 0) {
+        return res.status(400).json({ message: "A valid current reading is required" });
+      }
+
+      let meter = unit.ElectricityConsumption;
+      if (!meter) {
+        meter = await ElectricityConsumption.create({
+          meterNo,
+          readings: [],
+          consumption: 0,
+        });
+        unit.ElectricityConsumption = meter._id;
+        await unit.save();
+      } else if (String(meter.meterNo || "").trim() !== meterNo) {
+        meter.meterNo = meterNo;
+      }
+
+      const duplicate = meter.readings.some((reading) => {
+        const readingAt = new Date(reading.readingAt);
+        return readingAt >= bounds.start && readingAt < bounds.end;
+      });
+      if (duplicate) {
+        return res.status(409).json({
+          message: `A reading already exists for unit ${unit.unitNo} on this date`,
+        });
+      }
+      const previousReading = previousReadingBefore(meter, bounds.start);
+      if (previousReading !== null && currentReading < previousReading) {
+        return res.status(400).json({
+          message: `Current reading for meter ${meterNo} cannot be less than ${previousReading}`,
+        });
+      }
+      meter.readings.push({
+        value: currentReading,
+        readingAt,
+        addedBy: req.user,
+      });
+      meter.consumption =
+        previousReading === null ? 0 : currentReading - previousReading;
+      await meter.save();
+    }
+
+    res.status(201).json({ message: "DTC energy readings added" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const editDtcEnergyReading = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid reading id" });
+    }
+    const unit = await Unit.findOne({
+      company: req.company,
+      isActive: true,
+      unitNo: DTC_UNIT_PREFIX,
+      ElectricityConsumption: {
+        $in: await ElectricityConsumption.find({
+          "readings._id": req.params.id,
+        }).distinct("_id"),
+      },
+    }).populate({
+      path: "ElectricityConsumption",
+      populate: { path: "readings.addedBy", select: "firstName lastName" },
+    });
+    if (!unit?.ElectricityConsumption) {
+      return res.status(404).json({ message: "Reading not found" });
+    }
+
+    const meter = unit.ElectricityConsumption;
+    const meterNo = String(req.body.meterNo || "").trim();
+    const currentReading = Number(req.body.currentReading);
+    if (!meterNo || !Number.isFinite(currentReading) || currentReading < 0) {
+      return res.status(400).json({
+        message: "A Meter No. and valid Current Reading are required",
+      });
+    }
+    const context = readingContext(meter, req.params.id);
+    if (context.hasPreviousReading && currentReading < context.previousReading) {
+      return res.status(400).json({
+        message: `Current reading cannot be less than ${context.previousReading}`,
+      });
+    }
+    const nextReading = sortedReadings(meter).find(
+      (reading) => new Date(reading.readingAt) > new Date(context.reading.readingAt),
+    );
+    if (nextReading && currentReading > Number(nextReading.value)) {
+      return res.status(400).json({
+        message: `Current reading cannot exceed the next reading (${nextReading.value})`,
+      });
+    }
+
+    meter.meterNo = meterNo;
+    context.reading.value = currentReading;
+    const latest = sortedReadings(meter).at(-1);
+    const latestContext = latest ? readingContext(meter, latest._id) : null;
+    meter.consumption = latestContext?.consumption ?? 0;
+    await meter.save();
+    await meter.populate("readings.addedBy", "firstName lastName");
+
+    res.json({
+      message: "DTC energy reading updated",
+      data: serialize(unit, meter, readingContext(meter, req.params.id)),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   getStEnergyFormData,
   getStEnergyReadings,
   addStEnergyReadings,
   editStEnergyReading,
+  getDtcEnergyFormData,
+  getDtcEnergyReadings,
+  addDtcEnergyReadings,
+  editDtcEnergyReading,
 };

@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FaChevronLeft, FaChevronRight, FaEye } from "react-icons/fa";
-import { IconButton, MenuItem, Modal, TextField } from "@mui/material";
+import { Chip, IconButton, MenuItem, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "motion/react";
 import { IoMdClose } from "react-icons/io";
@@ -11,81 +11,15 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
-const ENERGY_METER_ROWS = [
-  {
-    unitNo: "DTC 501A",
-    meterNo: "MTR-DTC-501A-001",
-    previousReading: 12580,
-  },
-  {
-    unitNo: "DTC 501B",
-    meterNo: "MTR-DTC-501B-001",
-    previousReading: 11240,
-  },
-  {
-    unitNo: "DTC 601A",
-    meterNo: "MTR-DTC-601A-001",
-    previousReading: 15890,
-  },
-  {
-    unitNo: "DTC 601B",
-    meterNo: "MTR-DTC-601B-001",
-    previousReading: 13450,
-  },
-  {
-    unitNo: "DTC 701A",
-    meterNo: "MTR-DTC-701A-001",
-    previousReading: 17560,
-  },
-  {
-    unitNo: "DTC 701B",
-    meterNo: "MTR-DTC-701B-001",
-    previousReading: 14230,
-  },
-];
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAuth from "../../../../hooks/useAuth";
+import { toast } from "sonner";
 
-const SEED_READINGS = [
-  {
-    id: 1,
-    meterNo: "MTR-DTC-001",
-    unitNo: "DTC-701A",
-    previousReading: 12480,
-    currentReading: 12640,
-    consumption: 160,
-    date: "2026-08-07",
-    addedBy: "Rajesh Sawant",
-  },
-  {
-    id: 2,
-    meterNo: "MTR-DTC-002",
-    unitNo: "DTC-701B",
-    previousReading: 15210,
-    currentReading: 15350,
-    consumption: 140,
-    date: "2026-08-07",
-    addedBy: "Nilesh Patil",
-  },
-  {
-    id: 3,
-    meterNo: "MTR-DTC-003",
-    unitNo: "DTC-601A",
-    previousReading: 9800,
-    currentReading: 9965,
-    consumption: 165,
-    date: "2026-08-06",
-    addedBy: "Shubham Jadhav",
-  },
-  {
-    id: 4,
-    meterNo: "MTR-DTC-004",
-    unitNo: "DTC-601B",
-    previousReading: 17640,
-    currentReading: 17755,
-    consumption: 115,
-    date: "2026-08-05",
-    addedBy: "Sneha Desai",
-  },
-];
+const DTC_ENERGY_DAILY_API = "/api/maintenance";
+const DTC_ENERGY_DAILY_GET_API = `${DTC_ENERGY_DAILY_API}/get-dtc-energy-daily`;
+const DTC_ENERGY_DAILY_FORM_API = `${DTC_ENERGY_DAILY_GET_API}/form-data`;
+const DTC_ENERGY_DAILY_ADD_API = `${DTC_ENERGY_DAILY_API}/add-dtc-energy-daily`;
+const DTC_ENERGY_DAILY_EDIT_API = `${DTC_ENERGY_DAILY_API}/edit-dtc-energy-daily`;
 
 const emptyFormValues = {
   meterNo: "",
@@ -97,6 +31,10 @@ const emptyFormValues = {
 };
 
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
+const formatDateTime = (value) =>
+  value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "";
+const isPreviousDate = (value) => dayjs(value).isBefore(dayjs(), "day");
+
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -219,7 +157,9 @@ const DailyReadingModal = ({ open, onClose, title, children }) => {
 };
 
 const MaintainanceDtcEnergyReadingDaily = () => {
-  const [readings, setReadings] = useState(SEED_READINGS);
+   const axiosPrivate = useAxiosPrivate();
+  const { auth } = useAuth();
+  const [readings, setReadings] = useState([]);
   const [filterDate, setFilterDate] = useState(
     dayjs().format("YYYY-MM-DD"),
   );
@@ -227,16 +167,13 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedReading, setSelectedReading] = useState(null);
-  const [readingName, setReadingName] = useState("Kalpesh Naik");
+   const readingName = auth?.user
+    ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim()
+    : "";
   const [readingDate, setReadingDate] = useState(dayjs().format("YYYY-MM-DD"));
   const [currentReadingErrors, setCurrentReadingErrors] = useState({});
-  const [dailyReadings, setDailyReadings] = useState(
-    ENERGY_METER_ROWS.map((row) => ({
-      ...row,
-      currentReading: "",
-      consumption: 0,
-    })),
-  );
+    const [dailyReadings, setDailyReadings] = useState([]);
+  const [saving, setSaving] = useState(false);
 
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: emptyFormValues,
@@ -245,9 +182,22 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   const editPreviousReading = watch("previousReading");
   const editCurrentReading = watch("currentReading");
   const editConsumption = Math.max(
-    Number(editCurrentReading || 0) - Number(editPreviousReading || 0),
+    selectedReading?.hasPreviousReading
+      ? Number(editCurrentReading || 0) - Number(editPreviousReading || 0)
+      : 0,
     0,
   );
+
+  useEffect(() => {
+    let active = true;
+    axiosPrivate
+      .get(DTC_ENERGY_DAILY_GET_API, { params: { date: filterDate } })
+      .then(({ data }) => active && setReadings(data.data || []))
+      .catch((error) => toast.error(error.response?.data?.message || "Unable to load readings"));
+    return () => {
+      active = false;
+    };
+  }, [axiosPrivate, filterDate]);
 
   const handlePreviousDate = () => {
     setFilterDate((prev) =>
@@ -262,37 +212,57 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
   const tableTitle = "Dempo Trade Centre Energy Reading";
 
-  const filteredReadings = useMemo(() => {
-    return readings
-      .filter((row) => dayjs(row.date).isSame(dayjs(filterDate), "day"))
-      .sort((a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf());
-  }, [filterDate, readings]);
-
-  const tableData = useMemo(
+ const tableData = useMemo(
     () =>
-      filteredReadings.map((row, index) => ({
+      readings.map((row, index) => ({
         ...row,
         srNo: index + 1,
-        dateDisplay: formatDate(row.date),
+        dateDisplay: formatDateTime(row.date),
         meterNoDisplay: row.meterNo,
       })),
-    [filteredReadings],
+    [readings],
   );
 
-  const openAddModal = () => {
+  const totalConsumption = useMemo(
+    () =>
+      readings.reduce(
+        (sum, row) => sum + Number(row.consumption || 0),
+        0,
+      ),
+    [readings],
+  );
+
+  const openAddModal = async () => {
     setModalMode("add");
     setSelectedReading(null);
     setReadingDate(filterDate);
     setCurrentReadingErrors({});
-    setDailyReadings(
-      ENERGY_METER_ROWS.map((row) => ({
-        ...row,
-        currentReading: "",
-        consumption: 0,
-      })),
-    );
-    setModalOpen(true);
+    try {
+      const { data } = await axiosPrivate.get(
+        DTC_ENERGY_DAILY_FORM_API,
+        { params: { date: filterDate } },
+      );
+      setDailyReadings(
+        (data.data || []).map((row) => ({
+          ...row,
+          currentReading: "",
+          consumption: 0,
+        })),
+      );
+      setModalOpen(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load DTC units");
+    }
   };
+
+  const handleMeterChange = (index, value) => {
+    setDailyReadings((current) =>
+      current.map((row, rowIndex) =>
+        rowIndex === index ? { ...row, meterNo: value } : row,
+      ),
+    );
+  };
+
 
   const handleDailyReadingChange = (index, value) => {
     setCurrentReadingErrors((prev) => {
@@ -310,7 +280,11 @@ const MaintainanceDtcEnergyReadingDaily = () => {
         const previousReading = Number(row.previousReading) || 0;
         const currentReading = value === "" ? "" : Number(value);
         const consumption =
-          currentReading === "" ? 0 : currentReading - previousReading;
+          currentReading === ""
+            ? 0
+            : row.hasPreviousReading
+              ? currentReading - previousReading
+              : 0;
 
         return {
           ...row,
@@ -321,11 +295,17 @@ const MaintainanceDtcEnergyReadingDaily = () => {
     );
   };
 
-  const handleAddDailyReadings = () => {
-    const nextErrors = {};
+  const handleAddDailyReadings = async () => {
+    if (isPreviousDate(readingDate)) {
+      toast.error("Reading cannot be added for a previous date");
+      return;
+    }
+  const nextErrors = {};
     dailyReadings.forEach((row, index) => {
-      if (row.currentReading === "") {
-        nextErrors[index] = "Current reading is required";
+      if (!row.meterNo.trim() || row.currentReading === "") {
+        nextErrors[index] = "Meter No. and current reading are required";
+      } else if (Number(row.currentReading) < Number(row.previousReading)) {
+        nextErrors[index] = "Must be at least the previous reading";
       }
     });
 
@@ -335,33 +315,29 @@ const MaintainanceDtcEnergyReadingDaily = () => {
       return;
     }
 
-    const enteredReadings = dailyReadings.filter(
-      (row) => row.currentReading !== "",
-    );
-
-    if (!enteredReadings.length) return;
-
-    setReadings((current) => {
-      let nextId =
-        current.length > 0 ? Math.max(...current.map((row) => row.id)) + 1 : 1;
-
-      const newRows = enteredReadings.map((row) => ({
-        id: nextId++,
-        meterNo: row.meterNo,
-        unitNo: row.unitNo,
-        previousReading: Number(row.previousReading),
-        currentReading: Number(row.currentReading),
-        consumption: Number(row.consumption),
+     try {
+      setSaving(true);
+      await axiosPrivate.post(DTC_ENERGY_DAILY_ADD_API, {
         date: readingDate,
-        addedBy: readingName,
-      }));
-
-      return [...newRows, ...current];
-    });
-
-    setFilterDate(readingDate);
-    setModalOpen(false);
-    setCurrentReadingErrors({});
+        readings: dailyReadings.map(({ unitId, meterNo, currentReading }) => ({
+          unitId,
+          meterNo,
+          currentReading: Number(currentReading),
+        })),
+      });
+      setFilterDate(readingDate);
+      setModalOpen(false);
+      setCurrentReadingErrors({});
+      toast.success("DTC energy readings added");
+      const { data } = await axiosPrivate.get(DTC_ENERGY_DAILY_GET_API, {
+        params: { date: readingDate },
+      });
+      setReadings(data.data || []);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to add readings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const openEditModal = (row) => {
@@ -374,6 +350,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
       currentReading: row.currentReading,
       date: row.date,
       addedBy: row.addedBy,
+      hasPreviousReading: row.hasPreviousReading,
     });
     setModalOpen(true);
   };
@@ -391,40 +368,24 @@ const MaintainanceDtcEnergyReadingDaily = () => {
     setDetailOpen(false);
   };
 
-  const handleAddOrUpdate = (formValues) => {
-    const previousReading = Number(formValues.previousReading || 0);
-    const currentReading = Number(formValues.currentReading || 0);
-    const payload = {
-      meterNo: formValues.meterNo,
-      unitNo: formValues.unitNo,
-      previousReading,
-      currentReading,
-      consumption: Math.max(currentReading - previousReading, 0),
-      date: formValues.date,
-      addedBy: formValues.addedBy,
-    };
-
-    setReadings((current) => {
-      if (modalMode === "edit" && selectedReading) {
-        return current.map((row) =>
-          row.id === selectedReading.id ? { ...row, ...payload } : row,
-        );
-      }
-
-      const nextId =
-        current.length > 0 ? Math.max(...current.map((row) => row.id)) + 1 : 1;
-
-      return [
-        {
-          id: nextId,
-          ...payload,
-        },
-        ...current,
-      ];
-    });
-
-    closeModal();
-    reset(emptyFormValues);
+  const handleAddOrUpdate = async (formValues) => {
+    try {
+      setSaving(true);
+      const { data } = await axiosPrivate.patch(
+        `${DTC_ENERGY_DAILY_EDIT_API}/${selectedReading.id}`,
+        { meterNo: formValues.meterNo, currentReading: Number(formValues.currentReading) },
+      );
+      setReadings((current) =>
+        current.map((row) => (row.id === selectedReading.id ? data.data : row)),
+      );
+      closeModal();
+      reset(emptyFormValues);
+      toast.success("DTC energy reading updated");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to update reading");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const columns = [
@@ -458,29 +419,31 @@ const MaintainanceDtcEnergyReadingDaily = () => {
       minWidth: 160,
       pinned: "right",
       cellRenderer: (params) => (
-        <div className="flex items-center gap-1">
-          <IconButton
-            size="small"
-            onClick={() => openViewModal(params.data)}
-            aria-label="view-reading"
-          >
-            <FaEye />
-          </IconButton>
+        params.data.id ? (
+          <div className="flex items-center gap-1">
+            <IconButton
+              size="small"
+              onClick={() => openViewModal(params.data)}
+              aria-label="view-reading"
+            >
+              <FaEye />
+            </IconButton>
 
-          <ThreeDotMenu
-            rowId={params.data.id}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => openEditModal(params.data),
-              },
-              {
-                label: "View Record",
-                onClick: () => openViewModal(params.data),
-              },
-            ]}
-          />
-        </div>
+            <ThreeDotMenu
+              rowId={params.data.id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => openEditModal(params.data),
+                },
+                {
+                  label: "View Record",
+                  onClick: () => openViewModal(params.data),
+                },
+              ]}
+            />
+          </div>
+        ) : null
       ),
     },
   ];
@@ -495,6 +458,26 @@ const MaintainanceDtcEnergyReadingDaily = () => {
             tableTitle={tableTitle}
             buttonTitle="Add Reading"
             handleClick={openAddModal}
+            headerActions={
+              <div className="order-first">
+                <Chip
+                  label={`TOTAL CONSUMPTION : ${totalConsumption}`}
+                  sx={{
+                    backgroundColor: "#dfe8ff",
+                    color: "#1f3f7a",
+                    border: "1px solid #b8cbff",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    height: "40px",
+                    borderRadius: "10px",
+                    px: 1.5,
+                    "& .MuiChip-label": {
+                      px: 1,
+                    },
+                  }}
+                />
+              </div>
+            }
             exportData
             hideFilter
             headerBottomContent={
@@ -540,7 +523,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                 fullWidth
                 disabled
                 value={readingName}
-                onChange={(e) => setReadingName(e.target.value)}
+                 // onChange={(e) => setReadingName(e.target.value)}
                 sx={modalFieldSx}
               />
 
@@ -606,7 +589,10 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                           size="small"
                           fullWidth
                           value={row.meterNo}
-                          disabled
+                            placeholder="Enter meter no."
+                          type="text"
+                          onChange={(event) => handleMeterChange(index, event.target.value)}
+                          inputProps={{ inputMode: "text" }}
                           sx={modalFieldSx}
                         />
                       </td>
@@ -659,6 +645,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
               <motion.button
                 type="button"
                 onClick={handleAddDailyReadings}
+                disabled={saving}
                 whileHover={{
                   scale: 1.035,
                   y: -4,
@@ -668,7 +655,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                 transition={{ type: "spring", stiffness: 650, damping: 24 }}
                 className="w-full rounded-xl bg-primary py-3 text-base font-medium text-white shadow-[0_10px_20px_rgba(31,63,122,0.22)] transition-[filter] duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Add Reading
+                {saving ? "Saving..." : "Add Reading"}
               </motion.button>
             </div>
           </div>
@@ -706,10 +693,11 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                   <TextField
                     {...field}
                     label="Date"
-                    type="date"
+                   // type="date"
                     fullWidth
                     size="small"
                     disabled
+                    value={field.value ? formatDateTime(field.value) : ""}
                     InputLabelProps={{ shrink: true }}
                     sx={editFieldSx}
                   />
@@ -745,7 +733,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                     fullWidth
                     size="small"
                     InputLabelProps={{ shrink: true }}
-                    inputProps={{ inputMode: "text" }}
+                   // inputProps={{ inputMode: "text" }}
                     sx={editFieldSx}
                   />
                 )}
@@ -800,12 +788,13 @@ const MaintainanceDtcEnergyReadingDaily = () => {
             <div className="pt-1">
               <motion.button
                 type="submit"
+                disabled={saving}
                 whileHover={{ scale: 1.01, y: -1 }}
                 whileTap={{ scale: 0.99, y: 0 }}
                 transition={{ type: "spring", stiffness: 500, damping: 26 }}
                 className="w-full rounded-[4px] bg-primary py-[10px] text-[14px] font-medium text-white shadow-[0_10px_18px_rgba(31,63,122,0.18)] transition-[filter,box-shadow] duration-150 hover:brightness-110 hover:shadow-[0_14px_24px_rgba(31,63,122,0.26)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
-                Save Changes
+                {saving ? "Saving..." : "Save Changes"}
               </motion.button>
             </div>
           </form>
@@ -820,7 +809,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
         {selectedReading && (
           <div className="px-2 py-2">
             <div className="flex flex-col gap-4">
-              <DetalisFormatted title="Sr. No" detail={selectedReading.id ?? "-"} />
+              <DetalisFormatted title="Sr. No" detail={selectedReading.srNo ?? "-"} />
               <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted title="Unit No" detail={selectedReading.unitNo || "-"} />
               <DetalisFormatted
@@ -837,7 +826,8 @@ const MaintainanceDtcEnergyReadingDaily = () => {
               />
               <DetalisFormatted
                 title="Date"
-                detail={selectedReading.date ? formatDate(selectedReading.date) : "-"}
+                detail={selectedReading.date ? formatDateTime(selectedReading.date) : "-"}
+
               />
               <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
             </div>
