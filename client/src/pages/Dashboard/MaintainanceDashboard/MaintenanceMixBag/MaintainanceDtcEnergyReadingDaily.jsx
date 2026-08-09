@@ -210,7 +210,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   };
 
   const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
-  const tableTitle = "Dempo Trade Centre Energy Reading";
+  const tableTitle = "Dempo Trade Centre Building - Energy Reading";
 
  const tableData = useMemo(
     () =>

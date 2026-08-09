@@ -20,6 +20,19 @@ const isFutureDate = (value) => String(value || "").slice(0, 10) > getTodayDateS
 
 const ST_UNIT_PREFIX = /^ST/i;
 const DTC_UNIT_PREFIX = /^DTC/i;
+const DTC_BUILDING_NAME = /Dempo Trade Cent(?:re|er)/i;
+const HIDDEN_DTC_UNIT_NOS = new Set(["603 A", "605 A"]);
+
+const normalizeUnitNo = (value) =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toUpperCase();
+
+const isVisibleDtcUnit = (unit) =>
+  !HIDDEN_DTC_UNIT_NOS.has(normalizeUnitNo(unit?.unitNo)) &&
+  (DTC_UNIT_PREFIX.test(String(unit?.unitNo || "")) ||
+    DTC_BUILDING_NAME.test(String(unit?.building?.buildingName || "")));
 
 const buildReadingTimestamp = (dateValue) => {
   const currentTime = new Intl.DateTimeFormat("en-GB", {
@@ -309,13 +322,22 @@ const editStEnergyReading = async (req, res, next) => {
 };
 
 const getDtcCompanyUnits = (company) =>
-  Unit.find({ company, isActive: true, unitNo: DTC_UNIT_PREFIX })
-    .select("unitNo unitName ElectricityConsumption")
+  Unit.find({ company, isActive: true })
+    .select("unitNo unitName ElectricityConsumption building")
+    .populate({
+      path: "building",
+      select: "buildingName",
+    })
     .populate({
       path: "ElectricityConsumption",
       populate: { path: "readings.addedBy", select: "firstName lastName" },
     })
-    .sort({ unitNo: 1 });
+    .then((units) => units.filter(isVisibleDtcUnit).sort((a, b) =>
+      String(a.unitNo || "").localeCompare(String(b.unitNo || ""), undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    ));
 
 const getDtcEnergyFormData = async (req, res, next) => {
   try {
@@ -399,12 +421,14 @@ const addDtcEnergyReadings = async (req, res, next) => {
     ) {
       return res.status(400).json({ message: "Each valid unit can occur only once" });
     }
-    const units = await Unit.find({
+    const units = (await Unit.find({
       _id: { $in: unitIds },
       company: req.company,
       isActive: true,
-      unitNo: DTC_UNIT_PREFIX,
-    }).populate("ElectricityConsumption");
+    })
+      .select("unitNo unitName ElectricityConsumption building")
+      .populate({ path: "building", select: "buildingName" })
+      .populate("ElectricityConsumption")).filter(isVisibleDtcUnit);
     if (units.length !== unitIds.length) {
       return res.status(400).json({ message: "One or more units are invalid" });
     }
@@ -484,17 +508,24 @@ const editDtcEnergyReading = async (req, res, next) => {
     const unit = await Unit.findOne({
       company: req.company,
       isActive: true,
-      unitNo: DTC_UNIT_PREFIX,
       ElectricityConsumption: {
         $in: await ElectricityConsumption.find({
           "readings._id": req.params.id,
         }).distinct("_id"),
       },
-    }).populate({
-      path: "ElectricityConsumption",
-      populate: { path: "readings.addedBy", select: "firstName lastName" },
-    });
+    })
+      .select("unitNo unitName ElectricityConsumption building")
+      .populate({ path: "building", select: "buildingName" })
+      .populate({
+        path: "ElectricityConsumption",
+        populate: { path: "readings.addedBy", select: "firstName lastName" },
+      });
     if (!unit?.ElectricityConsumption) {
+      return res.status(404).json({ message: "Reading not found" });
+    }
+    if (
+      !isVisibleDtcUnit(unit)
+    ) {
       return res.status(404).json({ message: "Reading not found" });
     }
 
