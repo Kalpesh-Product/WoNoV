@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FaChevronLeft, FaChevronRight, FaEye } from "react-icons/fa";
-import { IconButton, MenuItem, Modal, TextField } from "@mui/material";
+import { Chip, IconButton, MenuItem, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "motion/react";
 import { IoMdClose } from "react-icons/io";
@@ -33,6 +33,7 @@ const emptyFormValues = {
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
 const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "";
+const isPreviousDate = (value) => dayjs(value).isBefore(dayjs(), "day");
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -221,6 +222,15 @@ const MaintainanceStEnergyReadingDaily = () => {
     [readings],
   );
 
+  const totalConsumption = useMemo(
+    () =>
+      readings.reduce(
+        (sum, row) => sum + Number(row.consumption || 0),
+        0,
+      ),
+    [readings],
+  );
+
   const openAddModal = async () => {
     setModalMode("add");
     setSelectedReading(null);
@@ -284,6 +294,11 @@ const MaintainanceStEnergyReadingDaily = () => {
   };
 
   const handleAddDailyReadings = async () => {
+    if (isPreviousDate(readingDate)) {
+      toast.error("Reading cannot be added for a previous date");
+      return;
+    }
+
     const nextErrors = {};
     dailyReadings.forEach((row, index) => {
       if (!row.meterNo.trim() || row.currentReading === "") {
@@ -442,6 +457,26 @@ const MaintainanceStEnergyReadingDaily = () => {
             tableTitle={tableTitle}
             buttonTitle="Add Reading"
             handleClick={openAddModal}
+            headerActions={
+              <div className="order-first">
+                <Chip
+                  label={`TOTAL CONSUMPTION : ${totalConsumption}`}
+                  sx={{
+                    backgroundColor: "#dfe8ff",
+                    color: "#1f3f7a",
+                    border: "1px solid #b8cbff",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    height: "40px",
+                    borderRadius: "10px",
+                    px: 1.5,
+                    "& .MuiChip-label": {
+                      px: 1,
+                    },
+                  }}
+                />
+              </div>
+            }
             exportData
             hideFilter
             headerBottomContent={
