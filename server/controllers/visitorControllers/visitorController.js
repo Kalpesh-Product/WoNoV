@@ -51,6 +51,50 @@ async function fetchVisitors(req, res, next) {
   }
 }
 
+const checkExistingVisitor = async (req, res, next) => {
+  try {
+    const phoneNumber = String(req.query?.phoneNumber || "").trim();
+
+    if (!/^\d{10}$/.test(phoneNumber)) {
+      return res.status(400).json({
+        message: "Enter a valid 10-digit phone number",
+      });
+    }
+
+    const visitor = await Visitor.findOne({
+      company: req.company,
+      phoneNumber,
+    })
+      .select("_id firstName lastName phoneNumber")
+      .lean();
+
+    const latestVisit = visitor
+      ? await ExternalVisits.findOne({
+          company: req.company,
+          visitorId: visitor._id,
+        })
+          .sort({ checkIn: -1 })
+          .select("checkIn")
+          .lean()
+      : null;
+
+    return res.status(200).json({
+      exists: Boolean(visitor),
+      visitor: visitor
+        ? {
+            id: visitor._id,
+            firstName: visitor.firstName,
+            lastName: visitor.lastName,
+            phoneNumber: visitor.phoneNumber,
+            lastVisitedAt: latestVisit?.checkIn || null,
+          }
+        : null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // const fetchVisitors = async (req, res, next) => {
 //   const { company } = req;
 //   const { query } = req.query;
@@ -266,7 +310,7 @@ const addVisitor = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid phone number format" });
     }
 
-    const visitorExists = await Visitor.findOne({ phoneNumber: phoneNumber });
+    const visitorExists = await Visitor.findOne({ company, phoneNumber });
 
     if (visitorExists) {
       return res.status(400).json({
@@ -2279,6 +2323,7 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
 
 module.exports = {
   fetchVisitors,
+  checkExistingVisitor,
   addVisitor,
   updateVisitor,
   Convettoclient,
