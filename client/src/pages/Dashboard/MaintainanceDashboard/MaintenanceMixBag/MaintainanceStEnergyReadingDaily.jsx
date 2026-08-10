@@ -389,8 +389,8 @@ const MaintainanceStEnergyReadingDaily = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr. No", flex: 0.5, minWidth: 90 },
-    { field: "meterNo", headerName: "Meter No", flex: 1, minWidth: 140 },
-    { field: "unitNo", headerName: "Unit No", flex: 1, minWidth: 130 },
+    { field: "unitNo", headerName: "Unit No", flex: 1, minWidth: 140 },
+    { field: "meterNo", headerName: "Meter No", flex: 1, minWidth: 130 },
     {
       field: "previousReading",
       headerName: "Previous Reading",
@@ -807,8 +807,8 @@ const MaintainanceStEnergyReadingDaily = () => {
           <div className="px-2 py-2">
             <div className="flex flex-col gap-4">
               <DetalisFormatted title="Sr. No" detail={selectedReading.srNo ?? "-"} />
-              <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted title="Unit No" detail={selectedReading.unitNo || "-"} />
+              <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted
                 title="Previous Reading"
                 detail={selectedReading.previousReading ?? "-"}
