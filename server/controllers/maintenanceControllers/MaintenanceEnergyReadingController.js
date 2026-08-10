@@ -96,9 +96,196 @@ const getCompanyUnits = (company) =>
     .select("unitNo unitName ElectricityConsumption")
     .populate({
       path: "ElectricityConsumption",
-      populate: { path: "readings.addedBy", select: "firstName lastName" },
+       populate: [
+        { path: "readings.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      ],
     })
     .sort({ unitNo: 1 });
+
+const monthBounds = (value) => {
+  const dateValue =
+    value instanceof Date
+      ? new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(value)
+      : String(value || getTodayDateString()).slice(0, 10);
+  const bounds = dayBounds(dateValue);
+  if (!bounds) return null;
+  const start = new Date(`${dateValue.slice(0, 7)}-01T00:00:00+05:30`);
+  return {
+    start,
+    end: bounds.end,
+    billDate: bounds.start,
+    monthKey: dateValue.slice(0, 7),
+  };
+};
+
+const monthlyConsumptionThrough = (meter, bounds) => {
+  if (!meter) return 0;
+  return sortedReadings(meter).reduce((total, reading, index, readings) => {
+    const readingAt = new Date(reading.readingAt);
+    if (readingAt < bounds.start || readingAt >= bounds.end || index === 0) {
+      return total;
+    }
+    return total + (Number(reading.value) - Number(readings[index - 1].value));
+  }, 0);
+};
+
+const serializeMonthly = (unit, meter, bill) => ({
+  id: bill._id,
+  unitId: unit._id,
+  unitNo: unit.unitNo,
+  meterNo: meter.meterNo,
+  totalConsumption: bill.totalConsumption,
+  totalBillAmount: bill.totalBillAmount,
+  date: bill.billDate,
+  monthKey: bill.monthKey,
+  addedBy: bill.addedBy
+    ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
+    : "",
+});
+
+const getStEnergyMonthlyFormData = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+
+    const units = await getCompanyUnits(req.company);
+    res.json({
+      data: units.map((unit) => ({
+        unitId: unit._id,
+        unitNo: unit.unitNo,
+        meterNo: unit.ElectricityConsumption?.meterNo ?? "",
+        totalConsumption: monthlyConsumptionThrough(
+          unit.ElectricityConsumption,
+          bounds,
+        ),
+      })),
+      date: bounds.billDate,
+      monthKey: bounds.monthKey,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getStEnergyMonthlyReadings = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+    const units = await getCompanyUnits(req.company);
+    const data = units.flatMap((unit) => {
+      const meter = unit.ElectricityConsumption;
+      const bill = meter?.monthlyBills?.find(
+        (item) => item.monthKey === bounds.monthKey,
+      );
+      return bill ? [serializeMonthly(unit, meter, bill)] : [];
+    });
+    res.json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addStEnergyMonthlyReadings = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.body.date);
+    const bills = req.body.bills || req.body.readings;
+    if (!bounds || !Array.isArray(bills)) {
+      return res.status(400).json({ message: "Date and bills are required" });
+    }
+    if (isFutureDate(req.body.date)) {
+      return res.status(400).json({ message: "Bill cannot be added for a future date" });
+    }
+
+    const units = await getCompanyUnits(req.company);
+    const billMap = new Map(bills.map((bill) => [String(bill.unitId), bill]));
+    if (bills.length !== units.length || billMap.size !== units.length) {
+      return res.status(400).json({
+        message: "A bill amount is required once for every active ST unit",
+      });
+    }
+
+    const metersToSave = [];
+    for (const unit of units) {
+      const bill = billMap.get(String(unit._id));
+      const totalBillAmount = Number(bill?.totalBillAmount);
+      if (!bill || !Number.isFinite(totalBillAmount) || totalBillAmount <= 0) {
+        return res.status(400).json({
+          message: `A valid Total Bill Amount is required for unit ${unit.unitNo}`,
+        });
+      }
+      const meterNo = String(unit.ElectricityConsumption?.meterNo || "").trim();
+      if (!meterNo) {
+        return res.status(400).json({
+          message: `Meter No. is not configured for unit ${unit.unitNo}`,
+        });
+      }
+      const meter = unit.ElectricityConsumption;
+      const monthlyBill = meter.monthlyBills.find(
+        (item) => item.monthKey === bounds.monthKey,
+      );
+      const billValues = {
+        totalConsumption: monthlyConsumptionThrough(meter, bounds),
+        totalBillAmount,
+        billDate: bounds.billDate,
+        monthKey: bounds.monthKey,
+        addedBy: req.user,
+      };
+      if (monthlyBill) {
+        Object.assign(monthlyBill, billValues);
+      } else {
+        meter.monthlyBills.push(billValues);
+      }
+      metersToSave.push(meter);
+    }
+    await Promise.all(metersToSave.map((meter) => meter.save()));
+    res.status(201).json({ message: "ST monthly energy bills saved" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const editStEnergyMonthlyReading = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid monthly bill id" });
+    }
+    const totalBillAmount = Number(req.body.totalBillAmount);
+    if (!Number.isFinite(totalBillAmount) || totalBillAmount <= 0) {
+      return res.status(400).json({ message: "A valid Total Bill Amount is required" });
+    }
+
+    const meterIds = await ElectricityConsumption.find({
+      "monthlyBills._id": req.params.id,
+    }).distinct("_id");
+    const unit = await Unit.findOne({
+      company: req.company,
+      isActive: true,
+      unitNo: ST_UNIT_PREFIX,
+      ElectricityConsumption: { $in: meterIds },
+    }).populate({
+      path: "ElectricityConsumption",
+      populate: { path: "monthlyBills.addedBy", select: "firstName lastName" },
+    });
+    if (!unit?.ElectricityConsumption) {
+      return res.status(404).json({ message: "Monthly bill not found" });
+    }
+
+    const meter = unit.ElectricityConsumption;
+    const monthlyBill = meter.monthlyBills.id(req.params.id);
+    const bounds = monthBounds(monthlyBill.billDate);
+    monthlyBill.totalConsumption = monthlyConsumptionThrough(meter, bounds);
+    monthlyBill.totalBillAmount = totalBillAmount;
+    await meter.save();
+    await meter.populate("monthlyBills.addedBy", "firstName lastName");
+    res.json({
+      message: "ST monthly energy bill updated",
+      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id)),
+    });
+  } catch (error) {
+    next(error);
+  }
+};    
 
 const getStEnergyFormData = async (req, res, next) => {
   try {
@@ -571,6 +758,10 @@ const editDtcEnergyReading = async (req, res, next) => {
 
 
 module.exports = {
+  getStEnergyMonthlyFormData,
+  getStEnergyMonthlyReadings,
+  addStEnergyMonthlyReadings,
+  editStEnergyMonthlyReading,
   getStEnergyFormData,
   getStEnergyReadings,
   addStEnergyReadings,

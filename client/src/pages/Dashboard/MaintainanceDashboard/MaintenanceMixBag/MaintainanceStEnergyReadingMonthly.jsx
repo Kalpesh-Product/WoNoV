@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Chip, IconButton, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
@@ -13,111 +13,102 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAuth from "../../../../hooks/useAuth";
+import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 
-const MONTHLY_UNIT_MASTER = [
-  { unitNo: "ST 501 A", meterNo: "MTR-501A-001", baseConsumption: 20 },
-  { unitNo: "ST 501 B", meterNo: "MTR-501B-001", baseConsumption: 40 },
-  { unitNo: "ST 601 A", meterNo: "MTR-601A-001", baseConsumption: 60 },
-  { unitNo: "ST 601 B", meterNo: "MTR-601B-001", baseConsumption: 80 },
-  { unitNo: "ST 701 A", meterNo: "MTR-701A-001", baseConsumption: 100 },
-  { unitNo: "ST 701 B", meterNo: "MTR-701B-001", baseConsumption: 120 },
-];
+const ST_ENERGY_MONTHLY_API = "/api/maintenance";
+const ST_ENERGY_MONTHLY_GET_API = `${ST_ENERGY_MONTHLY_API}/get-st-energy-monthly`;
+const ST_ENERGY_MONTHLY_FORM_API = `${ST_ENERGY_MONTHLY_GET_API}/form-data`;
+const ST_ENERGY_MONTHLY_ADD_API = `${ST_ENERGY_MONTHLY_API}/add-st-energy-monthly`;
+const ST_ENERGY_MONTHLY_EDIT_API = `${ST_ENERGY_MONTHLY_API}/edit-st-energy-monthly`;
 
-const createId = () => {
-  if (typeof crypto !== "undefined" && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-
-  return `st-energy-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
-};
 
 const monthKeyFromValue = (value) => dayjs(value).format("YYYY-MM");
 const formatDate = (value) => (value ? dayjs(value).format("DD-MM-YYYY") : "-");
 const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "-";
-const formatMonthLabel = (value) => dayjs(value).format("MMMM YYYY");
+
 const formatAmount = (value) =>
   `INR ${Number(value || 0).toLocaleString("en-IN")}`;
 
-const getConsumptionForMonth = (unit, monthValue, index) => {
-  const monthFactor = dayjs(monthValue).month() + 1;
-  return unit.baseConsumption + monthFactor * 15 + index * 8;
-};
+// const getConsumptionForMonth = (unit, monthValue, index) => {
+//   const monthFactor = dayjs(monthValue).month() + 1;
+//   return unit.baseConsumption + monthFactor * 15 + index * 8;
+// };
 
-const buildBillTimestamp = (baseDate, index) =>
-  dayjs(baseDate)
-    .hour(9 + index)
-    .minute((index * 13) % 60)
-    .second(0)
-    .millisecond(0)
-    .toISOString();
+// const buildBillTimestamp = (baseDate, index) =>
+//   dayjs(baseDate)
+//     .hour(9 + index)
+//     .minute((index * 13) % 60)
+//     .second(0)
+//     .millisecond(0)
+//     .toISOString();
 
-const getBillAmountForConsumption = (consumption, index) => {
-  const rate = 7.4 + index * 0.18;
-  return Math.round(consumption * rate);
-};
+// const getBillAmountForConsumption = (consumption, index) => {
+//   const rate = 7.4 + index * 0.18;
+//   return Math.round(consumption * rate);
+// };
 
-const getSeedRecords = () => {
-  const currentMonth = dayjs().startOf("month");
-  const previousMonth = dayjs().subtract(1, "month").startOf("month");
-  const months = [previousMonth, currentMonth];
+// const getSeedRecords = () => {
+//   const currentMonth = dayjs().startOf("month");
+//   const previousMonth = dayjs().subtract(1, "month").startOf("month");
+//   const months = [previousMonth, currentMonth];
 
-  return months.flatMap((month, monthIndex) =>
-    MONTHLY_UNIT_MASTER.map((unit, index) => {
-      const totalConsumption = getConsumptionForMonth(
-        unit,
-        month,
-        index + monthIndex,
-      );
-      const totalBillAmount = getBillAmountForConsumption(
-        totalConsumption,
-        index + monthIndex,
-      );
-      const date = month.add(20 + index, "day").format("YYYY-MM-DD");
-      const billTimestamp = buildBillTimestamp(date, index + monthIndex);
+//   return months.flatMap((month, monthIndex) =>
+//     MONTHLY_UNIT_MASTER.map((unit, index) => {
+//       const totalConsumption = getConsumptionForMonth(
+//         unit,
+//         month,
+//         index + monthIndex,
+//       );
+//       const totalBillAmount = getBillAmountForConsumption(
+//         totalConsumption,
+//         index + monthIndex,
+//       );
+//       const date = month.add(20 + index, "day").format("YYYY-MM-DD");
+//       const billTimestamp = buildBillTimestamp(date, index + monthIndex);
 
-      return {
-        id: createId(),
-        unitNo: unit.unitNo,
-        meterNo: unit.meterNo,
-        totalConsumption,
-        totalBillAmount,
-        date,
-        billTimestamp,
-        addedBy: "System Admin",
-        monthKey: monthKeyFromValue(date),
-      };
-    }),
-  );
-};
+//       return {
+//         id: createId(),
+//         unitNo: unit.unitNo,
+//         meterNo: unit.meterNo,
+//         totalConsumption,
+//         totalBillAmount,
+//         date,
+//         billTimestamp,
+//         addedBy: "System Admin",
+//         monthKey: monthKeyFromValue(date),
+//       };
+//     }),
+//   );
+// };
 
-const buildMonthRows = (monthValue, existingRows, addedBy) => {
-  const monthKey = monthKeyFromValue(monthValue);
+// const buildMonthRows = (monthValue, existingRows, addedBy) => {
+//   const monthKey = monthKeyFromValue(monthValue);
 
-  return MONTHLY_UNIT_MASTER.map((unit, index) => {
-    const existingRow = existingRows.find((row) => row.unitNo === unit.unitNo);
-    const dateValue =
-      existingRow?.date || dayjs(monthValue).endOf("month").format("YYYY-MM-DD");
-    const billTimestamp =
-      existingRow?.billTimestamp || buildBillTimestamp(dateValue, index);
-    const totalConsumption =
-      existingRow?.totalConsumption ??
-      getConsumptionForMonth(unit, monthValue, index);
+//   return MONTHLY_UNIT_MASTER.map((unit, index) => {
+//     const existingRow = existingRows.find((row) => row.unitNo === unit.unitNo);
+//     const dateValue =
+//       existingRow?.date || dayjs(monthValue).endOf("month").format("YYYY-MM-DD");
+//     const billTimestamp =
+//       existingRow?.billTimestamp || buildBillTimestamp(dateValue, index);
+//     const totalConsumption =
+//       existingRow?.totalConsumption ??
+//       getConsumptionForMonth(unit, monthValue, index);
 
-    return {
-      id: existingRow?.id || createId(),
-      unitNo: unit.unitNo,
-      meterNo: existingRow?.meterNo || unit.meterNo,
-      totalConsumption,
-      totalBillAmount: existingRow?.totalBillAmount ?? "",
-      date: dateValue,
-      billTimestamp,
-      addedBy: existingRow?.addedBy || addedBy,
-      monthKey,
-    };
-  });
-};
+//     return {
+//       id: existingRow?.id || createId(),
+//       unitNo: unit.unitNo,
+//       meterNo: existingRow?.meterNo || unit.meterNo,
+//       totalConsumption,
+//       totalBillAmount: existingRow?.totalBillAmount ?? "",
+//       date: dateValue,
+//       billTimestamp,
+//       addedBy: existingRow?.addedBy || addedBy,
+//       monthKey,
+//     };
+//   });
+// };
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -244,16 +235,16 @@ const emptyEditValues = {
 };
 
 const MaintainanceStEnergyReadingMonthly = () => {
+  const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
   const readingName = auth?.user
     ? `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim()
     : "System Admin";
 
-  const seedRecords = useMemo(() => getSeedRecords(), []);
   const [selectedMonth, setSelectedMonth] = useState(
     dayjs().startOf("month"),
   );
-  const [records, setRecords] = useState(() => seedRecords);
+  const [records, setRecords] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -271,22 +262,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
     [selectedMonth],
   );
 
-  const monthRecords = useMemo(
-    () =>
-      records
-        .filter((row) => row.monthKey === selectedMonthKey)
-        .slice()
-        .sort((a, b) => {
-          const indexA = MONTHLY_UNIT_MASTER.findIndex(
-            (unit) => unit.unitNo === a.unitNo,
-          );
-          const indexB = MONTHLY_UNIT_MASTER.findIndex(
-            (unit) => unit.unitNo === b.unitNo,
-          );
-          return indexA - indexB;
-        }),
-    [records, selectedMonthKey],
-  );
+  const monthRecords = records;
 
   const totalConsumption = useMemo(
     () =>
@@ -306,15 +282,9 @@ const MaintainanceStEnergyReadingMonthly = () => {
     [monthRecords],
   );
 
-  const selectedMonthLabel = formatMonthLabel(selectedMonth);
-  const monthBillDate = selectedMonth.endOf("month").format("YYYY-MM-DD");
-  const monthBillDateTime = selectedMonth
-    .endOf("month")
-    .hour(dayjs().hour())
-    .minute(dayjs().minute())
-    .second(dayjs().second())
-    .millisecond(0)
-    .toISOString();
+  const monthBillDate = selectedMonth.isSame(dayjs(), "month")
+    ? dayjs().format("YYYY-MM-DD")
+    : selectedMonth.endOf("month").format("YYYY-MM-DD");
   const monthRange = useMemo(
     () => ({
       startDate: selectedMonth.startOf("month").toDate(),
@@ -324,13 +294,52 @@ const MaintainanceStEnergyReadingMonthly = () => {
     [selectedMonth],
   );
 
-  const openAddModal = () => {
-    const existingRows = records.filter((row) => row.monthKey === selectedMonthKey);
-    setBillRows(buildMonthRows(selectedMonth, existingRows, readingName));
-    setBillErrors({});
-    setModalMode("add");
-    setSelectedRecord(null);
-    setModalOpen(true);
+  useEffect(() => {
+    let active = true;
+    axiosPrivate
+      .get(ST_ENERGY_MONTHLY_GET_API, { params: { date: monthBillDate } })
+      .then(({ data }) => {
+        if (active) {
+          setRecords(
+            (data.data || []).map((row) => ({
+              ...row,
+              billTimestamp: row.date,
+            })),
+          );
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          toast.error(
+            error.response?.data?.message || "Unable to load ST monthly bills",
+          );
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [axiosPrivate, monthBillDate]);
+
+  const openAddModal = async () => {
+    try {
+      const { data } = await axiosPrivate.get(ST_ENERGY_MONTHLY_FORM_API, {
+        params: { date: monthBillDate },
+      });
+      setBillRows(
+        (data.data || []).map((row) => ({
+          ...row,
+          totalBillAmount:
+            records.find((record) => record.unitId === row.unitId)
+              ?.totalBillAmount ?? "",
+        })),
+      );
+      setBillErrors({});
+      setModalMode("add");
+      setSelectedRecord(null);
+      setModalOpen(true);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to load ST units");
+    }
   };
 
   const openEditModal = (row) => {
@@ -393,25 +402,25 @@ const MaintainanceStEnergyReadingMonthly = () => {
 
     try {
       setSaving(true);
-      const rowsToSave = billRows.map((row) => ({
-        ...row,
-        totalBillAmount: Number(row.totalBillAmount),
-        date: row.date || monthBillDate,
-        billTimestamp:
-          row.billTimestamp ||
-          buildBillTimestamp(row.date || monthBillDate, billRows.indexOf(row)),
-        monthKey: monthKeyFromValue(row.date || monthBillDate),
-        addedBy: row.addedBy || readingName,
-      }));
-
-      setRecords((current) => [
-        ...current.filter((row) => row.monthKey !== selectedMonthKey),
-        ...rowsToSave,
-      ]);
+      await axiosPrivate.post(ST_ENERGY_MONTHLY_ADD_API, {
+        date: monthBillDate,
+        bills: billRows.map(({ unitId, totalBillAmount }) => ({
+          unitId,
+          totalBillAmount: Number(totalBillAmount),
+        })),
+      });
+      const { data } = await axiosPrivate.get(ST_ENERGY_MONTHLY_GET_API, {
+        params: { date: monthBillDate },
+      });
+      setRecords(
+        (data.data || []).map((row) => ({ ...row, billTimestamp: row.date })),
+      );
 
       toast.success("ST energy bills added");
       setModalOpen(false);
       setBillErrors({});
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to add ST energy bills");
     } finally {
       setSaving(false);
     }
@@ -429,13 +438,14 @@ const MaintainanceStEnergyReadingMonthly = () => {
         return;
       }
 
+      const { data } = await axiosPrivate.patch(
+        `${ST_ENERGY_MONTHLY_EDIT_API}/${selectedRecord.id}`,
+        { totalBillAmount: nextBillAmount },
+      );
       setRecords((current) =>
         current.map((row) =>
           row.id === selectedRecord.id
-            ? {
-                ...row,
-                totalBillAmount: nextBillAmount,
-              }
+            ? { ...data.data, billTimestamp: data.data.date }
             : row,
         ),
       );
@@ -443,6 +453,8 @@ const MaintainanceStEnergyReadingMonthly = () => {
       toast.success("ST energy bill updated");
       setModalOpen(false);
       reset(emptyEditValues);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Unable to update ST energy bill");
     } finally {
       setSaving(false);
     }
@@ -638,7 +650,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
                 <tbody>
                   {billRows.map((row, index) => (
                     <tr
-                      key={row.id}
+                      key={row.unitId}
                       className="border-b border-slate-200 last:border-b-0 even:bg-slate-50/50"
                     >
                       <td className="border-r border-slate-200 px-3 py-2.5 text-center">

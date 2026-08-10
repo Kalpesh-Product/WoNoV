@@ -17,6 +17,32 @@ const readingSchema = new mongoose.Schema({
   },
 });
 
+const monthlyBillSchema = new mongoose.Schema({
+  totalConsumption: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  totalBillAmount: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  billDate: {
+    type: Date,
+    required: true,
+  },
+  monthKey: {
+    type: String,
+    required: true,
+  },
+  addedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserData",
+    required: true,
+  },
+});
+
 const electricityConsumptionSchema = new mongoose.Schema(
   {
     meterNo: {
@@ -32,6 +58,10 @@ const electricityConsumptionSchema = new mongoose.Schema(
       type: Number,
       min: 0,
       default: 0,
+    },
+    monthlyBills: {
+      type: [monthlyBillSchema],
+      default: [],
     },
   },
   { timestamps: true },
