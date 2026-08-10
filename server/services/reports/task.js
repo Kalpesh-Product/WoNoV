@@ -9,6 +9,79 @@ const Task = require("../../models/tasks/Task");
 //)
 const { hasDepartmentAdminAccess, hasGlobalReportAccess } = require("./access");
 const { getPagination } = require("../../utils/pagination");
+const UserData = require("../../models/hr/UserData");
+const Department = require("../../models/Departments");
+const {
+  buildSearchRegex,
+  resolveReferenceIds,
+} = require("../../utils/referenceSearch");
+
+const buildMyTaskSearchConditions = async ({ company, search }) => {
+  const searchRegex = buildSearchRegex(search);
+  if (!searchRegex) return [];
+
+  const { users = [], departments = [] } = await resolveReferenceIds(
+    searchRegex,
+    [
+      {
+        key: "users",
+        model: UserData,
+        fields: ["firstName", "middleName", "lastName"],
+        extraFilter: company ? { company } : {},
+      },
+      {
+        key: "departments",
+        model: Department,
+        fields: ["name"],
+      },
+    ],
+  );
+
+  return [
+    { taskName: searchRegex },
+    { status: searchRegex },
+    { comment: searchRegex },
+    ...(users.length ? [{ assignedBy: { $in: users } }] : []),
+    ...(departments.length ? [{ department: { $in: departments } }] : []),
+  ];
+};
+
+const buildDepartmentTaskSearchConditions = async ({ company, search }) => {
+  const searchRegex = buildSearchRegex(search);
+  if (!searchRegex) return [];
+
+  const { users = [], departments = [] } = await resolveReferenceIds(
+    searchRegex,
+    [
+      {
+        key: "users",
+        model: UserData,
+        fields: ["firstName", "middleName", "lastName"],
+        extraFilter: company ? { company } : {},
+      },
+      {
+        key: "departments",
+        model: Department,
+        fields: ["name"],
+      },
+    ],
+  );
+
+  return [
+    { taskName: searchRegex },
+    { project: searchRegex },
+    { priority: searchRegex },
+    { status: searchRegex },
+    { comment: searchRegex },
+    ...(users.length
+      ? [
+          { assignedBy: { $in: users } },
+          { assignedTo: { $in: users } },
+        ]
+      : []),
+    ...(departments.length ? [{ department: { $in: departments } }] : []),
+  ];
+};
 
 const fetchAllTasksService = async ({
   dateFilter,
@@ -115,6 +188,10 @@ const fetchDeptTaskReportService = async ({
         ? query.dept
         : [query.dept]
       : departments;
+    const searchConditions = await buildDepartmentTaskSearchConditions({
+      company,
+      search: query?.search,
+    });
 
     const queryObj = {
       company,
@@ -132,6 +209,7 @@ const fetchDeptTaskReportService = async ({
       ...(dateFilter?.assignedDate && {
         assignedDate: dateFilter.assignedDate,
       }),
+      ...(searchConditions.length && { $or: searchConditions }),
     };
 
     let tasksQuery = Task.find(queryObj)
@@ -217,6 +295,10 @@ const fetchMyTasksReportService = async ({
     const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
 
     let { flag } = query;
+    const searchConditions = await buildMyTaskSearchConditions({
+      company,
+      search: query.search,
+    });
 
     const queryObj = {
       company,
@@ -233,6 +315,7 @@ const fetchMyTasksReportService = async ({
       ...(dateFilter?.assignedDate && {
         assignedDate: dateFilter.assignedDate,
       }),
+      ...(searchConditions.length && { $or: searchConditions }),
     };
 
     let tasksQuery = Task.find(queryObj)
