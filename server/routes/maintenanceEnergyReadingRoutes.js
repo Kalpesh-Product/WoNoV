@@ -8,24 +8,34 @@ const {
   getStEnergyMonthlyReadings,
   addStEnergyMonthlyReadings,
   editStEnergyMonthlyReading,
+  getDtcEnergyMonthlyFormData,
+  getDtcEnergyMonthlyReadings,
+  addDtcEnergyMonthlyReadings,
+  editDtcEnergyMonthlyReading,
   getDtcEnergyFormData,
   getDtcEnergyReadings,
   addDtcEnergyReadings,
   editDtcEnergyReading,
 } = require("../controllers/maintenanceControllers/MaintenanceEnergyReadingController");
-//Daily Routes
+// ST Daily Routes
 router.get("/get-st-energy-daily/form-data", getStEnergyFormData);
 router.get("/get-st-energy-daily", getStEnergyReadings);
 router.post("/add-st-energy-daily", addStEnergyReadings);
 router.patch("/edit-st-energy-daily/:id", editStEnergyReading);
 
-//Monthly Routes
+// ST Monthly Routes
 router.get("/get-st-energy-monthly/form-data", getStEnergyMonthlyFormData);
 router.get("/get-st-energy-monthly", getStEnergyMonthlyReadings);
 router.post("/add-st-energy-monthly", addStEnergyMonthlyReadings);
 router.patch("/edit-st-energy-monthly/:id", editStEnergyMonthlyReading);
 
-//Daily Routes
+// DTC monthly routes
+router.get("/get-dtc-energy-monthly/form-data", getDtcEnergyMonthlyFormData);
+router.get("/get-dtc-energy-monthly", getDtcEnergyMonthlyReadings);
+router.post("/add-dtc-energy-monthly", addDtcEnergyMonthlyReadings);
+router.patch("/edit-dtc-energy-monthly/:id", editDtcEnergyMonthlyReading);
+
+// DTC daily routes
 router.get("/get-dtc-energy-daily/form-data", getDtcEnergyFormData);
 router.get("/get-dtc-energy-daily", getDtcEnergyReadings);
 router.post("/add-dtc-energy-daily", addDtcEnergyReadings);

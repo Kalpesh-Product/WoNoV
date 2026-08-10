@@ -520,7 +520,11 @@ const getDtcCompanyUnits = (company) =>
     })
     .populate({
       path: "ElectricityConsumption",
-      populate: { path: "readings.addedBy", select: "firstName lastName" },
+      // populate: { path: "readings.addedBy", select: "firstName lastName" },
+       populate: [
+        { path: "readings.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      ],
     })
     .then((units) => units.filter(isVisibleDtcUnit).sort((a, b) =>
       String(a.unitNo || "").localeCompare(String(b.unitNo || ""), undefined, {
@@ -528,6 +532,150 @@ const getDtcCompanyUnits = (company) =>
         sensitivity: "base",
       }),
     ));
+  const getDtcEnergyMonthlyFormData = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+
+    const units = await getDtcCompanyUnits(req.company);
+    res.json({
+      data: units.map((unit) => ({
+        unitId: unit._id,
+        unitNo: unit.unitNo,
+        meterNo: unit.ElectricityConsumption?.meterNo ?? "",
+        totalConsumption: monthlyConsumptionThrough(
+          unit.ElectricityConsumption,
+          bounds,
+        ),
+      })),
+      date: bounds.billDate,
+      monthKey: bounds.monthKey,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getDtcEnergyMonthlyReadings = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.query.date);
+    if (!bounds) return res.status(400).json({ message: "Invalid date" });
+
+    const units = await getDtcCompanyUnits(req.company);
+    const data = units.flatMap((unit) => {
+      const meter = unit.ElectricityConsumption;
+      const bill = meter?.monthlyBills?.find(
+        (item) => item.monthKey === bounds.monthKey,
+      );
+      return bill ? [serializeMonthly(unit, meter, bill)] : [];
+    });
+    res.json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addDtcEnergyMonthlyReadings = async (req, res, next) => {
+  try {
+    const bounds = monthBounds(req.body.date);
+    const bills = req.body.bills || req.body.readings;
+    if (!bounds || !Array.isArray(bills)) {
+      return res.status(400).json({ message: "Date and bills are required" });
+    }
+    if (isFutureDate(req.body.date)) {
+      return res.status(400).json({ message: "Bill cannot be added for a future date" });
+    }
+
+    const units = await getDtcCompanyUnits(req.company);
+    const billMap = new Map(bills.map((bill) => [String(bill.unitId), bill]));
+    if (bills.length !== units.length || billMap.size !== units.length) {
+      return res.status(400).json({
+        message: "A bill amount is required once for every active DTC unit",
+      });
+    }
+
+    const metersToSave = [];
+    for (const unit of units) {
+      const bill = billMap.get(String(unit._id));
+      const totalBillAmount = Number(bill?.totalBillAmount);
+      if (!bill || !Number.isFinite(totalBillAmount) || totalBillAmount <= 0) {
+        return res.status(400).json({
+          message: `A valid Total Bill Amount is required for unit ${unit.unitNo}`,
+        });
+      }
+      const meter = unit.ElectricityConsumption;
+      if (!String(meter?.meterNo || "").trim()) {
+        return res.status(400).json({
+          message: `Meter No. is not configured for unit ${unit.unitNo}`,
+        });
+      }
+      const monthlyBill = meter.monthlyBills.find(
+        (item) => item.monthKey === bounds.monthKey,
+      );
+      const billValues = {
+        totalConsumption: monthlyConsumptionThrough(meter, bounds),
+        totalBillAmount,
+        billDate: bounds.billDate,
+        billTimestamp: new Date(),
+        monthKey: bounds.monthKey,
+        addedBy: req.user,
+      };
+      if (monthlyBill) Object.assign(monthlyBill, billValues);
+      else meter.monthlyBills.push(billValues);
+      metersToSave.push(meter);
+    }
+    await Promise.all(metersToSave.map((meter) => meter.save()));
+    res.status(201).json({ message: "DTC monthly energy bills saved" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const editDtcEnergyMonthlyReading = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid monthly bill id" });
+    }
+    const totalBillAmount = Number(req.body.totalBillAmount);
+    if (!Number.isFinite(totalBillAmount) || totalBillAmount <= 0) {
+      return res.status(400).json({ message: "A valid Total Bill Amount is required" });
+    }
+
+    const meterIds = await ElectricityConsumption.find({
+      "monthlyBills._id": req.params.id,
+    }).distinct("_id");
+    const unit = await Unit.findOne({
+      company: req.company,
+      isActive: true,
+      ElectricityConsumption: { $in: meterIds },
+    })
+      .select("unitNo unitName ElectricityConsumption building")
+      .populate({ path: "building", select: "buildingName" })
+      .populate({
+        path: "ElectricityConsumption",
+        populate: { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      });
+    if (!unit?.ElectricityConsumption || !isVisibleDtcUnit(unit)) {
+      return res.status(404).json({ message: "Monthly bill not found" });
+    }
+
+    const meter = unit.ElectricityConsumption;
+    const monthlyBill = meter.monthlyBills.id(req.params.id);
+    const bounds = monthBounds(monthlyBill.billDate);
+    monthlyBill.totalConsumption = monthlyConsumptionThrough(meter, bounds);
+    monthlyBill.totalBillAmount = totalBillAmount;
+    monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
+    await meter.save();
+    await meter.populate("monthlyBills.addedBy", "firstName lastName");
+    res.json({
+      message: "DTC monthly energy bill updated",
+      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id)),
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+  
 
 const getDtcEnergyFormData = async (req, res, next) => {
   try {
@@ -769,6 +917,10 @@ module.exports = {
   getStEnergyReadings,
   addStEnergyReadings,
   editStEnergyReading,
+  getDtcEnergyMonthlyFormData,
+  getDtcEnergyMonthlyReadings,
+  addDtcEnergyMonthlyReadings,
+  editDtcEnergyMonthlyReading,
   getDtcEnergyFormData,
   getDtcEnergyReadings,
   addDtcEnergyReadings,
