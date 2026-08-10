@@ -366,10 +366,17 @@ const MaintainanceStEnergyReadingMonthly = () => {
 
   const handleBillAmountChange = (index, value) => {
     setBillErrors((current) => {
-      if (!current[index]) return current;
+      const rowErrors = current[index];
+      if (!rowErrors?.totalBillAmount) return current;
 
       const next = { ...current };
-      delete next[index];
+      const nextRowErrors = { ...rowErrors };
+      delete nextRowErrors.totalBillAmount;
+      if (Object.keys(nextRowErrors).length === 0) {
+        delete next[index];
+      } else {
+        next[index] = nextRowErrors;
+      }
       return next;
     });
 
@@ -389,8 +396,18 @@ const MaintainanceStEnergyReadingMonthly = () => {
     const nextErrors = {};
 
     billRows.forEach((row, index) => {
-      if (row.totalBillAmount === "" || Number(row.totalBillAmount) <= 0) {
-        nextErrors[index] = "Bill amount is required";
+      const rowErrors = {};
+
+      if (Number(row.totalConsumption) <= 0) {
+        rowErrors.totalConsumption = "Total Consumption is required";
+      }
+
+      if (row.totalConsumption > 0 && (row.totalBillAmount === "" || Number(row.totalBillAmount) <= 0)) {
+        rowErrors.totalBillAmount = "Total Bill Amount is required";
+      }
+
+      if (Object.keys(rowErrors).length > 0) {
+        nextErrors[index] = rowErrors;
       }
     });
 
@@ -681,6 +698,8 @@ const MaintainanceStEnergyReadingMonthly = () => {
                           fullWidth
                           value={row.totalConsumption}
                           disabled
+                          error={Boolean(billErrors[index]?.totalConsumption)}
+                          helperText={billErrors[index]?.totalConsumption}
                           sx={modalFieldSx}
                         />
                       </td>
@@ -695,8 +714,8 @@ const MaintainanceStEnergyReadingMonthly = () => {
                           onChange={(event) =>
                             handleBillAmountChange(index, event.target.value)
                           }
-                          error={Boolean(billErrors[index])}
-                          helperText={billErrors[index]}
+                          error={Boolean(billErrors[index]?.totalBillAmount)}
+                          helperText={billErrors[index]?.totalBillAmount}
                           inputProps={{
                             min: 0,
                           }}
