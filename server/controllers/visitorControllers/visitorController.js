@@ -65,7 +65,7 @@ const checkExistingVisitor = async (req, res, next) => {
       company: req.company,
       phoneNumber,
     })
-      .select("_id firstName lastName phoneNumber")
+      .select("_id firstName lastName phoneNumber visitorFlag visitorRoles")
       .lean();
 
     const latestVisit = visitor
@@ -86,6 +86,8 @@ const checkExistingVisitor = async (req, res, next) => {
             firstName: visitor.firstName,
             lastName: visitor.lastName,
             phoneNumber: visitor.phoneNumber,
+            visitorFlag: visitor.visitorFlag,
+            visitorRoles: visitor.visitorRoles,
             lastVisitedAt: latestVisit?.checkIn || null,
           }
         : null,
