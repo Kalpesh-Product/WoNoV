@@ -32,6 +32,10 @@ const monthlyBillSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  billTimestamp: {
+    type: Date,
+    default: Date.now,
+  },
   monthKey: {
     type: String,
     required: true,

@@ -138,6 +138,7 @@ const serializeMonthly = (unit, meter, bill) => ({
   totalConsumption: bill.totalConsumption,
   totalBillAmount: bill.totalBillAmount,
   date: bill.billDate,
+  billTimestamp: bill.billTimestamp || bill.createdAt || bill.billDate,
   monthKey: bill.monthKey,
   addedBy: bill.addedBy
     ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
@@ -228,6 +229,7 @@ const addStEnergyMonthlyReadings = async (req, res, next) => {
         totalConsumption: monthlyConsumptionThrough(meter, bounds),
         totalBillAmount,
         billDate: bounds.billDate,
+        billTimestamp: new Date(),
         monthKey: bounds.monthKey,
         addedBy: req.user,
       };
@@ -276,6 +278,7 @@ const editStEnergyMonthlyReading = async (req, res, next) => {
     const bounds = monthBounds(monthlyBill.billDate);
     monthlyBill.totalConsumption = monthlyConsumptionThrough(meter, bounds);
     monthlyBill.totalBillAmount = totalBillAmount;
+    monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
     await meter.populate("monthlyBills.addedBy", "firstName lastName");
     res.json({

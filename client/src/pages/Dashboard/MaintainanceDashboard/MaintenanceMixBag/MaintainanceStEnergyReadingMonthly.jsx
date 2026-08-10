@@ -303,7 +303,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
           setRecords(
             (data.data || []).map((row) => ({
               ...row,
-              billTimestamp: row.date,
+              billRecordedAt: row.billTimestamp || row.date,
             })),
           );
         }
@@ -413,7 +413,10 @@ const MaintainanceStEnergyReadingMonthly = () => {
         params: { date: monthBillDate },
       });
       setRecords(
-        (data.data || []).map((row) => ({ ...row, billTimestamp: row.date })),
+        (data.data || []).map((row) => ({
+          ...row,
+          billRecordedAt: row.billTimestamp || row.date,
+        })),
       );
 
       toast.success("ST energy bills added");
@@ -445,7 +448,10 @@ const MaintainanceStEnergyReadingMonthly = () => {
       setRecords((current) =>
         current.map((row) =>
           row.id === selectedRecord.id
-            ? { ...data.data, billTimestamp: data.data.date }
+            ? {
+                ...data.data,
+                billRecordedAt: data.data.billTimestamp || data.data.date,
+              }
             : row,
         ),
       );
@@ -480,8 +486,8 @@ const MaintainanceStEnergyReadingMonthly = () => {
         Number(params.value || 0).toLocaleString("en-IN"),
     },
     {
-      field: "billTimestamp",
-      headerName: "Date & Time",
+      field: "billRecordedAt",
+      headerName: "Date",
       flex: 1.05,
       minWidth: 180,
       exportFormat: "datetime-comma",
@@ -747,7 +753,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
                 size="small"
                 fullWidth
                 disabled
-                value={formatDate(selectedRecord?.billTimestamp)}
+                value={formatDate(selectedRecord?.billRecordedAt)}
                 InputLabelProps={{ shrink: true }}
                 sx={editFieldSx}
               />
@@ -841,7 +847,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
               />
               <DetalisFormatted
                 title="Date"
-                detail={formatDateTime(selectedRecord.billTimestamp)}
+                detail={formatDateTime(selectedRecord.billRecordedAt)}
               />
               <DetalisFormatted title="Added By" detail={selectedRecord.addedBy || "-"} />
             </div>
