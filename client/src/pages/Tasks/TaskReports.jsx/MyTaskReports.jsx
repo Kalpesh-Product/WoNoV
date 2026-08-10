@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -41,7 +41,13 @@ const MyTaskReports = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
-   const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+  const [taskSearch, setTaskSearch] = useState("");
+  const [debouncedTaskSearch, setDebouncedTaskSearch] = useState("");
   const initialDateRange = useMemo(
     () => ({
       startDate: dayjs().startOf("month").toDate(),
@@ -52,6 +58,20 @@ const MyTaskReports = () => {
   );
   const [selectedTaskRange, setSelectedTaskRange] = useState(initialDateRange);
 
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedTaskSearch(taskSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [taskSearch]);
+
+  const handleTaskSearchChange = useCallback((value) => {
+    setTaskSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
+
   const { data: taskList = [], isLoading } = useQuery({
     queryKey: [
       "my-tasks",
@@ -60,6 +80,7 @@ const MyTaskReports = () => {
       selectedTaskRange.endDate,
       pagination.page,
       pagination.limit,
+      debouncedTaskSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -69,6 +90,7 @@ const MyTaskReports = () => {
           endDate: toUtcDayBoundary(selectedTaskRange.endDate, true),
           page: pagination.page,
           limit: pagination.limit,
+          search: debouncedTaskSearch || undefined,
         },
       });
       const responsePagination = response.data.pagination;
@@ -219,7 +241,7 @@ const MyTaskReports = () => {
           }
           columns={myTaskReportsColumns}
           onDateFilterChange={handleTaskRangeChange}
-           serverPagination
+          serverPagination
           pageSizeOptions={PAGE_SIZE_OPTIONS}
           paginationPageSize={pagination.limit}
           paginationPage={pagination.page}
@@ -234,6 +256,9 @@ const MyTaskReports = () => {
                 : { ...current, page: 1, limit },
             )
           }
+          serverSearch
+          searchValue={taskSearch}
+          onSearchChange={handleTaskSearchChange}
         />
       </PageFrame>
 
