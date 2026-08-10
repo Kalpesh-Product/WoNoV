@@ -454,6 +454,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
         <div className="flex flex-col gap-5">
           <AgTable
             data={tableData}
+            search={true}
             columns={columns}
             tableTitle={tableTitle}
             buttonTitle="Add Reading"
@@ -567,7 +568,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                       Current Reading
                     </th>
                     <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
-                      Consumption (Units)
+                      Consumption (KWH)
                     </th>
                   </tr>
                 </thead>
