@@ -397,11 +397,27 @@ const AddVisitor = () => {
                           <Button
                             color="inherit"
                             size="small"
-                            onClick={() =>
-                              navigate(
-                                "/app/visitors/mix-bag/repeat-visitors/repeat-internal-visitors",
-                              )
-                            }
+                            onClick={() => {
+                              const params = new URLSearchParams();
+
+                              if (existingVisitor.id) {
+                                params.set("visitorId", existingVisitor.id);
+                              }
+                              if (existingVisitor.lastVisitedAt) {
+                                params.set(
+                                  "lastVisitedAt",
+                                  existingVisitor.lastVisitedAt,
+                                );
+                              }
+
+                              navigate({
+                                pathname:
+                                  "/app/visitors/mix-bag/repeat-visitors/repeat-internal-visitors",
+                                search: params.toString()
+                                  ? `?${params.toString()}`
+                                  : "",
+                              });
+                            }}
                           >
                             Repeat Visitor
                           </Button>
