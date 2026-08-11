@@ -410,8 +410,8 @@ const MaintainanceDtcEnergyReadingDaily = () => {
       flex: 1,
       minWidth: 170,
     },
-    { field: "dateDisplay", headerName: "Date", flex: 1, minWidth: 120 },
-    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 160 },
+    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 120 },
+    { field: "dateDisplay", headerName: "AddedAt", flex: 1, minWidth: 150 },
     {
       field: "action",
       headerName: "Action",
@@ -825,12 +825,12 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                 title="Consumption (KWH)"
                 detail={selectedReading.consumption ?? "-"}
               />
+              <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
               <DetalisFormatted
-                title="Date"
+                title="Added At"
                 detail={selectedReading.date ? formatDateTime(selectedReading.date) : "-"}
 
               />
-              <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
             </div>
           </div>
         )}

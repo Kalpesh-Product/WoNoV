@@ -543,15 +543,15 @@ const MaintainanceStEnergyReadingMonthly = () => {
       valueFormatter: (params) =>
         Number(params.value || 0).toLocaleString("en-IN"),
     },
+    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 180 },
     {
       field: "billRecordedAt",
-      headerName: "Date",
+      headerName: "Added At",
       flex: 1.05,
-      minWidth: 180,
+      minWidth: 150,
       exportFormat: "datetime-comma",
       valueFormatter: (params) => formatDateTime(params.value),
     },
-    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 150 },
     {
       field: "action",
       headerName: "Action",
@@ -905,11 +905,11 @@ const MaintainanceStEnergyReadingMonthly = () => {
                 title="Total Bill Amount"
                 detail={formatAmount(selectedRecord.totalBillAmount)}
               />
+              <DetalisFormatted title="Added By" detail={selectedRecord.addedBy || "-"} />
               <DetalisFormatted
-                title="Date"
+                title="Added At"
                 detail={formatDateTime(selectedRecord.billRecordedAt)}
               />
-              <DetalisFormatted title="Added By" detail={selectedRecord.addedBy || "-"} />
             </div>
           </div>
         )}
