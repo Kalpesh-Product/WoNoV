@@ -1580,7 +1580,7 @@ export const routes = createBrowserRouter([
                         element: <MaintainanceDtcEnergyReadingDaily />,
                       },
                       {
-                        path: "mix-bag/energy-daily-reading-history/:module/:readingId",
+                        path: "mix-bag/:module/energy-daily-reading-history",
                         element: <EnergyDailyReadingHistory />,
                       },
                       {

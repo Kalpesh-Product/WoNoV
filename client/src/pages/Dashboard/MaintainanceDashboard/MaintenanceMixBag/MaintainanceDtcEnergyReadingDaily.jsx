@@ -442,9 +442,18 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                   label: "View Record",
                   // onClick: () => openViewModal(params.data),
                   onClick: () =>
-                    navigate(
-                      `/app/dashboard/maintenance-dashboard/mix-bag/energy-daily-reading-history/dtc/${params.data.id}`,
-                    ),
+                    {
+                      sessionStorage.setItem(
+                        "energyDailyReadingHistory:dtc-energy-daily-reading",
+                        params.data.id,
+                      );
+                      navigate(
+                        "/app/dashboard/maintenance-dashboard/mix-bag/dtc-energy-daily-reading/energy-daily-reading-history",
+                        {
+                          state: { readingId: params.data.id },
+                        },
+                      );
+                    },
                 },
               ]}
             />

@@ -441,9 +441,18 @@ const MaintainanceStEnergyReadingDaily = () => {
                   label: "View Record",
                   // onClick: () => openViewModal(params.data),
                    onClick: () =>
-                    navigate(
-                      `/app/dashboard/maintenance-dashboard/mix-bag/energy-daily-reading-history/st/${params.data.id}`,
-                    ), 
+                    {
+                      sessionStorage.setItem(
+                        "energyDailyReadingHistory:st-energy-daily-reading",
+                        params.data.id,
+                      );
+                      navigate(
+                        "/app/dashboard/maintenance-dashboard/mix-bag/st-energy-daily-reading/energy-daily-reading-history",
+                        {
+                          state: { readingId: params.data.id },
+                        },
+                      );
+                    },
                 },
               ]}
             />

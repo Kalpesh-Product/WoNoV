@@ -96,21 +96,26 @@ const userName = (user) =>
 
 const getDailyReadingHistory = async (req, res, next) => {
   try {
-    const { module, id } = req.params;
-    if (!["st", "dtc"].includes(module) || !mongoose.isValidObjectId(id)) {
+    const { module } = req.params;
+    const { readingId } = req.query;
+    const moduleKey = String(module || "").toLowerCase();
+    if (
+      !["st", "dtc"].some((prefix) => moduleKey.startsWith(prefix)) ||
+      !mongoose.isValidObjectId(readingId)
+    ) {
       return res.status(400).json({ message: "Invalid daily reading" });
     }
 
     const meterIds = await ElectricityConsumption.find({
-      "readings._id": id,
+      "readings._id": readingId,
     }).distinct("_id");
     let query = Unit.findOne({
       company: req.company,
       isActive: true,
       ElectricityConsumption: { $in: meterIds },
-      ...(module === "st" ? { unitNo: ST_UNIT_PREFIX } : {}),
+      ...(moduleKey.startsWith("st") ? { unitNo: ST_UNIT_PREFIX } : {}),
     }).select("unitNo ElectricityConsumption building");
-    if (module === "dtc") {
+    if (moduleKey.startsWith("dtc")) {
       query = query.populate({ path: "building", select: "buildingName" });
     }
     const unit = await query.populate({
@@ -120,12 +125,15 @@ const getDailyReadingHistory = async (req, res, next) => {
         { path: "readings.editHistory.editedBy", select: "firstName lastName" },
       ],
     });
-    if (!unit?.ElectricityConsumption || (module === "dtc" && !isVisibleDtcUnit(unit))) {
+    if (
+      !unit?.ElectricityConsumption ||
+      (moduleKey.startsWith("dtc") && !isVisibleDtcUnit(unit))
+    ) {
       return res.status(404).json({ message: "Reading not found" });
     }
 
     const meter = unit.ElectricityConsumption;
-    const context = readingContext(meter, id);
+    const context = readingContext(meter, readingId);
     if (!context) return res.status(404).json({ message: "Reading not found" });
     const reading = context.reading;
     const base = {
