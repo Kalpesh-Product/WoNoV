@@ -121,29 +121,85 @@ const monthBounds = (value) => {
 
 const monthlyConsumptionThrough = (meter, bounds) => {
   if (!meter) return 0;
-  return sortedReadings(meter).reduce((total, reading, index, readings) => {
+  const monthReadings = sortedReadings(meter).filter((reading) => {
     const readingAt = new Date(reading.readingAt);
-    if (readingAt < bounds.start || readingAt >= bounds.end || index === 0) {
-      return total;
-    }
-    return total + (Number(reading.value) - Number(readings[index - 1].value));
+    return readingAt >= bounds.start && readingAt < bounds.end;
+  });
+
+  let previousReading = previousReadingBefore(meter, bounds.start);
+
+  return monthReadings.reduce((total, reading) => {
+    const currentReading = Number(reading.value);
+    const consumption =
+      previousReading === null ? 0 : currentReading - Number(previousReading);
+    previousReading = currentReading;
+    return total + Math.max(consumption, 0);
   }, 0);
 };
 
-const serializeMonthly = (unit, meter, bill) => ({
-  id: bill._id,
-  unitId: unit._id,
-  unitNo: unit.unitNo,
-  meterNo: meter.meterNo,
-  totalConsumption: bill.totalConsumption,
-  totalBillAmount: bill.totalBillAmount,
-  date: bill.billDate,
-  billTimestamp: bill.billTimestamp || bill.createdAt || bill.billDate,
-  monthKey: bill.monthKey,
-  addedBy: bill.addedBy
-    ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
-    : "",
-});
+const syncMonthlyBillTotal = (meter, readingDate, addedBy) => {
+  const bounds = monthBounds(readingDate);
+  if (!meter || !bounds) return;
+
+  const monthlyConsumption = monthlyConsumptionThrough(meter, bounds);
+  const monthlyBill = meter.monthlyBills.find(
+    (item) => item.monthKey === bounds.monthKey,
+  );
+  if (monthlyBill) {
+    monthlyBill.totalConsumption = monthlyConsumption;
+    return monthlyBill;
+  }
+
+  if (addedBy) {
+    const draftMonthlyBill = {
+      totalConsumption: monthlyConsumption,
+      totalBillAmount: 0,
+      billDate: bounds.billDate,
+      billTimestamp: new Date(),
+      monthKey: bounds.monthKey,
+      addedBy,
+    };
+    meter.monthlyBills.push(draftMonthlyBill);
+    return draftMonthlyBill;
+  }
+
+  return null;
+};
+
+const serializeMonthly = (unit, meter, bill, bounds) => {
+  const resolvedBounds = bounds || monthBounds(bill?.billDate);
+  if (!resolvedBounds) {
+    return {
+      id: bill?._id ?? null,
+      unitId: unit._id,
+      unitNo: unit.unitNo,
+      meterNo: meter.meterNo,
+      totalConsumption: 0,
+      totalBillAmount: bill?.totalBillAmount ?? "",
+      date: bill?.billDate ?? null,
+      billTimestamp: bill?.billTimestamp || bill?.createdAt || bill?.billDate,
+      monthKey: bill?.monthKey ?? "",
+      addedBy: bill?.addedBy
+        ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
+        : "",
+    };
+  }
+
+  return {
+    id: bill?._id ?? null,
+    unitId: unit._id,
+    unitNo: unit.unitNo,
+    meterNo: meter.meterNo,
+    totalConsumption: monthlyConsumptionThrough(meter, resolvedBounds),
+    totalBillAmount: bill?.totalBillAmount ?? "",
+    date: bill?.billDate ?? resolvedBounds.billDate,
+    billTimestamp: bill?.billTimestamp || bill?.createdAt || bill?.billDate,
+    monthKey: bill?.monthKey ?? resolvedBounds.monthKey,
+    addedBy: bill?.addedBy
+      ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
+      : "",
+  };
+};
 
 const getStEnergyMonthlyFormData = async (req, res, next) => {
   try {
@@ -174,13 +230,24 @@ const getStEnergyMonthlyReadings = async (req, res, next) => {
     const bounds = monthBounds(req.query.date);
     if (!bounds) return res.status(400).json({ message: "Invalid date" });
     const units = await getCompanyUnits(req.company);
-    const data = units.flatMap((unit) => {
-      const meter = unit.ElectricityConsumption;
-      const bill = meter?.monthlyBills?.find(
-        (item) => item.monthKey === bounds.monthKey,
-      );
-      return bill ? [serializeMonthly(unit, meter, bill)] : [];
-    });
+    const data = units
+      .map((unit) => {
+        const meter = unit.ElectricityConsumption;
+        const bill = meter?.monthlyBills?.find(
+          (item) => item.monthKey === bounds.monthKey,
+        );
+        const hasMonthlyReading = sortedReadings(meter).some((reading) => {
+          const readingAt = new Date(reading.readingAt);
+          return readingAt >= bounds.start && readingAt < bounds.end;
+        });
+
+        if (!bill && !hasMonthlyReading) {
+          return null;
+        }
+
+        return serializeMonthly(unit, meter, bill || {}, bounds);
+      })
+      .filter(Boolean);
     res.json({ data });
   } catch (error) {
     next(error);
@@ -276,14 +343,13 @@ const editStEnergyMonthlyReading = async (req, res, next) => {
     const meter = unit.ElectricityConsumption;
     const monthlyBill = meter.monthlyBills.id(req.params.id);
     const bounds = monthBounds(monthlyBill.billDate);
-    monthlyBill.totalConsumption = monthlyConsumptionThrough(meter, bounds);
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
     await meter.populate("monthlyBills.addedBy", "firstName lastName");
     res.json({
       message: "ST monthly energy bill updated",
-      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id)),
+      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id), bounds),
     });
   } catch (error) {
     next(error);
@@ -440,6 +506,7 @@ const addStEnergyReadings = async (req, res, next) => {
       });
       meter.consumption =
         previousReading === null ? 0 : currentReading - previousReading;
+      syncMonthlyBillTotal(meter, readingAt, req.user);
       await meter.save();
     }
 
@@ -499,6 +566,7 @@ const editStEnergyReading = async (req, res, next) => {
     const latest = sortedReadings(meter).at(-1);
     const latestContext = latest ? readingContext(meter, latest._id) : null;
     meter.consumption = latestContext?.consumption ?? 0;
+    syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
     await meter.populate("readings.addedBy", "firstName lastName");
 
@@ -562,13 +630,24 @@ const getDtcEnergyMonthlyReadings = async (req, res, next) => {
     if (!bounds) return res.status(400).json({ message: "Invalid date" });
 
     const units = await getDtcCompanyUnits(req.company);
-    const data = units.flatMap((unit) => {
-      const meter = unit.ElectricityConsumption;
-      const bill = meter?.monthlyBills?.find(
-        (item) => item.monthKey === bounds.monthKey,
-      );
-      return bill ? [serializeMonthly(unit, meter, bill)] : [];
-    });
+    const data = units
+      .map((unit) => {
+        const meter = unit.ElectricityConsumption;
+        const bill = meter?.monthlyBills?.find(
+          (item) => item.monthKey === bounds.monthKey,
+        );
+        const hasMonthlyReading = sortedReadings(meter).some((reading) => {
+          const readingAt = new Date(reading.readingAt);
+          return readingAt >= bounds.start && readingAt < bounds.end;
+        });
+
+        if (!bill && !hasMonthlyReading) {
+          return null;
+        }
+
+        return serializeMonthly(unit, meter, bill || {}, bounds);
+      })
+      .filter(Boolean);
     res.json({ data });
   } catch (error) {
     next(error);
@@ -662,14 +741,13 @@ const editDtcEnergyMonthlyReading = async (req, res, next) => {
     const meter = unit.ElectricityConsumption;
     const monthlyBill = meter.monthlyBills.id(req.params.id);
     const bounds = monthBounds(monthlyBill.billDate);
-    monthlyBill.totalConsumption = monthlyConsumptionThrough(meter, bounds);
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
     await meter.populate("monthlyBills.addedBy", "firstName lastName");
     res.json({
       message: "DTC monthly energy bill updated",
-      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id)),
+      data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id), bounds),
     });
   } catch (error) {
     next(error);
@@ -829,6 +907,7 @@ const addDtcEnergyReadings = async (req, res, next) => {
       });
       meter.consumption =
         previousReading === null ? 0 : currentReading - previousReading;
+      syncMonthlyBillTotal(meter, readingAt, req.user);
       await meter.save();
     }
 
@@ -895,6 +974,7 @@ const editDtcEnergyReading = async (req, res, next) => {
     const latest = sortedReadings(meter).at(-1);
     const latestContext = latest ? readingContext(meter, latest._id) : null;
     meter.consumption = latestContext?.consumption ?? 0;
+    syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
     await meter.populate("readings.addedBy", "firstName lastName");
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Chip, IconButton, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
@@ -29,6 +29,8 @@ const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "-";
 const formatAmount = (value) =>
   `INR ${Number(value || 0).toLocaleString("en-IN")}`;
+
+const getTodayDateKey = () => dayjs().format("YYYY-MM-DD");
 
 // const getConsumptionForMonth = (unit, monthValue, index) => {
 //   const monthFactor = dayjs(monthValue).month() + 1;
@@ -243,6 +245,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     dayjs().startOf("month"),
   );
+  const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);
   const [records, setRecords] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -251,6 +254,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
   const [billRows, setBillRows] = useState([]);
   const [billErrors, setBillErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const lastKnownMonthKeyRef = useRef(dayjs().format("YYYY-MM"));
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: emptyEditValues,
@@ -260,6 +264,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
     () => monthKeyFromValue(selectedMonth),
     [selectedMonth],
   );
+  const currentMonthKey = todayDateKey.slice(0, 7);
 
   const monthRecords = records;
 
@@ -281,8 +286,30 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
     [monthRecords],
   );
 
-  const monthBillDate = selectedMonth.isSame(dayjs(), "month")
-    ? dayjs().format("YYYY-MM-DD")
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTodayDateKey((currentDateKey) => {
+        const nextDateKey = getTodayDateKey();
+        return currentDateKey === nextDateKey ? currentDateKey : nextDateKey;
+      });
+    }, 60 * 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (
+      selectedMonthKey === lastKnownMonthKeyRef.current &&
+      currentMonthKey !== lastKnownMonthKeyRef.current
+    ) {
+      setSelectedMonth(dayjs().startOf("month"));
+    }
+
+    lastKnownMonthKeyRef.current = currentMonthKey;
+  }, [currentMonthKey, selectedMonthKey]);
+
+  const monthBillDate = selectedMonthKey === currentMonthKey
+    ? todayDateKey
     : selectedMonth.endOf("month").format("YYYY-MM-DD");
   const monthRange = useMemo(
     () => ({
@@ -295,29 +322,41 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
 
   useEffect(() => {
     let active = true;
-    axiosPrivate
-      .get(DTC_ENERGY_MONTHLY_GET_API, { params: { date: monthBillDate } })
-      .then(({ data }) => {
-        if (active) {
-          setRecords(
-            (data.data || []).map((row) => ({
-              ...row,
-              billRecordedAt: row.billTimestamp || row.date,
-            })),
-          );
-        }
-      })
-      .catch((error) => {
-        if (active) {
-          toast.error(
-            error.response?.data?.message || "Unable to load DTC monthly bills",
-          );
-        }
-      });
+    const loadMonthlyBills = () => {
+      axiosPrivate
+        .get(DTC_ENERGY_MONTHLY_GET_API, { params: { date: monthBillDate } })
+        .then(({ data }) => {
+          if (active) {
+            setRecords(
+              (data.data || []).map((row) => ({
+                ...row,
+                billRecordedAt: row.billTimestamp || row.date,
+              })),
+            );
+          }
+        })
+        .catch((error) => {
+          if (active) {
+            toast.error(
+              error.response?.data?.message || "Unable to load DTC monthly bills",
+            );
+          }
+        });
+    };
+
+    loadMonthlyBills();
+    const shouldPollCurrentMonth = selectedMonthKey === currentMonthKey;
+    const timer = shouldPollCurrentMonth
+      ? setInterval(loadMonthlyBills, 30000)
+      : null;
+
     return () => {
       active = false;
+      if (timer) {
+        clearInterval(timer);
+      }
     };
-  }, [axiosPrivate, monthBillDate]);
+  }, [axiosPrivate, currentMonthKey, monthBillDate, selectedMonthKey]);
 
   const openAddModal = async () => {
     try {
