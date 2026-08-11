@@ -289,6 +289,70 @@ const serializeMonthly = (unit, meter, bill, bounds) => {
   };
 };
 
+const getMonthlyReadingHistory = async (req, res, next) => {
+  try {
+    const { module, id } = req.params;
+    if (!["st", "dtc"].includes(module) || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid monthly reading" });
+    }
+    const meterIds = await ElectricityConsumption.find({
+      "monthlyBills._id": id,
+    }).distinct("_id");
+    let query = Unit.findOne({
+      company: req.company,
+      isActive: true,
+      ElectricityConsumption: { $in: meterIds },
+      ...(module === "st" ? { unitNo: ST_UNIT_PREFIX } : {}),
+    }).select("unitNo ElectricityConsumption building");
+    if (module === "dtc") query = query.populate("building", "buildingName");
+    const unit = await query.populate({
+      path: "ElectricityConsumption",
+      populate: [
+        { path: "monthlyBills.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
+      ],
+    });
+    if (!unit?.ElectricityConsumption || (module === "dtc" && !isVisibleDtcUnit(unit))) {
+      return res.status(404).json({ message: "Monthly reading not found" });
+    }
+    const meter = unit.ElectricityConsumption;
+    const bill = meter.monthlyBills.id(id);
+    if (!bill) return res.status(404).json({ message: "Monthly reading not found" });
+    const edits = bill.editHistory || [];
+    const firstEdit = edits[0];
+    const base = {
+      unitNo: unit.unitNo,
+      addedBy: userName(bill.addedBy),
+      addedAt: bill.billTimestamp || bill.billDate,
+    };
+    res.json({
+      data: [
+        {
+          ...base,
+          meterNo: bill.originalMeterNo || meter.meterNo,
+          totalConsumption:
+            bill.originalTotalConsumption ?? firstEdit?.totalConsumption ?? bill.totalConsumption,
+          totalBillAmount:
+            bill.originalTotalBillAmount ?? firstEdit?.totalBillAmount ?? bill.totalBillAmount,
+          editedBy: "",
+          editedAt: null,
+        },
+        ...edits.map((edit) => ({
+          ...base,
+          meterNo: edit.meterNo,
+          totalConsumption: edit.totalConsumption,
+          totalBillAmount: edit.totalBillAmount,
+          editedBy: userName(edit.editedBy),
+          editedAt: edit.editedAt,
+        })),
+      ],
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 const getStEnergyMonthlyFormData = async (req, res, next) => {
   try {
     const bounds = monthBounds(req.query.date);
@@ -387,6 +451,9 @@ const addStEnergyMonthlyReadings = async (req, res, next) => {
         billTimestamp: new Date(),
         monthKey: bounds.monthKey,
         addedBy: req.user,
+        originalMeterNo: meterNo,
+        originalTotalConsumption: monthlyConsumptionThrough(meter, bounds),
+        originalTotalBillAmount: totalBillAmount,
       };
       if (monthlyBill) {
         Object.assign(monthlyBill, billValues);
@@ -431,6 +498,16 @@ const editStEnergyMonthlyReading = async (req, res, next) => {
     const meter = unit.ElectricityConsumption;
     const monthlyBill = meter.monthlyBills.id(req.params.id);
     const bounds = monthBounds(monthlyBill.billDate);
+    monthlyBill.originalMeterNo ||= meter.meterNo;
+    monthlyBill.originalTotalConsumption ??= monthlyBill.totalConsumption;
+    monthlyBill.originalTotalBillAmount ??= monthlyBill.totalBillAmount;
+    monthlyBill.editHistory.push({
+      meterNo: meter.meterNo,
+      totalConsumption: monthlyConsumptionThrough(meter, bounds),
+      totalBillAmount,
+      editedBy: req.user,
+      editedAt: new Date(),
+    });
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
@@ -804,6 +881,9 @@ const addDtcEnergyMonthlyReadings = async (req, res, next) => {
         billTimestamp: new Date(),
         monthKey: bounds.monthKey,
         addedBy: req.user,
+        originalMeterNo: meterNo,
+        originalTotalConsumption: monthlyConsumptionThrough(meter, bounds),
+        originalTotalBillAmount: totalBillAmount,
       };
       if (monthlyBill) Object.assign(monthlyBill, billValues);
       else meter.monthlyBills.push(billValues);
@@ -847,6 +927,16 @@ const editDtcEnergyMonthlyReading = async (req, res, next) => {
     const meter = unit.ElectricityConsumption;
     const monthlyBill = meter.monthlyBills.id(req.params.id);
     const bounds = monthBounds(monthlyBill.billDate);
+    monthlyBill.originalMeterNo ||= meter.meterNo;
+    monthlyBill.originalTotalConsumption ??= monthlyBill.totalConsumption;
+    monthlyBill.originalTotalBillAmount ??= monthlyBill.totalBillAmount;
+    monthlyBill.editHistory.push({
+      meterNo: meter.meterNo,
+      totalConsumption: monthlyConsumptionThrough(meter, bounds),
+      totalBillAmount,
+      editedBy: req.user,
+      editedAt: new Date(),
+    });
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
@@ -1129,4 +1219,5 @@ module.exports = {
   addDtcEnergyReadings,
   editDtcEnergyReading,
   getDailyReadingHistory,
+  getMonthlyReadingHistory,
 };

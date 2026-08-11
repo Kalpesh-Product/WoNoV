@@ -15,6 +15,7 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAuth from "../../../../hooks/useAuth";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const ST_ENERGY_MONTHLY_API = "/api/maintenance";
 const ST_ENERGY_MONTHLY_GET_API = `${ST_ENERGY_MONTHLY_API}/get-st-energy-monthly`;
@@ -237,6 +238,7 @@ const emptyEditValues = {
 };
 
 const MaintainanceStEnergyReadingMonthly = () => {
+  const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
   const readingName = auth?.user
@@ -578,7 +580,10 @@ const MaintainanceStEnergyReadingMonthly = () => {
                 },
                 {
                   label: "View Record",
-                  onClick: () => openViewModal(params.data),
+                  //onClick: () => openViewModal(params.data),
+                  onClick: () => navigate(
+                    `/app/dashboard/maintenance-dashboard/mix-bag/energy-monthly-reading-history/st/${params.data.id}`,
+                  ),
                 },
               ]}
             />
