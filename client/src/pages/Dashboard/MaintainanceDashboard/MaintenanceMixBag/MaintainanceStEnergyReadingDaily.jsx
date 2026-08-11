@@ -219,6 +219,7 @@ const MaintainanceStEnergyReadingDaily = () => {
         ...row,
         srNo: index + 1,
         dateDisplay: formatDateTime(row.date),
+        editedAtDisplay: formatDateTime(row.editedAt),
         meterNoDisplay: row.meterNo,
       })),
     [readings],
@@ -411,8 +412,15 @@ const MaintainanceStEnergyReadingDaily = () => {
       flex: 1,
       minWidth: 170,
     },
-    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 120 },
-    { field: "dateDisplay", headerName: "Added At", flex: 1, minWidth: 160 },
+    { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 180 },
+    { field: "dateDisplay", headerName: "Added At", flex: 1, minWidth: 180 },
+    { field: "editedBy", headerName: "Edited By", flex: 1, minWidth: 180 },
+    {
+      field: "editedAtDisplay",
+      headerName: "Edited At",
+      flex: 1,
+      minWidth: 180,
+    },
     {
       field: "action",
       headerName: "Action",
@@ -841,6 +849,14 @@ const MaintainanceStEnergyReadingDaily = () => {
               <DetalisFormatted
                 title="Added At"
                 detail={selectedReading.date ? formatDateTime(selectedReading.date) : "-"}
+              />
+              <DetalisFormatted
+                title="Edited By"
+                detail={selectedReading.editedBy || "-"}
+              />
+              <DetalisFormatted
+                title="Edited At"
+                detail={selectedReading.editedAt ? formatDateTime(selectedReading.editedAt) : "-"}
               />
             </div>
           </div>

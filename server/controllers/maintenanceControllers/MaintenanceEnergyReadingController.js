@@ -89,6 +89,15 @@ const serialize = (unit, meter, context) => ({
   addedBy: context.reading.addedBy
     ? `${context.reading.addedBy.firstName || ""} ${context.reading.addedBy.lastName || ""}`.trim()
     : "",
+  editedBy: Array.isArray(context.reading.editHistory) &&
+    context.reading.editHistory.length > 0 &&
+    context.reading.editHistory.at(-1)?.editedBy
+    ? `${context.reading.editHistory.at(-1).editedBy.firstName || ""} ${context.reading.editHistory.at(-1).editedBy.lastName || ""}`.trim()
+    : "",
+  editedAt:
+    Array.isArray(context.reading.editHistory) && context.reading.editHistory.length > 0
+      ? context.reading.editHistory.at(-1)?.editedAt || null
+      : null,
 });
 
 const userName = (user) =>
@@ -175,6 +184,7 @@ const getCompanyUnits = (company) =>
       path: "ElectricityConsumption",
        populate: [
         { path: "readings.addedBy", select: "firstName lastName" },
+        { path: "readings.editHistory.editedBy", select: "firstName lastName" },
         { path: "monthlyBills.addedBy", select: "firstName lastName" },
       ],
     })
@@ -660,7 +670,10 @@ const editStEnergyReading = async (req, res, next) => {
     meter.consumption = latestContext?.consumption ?? 0;
     syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
-    await meter.populate("readings.addedBy", "firstName lastName");
+    await meter.populate([
+      { path: "readings.addedBy", select: "firstName lastName" },
+      { path: "readings.editHistory.editedBy", select: "firstName lastName" },
+    ]);
 
     res.json({
       message: "ST energy reading updated",
@@ -683,6 +696,7 @@ const getDtcCompanyUnits = (company) =>
       // populate: { path: "readings.addedBy", select: "firstName lastName" },
        populate: [
         { path: "readings.addedBy", select: "firstName lastName" },
+        { path: "readings.editHistory.editedBy", select: "firstName lastName" },
         { path: "monthlyBills.addedBy", select: "firstName lastName" },
       ],
     })
@@ -1082,7 +1096,10 @@ const editDtcEnergyReading = async (req, res, next) => {
     meter.consumption = latestContext?.consumption ?? 0;
     syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
-    await meter.populate("readings.addedBy", "firstName lastName");
+    await meter.populate([
+      { path: "readings.addedBy", select: "firstName lastName" },
+      { path: "readings.editHistory.editedBy", select: "firstName lastName" },
+    ]);
 
     res.json({
       message: "DTC energy reading updated",
