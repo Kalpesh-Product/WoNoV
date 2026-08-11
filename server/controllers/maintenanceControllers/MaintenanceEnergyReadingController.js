@@ -103,6 +103,11 @@ const serialize = (unit, meter, context) => ({
 const userName = (user) =>
   user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
 
+const getLastMonthlyEdit = (bill) =>
+  Array.isArray(bill?.editHistory) && bill.editHistory.length > 0
+    ? bill.editHistory.at(-1)
+    : null;
+
 const getDailyReadingHistory = async (req, res, next) => {
   try {
     const { module } = req.params;
@@ -186,6 +191,7 @@ const getCompanyUnits = (company) =>
         { path: "readings.addedBy", select: "firstName lastName" },
         { path: "readings.editHistory.editedBy", select: "firstName lastName" },
         { path: "monthlyBills.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
       ],
     })
     .sort({ unitNo: 1 });
@@ -256,6 +262,7 @@ const syncMonthlyBillTotal = (meter, readingDate, addedBy) => {
 
 const serializeMonthly = (unit, meter, bill, bounds) => {
   const resolvedBounds = bounds || monthBounds(bill?.billDate);
+  const lastMonthlyEdit = getLastMonthlyEdit(bill);
   if (!resolvedBounds) {
     return {
       id: bill?._id ?? null,
@@ -270,6 +277,10 @@ const serializeMonthly = (unit, meter, bill, bounds) => {
       addedBy: bill?.addedBy
         ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
         : "",
+      editedBy: lastMonthlyEdit?.editedBy
+        ? `${lastMonthlyEdit.editedBy.firstName || ""} ${lastMonthlyEdit.editedBy.lastName || ""}`.trim()
+        : "",
+      editedAt: lastMonthlyEdit?.editedAt || null,
     };
   }
 
@@ -286,6 +297,10 @@ const serializeMonthly = (unit, meter, bill, bounds) => {
     addedBy: bill?.addedBy
       ? `${bill.addedBy.firstName || ""} ${bill.addedBy.lastName || ""}`.trim()
       : "",
+    editedBy: lastMonthlyEdit?.editedBy
+      ? `${lastMonthlyEdit.editedBy.firstName || ""} ${lastMonthlyEdit.editedBy.lastName || ""}`.trim()
+      : "",
+    editedAt: lastMonthlyEdit?.editedAt || null,
   };
 };
 
@@ -489,7 +504,10 @@ const editStEnergyMonthlyReading = async (req, res, next) => {
       ElectricityConsumption: { $in: meterIds },
     }).populate({
       path: "ElectricityConsumption",
-      populate: { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      populate: [
+        { path: "monthlyBills.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
+      ],
     });
     if (!unit?.ElectricityConsumption) {
       return res.status(404).json({ message: "Monthly bill not found" });
@@ -511,7 +529,10 @@ const editStEnergyMonthlyReading = async (req, res, next) => {
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
-    await meter.populate("monthlyBills.addedBy", "firstName lastName");
+    await meter.populate([
+      { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
+    ]);
     res.json({
       message: "ST monthly energy bill updated",
       data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id), bounds),
@@ -775,6 +796,7 @@ const getDtcCompanyUnits = (company) =>
         { path: "readings.addedBy", select: "firstName lastName" },
         { path: "readings.editHistory.editedBy", select: "firstName lastName" },
         { path: "monthlyBills.addedBy", select: "firstName lastName" },
+        { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
       ],
     })
     .then((units) => units.filter(isVisibleDtcUnit).sort((a, b) =>
@@ -918,7 +940,10 @@ const editDtcEnergyMonthlyReading = async (req, res, next) => {
       .populate({ path: "building", select: "buildingName" })
       .populate({
         path: "ElectricityConsumption",
-        populate: { path: "monthlyBills.addedBy", select: "firstName lastName" },
+        populate: [
+          { path: "monthlyBills.addedBy", select: "firstName lastName" },
+          { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
+        ],
       });
     if (!unit?.ElectricityConsumption || !isVisibleDtcUnit(unit)) {
       return res.status(404).json({ message: "Monthly bill not found" });
@@ -940,7 +965,10 @@ const editDtcEnergyMonthlyReading = async (req, res, next) => {
     monthlyBill.totalBillAmount = totalBillAmount;
     monthlyBill.billTimestamp = monthlyBill.billTimestamp || new Date();
     await meter.save();
-    await meter.populate("monthlyBills.addedBy", "firstName lastName");
+    await meter.populate([
+      { path: "monthlyBills.addedBy", select: "firstName lastName" },
+      { path: "monthlyBills.editHistory.editedBy", select: "firstName lastName" },
+    ]);
     res.json({
       message: "DTC monthly energy bill updated",
       data: serializeMonthly(unit, meter, meter.monthlyBills.id(req.params.id), bounds),

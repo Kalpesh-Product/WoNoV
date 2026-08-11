@@ -415,10 +415,10 @@ const MaintainanceDtcEnergyReadingDaily = () => {
     },
     { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 150 },
     { field: "dateDisplay", headerName: "Added At", flex: 1, minWidth: 180 },
-    { field: "editedBy", headerName: "Edited By", flex: 1, minWidth: 150 },
+    { field: "editedBy", headerName: "Modified By", flex: 1, minWidth: 150 },
     {
       field: "editedAtDisplay",
-      headerName: "Edited At",
+      headerName: "Modified At",
       flex: 1,
       minWidth: 180,
     },
@@ -855,11 +855,11 @@ const MaintainanceDtcEnergyReadingDaily = () => {
 
               />
               <DetalisFormatted
-                title="Edited By"
+                title="Modified By"
                 detail={selectedReading.editedBy || "-"}
               />
               <DetalisFormatted
-                title="Edited At"
+                title="Modified At"
                 detail={selectedReading.editedAt ? formatDateTime(selectedReading.editedAt) : "-"}
               />
             </div>

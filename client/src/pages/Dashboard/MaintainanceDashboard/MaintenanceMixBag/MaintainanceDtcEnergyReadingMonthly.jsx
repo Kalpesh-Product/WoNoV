@@ -555,6 +555,21 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
       valueFormatter: (params) => formatDateTime(params.value),
     },
     {
+      field: "editedBy",
+      headerName: "Modified By",
+      flex: 1,
+      minWidth: 180,
+      valueFormatter: (params) => params.value || "-",
+    },
+    {
+      field: "editedAt",
+      headerName: "Modified At",
+      flex: 1.05,
+      minWidth: 180,
+      exportFormat: "datetime-comma",
+      valueFormatter: (params) => formatDateTime(params.value),
+    },
+    {
       field: "action",
       headerName: "Action",
       flex: 1,
@@ -581,9 +596,13 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
                 {
                   label: "View Record",
                   // onClick: () => openViewModal(params.data),
-                   onClick: () => navigate(
-                    `/app/dashboard/maintenance-dashboard/mix-bag/energy-monthly-reading-history/dtc/${params.data.id}`,
-                  ),
+                   onClick: () =>
+                    navigate(
+                      "/app/dashboard/maintenance-dashboard/mix-bag/dtc-energy-monthly-reading/energy-monthly-reading-history",
+                      {
+                        state: { readingId: params.data.id },
+                      },
+                    ),
                 },
               ]}
             />
@@ -913,6 +932,11 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
               <DetalisFormatted
                 title="Added At"
                 detail={formatDateTime(selectedRecord.billRecordedAt)}
+              />
+              <DetalisFormatted title="Modified By" detail={selectedRecord.editedBy || "-"} />
+              <DetalisFormatted
+                title="Modified At"
+                detail={formatDateTime(selectedRecord.editedAt)}
               />
             </div>
           </div>

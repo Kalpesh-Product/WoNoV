@@ -1585,6 +1585,22 @@ export const routes = createBrowserRouter([
                         element: <EnergyDailyReadingHistory />,
                       },
                       {
+                        path: "mix-bag/st-energy-monthly-reading/energy-monthly-reading-history",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/energy-monthly-reading-history",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/st-energy-monthly-reading/energy-monthly-reading-history/:readingId",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/energy-monthly-reading-history/:readingId",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
                         path: "mix-bag/energy-monthly-reading-history/:module/:readingId",
                         element: <EnergyMonthlyReadingHistory />,
                       },

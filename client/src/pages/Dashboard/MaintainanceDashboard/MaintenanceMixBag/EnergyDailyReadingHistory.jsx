@@ -58,8 +58,8 @@ const EnergyDailyReadingHistory = () => {
     { field: "currentReading", headerName: "Current Reading", minWidth: 160, flex: 1 },
     { field: "addedBy", headerName: "Added By", minWidth: 140, flex: 1 },
     { field: "addedAtDisplay", headerName: "Added At", minWidth: 180, flex: 1 },
-    { field: "editedBy", headerName: "Edited By", minWidth: 140, flex: 1 },
-    { field: "editedAtDisplay", headerName: "Edited At", minWidth: 180, flex: 1 },
+    { field: "editedBy", headerName: "Modified By", minWidth: 140, flex: 1 },
+    { field: "editedAtDisplay", headerName: "Modified At", minWidth: 180, flex: 1 },
   ];
 
   const selectedUnitName = data[0]?.unitNo || (module?.startsWith("dtc") ? "DTC" : "ST");
