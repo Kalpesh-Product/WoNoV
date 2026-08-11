@@ -108,13 +108,14 @@ const monthBounds = (value) => {
     value instanceof Date
       ? new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(value)
       : String(value || getTodayDateString()).slice(0, 10);
-  const bounds = dayBounds(dateValue);
-  if (!bounds) return null;
   const start = new Date(`${dateValue.slice(0, 7)}-01T00:00:00+05:30`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + 1);
   return {
     start,
-    end: bounds.end,
-    billDate: bounds.start,
+    end,
+    billDate: new Date(`${dateValue}T00:00:00+05:30`),
     monthKey: dateValue.slice(0, 7),
   };
 };

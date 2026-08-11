@@ -504,7 +504,9 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
         current.map((row) =>
           row.id === selectedRecord.id
             ? {
+                ...row,
                 ...data.data,
+                totalConsumption: row.totalConsumption,
                 billRecordedAt: data.data.billTimestamp || data.data.date,
               }
             : row,
