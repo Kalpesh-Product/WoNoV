@@ -1,5 +1,37 @@
 const mongoose = require("mongoose");
 
+const readingEditSchema = new mongoose.Schema({
+  meterNo: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+
+  previousReading: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+
+  value: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+
+  editedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserData",
+    required: true,
+  },
+
+  editedAt: {
+    type: Date,
+    default: Date.now,
+    required: true,
+  },
+});
+
 const readingSchema = new mongoose.Schema({
   value: {
     type: Number,
@@ -15,6 +47,10 @@ const readingSchema = new mongoose.Schema({
     ref: "UserData",
     required: true,
   },
+  originalMeterNo: { type: String, trim: true },
+  originalValue: { type: Number, min: 0 },
+  originalPreviousReading: { type: Number, min: 0 },
+  editHistory: { type: [readingEditSchema], default: [] },
 });
 
 const monthlyBillSchema = new mongoose.Schema({
@@ -77,29 +113,3 @@ const ElectricityConsumption = mongoose.model(
 );
 
 module.exports = ElectricityConsumption;
-
-
-// const mongoose = require("mongoose");
-
-// const electricityConsumptionSchema = new mongoose.Schema({
-//     meterNo: {
-//         type: Number,
-//         required: true,
-//     },
-//     readings: [
-//   {
-//     value: Number,
-//     readingAt: Date,
-//     addedBy: {
-//       type: mongoose.Schema.Types.ObjectId,
-//       ref: "UserData",
-//     },
-//   }
-// ],
-//     consumption: {
-//         type: Number,
-//         required: true,
-//     },
-// }, { timestamps: true });
-// const ElectricityConsumption = mongoose.model("ElectricityConsumption", electricityConsumptionSchema);
-// module.exports = ElectricityConsumption;

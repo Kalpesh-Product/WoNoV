@@ -16,7 +16,9 @@ const {
   getDtcEnergyReadings,
   addDtcEnergyReadings,
   editDtcEnergyReading,
+  getDailyReadingHistory,
 } = require("../controllers/maintenanceControllers/MaintenanceEnergyReadingController");
+router.get("/energy-daily-history/:module/:id", getDailyReadingHistory);
 // ST Daily Routes
 router.get("/get-st-energy-daily/form-data", getStEnergyFormData);
 router.get("/get-st-energy-daily", getStEnergyReadings);

@@ -416,6 +416,7 @@ import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
 import MaintainanceStEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingDaily";
 import MaintainanceDtcEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingDaily";
+import EnergyDailyReadingHistory from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/EnergyDailyReadingHistory";
 import MaintainanceStEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingMonthly";
 import MaintainanceDtcEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingMonthly";
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
@@ -1577,6 +1578,10 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/dtc-energy-daily-reading",
                         element: <MaintainanceDtcEnergyReadingDaily />,
+                      },
+                      {
+                        path: "mix-bag/energy-daily-reading-history/:module/:readingId",
+                        element: <EnergyDailyReadingHistory />,
                       },
                       {
                         path: "mix-bag/st-energy-monthly-reading",

@@ -91,6 +91,75 @@ const serialize = (unit, meter, context) => ({
     : "",
 });
 
+const userName = (user) =>
+  user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "";
+
+const getDailyReadingHistory = async (req, res, next) => {
+  try {
+    const { module, id } = req.params;
+    if (!["st", "dtc"].includes(module) || !mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid daily reading" });
+    }
+
+    const meterIds = await ElectricityConsumption.find({
+      "readings._id": id,
+    }).distinct("_id");
+    let query = Unit.findOne({
+      company: req.company,
+      isActive: true,
+      ElectricityConsumption: { $in: meterIds },
+      ...(module === "st" ? { unitNo: ST_UNIT_PREFIX } : {}),
+    }).select("unitNo ElectricityConsumption building");
+    if (module === "dtc") {
+      query = query.populate({ path: "building", select: "buildingName" });
+    }
+    const unit = await query.populate({
+      path: "ElectricityConsumption",
+      populate: [
+        { path: "readings.addedBy", select: "firstName lastName" },
+        { path: "readings.editHistory.editedBy", select: "firstName lastName" },
+      ],
+    });
+    if (!unit?.ElectricityConsumption || (module === "dtc" && !isVisibleDtcUnit(unit))) {
+      return res.status(404).json({ message: "Reading not found" });
+    }
+
+    const meter = unit.ElectricityConsumption;
+    const context = readingContext(meter, id);
+    if (!context) return res.status(404).json({ message: "Reading not found" });
+    const reading = context.reading;
+    const base = {
+      unitNo: unit.unitNo,
+      addedBy: userName(reading.addedBy),
+      addedAt: reading.readingAt,
+    };
+    const edits = reading.editHistory || [];
+    const firstEdit = edits[0];
+    const data = [
+      {
+        ...base,
+        meterNo: reading.originalMeterNo || firstEdit?.meterNo || meter.meterNo,
+        previousReading: reading.originalPreviousReading ?? context.previousReading,
+        currentReading: reading.originalValue ?? firstEdit?.value ?? Number(reading.value),
+        editedBy: "",
+        editedAt: null,
+      },
+      ...edits.map((edit) => ({
+        ...base,
+        meterNo: edit.meterNo,
+        previousReading: edit.previousReading,
+        currentReading: Number(edit.value),
+        editedBy: userName(edit.editedBy),
+        editedAt: edit.editedAt,
+      })),
+    ];
+    res.json({ data });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 const getCompanyUnits = (company) =>
   Unit.find({ company, isActive: true, unitNo: ST_UNIT_PREFIX })
     .select("unitNo unitName ElectricityConsumption")
@@ -504,6 +573,9 @@ const addStEnergyReadings = async (req, res, next) => {
         value: currentReading,
         readingAt,
         addedBy: req.user,
+        originalMeterNo: meterNo,
+        originalValue: currentReading,
+        originalPreviousReading: previousReading ?? 0,
       });
       meter.consumption =
         previousReading === null ? 0 : currentReading - previousReading;
@@ -561,6 +633,17 @@ const editStEnergyReading = async (req, res, next) => {
         message: `Current reading cannot exceed the next reading (${nextReading.value})`,
       });
     }
+
+     context.reading.originalMeterNo ||= meter.meterNo;
+    context.reading.originalValue ??= Number(context.reading.value);
+    context.reading.originalPreviousReading ??= context.previousReading;
+    context.reading.editHistory.push({
+      meterNo,
+      previousReading: context.previousReading,
+      value: currentReading,
+      editedBy: req.user,
+      editedAt: new Date(),
+    });
 
     meter.meterNo = meterNo;
     context.reading.value = currentReading;
@@ -905,6 +988,9 @@ const addDtcEnergyReadings = async (req, res, next) => {
         value: currentReading,
         readingAt,
         addedBy: req.user,
+        originalMeterNo: meterNo,
+        originalValue: currentReading,
+        originalPreviousReading: previousReading ?? 0,
       });
       meter.consumption =
         previousReading === null ? 0 : currentReading - previousReading;
@@ -970,6 +1056,17 @@ const editDtcEnergyReading = async (req, res, next) => {
       });
     }
 
+      context.reading.originalMeterNo ||= meter.meterNo;
+    context.reading.originalValue ??= Number(context.reading.value);
+    context.reading.originalPreviousReading ??= context.previousReading;
+    context.reading.editHistory.push({
+      meterNo,
+      previousReading: context.previousReading,
+      value: currentReading,
+      editedBy: req.user,
+      editedAt: new Date(),
+    });
+
     meter.meterNo = meterNo;
     context.reading.value = currentReading;
     const latest = sortedReadings(meter).at(-1);
@@ -1006,4 +1103,5 @@ module.exports = {
   getDtcEnergyReadings,
   addDtcEnergyReadings,
   editDtcEnergyReading,
+  getDailyReadingHistory,
 };

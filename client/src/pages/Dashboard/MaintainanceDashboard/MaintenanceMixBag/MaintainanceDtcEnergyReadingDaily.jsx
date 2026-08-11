@@ -14,6 +14,7 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import useAuth from "../../../../hooks/useAuth";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 const DTC_ENERGY_DAILY_API = "/api/maintenance";
 const DTC_ENERGY_DAILY_GET_API = `${DTC_ENERGY_DAILY_API}/get-dtc-energy-daily`;
@@ -157,7 +158,8 @@ const DailyReadingModal = ({ open, onClose, title, children }) => {
 };
 
 const MaintainanceDtcEnergyReadingDaily = () => {
-   const axiosPrivate = useAxiosPrivate();
+  const navigate = useNavigate();
+  const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
   const [readings, setReadings] = useState([]);
   const [filterDate, setFilterDate] = useState(
@@ -438,7 +440,11 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                 },
                 {
                   label: "View Record",
-                  onClick: () => openViewModal(params.data),
+                  // onClick: () => openViewModal(params.data),
+                  onClick: () =>
+                    navigate(
+                      `/app/dashboard/maintenance-dashboard/mix-bag/energy-daily-reading-history/dtc/${params.data.id}`,
+                    ),
                 },
               ]}
             />
