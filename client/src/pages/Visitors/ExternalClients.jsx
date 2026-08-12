@@ -955,7 +955,7 @@ const ExternalClients = ({
         <YearWiseTable
           search={true}
           tableTitle={tableTitle}
-          dateColumn={"checkIn"}
+          dateColumn={"dateOfVisit"}
           initialDateRange={initialClientDateRange}
           onDateFilterChange={handleClientDateFilterChange}
           data={[

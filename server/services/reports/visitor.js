@@ -195,7 +195,7 @@ const populateExternalVisitFields = [
   { path: "unit", select: "unitNo unitName" },
 ];
 
-const attachExternalVisits = async (visitors, companyId) => {
+const attachExternalVisits = async (visitors, companyId, dateFilter) => {
   if (!Array.isArray(visitors) || visitors.length === 0) {
     return visitors;
   }
@@ -204,6 +204,7 @@ const attachExternalVisits = async (visitors, companyId) => {
   const visits = await ExternalVisits.find({
     visitorId: { $in: visitorIds },
     ...(companyId && { company: companyId }),
+    ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
   })
     .select("-__v")
     .sort({ checkIn: -1 })
@@ -229,6 +230,137 @@ const attachExternalVisits = async (visitors, companyId) => {
     ...visitor,
     externalVisits: visitsByVisitor[visitor._id.toString()] || [],
   }));
+};
+
+const getDayPassPaymentSearchConditions = (search) => {
+  const normalizedSearch = String(search || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalizedSearch === "paid") return [{ paymentStatus: true }];
+  if (
+    normalizedSearch === "unpaid" ||
+    normalizedSearch === "wait for payment"
+  ) {
+    return [{ paymentStatus: false }];
+  }
+  if (
+    normalizedSearch === "verify payment" ||
+    normalizedSearch === "under review"
+  ) {
+    return [{ paymentStatus: true, paymentVerification: "Under Review" }];
+  }
+  if (
+    normalizedSearch === "completed" ||
+    normalizedSearch === "verified"
+  ) {
+    return [{ paymentStatus: true, paymentVerification: "Verified" }];
+  }
+  if (
+    normalizedSearch === "review payment" ||
+    normalizedSearch === "pending"
+  ) {
+    return [
+      {
+        paymentStatus: true,
+        paymentVerification: { $nin: ["Under Review", "Verified"] },
+      },
+    ];
+  }
+
+  return [];
+};
+
+const fetchFinanceDayPassVisits = async ({
+  companyId,
+  dateFilter,
+  search,
+  shouldPaginate,
+  parsedPage,
+  parsedLimit,
+  skip,
+}) => {
+  const clientRoleFilter = {
+    company: companyId,
+    $or: [{ visitorFlag: "Client" }, { visitorRoles: "Client" }],
+  };
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const searchRegex = buildSearchRegex(normalizedSearch);
+
+  const clientVisitorIds = await Visitor.find(clientRoleFilter).distinct("_id");
+  let matchingVisitorIds = clientVisitorIds;
+  if (searchRegex) {
+    const visitorSearchConditions = await buildVisitorSearchConditions({
+      company: companyId,
+      search: normalizedSearch,
+    });
+    const visitorFilter = {
+      $and: [clientRoleFilter, { $or: visitorSearchConditions }],
+    };
+    matchingVisitorIds = await Visitor.find(visitorFilter).distinct("_id");
+  }
+
+  const visitFilter = {
+    company: companyId,
+    visitorId: { $in: clientVisitorIds },
+    visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+    ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
+  };
+
+  if (searchRegex) {
+    const paymentConditions = getDayPassPaymentSearchConditions(normalizedSearch);
+    visitFilter.$or = [
+      { purposeOfVisit: searchRegex },
+      { visitorType: searchRegex },
+      { paymentMode: searchRegex },
+      { paymentVerification: searchRegex },
+      ...paymentConditions,
+    ];
+
+    if (matchingVisitorIds.length) {
+      visitFilter.$or.push({ visitorId: { $in: matchingVisitorIds } });
+    }
+  }
+
+  let visitsQuery = ExternalVisits.find(visitFilter)
+    .sort({ dateOfVisit: -1, _id: -1 })
+    .populate({
+      path: "visitorId",
+      select:
+        "firstName middleName lastName email gender phoneNumber city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorCompany visitorFlag visitorRoles",
+    })
+    .populate(populateExternalVisitFields)
+    .lean();
+
+  if (shouldPaginate) {
+    visitsQuery = visitsQuery.skip(skip).limit(parsedLimit);
+  }
+
+  const [visits, total] = await Promise.all([
+    visitsQuery.exec(),
+    shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
+  ]);
+  const data = visits
+    .filter((visit) => visit.visitorId)
+    .map((visit) => {
+      const { visitorId, ...visitData } = visit;
+      return {
+        ...visitorId,
+        externalVisits: [visitData],
+      };
+    });
+
+  if (!shouldPaginate) return data;
+
+  return {
+    data,
+    pagination: {
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+    },
+  };
 };
 
 const fetchVisitorReportService = async ({
@@ -260,6 +392,18 @@ const fetchVisitorReportService = async ({
     const normalizedSearch = String(search || "")
       .trim()
       .slice(0, 100);
+
+    if (searchContext === "finance-day-pass" && type === "day-pass") {
+      return fetchFinanceDayPassVisits({
+        companyId,
+        dateFilter,
+        search: normalizedSearch,
+        shouldPaginate,
+        parsedPage,
+        parsedLimit,
+        skip,
+      });
+    }
 
     const supportsVisitorCompanySearch = [
       "repeat-external-companies",
@@ -330,7 +474,7 @@ const fetchVisitorReportService = async ({
     }
 
     if (dateFilter?.checkIn) {
-      filter.checkIn = {
+      const requestedDateRange = {
         ...(dateFilter.checkIn.$gte && {
           $gte: new Date(dateFilter.checkIn.$gte),
         }),
@@ -338,6 +482,30 @@ const fetchVisitorReportService = async ({
           $lte: new Date(dateFilter.checkIn.$lte),
         }),
       };
+
+      if (multipleVisits) {
+        const visitVisitorIds = await ExternalVisits.distinct("visitorId", {
+          company: companyId,
+          dateOfVisit: requestedDateRange,
+        });
+        const dateConditions = [
+          { checkIn: requestedDateRange },
+          { _id: { $in: visitVisitorIds } },
+        ];
+
+        if (filter.$or) {
+          filter.$and = [
+            ...(filter.$and || []),
+            { $or: filter.$or },
+            { $or: dateConditions },
+          ];
+          delete filter.$or;
+        } else {
+          filter.$or = dateConditions;
+        }
+      } else {
+        filter.checkIn = requestedDateRange;
+      }
     } else {
       //for dashboard
       filter.checkIn = {
@@ -714,7 +882,7 @@ const fetchVisitorReportService = async ({
     }
 
     if (multipleVisits) {
-      visitors = await attachExternalVisits(visitors, companyId);
+      visitors = await attachExternalVisits(visitors, companyId, dateFilter);
     }
 
     if (!shouldPaginate) {
