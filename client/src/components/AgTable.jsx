@@ -52,6 +52,7 @@ const AgTableComponent = React.memo(
     serverSearch = false,
     searchValue = "",
     onSearchChange,
+    headerBottomContent,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -349,6 +350,14 @@ const AgTableComponent = React.memo(
             </div>
           </div>
         </div>
+
+          {/* Custom content below title/actions */}
+        {headerBottomContent && (
+          <div className="w-full">
+            {headerBottomContent}
+          </div>
+        )}
+
 
         {!hideHeaderDivider && <hr className="my-2" />}
 

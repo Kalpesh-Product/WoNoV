@@ -12,6 +12,10 @@ const unitSchema = new mongoose.Schema(
       ref: "Building",
       required: true,
     },
+    ElectricityConsumption: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ElectricityConsumption",
+    },
     unitName: {
       type: String,
       required: true,
