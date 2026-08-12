@@ -43,7 +43,7 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-const ExternalMeetingCLients = () => {
+const ExternalMeetingCLients = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
@@ -289,28 +289,47 @@ const ExternalMeetingCLients = () => {
 
   //------------------------------API--------------------------------//
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
-    queryKey: [
-      "external-meetings",
-      meetingFilters.startDate,
-      meetingFilters.endDate,
-      "false",
-      pagination.page,
-      pagination.limit,
-      debouncedMeetingSearch,
-    ],
+    queryKey: financeView
+      ? [
+          "finance-external-meetings",
+          meetingFilters.startDate,
+          meetingFilters.endDate,
+          pagination.page,
+          pagination.limit,
+          debouncedMeetingSearch,
+        ]
+      : [
+          "external-meetings",
+          meetingFilters.startDate,
+          meetingFilters.endDate,
+          "false",
+          pagination.page,
+          pagination.limit,
+          debouncedMeetingSearch,
+        ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
-        params: {
-          startDate: meetingFilters.startDate,
-          endDate: meetingFilters.endDate,
-          type: "External",
-          completed: "false",
-          page: pagination.page,
-          limit: pagination.limit,
-          search: debouncedMeetingSearch || undefined,
-          searchContext: "external-table",
-        },
+        params: financeView
+          ? {
+              startDate: meetingFilters.startDate,
+              endDate: meetingFilters.endDate,
+              type: "External",
+              page: pagination.page,
+              limit: pagination.limit,
+              search: debouncedMeetingSearch || undefined,
+              searchContext: "external-table",
+            }
+          : {
+              startDate: meetingFilters.startDate,
+              endDate: meetingFilters.endDate,
+              type: "External",
+              completed: "false",
+              page: pagination.page,
+              limit: pagination.limit,
+              search: debouncedMeetingSearch || undefined,
+              searchContext: "external-table",
+            },
       });
       const responsePagination = response.data.pagination || response.data;
 
@@ -320,7 +339,9 @@ const ExternalMeetingCLients = () => {
         total: Number(responsePagination.total) || 0,
       }));
 
-      return response.data.data || [];
+      return Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [];
     },
   });
   const transformedMeetings = meetings
