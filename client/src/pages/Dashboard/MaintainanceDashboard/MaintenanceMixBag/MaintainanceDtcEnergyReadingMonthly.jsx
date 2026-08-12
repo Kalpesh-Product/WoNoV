@@ -791,7 +791,22 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
 
   const columns = [
     { field: "srNo", headerName: "Sr. No", flex: 0.45, minWidth: 90 },
-    { field: "unitNo", headerName: "Unit No", flex: 0.9, minWidth: 140 },
+    //{ field: "unitNo", headerName: "Unit No", flex: 0.9, minWidth: 140 },
+     {
+      field: "unitNo",
+      headerName: "Unit No",
+      flex: 0.9,
+      minWidth: 140,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          className="font-semibold text-[#355ae8] underline decoration-transparent underline-offset-4 transition hover:decoration-current"
+          onClick={() => navigate(`${encodeURIComponent(params.value)}`)}
+        >
+          {params.value}
+        </button>
+      ),
+    },
     { field: "meterNo", headerName: "Meter No", flex: 1, minWidth: 140 },
    {
       field: "totalConsumption",

@@ -420,6 +420,7 @@ import EnergyDailyReadingHistory from "../pages/Dashboard/MaintainanceDashboard/
 import EnergyMonthlyReadingHistory from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/EnergyMonthlyReadingHistory";
 import MaintainanceStEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingMonthly";
 import MaintainanceDtcEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingMonthly";
+import YearwiseEnergyBilling from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/YearwiseEnergyBilling";
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
@@ -1609,8 +1610,16 @@ export const routes = createBrowserRouter([
                         element: <MaintainanceStEnergyReadingMonthly />,
                       },
                       {
+                        path: "mix-bag/st-energy-monthly-reading/:unitNo",
+                        element: <YearwiseEnergyBilling building="st" />,
+                      },
+                      {
                         path: "mix-bag/dtc-energy-monthly-reading",
                         element: <MaintainanceDtcEnergyReadingMonthly />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/:unitNo",
+                        element: <YearwiseEnergyBilling building="dtc" />,
                       },
                       {
                         path: "team-members-schedule",
