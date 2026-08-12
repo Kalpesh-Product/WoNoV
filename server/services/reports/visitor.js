@@ -10,7 +10,11 @@ const UserData = require("../../models/hr/UserData");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 
-const buildVisitorSearchConditions = async ({ company, search }) => {
+const buildVisitorSearchConditions = async ({
+  company,
+  search,
+  includeDayPassPaymentStatus = false,
+}) => {
   const searchRegex = buildSearchRegex(search);
   if (!searchRegex) return [];
 
@@ -33,6 +37,57 @@ const buildVisitorSearchConditions = async ({ company, search }) => {
       fields: ["clientName", "companyName", "name"],
     },
   ]);
+  const normalizedSearch = String(search || "")
+    .trim()
+    .toLowerCase();
+  const paymentConditions = [];
+
+  if (normalizedSearch === "paid") {
+    paymentConditions.push({ paymentStatus: true });
+  }
+  if (
+    normalizedSearch === "unpaid" ||
+    normalizedSearch === "wait for payment"
+  ) {
+    paymentConditions.push({ paymentStatus: false });
+  }
+  if (
+    normalizedSearch === "verify payment" ||
+    normalizedSearch === "under review"
+  ) {
+    paymentConditions.push({
+      paymentStatus: true,
+      paymentVerification: "Under Review",
+    });
+  }
+  if (
+    normalizedSearch === "completed" ||
+    normalizedSearch === "verified"
+  ) {
+    paymentConditions.push({
+      paymentStatus: true,
+      paymentVerification: "Verified",
+    });
+  }
+  if (
+    normalizedSearch === "review payment" ||
+    normalizedSearch === "pending"
+  ) {
+    paymentConditions.push({
+      paymentStatus: true,
+      paymentVerification: { $nin: ["Under Review", "Verified"] },
+    });
+  }
+
+  const paymentVisitorIds =
+    includeDayPassPaymentStatus && paymentConditions.length
+      ? await ExternalVisits.distinct("visitorId", {
+          company,
+          visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+          $or: paymentConditions,
+        })
+      : [];
+
   return [
     { firstName: searchRegex },
     { lastName: searchRegex },
@@ -67,6 +122,9 @@ const buildVisitorSearchConditions = async ({ company, search }) => {
     ...(users.length ? [{ checkedOutBy: { $in: users } }] : []),
     ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
     ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
+    ...(paymentVisitorIds.length
+      ? [{ _id: { $in: paymentVisitorIds } }]
+      : []),
   ];
 };
 
@@ -207,6 +265,7 @@ const fetchVisitorReportService = async ({
       "repeat-external-companies",
       "convert-internal-visitors",
       "visitor-reports",
+      "finance-day-pass",
     ].includes(searchContext);
 
     // if (supportsVisitorCompanySearch && normalizedSearch) {
@@ -252,6 +311,7 @@ const fetchVisitorReportService = async ({
       filter.$or = await buildVisitorSearchConditions({
         company: companyId,
         search,
+        includeDayPassPaymentStatus: searchContext === "finance-day-pass",
       });
     }
 

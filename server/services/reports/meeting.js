@@ -43,7 +43,9 @@ const buildMeetingSearchConditions = async ({
   search,
   searchContext,
 }) => {
-  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const normalizedSearch = String(search || "")
+    .trim()
+    .slice(0, 100);
   if (!normalizedSearch) return [];
 
   const escapedSearch = escapeRegex(normalizedSearch);
@@ -189,6 +191,35 @@ const buildMeetingSearchConditions = async ({
     ...(visitorIds.length ? [{ externalClient: { $in: visitorIds } }] : []),
   ];
   const normalizedLowerSearch = normalizedSearch.toLowerCase();
+  const paymentStatusConditions = [];
+
+  if (normalizedLowerSearch === "paid") {
+    paymentStatusConditions.push({ paymentStatus: true });
+  }
+  if (
+    normalizedLowerSearch === "unpaid" ||
+    normalizedLowerSearch === "wait for payment"
+  ) {
+    paymentStatusConditions.push({ paymentStatus: false });
+  }
+  if (normalizedLowerSearch === "verify payment") {
+    paymentStatusConditions.push({
+      paymentStatus: true,
+      paymentVerification: "Under Review",
+    });
+  }
+  if (normalizedLowerSearch === "completed") {
+    paymentStatusConditions.push({
+      paymentStatus: true,
+      paymentVerification: "Verified",
+    });
+  }
+  if (normalizedLowerSearch === "review payment") {
+    paymentStatusConditions.push({
+      paymentStatus: true,
+      paymentVerification: { $nin: ["Under Review", "Verified"] },
+    });
+  }
 
   if (searchContext === "internal-table") {
     return [
@@ -225,38 +256,9 @@ const buildMeetingSearchConditions = async ({
       ...clientConditions,
       ...durationConditions,
       ...(!Number.isNaN(numericSearch)
-        ? [
-            { paymentAmount: numericSearch },
-            { discountAmount: numericSearch },
-          ]
+        ? [{ paymentAmount: numericSearch }, { discountAmount: numericSearch }]
         : []),
-      ...("paid".includes(normalizedLowerSearch)
-        ? [{ paymentStatus: true }]
-        : []),
-      ...("unpaid".includes(normalizedLowerSearch)
-        ? [{ paymentStatus: false }]
-        : []),
-      ...(normalizedLowerSearch &&
-      "wait for payment".includes(normalizedLowerSearch)
-        ? [{ paymentStatus: false }]
-        : []),
-      ...(normalizedLowerSearch &&
-      "verify payment".includes(normalizedLowerSearch)
-        ? [{ paymentStatus: true, paymentVerification: "Under Review" }]
-        : []),
-      ...(normalizedLowerSearch &&
-      "completed".includes(normalizedLowerSearch)
-        ? [{ paymentStatus: true, paymentVerification: "Verified" }]
-        : []),
-      ...(normalizedLowerSearch &&
-      "review payment".includes(normalizedLowerSearch)
-        ? [
-            {
-              paymentStatus: true,
-              paymentVerification: { $nin: ["Under Review", "Verified"] },
-            },
-          ]
-        : []),
+      ...paymentStatusConditions,
     ];
   }
 
@@ -285,10 +287,7 @@ const buildMeetingSearchConditions = async ({
         $regexMatch: {
           input: {
             $toString: {
-              $max: [
-                "$endTime",
-                { $ifNull: ["$extendTime", "$endTime"] },
-              ],
+              $max: ["$endTime", { $ifNull: ["$extendTime", "$endTime"] }],
             },
           },
           regex: escapedSearch,
@@ -418,7 +417,9 @@ const fetchMeetingReportService = async ({
       ? foundUser.departments
       : departments;
     const canViewAllMeetings = (userDepartments || []).some((department) =>
-      ["Administration", "Top Management"].includes(department?.name),
+      ["Administration", "Top Management", "Finance"].includes(
+        department?.name,
+      ),
     );
 
     if (!canViewAllMeetings && !currentUserId) {
@@ -514,8 +515,7 @@ const fetchMeetingReportService = async ({
           path: "client",
           select: "clientName meetingCreditBalance",
           transform: (clientDocument, clientId) => {
-            const isHostCompany =
-              clientId?.toString() === company?.toString();
+            const isHostCompany = clientId?.toString() === company?.toString();
 
             if (isHostCompany) {
               return {
