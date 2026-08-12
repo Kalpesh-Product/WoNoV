@@ -128,6 +128,18 @@ const bulkInsertRoutes = [
         route: "/api/sales/bulk-insert-co-working-client-members",
       },
       {
+        name: "Virtual Office Clients",
+        aliases: ["Virtual Office Client"],
+        fileKey: "virtualoffice",
+        route: "/api/sales/bulk-insert-virtual-office-clients",
+      },
+      {
+        name: "Virtual Office Revenue",
+        aliases: ["Virtual Office Revenues"],
+        fileKey: "virtual-office-revenue",
+        route: "/api/sales/bulk-insert-virtual-office-revenue",
+      },
+      {
         name: "inventory",
         route: "/api/invenotry/bulk-insert-inventory/6798bacce469e809084e24a1",
       },
