@@ -878,7 +878,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
     <div className="p-4">
       <div className="flex flex-col gap-4">
         <WidgetSection
-          title={`SUNTECK BUILDING UNIT WISE CONSUMPTION BILL - ${graphSelectedMonthLabel}`}
+          title={`SUNTECK BUILDING – UNIT WISE ENERGY CONSUMPTION & BILLING - ${graphSelectedMonthLabel}`}
           border
           headerRightContent={
             <>
