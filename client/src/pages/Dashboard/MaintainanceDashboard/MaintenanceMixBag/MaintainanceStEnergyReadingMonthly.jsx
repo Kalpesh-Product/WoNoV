@@ -474,7 +474,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
           show: false,
         },
         title: {
-          text: "Consumption/Bill Amount",
+          text: "Consumption & Bill Amount",
         },
         labels: {
           formatter: (value) => Number(value || 0).toLocaleString("en-IN"),
