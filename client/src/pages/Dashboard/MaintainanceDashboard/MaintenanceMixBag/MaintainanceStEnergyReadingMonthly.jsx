@@ -3,10 +3,13 @@ import { Controller, useForm } from "react-hook-form";
 import { Chip, IconButton, Modal, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "motion/react";
+import Chart from "react-apexcharts";
 import { IoMdClose } from "react-icons/io";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { FaEye } from "react-icons/fa";
 
 import PrimaryButton from "../../../../components/PrimaryButton";
+import WidgetSection from "../../../../components/WidgetSection";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
@@ -33,6 +36,11 @@ const formatAmount = (value) =>
   `INR ${Number(value || 0).toLocaleString("en-IN")}`;
 
 const getTodayDateKey = () => dayjs().format("YYYY-MM-DD");
+const normalizeMonthlyRows = (rows = []) =>
+  rows.map((row) => ({
+    ...row,
+    billRecordedAt: row.billTimestamp || row.date,
+  }));
 
 // const getConsumptionForMonth = (unit, monthValue, index) => {
 //   const monthFactor = dayjs(monthValue).month() + 1;
@@ -248,8 +256,12 @@ const MaintainanceStEnergyReadingMonthly = () => {
   const [selectedMonth, setSelectedMonth] = useState(
     dayjs().startOf("month"),
   );
+  const [graphSelectedMonth, setGraphSelectedMonth] = useState(
+    dayjs().startOf("month"),
+  );
   const [todayDateKey, setTodayDateKey] = useState(getTodayDateKey);
   const [records, setRecords] = useState([]);
+  const [graphRecords, setGraphRecords] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [modalMode, setModalMode] = useState("add");
@@ -267,26 +279,223 @@ const MaintainanceStEnergyReadingMonthly = () => {
     () => monthKeyFromValue(selectedMonth),
     [selectedMonth],
   );
+  const graphSelectedMonthKey = useMemo(
+    () => monthKeyFromValue(graphSelectedMonth),
+    [graphSelectedMonth],
+  );
   const currentMonthKey = todayDateKey.slice(0, 7);
+  const graphMonthBillDate =
+    graphSelectedMonthKey === currentMonthKey
+      ? todayDateKey
+      : graphSelectedMonth.endOf("month").format("YYYY-MM-DD");
 
   const monthRecords = records;
 
   const totalConsumption = useMemo(
     () =>
-      monthRecords.reduce(
+      graphRecords.reduce(
         (sum, row) => sum + Number(row.totalConsumption || 0),
         0,
       ),
-    [monthRecords],
+    [graphRecords],
   );
 
   const totalBillAmount = useMemo(
     () =>
-      monthRecords.reduce(
+      graphRecords.reduce(
         (sum, row) => sum + Number(row.totalBillAmount || 0),
         0,
       ),
-    [monthRecords],
+    [graphRecords],
+  );
+
+  const graphSelectedMonthLabel =
+    graphSelectedMonth.format("MMMM").toUpperCase();
+  const graphMonthNavigationLabel = graphSelectedMonth.format("MMMM");
+  const graphUnitLabels = useMemo(
+    () =>
+      graphRecords.length > 0
+        ? graphRecords.map((row) => row.unitNo)
+        : monthRecords.map((row) => row.unitNo),
+    [graphRecords, monthRecords],
+  );
+  const graphHasVisibleData = useMemo(
+    () =>
+      graphRecords.some(
+        (row) =>
+          Number(row.totalConsumption || 0) > 0 ||
+          Number(row.totalBillAmount || 0) > 0,
+      ),
+    [graphRecords],
+  );
+
+  const chartSeries = useMemo(
+    () => [
+      {
+        name: "Consumption",
+        data: graphUnitLabels.map((unitNo) => {
+          const row = graphRecords.find((item) => item.unitNo === unitNo);
+          return {
+            x: unitNo,
+            y: graphHasVisibleData ? Number(row?.totalConsumption || 0) : null,
+          };
+        }),
+      },
+      {
+        name: "Bill Amount",
+        data: graphUnitLabels.map((unitNo) => {
+          const row = graphRecords.find((item) => item.unitNo === unitNo);
+          return {
+            x: unitNo,
+            y: graphHasVisibleData ? Number(row?.totalBillAmount || 0) : null,
+          };
+        }),
+      },
+    ],
+    [graphHasVisibleData, graphRecords, graphUnitLabels],
+  );
+
+  const chartMax = useMemo(() => {
+    const highestValue = graphRecords.reduce((maxValue, row) => {
+      return Math.max(
+        maxValue,
+        Number(row.totalConsumption || 0),
+        Number(row.totalBillAmount || 0),
+      );
+    }, 0);
+
+    return Math.max(100, Math.ceil((highestValue * 1.2) / 100) * 100);
+  }, [graphRecords]);
+
+  const chartOptions = useMemo(
+    () => ({
+      chart: {
+        type: "bar",
+        stacked: false,
+        animations: { enabled: false },
+        toolbar: { show: false },
+        fontFamily: "Poppins-Regular",
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "38%",
+          borderRadius: 3,
+          dataLabels: {
+            position: "top",
+          },
+        },
+      },
+      dataLabels: {
+        enabled: graphHasVisibleData,
+        offsetY: -26,
+        dropShadow: {
+          enabled: false,
+        },
+        style: {
+          fontSize: "12px",
+          fontWeight: 700,
+          colors: ["#111827", "#111827"],
+        },
+        formatter: (value) =>
+          Number(value || 0) > 0 ? Number(value).toLocaleString("en-IN") : "",
+      },
+      stroke: {
+        show: true,
+        width: 1,
+        colors: ["transparent"],
+      },
+      grid: {
+        borderColor: "#e5e7eb",
+        strokeDashArray: 0,
+        padding: {
+          top: 18,
+        },
+        xaxis: {
+          lines: {
+            show: false,
+          },
+        },
+        yaxis: {
+          lines: {
+            show: true,
+          },
+        },
+      },
+      colors: ["#355ae8", "#ef233c"],
+      fill: {
+        opacity: 1,
+      },
+      legend: {
+        show: true,
+        position: "top",
+        horizontalAlign: "center",
+        onItemClick: {
+          toggleDataSeries: true,
+        },
+        markers: {
+          width: 12,
+          height: 12,
+          radius: 2,
+        },
+        itemMargin: {
+          horizontal: 8,
+          vertical: 4,
+        },
+        fontSize: "13px",
+      },
+      xaxis: {
+        categories: graphUnitLabels,
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        crosshairs: {
+          show: false,
+        },
+        title: {
+          text: "Unit",
+        },
+        labels: {
+          style: {
+            fontSize: "12px",
+          },
+        },
+      },
+      yaxis: {
+        min: 0,
+        max: chartMax,
+        axisBorder: {
+          show: false,
+        },
+        axisTicks: {
+          show: false,
+        },
+        title: {
+          text: "Consumption/Bill Amount",
+        },
+        labels: {
+          formatter: (value) => Number(value || 0).toLocaleString("en-IN"),
+        },
+      },
+      tooltip: {
+        y: {
+          formatter: (value) => Number(value || 0).toLocaleString("en-IN"),
+        },
+      },
+      noData: {
+        text: "",
+        align: "center",
+        verticalAlign: "middle",
+        style: {
+          color: "transparent",
+          fontSize: "0px",
+        },
+      },
+    }),
+    [chartMax, graphHasVisibleData, graphUnitLabels],
   );
 
   useEffect(() => {
@@ -330,12 +539,11 @@ const MaintainanceStEnergyReadingMonthly = () => {
         .get(ST_ENERGY_MONTHLY_GET_API, { params: { date: monthBillDate } })
         .then(({ data }) => {
           if (active) {
-            setRecords(
-              (data.data || []).map((row) => ({
-                ...row,
-                billRecordedAt: row.billTimestamp || row.date,
-              })),
-            );
+            const nextRows = normalizeMonthlyRows(data.data || []);
+            setRecords(nextRows);
+            if (graphSelectedMonthKey === selectedMonthKey) {
+              setGraphRecords(nextRows);
+            }
           }
         })
         .catch((error) => {
@@ -359,7 +567,49 @@ const MaintainanceStEnergyReadingMonthly = () => {
         clearInterval(timer);
       }
     };
-  }, [axiosPrivate, currentMonthKey, monthBillDate, selectedMonthKey]);
+  }, [
+    axiosPrivate,
+    currentMonthKey,
+    graphSelectedMonthKey,
+    monthBillDate,
+    selectedMonthKey,
+  ]);
+
+  useEffect(() => {
+    let active = true;
+    const loadGraphMonthlyBills = () => {
+      axiosPrivate
+        .get(ST_ENERGY_MONTHLY_GET_API, {
+          params: { date: graphMonthBillDate },
+        })
+        .then(({ data }) => {
+          if (active) {
+            setGraphRecords(normalizeMonthlyRows(data.data || []));
+          }
+        })
+        .catch((error) => {
+          if (active) {
+            toast.error(
+              error.response?.data?.message ||
+                "Unable to load ST graph monthly bills",
+            );
+          }
+        });
+    };
+
+    loadGraphMonthlyBills();
+    const shouldPollCurrentMonth = graphSelectedMonthKey === currentMonthKey;
+    const timer = shouldPollCurrentMonth
+      ? setInterval(loadGraphMonthlyBills, 30000)
+      : null;
+
+    return () => {
+      active = false;
+      if (timer) {
+        clearInterval(timer);
+      }
+    };
+  }, [axiosPrivate, currentMonthKey, graphMonthBillDate, graphSelectedMonthKey]);
 
   const openAddModal = async () => {
     try {
@@ -470,12 +720,11 @@ const MaintainanceStEnergyReadingMonthly = () => {
       const { data } = await axiosPrivate.get(ST_ENERGY_MONTHLY_GET_API, {
         params: { date: monthBillDate },
       });
-      setRecords(
-        (data.data || []).map((row) => ({
-          ...row,
-          billRecordedAt: row.billTimestamp || row.date,
-        })),
-      );
+      const nextRows = normalizeMonthlyRows(data.data || []);
+      setRecords(nextRows);
+      if (graphSelectedMonthKey === selectedMonthKey) {
+        setGraphRecords(nextRows);
+      }
 
       toast.success("ST energy bills added");
       setModalOpen(false);
@@ -515,6 +764,20 @@ const MaintainanceStEnergyReadingMonthly = () => {
             : row,
         ),
       );
+      if (graphSelectedMonthKey === selectedMonthKey) {
+        setGraphRecords((current) =>
+          current.map((row) =>
+            row.id === selectedRecord.id
+              ? {
+                  ...row,
+                  ...data.data,
+                  totalConsumption: row.totalConsumption,
+                  billRecordedAt: data.data.billTimestamp || data.data.date,
+                }
+              : row,
+          ),
+        );
+      }
 
       toast.success("ST energy bill updated");
       setModalOpen(false);
@@ -613,73 +876,128 @@ const MaintainanceStEnergyReadingMonthly = () => {
 
   return (
     <div className="p-4">
-      <PageFrame>
-        <div className="flex flex-col gap-5">
-          <YearWiseTable
-            data={records}
-            columns={columns}
-            tableTitle="Sunteck Building - Energy Consumption Bill"
-            hideTitle={true}
-            tableHeight={450}
-            dateColumn="date"
-            initialDateRange={monthRange}
-            preserveCurrentMonthRange
-            onDateFilterChange={({ selectedRange }) => {
-              if (selectedRange?.startDate) {
-                const nextMonth = dayjs(selectedRange.startDate).startOf("month");
-                const nextMonthKey = monthKeyFromValue(nextMonth);
-                if (nextMonthKey !== selectedMonthKey) {
-                  setSelectedMonth(nextMonth);
+      <div className="flex flex-col gap-4">
+        <WidgetSection
+          title={`SUNTECK BUILDING UNIT WISE CONSUMPTION BILL - ${graphSelectedMonthLabel}`}
+          border
+          headerRightContent={
+            <>
+              <Chip
+                label={`CONSUMPTION : ${Number(totalConsumption).toLocaleString(
+                  "en-IN",
+                )}`}
+                sx={{
+                  backgroundColor: "#dfe8ff",
+                  color: "#1f3f7a",
+                  border: "1px solid #b8cbff",
+                  fontWeight: 800,
+                  fontSize: "0.84rem",
+                  height: "36px",
+                  borderRadius: "8px",
+                  px: 1.15,
+                  "& .MuiChip-label": {
+                    px: 0.9,
+                    fontWeight: 800,
+                  },
+                }}
+              />
+
+              <Chip
+                label={`BILL AMOUNT : ${formatAmount(totalBillAmount)}`}
+                sx={{
+                  backgroundColor: "#eef7ef",
+                  color: "#17693a",
+                  border: "1px solid #c7e6d0",
+                  fontWeight: 800,
+                  fontSize: "0.84rem",
+                  height: "36px",
+                  borderRadius: "8px",
+                  px: 1.15,
+                  "& .MuiChip-label": {
+                    px: 0.9,
+                    fontWeight: 800,
+                  },
+                }}
+              />
+            </>
+          }
+          >
+          <div className="flex flex-col gap-4">
+            <Chart
+              options={chartOptions}
+              series={chartSeries}
+              type="bar"
+              height={450}
+            />
+
+            <div className="flex items-center justify-center gap-2 pb-1">
+              <button
+                type="button"
+                onClick={() =>
+                  setGraphSelectedMonth((current) =>
+                    current.subtract(1, "month"),
+                  )
                 }
+                className="flex h-8 w-[78px] items-center justify-center rounded-[6px] bg-[#d1d5db] text-[1rem] leading-none text-[#1f2937] transition-colors hover:bg-[#c7cdd8]"
+                aria-label="previous-graph-month"
+              >
+                <MdNavigateBefore />
+              </button>
+
+              <span className="min-w-[90px] text-center text-[1rem] font-semibold text-[#1f3f7a]">
+                {graphMonthNavigationLabel}
+              </span>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setGraphSelectedMonth((current) => current.add(1, "month"))
+                }
+                className="flex h-8 w-[78px] items-center justify-center rounded-[6px] bg-[#d1d5db] text-[1rem] leading-none text-[#1f2937] transition-colors hover:bg-[#c7cdd8]"
+                aria-label="next-graph-month"
+              >
+                <MdNavigateNext />
+              </button>
+            </div>
+          </div>
+          </WidgetSection>
+        <PageFrame>
+          <div className="flex flex-col gap-5">
+            <YearWiseTable
+              data={records}
+              columns={columns}
+              tableTitle="Sunteck Building - Energy Consumption Bill"
+              hideTitle={true}
+              tableHeight={450}
+              dateColumn="date"
+              initialDateRange={monthRange}
+              preserveCurrentMonthRange
+              onDateFilterChange={({ selectedRange }) => {
+                if (selectedRange?.startDate) {
+                  const nextMonth = dayjs(selectedRange.startDate).startOf("month");
+                  const nextMonthKey = monthKeyFromValue(nextMonth);
+                  if (nextMonthKey !== selectedMonthKey) {
+                    setSelectedMonth(nextMonth);
+                  }
+                }
+              }}
+              headerActions={
+                <div className="ml-auto flex flex-nowrap items-center justify-end gap-2 self-center">
+                  <PrimaryButton
+                    title="Add Bill"
+                    handleSubmit={openAddModal}
+                    padding="px-4 py-2"
+                    className="shrink-0 whitespace-nowrap"
+                  />
+                </div>
               }
-            }}
-            headerActions={
-              <div className="flex flex-wrap items-center gap-2">
-                <Chip
-                  label={`TOTAL CONSUMPTION : ${Number(
-                    totalConsumption,
-                  ).toLocaleString("en-IN")}`}
-                  sx={{
-                    backgroundColor: "#dfe8ff",
-                    color: "#1f3f7a",
-                    border: "1px solid #b8cbff",
-                    fontWeight: 700,
-                    fontSize: "0.84rem",
-                    height: "36px",
-                    borderRadius: "8px",
-                    px: 1.15,
-                    "& .MuiChip-label": {
-                      px: 0.9,
-                    },
-                  }}
-                />
-
-                <Chip
-                  label={`TOTAL BILL : ${formatAmount(totalBillAmount)}`}
-                  sx={{
-                    backgroundColor: "#eef7ef",
-                    color: "#17693a",
-                    border: "1px solid #c7e6d0",
-                    fontWeight: 700,
-                    fontSize: "0.84rem",
-                    height: "36px",
-                    borderRadius: "8px",
-                    px: 1.15,
-                    "& .MuiChip-label": {
-                      px: 0.9,
-                    },
-                  }}
-                />
-
-                <PrimaryButton title="Add Bill" handleSubmit={openAddModal} />
-              </div>
-            }
-            exportData
-            hideFilter
-            taskExportDateTimeFormatting
-          />
-        </div>
-      </PageFrame>
+              exportData
+              hideFilter
+              taskExportDateTimeFormatting
+            />
+          </div>
+        </PageFrame>
+      </div>
 
       {modalMode === "add" && (
         <MonthlyBillModal
