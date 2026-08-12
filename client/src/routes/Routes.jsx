@@ -726,11 +726,11 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "internal-meetings",
-                            element: <ManageMeetings />,
+                            element: <ManageMeetings financeView />,
                           },
                           {
                             path: "external-clients",
-                            element: <ExternalMeetingClients />,
+                            element: <ExternalMeetingClients financeView />,
                           },
                           {
                             path: "day-pass",
@@ -739,6 +739,7 @@ export const routes = createBrowserRouter([
                                 tableTitle="Day Pass"
                                 filterToDayPass={true}
                                 financeStatusMenu={true}
+                                financeView={true}
                               />
                             ),
                           },

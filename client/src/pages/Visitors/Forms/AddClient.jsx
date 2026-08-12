@@ -5,6 +5,8 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Alert,
+  Button,
   FormControl,
   InputLabel,
 } from "@mui/material";
@@ -78,11 +80,15 @@ const AddClient = () => {
   const { auth } = useAuth();
 
   const selectedCompany = watch("clientCompany");
+  const firstName = watch("firstName");
+  const lastName = watch("lastName");
+  const phoneNumber = watch("phoneNumber");
   const selectedIdType = watch("idProof.idType");
   const visitorType = watch("visitorType");
   const watchLocation = watch("location");
 
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [debouncedVisitorPhone, setDebouncedVisitorPhone] = useState("");
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const [states, setStates] = useState([]);
@@ -92,7 +98,51 @@ const AddClient = () => {
   }, []);
   useEffect(() => {
     setValue("checkIn", dayjs(new Date()));
-  }, []);
+  }, [setValue]);
+
+  useEffect(() => {
+    setDebouncedVisitorPhone("");
+
+    const hasValidIdentity =
+      firstName?.trim() &&
+      lastName?.trim() &&
+      isValidPhoneNumber(String(phoneNumber || "")) === true;
+
+    if (!hasValidIdentity) return undefined;
+
+    const timeoutId = setTimeout(
+      () => setDebouncedVisitorPhone(String(phoneNumber).trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [firstName, lastName, phoneNumber]);
+
+  const {
+    data: visitorCheck,
+    isFetching: isCheckingVisitor,
+    isError: isVisitorCheckError,
+  } = useQuery({
+    queryKey: ["visitor-exists", debouncedVisitorPhone],
+    queryFn: async () => {
+      const response = await axios.get("/api/visitors/check-existing", {
+        params: { phoneNumber: debouncedVisitorPhone },
+      });
+      return response.data;
+    },
+    enabled: Boolean(debouncedVisitorPhone),
+    retry: false,
+  });
+
+  const existingVisitor = visitorCheck?.exists
+    ? visitorCheck.visitor
+    : null;
+  const existingVisitorIsClient =
+    existingVisitor?.visitorFlag === "Client" ||
+    existingVisitor?.visitorRoles?.includes("Client");
+  const existingVisitorRoute = existingVisitorIsClient
+    ? "/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies"
+    : "/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors";
 
   const handleStateSelect = (stateCode) => {
     const city = City.getCitiesOfState("IN", stateCode);
@@ -179,6 +229,15 @@ const AddClient = () => {
     },
   });
   const onSubmit = (data) => {
+    if (existingVisitor) {
+      toast.error(
+        existingVisitorIsClient
+          ? "Client already exists. Continue from Repeat Day Pass in Mix Bag."
+          : "Visitor already exists. Continue from Visitors to Client in Mix Bag.",
+      );
+      return;
+    }
+
     const isBiznest = data.clientCompany === "6799f0cd6a01edbe1bc3fcea";
 
     const payload = {
@@ -367,6 +426,57 @@ const AddClient = () => {
                     )}
                   />
                 </div>
+
+                {debouncedVisitorPhone && (
+                  <div>
+                    {isCheckingVisitor ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <CircularProgress size={16} />
+                        <span>Checking for an existing visitor…</span>
+                      </div>
+                    ) : existingVisitor ? (
+                      <Alert
+                        severity="warning"
+                        action={
+                          <Button
+                            color="inherit"
+                            size="small"
+                            onClick={() => navigate(existingVisitorRoute)}
+                          >
+                            {existingVisitorIsClient
+                              ? "Repeat Client"
+                              : "Convert to Client"}
+                          </Button>
+                        }
+                      >
+                        {[
+                          existingVisitor.firstName,
+                          existingVisitor.lastName,
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || "This visitor"}{" "}
+                        already exists with this phone number.
+                        {existingVisitor.lastVisitedAt && (
+                          <span className="block mt-1">
+                            Last visited: {" "}
+                            {dayjs(existingVisitor.lastVisitedAt).format(
+                              "DD MMM YYYY, hh:mm A",
+                            )}
+                          </span>
+                        )}
+                      </Alert>
+                    ) : isVisitorCheckError ? (
+                      <Alert severity="info">
+                        Visitor availability could not be checked. The phone
+                        number will still be verified on submit.
+                      </Alert>
+                    ) : (
+                      <span className="text-sm text-green-700">
+                        No existing visitor found.
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-4 items-center">
                   <Controller
                     name="email"
@@ -974,7 +1084,9 @@ const AddClient = () => {
               type="submit"
               title={"Submit"}
               isLoading={isMutateVisitor}
-              disabled={isMutateVisitor}
+              disabled={
+                isMutateVisitor || isCheckingVisitor || Boolean(existingVisitor)
+              }
             />
             <SecondaryButton handleSubmit={handleReset} title={"Reset"} />
           </div>

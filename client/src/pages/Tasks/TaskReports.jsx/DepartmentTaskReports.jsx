@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -15,6 +15,21 @@ const DepartmentTaskReports = () => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [taskSearch, setTaskSearch] = useState("");
+  const [debouncedTaskSearch, setDebouncedTaskSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedTaskSearch(taskSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [taskSearch]);
+
+  const handleTaskSearchChange = useCallback((value) => {
+    setTaskSearch(value);
+  }, []);
 
   const handleViewDetails = (params) => {
     setSelectedTask(
@@ -27,11 +42,15 @@ const DepartmentTaskReports = () => {
     setOpenModal(true);
   };
 
-  const { data: taskList, isLoading } = useQuery({
-    queryKey: ["taskList"],
+  const { data: taskList = [], isLoading } = useQuery({
+    queryKey: ["taskList", debouncedTaskSearch],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/tasks/get-tasks");
+        const response = await axios.get("/api/tasks/get-tasks", {
+          params: {
+            search: debouncedTaskSearch || undefined,
+          },
+        });
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -176,6 +195,9 @@ const DepartmentTaskReports = () => {
             comment: task.comment,
           }))]}
           columns={departmentTaskReportsColumns}
+          serverSearch
+          searchValue={taskSearch}
+          onSearchChange={handleTaskSearchChange}
         />
       </div>
       <MuiModal

@@ -23,6 +23,10 @@ import useAuth from "../../hooks/useAuth";
 import UploadFileInput from "../../components/UploadFileInput";
 import humanDate from "../../utils/humanDateForamt";
 import { State } from "country-state-city";
+import {
+  DEFAULT_PAGE_SIZE,
+  PAGE_SIZE_OPTIONS,
+} from "../../constants/pagination";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";
@@ -40,6 +44,7 @@ const ExternalClients = ({
   tableTitle = "External Clients",
   filterToDayPass = false,
   financeStatusMenu = false,
+  financeView = false,
 }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -81,6 +86,27 @@ const ExternalClients = ({
   const [isEditing, setIsEditing] = useState(false);
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const [paymentVisitor, setPaymentVisitor] = useState(null);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+  const [visitorSearch, setVisitorSearch] = useState("");
+  const [debouncedVisitorSearch, setDebouncedVisitorSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(
+      () => setDebouncedVisitorSearch(visitorSearch.trim()),
+      400,
+    );
+
+    return () => clearTimeout(timeoutId);
+  }, [visitorSearch]);
+
+  const handleVisitorSearchChange = useCallback((value) => {
+    setVisitorSearch(value);
+    setPagination((current) => ({ ...current, page: 1 }));
+  }, []);
 
   const renderFileLink = (fileLink) => {
     if (!fileLink) return "—";
@@ -141,16 +167,40 @@ const ExternalClients = ({
   }, []);
 
   const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
-    queryKey: ["clients", clientFilters.startDate, clientFilters.endDate],
+    queryKey: [
+      financeView ? "finance-day-pass" : "clients",
+      clientFilters.startDate,
+      clientFilters.endDate,
+      ...(financeView
+        ? [pagination.page, pagination.limit, debouncedVisitorSearch]
+        : []),
+    ],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/visitors/fetch-visitors", {
           params: {
             filters: clientFilters,
             multipleVisits: true,
+            ...(financeView && {
+              type: "day-pass",
+              visitorFlag: "Client",
+              page: pagination.page,
+              limit: pagination.limit,
+              search: debouncedVisitorSearch || undefined,
+              searchContext: "finance-day-pass",
+            }),
           },
         });
-        return response.data;
+        if (!financeView) return response.data;
+
+        const responsePagination = response.data.pagination || {};
+        setPagination((current) => ({
+          page: Number(responsePagination.page) || current.page,
+          limit: Number(responsePagination.limit) || current.limit,
+          total: Number(responsePagination.total) || 0,
+        }));
+
+        return response.data.data || [];
       } catch (error) {
         throw new Error(error.response.data.message);
       }
@@ -905,7 +955,7 @@ const ExternalClients = ({
         <YearWiseTable
           search={true}
           tableTitle={tableTitle}
-          dateColumn={"checkIn"}
+          dateColumn={"dateOfVisit"}
           initialDateRange={initialClientDateRange}
           onDateFilterChange={handleClientDateFilterChange}
           data={[
@@ -949,7 +999,9 @@ const ExternalClients = ({
                     : "";
 
                 return {
-                  srNo: index + 1,
+                  srNo: financeView
+                    ? (pagination.page - 1) * pagination.limit + index + 1
+                    : index + 1,
                   mongoId: item._id,
                   latestExternalVisitId: latestVisit?._id || null,
                   firstName: item.firstName,
@@ -1066,6 +1118,24 @@ const ExternalClients = ({
           columns={visitorsColumns}
           handleClick={handleAddAsset}
           exportData={financeStatusMenu}
+          serverPagination={financeView}
+          pageSizeOptions={PAGE_SIZE_OPTIONS}
+          paginationPageSize={pagination.limit}
+          paginationPage={pagination.page}
+          paginationTotal={pagination.total}
+          onPaginationPageChange={(page) =>
+            setPagination((current) => ({ ...current, page }))
+          }
+          onPaginationPageSizeChange={(limit) =>
+            setPagination((current) =>
+              current.limit === limit
+                ? current
+                : { ...current, page: 1, limit },
+            )
+          }
+          serverSearch={financeView}
+          searchValue={visitorSearch}
+          onSearchChange={handleVisitorSearchChange}
         />
       </PageFrame>
       <MuiModal

@@ -5,7 +5,7 @@ import { MenuItem, TextField } from "@mui/material";
 import { LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -25,6 +25,8 @@ const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
 
 const RepeatInternalVisitors = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectedLastVisitedAt = searchParams.get("lastVisitedAt");
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -70,12 +72,19 @@ const RepeatInternalVisitors = () => {
   const watchLocation = watchRepeat("location");
 
   const initialVisitorDateRange = useMemo(
-    () => ({
-      startDate: dayjs().startOf("month").toDate(),
-      endDate: dayjs().endOf("month").toDate(),
-      key: "selection",
-    }),
-    [],
+    () => {
+      const redirectedVisitDate = dayjs(redirectedLastVisitedAt);
+      const rangeDate = redirectedVisitDate.isValid()
+        ? redirectedVisitDate
+        : dayjs();
+
+      return {
+        startDate: rangeDate.startOf("month").toDate(),
+        endDate: rangeDate.endOf("month").toDate(),
+        key: "selection",
+      };
+    },
+    [redirectedLastVisitedAt],
   );
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,

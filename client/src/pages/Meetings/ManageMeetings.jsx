@@ -39,7 +39,7 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-const ManageMeetings = () => {
+const ManageMeetings = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
@@ -334,27 +334,46 @@ const ManageMeetings = () => {
 
   //------------------------------API--------------------------------//
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
-    queryKey: [
-      "internal-meetings",
-      meetingFilters.startDate,
-      meetingFilters.endDate,
-      pagination.page,
-      pagination.limit,
-      debouncedMeetingSearch,
-    ],
+    queryKey: financeView
+      ? [
+          "finance-internal-meetings",
+          meetingFilters.startDate,
+          meetingFilters.endDate,
+          pagination.page,
+          pagination.limit,
+          debouncedMeetingSearch,
+        ]
+      : [
+          "internal-meetings",
+          meetingFilters.startDate,
+          meetingFilters.endDate,
+          pagination.page,
+          pagination.limit,
+          debouncedMeetingSearch,
+        ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings", {
-        params: {
-          startDate: meetingFilters.startDate,
-          endDate: meetingFilters.endDate,
-          type: "internal",
-          completed: "false",
-          page: pagination.page,
-          limit: pagination.limit,
-          search: debouncedMeetingSearch || undefined,
-          searchContext: "internal-table",
-        },
+        params: financeView
+          ? {
+              startDate: meetingFilters.startDate,
+              endDate: meetingFilters.endDate,
+              type: "internal",
+              page: pagination.page,
+              limit: pagination.limit,
+              search: debouncedMeetingSearch || undefined,
+              searchContext: "internal-table",
+            }
+          : {
+              startDate: meetingFilters.startDate,
+              endDate: meetingFilters.endDate,
+              type: "internal",
+              completed: "false",
+              page: pagination.page,
+              limit: pagination.limit,
+              search: debouncedMeetingSearch || undefined,
+              searchContext: "internal-table",
+            },
       });
       const responsePagination = response.data.pagination || response.data;
 
@@ -364,14 +383,16 @@ const ManageMeetings = () => {
         total: Number(responsePagination.total) || 0,
       }));
 
-      return response.data.data || [];
+      return Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [];
     },
   });
   const filteredMeetings = meetings.filter(
     (item) =>
-      // item.meetingStatus !== "Completed" && item.meetingType === "Internal",
-      item.meetingStatus !== "Completed" &&
-      item.meetingStatus !== "Cancelled" &&
+      (financeView ||
+        (item.meetingStatus !== "Completed" &&
+          item.meetingStatus !== "Cancelled")) &&
       item.meetingType === "Internal",
   );
 
@@ -704,8 +725,6 @@ const ManageMeetings = () => {
 
     housekeepingMutation.mutate(payload);
   };
-
-  console.log("selected : ", selectedMeeting, selectedMeetingId);
 
   //---------------------------------Event handlers----------------------------------------//
 

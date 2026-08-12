@@ -34,7 +34,7 @@ import {
 } from "../../../constants/pagination";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
-import { useLocation, useNavigate , useParams } from "react-router-dom" ;
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import StatusChip from "../../../components/StatusChip";
 
 const assetCardRouteConfig = {
@@ -63,7 +63,6 @@ const assetCardRouteConfig = {
   },
 };
 
-
 const ListOfAssets = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
@@ -72,22 +71,53 @@ const ListOfAssets = () => {
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState([]);
   const [previewImage, setPreviewImage] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: DEFAULT_PAGE_SIZE,
+    total: 0,
+  });
+
+  const [assetSearch, setAssetSearch] = useState("");
+  const [debouncedAssetSearch, setDebouncedAssetSearch] = useState("");
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setDebouncedAssetSearch(assetSearch.trim());
+    }, 400);
+
+    return () => clearTimeout(timeoutId);
+  }, [assetSearch]);
+
+  const handleAssetSearchChange = (value) => {
+    setAssetSearch(value);
+
+    setPagination((current) =>
+      current.page === 1
+        ? current
+        : {
+            ...current,
+            page: 1,
+          },
+    );
+  };
+
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
   const navigate = useNavigate();
   const location = useLocation();
   // const assetOwnershipTypeFilter = location.state?.assetOwnershipType;
   // const assetStatusFilter = location.state?.assetStatusFilter;
-   const { assetCard } = useParams();
+  const { assetCard } = useParams();
   const normalizedAssetCard = assetCard?.trim();
   const selectedAssetCardConfig =
     assetCardRouteConfig[normalizedAssetCard] || null;
   const assetOwnershipTypeFilter =
-    selectedAssetCardConfig?.ownershipType || location.state?.assetOwnershipType;
+    selectedAssetCardConfig?.ownershipType ||
+    location.state?.assetOwnershipType;
   const assetStatusFilter =
     selectedAssetCardConfig?.statusFilter || location.state?.assetStatusFilter;
   const isAssetCardRoute = Boolean(selectedAssetCardConfig);
-  const isAssetCardView = isAssetCardRoute || Boolean(location.state?.assetListTitle);
+  const isAssetCardView =
+    isAssetCardRoute || Boolean(location.state?.assetListTitle);
   const tableTitle =
     selectedAssetCardConfig?.tableTitle ||
     location.state?.assetListTitle ||
@@ -96,7 +126,7 @@ const ListOfAssets = () => {
     setPagination((current) =>
       current.page === 1 ? current : { ...current, page: 1 },
     );
-  }, [assetOwnershipTypeFilter, assetStatusFilter, departmentId]);  
+  }, [assetOwnershipTypeFilter, assetStatusFilter, departmentId]);
 
   //---------------------Forms----------------------//
   const {
@@ -145,7 +175,7 @@ const ListOfAssets = () => {
     watch: editWatch,
     reset: editRequest,
     setValue,
-     setError: setEditError,
+    setError: setEditError,
     clearErrors: clearEditErrors,
   } = useForm({
     defaultValues: {
@@ -203,17 +233,19 @@ const ListOfAssets = () => {
       assetStatusFilter,
       pagination.page,
       pagination.limit,
+      debouncedAssetSearch,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
       try {
-       const response = await axios.get("/api/assets/get-assets", {
+        const response = await axios.get("/api/assets/get-assets", {
           params: {
             departmentId,
             ownershipType: assetOwnershipTypeFilter,
             statusFilter: assetStatusFilter,
             page: pagination.page,
             limit: pagination.limit,
+            search: debouncedAssetSearch || undefined,
           },
         });
         const responsePagination = response.data.pagination;
@@ -316,7 +348,7 @@ const ListOfAssets = () => {
     },
     onError: function (error) {
       // toast.error(error.message);
-       toast.error(
+      toast.error(
         error?.response?.data?.message ||
           error?.message ||
           "Failed to add asset",
@@ -408,14 +440,14 @@ const ListOfAssets = () => {
         isExtra:
           typeof selectedForEdit?.isExtra === "boolean"
             ? String(selectedForEdit.isExtra)
-            : "",    
+            : "",
         status: selectedForEdit?.status === "Active" ? "Active" : "Inactive",
         isDamaged:
           typeof selectedForEdit?.isDamaged === "boolean"
             ? String(selectedForEdit.isDamaged)
             : "",
         // assetImage: null,
-         assetImage: selectedForEdit?.assetImage?.url || null,
+        assetImage: selectedForEdit?.assetImage?.url || null,
         warrantyDocument: selectedForEdit?.warrantyDocument?.link || null,
       });
     }
@@ -471,7 +503,7 @@ const ListOfAssets = () => {
     },
     onError: function (error) {
       // toast.error(error.message);
-        toast.error(
+      toast.error(
         error?.response?.data?.message ||
           error?.message ||
           "Failed to update asset",
@@ -560,7 +592,12 @@ const ListOfAssets = () => {
     { field: "assetId", headerName: "Asset Id" },
     { field: "secondaryId", headerName: "Secondary Id" },
     { field: "description", headerName: "Description", hide: true },
-    { field: "addedAt", headerName: "Added At", hide: true, exportFormat: "date" },
+    {
+      field: "addedAt",
+      headerName: "Added At",
+      hide: true,
+      exportFormat: "date",
+    },
     { field: "department", headerName: "Department", hide: true },
     { field: "assetType", headerName: "Asset Type", hide: true },
     { field: "subCategory", headerName: "Sub-Category" },
@@ -586,7 +623,8 @@ const ListOfAssets = () => {
       headerName: "Purchase Date",
       hide: true,
       exportFormat: "date",
-      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+      cellRenderer: (params) =>
+        params.value ? humanDate(params.value) : "N/A",
     },
     { field: "warranty", headerName: "Warranty (Months)", hide: true },
     {
@@ -595,10 +633,10 @@ const ListOfAssets = () => {
       exportFormat: "date",
       cellRenderer: (params) => humanDate(params.value),
     },
-    {
-      field: "addedBy",
-      headerName: "Added By",
-    },
+    // {
+    //   field: "addedBy",
+    //   headerName: "Added By",
+    // },
     {
       field: "ownershipType",
       headerName: "Ownership Type",
@@ -614,7 +652,8 @@ const ListOfAssets = () => {
       headerName: "Rental Expiry Date",
       hide: true,
       exportFormat: "date",
-      cellRenderer: (params) => (params.value ? humanDate(params.value) : "N/A"),
+      cellRenderer: (params) =>
+        params.value ? humanDate(params.value) : "N/A",
     },
     {
       field: "damagedLabel",
@@ -659,7 +698,7 @@ const ListOfAssets = () => {
     {
       field: "status",
       headerName: "Status",
-      pinned:"right",
+      pinned: "right",
       cellRenderer: (params) => <StatusChip status={params.value || "N/A"} />,
     },
     {
@@ -721,54 +760,51 @@ const ListOfAssets = () => {
                   : true,
           )
           .map((item, index) => {
-          return {
-            ...item,
-            srNo:
-              (pagination.page - 1) * pagination.limit +
-              index +
-              1,
-            assetMongoId: item?.asset?._id,
-            department: item?.department?.name || "N/A",
-            subCategory: item?.subCategory?.subCategoryName || "N/A",
-            subCatId: item?.subCategory?._id,
-            categoryId: item?.subCategory?.category?._id,
-            category: item?.subCategory?.category?.categoryName || "N/A",
-            building: item?.location?.building?.buildingName || "N/A",
-            unit: item?.location?.unitNo || "N/A",
-            description: item?.description || "N/A",
-            addedAt: item?.createdAt || null,
-            assetType: item?.assetType || "N/A",
-            price: item?.price ?? 0,
-            quantity: item?.quantity ?? 1,
-            purchaseDate: item?.purchaseDate || null,
-            warranty: item?.warranty ?? "N/A",
-            addedBy: item?.createdBy?.firstName
-              ? `${item.createdBy.firstName} ${item?.createdBy?.lastName || ""}`.trim()
-              : item?.createdBy?.name ||
-                (auth?.user?.firstName
-                  ? `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim()
-                  : auth?.user?.name || "N/A"),
-            ownershipType: item?.ownershipType || "N/A",
-            tangableLabel: item?.tangable ? "Yes" : "No",
-            rentedExpirationDate: item?.rentedExpirationDate || null,
-            damagedLabel: item?.isDamaged ? "Yes" : "No",
-            underMaintenanceLabel: item?.isUnderMaintenance ? "Yes" : "No",
-            extraLabel: item?.isExtra ? "Yes" : "No",
-            assignedLabel: item?.isAssigned ? "Yes" : "No",
-            assignedBuilding:
-              item?.assignedAsset?.location?.building?.buildingName || "N/A",
-            assignedUnit: item?.assignedAsset?.location?.unitNo || "N/A",
-            assetImageUrl: item?.assetImage?.url || "N/A",
-            warrantyDocumentLink: item?.warrantyDocument?.link || "N/A",
-          };
-        });
+            return {
+              ...item,
+              srNo: (pagination.page - 1) * pagination.limit + index + 1,
+              assetMongoId: item?.asset?._id,
+              department: item?.department?.name || "N/A",
+              subCategory: item?.subCategory?.subCategoryName || "N/A",
+              subCatId: item?.subCategory?._id,
+              categoryId: item?.subCategory?.category?._id,
+              category: item?.subCategory?.category?.categoryName || "N/A",
+              building: item?.location?.building?.buildingName || "N/A",
+              unit: item?.location?.unitNo || "N/A",
+              description: item?.description || "N/A",
+              addedAt: item?.createdAt || null,
+              assetType: item?.assetType || "N/A",
+              price: item?.price ?? 0,
+              quantity: item?.quantity ?? 1,
+              purchaseDate: item?.purchaseDate || null,
+              warranty: item?.warranty ?? "N/A",
+              addedBy: item?.createdBy?.firstName
+                ? `${item.createdBy.firstName} ${item?.createdBy?.lastName || ""}`.trim()
+                : item?.createdBy?.name ||
+                  (auth?.user?.firstName
+                    ? `${auth.user.firstName} ${auth?.user?.lastName || ""}`.trim()
+                    : auth?.user?.name || "N/A"),
+              ownershipType: item?.ownershipType || "N/A",
+              tangableLabel: item?.tangable ? "Yes" : "No",
+              rentedExpirationDate: item?.rentedExpirationDate || null,
+              damagedLabel: item?.isDamaged ? "Yes" : "No",
+              underMaintenanceLabel: item?.isUnderMaintenance ? "Yes" : "No",
+              extraLabel: item?.isExtra ? "Yes" : "No",
+              assignedLabel: item?.isAssigned ? "Yes" : "No",
+              assignedBuilding:
+                item?.assignedAsset?.location?.building?.buildingName || "N/A",
+              assignedUnit: item?.assignedAsset?.location?.unitNo || "N/A",
+              assetImageUrl: item?.assetImage?.url || "N/A",
+              warrantyDocumentLink: item?.warrantyDocument?.link || "N/A",
+            };
+          });
   //-----------------------Table Data----------------------//
 
   return (
     <PageFrame>
       <YearWiseTable
         search={true}
-       // dateColumn={"purchaseDate"}
+        // dateColumn={"purchaseDate"}
         // tableTitle={"List of Assets"}
         // buttonTitle={"Add Asset"}
         // data={tableData}
@@ -792,11 +828,12 @@ const ListOfAssets = () => {
         }
         onPaginationPageSizeChange={(limit) =>
           setPagination((current) =>
-            current.limit === limit
-              ? current
-              : { ...current, page: 1, limit },
+            current.limit === limit ? current : { ...current, page: 1, limit },
           )
         }
+        serverSearch
+        searchValue={assetSearch}
+        onSearchChange={handleAssetSearchChange}
       />
 
       <MuiModal
@@ -1283,7 +1320,7 @@ const ListOfAssets = () => {
                 isDamaged: data.isDamaged === "true" ? true : false,
                 isUnderMaintenance:
                   data.isUnderMaintenance === "true" ? true : false,
-                isExtra: data.isExtra === "true" ? true : false,  
+                isExtra: data.isExtra === "true" ? true : false,
               }),
             )}
             className="grid grid-cols-2 gap-4"
@@ -1588,7 +1625,7 @@ const ListOfAssets = () => {
                 </TextField>
               )}
             />
-              <Controller
+            <Controller
               name="isExtra"
               control={editControl}
               rules={{ required: "Extra is required" }}
@@ -1619,8 +1656,8 @@ const ListOfAssets = () => {
                   id="asset-image"
                   value={field.value}
                   label="Asset Image"
-                 // onChange={field.onChange}
-                   previewType="image"
+                  // onChange={field.onChange}
+                  previewType="image"
                   allowedExtensions={["jpeg", "jpg", "png"]}
                   error={!!editErrors.assetImage}
                   helperText={editErrors.assetImage?.message}
@@ -1697,7 +1734,7 @@ const ListOfAssets = () => {
                   : "N/A"
               }
             />
-            <DetalisFormatted title={"Added By"} detail={addedByName} />
+            {/* <DetalisFormatted title={"Added By"} detail={addedByName} /> */}
             <DetalisFormatted
               title={"Asset Type"}
               detail={selectedAsset?.assetType || "N/A"}
@@ -1782,11 +1819,11 @@ const ListOfAssets = () => {
               title={"Assigned"}
               detail={selectedAsset?.isAssigned ? "Yes" : "No"}
             />
-              <DetalisFormatted
+            <DetalisFormatted
               title={"Assigned Building"}
               detail={
-                selectedAsset?.assignedAsset?.location?.building?.buildingName ||
-                "N/A"
+                selectedAsset?.assignedAsset?.location?.building
+                  ?.buildingName || "N/A"
               }
             />
             <DetalisFormatted
