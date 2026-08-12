@@ -416,8 +416,11 @@ import TeamMembersSchedule from "../components/Pages/TeamMembersSchedule";
 import MaintenanceMixBag from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag";
 import MaintainanceStEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingDaily";
 import MaintainanceDtcEnergyReadingDaily from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingDaily";
+import EnergyDailyReadingHistory from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/EnergyDailyReadingHistory";
+import EnergyMonthlyReadingHistory from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/EnergyMonthlyReadingHistory";
 import MaintainanceStEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceStEnergyReadingMonthly";
 import MaintainanceDtcEnergyReadingMonthly from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/MaintainanceDtcEnergyReadingMonthly";
+import YearwiseEnergyBilling from "../pages/Dashboard/MaintainanceDashboard/MaintenanceMixBag/YearwiseEnergyBilling";
 import ItMixBag from "../pages/Dashboard/ItDashboard/itMixBag/ItMixBag";
 import TeamMemberDetails from "../components/Pages/TeamMemberDetails";
 import BudgetPage from "../components/Pages/BudgetPage";
@@ -1580,12 +1583,44 @@ export const routes = createBrowserRouter([
                         element: <MaintainanceDtcEnergyReadingDaily />,
                       },
                       {
+                        path: "mix-bag/:module/energy-daily-reading-history",
+                        element: <EnergyDailyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/st-energy-monthly-reading/energy-monthly-reading-history",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/energy-monthly-reading-history",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/st-energy-monthly-reading/energy-monthly-reading-history/:readingId",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/energy-monthly-reading-history/:readingId",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
+                        path: "mix-bag/energy-monthly-reading-history/:module/:readingId",
+                        element: <EnergyMonthlyReadingHistory />,
+                      },
+                      {
                         path: "mix-bag/st-energy-monthly-reading",
                         element: <MaintainanceStEnergyReadingMonthly />,
                       },
                       {
+                        path: "mix-bag/st-energy-monthly-reading/:unitNo",
+                        element: <YearwiseEnergyBilling building="st" />,
+                      },
+                      {
                         path: "mix-bag/dtc-energy-monthly-reading",
                         element: <MaintainanceDtcEnergyReadingMonthly />,
+                      },
+                      {
+                        path: "mix-bag/dtc-energy-monthly-reading/:unitNo",
+                        element: <YearwiseEnergyBilling building="dtc" />,
                       },
                       {
                         path: "team-members-schedule",

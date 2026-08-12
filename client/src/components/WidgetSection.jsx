@@ -28,6 +28,7 @@ const WidgetSection = ({
   fun,
   normalCase,
   summaryChipVariant,
+  headerRightContent,
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -101,62 +102,70 @@ const WidgetSection = ({
               </span>
             )}
             <div className="flex flex-col items-end gap-2">
-              {TitleAmount ? (
-                <span
-                  className={`${
-                    titleFont
-                      ? "text-subtitle text-primary "
-                      : "text-widgetTitle text-primary font-pmedium"
-                  }`}>
-                  {TitleAmount}{" "}
-                </span>
-              ) : null}
-              <div className="flex gap-2 flex-wrap justify-end">
-                {TitleAmountTotal !== undefined &&
-                  TitleAmountTotal !== null && (
+              {headerRightContent ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {headerRightContent}
+                </div>
+              ) : (
+                <>
+                  {TitleAmount ? (
                     <span
                       className={`${
                         titleFont
-                          ? "text-subtitle text-slate-800"
-                          : "text-body text-slate-800 font-pmedium"
+                          ? "text-subtitle text-primary "
+                          : "text-widgetTitle text-primary font-pmedium"
                       }`}>
-                      <div className={totalChipClasses}>
-                        {totalTitle && <div>{totalTitle} : </div>}
-                        <div>{TitleAmountTotal}</div>
-                      </div>
+                      {TitleAmount}{" "}
                     </span>
-                  )}
-                {TitleAmountGreen !== undefined &&
-                  TitleAmountGreen !== null && (
-                    <span
-                      className={`${
-                        titleFont
-                          ? "text-subtitle text-green-800"
-                          : "text-body text-green-800 font-pmedium"
-                      }`}>
-                      <div className={greenChipClasses}>
-                        {/* <FaArrowTrendUp /> */}
-                        {greenTitle && <div>{greenTitle} : </div>}
-                        <div>{TitleAmountGreen}</div>
-                      </div>
-                    </span>
-                  )}
-                {TitleAmountRed !== undefined && TitleAmountGreen !== null && (
-                  <span
-                    className={`${
-                      titleFont
-                        ? "text-subtitle text-red-800"
-                        : "text-body text-red-800 font-pmedium"
-                    }`}>
-                      <div className={redChipClasses}>
-                        {/* <FaArrowTrendDown /> */}
-                        {redTitle && <div>{redTitle} : </div>}
+                  ) : null}
+                  <div className="flex gap-2 flex-wrap justify-end">
+                    {TitleAmountTotal !== undefined &&
+                      TitleAmountTotal !== null && (
+                        <span
+                          className={`${
+                            titleFont
+                              ? "text-subtitle text-slate-800"
+                              : "text-body text-slate-800 font-pmedium"
+                          }`}>
+                          <div className={totalChipClasses}>
+                            {totalTitle && <div>{totalTitle} : </div>}
+                            <div>{TitleAmountTotal}</div>
+                          </div>
+                        </span>
+                      )}
+                    {TitleAmountGreen !== undefined &&
+                      TitleAmountGreen !== null && (
+                        <span
+                          className={`${
+                            titleFont
+                              ? "text-subtitle text-green-800"
+                              : "text-body text-green-800 font-pmedium"
+                          }`}>
+                          <div className={greenChipClasses}>
+                            {/* <FaArrowTrendUp /> */}
+                            {greenTitle && <div>{greenTitle} : </div>}
+                            <div>{TitleAmountGreen}</div>
+                          </div>
+                        </span>
+                      )}
+                    {TitleAmountRed !== undefined && TitleAmountGreen !== null && (
+                      <span
+                        className={`${
+                          titleFont
+                            ? "text-subtitle text-red-800"
+                            : "text-body text-red-800 font-pmedium"
+                        }`}>
+                          <div className={redChipClasses}>
+                            {/* <FaArrowTrendDown /> */}
+                            {redTitle && <div>{redTitle} : </div>}
 
-                      <div>{TitleAmountRed}</div>
-                    </div>
-                  </span>
-                )}
-              </div>
+                          <div>{TitleAmountRed}</div>
+                        </div>
+                      </span>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
           </div>
           {button && (

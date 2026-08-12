@@ -460,6 +460,8 @@ const YearWiseTable = ({
             <PrimaryButton
               title={exportButtonTitle}
               handleSubmit={handleExportPass}
+              padding="px-4 py-2"
+              className="shrink-0 whitespace-nowrap"
             />
           )}
           {batchButton && selectedRows.length > 0 && (
