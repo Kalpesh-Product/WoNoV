@@ -888,23 +888,25 @@ const addDtcEnergyMonthlyReadings = async (req, res, next) => {
         });
       }
       const meter = unit.ElectricityConsumption;
-      if (!String(meter?.meterNo || "").trim()) {
+      const meterNo = String(meter?.meterNo || "").trim();
+      if (!meterNo) {
         return res.status(400).json({
           message: `Meter No. is not configured for unit ${unit.unitNo}`,
         });
       }
+      const totalConsumption = monthlyConsumptionThrough(meter, bounds);
       const monthlyBill = meter.monthlyBills.find(
         (item) => item.monthKey === bounds.monthKey,
       );
       const billValues = {
-        totalConsumption: monthlyConsumptionThrough(meter, bounds),
+        totalConsumption,
         totalBillAmount,
         billDate: bounds.billDate,
         billTimestamp: new Date(),
         monthKey: bounds.monthKey,
         addedBy: req.user,
         originalMeterNo: meterNo,
-        originalTotalConsumption: monthlyConsumptionThrough(meter, bounds),
+        originalTotalConsumption: totalConsumption,
         originalTotalBillAmount: totalBillAmount,
       };
       if (monthlyBill) Object.assign(monthlyBill, billValues);
