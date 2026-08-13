@@ -3,6 +3,7 @@ const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
 
 const fetchCoworkingRevenueService = async ({
   dateFilter,
@@ -191,10 +192,87 @@ const fetchMeetingRevenueReportService = async ({
     filter.date = dateFilter.date;
   }
 
-  const revenues = await MeetingRevenue.find(filter)
-    .sort({ date: -1 })
-    .lean()
-    .exec();
+  const dayPassFilter = {
+    ...(company && { company }),
+    visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+    meeting: null,
+    ...(dateFilter?.date && { dateOfVisit: dateFilter.date }),
+  };
+
+  const [meetingRevenues, dayPassVisits] = await Promise.all([
+    MeetingRevenue.find(filter)
+      .sort({ date: -1 })
+      .populate({
+        path: "meeting",
+        select: "meetingType bookedRoom",
+        populate: {
+          path: "bookedRoom",
+          select: "location",
+          populate: {
+            path: "location",
+            select: "unitNo unitName building",
+            populate: { path: "building", select: "buildingName" },
+          },
+        },
+      })
+      .lean()
+      .exec(),
+    ExternalVisits.find(dayPassFilter)
+      .sort({ dateOfVisit: -1 })
+      .populate({
+        path: "visitorId",
+        select:
+          "firstName middleName lastName registeredClientCompany brandName visitorCompany",
+      })
+      .populate({
+        path: "unit",
+        select: "unitNo unitName building",
+        populate: { path: "building", select: "buildingName" },
+      })
+      .lean()
+      .exec(),
+  ]);
+
+  const dayPassRevenues = dayPassVisits.map((visit) => {
+    const visitorName = [
+      visit.visitorId?.firstName,
+      visit.visitorId?.middleName,
+      visit.visitorId?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    return {
+      client:
+        visit.visitorId?.registeredClientCompany ||
+        visit.visitorId?.brandName ||
+        visit.visitorId?.visitorCompany ||
+        visitorName ||
+        "N/A",
+      meetingType: visit.visitorType,
+      particulars: visit.purposeOfVisit || visit.visitorType,
+      unitsOrHours: "Pass",
+      meetingRoomName:
+        visit.unit?.unitName || visit.unit?.unitNo || "N/A",
+      unit: visit.unit,
+      building: visit.unit?.building?.buildingName || "N/A",
+      taxable: Math.max(
+        Number(visit.amount || 0) - Number(visit.discount || 0),
+        0,
+      ),
+      gst: Number(visit.gstAmount || 0),
+      totalAmount: Number(visit.totalAmount || 0),
+      date: visit.dateOfVisit,
+      paymentDate: visit.paymentStatus ? visit.updatedAt : null,
+      status: visit.paymentStatus ? "Paid" : "Unpaid",
+      remarks: visit.paymentMode || "-",
+      source: "day-pass",
+    };
+  });
+
+  const revenues = [...meetingRevenues, ...dayPassRevenues].sort(
+    (a, b) => new Date(b.date || 0) - new Date(a.date || 0),
+  );
 
   const MONTHS_SHORT = [
     "Jan",
@@ -235,6 +313,12 @@ const fetchMeetingRevenueReportService = async ({
 
     monthData.revenue.push({
       clientName: item.client,
+      meetingType:
+        item.source === "day-pass"
+          ? item.meetingType
+          : item.meeting
+            ? "Meeting Room Booking"
+            : String(item.particulars || "").trim() || "N/A",
       particulars: item.particulars,
       unitsOrHours: item.unitsOrHours,
       hoursBooked: item.hoursBooked,
@@ -246,6 +330,15 @@ const fetchMeetingRevenueReportService = async ({
       date: item.date,
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
+      unit:
+        item.source === "day-pass"
+          ? item.unit
+          : item.meeting?.bookedRoom?.location,
+      building:
+        item.source === "day-pass"
+          ? item.building
+          : item.meeting?.bookedRoom?.location?.building?.buildingName ||
+            "N/A",
       remarks: item.remarks || "",
     });
   });

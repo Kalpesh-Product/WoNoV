@@ -10,6 +10,10 @@ import StatusChip from "../../../components/StatusChip";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import { useState } from "react";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
 
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
@@ -54,8 +58,15 @@ const getNormalizedPaymentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const getUnitLabel = (unit) => {
+  if (!unit) return "N/A";
+  if (typeof unit === "string") return unit;
+  return unit.unitNo || "N/A";
+};
+
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
+  const [selectedRevenue, setSelectedRevenue] = useState(null);
 
   const {
     data: meetingsData = [],
@@ -75,6 +86,7 @@ const MeetingRevenue = () => {
     revenue: monthData?.revenue?.map((client) => ({
       ...client,
       particulars: client.particulars || "-",
+      meetingType: client.meetingType || "N/A",
       unitsOrHours: client.unitsOrHours ?? "-",
       taxable: client.taxable ?? 0,
       gst: client.gst ?? 0,
@@ -221,6 +233,7 @@ const MeetingRevenue = () => {
               // { headerName: "Particulars", field: "particulars", width: 200 },
               // { headerName: "Units / Hours", field: "unitsOrHours" },
               { headerName: "Client Name", field: "clientName" },
+              { headerName: "Meeting Type", field: "meetingType" },
               {
                 headerName: "Taxable (INR)",
                 field: "taxable",
@@ -254,8 +267,87 @@ const MeetingRevenue = () => {
                 pinned: "right",
                 cellRenderer: (params) => <StatusChip status={params.value} />,
               },
+              {
+                headerName: "Actions",
+                field: "actions",
+                pinned: "right",
+                sortable: false,
+                filter: false,
+                cellRenderer: (params) => (
+                  <button
+                    type="button"
+                    aria-label="View meeting revenue details"
+                    className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                    onClick={() => setSelectedRevenue(params.data)}
+                  >
+                    <MdOutlineRemoveRedEye size={20} />
+                  </button>
+                ),
+              },
             ]}
           />
+          <MuiModal
+            title="Meeting Revenue Details"
+            open={Boolean(selectedRevenue)}
+            onClose={() => setSelectedRevenue(null)}
+          >
+            {selectedRevenue && (
+              <div className="grid grid-cols-1 gap-4 w-full">
+                <DetalisFormatted
+                  title="Client Name"
+                  detail={selectedRevenue.clientName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Meeting Type"
+                  detail={selectedRevenue.meetingType || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Meeting Date"
+                  detail={humanDate(selectedRevenue.date)}
+                />
+                <DetalisFormatted
+                  title="Payment Date"
+                  detail={humanDate(selectedRevenue.paymentDate)}
+                />
+                <DetalisFormatted
+                  title="Unit"
+                  detail={getUnitLabel(selectedRevenue.unit)}
+                />
+                <DetalisFormatted
+                  title="Building"
+                  detail={selectedRevenue.building || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Hours Booked"
+                  detail={selectedRevenue.hoursBooked || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Cost Per Hour"
+                  detail={`INR ${inrFormat(selectedRevenue.costPerHour || 0)}`}
+                />
+                <DetalisFormatted
+                  title="Taxable Amount"
+                  detail={`INR ${inrFormat(selectedRevenue.taxable || 0)}`}
+                />
+                <DetalisFormatted
+                  title="GST Amount"
+                  detail={`INR ${inrFormat(selectedRevenue.gst || 0)}`}
+                />
+                <DetalisFormatted
+                  title="Total Amount"
+                  detail={`INR ${inrFormat(selectedRevenue.totalAmount || 0)}`}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedRevenue.status || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Remarks"
+                  detail={selectedRevenue.remarks || "N/A"}
+                />
+              </div>
+            )}
+          </MuiModal>
         </>
       )}
     </div>

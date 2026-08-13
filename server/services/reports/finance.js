@@ -7,6 +7,7 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const Unit = require("../../models/locations/Unit");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const dayjs = require("dayjs");
 const utc = require("dayjs/plugin/utc");
 const timezone = require("dayjs/plugin/timezone");
@@ -439,6 +440,7 @@ const fetchProfitLossReportService = async ({
 
   const [
     meetingRevenue,
+    dayPassRevenue,
     alternateRevenue,
     virtualOfficeRevenue,
     workationRevenue,
@@ -452,6 +454,27 @@ const fetchProfitLossReportService = async ({
       meetingIncomeValueExpr,
       company,
       dateRange,
+    ),
+    monthlyAggregate(
+      ExternalVisits,
+      "dateOfVisit",
+      {
+        $max: [
+          {
+            $subtract: [
+              { $ifNull: ["$amount", 0] },
+              { $ifNull: ["$discount", 0] },
+            ],
+          },
+          0,
+        ],
+      },
+      company,
+      dateRange,
+      {
+        visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+        meeting: null,
+      },
     ),
     monthlyAggregate(
       AlternateRevenue,
@@ -499,6 +522,7 @@ const fetchProfitLossReportService = async ({
 
   [
     ["Meeting revenue", meetingRevenue],
+    ["Day pass revenue", dayPassRevenue],
     ["Alternate revenue", alternateRevenue],
     ["Virtual office revenue", virtualOfficeRevenue],
     ["Workation revenue", workationRevenue],
@@ -512,6 +536,7 @@ const fetchProfitLossReportService = async ({
   const incomeMap = {};
   [
     meetingRevenue,
+    dayPassRevenue,
     alternateRevenue,
     virtualOfficeRevenue,
     workationRevenue,
