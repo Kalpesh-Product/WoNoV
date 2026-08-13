@@ -1,5 +1,5 @@
 import AgTable from "../../../components/AgTable";
-import { Chip } from "@mui/material";
+import { Checkbox, Chip, FormControlLabel, TextField } from "@mui/material";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
@@ -12,10 +12,23 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "./../../../utils/humanDateForamt";
 import formatDateTime from "../../../utils/formatDateTime";
 
-const EscalatedTickets = ({ title, departmentId }) => {
+import { Controller, useForm } from "react-hook-form";
+import PrimaryButton from "../../../components/PrimaryButton";
+
+const EscalatedTickets = ({ title, departmentId, isItDepartment }) => {
   const axios = useAxiosPrivate();
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [closeModal, setCloseModal] = useState(false);
+  const [closingTicketId, setClosingTicketId] = useState(null);
+  const {
+    handleSubmit: handleCloseSubmit,
+    reset: resetCloseForm,
+    control: closeControl,
+    formState: { errors: closeErrors },
+  } = useForm({
+    defaultValues: { closingRemark: "", closingCategories: [] },
+  });
 
   // Fetch Supported Tickets
   const { data: escalatedTickets = [], isLoading } = useQuery({
@@ -59,11 +72,13 @@ const EscalatedTickets = ({ title, departmentId }) => {
     return { assignedToDisplay, assignmentDetails };
   };
 
-  const { mutate } = useMutation({
+const { mutate, isPending: isClosingTicket } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async (ticketId) => {
+    mutationFn: async ({ ticketId, closingRemark, closingCategories }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
+        closingRemark,
+        closingCategories,
       });
       return response.data;
     },
@@ -271,7 +286,10 @@ const EscalatedTickets = ({ title, departmentId }) => {
         if (isClosed) {
           menuItems.push({
             label: "Close",
-            onClick: () => mutate(params.data.id),
+             onClick: () => {
+              setClosingTicketId(params.data.id);
+              setCloseModal(true);
+            },
           });
         }
         return (
@@ -401,6 +419,53 @@ const EscalatedTickets = ({ title, departmentId }) => {
               )}
             </div>
           )}
+        </MuiModal>
+         <MuiModal
+          open={closeModal}
+          onClose={() => {
+            resetCloseForm();
+            setCloseModal(false);
+          }}
+          title="Close Ticket"
+        >
+          <form
+            onSubmit={handleCloseSubmit((data) =>
+              mutate(
+                { ticketId: closingTicketId, ...data },
+                { onSuccess: () => setCloseModal(false) },
+              ),
+            )}
+            className="grid grid-cols-1 gap-5"
+          >
+            {isItDepartment && (
+              <Controller
+                name="closingCategories"
+                control={closeControl}
+                rules={{ validate: (value) => value.length > 0 || "Select at least one ticket category" }}
+                render={({ field }) => (
+                  <div>
+                    <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                      {["Daily Task", "ISP/External Issue", "Client Support", "Client/User Side Issue", "IT Internal Issue", "Others Issue"].map((category, index) => (
+                        <FormControlLabel
+                          key={category}
+                          control={<Checkbox checked={field.value.includes(category)} onChange={(event) => field.onChange(event.target.checked ? [...field.value, category] : field.value.filter((item) => item !== category))} />}
+                          label={`${index + 1}. ${category}`}
+                        />
+                      ))}
+                    </div>
+                    {closeErrors.closingCategories && <p className="mt-1 text-xs text-red-600">{closeErrors.closingCategories.message}</p>}
+                  </div>
+                )}
+              />
+            )}
+            <Controller
+              name="closingRemark"
+              control={closeControl}
+              rules={{ required: "Closing remark is required" }}
+              render={({ field }) => <TextField {...field} label="Closing Remark" fullWidth multiline rows={4} error={!!closeErrors.closingRemark} helperText={closeErrors.closingRemark?.message} />}
+            />
+            <PrimaryButton title="Close Ticket" isLoading={isClosingTicket} disabled={isClosingTicket} type="submit" />
+          </form>
         </MuiModal>
       </div>
     </div>

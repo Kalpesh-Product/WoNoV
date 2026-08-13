@@ -11,7 +11,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import StatusChip from "../../../components/StatusChip";
 import formatDateTime from "../../../utils/formatDateTime";
 
-const ClosedTickets = ({ title, departmentId }) => {
+const ClosedTickets = ({ title, departmentId, isItDepartment }) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
@@ -281,6 +281,14 @@ const ClosedTickets = ({ title, departmentId }) => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+           {isItDepartment && (
+            <DetalisFormatted
+              title="Categories"
+              detail={Array.isArray(viewTicketDetails?.closingCategories)
+                ? viewTicketDetails.closingCategories.join(", ")
+                : ""}
+            />
+          )}
           {viewTicketDetails?.image && (
             <div className="lg:col-span-1">
               <img

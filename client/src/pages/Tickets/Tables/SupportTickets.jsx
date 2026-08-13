@@ -3,6 +3,8 @@ import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
 import {
   Autocomplete,
+  Checkbox,
+  FormControlLabel,
   Chip,
   CircularProgress,
   MenuItem,
@@ -25,7 +27,7 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import humanTime from "../../../utils/humanTime";
 import useAuth from "../../../hooks/useAuth";
 
-const SupportTickets = ({ title, departmentId }) => {
+const SupportTickets = ({ title, departmentId, isItDepartment }) => {
   const { auth } = useAuth();
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
@@ -48,6 +50,7 @@ const SupportTickets = ({ title, departmentId }) => {
   } = useForm({
     defaultValues: {
       closingRemark: "",
+      closingCategories: [],
     },
   });
 
@@ -248,10 +251,11 @@ const SupportTickets = ({ title, departmentId }) => {
 
   const { mutate: closeTicket, isPending: isClosingTicket } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async ({ ticketId, closingRemark }) => {
+    mutationFn: async ({ ticketId, closingRemark, closingCategories }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
         closingRemark,
+        closingCategories,
       });
       return response.data;
     },
@@ -771,18 +775,74 @@ const SupportTickets = ({ title, departmentId }) => {
 
       <MuiModal
         open={closeModal}
-        onClose={() => setCloseModal(false)}
+        // onClose={() => setCloseModal(false)}
+          onClose={() => {
+          resetCloseForm();
+          setCloseModal(false);
+        }}  
         title="Close Ticket"
       >
         <form
-          onSubmit={handleCloseSubmit((data) =>
-            closeTicket({
-              ticketId: closingTicketId,
-              closingRemark: data.closingRemark,
-            }),
+          // onSubmit={handleCloseSubmit((data) =>
+          //   closeTicket({
+          //     ticketId: closingTicketId,
+          //     closingRemark: data.closingRemark,
+          //   }),
+          // )}
+          // className="grid grid-cols-1 gap-4"
+           onSubmit={handleCloseSubmit((data) =>
+            closeTicket({ ticketId: closingTicketId, ...data }),
           )}
-          className="grid grid-cols-1 gap-4"
+          className="grid grid-cols-1 gap-5"
         >
+          {isItDepartment && (
+            <Controller
+              name="closingCategories"
+              control={closeControl}
+              rules={{
+                validate: (value) =>
+                  value.length > 0 || "Select at least one ticket category",
+              }}
+              render={({ field }) => (
+                <div>
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {[
+                      "Daily Task",
+                      "ISP/External Issue",
+                      "Client Support",
+                      "Client/User Side Issue",
+                      "IT Internal Issue",
+                      "Others Issue",
+                    ].map((category, index) => (
+                      <FormControlLabel
+                        key={category}
+                        control={
+                          <Checkbox
+                            checked={field.value.includes(category)}
+                            onChange={(event) =>
+                              field.onChange(
+                                event.target.checked
+                                  ? [...field.value, category]
+                                  : field.value.filter(
+                                      (item) => item !== category,
+                                    ),
+                              )
+                            }
+                          />
+                        }
+                        label={`${index + 1}. ${category}`}
+                      />
+                    ))}
+                  </div>
+                  {closeErrors.closingCategories && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {closeErrors.closingCategories.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
+          )}
           <Controller
             name="closingRemark"
             control={closeControl}
@@ -792,7 +852,7 @@ const SupportTickets = ({ title, departmentId }) => {
                 {...field}
                 label="Closing Remark"
                 fullWidth
-                size="small"
+               // size="small"
                 multiline
                 rows={4}
                 error={!!closeErrors.closingRemark}
