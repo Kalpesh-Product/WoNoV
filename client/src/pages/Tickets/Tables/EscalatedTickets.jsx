@@ -449,7 +449,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
                         <FormControlLabel
                           key={category}
                           control={<Checkbox checked={field.value.includes(category)} onChange={(event) => field.onChange(event.target.checked ? [...field.value, category] : field.value.filter((item) => item !== category))} />}
-                          label={`${index + 1}. ${category}`}
+                          label={category}
                         />
                       ))}
                     </div>

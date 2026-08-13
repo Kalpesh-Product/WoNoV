@@ -696,7 +696,7 @@ const AcceptedTickets = ({ title, departmentId, isItDepartment }) => {
                             }
                           />
                         }
-                        label={`${index + 1}. ${category}`}
+                        label={category}
                       />
                     ))}
                   </div>

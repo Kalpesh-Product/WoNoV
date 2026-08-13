@@ -434,6 +434,9 @@ const TicketReports = () => {
                   closedAt: item.closedAt ? formatDateTime(item.closedAt) : "",
                   closedAtRaw: item.closedAt || "",
                   closingRemark: item.closingRemark || "",
+                  closingCategories: Array.isArray(item.closingCategories)
+                    ? item.closingCategories
+                    : [],
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -633,6 +636,13 @@ const TicketReports = () => {
               title="Closing Remark"
               detail={selectedMeeting?.closingRemark || ""}
             />
+              {selectedMeeting?.raisedToDepartment?.trim().toLowerCase() ===
+              "it" && (
+              <DetalisFormatted
+                title="Categories"
+                detail={selectedMeeting.closingCategories.join(", ")}
+              />
+            )}
             {/* <DetalisFormatted
               title={"Rejected By"}
               detail={selectedMeeting?.rejectedBy || "None"}
