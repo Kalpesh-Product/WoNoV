@@ -638,7 +638,9 @@ const TicketReports = () => {
             />
               {["it", "tech"].includes(
                 selectedMeeting?.raisedToDepartment?.trim().toLowerCase(),
-              ) && (
+              ) &&
+                Array.isArray(selectedMeeting?.closingCategories) &&
+                selectedMeeting.closingCategories.length > 0 && (
               <DetalisFormatted
                 title="Categories"
                 detail={selectedMeeting.closingCategories.join(", ")}

@@ -1287,16 +1287,17 @@ const closeTicket = async (req, res, next) => {
       );
     }
 
-     const ticketDepartment = await Department.findById(
+    const ticketDepartment = await Department.findById(
       foundTicket.raisedToDepartment,
     )
       .select("name")
       .lean();
-    const isItDepartment = ticketDepartment?.name?.trim().toLowerCase() === "it";
+    const ticketDepartmentName = ticketDepartment?.name?.trim().toLowerCase();
+    const canUseClosingCategories = ["it", "tech"].includes(ticketDepartmentName);
 
-    if (!isItDepartment && closingCategories.length) {
+    if (!canUseClosingCategories && closingCategories.length) {
       return res.status(400).json({
-        message: "Closing categories are only available for IT tickets",
+        message: "Closing categories are only available for IT and Tech tickets",
       });
     }
 
@@ -1322,7 +1323,7 @@ const closeTicket = async (req, res, next) => {
         closedAt: new Date(),
         closedBy: user,
         closingRemark: closingRemark.trim(),
-        ...(isItDepartment && {
+        ...(canUseClosingCategories && closingCategories.length > 0 && {
           closingCategories: [...new Set(closingCategories)],
         }),
       },
@@ -1341,22 +1342,22 @@ const closeTicket = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Ticket closed successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedTicket._id,
-      changes: {
-        closedBy: user,
-        status: "Closed",
-        closingRemark: closingRemark.trim(),
-        ...(isItDepartment && {
-          closingCategories: [...new Set(closingCategories)],
-        }),
-      },
-    });
+        remarks: "Ticket closed successfully",
+        status: "Success",
+        user: user,
+        ip: ip,
+        company: company,
+        sourceKey: logSourceKey,
+        sourceId: updatedTicket._id,
+        changes: {
+          closedBy: user,
+          status: "Closed",
+          closingRemark: closingRemark.trim(),
+          ...(canUseClosingCategories && closingCategories.length > 0 && {
+            closingCategories: [...new Set(closingCategories)],
+          }),
+        },
+      });
 
     return res.status(200).json({ message: "Ticket closed successfully" });
   } catch (error) {

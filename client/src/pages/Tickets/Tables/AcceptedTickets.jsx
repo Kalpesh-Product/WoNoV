@@ -682,10 +682,6 @@ const AcceptedTickets = ({
             <Controller
               name="closingCategories"
               control={closeControl}
-              rules={{
-                validate: (value) =>
-                  value.length > 0 || "Select at least one ticket category",
-              }}
               render={({ field }) => (
                 <div>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">

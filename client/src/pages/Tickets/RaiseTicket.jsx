@@ -701,7 +701,9 @@ const RaiseTicket = () => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
-           {viewTicketDetails?.isItDepartment && (
+           {viewTicketDetails?.isItDepartment &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
             <DetalisFormatted
               title="Categories"
               detail={Array.isArray(viewTicketDetails?.closingCategories)

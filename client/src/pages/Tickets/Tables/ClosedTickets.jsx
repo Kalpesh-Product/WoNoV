@@ -286,7 +286,9 @@ const ClosedTickets = ({
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
-           {(isItDepartment || isTechDepartment) && (
+           {(isItDepartment || isTechDepartment) &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
             <DetalisFormatted
               title="Categories"
               detail={Array.isArray(viewTicketDetails?.closingCategories)

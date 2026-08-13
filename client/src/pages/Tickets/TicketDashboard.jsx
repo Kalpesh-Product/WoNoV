@@ -73,7 +73,9 @@ const TicketDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/tickets/get-all-tickets`);
-        return response.data;
+        return Array.isArray(response.data)
+          ? response.data
+          : response.data?.data || [];
       } catch (error) {
         console.error("Error fetching tickets:", error);
         throw new Error("Failed to fetch tickets");
@@ -94,7 +96,8 @@ const TicketDashboard = () => {
       }
     },
   });
-  const totalTickets = ticketsData.length || 0;
+  const safeTicketsData = Array.isArray(ticketsData) ? ticketsData : [];
+  const totalTickets = safeTicketsData.length || 0;
 
   const todayDate = dayjs().startOf("day");
 
@@ -114,44 +117,44 @@ const TicketDashboard = () => {
   };
 
   const ticketsFilteredData = {
-    openTickets: ticketsData.filter((item) => {
+    openTickets: safeTicketsData.filter((item) => {
       return (
         item.status === "Open" && dayjs(item.createdAt).isSame(todayDate, "day")
       );
     }).length,
 
-    rejectedTickets: ticketsData.filter((item) => {
+    rejectedTickets: safeTicketsData.filter((item) => {
       return (
         item.status === "Rejected" && dayjs(item.createdAt).isSame(todayDate, "day")
       );
     }).length,
 
-    closedTickets: ticketsData.filter(
+    closedTickets: safeTicketsData.filter(
       (item) =>
         item.status === "Closed" &&
         dayjs(item?.closedAt).isSame(todayDate, "day")
     ).length,
 
-    pendingTickets: ticketsData.filter(
+    pendingTickets: safeTicketsData.filter(
       (item) =>
         item.status === "Pending" &&
         dayjs(item.createdAt).isSame(todayDate, "day")
     ).length,
 
-    acceptedTickets: ticketsData.filter(
+    acceptedTickets: safeTicketsData.filter(
       (item) =>
         item?.acceptedBy?._id === auth.user?._id &&
         item.status === "In Progress" &&
         dayjs(item?.acceptedAt).isSame(todayDate, "day")
     ).length,
 
-    assignedTickets: ticketsData.filter(
+    assignedTickets: safeTicketsData.filter(
       (item) =>
         isAssignedToCurrentUser(item) &&
         dayjs(item?.assignedAt).isSame(todayDate, "day")
     ).length,
 
-    escalatedTickets: ticketsData.filter((item) => {
+    escalatedTickets: safeTicketsData.filter((item) => {
       const depts = auth.user.departments.map((dept) => dept._id.toString());
 
       const matchedDept = depts.some(
@@ -166,20 +169,20 @@ const TicketDashboard = () => {
     }).length,
 
     averagePerformance: (
-      (ticketsData.filter(
+      (safeTicketsData.filter(
         (item) =>
           item.status === "Closed" &&
           dayjs(item.createdAt).isSame(todayDate, "day")
       ).length /
-        ticketsData.filter((item) =>
+        safeTicketsData.filter((item) =>
           dayjs(item.createdAt).isSame(todayDate, "day")
         ).length || 1) * 100
     ).toFixed(0),
   };
 
   const avg = (
-    (ticketsData.filter((item) => item.status === "Closed").length /
-      ticketsData.length) *
+    (safeTicketsData.filter((item) => item.status === "Closed").length /
+      safeTicketsData.length) *
     100
   ).toFixed(0);
 
@@ -201,14 +204,14 @@ const TicketDashboard = () => {
 
   const currentYear = new Date().getFullYear();
 
-  const todayTickets = ticketsData.filter((ticket) => {
+  const todayTickets = safeTicketsData.filter((ticket) => {
     if (!ticket?.createdAt) return false;
     return dayjs(ticket.createdAt).isSame(dayjs(), "day");
   });
 
   const lastMonth = new Date().getMonth();
 
-  const lastMonthTickets = ticketsData.filter((ticket) => {
+  const lastMonthTickets = safeTicketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
     return (
       createdAt.getMonth() - 1 === lastMonth - 1 &&
@@ -218,7 +221,7 @@ const TicketDashboard = () => {
 
   const currentMonth = new Date().getMonth();
 
-  const currentMonthTickets = ticketsData.filter((ticket) => {
+  const currentMonthTickets = safeTicketsData.filter((ticket) => {
     const createdAt = new Date(ticket.createdAt);
 
     return (
@@ -458,7 +461,7 @@ const TicketDashboard = () => {
         >
           {!isLoading ? (
             <AreaGraph
-              responseData={ticketsData}
+              responseData={safeTicketsData}
               onTotalChange={setFilteredTotal}
               timeFilter={timeFilter}
               setTimeFilter={setTimeFilter}
