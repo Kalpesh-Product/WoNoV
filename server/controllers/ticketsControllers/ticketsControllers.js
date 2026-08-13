@@ -1219,7 +1219,7 @@ const closeTicket = async (req, res, next) => {
   const { user, company, ip } = req;
 
   try {
-    const { ticketId, closingRemark = "" } = req.body;
+     const { ticketId, closingRemark = "", closingCategories = [] } = req.body;
 
     if (!ticketId) {
       throw new CustomError(
@@ -1239,12 +1239,34 @@ const closeTicket = async (req, res, next) => {
       );
     }
 
+    if (typeof closingRemark !== "string") {
+      return res.status(400).json({ message: "Closing remark must be text" });
+    }
+
+
     if (closingRemark.trim().length > 250) {
       return res.status(400).json({
         message: "Closing remark must not exceed 250 characters",
         currentLength: closingRemark.trim().length,
         maxLength: 250,
       });
+    }
+
+    const allowedClosingCategories = [
+      "Daily Task",
+      "ISP/External Issue",
+      "Client Support",
+      "Client/User Side Issue",
+      "IT Internal Issue",
+      "Others Issue",
+    ];
+    if (
+      !Array.isArray(closingCategories) ||
+      closingCategories.some(
+        (category) => !allowedClosingCategories.includes(category),
+      )
+    ) {
+      return res.status(400).json({ message: "Invalid closing categories" });
     }
 
     const foundUser = await User.findOne({ _id: user })
@@ -1265,6 +1287,20 @@ const closeTicket = async (req, res, next) => {
       );
     }
 
+    const ticketDepartment = await Department.findById(
+      foundTicket.raisedToDepartment,
+    )
+      .select("name")
+      .lean();
+    const ticketDepartmentName = ticketDepartment?.name?.trim().toLowerCase();
+    const canUseClosingCategories = ["it", "tech"].includes(ticketDepartmentName);
+
+    if (!canUseClosingCategories && closingCategories.length) {
+      return res.status(400).json({
+        message: "Closing categories are only available for IT and Tech tickets",
+      });
+    }
+
     const userDepartments = foundUser.departments.map((dept) =>
       dept.toString(),
     );
@@ -1282,7 +1318,15 @@ const closeTicket = async (req, res, next) => {
 
     const updatedTicket = await Tickets.findByIdAndUpdate(
       ticketId,
-      { status: "Closed", closedAt: new Date(), closedBy: user, closingRemark },
+      {
+        status: "Closed",
+        closedAt: new Date(),
+        closedBy: user,
+        closingRemark: closingRemark.trim(),
+        ...(canUseClosingCategories && closingCategories.length > 0 && {
+          closingCategories: [...new Set(closingCategories)],
+        }),
+      },
       { new: true },
     );
     if (!updatedTicket) {
@@ -1298,15 +1342,22 @@ const closeTicket = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: "Ticket closed successfully",
-      status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
-      sourceKey: logSourceKey,
-      sourceId: updatedTicket._id,
-      changes: { closedBy: user, status: "Closed" },
-    });
+        remarks: "Ticket closed successfully",
+        status: "Success",
+        user: user,
+        ip: ip,
+        company: company,
+        sourceKey: logSourceKey,
+        sourceId: updatedTicket._id,
+        changes: {
+          closedBy: user,
+          status: "Closed",
+          closingRemark: closingRemark.trim(),
+          ...(canUseClosingCategories && closingCategories.length > 0 && {
+            closingCategories: [...new Set(closingCategories)],
+          }),
+        },
+      });
 
     return res.status(200).json({ message: "Ticket closed successfully" });
   } catch (error) {
@@ -1431,7 +1482,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-        "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark",
+         "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark closingCategories",
       )
       .populate([
         {

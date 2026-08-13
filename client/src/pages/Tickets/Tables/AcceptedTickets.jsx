@@ -1,6 +1,8 @@
 import AgTable from "../../../components/AgTable";
 import {
   Autocomplete,
+  Checkbox,
+  FormControlLabel,
   Chip,
   CircularProgress,
   LinearProgress,
@@ -29,7 +31,12 @@ import StatusChip from "../../../components/StatusChip";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 
-const AcceptedTickets = ({ title, departmentId }) => {
+const AcceptedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
@@ -77,8 +84,21 @@ const AcceptedTickets = ({ title, departmentId }) => {
   } = useForm({
     defaultValues: {
       closingRemark: "",
+      closingCategories: [],
     },
   });
+  const closingCategoryOptions = isItDepartment
+    ? [
+        "Daily Task",
+        "ISP/External Issue",
+        "Client Support",
+        "Client/User Side Issue",
+        "IT Internal Issue",
+        "Others Issue",
+      ]
+    : isTechDepartment
+      ? ["Others Issue"]
+      : [];
 
   const handleViewTicket = (ticket) => {
     setSelectedTicket({
@@ -157,10 +177,11 @@ const AcceptedTickets = ({ title, departmentId }) => {
 
   const { mutate: closeTicket, isPending: isClosing } = useMutation({
     mutationKey: ["close-ticket"],
-    mutationFn: async ({ ticketId, closingRemark }) => {
+     mutationFn: async ({ ticketId, closingRemark, closingCategories }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
         closingRemark,
+        closingCategories,
       });
       return response.data;
     },
@@ -603,7 +624,7 @@ const AcceptedTickets = ({ title, departmentId }) => {
         )}
       </MuiModal>
 
-      <MuiModal
+      {/* <MuiModal
         open={closeModal}
         onClose={() => setCloseModal(false)}
         title={"Close Ticket"}
@@ -637,6 +658,83 @@ const AcceptedTickets = ({ title, departmentId }) => {
 
           <PrimaryButton
             title={"Close Ticket"}
+            isLoading={isClosing}
+            disabled={isClosing}
+            type="submit"
+          />
+        </form>
+      </MuiModal> */}
+       <MuiModal
+        open={closeModal}
+        onClose={() => {
+          resetCloseForm();
+          setCloseModal(false);
+        }}
+        title="Close Ticket"
+      >
+        <form
+          onSubmit={handleCloseSubmit((data) =>
+            closeTicket({ ticketId: closingTicketId, ...data }),
+          )}
+          className="grid grid-cols-1 gap-5"
+        >
+          {closingCategoryOptions.length > 0 && (
+            <Controller
+              name="closingCategories"
+              control={closeControl}
+              render={({ field }) => (
+                <div>
+                  <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                    {closingCategoryOptions.map((category) => (
+                      <FormControlLabel
+                        key={category}
+                        control={
+                          <Checkbox
+                            checked={field.value.includes(category)}
+                            onChange={(event) =>
+                              field.onChange(
+                                event.target.checked
+                                  ? [...field.value, category]
+                                  : field.value.filter(
+                                      (item) => item !== category,
+                                    ),
+                              )
+                            }
+                          />
+                        }
+                        label={category}
+                      />
+                    ))}
+                  </div>
+                  {closeErrors.closingCategories && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {closeErrors.closingCategories.message}
+                    </p>
+                  )}
+                </div>
+              )}
+            />
+          )}
+          <Controller
+            name="closingRemark"
+            control={closeControl}
+            rules={{
+              required: "Closing remark is required",
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Closing Remark"
+                fullWidth
+                multiline
+                rows={4}
+                error={!!closeErrors.closingRemark}
+                helperText={closeErrors.closingRemark?.message}
+              />
+            )}
+          />
+          <PrimaryButton
+            title="Close Ticket"
             isLoading={isClosing}
             disabled={isClosing}
             type="submit"

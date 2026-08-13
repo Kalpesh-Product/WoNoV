@@ -180,7 +180,7 @@ const TicketReports = () => {
   };
 
   const kraColumn = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "ticket", headerName: "Ticket Title" },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -193,10 +193,12 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
+      pinned: "right",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "actions",
+      pinned: "right",
       headerName: "Actions",
       cellRenderer: (params) => (
         <>
@@ -432,6 +434,9 @@ const TicketReports = () => {
                   closedAt: item.closedAt ? formatDateTime(item.closedAt) : "",
                   closedAtRaw: item.closedAt || "",
                   closingRemark: item.closingRemark || "",
+                  closingCategories: Array.isArray(item.closingCategories)
+                    ? item.closingCategories
+                    : [],
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -631,6 +636,16 @@ const TicketReports = () => {
               title="Closing Remark"
               detail={selectedMeeting?.closingRemark || ""}
             />
+              {["it", "tech"].includes(
+                selectedMeeting?.raisedToDepartment?.trim().toLowerCase(),
+              ) &&
+                Array.isArray(selectedMeeting?.closingCategories) &&
+                selectedMeeting.closingCategories.length > 0 && (
+              <DetalisFormatted
+                title="Categories"
+                detail={selectedMeeting.closingCategories.join(", ")}
+              />
+            )}
             {/* <DetalisFormatted
               title={"Rejected By"}
               detail={selectedMeeting?.rejectedBy || "None"}

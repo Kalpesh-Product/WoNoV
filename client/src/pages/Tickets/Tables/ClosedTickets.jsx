@@ -11,7 +11,12 @@ import humanDate from "../../../utils/humanDateForamt";
 import StatusChip from "../../../components/StatusChip";
 import formatDateTime from "../../../utils/formatDateTime";
 
-const ClosedTickets = ({ title, departmentId }) => {
+const ClosedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
@@ -129,7 +134,7 @@ const ClosedTickets = ({ title, departmentId }) => {
   const rows = isLoading ? [] : transformTicketsData(data);
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -138,12 +143,13 @@ const ClosedTickets = ({ title, departmentId }) => {
     {
       field: "status",
       headerName: "Status",
+      pinned: "right",
       cellRenderer: (params) => {
         return <StatusChip status={params.value} />;
       },
     },
-    { field: "closedBy", headerName: "Closed By" },
-    { field: "closedAt", headerName: "Closed At" },
+    { field: "closedBy", headerName: "Closed By",pinned: "right", },
+    { field: "closedAt", headerName: "Closed At" ,pinned: "right",},
     {
       field: "actions",
       headerName: "Actions",
@@ -280,6 +286,16 @@ const ClosedTickets = ({ title, departmentId }) => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+           {(isItDepartment || isTechDepartment) &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={Array.isArray(viewTicketDetails?.closingCategories)
+                ? viewTicketDetails.closingCategories.join(", ")
+                : ""}
+            />
+          )}
           {viewTicketDetails?.image && (
             <div className="lg:col-span-1">
               <img

@@ -41,6 +41,23 @@ const ManageTickets = () => {
     PERMISSIONS.TICKETS_SUPPORT_TICKETS.value,
   );
 
+   const { data: companyDepartments = [] } = useQuery({
+    queryKey: ["ticket-company-departments"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "api/company/get-company-data?field=selectedDepartments",
+      );
+      return response.data?.selectedDepartments || [];
+    },
+  });
+  const selectedDepartmentDetails = companyDepartments.find(
+    (item) => String(item?.department?._id) === String(selectedDepartment),
+  )?.department;
+  const isItTicketDepartment =
+    selectedDepartmentDetails?.name?.trim().toLowerCase() === "it";
+  const isTechTicketDepartment =
+    selectedDepartmentDetails?.name?.trim().toLowerCase() === "tech";
+
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
     queryFn: async () => {
@@ -197,6 +214,8 @@ const ManageTickets = () => {
       component: (
         <AcceptedTickets
           departmentId={selectedDepartment}
+          isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Accepted Tickets"
         />
       ),
@@ -208,6 +227,8 @@ const ManageTickets = () => {
       component: (
         <AssignedTickets
           departmentId={selectedDepartment}
+          isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Assigned Tickets"
         />
       ),
@@ -219,6 +240,8 @@ const ManageTickets = () => {
       component: (
         <SupportTickets
           departmentId={selectedDepartment}
+          isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Support Tickets"
         />
       ),
@@ -230,6 +253,8 @@ const ManageTickets = () => {
       component: (
         <EscalatedTickets
           departmentId={selectedDepartment}
+          isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Escalated Tickets"
         />
       ),
@@ -241,6 +266,8 @@ const ManageTickets = () => {
       component: (
         <ClosedTickets
           departmentId={selectedDepartment}
+          isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Closed Tickets"
         />
       ),

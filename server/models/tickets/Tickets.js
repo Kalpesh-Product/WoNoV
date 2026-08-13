@@ -68,6 +68,18 @@ const ticketsSchema = new mongoose.Schema(
       type: String,
       maxlength: 250,
     },
+     closingCategories: {
+      type: [String],
+      enum: [
+        "Daily Task",
+        "ISP/External Issue",
+        "Client Support",
+        "Client/User Side Issue",
+        "IT Internal Issue",
+        "Others Issue",
+      ],
+      default: undefined,
+    },
     acceptedAt: Date,
     acceptedBy: {
       type: mongoose.Schema.Types.ObjectId,
