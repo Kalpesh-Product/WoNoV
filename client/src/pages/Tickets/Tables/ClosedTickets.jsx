@@ -129,7 +129,7 @@ const ClosedTickets = ({ title, departmentId }) => {
   const rows = isLoading ? [] : transformTicketsData(data);
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -138,12 +138,13 @@ const ClosedTickets = ({ title, departmentId }) => {
     {
       field: "status",
       headerName: "Status",
+      pinned: "right",
       cellRenderer: (params) => {
         return <StatusChip status={params.value} />;
       },
     },
-    { field: "closedBy", headerName: "Closed By" },
-    { field: "closedAt", headerName: "Closed At" },
+    { field: "closedBy", headerName: "Closed By",pinned: "right", },
+    { field: "closedAt", headerName: "Closed At" ,pinned: "right",},
     {
       field: "actions",
       headerName: "Actions",

@@ -180,7 +180,7 @@ const TicketReports = () => {
   };
 
   const kraColumn = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", sort: "desc" },
     { field: "ticket", headerName: "Ticket Title" },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -193,10 +193,12 @@ const TicketReports = () => {
     {
       field: "status",
       headerName: "Status",
+      pinned: "right",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
     {
       field: "actions",
+      pinned: "right",
       headerName: "Actions",
       cellRenderer: (params) => (
         <>
