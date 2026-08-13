@@ -636,8 +636,9 @@ const TicketReports = () => {
               title="Closing Remark"
               detail={selectedMeeting?.closingRemark || ""}
             />
-              {selectedMeeting?.raisedToDepartment?.trim().toLowerCase() ===
-              "it" && (
+              {["it", "tech"].includes(
+                selectedMeeting?.raisedToDepartment?.trim().toLowerCase(),
+              ) && (
               <DetalisFormatted
                 title="Categories"
                 detail={selectedMeeting.closingCategories.join(", ")}

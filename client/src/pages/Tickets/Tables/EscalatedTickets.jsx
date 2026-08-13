@@ -15,7 +15,12 @@ import formatDateTime from "../../../utils/formatDateTime";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 
-const EscalatedTickets = ({ title, departmentId, isItDepartment }) => {
+const EscalatedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const axios = useAxiosPrivate();
   const [openView, setOpenView] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -29,6 +34,18 @@ const EscalatedTickets = ({ title, departmentId, isItDepartment }) => {
   } = useForm({
     defaultValues: { closingRemark: "", closingCategories: [] },
   });
+  const closingCategoryOptions = isItDepartment
+    ? [
+        "Daily Task",
+        "ISP/External Issue",
+        "Client Support",
+        "Client/User Side Issue",
+        "IT Internal Issue",
+        "Others Issue",
+      ]
+    : isTechDepartment
+      ? ["Others Issue"]
+      : [];
 
   // Fetch Supported Tickets
   const { data: escalatedTickets = [], isLoading } = useQuery({
@@ -437,7 +454,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
             )}
             className="grid grid-cols-1 gap-5"
           >
-            {isItDepartment && (
+            {closingCategoryOptions.length > 0 && (
               <Controller
                 name="closingCategories"
                 control={closeControl}
@@ -445,7 +462,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
                 render={({ field }) => (
                   <div>
                     <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-                      {["Daily Task", "ISP/External Issue", "Client Support", "Client/User Side Issue", "IT Internal Issue", "Others Issue"].map((category, index) => (
+                      {closingCategoryOptions.map((category) => (
                         <FormControlLabel
                           key={category}
                           control={<Checkbox checked={field.value.includes(category)} onChange={(event) => field.onChange(event.target.checked ? [...field.value, category] : field.value.filter((item) => item !== category))} />}

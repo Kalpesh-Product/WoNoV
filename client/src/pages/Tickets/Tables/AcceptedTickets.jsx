@@ -31,7 +31,12 @@ import StatusChip from "../../../components/StatusChip";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 
-const AcceptedTickets = ({ title, departmentId, isItDepartment }) => {
+const AcceptedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
@@ -82,6 +87,18 @@ const AcceptedTickets = ({ title, departmentId, isItDepartment }) => {
       closingCategories: [],
     },
   });
+  const closingCategoryOptions = isItDepartment
+    ? [
+        "Daily Task",
+        "ISP/External Issue",
+        "Client Support",
+        "Client/User Side Issue",
+        "IT Internal Issue",
+        "Others Issue",
+      ]
+    : isTechDepartment
+      ? ["Others Issue"]
+      : [];
 
   const handleViewTicket = (ticket) => {
     setSelectedTicket({
@@ -661,7 +678,7 @@ const AcceptedTickets = ({ title, departmentId, isItDepartment }) => {
           )}
           className="grid grid-cols-1 gap-5"
         >
-          {isItDepartment && (
+          {closingCategoryOptions.length > 0 && (
             <Controller
               name="closingCategories"
               control={closeControl}
@@ -672,14 +689,7 @@ const AcceptedTickets = ({ title, departmentId, isItDepartment }) => {
               render={({ field }) => (
                 <div>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {[
-                      "Daily Task",
-                      "ISP/External Issue",
-                      "Client Support",
-                      "Client/User Side Issue",
-                      "IT Internal Issue",
-                      "Others Issue",
-                    ].map((category, index) => (
+                    {closingCategoryOptions.map((category) => (
                       <FormControlLabel
                         key={category}
                         control={

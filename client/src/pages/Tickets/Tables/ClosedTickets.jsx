@@ -11,7 +11,12 @@ import humanDate from "../../../utils/humanDateForamt";
 import StatusChip from "../../../components/StatusChip";
 import formatDateTime from "../../../utils/formatDateTime";
 
-const ClosedTickets = ({ title, departmentId, isItDepartment }) => {
+const ClosedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
@@ -281,7 +286,7 @@ const ClosedTickets = ({ title, departmentId, isItDepartment }) => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
-           {isItDepartment && (
+           {(isItDepartment || isTechDepartment) && (
             <DetalisFormatted
               title="Categories"
               detail={Array.isArray(viewTicketDetails?.closingCategories)

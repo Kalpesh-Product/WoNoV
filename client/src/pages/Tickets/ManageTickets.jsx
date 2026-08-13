@@ -55,6 +55,8 @@ const ManageTickets = () => {
   )?.department;
   const isItTicketDepartment =
     selectedDepartmentDetails?.name?.trim().toLowerCase() === "it";
+  const isTechTicketDepartment =
+    selectedDepartmentDetails?.name?.trim().toLowerCase() === "tech";
 
   const { data: ticketsData = [], isLoading } = useQuery({
     queryKey: ["tickets-data"],
@@ -213,6 +215,7 @@ const ManageTickets = () => {
         <AcceptedTickets
           departmentId={selectedDepartment}
           isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Accepted Tickets"
         />
       ),
@@ -225,6 +228,7 @@ const ManageTickets = () => {
         <AssignedTickets
           departmentId={selectedDepartment}
           isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Assigned Tickets"
         />
       ),
@@ -237,6 +241,7 @@ const ManageTickets = () => {
         <SupportTickets
           departmentId={selectedDepartment}
           isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Support Tickets"
         />
       ),
@@ -249,6 +254,7 @@ const ManageTickets = () => {
         <EscalatedTickets
           departmentId={selectedDepartment}
           isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Escalated Tickets"
         />
       ),
@@ -261,6 +267,7 @@ const ManageTickets = () => {
         <ClosedTickets
           departmentId={selectedDepartment}
           isItDepartment={isItTicketDepartment}
+          isTechDepartment={isTechTicketDepartment}
           title="Closed Tickets"
         />
       ),

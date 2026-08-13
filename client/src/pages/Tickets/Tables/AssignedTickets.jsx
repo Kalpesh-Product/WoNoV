@@ -27,7 +27,12 @@ import useAuth from "../../../hooks/useAuth";
 import formatDateTime from "../../../utils/formatDateTime";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 
-const AssignedTickets = ({ title, departmentId, isItDepartment }) => {
+const AssignedTickets = ({
+  title,
+  departmentId,
+  isItDepartment,
+  isTechDepartment,
+}) => {
   const { auth } = useAuth();
   const [openModal, setopenModal] = useState(false);
   const [esCalateModal, setEscalateModal] = useState(false);
@@ -91,6 +96,18 @@ const AssignedTickets = ({ title, departmentId, isItDepartment }) => {
       closingCategories: [],
     },
   });
+  const closingCategoryOptions = isItDepartment
+    ? [
+        "Daily Task",
+        "ISP/External Issue",
+        "Client Support",
+        "Client/User Side Issue",
+        "IT Internal Issue",
+        "Others Issue",
+      ]
+    : isTechDepartment
+      ? ["Others Issue"]
+      : [];
 
   const handleViewTicket = (ticket) => {
     setSelectedTicket({
@@ -830,7 +847,7 @@ const AssignedTickets = ({ title, departmentId, isItDepartment }) => {
           )}
           className="grid grid-cols-1 gap-5"
         >
-          {isItDepartment && (
+          {closingCategoryOptions.length > 0 && (
             <Controller
               name="closingCategories"
               control={closeControl}
@@ -841,14 +858,7 @@ const AssignedTickets = ({ title, departmentId, isItDepartment }) => {
               render={({ field }) => (
                 <div>
                   <div className="grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
-                    {[
-                      "Daily Task",
-                      "ISP/External Issue",
-                      "Client Support",
-                      "Client/User Side Issue",
-                      "IT Internal Issue",
-                      "Others Issue",
-                    ].map((category, index) => (
+                    {closingCategoryOptions.map((category) => (
                       <FormControlLabel
                         key={category}
                         control={

@@ -600,9 +600,9 @@ const RaiseTicket = () => {
                   status: ticket?.status,
                   closingRemark: ticket?.closingRemark,
                   closingCategories: ticket?.closingCategories,
-                  isItDepartment:
-                    ticket?.raisedToDepartment?.name?.trim().toLowerCase() ===
-                    "it",
+                  isItDepartment: ["it", "tech"].includes(
+                    ticket?.raisedToDepartment?.name?.trim().toLowerCase(),
+                  ),
                   acceptedBy: ticket?.acceptedBy
                     ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                     : "None",
