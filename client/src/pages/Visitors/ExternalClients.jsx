@@ -1592,8 +1592,16 @@ const ExternalClients = ({
                       <>
                         <div className="font-bold">Payment Details</div>
                         <DetalisFormatted
-                          title="Amount"
-                          detail={`INR ${selectedVisitor?.paymentAmount || 0}`}
+                          title="Taxable Amount"
+                          detail={`INR ${selectedVisitor?.rawPaymentAmount || 0}`}
+                        />
+                        <DetalisFormatted
+                          title="GST Amount"
+                          detail={`INR ${selectedVisitor?.gstAmount || 0}`}
+                        />
+                        <DetalisFormatted
+                          title="Total Amount"
+                          detail={`INR ${selectedVisitor?.finalAmount || 0}`}
                         />
                         <DetalisFormatted
                           title="Discount"

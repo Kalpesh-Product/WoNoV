@@ -480,7 +480,7 @@ const fetchMeetingReportService = async ({
 
     let meetingsQuery = Meeting.find(meetingQuery)
       .select(
-        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime meetingType credits creditsUsed paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
+        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
       )
       .populate({ path: "company", select: "meetingCreditBalance" })
       .populate({
@@ -612,6 +612,8 @@ const fetchMeetingReportService = async ({
           ? meeting.externalClient.registeredClientCompany
           : null,
         paymentAmount: meeting.paymentAmount ?? null,
+        paymentBaseAmount: meeting.paymentBaseAmount ?? null,
+        paymentGstAmount: meeting.paymentGstAmount ?? null,
         paymentMode: meeting.paymentMode ?? null,
         paymentStatus: meeting?.paymentStatus ? "Paid" : "Unpaid",
         paymentProof: meeting.paymentProof?.link ?? null,

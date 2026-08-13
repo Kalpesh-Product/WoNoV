@@ -370,6 +370,14 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         extendTime: meeting.extendTime,
         srNo: (pagination.page - 1) * pagination.limit + index + 1,
         paymentAmount: meeting.paymentAmount ?? 0,
+        paymentBaseAmount:
+          meeting.paymentBaseAmount ??
+          Math.max(
+            Number(meeting.paymentAmount || 0) -
+              Number(meeting.paymentGstAmount || 0),
+            0,
+          ),
+        paymentGstAmount: meeting.paymentGstAmount ?? 0,
         paymnetDiscountAmount: meeting.discountAmount ?? 0,
         paymentDiscountAmount: meeting.discountAmount ?? 0,
         paymentMode: meeting.paymentMode ?? "",
@@ -1403,7 +1411,15 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             <br />
             <div className="font-bold">Payment Details</div>
             <DetalisFormatted
-              title="Amount"
+              title="Taxable Amount"
+              detail={`INR ${inrFormat(selectedMeeting?.paymentBaseAmount)}`}
+            />
+            <DetalisFormatted
+              title="GST Amount"
+              detail={`INR ${inrFormat(selectedMeeting?.paymentGstAmount)}`}
+            />
+            <DetalisFormatted
+              title="Total Amount"
               detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
             />
             <DetalisFormatted

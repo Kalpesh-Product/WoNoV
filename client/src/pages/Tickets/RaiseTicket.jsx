@@ -599,6 +599,10 @@ const RaiseTicket = () => {
                   ticketTitle: ticket?.ticket,
                   status: ticket?.status,
                   closingRemark: ticket?.closingRemark,
+                  closingCategories: ticket?.closingCategories,
+                  isItDepartment: ["it", "tech"].includes(
+                    ticket?.raisedToDepartment?.name?.trim().toLowerCase(),
+                  ),
                   acceptedBy: ticket?.acceptedBy
                     ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
                     : "None",
@@ -697,6 +701,16 @@ const RaiseTicket = () => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+           {viewTicketDetails?.isItDepartment &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={Array.isArray(viewTicketDetails?.closingCategories)
+                ? viewTicketDetails.closingCategories.join(", ")
+                : ""}
+            />
+          )}
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">
               <img
