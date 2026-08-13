@@ -34,7 +34,7 @@ const emptyFormValues = {
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
 const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "";
-const isPreviousDate = (value) => dayjs(value).isBefore(dayjs(), "day");
+// const isPreviousDate = (value) => dayjs(value).isBefore(dayjs(), "day");
 
 const modalFieldSx = {
   "& .MuiInputLabel-root": {
@@ -297,10 +297,11 @@ const MaintainanceStEnergyReadingDaily = () => {
   };
 
   const handleAddDailyReadings = async () => {
-    if (isPreviousDate(readingDate)) {
-      toast.error("Reading cannot be added for a previous date");
-      return;
-    }
+    // Backdate restriction temporarily disabled.
+    // if (isPreviousDate(readingDate)) {
+    //   toast.error("Reading cannot be added for a previous date");
+    //   return;
+    // }
 
     const nextErrors = {};
     dailyReadings.forEach((row, index) => {
