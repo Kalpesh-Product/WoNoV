@@ -782,11 +782,15 @@ const AssetsDashboard = () => {
       }),
     };
   });
-  const assetValueSeriesMax = Math.max(
-    5,
-    ...assetUtilizationSeries.flatMap((series) => series.data || []),
+  const selectedAssetValueSeries = assetUtilizationSeries.find(
+    (series) => series.name === selectedAssetValueFY,
   );
-  const assetValueYAxisMax = Math.ceil(assetValueSeriesMax);
+  const assetValueSeriesMax = Math.max(0, ...(selectedAssetValueSeries?.data || []));
+  const assetValueYAxisMax =
+    assetValueSeriesMax > 0
+      ? Math.max(5, Math.ceil(assetValueSeriesMax * 1.2))
+      : 5;
+  const assetValueTickAmount = assetValueYAxisMax <= 10 ? 5 : 6;
   const getSelectedFyAssetValueByMonth = (month) => {
     if (!month) return 0;
 
@@ -807,7 +811,7 @@ const AssetsDashboard = () => {
     yaxis: {
       min: 0,
       max: assetValueYAxisMax,
-      tickAmount: 5,
+      tickAmount: assetValueTickAmount,
       title: {
         text: "Amount In Lakhs (INR)",
       },
