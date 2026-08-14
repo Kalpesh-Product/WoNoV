@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
+  Autocomplete,
   TextField,
   MenuItem,
   CircularProgress,
@@ -151,6 +152,29 @@ const AddVisitor = () => {
       }
     },
   });
+
+  const { data: visitorCompanyRecords = [], isLoading: visitorCompaniesLoading } =
+    useQuery({
+      queryKey: ["visitor-company-options"],
+      queryFn: async () => {
+        const response = await axios.get("/api/visitors/fetch-visitors", {
+          params: { searchContext: "visitor-company-dropdown" },
+        });
+        return Array.isArray(response.data) ? response.data : [];
+      },
+    });
+
+  const visitorCompanyOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          visitorCompanyRecords
+            .map((visitor) => String(visitor?.visitorCompany || "").trim())
+            .filter(Boolean),
+        ),
+      ).sort((first, second) => first.localeCompare(second)),
+    [visitorCompanyRecords],
+  );
 
   const { data: clientMembers = [], isLoading: clientMembersIsLoading } =
     useQuery({
@@ -499,12 +523,28 @@ const AddVisitor = () => {
                 <Controller
                   name="visitorCompany"
                   control={control}
-                  render={({ field }) => (
-                    <TextField
+                  render={({ field: { onChange, value, ...field } }) => (
+                    <Autocomplete
                       {...field}
-                      size="small"
                       fullWidth
-                      label={"Visitor company"}
+                      freeSolo
+                      autoSelect
+                      selectOnFocus
+                      options={visitorCompanyOptions}
+                      value={value || null}
+                      loading={visitorCompaniesLoading}
+                      noOptionsText="No options — type to add"
+                      onChange={(_, selectedValue) =>
+                        onChange(selectedValue || "")
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          size="small"
+                          fullWidth
+                          label="Visitor Company"
+                        />
+                      )}
                     />
                   )}
                 />

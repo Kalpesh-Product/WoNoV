@@ -108,6 +108,7 @@ const addMeetings = async (req, res, next) => {
       meetingType,
       bookedRoom,
       bookedBy,
+      clientBookedBy,
       startDate,
       endDate,
       startTime,
@@ -135,7 +136,8 @@ const addMeetings = async (req, res, next) => {
       !endTime ||
       !subject ||
       !agenda ||
-      (meetingType === "Internal" && !bookedBy) ||
+      // (meetingType === "Internal" && !bookedBy) ||
+      (meetingType === "Internal" && !bookedBy && !clientBookedBy) ||
       (meetingType === "Internal" && !client) ||
       (meetingType === "External" && !externalCompany) ||
       (meetingType === "External" &&
@@ -324,6 +326,10 @@ const addMeetings = async (req, res, next) => {
     // Atomically deduct credits using findOneAndUpdate with credit check
 
     const bookingUser = bookedBy ? await User.findById(bookedBy) : null;
+    // const bookingUserId = bookedBy || clientBookedBy;
+    // const bookingUser = bookingUserId
+    //   ? await User.findById(bookingUserId)
+    //   : null;
 
     if (meetingType === "Internal") {
       const BookingModel = isClient ? CoworkingClient : Company;
@@ -407,8 +413,20 @@ const addMeetings = async (req, res, next) => {
 
     const meeting = new Meeting({
       meetingType,
-      bookedBy: meetingType === "Internal" && !isClient ? bookedBy : null,
-      clientBookedBy: meetingType === "Internal" && isClient ? bookedBy : null,
+      // bookedBy: meetingType === "Internal" && !isClient ? bookedBy : null,
+      // clientBookedBy: meetingType === "Internal" && isClient ? bookedBy : null,
+
+      // bookedBy: meetingType === "Internal" && bookingUser ? bookedBy : null,
+      // clientBookedBy:
+      //   meetingType === "Internal" && isClient && !bookingUser
+      //     ? bookedBy
+      //     : null,
+
+       bookedBy: meetingType === "Internal" && bookedBy ? bookedBy : null,
+      clientBookedBy:
+        meetingType === "Internal" && isClient && clientBookedBy
+          ? clientBookedBy
+          : null,    
       externalBookedBy: meetingType === "External" ? bookedBy : null,
       receptionist: user,
       startDate: startDateObj,
@@ -897,6 +915,20 @@ const getMyMeetings = async (req, res, next) => {
     const { user, company, roles } = req;
 
     let meetings = [];
+    const currentUser = await User.findById(user).select("email").lean();
+    const currentClientMembers = currentUser?.email
+      ? await CoworkingMember.find({
+          email: currentUser.email,
+          isActive: true,
+        })
+          .select("_id")
+          .collation({ locale: "en", strength: 2 })
+          .lean()
+      : [];
+    const currentClientMemberIds = currentClientMembers.map(
+      (member) => member._id,
+    );
+
 
     meetings = await Meeting.find({
       company,
@@ -908,6 +940,12 @@ const getMyMeetings = async (req, res, next) => {
         {
           externalParticipants: { $in: [new mongoose.Types.ObjectId(user)] },
         },
+         ...(currentClientMemberIds.length
+          ? [
+              { clientBookedBy: { $in: currentClientMemberIds } },
+              { clientParticipants: { $in: currentClientMemberIds } },
+            ]
+          : []),
       ],
     })
       .populate({
@@ -1011,7 +1049,9 @@ const getMyMeetings = async (req, res, next) => {
         _id: meeting._id,
         receptionist: receptionist,
         bookedById: meeting?.bookedBy?._id || null,
-        bookedBy: bookedBy,
+        // bookedBy: bookedBy,
+         bookedBy:
+          bookedBy || meeting.clientBookedBy?.employeeName || "Unknown",
         clientBookedBy: meeting.clientBookedBy,
         department: meeting?.bookedBy?.departments,
         roomName: meeting.bookedRoom.name,

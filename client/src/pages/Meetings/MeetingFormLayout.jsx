@@ -49,6 +49,7 @@ const MeetingFormLayout = () => {
   const meetingRoomName = searchParams.get("meetingRoom") || "";
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
+  const repeatMeetingClient = locationState.state?.repeatMeetingClient;
   const { perHourCredit, perHourPrice } = locationState.state;
   const [events, setEvents] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => dayjs());
@@ -57,6 +58,10 @@ const MeetingFormLayout = () => {
   let showExternalType = false;
 
   const roles = auth.user.role.map((role) => role.roleTitle);
+  const isTechManager =
+    roles.includes("Tech Admin") || roles.includes("IT Admin");
+  const isTechEmployee =
+    roles.includes("Tech Employee") || roles.includes("IT Employee");
 
   const canBypassMeetingAvailability = useMemo(
     () =>
@@ -189,11 +194,11 @@ const MeetingFormLayout = () => {
     setValue("internalParticipants", []);
   }, [company, isReceptionist, setValue]);
 
-  useEffect(() => {
-    if (!isReceptionist) {
-      setValue("company", BIZNEST_COMPANY_ID);
-    }
-  }, [isReceptionist, setValue]);
+  // useEffect(() => {
+  //   if (!isReceptionist) {
+  //     setValue("company", BIZNEST_COMPANY_ID);
+  //   }
+  // }, [isReceptionist, setValue]);
 
   const [shouldFetchParticipants, setShouldFetchParticipants] = useState(false);
   const buildDateTime = (dateValue, timeValue) => {
@@ -239,7 +244,44 @@ const MeetingFormLayout = () => {
     () => clientsData.find((item) => item._id === company),
     [clientsData, company],
   );
+ const wonoClient = useMemo(
+    () =>
+      clientsData.find((client) => {
+        const names = [
+          client?.clientName,
+          client?.clientInvoiceName,
+          client?.brandName,
+        ];
 
+        return names.some((name) =>
+          ["WONO", "WONOCO PRIVATE LIMITED"].includes(
+            String(name || "")
+              .trim()
+              .toUpperCase(),
+          ),
+        );
+      }),
+    [clientsData],
+  );
+
+  useEffect(() => {
+    if (isReceptionist || isTechManager) return;
+
+    if (isTechEmployee) {
+      if (wonoClient?._id) {
+        setValue("company", wonoClient._id);
+      }
+      return;
+    }
+
+    setValue("company", BIZNEST_COMPANY_ID);
+  }, [
+    isReceptionist,
+    isTechEmployee,
+    isTechManager,
+    setValue,
+    wonoClient?._id,
+  ]);
   const selectedCreditMonth = useMemo(
     () => (startDate ? dayjs(startDate) : dayjs()),
     [startDate],
@@ -415,8 +457,15 @@ const MeetingFormLayout = () => {
       });
     }
 
+ if (isTechManager) {
+      return opts.filter(
+        (option) =>
+          option.id === BIZNEST_COMPANY_ID || option.id === wonoClient?._id,
+      );
+    }
+
     return opts;
-  }, [clientsData, BIZNEST_COMPANY_ID]);
+   }, [clientsData, BIZNEST_COMPANY_ID, isTechManager, wonoClient?._id]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {
@@ -510,6 +559,37 @@ const MeetingFormLayout = () => {
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
+      //  const bookingUserId = data.bookedBy || data.internalBooked;
+       const isClientBooking =
+        data.meetingType === "Internal" &&
+        data.company !== BIZNEST_COMPANY_ID;
+      let bookingUserId = data.bookedBy || data.internalBooked;
+
+      if (isClientBooking && !data.bookedBy) {
+        const membersResponse = await axios.get(
+          "/api/sales/co-working-client-members",
+          {
+            params: { clientId: data.company, active: true },
+          },
+        );
+        const currentUserEmail = String(auth.user?.email || "")
+          .trim()
+          .toLowerCase();
+        const currentClientMember = (membersResponse.data || []).find(
+          (member) =>
+            String(member?.email || "")
+              .trim()
+              .toLowerCase() === currentUserEmail,
+        );
+
+        if (!currentClientMember?._id) {
+          throw new Error(
+            "Your coworking member profile was not found for the selected company",
+          );
+        }
+
+        bookingUserId = currentClientMember._id;
+      }
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
@@ -521,7 +601,14 @@ const MeetingFormLayout = () => {
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants: data.internalParticipants,
-        bookedBy: data.bookedBy || data.internalBooked,
+       // bookedBy: data.bookedBy || data.internalBooked,
+        ...(isClientBooking
+          ? { clientBookedBy: bookingUserId }
+          : { bookedBy: bookingUserId }),
+        // ...(data.meetingType === "Internal" &&
+        // data.company !== BIZNEST_COMPANY_ID
+        //   ? { clientBookedBy: bookingUserId }
+        //   : { bookedBy: bookingUserId }),
         externalParticipants: data.externalParticipants,
         externalCompany: data.externalCompany,
       });
@@ -533,7 +620,7 @@ const MeetingFormLayout = () => {
       navigate("/app/meetings/calendar");
     },
     onError: (error) => {
-      toast.error(error.response.data.message || "ERROR");
+        toast.error(error.response?.data?.message || error.message || "ERROR");
     },
   });
   //-------------------------------API POST-------------------------------//
@@ -547,7 +634,12 @@ const MeetingFormLayout = () => {
   } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          visitorFlag: "Client",
+          searchContext: "external-meeting-booking",
+        },
+      });
 
       return response.data;
     },
@@ -571,6 +663,32 @@ const MeetingFormLayout = () => {
         label: item.registeredClientCompany || "Unnamed Company",
       }));
   }, [externalUsers]);
+
+  useEffect(() => {
+    if (!repeatMeetingClient?.visitorId) return;
+
+    const selectedVisitor = externalUsers.find(
+      (visitor) => visitor._id === repeatMeetingClient.visitorId,
+    );
+    if (!selectedVisitor) return;
+
+    setValue("meetingType", "External");
+    setValue("externalCompany", selectedVisitor._id);
+    setValue("bookedBy", selectedVisitor._id);
+    setValue("externalParticipants", [
+      {
+        name:
+          `${selectedVisitor.firstName || ""} ${selectedVisitor.lastName || ""}`.trim() ||
+          repeatMeetingClient.visitorName ||
+          "External client",
+        mobileNumber:
+          selectedVisitor.mobileNumber ||
+          selectedVisitor.phoneNumber ||
+          repeatMeetingClient.phoneNumber ||
+          "",
+      },
+    ]);
+  }, [externalUsers, repeatMeetingClient, setValue]);
 
   //-------------------------------API vISITORS-------------------------------//
 
@@ -808,7 +926,7 @@ const MeetingFormLayout = () => {
             </LocalizationProvider>
             {meetingType === "Internal" ? (
               <>
-                {isReceptionist ? (
+             {isReceptionist || isTechManager ? (
                   <Controller
                     name="company"
                     control={control}
@@ -864,7 +982,12 @@ const MeetingFormLayout = () => {
                     <TextField
                       fullWidth
                       size="small"
-                      value={`${auth.user?.company?.companyName || "BIZNest"} `}
+                     // value={`${auth.user?.company?.companyName || "BIZNest"} `}
+                      value={
+                        isTechEmployee
+                          ? wonoClient?.clientName || "WONO"
+                          : auth.user?.company?.companyName || "BIZNest"
+                      }
                       disabled
                       label="Company"
                     />

@@ -9,7 +9,7 @@ import {
 } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
 import { Controller, useForm, useWatch } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -36,6 +36,7 @@ import StatusChip from "../../components/StatusChip";
 const BookMeetings = () => {
   // ------------------------------Initializations ------------------------------------//
   const navigate = useNavigate();
+  const locationState = useLocation();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const [selectedUnitId, setSelectedUnitId] = useState("");
@@ -335,6 +336,7 @@ const BookMeetings = () => {
           perHourCredit: selectedRoom?.perHourCredit,
           perHourPrice: selectedRoom?.perHourPrice,
           seats: selectedRoom?.seats,
+          repeatMeetingClient: locationState.state?.repeatMeetingClient,
         },
       }
     );
