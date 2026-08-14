@@ -82,7 +82,6 @@ const RepeatExternalCompaanies = () => {
       //const visitorsResponse = await axios.get("/api/visitors/fetch-visitors?type=day-pass&page=1&limit=10");
        const visitorsResponse = await axios.get("/api/visitors/fetch-visitors", {
         params: {
-          type: "day-pass",
           visitorFlag: "Client",
           page: pagination.page,
           limit: pagination.limit,
@@ -101,17 +100,6 @@ const RepeatExternalCompaanies = () => {
       }));
       console.log("Fetched visitors:", visitors);
 
-      const dayPassVisitors = visitors.filter((visitor) => {
-        const isExternalVisitor = visitor.visitorFlag === "Client";
-        const purpose = (visitor.purposeOfVisit || "").trim().toLowerCase();
-
-        return (
-          isExternalVisitor &&
-          (purpose === "half-day pass" || purpose === "full-day pass")
-        );
-      });
-
-      setRepeatExternalCompanies(dayPassVisitors);
       const convertedClients = visitors.filter(
         (visitor) => visitor?.visitorFlag === "Client",
       );
@@ -177,6 +165,22 @@ const RepeatExternalCompaanies = () => {
       setOpenModal(true);
     },
     [reset],
+  );
+
+  const bookMeetingRoom = useCallback(
+    (row) => {
+      navigate("/app/meetings/book-meeting", {
+        state: {
+          repeatMeetingClient: {
+            visitorId: row.mongoId,
+            visitorName: row.visitorName,
+            company: row.company,
+            phoneNumber: row.phoneNumber || row.mobileNumber || "",
+          },
+        },
+      });
+    },
+    [navigate],
   );
 
   const handleRepeatClientSubmit = async (formData) => {
@@ -252,15 +256,19 @@ const RepeatExternalCompaanies = () => {
           <ThreeDotMenu
             menuItems={[
               {
-                label: "Repeat Client",
+                label: "Repeat Day Pass",
                 onClick: () => openRepeatClientModal(params.data),
+              },
+              {
+                label: "Book Meeting Room",
+                onClick: () => bookMeetingRoom(params.data),
               },
             ]}
           />
         ),
       },
     ],
-    [openRepeatClientModal],
+    [bookMeetingRoom, openRepeatClientModal],
   );
 
   return (

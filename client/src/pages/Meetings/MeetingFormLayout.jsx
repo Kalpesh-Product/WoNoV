@@ -49,6 +49,7 @@ const MeetingFormLayout = () => {
   const meetingRoomName = searchParams.get("meetingRoom") || "";
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
+  const repeatMeetingClient = locationState.state?.repeatMeetingClient;
   const { perHourCredit, perHourPrice } = locationState.state;
   const [events, setEvents] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => dayjs());
@@ -547,7 +548,12 @@ const MeetingFormLayout = () => {
   } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: {
+          visitorFlag: "Client",
+          searchContext: "external-meeting-booking",
+        },
+      });
 
       return response.data;
     },
@@ -571,6 +577,32 @@ const MeetingFormLayout = () => {
         label: item.registeredClientCompany || "Unnamed Company",
       }));
   }, [externalUsers]);
+
+  useEffect(() => {
+    if (!repeatMeetingClient?.visitorId) return;
+
+    const selectedVisitor = externalUsers.find(
+      (visitor) => visitor._id === repeatMeetingClient.visitorId,
+    );
+    if (!selectedVisitor) return;
+
+    setValue("meetingType", "External");
+    setValue("externalCompany", selectedVisitor._id);
+    setValue("bookedBy", selectedVisitor._id);
+    setValue("externalParticipants", [
+      {
+        name:
+          `${selectedVisitor.firstName || ""} ${selectedVisitor.lastName || ""}`.trim() ||
+          repeatMeetingClient.visitorName ||
+          "External client",
+        mobileNumber:
+          selectedVisitor.mobileNumber ||
+          selectedVisitor.phoneNumber ||
+          repeatMeetingClient.phoneNumber ||
+          "",
+      },
+    ]);
+  }, [externalUsers, repeatMeetingClient, setValue]);
 
   //-------------------------------API vISITORS-------------------------------//
 

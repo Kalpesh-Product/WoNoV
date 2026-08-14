@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
 import {
+  Autocomplete,
   TextField,
   Select,
   MenuItem,
@@ -187,6 +188,34 @@ const AddClient = () => {
       }
     },
   });
+
+  const { data: existingClientCompanies = [], isLoading: isCompaniesLoading } =
+    useQuery({
+      queryKey: ["visitor-client-companies"],
+      queryFn: async () => {
+        const response = await axios.get("/api/visitors/fetch-visitors", {
+          params: {
+            visitorFlag: "Client",
+            searchContext: "external-meeting-booking",
+          },
+        });
+        return Array.isArray(response.data) ? response.data : [];
+      },
+    });
+
+  const uniqueCompanyNames = (fieldName) =>
+    Array.from(
+      new Set(
+        existingClientCompanies
+          .map((client) => String(client?.[fieldName] || "").trim())
+          .filter(Boolean),
+      ),
+    ).sort((first, second) => first.localeCompare(second));
+
+  const brandNameOptions = uniqueCompanyNames("brandName");
+  const registeredCompanyOptions = uniqueCompanyNames(
+    "registeredClientCompany",
+  );
 
   //---------------------------------------Data processing----------------------------------------------------//
   const getEmployeeDepartments = (employee) =>
@@ -639,14 +668,30 @@ const AddClient = () => {
                         isAlphanumeric,
                       },
                     }}
-                    render={({ field }) => (
-                      <TextField
+                    render={({ field: { onChange, value, ...field } }) => (
+                      <Autocomplete
                         {...field}
-                        size="small"
-                        label="Brand Name"
                         fullWidth
-                        error={!!errors.brandName}
-                        helperText={errors.brandName?.message}
+                        freeSolo
+                        autoSelect
+                        selectOnFocus
+                        options={brandNameOptions}
+                        value={value || null}
+                        loading={isCompaniesLoading}
+                        noOptionsText="No options — type to add"
+                        onChange={(_, selectedValue) => {
+                          onChange(selectedValue || "");
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Brand Name"
+                            fullWidth
+                            error={!!errors.brandName}
+                            helperText={errors.brandName?.message}
+                          />
+                        )}
                       />
                     )}
                   />
@@ -656,14 +701,30 @@ const AddClient = () => {
                     rules={{
                       required: "Registered Client Company is required",
                     }}
-                    render={({ field }) => (
-                      <TextField
+                    render={({ field: { onChange, value, ...field } }) => (
+                      <Autocomplete
                         {...field}
-                        size="small"
-                        label="Registered Client Company"
                         fullWidth
-                        error={!!errors.registeredClientCompany}
-                        helperText={errors.registeredClientCompany?.message}
+                        freeSolo
+                        autoSelect
+                        selectOnFocus
+                        options={registeredCompanyOptions}
+                        value={value || null}
+                        loading={isCompaniesLoading}
+                        noOptionsText="No options — type to add"
+                        onChange={(_, selectedValue) => {
+                          onChange(selectedValue || "");
+                        }}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Registered Client Company"
+                            fullWidth
+                            error={!!errors.registeredClientCompany}
+                            helperText={errors.registeredClientCompany?.message}
+                          />
+                        )}
                       />
                     )}
                   />

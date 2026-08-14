@@ -506,7 +506,13 @@ const fetchVisitorReportService = async ({
       } else {
         filter.checkIn = requestedDateRange;
       }
-    } else {
+    } else if (
+      ![
+        "repeat-external-companies",
+        "external-meeting-booking",
+        "visitor-company-dropdown",
+      ].includes(searchContext)
+    ) {
       //for dashboard
       filter.checkIn = {
         $gte: new Date("2026-01-01T18:30:00.000Z"),
