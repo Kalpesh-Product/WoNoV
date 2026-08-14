@@ -106,19 +106,46 @@ const Calender = () => {
   //   };
   // });
 
-  const currentUserId = auth?.user?._id?.toString();
+  // const currentUserId = auth?.user?._id?.toString();
 
-  const ownMeetings = useMemo(
+  // const ownMeetings = useMemo(
+  //   () =>
+  //     meetings.filter(
+  //       (meeting) => meeting?.bookedById?.toString() === currentUserId
+  //     ),
+  //   [meetings, currentUserId]
+  // );
+
+  // const transformedMeetings = useMemo(
+  //   () =>
+  //     ownMeetings.map((meeting) => ({
+    const currentUserId = auth.user?._id?.toString();
+  const currentUserEmail = String(auth.user?.email || "")
+    .trim()
+    .toLowerCase();
+
+  const visibleMeetings = useMemo(
     () =>
-      meetings.filter(
-        (meeting) => meeting?.bookedById?.toString() === currentUserId
-      ),
-    [meetings, currentUserId]
+      meetings.filter((meeting) => {
+        const isVisibleStatus = ["upcoming", "completed"].includes(
+          meeting?.meetingStatus?.toLowerCase?.(),
+        );
+        const isInternalBooker =
+          meeting?.bookedById?.toString() === currentUserId;
+        const clientBookerEmail = String(meeting?.clientBookedBy?.email || "")
+          .trim()
+          .toLowerCase();
+        const isClientBooker =
+          Boolean(currentUserEmail) && clientBookerEmail === currentUserEmail;
+
+        return isVisibleStatus && (isInternalBooker || isClientBooker);
+      }),
+    [currentUserEmail, currentUserId, meetings],
   );
 
   const transformedMeetings = useMemo(
     () =>
-      ownMeetings.map((meeting) => ({
+      visibleMeetings.map((meeting) => ({
         id: meeting._id,
         title: meeting.subject || "Meeting",
         start: meeting.startTime,
@@ -138,15 +165,26 @@ const Calender = () => {
           endTime: meeting.endTime,
           subject: meeting.subject,
           department: meeting.department,
-          participants: meeting.participants?.map(
-            (p) => `${p.firstName} ${p.lastName}`
+    //       participants: meeting.participants?.map(
+    //         (p) => `${p.firstName} ${p.lastName}`
+    //       ),
+    //       meetingStatus: meeting.meetingStatus,
+    //       housekeepingStatus: meeting.housekeepingStatus,
+    //       location: meeting.location,
+    //     },
+    //   })),
+    // [ownMeetings]
+     participants: meeting.participants?.map((participant) =>
+            participant?.firstName
+              ? `${participant.firstName} ${participant.lastName || ""}`.trim()
+              : participant?.employeeName || participant?.name || "N/A",
           ),
           meetingStatus: meeting.meetingStatus,
           housekeepingStatus: meeting.housekeepingStatus,
           location: meeting.location,
         },
       })),
-    [ownMeetings]
+    [visibleMeetings]
   );
 
   const transformedEvents = useMemo(

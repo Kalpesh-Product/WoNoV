@@ -181,6 +181,7 @@ const Calender = () => {
       const meetingStatus = meeting?.meetingStatus?.toLowerCase?.();
 
       const isCurrentUserParticipant =
+        meeting?.isCurrentUserInvolved === true ||
         bookedById?.toString() === currentUserId ||
         meeting?.clientBookedBy?._id?.toString() === currentUserId ||
         (meeting?.participants || []).some(

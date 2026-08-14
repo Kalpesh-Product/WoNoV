@@ -410,9 +410,23 @@ const fetchMeetingReportService = async ({
     const foundUser = currentUserId
       ? await UserData.findById(currentUserId)
           .populate({ path: "departments", select: "name" })
-          .select("departments")
+         .select("departments email")
           .lean()
       : null;
+     const currentMemberIds = foundUser?.email
+      ? idsFrom(
+          await CoworkingMember.find({
+            email: foundUser.email,
+            isActive: true,
+          })
+            .select("_id")
+            .collation({ locale: "en", strength: 2 })
+            .lean(),
+        )
+      : [];
+    const currentMemberIdSet = new Set(
+      currentMemberIds.map((memberId) => memberId.toString()),
+    );
     const userDepartments = foundUser?.departments?.length
       ? foundUser.departments
       : departments;
@@ -466,10 +480,19 @@ const fetchMeetingReportService = async ({
       ...(!canViewAllMeetings &&
         currentUserId && {
           $or: [
-            { bookedBy: currentUserId },
-            { clientBookedBy: currentUserId },
+            // { bookedBy: currentUserId },
+            // { clientBookedBy: currentUserId },
+            // { internalParticipants: currentUserId },
+            // { clientParticipants: currentUserId },
+
+             { bookedBy: currentUserId },
             { internalParticipants: currentUserId },
-            { clientParticipants: currentUserId },
+            ...(currentMemberIds.length
+              ? [
+                  { clientBookedBy: { $in: currentMemberIds } },
+                  { clientParticipants: { $in: currentMemberIds } },
+                ]
+              : []),
           ],
         }),
     };
@@ -583,9 +606,20 @@ const fetchMeetingReportService = async ({
       const isReceptionist = meeting.receptionist?.departments?.some(
         (dept) => dept.name === "Administration",
       );
+        const isCurrentUserInvolved = Boolean(
+        meeting.bookedBy?._id?.toString() === currentUserId ||
+          (meeting.internalParticipants || []).some(
+            (participant) => participant?._id?.toString() === currentUserId,
+          ) ||
+          currentMemberIdSet.has(meeting.clientBookedBy?._id?.toString()) ||
+          (meeting.clientParticipants || []).some((participant) =>
+            currentMemberIdSet.has(participant?._id?.toString()),
+          ),
+      );
 
       return {
         _id: meeting._id,
+         isCurrentUserInvolved,
         receptionist: isReceptionist
           ? formatPersonName(meeting.receptionist)
           : "N/A",

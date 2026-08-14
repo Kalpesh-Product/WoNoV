@@ -1,14 +1,10 @@
-import BarGraph from "../../../components/graphs/BarGraph";
-import WidgetSection from "../../../components/WidgetSection";
+import { useMemo, useState } from "react";
 import { inrFormat } from "../../../utils/currencyFormat";
-import humanDate from "../../../utils/humanDateForamt";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
-import YearlyGraph from "../../../components/graphs/YearlyGraph";
-import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
 
 // const MeetingRevenue = () => {
@@ -54,8 +50,27 @@ const getNormalizedPaymentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const getCurrentFinancialYearLabel = () => {
+  const today = new Date();
+  const startYear =
+    today.getMonth() < 3 ? today.getFullYear() - 1 : today.getFullYear();
+
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getFinancialYear = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return null;
+
+  const startYear = date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear();
+  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
+  const [selectedFY, setSelectedFY] = useState(
+    getCurrentFinancialYearLabel(),
+  );
 
   const {
     data: meetingsData = [],
@@ -87,20 +102,33 @@ const MeetingRevenue = () => {
   }));
 
   const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
-  const maxMeetingAmount = flattenedRevenueData.reduce(
-    (max, item) => Math.max(max, getNumericAmount(item?.taxable)),
-    0
+  const graphData = useMemo(
+    () =>
+      isMeetingsLoading
+        ? []
+        : flattenedRevenueData
+            .filter((item) => item.normalizedStatus === "paid")
+            .map((item) => ({
+              date: item.date,
+              taxable: getNumericAmount(item.taxable),
+              vertical: "Meeting",
+            })),
+    [flattenedRevenueData, isMeetingsLoading],
+  );
+  const selectedFiscalYearRevenue = useMemo(
+    () =>
+      graphData.filter((item) => getFinancialYear(item.date) === selectedFY),
+    [graphData, selectedFY],
+  );
+  const maxMeetingAmount = useMemo(
+    () =>
+      selectedFiscalYearRevenue.reduce(
+        (max, item) => Math.max(max, getNumericAmount(item.taxable)),
+        0,
+      ),
+    [selectedFiscalYearRevenue],
   );
   const useLakhsScale = maxMeetingAmount >= 100000;
-  const graphData = isMeetingsLoading
-    ? []
-    : flattenedRevenueData
-        .filter((item) => item.normalizedStatus === "paid")
-        .map((item) => ({
-          date: item.date,
-          taxable: getNumericAmount(item.taxable),
-          vertical: "Meeting",
-        }));
   const options = {
     dataLabels: {
       enabled: true,
@@ -115,12 +143,17 @@ const MeetingRevenue = () => {
       offsetY: -22,
     },
     yaxis: {
+      min: 0,
       title: { text: useLakhsScale ? "Amount In Lakhs (INR)" : "Amount (INR)" },
       labels: {
         formatter: (val) =>
           useLakhsScale
-            ? `${(val / 100000).toLocaleString("en-IN")}`
-            : inrFormat(val),
+            ? `${Number(val / 100000).toLocaleString("en-IN", {
+                maximumFractionDigits: 1,
+              })}`
+            : `${Number(val).toLocaleString("en-IN", {
+                maximumFractionDigits: 0,
+              })}`,
       },
     },
     tooltip: {
@@ -179,13 +212,15 @@ const MeetingRevenue = () => {
         </div>
       ) : (
         <>
-          <FyBarGraph
-            data={graphData}
-            dateKey="date"
-            valueKey="taxable"
-            graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
-            chartOptions={options}
-          />
+        <FyBarGraph
+          data={graphData}
+          dateKey="date"
+          valueKey="taxable"
+          graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
+          chartOptions={options}
+          selectedFY={selectedFY}
+          onSelectedFYChange={setSelectedFY}
+        />
 
           <WidgetTable
             data={flattenedRevenueData}
