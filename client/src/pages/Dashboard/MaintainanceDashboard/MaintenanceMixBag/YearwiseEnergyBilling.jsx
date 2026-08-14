@@ -29,10 +29,30 @@ const BUILDING_CONFIG = {
 
 const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
 const SHOW_PAGE_HEADER = false;
-const Y_AXIS_STEP = 200;
+const Y_AXIS_PADDING_RATIO = 0.2;
+const Y_AXIS_MIN = 100;
+const Y_AXIS_TICK_AMOUNT = 4;
 
 const getFinancialYearLabel = (startYear) =>
   `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+
+const getSharedYAxisMax = (values = []) => {
+  const maxValue = values.reduce((currentMax, value) => {
+    const numericValue = Number(value || 0);
+    return Number.isFinite(numericValue)
+      ? Math.max(currentMax, numericValue)
+      : currentMax;
+  }, 0);
+
+  if (maxValue <= 0) {
+    return Y_AXIS_MIN;
+  }
+
+  return Math.max(
+    Y_AXIS_MIN,
+    Math.ceil((maxValue * (1 + Y_AXIS_PADDING_RATIO)) / 100) * 100,
+  );
+};
 
 const createFinancialYearMonths = (startYear) =>
   Array.from({ length: 12 }, (_, index) => {
@@ -115,16 +135,15 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     (sum, row) => sum + Number(row.totalBillAmount || 0),
     0,
   );
-  const chartMaxValue = Math.max(
-    0,
-    ...rows.flatMap((row) => [
-      Number(row.totalConsumption || 0),
-      Number(row.totalBillAmount || 0),
-    ]),
-  );
-  const yAxisMax = Math.max(
-    Y_AXIS_STEP,
-    Math.ceil(chartMaxValue / Y_AXIS_STEP) * Y_AXIS_STEP + Y_AXIS_STEP,
+  const yAxisMax = useMemo(
+    () =>
+      getSharedYAxisMax(
+        rows.flatMap((row) => [
+          Number(row.totalConsumption || 0),
+          Number(row.totalBillAmount || 0),
+        ]),
+      ),
+    [rows],
   );
 
   const series = [
@@ -170,7 +189,8 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     yaxis: {
       min: 0,
       max: yAxisMax,
-      tickAmount: yAxisMax / Y_AXIS_STEP,
+      tickAmount: Y_AXIS_TICK_AMOUNT,
+      forceNiceScale: true,
       title: { text: "Consumption & Bill Amount" },
       labels: { formatter: formatNumber },
     },
