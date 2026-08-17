@@ -6,10 +6,10 @@ import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
-import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import humanDate from "../../../utils/humanDateForamt";
 
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
@@ -56,6 +56,12 @@ const getNormalizedPaymentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const getUnitLabel = (unit) => {
+  if (!unit) return "N/A";
+  if (typeof unit === "string") return unit;
+  return unit.unitNo || unit.unitName || "N/A";
+};
+
 const getCurrentFinancialYearLabel = () => {
   const today = new Date();
   const startYear =
@@ -76,6 +82,7 @@ const getFinancialYear = (dateValue) => {
 const MeetingRevenue = () => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  const [selectedRevenue, setSelectedRevenue] = useState(null);
 
   const {
     data: meetingsData = [],
