@@ -563,7 +563,9 @@ const MeetingFormLayout = () => {
        const isClientBooking =
         data.meetingType === "Internal" &&
         data.company !== BIZNEST_COMPANY_ID;
-      let bookingUserId = data.bookedBy || data.internalBooked;
+      const currentUserId = auth?.user?._id;
+      let bookingUserId = data.bookedBy || data.internalBooked || currentUserId;
+      let clientBookedById = null;
 
       if (isClientBooking && !data.bookedBy) {
         const membersResponse = await axios.get(
@@ -580,7 +582,7 @@ const MeetingFormLayout = () => {
             String(member?.email || "")
               .trim()
               .toLowerCase() === currentUserEmail,
-        );
+          );
 
         if (!currentClientMember?._id) {
           throw new Error(
@@ -588,8 +590,21 @@ const MeetingFormLayout = () => {
           );
         }
 
-        bookingUserId = currentClientMember._id;
+        clientBookedById = currentClientMember._id;
       }
+
+      const internalParticipants = Array.from(
+        new Set(
+          [
+            ...(Array.isArray(data.internalParticipants)
+              ? data.internalParticipants
+              : []),
+          ]
+            .filter(Boolean)
+            .map((id) => String(id)),
+        ),
+      );
+
       await axios.post("/api/meetings/create-meeting", {
         bookedRoom: meetingRoomId,
         meetingType: data.meetingType,
@@ -600,11 +615,12 @@ const MeetingFormLayout = () => {
         client: data.company,
         subject: data.subject,
         agenda: data.agenda,
-        internalParticipants: data.internalParticipants,
+        internalParticipants,
        // bookedBy: data.bookedBy || data.internalBooked,
-        ...(isClientBooking
-          ? { clientBookedBy: bookingUserId }
-          : { bookedBy: bookingUserId }),
+        bookedBy: bookingUserId,
+        ...(isClientBooking && clientBookedById
+          ? { clientBookedBy: clientBookedById }
+          : {}),
         // ...(data.meetingType === "Internal" &&
         // data.company !== BIZNEST_COMPANY_ID
         //   ? { clientBookedBy: bookingUserId }
@@ -615,6 +631,7 @@ const MeetingFormLayout = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Meeting booked successfully");
       setOpen(false);
       navigate("/app/meetings/calendar");

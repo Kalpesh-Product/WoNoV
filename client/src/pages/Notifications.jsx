@@ -19,12 +19,7 @@ const Notifications = () => {
     queryKey: ["notifications"],
     queryFn: async () => {
       const res = await axios.get("/api/notifications/get-my-notifications");
-
-      const filtered = res.data.filter(
-        (n) => n.initiatorData?._id !== auth?.user?._id
-      );
-
-      return filtered;
+      return res.data;
     },
     refetchInterval: 15000,
   });
@@ -33,7 +28,8 @@ const Notifications = () => {
     const count = notification.users.filter(
       (user) =>
         user.userActions?.hasRead === false &&
-        user.userActions?.whichUser?._id === auth.user._id
+        String(user.userActions?.whichUser?._id || user.userActions?.whichUser) ===
+          String(auth?.user?._id)
     ).length;
     return total + count;
   }, 0);

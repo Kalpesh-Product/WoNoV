@@ -325,11 +325,133 @@ const addMeetings = async (req, res, next) => {
 
     // Atomically deduct credits using findOneAndUpdate with credit check
 
-    const bookingUser = bookedBy ? await User.findById(bookedBy) : null;
-    // const bookingUserId = bookedBy || clientBookedBy;
-    // const bookingUser = bookingUserId
-    //   ? await User.findById(bookingUserId)
-    //   : null;
+    const bookingUser = bookedBy
+      ? await User.findById(bookedBy)
+      : isClient && clientBookedBy
+        ? await CoworkingMembers.findById(clientBookedBy)
+        : null;
+
+    const meetingParticipants = Array.from(
+      new Set(
+        [
+          ...(Array.isArray(internalUsers) ? internalUsers : []),
+          bookingUser?._id || null,
+        ]
+          .filter(Boolean)
+          .map((id) => id.toString()),
+      ),
+    ).map((id) => new mongoose.Types.ObjectId(id));
+
+    const normalizeEmail = (value) =>
+      String(value || "").trim().toLowerCase();
+
+    const departmentManagerRecipientIds = async () => {
+      const departmentIds = Array.isArray(req.departments)
+        ? req.departments.filter(Boolean)
+        : [];
+
+      if (!departmentIds.length) {
+        return [];
+      }
+
+      const userDepartments = await UserData.find({
+        company: req.company,
+        departments: { $in: departmentIds },
+        isActive: true,
+      })
+        .populate([
+          { path: "role", select: "roleTitle" },
+          { path: "departments", select: "name" },
+        ])
+        .select("_id firstName lastName");
+
+      const managerIds = userDepartments
+        .filter((user) =>
+          user.departments?.some((department) =>
+            user.role?.some((role) => {
+              const roleTitle = String(role?.roleTitle || "");
+              const departmentName = String(department?.name || "");
+              return (
+                roleTitle.startsWith(departmentName) &&
+                (roleTitle.endsWith("Admin") || roleTitle.endsWith("Manager"))
+              );
+            }),
+          ),
+        )
+        .map((user) => user._id.toString());
+
+      return Array.from(new Set(managerIds)).map(
+        (id) => new mongoose.Types.ObjectId(id),
+      );
+    };
+
+    const notificationRecipientIds = async () => {
+      if (!isClient) {
+        const managerRecipientIds = await departmentManagerRecipientIds();
+        return Array.from(
+          new Set(
+            [...meetingParticipants, ...managerRecipientIds].map((id) =>
+              id.toString(),
+            ),
+          ),
+        ).map((id) => new mongoose.Types.ObjectId(id));
+      }
+
+      const rawRecipientIds = Array.from(
+        new Set(meetingParticipants.map((id) => id.toString())),
+      );
+
+      const coworkingMemberDocs = await CoworkingMembers.find({
+        _id: { $in: rawRecipientIds },
+      })
+        .select("_id email")
+        .lean()
+        .exec();
+
+      const memberEmailSet = new Set(
+        coworkingMemberDocs
+          .map((member) => normalizeEmail(member.email))
+          .filter(Boolean),
+      );
+
+      const mappedUsers = memberEmailSet.size
+        ? await User.find({
+            email: { $in: Array.from(memberEmailSet) },
+          })
+            .select("_id email")
+            .lean()
+            .exec()
+        : [];
+
+      const userIdByEmail = new Map(
+        mappedUsers.map((user) => [normalizeEmail(user.email), user._id]),
+      );
+
+      const recipientSet = new Set();
+
+      rawRecipientIds.forEach((recipientId) => {
+        const member = coworkingMemberDocs.find(
+          (item) => item._id.toString() === recipientId,
+        );
+
+        if (member) {
+          const mappedUserId = userIdByEmail.get(normalizeEmail(member.email));
+          if (mappedUserId) {
+            recipientSet.add(mappedUserId.toString());
+          }
+          return;
+        }
+
+        recipientSet.add(recipientId);
+      });
+
+      const managerRecipientIds = await departmentManagerRecipientIds();
+      managerRecipientIds.forEach((managerId) =>
+        recipientSet.add(managerId.toString()),
+      );
+
+      return Array.from(recipientSet).map((id) => new mongoose.Types.ObjectId(id));
+    };
 
     if (meetingType === "Internal") {
       const BookingModel = isClient ? CoworkingClient : Company;
@@ -441,8 +563,7 @@ const addMeetings = async (req, res, next) => {
       externalClient: meetingType === "External" ? externalCompany : null,
       company,
       status: "Upcoming",
-      internalParticipants:
-        internalParticipants && !isClient ? internalUsers : [],
+      internalParticipants: !isClient ? meetingParticipants : [],
       clientParticipants: internalParticipants && isClient ? internalUsers : [],
       externalParticipants: externalParticipants || [],
     });
@@ -463,15 +584,16 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    if (
-      !isClient &&
-      bookingUser &&
-      Array.isArray(internalParticipants) &&
-      internalParticipants.length > 0
-    ) {
+    const notificationRecipients = await notificationRecipientIds();
+
+    if (bookingUser && notificationRecipients.length > 0) {
+      const bookingUserName = bookingUser?.firstName || bookingUser?.lastName
+        ? `${bookingUser?.firstName || ""} ${bookingUser?.lastName || ""}`.trim()
+        : bookingUser?.employeeName || bookingUser?.name || "Unknown";
+
       emitter.emit("notification", {
         initiatorData: bookingUser._id,
-        users: internalParticipants.map((userId) => ({
+        users: notificationRecipients.map((userId) => ({
           userActions: {
             whichUser: userId,
             hasRead: false,
@@ -479,7 +601,7 @@ const addMeetings = async (req, res, next) => {
         })),
         type: "book meeting",
         module: "Meetings",
-        message: `You have been added to a meeting by ${bookingUser.firstName} ${bookingUser.lastName}`,
+        message: `You have been added to a meeting by ${bookingUserName}`,
       });
     }
 
