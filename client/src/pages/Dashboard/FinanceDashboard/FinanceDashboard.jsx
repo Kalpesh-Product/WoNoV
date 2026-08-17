@@ -159,14 +159,16 @@ const FinanceDashboard = () => {
     });
 
   const { data: budgetData = [], isLoading: isBudgetDataLoading } = useQuery({
-    queryKey: ["budgetData"],
+    queryKey: ["budgetData", "finance-dashboard"],
     queryFn: async () => {
-      const res = await axios.get("/api/budget/company-budget");
+      const res = await axios.get("/api/budget/company-budget", {
+        params: { view: "dashboard" },
+      });
       return res.data?.allBudgets;
     },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
   });
 
@@ -1653,6 +1655,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           TitleAmountRed={item.TitleAmountRed}
           onYearChange={item.onYearChange}
           currentYear={selectedFiscalYear}
+          refreshOnDataChange
         />
       )),
     },

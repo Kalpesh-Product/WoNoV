@@ -31,10 +31,12 @@ const AverageProfitLoss = () => {
     });
 
   const { data: budgetData = [], isLoading: isBudgetDataLoading } = useQuery({
-    queryKey: ["budgetData"],
+    queryKey: ["budgetData", "profit-loss"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/budget/company-budget");
+        const response = await axios.get("/api/budget/company-budget", {
+          params: { view: "profit-loss" },
+        });
         return Array.isArray(response.data?.allBudgets)
           ? response.data.allBudgets
           : [];
@@ -42,6 +44,8 @@ const AverageProfitLoss = () => {
         console.error(error);
       }
     },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: simpleRevenue = [], isLoading: isSimpleRevenueLoading } =

@@ -522,12 +522,14 @@ const updateBudget = async (req, res, next) => {
 
 const fetchBudget = async (req, res, next) => {
   try {
-    const { departmentId } = req.query;
+    const { departmentId, view } = req.query;
     const { company } = req;
 
     const result = await fetchBudgetVoucherService({
       company: company,
       departmentId,
+      dashboardView: view === "dashboard",
+      profitLossView: view === "profit-loss",
     });
 
     return res.status(200).json(result);
