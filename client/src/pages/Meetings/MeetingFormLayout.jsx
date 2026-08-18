@@ -394,6 +394,19 @@ const MeetingFormLayout = () => {
     ? employees.filter((user) => availableEmployeeIds.has(user._id))
     : employees;
 
+  const bookedByOptions = useMemo(() => {
+    if (!isBizNest) return participantOptions;
+
+    return employees.filter(
+      (user) =>
+        !user?.role?.some((role) =>
+          ["Tech Employee"].includes(
+            String(role?.roleTitle || "").trim(),
+          ),
+        ),
+    );
+  }, [employees, isBizNest, participantOptions]);
+
   const { data: currentUserAvailability = [] } = useQuery({
     queryKey: [
       "current-user-availability",
@@ -426,9 +439,11 @@ const MeetingFormLayout = () => {
     auth?.user?._id,
     canBypassMeetingAvailability,
     currentUserAvailability,
-    endDateTime,
+    endDate,
+    endTime,
     isSameDaySelection,
-    startDateTime,
+    startDate,
+    startTime,
   ]);
 
   const companyOptions = useMemo(() => {
@@ -1076,7 +1091,7 @@ const MeetingFormLayout = () => {
                       }}
                       render={({ field }) => (
                         <Autocomplete
-                          options={participantOptions}
+                          options={bookedByOptions}
                           loading={isEmployeesLoading || isAvailableEmployees}
                           getOptionLabel={(user) =>
                             isBizNest
@@ -1085,7 +1100,7 @@ const MeetingFormLayout = () => {
                               : `${user.employeeName ?? ""}`.trim() || "Unnamed"
                           }
                           value={
-                            participantOptions.find(
+                            bookedByOptions.find(
                               (u) => u._id === field.value,
                             ) || null
                           }
