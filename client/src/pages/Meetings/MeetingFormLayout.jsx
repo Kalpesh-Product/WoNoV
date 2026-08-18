@@ -394,6 +394,42 @@ const MeetingFormLayout = () => {
     ? employees.filter((user) => availableEmployeeIds.has(user._id))
     : employees;
 
+  const { data: biznestEmployees = [] } = useQuery({
+    queryKey: ["biznest-participants", company],
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
+      return (response.data || []).filter((user) => user.isActive === true);
+    },
+    enabled: shouldFetchParticipants && company === wonoClient?._id,
+  });
+
+  const internalParticipantOptions = useMemo(() => {
+    if (company !== wonoClient?._id) return participantOptions;
+
+    const seen = new Set();
+    return [...participantOptions, ...biznestEmployees].filter((user) => {
+      const key = String(user?.email || user?._id || "")
+        .trim()
+        .toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [biznestEmployees, company, participantOptions, wonoClient?._id]);
+
+  const getInternalParticipantLabel = (user) => {
+    const fullName = [user?.firstName, user?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    return (
+      fullName ||
+      String(user?.employeeName || user?.name || "").trim() ||
+      "Unnamed"
+    );
+  };
+
   const bookedByOptions = useMemo(() => {
     if (!isBizNest) return participantOptions;
 
@@ -1184,20 +1220,16 @@ const MeetingFormLayout = () => {
                       render={({ field }) => (
                         <Autocomplete
                           multiple
-                          options={participantOptions}
+                          options={internalParticipantOptions}
                           loading={isAvailableEmployees}
-                          getOptionLabel={(user) =>
-                            isBizNest
-                              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`
-                              : `${user.employeeName ?? ""}`
-                          }
+                          getOptionLabel={getInternalParticipantLabel}
                           onFocus={() => {
                             setShouldFetchParticipants(true);
                             if (shouldCheckAvailability) {
                               refetchAvailableEmployees();
                             }
                           }}
-                          value={participantOptions.filter((user) =>
+                          value={internalParticipantOptions.filter((user) =>
                             field.value?.includes(user._id),
                           )}
                           onChange={(_, newValue) =>
@@ -1207,13 +1239,7 @@ const MeetingFormLayout = () => {
                             selected.map((user, index) => (
                               <Chip
                                 key={user._id}
-                                label={
-                                  isBizNest
-                                    ? `${user.firstName ?? ""} ${
-                                        user.lastName ?? ""
-                                      }`
-                                    : `${user.employeeName ?? ""}`
-                                }
+                                label={getInternalParticipantLabel(user)}
                                 {...getTagProps({ index })}
                                 deleteIcon={<IoMdClose />}
                               />
