@@ -127,6 +127,55 @@ const addMeetings = async (req, res, next) => {
     const company = req.company;
     const user = req.user;
     const ip = req.ip;
+    let isClient = client ? company.toString() !== client.toString() : false;
+    let resolvedClientBookedBy = clientBookedBy;
+
+    if (meetingType === "Internal" && isClient && !bookedBy && !resolvedClientBookedBy) {
+      const normalizeText = (value) =>
+        String(value || "").trim().toLowerCase();
+
+      const currentUser = await User.findById(user)
+        .select("email firstName lastName phone")
+        .lean();
+
+      const currentUserFullName = normalizeText(
+        [currentUser?.firstName, currentUser?.lastName]
+          .filter(Boolean)
+          .join(" "),
+      );
+
+      const memberLookupConditions = [
+        ...(currentUser?.email ? [{ email: currentUser.email }] : []),
+        ...(currentUserFullName ? [{ employeeName: currentUserFullName }] : []),
+        ...(currentUser?.phone ? [{ mobileNo: currentUser.phone }] : []),
+      ];
+
+      const currentClientMembers = memberLookupConditions.length
+        ? await CoworkingMembers.find({
+            client,
+            $or: memberLookupConditions,
+          })
+            .select("_id")
+            .collation({ locale: "en", strength: 2 })
+            .lean()
+        : [];
+
+      const fallbackClientMembers =
+        currentClientMembers.length || !memberLookupConditions.length
+          ? []
+          : await CoworkingMembers.find({
+              $or: memberLookupConditions,
+            })
+              .select("_id")
+              .collation({ locale: "en", strength: 2 })
+              .lean();
+
+      resolvedClientBookedBy = (
+        currentClientMembers.length > 0
+          ? currentClientMembers
+          : fallbackClientMembers
+      )[0]?._id || null;
+    }
 
     if (
       !meetingType ||
@@ -137,7 +186,7 @@ const addMeetings = async (req, res, next) => {
       !subject ||
       !agenda ||
       // (meetingType === "Internal" && !bookedBy) ||
-      (meetingType === "Internal" && !bookedBy && !clientBookedBy) ||
+      (meetingType === "Internal" && !bookedBy && !resolvedClientBookedBy) ||
       (meetingType === "Internal" && !client) ||
       (meetingType === "External" && !externalCompany) ||
       (meetingType === "External" &&
@@ -236,7 +285,6 @@ const addMeetings = async (req, res, next) => {
 
     let internalUsers = [];
     let users = [];
-    let isClient = client ? company.toString() !== client.toString() : false;
 
     if (internalParticipants) {
       const invalidIds = internalParticipants.filter(
@@ -327,8 +375,8 @@ const addMeetings = async (req, res, next) => {
 
     const bookingUser = bookedBy
       ? await User.findById(bookedBy)
-      : isClient && clientBookedBy
-        ? await CoworkingMembers.findById(clientBookedBy)
+      : isClient && resolvedClientBookedBy
+        ? await CoworkingMembers.findById(resolvedClientBookedBy)
         : null;
 
     const meetingParticipants = Array.from(
@@ -535,7 +583,7 @@ const addMeetings = async (req, res, next) => {
 
     const meeting = new Meeting({
       meetingType,
-      // bookedBy: meetingType === "Internal" && !isClient ? bookedBy : null,
+       // bookedBy: meetingType === "Internal" && !isClient ? bookedBy : null,
       // clientBookedBy: meetingType === "Internal" && isClient ? bookedBy : null,
 
       // bookedBy: meetingType === "Internal" && bookingUser ? bookedBy : null,
@@ -546,8 +594,8 @@ const addMeetings = async (req, res, next) => {
 
        bookedBy: meetingType === "Internal" && bookedBy ? bookedBy : null,
       clientBookedBy:
-        meetingType === "Internal" && isClient && clientBookedBy
-          ? clientBookedBy
+        meetingType === "Internal" && isClient && resolvedClientBookedBy
+          ? resolvedClientBookedBy
           : null,    
       externalBookedBy: meetingType === "External" ? bookedBy : null,
       receptionist: user,
@@ -1118,7 +1166,7 @@ const getMyMeetings = async (req, res, next) => {
       .populate([
         {
           path: "bookedBy",
-          selected: "firstName lastName email departments",
+          select: "firstName lastName email departments",
           populate: { path: "departments" },
         },
         { path: "externalBookedBy", select: "firstName lastName" },
@@ -1200,10 +1248,38 @@ const getMyMeetings = async (req, res, next) => {
           : "";
       }
 
+      const isCurrentUserInvolved = Boolean(
+        meeting?.bookedBy?._id?.toString() === user?.toString() ||
+          (meeting?.internalParticipants || []).some(
+            (participant) => participant?._id?.toString() === user?.toString(),
+          ) ||
+          currentClientMemberIds.some(
+            (memberId) =>
+              memberId?.toString() ===
+              meeting?.clientBookedBy?._id?.toString(),
+          ) ||
+          (meeting?.clientParticipants || []).some((participant) =>
+            currentClientMemberIds.some(
+              (memberId) => memberId?.toString() === participant?._id?.toString(),
+            ),
+          ),
+      );
+      const isCurrentUserBooked = Boolean(
+        meeting?.bookedBy?._id?.toString() === user?.toString() ||
+          currentClientMemberIds.some(
+            (memberId) =>
+              memberId?.toString() ===
+              meeting?.clientBookedBy?._id?.toString(),
+          ),
+      );
+
       return {
         _id: meeting._id,
         receptionist: receptionist,
         bookedById: meeting?.bookedBy?._id || null,
+        clientBookedById: meeting?.clientBookedBy?._id || null,
+        isCurrentUserInvolved,
+        isCurrentUserBooked,
         // bookedBy: bookedBy,
          bookedBy:
           bookedBy || meeting.clientBookedBy?.employeeName || "Unknown",

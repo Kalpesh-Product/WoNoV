@@ -407,25 +407,50 @@ const fetchMeetingReportService = async ({
           : data;
 
     const currentUserId = user?.toString();
+    const normalizeText = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
     const foundUser = currentUserId
       ? await UserData.findById(currentUserId)
           .populate({ path: "departments", select: "name" })
-         .select("departments email")
+          .select("departments email firstName lastName phone")
           .lean()
       : null;
-     const currentMemberIds = foundUser?.email
+    const currentUserFullName = normalizeText(
+      [foundUser?.firstName, foundUser?.lastName].filter(Boolean).join(" "),
+    );
+    const currentMemberLookupConditions = [
+      ...(foundUser?.email ? [{ email: foundUser.email }] : []),
+      ...(currentUserFullName ? [{ employeeName: currentUserFullName }] : []),
+      ...(foundUser?.phone ? [{ mobileNo: foundUser.phone }] : []),
+    ];
+    const currentMemberIds = currentMemberLookupConditions.length
       ? idsFrom(
           await CoworkingMember.find({
-            email: foundUser.email,
-            isActive: true,
+            company,
+            $or: currentMemberLookupConditions,
           })
             .select("_id")
             .collation({ locale: "en", strength: 2 })
             .lean(),
         )
       : [];
+    const fallbackMemberIds =
+      currentMemberIds.length || !currentMemberLookupConditions.length
+        ? []
+        : idsFrom(
+            await CoworkingMember.find({
+              $or: currentMemberLookupConditions,
+            })
+              .select("_id")
+              .collation({ locale: "en", strength: 2 })
+              .lean(),
+          );
+    const resolvedCurrentMemberIds =
+      currentMemberIds.length > 0 ? currentMemberIds : fallbackMemberIds;
     const currentMemberIdSet = new Set(
-      currentMemberIds.map((memberId) => memberId.toString()),
+      resolvedCurrentMemberIds.map((memberId) => memberId.toString()),
     );
     const userDepartments = foundUser?.departments?.length
       ? foundUser.departments
@@ -487,10 +512,10 @@ const fetchMeetingReportService = async ({
 
              { bookedBy: currentUserId },
             { internalParticipants: currentUserId },
-            ...(currentMemberIds.length
+            ...(resolvedCurrentMemberIds.length
               ? [
-                  { clientBookedBy: { $in: currentMemberIds } },
-                  { clientParticipants: { $in: currentMemberIds } },
+                  { clientBookedBy: { $in: resolvedCurrentMemberIds } },
+                  { clientParticipants: { $in: resolvedCurrentMemberIds } },
                 ]
               : []),
           ],

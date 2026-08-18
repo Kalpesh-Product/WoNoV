@@ -559,38 +559,75 @@ const MeetingFormLayout = () => {
   const { mutate: createMeeting, isPending: isCreateMeeting } = useMutation({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
-      //  const bookingUserId = data.bookedBy || data.internalBooked;
-       const isClientBooking =
+      const normalizeText = (value) =>
+        String(value || "").trim().toLowerCase();
+
+      const currentUserEmail = normalizeText(auth.user?.email);
+      const currentUserFullName = normalizeText(
+        [auth.user?.firstName, auth.user?.lastName].filter(Boolean).join(" "),
+      );
+      const currentUserPhone = normalizeText(
+        auth.user?.phone || auth.user?.mobileNo || auth.user?.mobileNumber,
+      );
+
+      const findCurrentClientMember = (members = []) =>
+        members.find((member) => {
+          const memberEmail = normalizeText(member?.email);
+          const memberName = normalizeText(
+            member?.employeeName || member?.name,
+          );
+          const memberPhone = normalizeText(
+            member?.mobileNo || member?.phoneNumber || member?.phone,
+          );
+
+          return (
+            (currentUserEmail && memberEmail === currentUserEmail) ||
+            (currentUserFullName && memberName === currentUserFullName) ||
+            (currentUserPhone && memberPhone === currentUserPhone)
+          );
+        });
+
+      const isClientBooking =
         data.meetingType === "Internal" &&
-        data.company !== BIZNEST_COMPANY_ID;
+        String(data.company || "") !== BIZNEST_COMPANY_ID;
       const currentUserId = auth?.user?._id;
-      let bookingUserId = data.bookedBy || data.internalBooked || currentUserId;
+      const selectedBookingUserId =
+        data.bookedBy || data.internalBooked || currentUserId;
       let clientBookedById = null;
 
-      if (isClientBooking && !data.bookedBy) {
+      if (isClientBooking) {
+        clientBookedById = data.bookedBy || null;
+
+        if (!clientBookedById) {
+          // Fall back to the current user's coworking profile when no explicit booker is selected.
+          const membersResponse = await axios.get(
+            "/api/sales/co-working-client-members",
+            {
+              params: { clientId: data.company, active: true },
+            },
+          );
+          const currentClientMember = findCurrentClientMember(
+            membersResponse.data || [],
+          );
+
+          clientBookedById = currentClientMember?._id || null;
+        }
+      }
+
+      if (!isClientBooking && !selectedBookingUserId) {
         const membersResponse = await axios.get(
           "/api/sales/co-working-client-members",
           {
             params: { clientId: data.company, active: true },
           },
         );
-        const currentUserEmail = String(auth.user?.email || "")
-          .trim()
-          .toLowerCase();
-        const currentClientMember = (membersResponse.data || []).find(
-          (member) =>
-            String(member?.email || "")
-              .trim()
-              .toLowerCase() === currentUserEmail,
-          );
+        const currentClientMember = findCurrentClientMember(
+          membersResponse.data || [],
+        );
 
-        if (!currentClientMember?._id) {
-          throw new Error(
-            "Your coworking member profile was not found for the selected company",
-          );
-        }
-
-        clientBookedById = currentClientMember._id;
+        // Internal users can book meetings for WONO/client companies too.
+        // Only attach clientBookedBy when the current user actually has a matching client-member profile.
+        if (currentClientMember?._id) clientBookedById = currentClientMember._id;
       }
 
       const internalParticipants = Array.from(
@@ -617,7 +654,7 @@ const MeetingFormLayout = () => {
         agenda: data.agenda,
         internalParticipants,
        // bookedBy: data.bookedBy || data.internalBooked,
-        bookedBy: bookingUserId,
+        bookedBy: isClientBooking ? null : selectedBookingUserId,
         ...(isClientBooking && clientBookedById
           ? { clientBookedBy: clientBookedById }
           : {}),
