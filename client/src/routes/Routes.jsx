@@ -3291,6 +3291,24 @@ export const routes = createBrowserRouter([
                       />
                     ),
                   },
+                   {
+                    path: "reports-section/cafe",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_CAFE]}
+                        element={<DepartmentReportCommon />}
+                      />
+                    ),
+                  },
+                  {
+                    path: "reports-section/legal",
+                    element: (
+                      <PerformancePermissionRoute
+                        permissions={[PERMISSIONS.REPORTS_LEGAL]}
+                        element={<DepartmentReportCommon />}
+                      />
+                    ),
+                  },
                   {
                     path: "reports-section/:moduleKey",
                     element: (

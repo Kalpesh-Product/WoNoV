@@ -875,6 +875,16 @@ export const PERMISSIONS = {
     title: "TECH",
     type: "read",
   },
+   REPORTS_CAFE: {
+    value: "reports_cafe",
+    title: "CAFE",
+    type: "read",
+  },
+  REPORTS_LEGAL: {
+    value: "reports_legal",
+    title: "LEGAL",
+    type: "read",
+  },
   REPORTS_TICKETS: {
     value: "reports_tickets",
     title: "TICKET",

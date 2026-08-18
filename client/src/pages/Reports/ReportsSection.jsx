@@ -7,6 +7,18 @@ import useUserPermissions from "../../hooks/useUserPermissions";
 //import useAuth from "../../hooks/useAuth";
 
 const staticReportModules = [
+   {
+    title: "CAFE",
+    subtitle: "Cafe Reports",
+    route: "../reports-section/cafe",
+    permission: PERMISSIONS.REPORTS_CAFE.value,
+  },
+  {
+    title: "LEGAL",
+    subtitle: "Legal Reports",
+    route: "../reports-section/legal",
+    permission: PERMISSIONS.REPORTS_LEGAL.value,
+  },
   {
     title: "TICKETS",
     subtitle: "Ticket Reports",
@@ -69,6 +81,12 @@ const ReportsSection = () => {
 
     return departments
       .filter((department) => department?.name && department?.isActive !== false)
+       .filter(
+        (department) =>
+          !["cafe", "legal"].includes(
+            String(department.name).trim().toLowerCase(),
+          ),
+      )
       .filter(
         (department, index, arr) =>
           arr.findIndex(
