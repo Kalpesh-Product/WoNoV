@@ -236,16 +236,56 @@ const selectedFiscalYearPaidUnitsData = useMemo(
     () => [
       {
         name: "Monthly Rent",
-        data: selectedFiscalYearRentData,
+        data: selectedFiscalYearMonths.map((month) =>
+          Object.prototype.hasOwnProperty.call(monthlyRentMap, month)
+            ? monthlyRentMap[month]
+            : null,
+        ),
       },
     ],
-    [selectedFiscalYearRentData]
+    [monthlyRentMap, selectedFiscalYearMonths]
   );
 
   const totalRent = useMemo(
     () => selectedFiscalYearRentData.reduce((sum, amount) => sum + amount, 0),
     [selectedFiscalYearRentData]
   );
+
+  const { rentAxisMax, rentTickAmount } = useMemo(() => {
+    const maxValue = Math.max(...selectedFiscalYearRentData, 0);
+
+    if (maxValue <= 0) {
+      return {
+        rentAxisMax: 2000000,
+        rentTickAmount: 4,
+      };
+    }
+
+    const bufferedMax = maxValue * 1.1;
+    const roughStep = bufferedMax / 6;
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+    const normalizedStep = roughStep / magnitude;
+
+    let step;
+
+    if (normalizedStep <= 1) {
+      step = magnitude;
+    } else if (normalizedStep <= 2) {
+      step = 2 * magnitude;
+    } else if (normalizedStep <= 5) {
+      step = 5 * magnitude;
+    } else {
+      step = 10 * magnitude;
+    }
+
+    const roundedMax =
+      Math.ceil(bufferedMax / step) * step + step;
+
+    return {
+      rentAxisMax: roundedMax,
+      rentTickAmount: Math.max(Math.round(roundedMax / step), 1),
+    };
+  }, [selectedFiscalYearRentData]);
 
   const barGraphOptions = {
     chart: {
@@ -266,7 +306,8 @@ const selectedFiscalYearPaidUnitsData = useMemo(
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val),
+      formatter: (val) =>
+        val === null || Number(val) === 0 ? "" : inrFormat(val),
       style: {
         fontSize: "12px",
         colors: ["#000"],
@@ -275,9 +316,19 @@ const selectedFiscalYearPaidUnitsData = useMemo(
     },
     xaxis: {
       categories: selectedFiscalYearMonths,
+      crosshairs: {
+        show: false,
+        fill: {
+          opacity: 0,
+        },
+        stroke: {
+          opacity: 0,
+        },
+      },
     },
     yaxis: {
-      max: 2000000,
+      max: rentAxisMax,
+      tickAmount: rentTickAmount,
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}`,
       },
@@ -436,6 +487,7 @@ const unpaidText =
           </span>
         </div>
 
+        <!--
         <div style="
           display: flex;
           align-items: center;
@@ -458,6 +510,7 @@ const unpaidText =
             INR ${unpaidTotal.toLocaleString("en-IN")}
           </span>
         </div>
+        -->
 
       <div style="
   border-top: 1px solid #e5e7eb;
