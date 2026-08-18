@@ -1037,19 +1037,52 @@ const getMyMeetings = async (req, res, next) => {
     const { user, company, roles } = req;
 
     let meetings = [];
-    const currentUser = await User.findById(user).select("email").lean();
-    const currentClientMembers = currentUser?.email
+    const normalizeText = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
+
+    const currentUser = await User.findById(user)
+      .select("email firstName lastName phone")
+      .lean();
+
+    const currentUserFullName = normalizeText(
+      [currentUser?.firstName, currentUser?.lastName]
+        .filter(Boolean)
+        .join(" "),
+    );
+
+    const memberLookupConditions = [
+      ...(currentUser?.email ? [{ email: currentUser.email }] : []),
+      ...(currentUserFullName ? [{ employeeName: currentUserFullName }] : []),
+      ...(currentUser?.phone ? [{ mobileNo: currentUser.phone }] : []),
+    ];
+
+    const currentClientMembers = memberLookupConditions.length
       ? await CoworkingMember.find({
-          email: currentUser.email,
-          isActive: true,
+          company,
+          $or: memberLookupConditions,
         })
           .select("_id")
           .collation({ locale: "en", strength: 2 })
           .lean()
       : [];
-    const currentClientMemberIds = currentClientMembers.map(
-      (member) => member._id,
-    );
+
+    const fallbackClientMembers =
+      currentClientMembers.length || !memberLookupConditions.length
+        ? []
+        : await CoworkingMember.find({
+            $or: memberLookupConditions,
+          })
+            .select("_id")
+            .collation({ locale: "en", strength: 2 })
+            .lean();
+
+    const currentClientMemberIds = (
+      currentClientMembers.length > 0
+        ? currentClientMembers
+        : fallbackClientMembers
+    ).map((member) => member._id);
 
 
     meetings = await Meeting.find({
