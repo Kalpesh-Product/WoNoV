@@ -58,12 +58,16 @@ const LandlordPayments = () => {
   );
 
   const { data: hrFinance = [], isPending: isHrLoading, isError } = useQuery({
-    queryKey: ["allBudgets"],
+    // queryKey: ["allBudgets"],
+    // queryFn: async () => {
+    //   try {
+    //     const response = await axios.get(
+    //       `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+    //     );
+     queryKey: ["landlord-payments"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
-        );
+        const response = await axios.get("/api/budget/company-budget");
         const budgets = response.data?.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
@@ -75,7 +79,16 @@ const LandlordPayments = () => {
 
   const landLordData = useMemo(() => {
     if (!Array.isArray(hrFinance)) return [];
-    return hrFinance.filter((item) => item.expanseType === "Monthly Rent");
+   // return hrFinance.filter((item) => item.expanseType === "Monthly Rent");
+      return hrFinance.filter((item) => {
+      const expenseType = String(item.expanseType || "")
+        .trim()
+        .toLowerCase();
+
+      return ["monthly rent", "rent", "landlord payment", "landlord payments"].includes(
+        expenseType,
+      );
+    });
   }, [hrFinance]);
 
   // const monthlyRentMap = useMemo(() => {

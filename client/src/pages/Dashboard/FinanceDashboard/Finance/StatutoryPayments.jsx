@@ -96,12 +96,16 @@ const StatutoryPayments = () => {
 
   const axios = useAxiosPrivate();
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["financeBudget"],
+    // queryKey: ["financeBudget"],
+    // queryFn: async () => {
+    //   try {
+    //     const response = await axios.get(
+    //       `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
+    //     );
+     queryKey: ["statutory-payments"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
-        );
+        const response = await axios.get("/api/budget/company-budget");
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
@@ -153,11 +157,27 @@ const StatutoryPayments = () => {
     );
   };
 
+  //  const statutoryRaw = useMemo(
+  //   () =>
+  //     isHrLoading
+  //       ? []
+  //       : hrFinance.filter((item) => item.expanseType === "Statutory Payments"),
+  //   [hrFinance, isHrLoading]
+  // );
+
    const statutoryRaw = useMemo(
     () =>
       isHrLoading
         ? []
-        : hrFinance.filter((item) => item.expanseType === "Statutory Payments"),
+        : hrFinance.filter((item) => {
+            const expenseType = String(item.expanseType || "")
+              .trim()
+              .toLowerCase();
+
+            return ["statutory", "statutory payment", "statutory payments"].includes(
+              expenseType,
+            );
+          }),
     [hrFinance, isHrLoading]
   );
 
