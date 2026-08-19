@@ -118,6 +118,7 @@ const addMeetings = async (req, res, next) => {
       client,
       externalCompany,
       internalParticipants,
+      clientParticipants,
       externalParticipants,
       paymentAmount,
       paymentStatus,
@@ -283,11 +284,27 @@ const addMeetings = async (req, res, next) => {
       );
     }
 
-    let internalUsers = [];
-    let users = [];
+    const normalizeParticipantIds = (ids = []) =>
+      Array.from(
+        new Set(
+          (Array.isArray(ids) ? ids : [])
+            .filter(Boolean)
+            .map((id) => String(id).trim())
+            .filter(Boolean),
+        ),
+      );
 
-    if (internalParticipants) {
-      const invalidIds = internalParticipants.filter(
+    const internalParticipantIds = normalizeParticipantIds(internalParticipants);
+    const clientParticipantIds = normalizeParticipantIds(clientParticipants);
+    const requestedParticipantIds = Array.from(
+      new Set([...internalParticipantIds, ...clientParticipantIds]),
+    );
+
+    let internalUsers = [];
+    let clientUsers = [];
+
+    if (requestedParticipantIds.length > 0) {
+      const invalidIds = requestedParticipantIds.filter(
         (id) => !mongoose.Types.ObjectId.isValid(id),
       );
 
@@ -300,19 +317,22 @@ const addMeetings = async (req, res, next) => {
         );
       }
 
-      if (isClient) {
-        users = await CoworkingMembers.find({
-          _id: { $in: internalParticipants },
-        });
-      } else {
-        users = await User.find({ _id: { $in: internalParticipants } });
-      }
+      const [matchedInternalUsers, matchedClientUsers] = await Promise.all([
+        User.find({ _id: { $in: requestedParticipantIds } }).select("_id"),
+        CoworkingMembers.find({ _id: { $in: requestedParticipantIds } }).select(
+          "_id",
+        ),
+      ]);
 
-      const unmatchedIds = internalParticipants.filter(
-        (id) =>
-          !users.find((user) => {
-            return user._id.toString() === id.toString();
-          }),
+      const internalIdSet = new Set(
+        matchedInternalUsers.map((user) => user._id.toString()),
+      );
+      const clientIdSet = new Set(
+        matchedClientUsers.map((user) => user._id.toString()),
+      );
+
+      const unmatchedIds = requestedParticipantIds.filter(
+        (id) => !internalIdSet.has(id) && !clientIdSet.has(id),
       );
 
       if (unmatchedIds.length > 0) {
@@ -324,7 +344,8 @@ const addMeetings = async (req, res, next) => {
         );
       }
 
-      internalUsers = users.map((user) => user._id);
+      internalUsers = matchedInternalUsers.map((user) => user._id);
+      clientUsers = matchedClientUsers.map((user) => user._id);
     }
 
     const conflictingMeeting = await Meeting.findOne({
@@ -383,6 +404,7 @@ const addMeetings = async (req, res, next) => {
       new Set(
         [
           ...(Array.isArray(internalUsers) ? internalUsers : []),
+          ...(Array.isArray(clientUsers) ? clientUsers : []),
           bookingUser?._id || null,
         ]
           .filter(Boolean)
@@ -611,8 +633,8 @@ const addMeetings = async (req, res, next) => {
       externalClient: meetingType === "External" ? externalCompany : null,
       company,
       status: "Upcoming",
-      internalParticipants: !isClient ? meetingParticipants : [],
-      clientParticipants: internalParticipants && isClient ? internalUsers : [],
+      internalParticipants: internalUsers,
+      clientParticipants: clientUsers,
       externalParticipants: externalParticipants || [],
     });
 
@@ -1203,17 +1225,11 @@ const getMyMeetings = async (req, res, next) => {
     );
 
     const transformedMeetings = meetings.map((meeting, index) => {
-      let totalParticipants = [];
-      if (
-        internalParticipants[index].length &&
-        clientParticipants[index].length &&
-        meeting.externalParticipants.length
-      ) {
-        totalParticipants = [
-          ...internalParticipants[index],
-          ...meeting.externalParticipants,
-        ];
-      }
+      const totalParticipants = [
+        ...(internalParticipants[index] || []),
+        ...(clientParticipants[index] || []),
+        ...(meeting.externalParticipants || []),
+      ];
 
       const meetingReviews = reviews.find(
         (review) => review.meeting.toString() === meeting._id.toString(),
@@ -2608,13 +2624,6 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(404).json({ message: "Meeting not found" });
     }
 
-    const internalMeetingParticipants =
-      internalParticipants && internalParticipants.length > 0
-        ? internalParticipants
-        : clientParticipants && clientParticipants.length > 0
-          ? clientParticipants
-          : [];
-
     const isClient = !!meeting.clientBookedBy;
     const isExternal = !!meeting.externalBookedBy;
     const BookingCompanyModel = isClient
@@ -2753,9 +2762,31 @@ const updateMeetingDetails = async (req, res, next) => {
         .json({ message: "Room is already booked for the specified time" });
     }
 
+    const normalizeParticipantIds = (ids = []) =>
+      Array.from(
+        new Set(
+          (Array.isArray(ids) ? ids : [])
+            .filter(Boolean)
+            .map((id) => String(id).trim())
+            .filter(Boolean),
+        ),
+      );
+
+    const requestedInternalParticipantIds = normalizeParticipantIds(
+      internalParticipants,
+    );
+    const requestedClientParticipantIds = normalizeParticipantIds(
+      clientParticipants,
+    );
+    const requestedParticipantIds = Array.from(
+      new Set([...requestedInternalParticipantIds, ...requestedClientParticipantIds]),
+    );
+
     let internalUsers = [];
-    if (internalMeetingParticipants) {
-      const invalidIds = internalMeetingParticipants.filter(
+    let clientUsers = [];
+
+    if (requestedParticipantIds.length > 0) {
+      const invalidIds = requestedParticipantIds.filter(
         (id) => !mongoose.Types.ObjectId.isValid(id),
       );
       if (invalidIds.length > 0) {
@@ -2764,11 +2795,22 @@ const updateMeetingDetails = async (req, res, next) => {
           .json({ message: "Invalid internal participant IDs" });
       }
 
-      const users = await BookingUserModel.find({
-        _id: { $in: internalMeetingParticipants },
-      });
-      const unmatchedIds = internalMeetingParticipants.filter(
-        (id) => !users.find((u) => u._id.toString() === id.toString()),
+      const [matchedInternalUsers, matchedClientUsers] = await Promise.all([
+        User.find({ _id: { $in: requestedParticipantIds } }).select("_id"),
+        CoworkingMembers.find({ _id: { $in: requestedParticipantIds } }).select(
+          "_id",
+        ),
+      ]);
+
+      const internalIdSet = new Set(
+        matchedInternalUsers.map((user) => user._id.toString()),
+      );
+      const clientIdSet = new Set(
+        matchedClientUsers.map((user) => user._id.toString()),
+      );
+
+      const unmatchedIds = requestedParticipantIds.filter(
+        (id) => !internalIdSet.has(id) && !clientIdSet.has(id),
       );
 
       if (unmatchedIds.length > 0) {
@@ -2777,7 +2819,8 @@ const updateMeetingDetails = async (req, res, next) => {
         });
       }
 
-      internalUsers = users.map((u) => u._id);
+      internalUsers = matchedInternalUsers.map((user) => user._id);
+      clientUsers = matchedClientUsers.map((user) => user._id);
     }
 
     // const oldCreditsUsed = meeting.creditsUsed || 0;
@@ -2911,8 +2954,8 @@ const updateMeetingDetails = async (req, res, next) => {
       extendTime: null,
       // creditsUsed: externalParticipants ? newCreditsUsed : 0,
       creditsUsed: isExternal ? 0 : newCreditsUsed,
-      internalParticipants: !isClient ? internalUsers : [],
-      clientParticipants: isClient ? internalUsers : [],
+      internalParticipants: internalUsers,
+      clientParticipants: clientUsers,
       externalParticipants: externalParticipants || [],
       paymentAmount: isExternal
         ? paymentAmount
