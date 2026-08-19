@@ -112,6 +112,8 @@ const createUser = async (req, res, next) => {
       bankInformation,
       panAadhaarDetails,
       payrollInformation,
+      salaryPackage,
+      internshipIsUnpaid,
       familyInformation,
     } = req.body;
 
@@ -263,6 +265,21 @@ const createUser = async (req, res, next) => {
         })
         .optional(),
 
+      salaryPackage: yup
+        .object({
+          amount: yup.number().min(0).optional(),
+          grossAnnual: yup.number().min(0).optional(),
+          currency: yup.string().trim().optional(),
+          payFrequency: yup
+            .string()
+            .oneOf(["monthly", "weekly", "biweekly", "annual"])
+            .optional(),
+          allowances: yup.number().min(0).optional(),
+          deductions: yup.number().min(0).optional(),
+        })
+        .optional(),
+      internshipIsUnpaid: yup.boolean().optional(),
+
       // ── familyInformation (all fields optional) ───────────────────────────
       familyInformation: yup
         .object({
@@ -337,7 +354,6 @@ const createUser = async (req, res, next) => {
     const existingUser = await User.findOne({
       $or: [{ company: company, empId }, { email }],
     }).exec();
-    console.log("Existing user check:", { existingUser });
     if (existingUser) {
       throw new CustomError(
         "Employee ID or email already exists",
@@ -386,6 +402,33 @@ const createUser = async (req, res, next) => {
     const resolvedAttendanceSource =
       attendanceSource || policies?.attendanceSource;
     const resolvedShift = shift || policies?.workSchedulePolicy;
+    const employeeTypeName =
+      typeof employeeType === "string" ? employeeType : employeeType?.name;
+    const normalizedEmployeeType = employeeTypeName
+      ?.trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "");
+    const defaultLeaveBalances =
+      normalizedEmployeeType === "fulltime"
+        ? [
+            { leaveType: "Privileged", count: 12 },
+            { leaveType: "Sick", count: 6 },
+          ]
+        : ["parttime", "intern"].includes(normalizedEmployeeType)
+          ? [
+              { leaveType: "Privileged", count: 6 },
+              { leaveType: "Sick", count: 0 },
+            ]
+          : employeeType?.leavesCount;
+    const resolvedEmployeeType = employeeTypeName
+      ? {
+          ...(typeof employeeType === "object" ? employeeType : {}),
+          name: employeeTypeName,
+          ...(defaultLeaveBalances
+            ? { leavesCount: defaultLeaveBalances }
+            : {}),
+        }
+      : undefined;
 
     const newUser = new User({
       empId,
@@ -401,7 +444,7 @@ const createUser = async (req, res, next) => {
       password: hashedPassword,
       attendanceSource: resolvedAttendanceSource,
       departments,
-      employeeType,
+      employeeType: resolvedEmployeeType,
       jobTitle,
       jobDescription,
       designation,
@@ -413,6 +456,8 @@ const createUser = async (req, res, next) => {
       bankInformation,
       panAadhaarDetails,
       payrollInformation,
+      salaryPackage,
+      internshipIsUnpaid,
       familyInformation,
       isActive: true,
     });
