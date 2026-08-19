@@ -611,28 +611,68 @@ const fetchApprovedbudgets = async (req, res, next) => {
   }
 };
 
+// const fetchLandlordPayments = async (req, res, next) => {
+//   try {
+//     const { unit } = req.query;
+//     const { user, company } = req;
+//     const query = { company, expanseType: "Monthly Rent" };
+
+//     let foundUnit;
+
+//     if (unit) {
+//       const foundUnit = await Unit.findOne({ unitNo: unit });
+
+//       if (!foundUnit) {
+//         return res.status(400).json({ message: "No unit found" });
+//       }
+//       query.unit = foundUnit._id;
+//     }
+
+//     const allBudgets = await Budget.find(query)
+//       .populate([
+//         { path: "department", select: "name" },
+//         { path: "unit", populate: { path: "building", model: "Building" } },
 const fetchLandlordPayments = async (req, res, next) => {
   try {
-    const { unit } = req.query;
-    const { user, company } = req;
-    const query = { company, expanseType: "Monthly Rent" };
+    const { unitId, unit, building } = req.query;
+    const { company } = req;
+    const query = {
+      company,
+      expanseType: {
+        $regex: /^\s*(monthly rent|rent|landlord payments?)\s*$/i,
+      },
+    };
 
     let foundUnit;
 
-    if (unit) {
-      const foundUnit = await Unit.findOne({ unitNo: unit });
+    if (unitId && mongoose.Types.ObjectId.isValid(unitId)) {
+      foundUnit = await Unit.findOne({ _id: unitId, company });
+    } else if (unit) {
+      const unitCandidates = await Unit.find({ unitNo: unit, company })
+        .populate({ path: "building", select: "buildingName" })
+        .lean();
+      const normalizedBuilding = String(building || "").trim().toLowerCase();
 
-      if (!foundUnit) {
-        return res.status(400).json({ message: "No unit found" });
-      }
-      query.unit = foundUnit._id;
+      foundUnit = normalizedBuilding
+        ? unitCandidates.find(
+            (candidate) =>
+              String(candidate.building?.buildingName || "")
+                .trim()
+                .toLowerCase() === normalizedBuilding,
+          )
+        : unitCandidates[0];
     }
+
+    if (!foundUnit) {
+      return res.status(404).json({ message: "No unit found" });
+    }
+    query.unit = foundUnit._id;
 
     const allBudgets = await Budget.find(query)
       .populate([
         { path: "department", select: "name" },
         { path: "unit", populate: { path: "building", model: "Building" } },
-      ])
+])
       .lean()
       .exec();
 
