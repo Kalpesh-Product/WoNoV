@@ -85,23 +85,40 @@ const LandlordPaymentLocation = () => {
     isLoading: landlordPaymentsLoading,
     isError: landlordPaymentsError,
   } = useQuery({
-    queryKey: ["landlordPayments", unit],
+  //   queryKey: ["landlordPayments", unit],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `/api/budget/landlord-payments?unit=${unit}`
+  //       );
+  //       return response.data || {};
+  //     } catch (error) {
+  //       console.error("Error fetching landlord payments:", error);
+  //       return {};
+  //     }
+  //   },
+  // });
+
+  // const payments = Array.isArray(landlordPayments?.allBudgets)
+  //   ? landlordPayments.allBudgets
+  //   : [];
+   queryKey: ["landlordPayments", unitId, building, unit],
     queryFn: async () => {
-      try {
-        const response = await axios.get(
-          `/api/budget/landlord-payments?unit=${unit}`
-        );
-        return response.data || {};
-      } catch (error) {
-        console.error("Error fetching landlord payments:", error);
-        return {};
-      }
+      const response = await axios.get("/api/budget/landlord-payments", {
+        params: { unitId, unit, building },
+      });
+      return response.data || {};
     },
+    enabled: Boolean(unitId || unit),
   });
 
-  const payments = Array.isArray(landlordPayments?.allBudgets)
-    ? landlordPayments.allBudgets
-    : [];
+  const payments = useMemo(
+    () =>
+      Array.isArray(landlordPayments?.allBudgets)
+        ? landlordPayments.allBudgets
+        : [],
+    [landlordPayments],
+  );
   const effectivePayments = visiblePayments ?? payments;
   const tablePayments = useMemo(
     () =>
@@ -117,6 +134,10 @@ const LandlordPaymentLocation = () => {
 
   payments.forEach((item) => {
     if (!item.dueDate || !dayjs(item.dueDate).isValid()) return;
+    const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    if (fiscalYearStart !== null) {
+      fiscalYearStarts.add(fiscalYearStart);
+    }
     const paymentStatus = String(item.isPaid || "")
       .trim()
       .toLowerCase();
@@ -126,10 +147,10 @@ const LandlordPaymentLocation = () => {
     monthlyRentMap[monthKey] =
       (monthlyRentMap[monthKey] || 0) + parseAmount(item.actualAmount);
 
-    const fiscalYearStart = getFiscalYearStart(item.dueDate);
-    if (fiscalYearStart !== null) {
-      fiscalYearStarts.add(fiscalYearStart);
-    }
+    // const fiscalYearStart = getFiscalYearStart(item.dueDate);
+    // if (fiscalYearStart !== null) {
+    //   fiscalYearStarts.add(fiscalYearStart);
+    // }
   });
 
   const graphData = [...fiscalYearStarts]
