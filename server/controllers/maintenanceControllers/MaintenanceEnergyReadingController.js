@@ -52,6 +52,17 @@ const sortedReadings = (meter) =>
     (a, b) => new Date(a.readingAt) - new Date(b.readingAt),
   );
 
+const refreshReadingConsumptions = (meter) => {
+  const readings = sortedReadings(meter);
+  readings.forEach((reading, index) => {
+    const nextReading = readings[index + 1];
+    reading.consumption = nextReading
+      ? Math.max(Number(nextReading.value) - Number(reading.value), 0)
+      : 0;
+  });
+  return readings;
+};
+
 const readingContext = (meter, readingId) => {
   const readings = sortedReadings(meter);
   const index = readings.findIndex(
@@ -84,7 +95,7 @@ const serialize = (unit, meter, context) => ({
   previousReading: context.previousReading,
   hasPreviousReading: context.hasPreviousReading,
   currentReading: Number(context.reading.value),
-  consumption: context.consumption,
+  consumption: Number(context.reading.consumption ?? context.consumption ?? 0),
   date: context.reading.readingAt,
   addedBy: context.reading.addedBy
     ? `${context.reading.addedBy.firstName || ""} ${context.reading.addedBy.lastName || ""}`.trim()
@@ -574,6 +585,7 @@ const getStEnergyReadings = async (req, res, next) => {
     const units = await getCompanyUnits(req.company);
     const data = units.map((unit) => {
       const meter = unit.ElectricityConsumption;
+      refreshReadingConsumptions(meter);
       const currentReading = meter?.readings.find((item) => {
         const readingAt = new Date(item.readingAt);
         return readingAt >= bounds.start && readingAt < bounds.end;
@@ -692,9 +704,10 @@ const addStEnergyReadings = async (req, res, next) => {
         originalMeterNo: meterNo,
         originalValue: currentReading,
         originalPreviousReading: previousReading ?? 0,
+        consumption: 0,
       });
-      meter.consumption =
-        previousReading === null ? 0 : currentReading - previousReading;
+      refreshReadingConsumptions(meter);
+      meter.consumption = sortedReadings(meter).at(-1)?.consumption ?? 0;
       syncMonthlyBillTotal(meter, readingAt, req.user);
       await meter.save();
     }
@@ -763,9 +776,8 @@ const editStEnergyReading = async (req, res, next) => {
 
     meter.meterNo = meterNo;
     context.reading.value = currentReading;
-    const latest = sortedReadings(meter).at(-1);
-    const latestContext = latest ? readingContext(meter, latest._id) : null;
-    meter.consumption = latestContext?.consumption ?? 0;
+    refreshReadingConsumptions(meter);
+    meter.consumption = sortedReadings(meter).at(-1)?.consumption ?? 0;
     syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
     await meter.populate([
@@ -1013,6 +1025,7 @@ const getDtcEnergyReadings = async (req, res, next) => {
     const units = await getDtcCompanyUnits(req.company);
     const data = units.map((unit) => {
       const meter = unit.ElectricityConsumption;
+      refreshReadingConsumptions(meter);
       const currentReading = meter?.readings.find((item) => {
         const readingAt = new Date(item.readingAt);
         return readingAt >= bounds.start && readingAt < bounds.end;
@@ -1133,9 +1146,10 @@ const addDtcEnergyReadings = async (req, res, next) => {
         originalMeterNo: meterNo,
         originalValue: currentReading,
         originalPreviousReading: previousReading ?? 0,
+        consumption: 0,
       });
-      meter.consumption =
-        previousReading === null ? 0 : currentReading - previousReading;
+      refreshReadingConsumptions(meter);
+      meter.consumption = sortedReadings(meter).at(-1)?.consumption ?? 0;
       syncMonthlyBillTotal(meter, readingAt, req.user);
       await meter.save();
     }
@@ -1211,9 +1225,8 @@ const editDtcEnergyReading = async (req, res, next) => {
 
     meter.meterNo = meterNo;
     context.reading.value = currentReading;
-    const latest = sortedReadings(meter).at(-1);
-    const latestContext = latest ? readingContext(meter, latest._id) : null;
-    meter.consumption = latestContext?.consumption ?? 0;
+    refreshReadingConsumptions(meter);
+    meter.consumption = sortedReadings(meter).at(-1)?.consumption ?? 0;
     syncMonthlyBillTotal(meter, context.reading.readingAt, req.user);
     await meter.save();
     await meter.populate([
