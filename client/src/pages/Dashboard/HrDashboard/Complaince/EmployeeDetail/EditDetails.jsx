@@ -29,6 +29,12 @@ import { Visibility, VisibilityOff } from "@mui/icons-material";
 dayjs.extend(customParseFormat);
 const payrollDropdownOptions = {
   payrollBatch: ["Full Time Batch", "Intern Batch", "Consultant Batch"],
+  pfContributionRate: [
+    "Restrict Employee & Employer PF to 15,000",
+    "Employee & Employer PF on Actual Wage",
+    "Employee PF on Actual Wage & Employer PF to 15,000",
+  ],
+  employeePF: ["10%", "12%"],
   employerPf: ["10%", "12%", "13%"],
 };
 
@@ -1995,7 +2001,9 @@ const EditDetails = () => {
                                       .replace(/\bP\sF\b/gi, "PF")}
                                     fullWidth
                                   >
-                                    <MenuItem value="">Select</MenuItem>
+                                    <MenuItem value="" disabled>
+                                      Select
+                                    </MenuItem>
                                     <MenuItem value="Yes">Yes</MenuItem>
                                     <MenuItem value="No">No</MenuItem>
                                   </TextField>
@@ -2011,7 +2019,9 @@ const EditDetails = () => {
                                       .replace(/\bP\sF\b/gi, "PF")}
                                     fullWidth
                                   >
-                                    <MenuItem value="">Select</MenuItem>
+                                    <MenuItem value="" disabled>
+                                      Select
+                                    </MenuItem>
                                     {payrollDropdownOptions[fieldKey].map(
                                       (option) => (
                                         <MenuItem key={option} value={option}>
