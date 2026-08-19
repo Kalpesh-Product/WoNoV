@@ -294,9 +294,15 @@ const Header = ({
         onClose={() => setNotificationAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{
+          sx: {
+            borderRadius: "12px",
+            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.12)",
+          },
+        }}
       >
-        <div className="p-4 w-[30rem] max-h-[400px] overflow-y-auto">
-          <div className="flex justify-between items-center mb-2">
+        <div className="w-[30rem] max-h-[400px] overflow-y-auto bg-white p-4">
+          <div className="mb-2 flex items-center justify-between">
             <div className="flex items-center gap-5 rounded-full">
               <span className="font-pmedium text-subtitle">Notifications</span>
               <Badge
@@ -327,8 +333,8 @@ const Header = ({
                 <p className="text-gray-500 text-sm">No notifications yet.</p>
               ) : (
                 <>
-                  <div className="h-52 overflow-y-auto pr-4">
-                    <ul className="space-y-2">
+                  <div className="h-52 overflow-y-auto pr-2">
+                    <ul className="space-y-3">
                       {notifications.slice(0, 9).map((n, index) => {
                         const initiator = `${n.initiatorData?.firstName} ${n.initiatorData?.lastName}`;
                         const currentUser = auth?.user?._id;
@@ -342,7 +348,10 @@ const Header = ({
 
                         const userEntry = n.users?.find(
                           (item) =>
-                            item.userActions?.whichUser?._id === currentUser
+                            String(
+                              item.userActions?.whichUser?._id ||
+                                item.userActions?.whichUser
+                            ) === String(currentUser)
                         );
 
                         const hasRead = userEntry?.userActions?.hasRead;
@@ -350,51 +359,44 @@ const Header = ({
                         return (
                           <li
                             key={n._id || index}
-                            className={`text-sm p-2 rounded ${
-                              !n.hasRead
-                                ? "bg-gray-200 border-borderGray border-default"
-                                : "border-default border-borderGray"
+                            className={`rounded-md border p-3 text-sm shadow-sm transition-colors ${
+                              !hasRead
+                                ? "bg-[#E2E5E9] border-[#C8CDD3]"
+                                : "bg-[#EEF1F4] border-[#C8CDD3]"
                             }`}
                           >
-                            <div className="flex w-full justify-between items-center gap-4 mb-2">
-                              <div className="flex justify-between w-full items-center">
-                                <div
-                                  role="button"
-                                  onClick={() => {
-                                    if (navigations[module]) {
-                                      navigate(navigations[module]);
-                                      setNotificationAnchorEl(null);
-                                    }
-                                  }}
-                                  className="flex flex-col gap-1 w-full"
-                                >
-                                  <div className="flex justify-between w-full">
-                                    <div className="flex justify-start w-full">
-                                      <span className="font-pmedium">
-                                        {n.module}
-                                      </span>
-                                    </div>
+                            <div className="flex items-start justify-between gap-4">
+                              <div
+                                role="button"
+                                onClick={() => {
+                                  if (navigations[module]) {
+                                    navigate(navigations[module]);
+                                    setNotificationAnchorEl(null);
+                                  }
+                                }}
+                                className="min-w-0 flex-1 cursor-pointer"
+                              >
+                                <div className="flex items-start justify-between gap-3">
+                                  <span className="font-pmedium text-slate-900">
+                                    {n.module}
+                                  </span>
 
-                                    <div className="text-xs text-gray-500 w-full flex justify-end">
-                                      {dayjs(n.createdAt).fromNow()}
-                                    </div>
-                                  </div>
+                                  <span className="shrink-0 text-xs text-slate-500">
+                                    {dayjs(n.createdAt).fromNow()}
+                                  </span>
                                 </div>
+                                <p className="mt-2 text-sm leading-5 text-slate-700">
+                                  {n.message}
+                                </p>
                               </div>
-                            </div>
-
-                            <div className="w-full grid grid-cols-5">
-                              <div className="col-span-4 flex items-end">
-                                <span>{n.message}</span>
-                              </div>
-                              <div className="col-span-1 flex justify-end items-start">
+                              <div className="flex items-start pt-0.5">
                                 {!hasRead && (
                                   <button
                                     onClick={() => updateRead(n._id)}
-                                    className="p-2 rounded-full bg-green-300 text-green-600"
+                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-300 text-green-700"
                                     title="Mark as Read"
                                   >
-                                    <FaCheck />
+                                    <FaCheck size={12} />
                                   </button>
                                 )}
                               </div>

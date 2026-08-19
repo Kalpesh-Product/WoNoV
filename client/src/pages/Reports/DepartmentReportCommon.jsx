@@ -101,7 +101,10 @@ const DepartmentReportCommon = () => {
   const { permissions } = useUserPermissions();
   const location = useLocation();
   const { moduleKey = "" } = useParams();
-  const normalizedModuleKey = String(moduleKey).trim().toLowerCase();
+ // const normalizedModuleKey = String(moduleKey).trim().toLowerCase();
+ const routeModuleKey =
+    moduleKey || location.pathname.split("/").filter(Boolean).at(-1);
+  const normalizedModuleKey = String(routeModuleKey).trim().toLowerCase();
   const matchedReportModule = REPORT_MODULE_MAP[normalizedModuleKey];
 
   const { data: departments = [], isLoading: isDepartmentsLoading } = useQuery({
@@ -140,7 +143,8 @@ const DepartmentReportCommon = () => {
         reportType: matchedReportModule.reportType,
       }
     : {
-        title: `${String(selectedDepartment?.name || moduleKey || "")
+      //  title: `${String(selectedDepartment?.name || moduleKey || "")
+      title: `${String(selectedDepartment?.name || routeModuleKey || "")
           .trim()
           .toUpperCase()} Department Report`,
         module: selectedDepartment?.name || "",

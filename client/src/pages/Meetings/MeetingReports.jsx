@@ -201,6 +201,10 @@ const MeetingReports = () => {
   );
 
   const isCurrentUserParticipant = (meeting) => {
+    if (meeting?.isCurrentUserInvolved === true) {
+      return true;
+    }
+
     const bookedById =
       typeof meeting?.bookedBy === "object"
         ? meeting?.bookedBy?._id

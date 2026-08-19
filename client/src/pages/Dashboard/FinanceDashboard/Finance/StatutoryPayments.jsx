@@ -96,12 +96,16 @@ const StatutoryPayments = () => {
 
   const axios = useAxiosPrivate();
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["financeBudget"],
+    // queryKey: ["financeBudget"],
+    // queryFn: async () => {
+    //   try {
+    //     const response = await axios.get(
+    //       `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
+    //     );
+     queryKey: ["statutory-payments"],
     queryFn: async () => {
       try {
-        const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
-        );
+        const response = await axios.get("/api/budget/company-budget");
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
       } catch (error) {
@@ -148,16 +152,34 @@ const StatutoryPayments = () => {
           amount: actualAmount,
           actualAmount,
           projectedAmount,
+          hasActual: actualAmount > 0,
+          hasProjected: projectedAmount > 0,
         };
       },
     );
   };
 
+  //  const statutoryRaw = useMemo(
+  //   () =>
+  //     isHrLoading
+  //       ? []
+  //       : hrFinance.filter((item) => item.expanseType === "Statutory Payments"),
+  //   [hrFinance, isHrLoading]
+  // );
+
    const statutoryRaw = useMemo(
     () =>
       isHrLoading
         ? []
-        : hrFinance.filter((item) => item.expanseType === "Statutory Payments"),
+        : hrFinance.filter((item) => {
+            const expenseType = String(item.expanseType || "")
+              .trim()
+              .toLowerCase();
+
+            return ["statutory", "statutory payment", "statutory payments"].includes(
+              expenseType,
+            );
+          }),
     [hrFinance, isHrLoading]
   );
 
@@ -175,6 +197,7 @@ const StatutoryPayments = () => {
       unpaid: 0,
       amount: 0,
       meta: null,
+      hasActual: false,
     }));
 
     statutoryFormatted.forEach((item) => {
@@ -190,14 +213,27 @@ const StatutoryPayments = () => {
         paid: item.paid,
         unpaid: item.unpaid,
         amount: item.amount,
+        projectedAmount: item.projectedAmount,
         meta: item,
+        hasActual: item.hasActual,
+        hasProjected: item.hasProjected,
       };
     });
 
-     return {
+    return {
       chartData: [
-        { name: "Approved", data: fyBuckets.map((entry) => entry.paid) },
-        { name: "Pending", data: fyBuckets.map((entry) => entry.unpaid) },
+        {
+          name: "Actual Amount",
+          data: fyBuckets.map((entry) =>
+            entry.hasActual ? entry.paid : null,
+          ),
+        },
+        {
+          name: "Projected Amount",
+          data: fyBuckets.map((entry) =>
+            !entry.hasActual && entry.hasProjected ? 100 : null,
+          ),
+        },
       ],
       meta: fyBuckets.map((entry) => entry.meta),
       totalAmount: fyBuckets.reduce((sum, entry) => sum + entry.amount, 0),
@@ -238,6 +274,18 @@ const StatutoryPayments = () => {
         columnWidth: "40%",
       },
     },
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
+    },
     dataLabels: {
       enabled: true,
       formatter: (val) => `${val}%`,
@@ -263,15 +311,67 @@ const StatutoryPayments = () => {
         if (!item) return "";
 
         return `
-      <div style="padding:10px;font-family:Poppins-Regular;font-size:13px; width: 220px">
-        <div style="display:flex; justify-content:space-between;"><strong style="color:#54C4A7;">Actual Amount : </strong><span style="color:#000;">INR ${item.actualAmount.toLocaleString("en-IN")}</span></div>
-        <div style="display:flex; justify-content:space-between;"><strong style="color:#EB5C45;">Projected Amount :  </strong><span style="color:#000;">INR ${item.projectedAmount.toLocaleString("en-IN")}</span></div>
+      <div style="
+        font-family:Poppins-Regular;
+        font-size:13px;
+        min-width:200px;
+        border:1px solid #E5E7EB;
+        border-radius:6px;
+        overflow:hidden;
+        background:#fff;
+        box-shadow:0 2px 8px rgba(0,0,0,0.08);
+      ">
+        <div style="
+          padding:8px 10px;
+          background:#F3F4F6;
+          color:#111827;
+          font-size:12px;
+          border-bottom:1px solid #E5E7EB;
+        ">
+          ${item.month || ""}
+        </div>
+
+        <div style="padding:10px 12px; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; white-space:nowrap;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background:#C4C4C4;
+                display:inline-block;
+                flex-shrink:0;
+              "></span>
+              <span style="color:#374151;">Projected Amount:</span>
+            </div>
+            <span style="font-weight:700; color:#111827;">
+              INR ${item.projectedAmount.toLocaleString("en-IN")}
+            </span>
+          </div>
+
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; white-space:nowrap;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="
+                width:12px;
+                height:12px;
+                border-radius:50%;
+                background:#54C4A7;
+                display:inline-block;
+                flex-shrink:0;
+              "></span>
+              <span style="color:#374151;">Actual Amount:</span>
+            </div>
+            <span style="font-weight:700; color:#111827;">
+              INR ${item.actualAmount.toLocaleString("en-IN")}
+            </span>
+          </div>
+        </div>
       </div>
     `;
       },
     },
 
-    colors: ["#54C4A7", "#EB5C45"], // Green for paid, red for unpaid
+    colors: ["#54C4A7", "#C4C4C4"], // Green for paid, gray for projected/pending
   };
   //--------------------------------------------------------TableData----------------------------------------------------//
   const kraColumn = [
