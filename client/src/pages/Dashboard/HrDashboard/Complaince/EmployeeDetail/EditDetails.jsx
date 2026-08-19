@@ -27,11 +27,9 @@ import { LuImageUp } from "react-icons/lu";
 import MuiModal from "../../../../../components/MuiModal";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 dayjs.extend(customParseFormat);
-const normalizeYesNoValue = (value) => {
-  const normalizedValue = String(value ?? "").trim().toLowerCase();
-  if (normalizedValue === "yes") return "Yes";
-  if (normalizedValue === "no") return "No";
-  return "";
+const payrollDropdownOptions = {
+  payrollBatch: ["Full Time Batch", "Intern Batch", "Consultant Batch"],
+  employerPf: ["10%", "12%", "13%"],
 };
 
 
@@ -585,10 +583,13 @@ const EditDetails = () => {
       //   employeeData?.pFContributionRate ||
       //   "",     // pFContributionRate: employeeData?.payrollInformation?.pfContributionRate || "",
       payrollBatch:
-         normalizeYesNoValue(
-          employeeData?.payrollInformation?.payrollBatch ||
-            employeeData?.payrollBatch,
-        ),
+        employeeData?.payrollInformation?.payrollBatch ||
+        employeeData?.payrollBatch ||
+        "",
+      employerPf:
+        employeeData?.payrollInformation?.employerPf ||
+        employeeData?.employerPf ||
+        "",
 
       //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status:
@@ -764,6 +765,7 @@ const EditDetails = () => {
           pfContributionRate:
             formData?.pfContributionRate || formData?.pFContributionRate || "",
           employeePF: formData?.employeePF || "",
+          employerPf: formData?.employerPf || "",
           includeInPayroll: normalizeBoolean(formData?.includeInPayroll),
           professionTaxExemption: normalizeBoolean(
             formData?.professionalTaxExemption,
@@ -1017,10 +1019,9 @@ const EditDetails = () => {
         //   employeeData?.pFContributionRate ||
         //   "",
         payrollBatch:
-         normalizeYesNoValue(
-            employeeData?.payrollInformation?.payrollBatch ||
-              employeeData?.payrollBatch,
-          ),
+          employeeData?.payrollInformation?.payrollBatch ||
+          employeeData?.payrollBatch ||
+          "",
         pfContributionRate:
           employeeData?.payrollInformation?.pfContributionRate ||
           employeeData?.pFContributionRate ||
@@ -1028,6 +1029,10 @@ const EditDetails = () => {
         employeePF:
           employeeData?.payrollInformation?.employeePF ||
           employeeData?.employeePF ||
+          "",
+        employerPf:
+          employeeData?.payrollInformation?.employerPf ||
+          employeeData?.employerPf ||
           "",
         // employeePF: employeeData?.payrollInformation?.employeePF || "",
         // includeInPayroll:
@@ -1780,6 +1785,7 @@ const EditDetails = () => {
                         "includePF",
                         "pfContributionRate",
                         "employeePF",
+                        "employerPf",
                       ].map((fieldKey) => (
                         <div key={fieldKey}>
                           {isEditing ? (
@@ -1789,7 +1795,6 @@ const EditDetails = () => {
                               render={({ field }) =>
                                 [
                                   "includeInPayroll",
-                                   "payrollBatch",
                                   "professionalTaxExemption",
                                   "includePF",
                                 ].includes(fieldKey) ? (
@@ -1816,6 +1821,27 @@ const EditDetails = () => {
                                     <MenuItem value="">Select</MenuItem>
                                     <MenuItem value="Yes">Yes</MenuItem>
                                     <MenuItem value="No">No</MenuItem>
+                                  </TextField>
+                                ) : payrollDropdownOptions[fieldKey] ? (
+                                  <TextField
+                                    {...field}
+                                    value={field.value || ""}
+                                    select
+                                    size="small"
+                                    label={fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())
+                                      .replace(/\bP\sF\b/gi, "PF")}
+                                    fullWidth
+                                  >
+                                    <MenuItem value="">Select</MenuItem>
+                                    {payrollDropdownOptions[fieldKey].map(
+                                      (option) => (
+                                        <MenuItem key={option} value={option}>
+                                          {option}
+                                        </MenuItem>
+                                      ),
+                                    )}
                                   </TextField>
                                 ) : (
                                   <TextField
