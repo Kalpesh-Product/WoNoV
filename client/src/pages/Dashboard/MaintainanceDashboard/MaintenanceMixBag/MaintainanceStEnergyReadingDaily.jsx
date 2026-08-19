@@ -232,7 +232,14 @@ const MaintainanceStEnergyReadingDaily = () => {
     [readings],
   );
 
+  const isAddReadingDisabled = readings.some((row) => Boolean(row.id));
+
   const openAddModal = async () => {
+    if (isAddReadingDisabled) {
+      toast.info("This date already has readings. Move to the next date to add a new entry.");
+      return;
+    }
+
     setModalMode("add");
     setSelectedReading(null);
     setReadingDate(filterDate);
@@ -480,6 +487,7 @@ const MaintainanceStEnergyReadingDaily = () => {
             tableTitle={tableTitle}
             buttonTitle="Add Reading"
             handleClick={openAddModal}
+            disabled={isAddReadingDisabled}
             headerActions={
               <div className="order-first">
                 <Chip
