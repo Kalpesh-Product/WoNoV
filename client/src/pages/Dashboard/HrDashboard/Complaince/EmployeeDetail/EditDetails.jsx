@@ -590,6 +590,19 @@ const EditDetails = () => {
         employeeData?.payrollInformation?.employerPf ||
         employeeData?.employerPf ||
         "",
+      annualCtc:
+        employeeData?.salaryPackage?.grossAnnual ??
+        employeeData?.annualCtc ??
+        employeeData?.salaryPackage?.amount ??
+        "",
+      allowancesAmount:
+        employeeData?.salaryPackage?.allowances ??
+        employeeData?.allowancesAmount ??
+        0,
+      deductionsAmount:
+        employeeData?.salaryPackage?.deductions ??
+        employeeData?.deductionsAmount ??
+        0,
 
       //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status:
@@ -774,6 +787,15 @@ const EditDetails = () => {
             formData?.professionalTaxExemption,
           ),
           includePF: normalizeBoolean(formData?.includePF),
+        },
+        salaryPackage: {
+          amount: Number(formData?.annualCtc) || 0,
+          grossAnnual: Number(formData?.annualCtc) || 0,
+          currency: employeeData?.salaryPackage?.currency || "INR",
+          payFrequency:
+            employeeData?.salaryPackage?.payFrequency || "annual",
+          allowances: Number(formData?.allowancesAmount) || 0,
+          deductions: Number(formData?.deductionsAmount) || 0,
         },
         status: formData?.status,
         isActive: formData?.status === "Active",
@@ -1034,6 +1056,35 @@ const EditDetails = () => {
           employeeData?.payrollInformation?.employerPf ||
           employeeData?.employerPf ||
           "",
+        annualCtc:
+          employeeData?.salaryPackage?.grossAnnual ??
+          employeeData?.annualCtc ??
+          employeeData?.salaryPackage?.amount ??
+          0,
+        monthlySalary:
+          Number(
+            employeeData?.salaryPackage?.grossAnnual ??
+              employeeData?.annualCtc ??
+              employeeData?.salaryPackage?.amount ??
+              0,
+          ) / 12,
+        dailyRate:
+          Number(
+            employeeData?.salaryPackage?.grossAnnual ??
+              employeeData?.annualCtc ??
+              employeeData?.salaryPackage?.amount ??
+              0,
+          ) /
+          12 /
+          26,
+        allowancesAmount:
+          employeeData?.salaryPackage?.allowances ??
+          employeeData?.allowancesAmount ??
+          0,
+        deductionsAmount:
+          employeeData?.salaryPackage?.deductions ??
+          employeeData?.deductionsAmount ??
+          0,
         // employeePF: employeeData?.payrollInformation?.employeePF || "",
         // includeInPayroll:
         //   employeeData?.payrollInformation?.includeInPayroll ?? "",
@@ -1647,6 +1698,132 @@ const EditDetails = () => {
                           )}
                         </div>
                       ))}
+                </div>
+              </div>
+              <div>
+                {/* Section: Compensation Details */}
+                <div className="py-4 border-b-default border-borderGray">
+                  <span className="text-subtitle font-pmedium">
+                    Compensation Details
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-4 p-4">
+                  {isEditing ? (
+                    <>
+                      <Controller
+                        name="annualCtc"
+                        control={control}
+                        rules={{
+                          min: {
+                            value: 0,
+                            message: "Annual CTC cannot be negative",
+                          },
+                        }}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            type="number"
+                            label="Annual CTC (INR)"
+                            fullWidth
+                            inputProps={{ min: 0, step: "0.01" }}
+                            helperText={errors?.annualCtc?.message}
+                            error={Boolean(errors?.annualCtc)}
+                          />
+                        )}
+                      />
+                      <TextField
+                        size="small"
+                        label="Monthly Salary (INR)"
+                        fullWidth
+                        disabled
+                        value={(Number(watch("annualCtc")) > 0
+                          ? Number(watch("annualCtc")) / 12
+                          : 0
+                        ).toFixed(2)}
+                      />
+                      <TextField
+                        size="small"
+                        label="Daily Rate - 26 Working Days (INR)"
+                        fullWidth
+                        disabled
+                        value={(Number(watch("annualCtc")) > 0
+                          ? Number(watch("annualCtc")) / 12 / 26
+                          : 0
+                        ).toFixed(2)}
+                      />
+                      <Controller
+                        name="allowancesAmount"
+                        control={control}
+                        rules={{
+                          min: {
+                            value: 0,
+                            message: "Allowances cannot be negative",
+                          },
+                        }}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            type="number"
+                            label="Monthly Fixed Allowances (INR)"
+                            fullWidth
+                            inputProps={{ min: 0, step: "0.01" }}
+                            helperText={errors?.allowancesAmount?.message}
+                            error={Boolean(errors?.allowancesAmount)}
+                          />
+                        )}
+                      />
+                      <Controller
+                        name="deductionsAmount"
+                        control={control}
+                        rules={{
+                          min: {
+                            value: 0,
+                            message: "Deductions cannot be negative",
+                          },
+                        }}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            type="number"
+                            label="Monthly Fixed Deductions (INR)"
+                            fullWidth
+                            inputProps={{ min: 0, step: "0.01" }}
+                            helperText={errors?.deductionsAmount?.message}
+                            error={Boolean(errors?.deductionsAmount)}
+                          />
+                        )}
+                      />
+                    </>
+                  ) : (
+                    [
+                      ["Annual CTC", transformEmployeeData.annualCtc],
+                      ["Monthly Salary", transformEmployeeData.monthlySalary],
+                      ["Daily Rate (26 Working Days)", transformEmployeeData.dailyRate],
+                      ["Monthly Fixed Allowances", transformEmployeeData.allowancesAmount],
+                      ["Monthly Fixed Deductions", transformEmployeeData.deductionsAmount],
+                    ].map(([label, value]) => (
+                      <div
+                        key={label}
+                        className="py-2 flex justify-between items-center gap-2"
+                      >
+                        <div className="w-full justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            {label}
+                          </span>
+                        </div>
+                        <div>:</div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            INR {Number(value || 0).toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
               <div>

@@ -701,6 +701,11 @@ const fetchSingleUser = async (req, res) => {
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
+      salaryPackage: user.salaryPackage || {},
+      annualCtc:
+        user.salaryPackage?.grossAnnual ?? user.salaryPackage?.amount ?? 0,
+      allowancesAmount: user.salaryPackage?.allowances ?? 0,
+      deductionsAmount: user.salaryPackage?.deductions ?? 0,
       passwordPreview,
     };
 
