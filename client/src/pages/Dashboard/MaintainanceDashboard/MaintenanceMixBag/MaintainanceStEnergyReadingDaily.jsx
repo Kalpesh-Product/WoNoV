@@ -182,12 +182,10 @@ const MaintainanceStEnergyReadingDaily = () => {
 
   const editPreviousReading = watch("previousReading");
   const editCurrentReading = watch("currentReading");
-  const editConsumption = Math.max(
-    selectedReading?.hasPreviousReading
-      ? Number(editCurrentReading || 0) - Number(editPreviousReading || 0)
-      : 0,
-    0,
-  );
+  const editConsumption =
+    editCurrentReading === "" || editCurrentReading === undefined
+      ? 0
+      : Number(editCurrentReading) - Number(editPreviousReading || 0);
 
   useEffect(() => {
     let active = true;
@@ -397,13 +395,13 @@ const MaintainanceStEnergyReadingDaily = () => {
     { field: "meterNo", headerName: "Meter No", flex: 1, minWidth: 130 },
     {
       field: "previousReading",
-      headerName: "Previous Reading",
+      headerName: "Last Reading",
       flex: 1,
       minWidth: 160,
     },
     {
       field: "currentReading",
-      headerName: "Current Reading",
+      headerName: "New Reading",
       flex: 1,
       minWidth: 160,
     },
@@ -585,10 +583,10 @@ const MaintainanceStEnergyReadingDaily = () => {
                       Meter No.
                     </th>
                     <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
-                      Previous Reading
+                      Last Reading
                     </th>
                     <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
-                      Current Reading
+                      New Reading
                     </th>
                     <th className="px-4 py-3 text-center text-[13px] font-medium tracking-wide">
                       Consumption (KWH)
@@ -769,7 +767,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Previous Reading"
+                    label="Last Reading"
                     type="number"
                     fullWidth
                     size="small"
@@ -786,7 +784,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    label="Current Reading"
+                    label="New Reading"
                     type="number"
                     fullWidth
                     size="small"
@@ -835,11 +833,11 @@ const MaintainanceStEnergyReadingDaily = () => {
               <DetalisFormatted title="Unit No" detail={selectedReading.unitNo || "-"} />
               <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted
-                title="Previous Reading"
+                title="Last Reading"
                 detail={selectedReading.previousReading ?? "-"}
               />
               <DetalisFormatted
-                title="Current Reading"
+                title="New Reading"
                 detail={selectedReading.currentReading ?? "-"}
               />
               <DetalisFormatted

@@ -50,6 +50,11 @@ const readingSchema = new mongoose.Schema({
   originalMeterNo: { type: String, trim: true },
   originalValue: { type: Number, min: 0 },
   originalPreviousReading: { type: Number, min: 0 },
+  consumption: {
+    type: Number,
+    min: 0,
+    default: 0,
+  },
   editHistory: { type: [readingEditSchema], default: [] },
 });
 
