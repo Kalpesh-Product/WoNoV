@@ -55,6 +55,65 @@ const getFiscalYearMonths = (startYear) =>
     return `${month}-${String(year).slice(-2)}`;
   });
 
+const getPaymentStatus = (value) => {
+  if (typeof value === "boolean") {
+    return value ? "paid" : "unpaid";
+  }
+
+  if (typeof value === "number") {
+    if (value === 1) return "paid";
+    if (value === 0) return "unpaid";
+  }
+
+  if (typeof value === "string") {
+    const normalizedValue = value.trim().toLowerCase();
+
+    if (["paid", "unpaid"].includes(normalizedValue)) return normalizedValue;
+    if (["true", "yes", "1"].includes(normalizedValue)) return "paid";
+    if (["false", "no", "0"].includes(normalizedValue)) return "unpaid";
+  }
+
+  return "";
+};
+
+const getDynamicYAxis = (values = []) => {
+  const numericValues = values.filter(
+    (value) => Number.isFinite(value) && value > 0,
+  );
+
+  if (numericValues.length === 0) {
+    return {
+      max: 100000,
+      tickAmount: 4,
+    };
+  }
+
+  const maxValue = Math.max(...numericValues);
+  const bufferedMax = maxValue * 1.1;
+  const roughStep = bufferedMax / 6;
+  const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+  const normalizedStep = roughStep / magnitude;
+
+  let step;
+
+  if (normalizedStep <= 1) {
+    step = magnitude;
+  } else if (normalizedStep <= 2) {
+    step = 2 * magnitude;
+  } else if (normalizedStep <= 5) {
+    step = 5 * magnitude;
+  } else {
+    step = 10 * magnitude;
+  }
+
+  const roundedMax = Math.ceil(bufferedMax / step) * step + step;
+
+  return {
+    max: roundedMax,
+    tickAmount: Math.max(Math.round(roundedMax / step), 1),
+  };
+};
+
 const getPaymentSignature = (payment = {}) =>
   [
     payment?._id,
@@ -75,6 +134,9 @@ const LandlordPaymentLocation = () => {
   const [selectedMonth, setSelectedMonth] = useState(null);
   const [rangeTotal, setRangeTotal] = useState(0);
   const [visiblePayments, setVisiblePayments] = useState(null);
+  const [selectedGraphYearLabel, setSelectedGraphYearLabel] = useState(() =>
+    formatFiscalYear(getFiscalYearStart(new Date())),
+  );
 
   const building = searchParams.get("location") || "";
   const rawUnit = searchParams.get("floor") || "";
@@ -138,9 +200,7 @@ const LandlordPaymentLocation = () => {
     if (fiscalYearStart !== null) {
       fiscalYearStarts.add(fiscalYearStart);
     }
-    const paymentStatus = String(item.isPaid || "")
-      .trim()
-      .toLowerCase();
+    const paymentStatus = getPaymentStatus(item.isPaid);
     if (paymentStatus !== "paid") return;
 
     const monthKey = dayjs(item.dueDate).format("MMM-YY");
@@ -159,9 +219,39 @@ const LandlordPaymentLocation = () => {
       name: "Monthly Rent",
       group: formatFiscalYear(startYear),
       data: getFiscalYearMonths(startYear).map(
-        (month) => monthlyRentMap[month] || 0,
-      ),
+        (month) => {
+          const value = monthlyRentMap[month] || 0;
+          return value > 0 ? value : null;
+        },
+        ),
     }));
+
+  const graphSeriesData = useMemo(() => {
+    const hasSelectedYear = graphData.some(
+      (item) => item.group === selectedGraphYearLabel,
+    );
+
+    if (hasSelectedYear) return graphData;
+
+    return [
+      ...graphData,
+      {
+        name: "Monthly Rent",
+        group: selectedGraphYearLabel,
+        data: Array(12).fill(null),
+      },
+    ];
+  }, [graphData, selectedGraphYearLabel]);
+
+  const dynamicYAxis = useMemo(
+    () =>
+      getDynamicYAxis(
+        graphSeriesData
+          .find((item) => item.group === selectedGraphYearLabel)
+          ?.data || [],
+      ),
+    [graphSeriesData, selectedGraphYearLabel],
+  );
 
   const totalUnitRent = effectivePayments.reduce(
     (sum, item) => sum + parseAmount(item.actualAmount),
@@ -200,7 +290,10 @@ const LandlordPaymentLocation = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (val) => inrFormat(val),
+      formatter: (val) => {
+        if (val === null || val === undefined || Number(val) === 0) return "";
+        return inrFormat(val);
+      },
       offsetY: -24,
       style: {
         fontSize: "12px",
@@ -209,9 +302,13 @@ const LandlordPaymentLocation = () => {
     },
     xaxis: {
       categories: [], // Injected by YearlyGraph
+      crosshairs: {
+        show: false,
+      },
     },
     yaxis: {
-      max: 500000,
+      max: dynamicYAxis.max,
+      tickAmount: dynamicYAxis.tickAmount,
       labels: {
         formatter: (val) => `${Math.round(val / 100000)}L`,
       },
@@ -317,8 +414,10 @@ const LandlordPaymentLocation = () => {
           <YearlyGraph
             title={`(${unit}) RENT DETAILS `}
             chartId="unit-wise-rent"
-            data={graphData}
+            data={graphSeriesData}
             options={barGraphOptions}
+            currentYear={selectedGraphYearLabel}
+            onYearChange={setSelectedGraphYearLabel}
           />
 
           <WidgetSection
