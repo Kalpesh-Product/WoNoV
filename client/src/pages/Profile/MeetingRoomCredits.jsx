@@ -185,6 +185,15 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                   tableTitle={"My Meetings"}
                   data={[
                     ...myMeetings.map((meeting, index) => {
+                      const bookedByName =
+                        typeof meeting.bookedBy === "string" &&
+                        meeting.bookedBy !== "Unknown"
+                          ? meeting.bookedBy
+                          : meeting.bookedBy?.firstName
+                            ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim()
+                            : meeting.clientBookedBy?.employeeName ||
+                              meeting.clientBookedBy?.name ||
+                              "Unknown";
 
                       return {
                         srNo: index + 1,
@@ -196,7 +205,8 @@ const MeetingRoomCredits = ({ pageTitle }) => {
                         meetingStatus: meeting.meetingStatus,
                         meetingType: meeting.meetingType,
                         date: meeting.date,
-                        bookedBy: meeting.bookedBy || "Unknown",
+                        bookedBy: bookedByName,
+                        clientBookedBy: meeting.clientBookedBy,
                         receptionist: meeting.receptionist || "Unknown",
                         reviews: meeting.reviews,
                         location: meeting.location
@@ -399,7 +409,12 @@ const MeetingRoomCredits = ({ pageTitle }) => {
 
             <DetalisFormatted
               title="Booked By"
-              detail={selectedMeeting.bookedBy}
+              detail={
+                selectedMeeting.bookedBy ||
+                selectedMeeting.clientBookedBy?.employeeName ||
+                selectedMeeting.clientBookedBy?.name ||
+                "Unknown"
+              }
             />
             <DetalisFormatted
               title="Receptionist"

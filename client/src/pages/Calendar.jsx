@@ -119,10 +119,7 @@ const Calender = () => {
   // const transformedMeetings = useMemo(
   //   () =>
   //     ownMeetings.map((meeting) => ({
-    const currentUserId = auth.user?._id?.toString();
-  const currentUserEmail = String(auth.user?.email || "")
-    .trim()
-    .toLowerCase();
+  const currentUserId = auth.user?._id?.toString();
 
   const visibleMeetings = useMemo(
     () =>
@@ -130,17 +127,13 @@ const Calender = () => {
         const isVisibleStatus = ["upcoming", "completed"].includes(
           meeting?.meetingStatus?.toLowerCase?.(),
         );
-        const isInternalBooker =
+        const isOwnBooking =
+          meeting?.isCurrentUserBooked === true ||
           meeting?.bookedById?.toString() === currentUserId;
-        const clientBookerEmail = String(meeting?.clientBookedBy?.email || "")
-          .trim()
-          .toLowerCase();
-        const isClientBooker =
-          Boolean(currentUserEmail) && clientBookerEmail === currentUserEmail;
 
-        return isVisibleStatus && (isInternalBooker || isClientBooker);
+        return isVisibleStatus && isOwnBooking;
       }),
-    [currentUserEmail, currentUserId, meetings],
+    [currentUserId, meetings],
   );
 
   const transformedMeetings = useMemo(
