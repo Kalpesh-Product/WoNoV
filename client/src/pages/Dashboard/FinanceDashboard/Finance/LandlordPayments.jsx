@@ -58,24 +58,32 @@ const LandlordPayments = () => {
   );
 
   const { data: hrFinance = [], isPending: isHrLoading, isError } = useQuery({
-    // queryKey: ["allBudgets"],
-    // queryFn: async () => {
-    //   try {
-    //     const response = await axios.get(
-    //       `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
-    //     );
-     queryKey: ["landlord-payments"],
+    queryKey: ["allBudgets"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/budget/company-budget");
-        const budgets = response.data?.allBudgets;
-        return Array.isArray(budgets) ? budgets : [];
+        const response = await axios.get(
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+        );
+        return response.data?.allBudgets || [];
       } catch (error) {
         console.error("Error fetching budget:", error);
         return [];
       }
     },
   });
+
+  //    queryKey: ["landlord-payments"],
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get("/api/budget/company-budget");
+  //       const budgets = response.data?.allBudgets;
+  //       return Array.isArray(budgets) ? budgets : [];
+  //     } catch (error) {
+  //       console.error("Error fetching budget:", error);
+  //       return [];
+  //     }
+  //   },
+  // });
 
   const landLordData = useMemo(() => {
     if (!Array.isArray(hrFinance)) return [];
