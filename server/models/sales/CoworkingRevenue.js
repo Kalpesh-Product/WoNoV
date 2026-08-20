@@ -39,6 +39,9 @@ const coworkingClientRevenue = new mongoose.Schema(
     rentDate: {
       type: Date,
     },
+    invoiceUploadedAt: {
+      type: Date,
+    },
     rentStatus: {
       type: String,
       // enum: ["paid", "unpaid", "partial"], // Consider enum: ['paid', 'unpaid', 'partial'] if applicable

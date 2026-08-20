@@ -1,11 +1,9 @@
 import {
   CircularProgress,
-IconButton,
-  Menu,
+  IconButton,
   MenuItem,
   TextField,
 } from "@mui/material";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -23,6 +21,7 @@ import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import UploadFileInput from "../../../components/UploadFileInput";
 import PrimaryButton from "../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { queryClient } from "../../../main";
 
 const getNormalizedRentStatus = (status) =>
@@ -30,6 +29,12 @@ const getNormalizedRentStatus = (status) =>
 
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
+const normalizeAmount = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = Number(String(value).replace(/,/g, ""));
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 
 // const CoworkingInvoiceActions = () => {
@@ -91,31 +96,35 @@ const getNumericAmount = (value) =>
 //     });
 // };
 
-const CoworkingInvoiceActions = ({ row, onView, onEdit }) => {
-  const [anchorEl, setAnchorEl] = useState(null);
+const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
+  <div className="flex items-center justify-start gap-0.5 w-full pl-2">
+    <IconButton
+      size="small"
+      aria-label="View invoice details"
+      onClick={() => onView(row)}
+      sx={{
+        padding: "6px",
+        color: "#6B7280",
+        "&:hover": {
+          backgroundColor: "rgba(30, 61, 115, 0.08)",
+          color: "#1E3D73",
+        },
+      }}
+    >
+      <MdOutlineRemoveRedEye size={18} />
+    </IconButton>
 
-  return (
-    <div className="flex items-center justify-center">
-      <IconButton size="small" aria-label="View invoice details" onClick={() => onView(row)}>
-        <MdOutlineRemoveRedEye size={20} />
-      </IconButton>
-      <IconButton
-        size="small"
-        aria-label="Open invoice actions"
-        onClick={(event) => setAnchorEl(event.currentTarget)}
-      >
-        <MoreVertIcon fontSize="small" />
-      </IconButton>
-      <Menu
-        anchorEl={anchorEl}
-        open={Boolean(anchorEl)}
-        onClose={() => setAnchorEl(null)}
-      >
-        <MenuItem onClick={() => { setAnchorEl(null); onEdit(row); }}>Edit</MenuItem>
-      </Menu>
-    </div>
-  );
-};
+    <ThreeDotMenu
+      rowId={row?._id || row?.id}
+      menuItems={[
+        {
+          label: "Edit",
+          onClick: () => onEdit(row),
+        },
+      ]}
+    />
+  </div>
+);
 
 const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
   const targetMonth = dayjs(selectedDate).startOf("month");
@@ -162,7 +171,9 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
     reset({
       ...row,
       invoiceFile: null,
-      invoiceUploadedAt: dayjs(row.rentDate),
+      invoiceUploadedAt: dayjs(
+        row.invoiceUploadedAt || row.updatedAt || row.createdAt || new Date(),
+      ),
       rentDate: dayjs(row.rentDate),
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
       nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
@@ -302,11 +313,15 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
         service: client.service,
         clientName: client.clientName,
         clientInvoiceName: client.clientInvoiceName,
+        invoiceName: client.invoiceName || client.clientInvoiceName || "-",
+        invoiceLink: client.invoiceLink || client.invoice?.link || "-",
+        invoiceUploadedAt:
+          client.invoiceUploadedAt || client.updatedAt || client.createdAt || null,
         channel: client.channel,
         occupation: client.occupation,
         noOfDesks: client.noOfDesks,
-        deskRate: inrFormat(client.deskRate),
-        revenue: client.revenue,
+        deskRate: normalizeAmount(client.deskRate),
+        revenue: normalizeAmount(client.revenue),
         totalTerm: client.totalTerm || 0,
         dueTerm: client.dueTerm || 0,
         rentDate: client.rentDate,
@@ -393,7 +408,11 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
               cellRenderer: (params) => inrFormat(params.value),
             },
             { headerName: "No. of Desks", field: "noOfDesks" },
-            { headerName: "Desk Rate", field: "deskRate" },
+            {
+              headerName: "Desk Rate",
+              field: "deskRate",
+              cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+            },
             { headerName: "Total Term", field: "totalTerm" },
             { headerName: "Rent Date", field: "rentDate" },
 
@@ -414,14 +433,23 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
               cellRenderer: (params) => <StatusChip status={params.value} />,
             },
              ...(showInvoiceProjections
-              ? [
+                ? [
                   {
                     headerName: "Action",
                     field: "actions",
                     pinned: "right",
-                    width: 120,
+                    flex: 1,
+                    minWidth: 130,
+                    maxWidth: 130,
                     sortable: false,
                     filter: false,
+                    cellStyle: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                    },
                     cellRenderer: (params) => (
                       <CoworkingInvoiceActions
                         row={params.data}
@@ -439,49 +467,68 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
           <CircularProgress />
         </div>
       )}
+
       {viewRow && (
-  <MuiModal
-    open
-    onClose={() => setViewRow(null)}
-    title="View Invoice Details"
-  >
-    <div className="flex flex-col gap-3">
-      {[
-        ["Client Name", viewRow.clientName],
-        ["Invoice Name", viewRow.clientInvoiceName],
-        ["Channel", viewRow.channel],
-        ["Occupation", viewRow.occupation],
-        ["No. of Desks", viewRow.noOfDesks],
-        ["Desk Rate", inrFormat(viewRow.deskRate)],
-        ["Revenue", inrFormat(viewRow.revenue)],
-        ["Total Term", viewRow.totalTerm],
-        ["Due Term", viewRow.dueTerm],
-        ["Rent Date", dayjs(viewRow.rentDate).format("DD-MM-YYYY")],
-        [
-          "Past Due Date",
-          viewRow.pastDueDate
-            ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY")
-            : "—",
-        ],
-        ["Annual Increment (%)", viewRow.annualIncrement],
-        [
-          "Next Increment Date",
-          viewRow.nextIncrementDate
-            ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY")
-            : "—",
-        ],
-        ["Paid Status", viewRow.rentStatus],
-      ].map(([title, detail]) => (
-        <DetalisFormatted
-          key={title}
-          title={title}
-          detail={detail}
-          gap="w-[35%]"
-        />
-      ))}
-    </div>
-  </MuiModal>
-)}
+        <MuiModal
+          open
+          onClose={() => setViewRow(null)}
+          title="View Invoice Details"
+        >
+          <div className="flex flex-col gap-3">
+            {/* <span className="text-subtitle font-pmedium text-primary uppercase">
+              Co-Working Revenue Details
+            </span> */}
+            <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
+            <DetalisFormatted title="Invoice Name" detail={viewRow.clientInvoiceName || "-"} />
+            <DetalisFormatted
+              title="Invoice Link"
+              detail={
+                viewRow.invoiceLink && viewRow.invoiceLink !== "-" ? (
+                  <a
+                    href={viewRow.invoiceLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    View PDF
+                  </a>
+                ) : (
+                  "-"
+                )
+              }
+            />
+            <DetalisFormatted
+              title="Invoice Uploaded Date"
+              detail={
+                viewRow.invoiceUploadedAt
+                  ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+                  : "-"
+              }
+            />
+            <DetalisFormatted title="Channel" detail={viewRow.channel || "-"} />
+            {/* <DetalisFormatted title="Occupation" detail={viewRow.occupation || "-"} /> */}
+            <DetalisFormatted title="No. of Desks" detail={viewRow.noOfDesks || "-"} />
+            <DetalisFormatted title="Desk Rate" detail={`INR ${inrFormat(normalizeAmount(viewRow.deskRate))}`} />
+            <DetalisFormatted title="Revenue" detail={`INR ${inrFormat(normalizeAmount(viewRow.revenue))}`} />
+            <DetalisFormatted title="Total Term" detail={viewRow.totalTerm || "-"} />
+            {/* <DetalisFormatted title="Due Term" detail={viewRow.dueTerm || "-"} /> */}
+            <DetalisFormatted
+              title="Rent Date"
+              detail={viewRow.rentDate ? dayjs(viewRow.rentDate).format("DD-MM-YYYY") : "-"}
+            />
+            <DetalisFormatted
+              title="Past Due Date"
+              detail={viewRow.pastDueDate ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY") : "-"}
+            />
+            <DetalisFormatted title="Annual Increment (%)" detail={viewRow.annualIncrement || "-"} />
+            <DetalisFormatted
+              title="Next Increment Date"
+              detail={viewRow.nextIncrementDate ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY") : "-"}
+            />
+            <DetalisFormatted title="Paid Status" detail={viewRow.rentStatus || "-"} />
+          </div>
+        </MuiModal>
+      )}
 
 {editRow && (
   <MuiModal
@@ -493,20 +540,6 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
       onSubmit={handleSubmit((values) => saveInvoice(values))}
       className="grid grid-cols-2 gap-4"
     >
-      <Controller
-        name="invoiceFile"
-        control={control}
-        render={({ field }) => (
-          <div className="col-span-2">
-            <UploadFileInput
-              value={field.value}
-              onChange={field.onChange}
-              allowedExtensions={["pdf", "doc", "docx"]}
-            />
-          </div>
-        )}
-      />
-
       <Controller
         name="clients"
         control={control}
@@ -532,8 +565,8 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
         ["clientInvoiceName", "Invoice Name", "text"],
         ["channel", "Channel", "text"],
         ["noOfDesks", "No. of Desks", "number"],
-        ["occupation", "Occupation", "text"],
-        ["dueTerm", "Due Term", "number"],
+        // ["occupation", "Occupation", "text"],
+        // ["dueTerm", "Due Term", "number"],
         ["deskRate", "Desk Rate", "number"],
         ["revenue", "Revenue", "number"],
         ["totalTerm", "Total Term", "number"],
@@ -598,12 +631,27 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
         )}
       />
 
+      <Controller
+        name="invoiceFile"
+        control={control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <UploadFileInput
+              value={field.value}
+              onChange={field.onChange}
+              allowedExtensions={["pdf", "doc", "docx"]}
+            />
+          </div>
+        )}
+      />
+
       <div className="col-span-2">
         <PrimaryButton
           type="submit"
           title="Update Invoice"
           disabled={isSavingInvoice}
           isLoading={isSavingInvoice}
+          className="w-full"
         />
       </div>
     </form>

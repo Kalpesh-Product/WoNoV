@@ -72,6 +72,7 @@ const fetchCoworkingRevenueService = async ({
         totalTerm: item.totalTerm,
         ...(!isReport && { dueTerm: item.dueTerm }),
         rentDate: item.rentDate,
+        invoiceUploadedAt: item.invoiceUploadedAt,
         rentStatus: item.rentStatus,
         ...(!isReport && { pastDueDate: item.pastDueDate }),
         annualIncrement: item.annualIncrement,

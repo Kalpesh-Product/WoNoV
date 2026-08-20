@@ -71,6 +71,7 @@ const addRevenue = async (req, res, next) => {
       totalTerm,
       dueTerm,
       rentDate,
+      invoiceUploadedAt,
       rentStatus,
       pastDueDate,
       annualIncrement,
@@ -126,6 +127,7 @@ const addRevenue = async (req, res, next) => {
       totalTerm,
       dueTerm,
       rentDate,
+      invoiceUploadedAt,
       rentStatus,
       pastDueDate,
       annualIncrement,
@@ -253,9 +255,9 @@ const updateRevenueInvoice = async (req, res, next) => {
   try {
     const { revenueId, isProjectedInvoice, ...updates } = req.body;
     const allowedFields = [
-      "clients", "service", "clientName", "clientInvoiceName", "channel",
+    "clients", "service", "clientName", "clientInvoiceName", "channel",
       "noOfDesks", "deskRate", "occupation", "revenue", "totalTerm",
-      "dueTerm", "rentDate", "rentStatus", "pastDueDate",
+      "dueTerm", "rentDate", "invoiceUploadedAt", "rentStatus", "pastDueDate",
       "annualIncrement", "nextIncrementDate",
     ];
     const payload = allowedFields.reduce((result, field) => {
