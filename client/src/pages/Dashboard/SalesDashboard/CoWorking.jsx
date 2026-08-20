@@ -177,7 +177,7 @@ const getNumericAmount = (value) =>
           totalTitle="Total"
           summaryChipVariant="ticket"
           columns={[
-            { headerName: "Sr No", field: "id", width: 100 },
+            { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
             {
