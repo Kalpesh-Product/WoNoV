@@ -1231,6 +1231,46 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/client-invoicing",
   },
+  FINANCE_BILLING_COWORKING_REVENUE_INVOICING: {
+    value: "co_working_revenue_invoicing",
+    title: "Co-Working Revenue Invoicing",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/co-working-revenue-invoicing",
+  },
+  FINANCE_BILLING_MEETING_REVENUE_INVOICING: {
+    value: "meeting_revenue_invoicing",
+    title: "Meeting Revenue Invoicing",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+  },
+  FINANCE_BILLING_VIRTUAL_OFFICE_REVENUE_INVOICING: {
+    value: "virtual_office_revenue_invoicing",
+    title: "Virtual Office Revenue Invoicing",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/virtual-office-revenue-invoicing",
+  },
+  FINANCE_BILLING_WORKATION_REVENUE_INVOICING: {
+    value: "workation_revenue_invoicing",
+    title: "Workation Revenue Invoicing",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/workation-revenue-invoicing",
+  },
+  FINANCE_BILLING_ALTERNATE_REVENUE_INVOICING: {
+    value: "alternate_revenue_invoicing",
+    title: "Alternate Revenue Invoicing",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/alternate-revenue-invoicing",
+  },
   FINANCE_BILLING_VOUCHER_REQUEST: {
     value: "billing_voucher_request_card",
     title: "BILLING VOUCHER REQUEST",

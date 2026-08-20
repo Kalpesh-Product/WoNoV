@@ -21,7 +21,14 @@ const BillingsLayout = () => {
       {
         title: "Client Invoicing",
         route: `${BILLING_BASE_PATH}/client-invoicing`,
-        permission: PERMISSIONS.FINANCE_BILLING_CLIENT_INVOICE.value,
+       // permission: PERMISSIONS.FINANCE_BILLING_CLIENT_INVOICE.value,
+        permission: [
+          PERMISSIONS.FINANCE_BILLING_COWORKING_REVENUE_INVOICING.value,
+          PERMISSIONS.FINANCE_BILLING_MEETING_REVENUE_INVOICING.value,
+          PERMISSIONS.FINANCE_BILLING_VIRTUAL_OFFICE_REVENUE_INVOICING.value,
+          PERMISSIONS.FINANCE_BILLING_WORKATION_REVENUE_INVOICING.value,
+          PERMISSIONS.FINANCE_BILLING_ALTERNATE_REVENUE_INVOICING.value,
+        ],
       },
       {
         title: "Voucher Request",

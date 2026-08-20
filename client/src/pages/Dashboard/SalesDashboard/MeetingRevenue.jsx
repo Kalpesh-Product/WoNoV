@@ -79,7 +79,8 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
-const MeetingRevenue = () => {
+// const MeetingRevenue = () => {
+  const MeetingRevenue = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   const [selectedRevenue, setSelectedRevenue] = useState(null);
@@ -225,7 +226,7 @@ const MeetingRevenue = () => {
         </div>
       ) : (
         <>
-          <FyBarGraph
+          {/* <FyBarGraph
             data={graphData}
             dateKey="date"
             valueKey="taxable"
@@ -233,7 +234,18 @@ const MeetingRevenue = () => {
             chartOptions={options}
             selectedFY={selectedFY}
             onSelectedFYChange={setSelectedFY}
-          />
+          /> */}
+           {showChart && (
+            <FyBarGraph
+              data={graphData}
+              dateKey="date"
+              valueKey="taxable"
+              graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
+              chartOptions={options}
+              selectedFY={selectedFY}
+              onSelectedFYChange={setSelectedFY}
+            />
+          )}
 
           <WidgetTable
             data={flattenedRevenueData}

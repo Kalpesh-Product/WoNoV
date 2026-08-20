@@ -30,7 +30,8 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
-const Workations = () => {
+// const Workations = () => {
+  const Workations = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
@@ -169,7 +170,7 @@ const Workations = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <FyBarGraph
+      {/* <FyBarGraph
         graphTitle="ANNUAL MONTHLY WORKATION REVENUES"
         data={graphData}
         chartOptions={options}
@@ -177,7 +178,18 @@ const Workations = () => {
         valueKey="taxableAmount"
         selectedFY={selectedFY}
         onSelectedFYChange={setSelectedFY}
-      />
+      /> */}
+          {showChart && (
+        <FyBarGraph
+          graphTitle="ANNUAL MONTHLY WORKATION REVENUES"
+          data={graphData}
+          chartOptions={options}
+          dateKey="date"
+          valueKey="taxableAmount"
+          selectedFY={selectedFY}
+          onSelectedFYChange={setSelectedFY}
+        />
+      )}
       <WidgetTable
         data={tableData}
         tableTitle={"Monthly Revenue with Client Details"}

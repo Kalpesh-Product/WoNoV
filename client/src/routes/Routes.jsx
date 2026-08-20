@@ -132,6 +132,7 @@ import MeetingRevenue from "../pages/Dashboard/SalesDashboard/MeetingRevenue";
 import VirtualOffice from "../pages/Dashboard/SalesDashboard/VirtualOffice";
 import Workations from "../pages/Dashboard/SalesDashboard/Workations";
 import AltRevenues from "../pages/Dashboard/SalesDashboard/AltRevenues";
+import ClientInvoicingLayout from "../pages/Dashboard/FinanceDashboard/Billing/ClientInvoicingLayout";  
 import ClientsLayout from "../pages/Dashboard/SalesDashboard/ClientsLayout";
 import ViewClients from "../pages/Dashboard/SalesDashboard/ViewClients";
 import ClientOnboarding from "../pages/Dashboard/SalesDashboard/ClientOnboarding";
@@ -303,7 +304,7 @@ import MonthlyProfitLoss from "../pages/Dashboard/FinanceDashboard/MonthyProfitL
 import AverageProfitLoss from "../pages/Dashboard/FinanceDashboard/AverageProfitLoss/AverageProfitLoss";
 import OverallProfitLoss from "../pages/Dashboard/FinanceDashboard/OverallProfitLoss/OverallProfitLoss";
 import SqWiseData from "../pages/Dashboard/FinanceDashboard/SqftWiseData/SqWiseData";
-import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
+//import InvoiceCreation from "../pages/Dashboard/FinanceDashboard/Billing/InvoiceCreation";
 import VoucherCreation from "../pages/Dashboard/FinanceDashboard/Billing/VoucherCreation";
 import PendingApprovals from "../pages/Dashboard/FinanceDashboard/Billing/PendingApprovals";
 import RejectedVoucher from "../pages/Dashboard/FinanceDashboard/Billing/RejectedVoucher";
@@ -942,7 +943,30 @@ export const routes = createBrowserRouter([
                         children: [
                           {
                             path: "client-invoicing",
-                            element: <InvoiceCreation />,
+                            // element: <InvoiceCreation />,
+                             element: <ClientInvoicingLayout />,
+                            children: [
+                              {
+                                path: "co-working-revenue-invoicing",
+                                element: <CoWorking showChart={false} />,
+                              },
+                              {
+                                path: "meeting-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} />,
+                              },
+                              {
+                                path: "virtual-office-revenue-invoicing",
+                                element: <VirtualOffice showChart={false} />,
+                              },
+                              {
+                                path: "workation-revenue-invoicing",
+                                element: <Workations showChart={false} />,
+                              },
+                              {
+                                path: "alternate-revenue-invoicing",
+                                element: <AltRevenues showChart={false} />,
+                              },
+                            ],
                           },
                           {
                             path: "voucher-request",
