@@ -483,6 +483,7 @@ const ExternalClients = ({
   const getUnitName = (visitor) => {
     if (!visitor) return "N/A";
     if (visitor?.unit?.unitNo) return visitor.unit.unitNo;
+    if (visitor?.unit?.unitName) return visitor.unit.unitName;
     if (visitor?.unitNo) return visitor.unitNo;
     if (typeof visitor?.unit === "string") {
       const matchedUnit = unitsData?.find(
@@ -1015,14 +1016,25 @@ const ExternalClients = ({
                   //   latestVisit?.visitorType || item.purposeOfVisit,
                   // purposeOfVisit: item.purposeOfVisit || "-",
                   // purposeOfVisit: item.purposeOfVisit || "-",
-                  purposeOfVisit: item.purposeOfVisit || "-",
+                  purposeOfVisit:
+                    latestVisit?.purposeOfVisit ||
+                    latestVisit?.visitorType ||
+                    item.purposeOfVisit ||
+                    item.visitorType ||
+                    "-",
                   visitorType: normalizeVisitorType(
                     latestVisit?.visitorType ||
                       item?.visitorType ||
                       item?.purposeOfVisit,
                   ),
-                  buildingName: getBuildingName(item),
-                  unitName: getUnitName(item),
+                  buildingName:
+                    getBuildingName(latestVisit) !== "N/A"
+                      ? getBuildingName(latestVisit)
+                      : getBuildingName(item),
+                  unitName:
+                    getUnitName(latestVisit) !== "N/A"
+                      ? getUnitName(latestVisit)
+                      : getUnitName(item),
                   toMeet: !item?.toMeet
                     ? null
                     : `${item?.toMeet?.firstName} ${item?.toMeet?.lastName}`,
