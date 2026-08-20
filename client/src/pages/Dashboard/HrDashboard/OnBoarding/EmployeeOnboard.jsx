@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { City, Country, State } from "country-state-city";
 import { useForm, Controller } from "react-hook-form";
 import { Checkbox, ListItemText, MenuItem, TextField } from "@mui/material";
@@ -9,9 +9,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import UploadFileInput from "../../../../components/UploadFileInput";
 import { useNavigate } from "react-router-dom";
-import { LuImageUp } from "react-icons/lu";
 
 const EmployeeOnboard = () => {
   const navigate = useNavigate();
@@ -24,8 +22,6 @@ const EmployeeOnboard = () => {
     reset,
     watch,
     setValue,
-    setError,
-    clearErrors,
     formState: { errors },
   } = useForm({
     defaultValues: {
@@ -69,7 +65,9 @@ const EmployeeOnboard = () => {
       includeEsi: "",
       esiContribution: "",
       hraType: "",
+      hraPercentage: "",
       tdsCalculationBasedOn: "",
+      taxPercentage: "",
       incomeTaxRegime: "",
       addressLine1: "",
       addressLine2: "",
@@ -174,26 +172,6 @@ const EmployeeOnboard = () => {
     if (value instanceof File) return value.name;
     return "";
   };
-  const handlePolicyFileChange = (file, onChange, fieldName) => {
-    if (!file) {
-      onChange("");
-      clearErrors(fieldName);
-      return;
-    }
-    const isPdfFile =
-      file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
-    if (!isPdfFile) {
-      setError(fieldName, {
-        type: "manual",
-        message: "Invalid file format. Please upload a PDF file.",
-      });
-      onChange("");
-      return;
-    }
-    clearErrors(fieldName);
-    onChange(file);
-  };
-
   const stripEmpty = (obj) => {
     if (Array.isArray(obj)) return obj.length ? obj : undefined;
     if (obj && typeof obj === "object") {
@@ -304,7 +282,9 @@ const EmployeeOnboard = () => {
         includeEsi: normalizeBoolean(data.includeEsi),
         esiContribution: data.esiContribution?.trim(),
         hraType: data.hraType?.trim(),
+        hraPercentage: data.hraPercentage?.trim(),
         tdsCalculationBasedOn: data.tdsCalculationBasedOn?.trim(),
+        taxPercentage: data.taxPercentage?.trim(),
         incomeTaxRegime: data.incomeTaxRegime?.trim(),
       },
       salaryPackage: {
@@ -356,8 +336,69 @@ const EmployeeOnboard = () => {
     },
   });
 
+  const { data: companyPolicies = [] } = useQuery({
+    queryKey: ["policies"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-documents/policies",
+      );
+      return Array.isArray(response.data?.policies)
+        ? response.data.policies
+        : [];
+    },
+  });
+
+  const leavePolicies = companyPolicies.filter(
+    (policy) =>
+      policy?.policyType === "Leave" &&
+      policy?.isActive !== false &&
+      policy?.isDeleted !== true,
+  );
+  const holidayPolicies = companyPolicies.filter(
+    (policy) =>
+      policy?.policyType === "Holiday" &&
+      policy?.isActive !== false &&
+      policy?.isDeleted !== true,
+  );
+
   const selectedCountryCode = watch("country");
   const selectedStateCode = watch("state");
+  const annualCtc = Number(watch("annualCtc")) || 0;
+  const includePF = watch("includePF");
+  const includeEsi = watch("includeEsi");
+  const hraType = watch("hraType");
+  const tdsCalculationBasedOn = watch("tdsCalculationBasedOn");
+  const isEsiIneligible = annualCtc / 12 > 21000;
+
+  useEffect(() => {
+    if (includePF === "no") {
+      setValue("pfContributionRate", "");
+      setValue("employeePF", "");
+      setValue("employerPf", "");
+    }
+
+    if (isEsiIneligible) {
+      setValue("includeEsi", "no");
+      setValue("esiContribution", "");
+    } else if (includeEsi === "no") {
+      setValue("esiContribution", "");
+    }
+
+    if (hraType !== "Custom") {
+      setValue("hraPercentage", "");
+    }
+
+    if (tdsCalculationBasedOn !== "Tax Percentage (Consultants)") {
+      setValue("taxPercentage", "");
+    }
+  }, [
+    hraType,
+    includeEsi,
+    includePF,
+    isEsiIneligible,
+    setValue,
+    tdsCalculationBasedOn,
+  ]);
 
   const countryOptions = useMemo(() => Country.getAllCountries(), []);
 
@@ -600,9 +641,10 @@ const EmployeeOnboard = () => {
                       <TextField
                         {...field}
                         size="small"
-                        label="Mobile Phone"
-                        fullWidth
-                        helperText={errors?.phone?.message}
+                      label="Mobile Phone"
+                      fullWidth
+                      inputProps={{ inputMode: "numeric", maxLength: 10 }}
+                      helperText={errors?.phone?.message}
                         error={!!errors.phone}
                       />
                     )}
@@ -1195,100 +1237,100 @@ const EmployeeOnboard = () => {
                     name="leavePolicy"
                     control={control}
                     defaultValue=""
-                    // render={({ field }) => (
-                    //   <TextField
-                    //     {...field}
-                    //     size="small"
-                    //     label="Leave Policy"
-                    //     fullWidth
-                    //     helperText={errors?.leavePolicy?.message}
-                    //     error={!!errors.leavePolicy}
-                    //   />
-                     render={({ field: { value, onChange } }) => (
-                      <>
-                        <input
-                          id="leave-policy-upload"
-                          type="file"
-                          accept=".pdf,application/pdf"
-                          hidden
-                          onChange={(e) =>
-                            handlePolicyFileChange(
-                              e.target.files?.[0],
-                              onChange,
-                              "leavePolicy",
-                            )
-                          }
-                        />
-                        <TextField
-                          size="small"
-                          label="Leave Policy"
-                          fullWidth
-                          value={value?.name || value || ""}
-                          helperText={errors?.leavePolicy?.message}
-                          error={!!errors.leavePolicy}
-                          InputProps={{
-                            readOnly: true,
-                            endAdornment: (
-                              <label
-                                htmlFor="leave-policy-upload"
-                                className="text-primary cursor-pointer"
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        value={field.value || ""}
+                        size="small"
+                        label="Leave Policy"
+                        select
+                        fullWidth
+                        helperText={errors?.leavePolicy?.message}
+                        error={!!errors.leavePolicy}
+                        SelectProps={{
+                          renderValue: (selected) =>
+                            leavePolicies.find(
+                              (policy) => policy.documentLink === selected,
+                            )?.name || selected,
+                        }}
+                      >
+                        <MenuItem value="" disabled>
+                          Select Leave Policy
+                        </MenuItem>
+                        {leavePolicies.length ? (
+                          leavePolicies.map((policy) => (
+                            <MenuItem
+                              key={policy._id}
+                              value={policy.documentLink}
+                              className="flex justify-between gap-4"
+                            >
+                              <span>{policy.name}</span>
+                              <a
+                                href={policy.documentLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline"
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onClick={(event) => event.stopPropagation()}
                               >
-                                <LuImageUp size={20} />
-                              </label>
-                            ),
-                          }}
-                        />
-                      </>
+                                View
+                              </a>
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>No leave policies found</MenuItem>
+                        )}
+                      </TextField>
                     )}
                   />
                   <Controller
                     name="holidayPolicy"
                     control={control}
                     defaultValue=""
-                    // render={({ field }) => (
-                    //   <TextField
-                    //     {...field}
-                    //     size="small"
-                    //     label="Holiday Policy"
-                    //     fullWidth
-                    //     helperText={errors?.holidayPolicy?.message}
-                    //     error={!!errors.holidayPolicy}
-                    //   />
-                     render={({ field: { value, onChange } }) => (
-                      <>
-                        <input
-                          id="holiday-policy-upload"
-                          type="file"
-                          accept=".pdf,application/pdf"
-                          hidden
-                          onChange={(e) =>
-                            handlePolicyFileChange(
-                              e.target.files?.[0],
-                              onChange,
-                              "holidayPolicy",
-                            )
-                          }
-                        />
-                        <TextField
-                          size="small"
-                          label="Holiday Policy"
-                          fullWidth
-                          value={value?.name || value || ""}
-                          helperText={errors?.holidayPolicy?.message}
-                          error={!!errors.holidayPolicy}
-                          InputProps={{
-                            readOnly: true,
-                            endAdornment: (
-                              <label
-                                htmlFor="holiday-policy-upload"
-                                className="text-primary cursor-pointer"
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        value={field.value || ""}
+                        size="small"
+                        label="Holiday Policy"
+                        select
+                        fullWidth
+                        helperText={errors?.holidayPolicy?.message}
+                        error={!!errors.holidayPolicy}
+                        SelectProps={{
+                          renderValue: (selected) =>
+                            holidayPolicies.find(
+                              (policy) => policy.documentLink === selected,
+                            )?.name || selected,
+                        }}
+                      >
+                        <MenuItem value="" disabled>
+                          Select Holiday Policy
+                        </MenuItem>
+                        {holidayPolicies.length ? (
+                          holidayPolicies.map((policy) => (
+                            <MenuItem
+                              key={policy._id}
+                              value={policy.documentLink}
+                              className="flex justify-between gap-4"
+                            >
+                              <span>{policy.name}</span>
+                              <a
+                                href={policy.documentLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline"
+                                onMouseDown={(event) => event.stopPropagation()}
+                                onClick={(event) => event.stopPropagation()}
                               >
-                                <LuImageUp size={20} />
-                              </label>
-                            ),
-                          }}
-                        />
-                      </>
+                                View
+                              </a>
+                            </MenuItem>
+                          ))
+                        ) : (
+                          <MenuItem disabled>No holiday policies found</MenuItem>
+                        )}
+                      </TextField>
                     )}
                   />
                 </div>
@@ -1398,58 +1440,62 @@ const EmployeeOnboard = () => {
                       </TextField>
                     )}
                   />
+                  {includePF !== "no" && (
+                    <Controller
+                      name="pfContributionRate"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="PF Contribution Rate"
+                          select
+                          fullWidth
+                          helperText={errors?.pfContributionRate?.message}
+                          error={!!errors.pfContributionRate}
+                        >
+                          <MenuItem value="" disabled>
+                            Select PF Contribution Rate
+                          </MenuItem>
+                          <MenuItem value="Restrict Employee & Employer PF to 15,000">
+                            Restrict Employee & Employer PF to 15,000
+                          </MenuItem>
+                          <MenuItem value="Employee & Employer PF on Actual Wage">
+                            Employee & Employer PF on Actual Wage
+                          </MenuItem>
+                          <MenuItem value="Employee PF on Actual Wage & Employer PF to 15,000">
+                            Employee PF on Actual Wage & Employer PF to 15,000
+                          </MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  )}
+                </div>
+                {includePF !== "no" && (
                   <Controller
-                    name="pfContributionRate"
+                    name="employeePF"
                     control={control}
                     defaultValue=""
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
-                        label="PF Contribution Rate"
+                        label="Employee PF"
                         select
                         fullWidth
-                        helperText={errors?.pfContributionRate?.message}
-                        error={!!errors.pfContributionRate}
+                        helperText={errors?.employeePF?.message}
+                        error={!!errors.employeePF}
                       >
                         <MenuItem value="" disabled>
-                          Select PF Contribution Rate
+                          Select Employee PF
                         </MenuItem>
-                        <MenuItem value="Restrict Employee & Employer PF to 15,000">
-                          Restrict Employee & Employer PF to 15,000
-                        </MenuItem>
-                        <MenuItem value="Employee & Employer PF on Actual Wage">
-                          Employee & Employer PF on Actual Wage
-                        </MenuItem>
-                        <MenuItem value="Employee PF on Actual Wage & Employer PF to 15,000">
-                          Employee PF on Actual Wage & Employer PF to 15,000
-                        </MenuItem>
+                        <MenuItem value="10%">10%</MenuItem>
+                        <MenuItem value="12%">12%</MenuItem>
                       </TextField>
                     )}
                   />
-                </div>
-                <Controller
-                  name="employeePF"
-                  control={control}
-                  defaultValue=""
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      size="small"
-                      label="Employee PF"
-                      select
-                      fullWidth
-                      helperText={errors?.employeePF?.message}
-                      error={!!errors.employeePF}
-                    >
-                      <MenuItem value="" disabled>
-                        Select Employee PF
-                      </MenuItem>
-                      <MenuItem value="10%">10%</MenuItem>
-                      <MenuItem value="12%">12%</MenuItem>
-                    </TextField>
-                  )}
-                />
+                )}
               </div>
             </div>
 
@@ -1462,29 +1508,31 @@ const EmployeeOnboard = () => {
               </div>
               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4  ">
-                  <Controller
-                    name="employerPf"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        label="Employer PF"
-                        select
-                        fullWidth
-                        helperText={errors?.employerPf?.message}
-                        error={!!errors.employerPf}
-                      >
-                        <MenuItem value="" disabled>
-                          Select Employer PF
-                        </MenuItem>
-                        <MenuItem value="10%">10%</MenuItem>
-                        <MenuItem value="12%">12%</MenuItem>
-                        <MenuItem value="13%">13%</MenuItem>
-                      </TextField>
-                    )}
-                  />
+                  {includePF !== "no" && (
+                    <Controller
+                      name="employerPf"
+                      control={control}
+                      defaultValue=""
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Employer PF"
+                          select
+                          fullWidth
+                          helperText={errors?.employerPf?.message}
+                          error={!!errors.employerPf}
+                        >
+                          <MenuItem value="" disabled>
+                            Select Employer PF
+                          </MenuItem>
+                          <MenuItem value="10%">10%</MenuItem>
+                          <MenuItem value="12%">12%</MenuItem>
+                          <MenuItem value="13%">13%</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  )}
                   <Controller
                     name="includeEsi"
                     control={control}
@@ -1496,7 +1544,12 @@ const EmployeeOnboard = () => {
                         label="Include ESI"
                         select
                         fullWidth
-                        helperText={errors?.includeEsi?.message}
+                        disabled={isEsiIneligible}
+                        helperText={
+                          isEsiIneligible
+                            ? "ESI is unavailable when monthly CTC exceeds INR 21,000"
+                            : errors?.includeEsi?.message
+                        }
                         error={!!errors.includeEsi}
                       >
                         <MenuItem value="" disabled>
@@ -1508,6 +1561,7 @@ const EmployeeOnboard = () => {
                     )}
                   />
                 </div>
+                {(includeEsi !== "no" || isEsiIneligible) && (
                 <Controller
                   name="esiContribution"
                   control={control}
@@ -1519,6 +1573,7 @@ const EmployeeOnboard = () => {
                       label="ESI Contribution"
                       select
                       fullWidth
+                      disabled={isEsiIneligible}
                       helperText={errors?.esiContribution?.message}
                       error={!!errors.esiContribution}
                     >
@@ -1532,6 +1587,7 @@ const EmployeeOnboard = () => {
                     </TextField>
                   )}
                 />
+                )}
                 <Controller
                   name="hraType"
                   control={control}
@@ -1559,6 +1615,35 @@ const EmployeeOnboard = () => {
                     </TextField>
                   )}
                 />
+                {hraType === "Custom" && (
+                  <Controller
+                    name="hraPercentage"
+                    control={control}
+                    rules={{
+                      required: "HRA percentage is required",
+                      min: {
+                        value: 0,
+                        message: "HRA percentage cannot be negative",
+                      },
+                      max: {
+                        value: 100,
+                        message: "HRA percentage cannot exceed 100",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        type="number"
+                        label="HRA Percentage"
+                        fullWidth
+                        inputProps={{ min: 0, max: 100, step: "0.01" }}
+                        helperText={errors?.hraPercentage?.message}
+                        error={!!errors.hraPercentage}
+                      />
+                    )}
+                  />
+                )}
                 <Controller
                   name="tdsCalculationBasedOn"
                   control={control}
@@ -1585,6 +1670,35 @@ const EmployeeOnboard = () => {
                     </TextField>
                   )}
                 />
+                {tdsCalculationBasedOn === "Tax Percentage (Consultants)" && (
+                  <Controller
+                    name="taxPercentage"
+                    control={control}
+                    rules={{
+                      required: "Tax percentage is required",
+                      min: {
+                        value: 0,
+                        message: "Tax percentage cannot be negative",
+                      },
+                      max: {
+                        value: 100,
+                        message: "Tax percentage cannot exceed 100",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        type="number"
+                        label="Tax Percentage"
+                        fullWidth
+                        inputProps={{ min: 0, max: 100, step: "0.01" }}
+                        helperText={errors?.taxPercentage?.message}
+                        error={!!errors.taxPercentage}
+                      />
+                    )}
+                  />
+                )}
                 <Controller
                   name="incomeTaxRegime"
                   control={control}

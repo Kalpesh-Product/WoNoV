@@ -259,7 +259,9 @@ const userDataSchema = new mongoose.Schema(
       includeEsi: { type: Boolean },
       esiContribution: { type: String },
       hraType: { type: String },
+      hraPercentage: { type: String },
       tdsCalculationBasedOn: { type: String },
+      taxPercentage: { type: String },
       incomeTaxRegime: { type: String },
     },
 

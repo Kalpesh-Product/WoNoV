@@ -12,7 +12,7 @@ const Department = require("../../models/Departments");
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
 
 const uploadCompanyDocument = async (req, res, next) => {
-  const { documentName, type } = req.body;
+  const { documentName, type, policyType = "None" } = req.body;
   const file = req.file;
   const user = req.user;
 
@@ -26,6 +26,13 @@ const uploadCompanyDocument = async (req, res, next) => {
         message:
           "Invalid document type. Allowed values: template, sop, policy, agreement",
       });
+    }
+
+    if (
+      type === "policy" &&
+      !["Leave", "Holiday", "None"].includes(policyType)
+    ) {
+      return res.status(400).json({ message: "Invalid policy type" });
     }
 
     const allowedExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
@@ -87,6 +94,7 @@ const uploadCompanyDocument = async (req, res, next) => {
           name: documentName,
           documentLink: response.secure_url,
           documentId: response.public_id,
+          ...(type === "policy" && { policyType }),
         },
       },
     });

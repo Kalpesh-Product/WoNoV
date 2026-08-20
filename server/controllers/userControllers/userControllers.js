@@ -141,7 +141,11 @@ const createUser = async (req, res, next) => {
         )
         .required("gender is required"),
       dateOfBirth: yup.mixed().required("dateOfBirth is required"),
-      phone: yup.string().trim().required("phone is required"),
+      phone: yup
+        .string()
+        .trim()
+        .matches(/^[0-9]{10}$/, "phone must be a valid 10-digit number")
+        .required("phone is required"),
       email: yup.string().trim().email().required("email is required"),
       role: yup
         .mixed()
@@ -260,7 +264,9 @@ const createUser = async (req, res, next) => {
           includeEsi: yup.mixed().optional(),
           esiContribution: yup.string().trim().optional(),
           hraType: yup.string().trim().optional(),
+          hraPercentage: yup.string().trim().optional(),
           tdsCalculationBasedOn: yup.string().trim().optional(),
+          taxPercentage: yup.string().trim().optional(),
           incomeTaxRegime: yup.string().trim().optional(),
         })
         .optional(),
@@ -352,11 +358,15 @@ const createUser = async (req, res, next) => {
 
     // Check if employee ID or email already exists
     const existingUser = await User.findOne({
-      $or: [{ company: company, empId }, { email }],
+      $or: [
+        { company: company, empId },
+        { email },
+        { company: company, phone: phone.trim() },
+      ],
     }).exec();
     if (existingUser) {
       throw new CustomError(
-        "Employee ID or email already exists",
+        "Employee ID, email, or phone number already exists",
         logPath,
         logAction,
         logSourceKey,
@@ -698,8 +708,10 @@ const fetchSingleUser = async (req, res) => {
       includeEsi: user.payrollInformation?.includeEsi ? "Yes" : "No",
       esiContribution: user.payrollInformation?.esiContribution || "",
       hraType: user.payrollInformation?.hraType || "",
+      hraPercentage: user.payrollInformation?.hraPercentage || "",
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
+      taxPercentage: user.payrollInformation?.taxPercentage || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
       salaryPackage: user.salaryPackage || {},
       annualCtc:
@@ -810,6 +822,27 @@ const updateProfile = async (req, res, next) => {
 
     if (!targetUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    }
+
+    if (updateData?.phone !== undefined) {
+      const updatedPhone = String(updateData.phone || "").trim();
+      if (!/^[0-9]{10}$/.test(updatedPhone)) {
+        return res.status(400).json({
+          message: "Phone number must be a valid 10-digit number",
+        });
+      }
+
+      const phoneExists = await User.exists({
+        company,
+        phone: updatedPhone,
+        _id: { $ne: targetedUserId },
+      });
+      if (phoneExists) {
+        return res.status(409).json({
+          message: "Phone number is already registered to another employee",
+        });
+      }
+      updateData.phone = updatedPhone;
     }
 
     //Check if the updated employee ID already exists for another user in the same company
