@@ -49,6 +49,7 @@ const WidgetTable = ({
   totalTitle,
   summaryChipVariant,
   preserveCurrentMonthRange = false,
+   getMissingRangeData,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -147,13 +148,23 @@ const WidgetTable = ({
     const start = dayjs(startDate).startOf("day").toDate();
     const end = dayjs(endDate).endOf("day").toDate();
 
-    return data.filter((item) => {
+  //   return data.filter((item) => {
+  //     const itemDate = dayjs(item[dateColumn]);
+  //     if (!itemDate.isValid()) return false;
+
+  //     return isWithinInterval(itemDate.toDate(), { start, end });
+  //   });
+  // }, [data, dateColumn, dateRange]);
+   const matchingData = data.filter((item) => {
       const itemDate = dayjs(item[dateColumn]);
       if (!itemDate.isValid()) return false;
 
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
-  }, [data, dateColumn, dateRange]);
+
+    if (matchingData.length || !getMissingRangeData) return matchingData;
+    return getMissingRangeData(startDate);
+  }, [data, dateColumn, dateRange, getMissingRangeData]);
 
   const rangeTotal = useMemo(() => {
     if (!filteredData.length || !totalKey) return 0;

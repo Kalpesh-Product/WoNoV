@@ -948,7 +948,13 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 path: "co-working-revenue-invoicing",
-                                element: <CoWorking showChart={false} />,
+                                // element: <CoWorking showChart={false} />,
+                                 element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "meeting-revenue-invoicing",

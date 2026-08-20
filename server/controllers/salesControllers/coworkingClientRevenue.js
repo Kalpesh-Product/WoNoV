@@ -249,6 +249,40 @@ const getRevenues = async (req, res, next) => {
     return next(error);
   }
 };
+const updateRevenueInvoice = async (req, res, next) => {
+  try {
+    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const allowedFields = [
+      "clients", "service", "clientName", "clientInvoiceName", "channel",
+      "noOfDesks", "deskRate", "occupation", "revenue", "totalTerm",
+      "dueTerm", "rentDate", "rentStatus", "pastDueDate",
+      "annualIncrement", "nextIncrementDate",
+    ];
+    const payload = allowedFields.reduce((result, field) => {
+      if (updates[field] !== undefined) result[field] = updates[field];
+      return result;
+    }, {});
+
+    let revenue;
+    if (revenueId && !isProjectedInvoice) {
+      revenue = await CoworkingRevenue.findOneAndUpdate(
+        { _id: revenueId, company: req.company },
+        payload,
+        { new: true, runValidators: true },
+      );
+    } else {
+      revenue = await CoworkingRevenue.create({ ...payload, company: req.company });
+    }
+
+    if (!revenue) return res.status(404).json({ message: "Revenue not found" });
+    return res.status(isProjectedInvoice ? 201 : 200).json({
+      message: "Co-working invoice updated successfully",
+      revenue,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
   try {
@@ -381,4 +415,9 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
   }
 };
 
-module.exports = { addRevenue, getRevenues, bulkInsertCoworkingClientRevenues };
+module.exports = {
+  addRevenue,
+  getRevenues,
+  updateRevenueInvoice,
+  bulkInsertCoworkingClientRevenues,
+};

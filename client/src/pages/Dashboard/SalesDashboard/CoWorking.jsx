@@ -1,12 +1,29 @@
 import {
   CircularProgress,
+IconButton,
+  Menu,
+  MenuItem,
+  TextField,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import { queryClient } from "../../../main";
 
 const getNormalizedRentStatus = (status) =>
   String(status || "").trim().toLowerCase();
@@ -14,9 +31,174 @@ const getNormalizedRentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+
+// const CoworkingInvoiceActions = () => {
+//   const [anchorEl, setAnchorEl] = useState(null);
+
+//   return (
+//     <div className="flex items-center justify-center">
+//       <IconButton size="small" aria-label="View invoice details">
+//         <MdOutlineRemoveRedEye size={20} />
+//       </IconButton>
+//       <IconButton
+//         size="small"
+//         aria-label="Open invoice actions"
+//         onClick={(event) => setAnchorEl(event.currentTarget)}
+//       >
+//         <MoreVertIcon fontSize="small" />
+//       </IconButton>
+//       <Menu
+//         anchorEl={anchorEl}
+//         open={Boolean(anchorEl)}
+//         onClose={() => setAnchorEl(null)}
+//       >
+//         <MenuItem onClick={() => setAnchorEl(null)}>Edit</MenuItem>
+//       </Menu>
+//     </div>
+//   );
+// };
+
+// const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
+//   const targetMonth = dayjs(selectedDate).startOf("month");
+//   if (!targetMonth.isValid() || targetMonth.isBefore(dayjs().startOf("month"))) {
+//     return [];
+//   }
+
+//   const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
+//   if (!validRows.length) return [];
+
+//   const latestMonth = validRows.reduce((latest, row) => {
+//     const rowMonth = dayjs(row.rentDate).startOf("month");
+//     return rowMonth.isAfter(latest) ? rowMonth : latest;
+//   }, dayjs(validRows[0].rentDate).startOf("month"));
+
+//   return validRows
+//     .filter((row) => dayjs(row.rentDate).isSame(latestMonth, "month"))
+//     .map((row, index) => {
+//       const originalRentDate = dayjs(row.rentDate);
+//       const projectedRentDate = targetMonth.date(
+//         Math.min(originalRentDate.date(), targetMonth.daysInMonth())
+//       );
+
+//       return {
+//         ...row,
+//         id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+//         rentDate: projectedRentDate.toISOString(),
+//         rentStatus: "Unpaid",
+//         normalizedRentStatus: "unpaid",
+//         isProjectedInvoice: true,
+//       };
+//     });
+// };
+
+const CoworkingInvoiceActions = ({ row, onView, onEdit }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <div className="flex items-center justify-center">
+      <IconButton size="small" aria-label="View invoice details" onClick={() => onView(row)}>
+        <MdOutlineRemoveRedEye size={20} />
+      </IconButton>
+      <IconButton
+        size="small"
+        aria-label="Open invoice actions"
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+      >
+        <MoreVertIcon fontSize="small" />
+      </IconButton>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem onClick={() => { setAnchorEl(null); onEdit(row); }}>Edit</MenuItem>
+      </Menu>
+    </div>
+  );
+};
+
+const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
+  const targetMonth = dayjs(selectedDate).startOf("month");
+  if (!targetMonth.isValid() || targetMonth.isBefore(dayjs().startOf("month"))) {
+    return [];
+  }
+
+  const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
+  if (!validRows.length) return [];
+
+  const latestMonth = validRows.reduce((latest, row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return rowMonth.isAfter(latest) ? rowMonth : latest;
+  }, dayjs(validRows[0].rentDate).startOf("month"));
+
+  return validRows
+    .filter((row) => dayjs(row.rentDate).isSame(latestMonth, "month"))
+    .map((row, index) => {
+      const originalRentDate = dayjs(row.rentDate);
+      const projectedRentDate = targetMonth.date(
+        Math.min(originalRentDate.date(), targetMonth.daysInMonth())
+      );
+
+      return {
+        ...row,
+        id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+        rentDate: projectedRentDate.toISOString(),
+        rentStatus: "Unpaid",
+        normalizedRentStatus: "unpaid",
+        isProjectedInvoice: true,
+      };
+    });
+};
 // const CoWorking = () => {
-  const CoWorking = ({ showChart = true }) => {
+  // const CoWorking = ({ showChart = true }) => {
+ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const { control, handleSubmit, reset } = useForm();
+
+  const openEdit = (row) => {
+    setEditRow(row);
+    reset({
+      ...row,
+      invoiceFile: null,
+      invoiceUploadedAt: dayjs(row.rentDate),
+      rentDate: dayjs(row.rentDate),
+      pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
+      nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
+      rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
+    });
+  };
+
+  const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
+    mutationFn: async (values) => {
+      const payload = {
+        ...values,
+        revenueId: editRow._id,
+        isProjectedInvoice: Boolean(editRow.isProjectedInvoice),
+        rentDate: values.rentDate?.toISOString(),
+        pastDueDate: values.pastDueDate?.toISOString(),
+        nextIncrementDate: values.nextIncrementDate?.toISOString(),
+      };
+      delete payload.invoiceFile;
+      delete payload.invoiceUploadedAt;
+      await axios.patch("/api/sales/coworking-revenue-invoice", payload);
+
+      if (values.invoiceFile && values.clients) {
+        const formData = new FormData();
+        formData.append("client-invoice", values.invoiceFile);
+        formData.append("client", values.clients);
+        formData.append("invoiceUploadedAt", values.invoiceUploadedAt?.toISOString());
+        await axios.post("/api/finance/upload-client-invoice", formData);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Invoice updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["coWorkingData"] });
+      setEditRow(null);
+    },
+    onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
+  });
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
     queryKey: ["coWorkingData"],
     queryFn: async () => {
@@ -28,6 +210,16 @@ const getNumericAmount = (value) =>
       }
     },
   });
+
+ const { data: coworkingClients = [] } = useQuery({
+    queryKey: ["coworkingInvoiceClients"],
+    enabled: showInvoiceProjections,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const graphData = isCoWorkingLoading
     ? []
     : coWorkingData.flatMap((item) =>
@@ -105,12 +297,18 @@ const getNumericAmount = (value) =>
     : coWorkingData.map((monthData) => ({
       revenue: monthData?.clients?.map((client) => ({
         id: serialNumber++,
+       _id: client._id,
+        clients: client.clients,
+        service: client.service,
         clientName: client.clientName,
+        clientInvoiceName: client.clientInvoiceName,
         channel: client.channel,
+        occupation: client.occupation,
         noOfDesks: client.noOfDesks,
         deskRate: inrFormat(client.deskRate),
         revenue: client.revenue,
         totalTerm: client.totalTerm || 0,
+        dueTerm: client.dueTerm || 0,
         rentDate: client.rentDate,
         rentStatus: client.rentStatus,
         normalizedRentStatus: getNormalizedRentStatus(client.rentStatus),
@@ -120,7 +318,9 @@ const getNumericAmount = (value) =>
       })),
     }));
 
-  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  const baseRevenueData = tableData.flatMap((month) => month.revenue);
+  const flattenedRevenueData = baseRevenueData;
 
   return (
     <div className="flex flex-col gap-4">
@@ -176,6 +376,13 @@ const getNumericAmount = (value) =>
           redTitle="Unpaid"
           totalTitle="Total"
           summaryChipVariant="ticket"
+         preserveCurrentMonthRange={showInvoiceProjections}
+          getMissingRangeData={
+            showInvoiceProjections
+              ? (selectedDate) =>
+                  getUnpaidInvoiceRowsForMonth(baseRevenueData, selectedDate)
+              : undefined
+          }
           columns={[
             { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
@@ -202,9 +409,29 @@ const getNumericAmount = (value) =>
             {
               headerName: "Rent Status",
               field: "rentStatus",
+              flex: 1,
               pinned: "right",
               cellRenderer: (params) => <StatusChip status={params.value} />,
             },
+             ...(showInvoiceProjections
+              ? [
+                  {
+                    headerName: "Action",
+                    field: "actions",
+                    pinned: "right",
+                    width: 120,
+                    sortable: false,
+                    filter: false,
+                    cellRenderer: (params) => (
+                      <CoworkingInvoiceActions
+                        row={params.data}
+                        onView={setViewRow}
+                        onEdit={openEdit}
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ]}
         />
       ) : (
@@ -212,6 +439,176 @@ const getNumericAmount = (value) =>
           <CircularProgress />
         </div>
       )}
+      {viewRow && (
+  <MuiModal
+    open
+    onClose={() => setViewRow(null)}
+    title="View Invoice Details"
+  >
+    <div className="flex flex-col gap-3">
+      {[
+        ["Client Name", viewRow.clientName],
+        ["Invoice Name", viewRow.clientInvoiceName],
+        ["Channel", viewRow.channel],
+        ["Occupation", viewRow.occupation],
+        ["No. of Desks", viewRow.noOfDesks],
+        ["Desk Rate", inrFormat(viewRow.deskRate)],
+        ["Revenue", inrFormat(viewRow.revenue)],
+        ["Total Term", viewRow.totalTerm],
+        ["Due Term", viewRow.dueTerm],
+        ["Rent Date", dayjs(viewRow.rentDate).format("DD-MM-YYYY")],
+        [
+          "Past Due Date",
+          viewRow.pastDueDate
+            ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY")
+            : "—",
+        ],
+        ["Annual Increment (%)", viewRow.annualIncrement],
+        [
+          "Next Increment Date",
+          viewRow.nextIncrementDate
+            ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY")
+            : "—",
+        ],
+        ["Paid Status", viewRow.rentStatus],
+      ].map(([title, detail]) => (
+        <DetalisFormatted
+          key={title}
+          title={title}
+          detail={detail}
+          gap="w-[35%]"
+        />
+      ))}
+    </div>
+  </MuiModal>
+)}
+
+{editRow && (
+  <MuiModal
+    open
+    onClose={() => setEditRow(null)}
+    title="Edit Invoice"
+  >
+    <form
+      onSubmit={handleSubmit((values) => saveInvoice(values))}
+      className="grid grid-cols-2 gap-4"
+    >
+      <Controller
+        name="invoiceFile"
+        control={control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <UploadFileInput
+              value={field.value}
+              onChange={field.onChange}
+              allowedExtensions={["pdf", "doc", "docx"]}
+            />
+          </div>
+        )}
+      />
+
+      <Controller
+        name="clients"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Select Client"
+            size="small"
+            fullWidth
+          >
+            {coworkingClients.map((client) => (
+              <MenuItem key={client._id} value={client._id}>
+                {client.clientName}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+      />
+
+      {[
+        ["clientName", "Client Name", "text"],
+        ["clientInvoiceName", "Invoice Name", "text"],
+        ["channel", "Channel", "text"],
+        ["noOfDesks", "No. of Desks", "number"],
+        ["occupation", "Occupation", "text"],
+        ["dueTerm", "Due Term", "number"],
+        ["deskRate", "Desk Rate", "number"],
+        ["revenue", "Revenue", "number"],
+        ["totalTerm", "Total Term", "number"],
+        ["annualIncrement", "Annual Increment (%)", "number"],
+      ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+            />
+          )}
+        />
+      ))}
+
+      {[
+        ["rentDate", "Rent Date"],
+        ["pastDueDate", "Past Due Date"],
+        ["nextIncrementDate", "Next Increment Date"],
+        ["invoiceUploadedAt", "Invoice Upload Date"],
+      ].map(([name, label]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              label={label}
+              format="DD-MM-YYYY"
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+          )}
+        />
+      ))}
+
+      <Controller
+        name="rentStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Paid Status"
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="Paid">Paid</MenuItem>
+            <MenuItem value="Unpaid">Unpaid</MenuItem>
+          </TextField>
+        )}
+      />
+
+      <div className="col-span-2">
+        <PrimaryButton
+          type="submit"
+          title="Update Invoice"
+          disabled={isSavingInvoice}
+          isLoading={isSavingInvoice}
+        />
+      </div>
+    </form>
+  </MuiModal>
+)}
     </div>
   );
 };

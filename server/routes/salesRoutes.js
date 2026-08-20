@@ -44,6 +44,7 @@ const {
   addRevenue,
   getRevenues,
   bulkInsertCoworkingClientRevenues,
+  updateRevenueInvoice,
 } = require("../controllers/salesControllers/coworkingClientRevenue");
 
 const {
@@ -153,6 +154,7 @@ router.patch(
 //Revenues
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
+router.patch("/coworking-revenue-invoice", updateRevenueInvoice);
 router.get(
   "/coworking-client-revenue/:coworkingId",
   getCoworkingClientRevenues,

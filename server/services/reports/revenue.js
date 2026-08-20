@@ -59,7 +59,11 @@ const fetchCoworkingRevenueService = async ({
       monthData.totalRevenue += item.revenue || 0;
 
       monthData.clients.push({
+        _id: item._id,
+        clients: item.clients,
+        service: item.service,
         clientName: item.clientName || item.client?.clientName,
+        clientInvoiceName: item.clientInvoiceName,
         channel: item.channel,
         noOfDesks: item.noOfDesks,
         deskRate: item.deskRate,
