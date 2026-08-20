@@ -57,6 +57,10 @@ const EmployeeOnboard = () => {
       esiAccountNo: "",
       employerPf: "",
       includeInPayroll: "",
+      annualCtc: "",
+      allowancesAmount: "0",
+      deductionsAmount: "0",
+      internshipIsUnpaid: false,
       payrollBatch: "",
       professionTaxExemption: "",
       includePF: "",
@@ -159,6 +163,12 @@ const EmployeeOnboard = () => {
     return undefined;
   };
 
+  const toOptionalNumber = (value) => {
+    if (value === "" || value === null || value === undefined) return undefined;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : undefined;
+  };
+
    const normalizePolicyValue = (value) => {
     if (typeof value === "string") return value;
     if (value instanceof File) return value.name;
@@ -246,6 +256,7 @@ const EmployeeOnboard = () => {
       role: data.role?.length ? data.role : undefined,
       departments: data.departments?.length ? data.departments : undefined,
       employeeType: data.employeeType ? { name: data.employeeType } : undefined,
+      internshipIsUnpaid: Boolean(data.internshipIsUnpaid),
       designation: data.jobTitle?.trim(),
       jobTitle: data.jobTitle?.trim(),
       jobDescription: data.jobDescription?.trim(),
@@ -295,6 +306,14 @@ const EmployeeOnboard = () => {
         hraType: data.hraType?.trim(),
         tdsCalculationBasedOn: data.tdsCalculationBasedOn?.trim(),
         incomeTaxRegime: data.incomeTaxRegime?.trim(),
+      },
+      salaryPackage: {
+        amount: toOptionalNumber(data.annualCtc),
+        grossAnnual: toOptionalNumber(data.annualCtc),
+        currency: "INR",
+        payFrequency: "annual",
+        allowances: toOptionalNumber(data.allowancesAmount) ?? 0,
+        deductions: toOptionalNumber(data.deductionsAmount) ?? 0,
       },
       familyInformation: {
         fatherName: data.fatherName?.trim(),
@@ -449,7 +468,7 @@ const EmployeeOnboard = () => {
         </div>
         <form onSubmit={handleSubmit(onSubmit)} className="">
           <div className="grid grid-cols-2 sm:grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+            <div className="order-1">
               {/* Section: Basic Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -606,7 +625,7 @@ const EmployeeOnboard = () => {
                 </div>
               </div>
             </div>
-            <div>
+            <div className="order-2">
               {/* Section: Home Address Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -749,7 +768,7 @@ const EmployeeOnboard = () => {
                 </div>
               </div>
             </div>
-            <div>
+            <div className="order-3">
               {/* Section: Job Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -822,9 +841,31 @@ const EmployeeOnboard = () => {
                         </MenuItem>
                         <MenuItem value="Full-time">Full-time</MenuItem>
                         <MenuItem value="Part-time">Part-time</MenuItem>
+                        <MenuItem value="Intern">Intern</MenuItem>
                       </TextField>
                     )}
                   />
+                  {watch("employeeType") === "Intern" && (
+                    <Controller
+                      name="internshipIsUnpaid"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          value={field.value ? "yes" : "no"}
+                          onChange={(event) =>
+                            field.onChange(event.target.value === "yes")
+                          }
+                          size="small"
+                          label="Unpaid Internship"
+                          select
+                          fullWidth
+                        >
+                          <MenuItem value="no">No</MenuItem>
+                          <MenuItem value="yes">Yes</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -981,7 +1022,112 @@ const EmployeeOnboard = () => {
                 </div>
                 
             </div>
-            <div>
+            <div className="order-5">
+              {/* Section: Compensation Details */}
+              <div className="py-4 border-b-default border-borderGray">
+                <span className="text-subtitle font-pmedium">
+                  Compensation Details
+                </span>
+              </div>
+              <div className="flex flex-col gap-4 p-4">
+                <Controller
+                  name="annualCtc"
+                  control={control}
+                  rules={{
+                    validate: (value) => {
+                      if (watch("internshipIsUnpaid")) return true;
+                      if (watch("includeInPayroll") !== "yes" && !value) return true;
+                      return Number(value) > 0 || "Annual CTC must be greater than 0";
+                    },
+                  }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      size="small"
+                      type="number"
+                      label="Annual CTC (INR)"
+                      fullWidth
+                      disabled={watch("internshipIsUnpaid")}
+                      inputProps={{ min: 0, step: "0.01" }}
+                      helperText={errors?.annualCtc?.message}
+                      error={!!errors.annualCtc}
+                    />
+                  )}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <TextField
+                    size="small"
+                    label="Monthly Salary (INR)"
+                    fullWidth
+                    disabled
+                    value={(Number(watch("annualCtc")) > 0
+                      ? Number(watch("annualCtc")) / 12
+                      : 0
+                    ).toFixed(2)}
+                  />
+                  <TextField
+                    size="small"
+                    label="Daily Rate - 26 Working Days (INR)"
+                    fullWidth
+                    disabled
+                    value={(Number(watch("annualCtc")) > 0
+                      ? Number(watch("annualCtc")) / 12 / 26
+                      : 0
+                    ).toFixed(2)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Controller
+                    name="allowancesAmount"
+                    control={control}
+                    rules={{
+                      min: {
+                        value: 0,
+                        message: "Allowances cannot be negative",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        type="number"
+                        label="Monthly Fixed Allowances (INR)"
+                        fullWidth
+                        disabled={watch("internshipIsUnpaid")}
+                        inputProps={{ min: 0, step: "0.01" }}
+                        helperText={errors?.allowancesAmount?.message}
+                        error={!!errors.allowancesAmount}
+                      />
+                    )}
+                  />
+                  <Controller
+                    name="deductionsAmount"
+                    control={control}
+                    rules={{
+                      min: {
+                        value: 0,
+                        message: "Deductions cannot be negative",
+                      },
+                    }}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        size="small"
+                        type="number"
+                        label="Monthly Fixed Deductions (INR)"
+                        fullWidth
+                        disabled={watch("internshipIsUnpaid")}
+                        inputProps={{ min: 0, step: "0.01" }}
+                        helperText={errors?.deductionsAmount?.message}
+                        error={!!errors.deductionsAmount}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="order-4">
               {/* Section: Policies */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">Policies</span>
@@ -1149,7 +1295,7 @@ const EmployeeOnboard = () => {
               </div>
             </div>
 
-            <div>
+            <div className="order-7">
               {/* Section: Payroll Information I */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -1197,8 +1343,11 @@ const EmployeeOnboard = () => {
                       <MenuItem value="" disabled>
                         Select Payroll Batch
                       </MenuItem>
-                      <MenuItem value="yes">Yes</MenuItem>
-                      <MenuItem value="no">No</MenuItem>
+                      <MenuItem value="Full Time Batch">Full Time Batch</MenuItem>
+                      <MenuItem value="Intern Batch">Intern Batch</MenuItem>
+                      <MenuItem value="Consultant Batch">
+                        Consultant Batch
+                      </MenuItem>
                     </TextField>
                   )}
                 />
@@ -1258,10 +1407,24 @@ const EmployeeOnboard = () => {
                         {...field}
                         size="small"
                         label="PF Contribution Rate"
+                        select
                         fullWidth
                         helperText={errors?.pfContributionRate?.message}
                         error={!!errors.pfContributionRate}
-                      />
+                      >
+                        <MenuItem value="" disabled>
+                          Select PF Contribution Rate
+                        </MenuItem>
+                        <MenuItem value="Restrict Employee & Employer PF to 15,000">
+                          Restrict Employee & Employer PF to 15,000
+                        </MenuItem>
+                        <MenuItem value="Employee & Employer PF on Actual Wage">
+                          Employee & Employer PF on Actual Wage
+                        </MenuItem>
+                        <MenuItem value="Employee PF on Actual Wage & Employer PF to 15,000">
+                          Employee PF on Actual Wage & Employer PF to 15,000
+                        </MenuItem>
+                      </TextField>
                     )}
                   />
                 </div>
@@ -1274,17 +1437,24 @@ const EmployeeOnboard = () => {
                       {...field}
                       size="small"
                       label="Employee PF"
+                      select
                       fullWidth
                       helperText={errors?.employeePF?.message}
                       error={!!errors.employeePF}
-                    />
+                    >
+                      <MenuItem value="" disabled>
+                        Select Employee PF
+                      </MenuItem>
+                      <MenuItem value="10%">10%</MenuItem>
+                      <MenuItem value="12%">12%</MenuItem>
+                    </TextField>
                   )}
                 />
               </div>
             </div>
 
             {/* Section: Payroll Information II*/}
-            <div>
+            <div className="order-8">
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
                   Payroll Information II
@@ -1309,9 +1479,9 @@ const EmployeeOnboard = () => {
                         <MenuItem value="" disabled>
                           Select Employer PF
                         </MenuItem>
+                        <MenuItem value="10%">10%</MenuItem>
                         <MenuItem value="12%">12%</MenuItem>
                         <MenuItem value="13%">13%</MenuItem>
-                        <MenuItem value="15%">15%</MenuItem>
                       </TextField>
                     )}
                   />
@@ -1439,7 +1609,7 @@ const EmployeeOnboard = () => {
                 />
               </div>
             </div>
-            <div>
+            <div className="order-6">
               {/* Section: Bank Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">
@@ -1541,7 +1711,7 @@ const EmployeeOnboard = () => {
                 />
               </div>
             </div>
-            <div>
+            <div className="order-9">
               {/* Section: KYC Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">KYC</span>
@@ -1664,7 +1834,7 @@ const EmployeeOnboard = () => {
               </div>
             </div>
 
-            <div>
+            <div className="order-10">
               {/* Section: Family Information */}
               <div className="py-4 border-b-default border-borderGray">
                 <span className="text-subtitle font-pmedium">

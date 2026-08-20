@@ -23,6 +23,7 @@ const YearlyGraph = ({
   chartHeight,
   currentYear,
   onYearChange,
+  refreshOnDataChange = false,
   dateKey, // 👈 New prop
 }) => {
    const yearKey = dataPoint === "name" ? "name" : "group";
@@ -88,7 +89,7 @@ const YearlyGraph = ({
     filteredData = data.filter((item) => item.group === selectedYear);
   }
 
- if (filteredData.length === 0 && dataPoint !== "name") {
+  if (filteredData.length === 0 && dataPoint !== "name") {
     const uniqueSeriesNames = [...new Set((data || []).map((item) => item?.name).filter(Boolean))];
     filteredData = uniqueSeriesNames.map((seriesName) => ({
       name: seriesName,
@@ -96,6 +97,10 @@ const YearlyGraph = ({
       data: Array(12).fill(0),
     }));
   }
+
+  const seriesKey = filteredData
+    .map((series) => `${series.name}:${(series.data || []).join(",")}`)
+    .join("|");
 
   const updatedOptions = {
     ...options,
@@ -136,7 +141,7 @@ const YearlyGraph = ({
       >
         <div className="flex flex-col gap-4">
           <BarGraph
-            key={selectedYear}
+            key={refreshOnDataChange ? `${selectedYear}-${seriesKey}` : selectedYear}
             data={filteredData}
             options={updatedOptions}
             chartId={chartId || ""}

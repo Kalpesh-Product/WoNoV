@@ -263,6 +263,20 @@ const userDataSchema = new mongoose.Schema(
       incomeTaxRegime: { type: String },
     },
 
+    salaryPackage: {
+      amount: { type: Number, min: 0, default: 0 },
+      grossAnnual: { type: Number, min: 0, default: 0 },
+      currency: { type: String, default: "INR" },
+      payFrequency: {
+        type: String,
+        enum: ["monthly", "weekly", "biweekly", "annual"],
+        default: "annual",
+      },
+      allowances: { type: Number, min: 0, default: 0 },
+      deductions: { type: Number, min: 0, default: 0 },
+    },
+    internshipIsUnpaid: { type: Boolean, default: false },
+
     familyInformation: {
       fatherName: { type: String },
       motherName: { type: String },

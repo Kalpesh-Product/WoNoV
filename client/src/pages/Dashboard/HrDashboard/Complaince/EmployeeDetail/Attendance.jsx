@@ -85,10 +85,15 @@ const Attendance = () => {
     }
   };
 
-  const { data: attendance = [], isLoading } = useQuery({
-    queryKey: ["user-attendance"],
+  const { data: attendanceResponse, isLoading } = useQuery({
+    queryKey: ["user-attendance", employmentID],
     queryFn: fetchAttendance,
+    enabled: Boolean(employmentID),
   });
+  const attendance = useMemo(
+    () => (Array.isArray(attendanceResponse) ? attendanceResponse : []),
+    [attendanceResponse],
+  );
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
     mutationFn: async (data) => {

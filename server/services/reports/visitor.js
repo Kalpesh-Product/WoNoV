@@ -192,7 +192,11 @@ const populateExternalVisitFields = [
     select:
       "subject agenda startDate endDate startTime endTime meetingType status",
   },
-  { path: "unit", select: "unitNo unitName" },
+  {
+    path: "unit",
+    select: "unitNo unitName building",
+    populate: { path: "building", select: "buildingName" },
+  },
 ];
 
 const attachExternalVisits = async (visitors, companyId, dateFilter) => {
