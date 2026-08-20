@@ -94,6 +94,68 @@ const Attendance = () => {
     () => (Array.isArray(attendanceResponse) ? attendanceResponse : []),
     [attendanceResponse],
   );
+  const { data: employeeData } = useQuery({
+    queryKey: ["attendance-employee", employmentID],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/users/fetch-single-user/${employmentID}`,
+      );
+      return response.data;
+    },
+    enabled: Boolean(employmentID),
+  });
+  const selectedShift = useMemo(() => {
+    const shifts = auth?.user?.company?.shifts || [];
+    return shifts.find(
+      (shift) =>
+        shift?.isActive !== false &&
+        shift?.isDeleted !== true &&
+        String(shift?.name || "").trim().toLowerCase() ===
+          String(employeeData?.shift || "").trim().toLowerCase(),
+    );
+  }, [auth?.user?.company?.shifts, employeeData?.shift]);
+  const getExpectedShiftTimes = useCallback(
+    (attendanceDate) => {
+      const expectedIn = new Date(attendanceDate);
+      const expectedOut = new Date(attendanceDate);
+      const configuredStart = selectedShift?.startTime
+        ? new Date(selectedShift.startTime)
+        : null;
+      const configuredEnd = selectedShift?.endTime
+        ? new Date(selectedShift.endTime)
+        : null;
+      const isNightShift =
+        String(employeeData?.shift || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, "") === "nightshift";
+
+      const startHours = isNightShift
+        ? 19
+        : (configuredStart?.getHours() ?? 9);
+      const startMinutes = isNightShift
+        ? 0
+        : (configuredStart?.getMinutes() ?? 30);
+      const endHours = isNightShift
+        ? 4
+        : (configuredEnd?.getHours() ?? 18);
+      const endMinutes = isNightShift
+        ? 0
+        : (configuredEnd?.getMinutes() ?? 30);
+
+      expectedIn.setHours(startHours, startMinutes, 0, 0);
+      expectedOut.setHours(endHours, endMinutes, 0, 0);
+
+      const startsAt = startHours * 60 + startMinutes;
+      const endsAt = endHours * 60 + endMinutes;
+      if (endsAt <= startsAt) {
+        expectedOut.setDate(expectedOut.getDate() + 1);
+      }
+
+      return { expectedIn, expectedOut };
+    },
+    [employeeData?.shift, selectedShift],
+  );
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
     mutationFn: async (data) => {
@@ -153,11 +215,7 @@ const Attendance = () => {
         const outLocal = new Date(outDate);
 
         // Expected office hours
-        const expectedIn = new Date(inLocal);
-        expectedIn.setHours(9, 30, 0, 0);
-
-        const expectedOut = new Date(inLocal);
-        expectedOut.setHours(18, 30, 0, 0);
+        const { expectedIn, expectedOut } = getExpectedShiftTimes(inLocal);
 
         const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
         const earlyCheckOut = Math.max(
@@ -199,7 +257,7 @@ const Attendance = () => {
       });
 
     return formatted;
- }, [currentMonth, currentYear]);
+ }, [currentMonth, currentYear, getExpectedShiftTimes]);
 
   const sourceAttendanceForGraph = useMemo(() => {
     if (Array.isArray(filteredAttendanceForGraph)) {
@@ -234,8 +292,7 @@ const Attendance = () => {
           return summary;
         }
 
-        const expectedIn = new Date(inDate);
-        expectedIn.setHours(9, 30, 0, 0);
+        const { expectedIn, expectedOut } = getExpectedShiftTimes(inDate);
 
         if (inDate <= expectedIn) {
           summary.accurateCheckIns += 1;
@@ -245,8 +302,6 @@ const Attendance = () => {
 
         if (entry?.outTime) {
           const outDate = new Date(entry.outTime);
-          const expectedOut = new Date(inDate);
-          expectedOut.setHours(18, 30, 0, 0);
           if (outDate > expectedOut) {
             summary.lateCheckOuts += 1;
           }
@@ -260,7 +315,7 @@ const Attendance = () => {
         lateCheckOuts: 0,
       }
     );
-  }, [attendance, currentMonth, currentYear]);
+  }, [attendance, currentMonth, currentYear, getExpectedShiftTimes]);
 
   const attendanceSeries = [
     {

@@ -1,6 +1,12 @@
 import { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, TextField, IconButton, DialogActions } from "@mui/material";
+import {
+  Chip,
+  TextField,
+  IconButton,
+  DialogActions,
+  MenuItem,
+} from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import MuiModal from "../../../../components/MuiModal";
@@ -30,6 +36,7 @@ const HrSettingsPolicies = () => {
     mode: "onChange",
     defaultValues: {
       policyName: "",
+      policyType: "None",
       file: null,
     },
   });
@@ -42,6 +49,7 @@ const HrSettingsPolicies = () => {
     mode: "onChange",
     defaultValues: {
       policyName: "",
+      policyType: "None",
       file: null,
     },
   });
@@ -101,13 +109,17 @@ const HrSettingsPolicies = () => {
     const formData = new FormData();
     formData.append("documentName", data.policyName);
     formData.append("type", "policy");
+    formData.append("policyType", data.policyType || "None");
     formData.append("document", data.file);
     addPolicyMutation.mutate(formData);
   };
 
   const handleEdit = (row) => {
     setSelectedPolicy(row);
-    reset({ policyName: row.policyname });
+    reset({
+      policyName: row.policyname,
+      policyType: row.policyType || "None",
+    });
     setModalType("edit");
     setOpenModal(true);
   };
@@ -124,6 +136,7 @@ const HrSettingsPolicies = () => {
       itemId: selectedPolicy.mongoId,
       oldDocumentName: selectedPolicy.policyname,
       name: data.policyName,
+      policyType: data.policyType || "None",
     });
   };
 
@@ -158,6 +171,11 @@ const HrSettingsPolicies = () => {
       field: "uploadedDate",
       headerName: "Uploaded Date",
       width: 150,
+    },
+    {
+      field: "policyType",
+      headerName: "TYPE",
+      width: 130,
     },
     {
       field: "updatedDate",
@@ -206,7 +224,7 @@ const HrSettingsPolicies = () => {
         buttonTitle="Add Policy"
         handleClick={() => {
           setModalType("add");
-          reset({ policyName: "", file: null });
+          addReset({ policyName: "", policyType: "None", file: null });
           setOpenModal(true);
         }}
         columns={columns}
@@ -215,6 +233,7 @@ const HrSettingsPolicies = () => {
           mongoId: policy._id,
           policyname: policy.name,
           policyLink: policy.documentLink,
+          policyType: policy.policyType || "None",
           status: policy.isActive,
           uploadedDate: humanDate(policy.createdAt),
           updatedDate: humanDate(policy.updatedAt),
@@ -254,6 +273,26 @@ const HrSettingsPolicies = () => {
                   error={!!addErrors?.policyName}
                   helperText={addErrors?.policyName?.message}
                 />
+              )}
+            />
+            <Controller
+              name="policyType"
+              control={addControl}
+              rules={{ required: "Policy Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Policy Type"
+                  size="small"
+                  select
+                  fullWidth
+                  error={!!addErrors?.policyType}
+                  helperText={addErrors?.policyType?.message}
+                >
+                  <MenuItem value="Leave">Leave</MenuItem>
+                  <MenuItem value="Holiday">Holiday</MenuItem>
+                  <MenuItem value="None">None</MenuItem>
+                </TextField>
               )}
             />
             <Controller
@@ -324,6 +363,26 @@ const HrSettingsPolicies = () => {
                   error={!!errors?.policyName}
                   helperText={errors?.policyName?.message}
                 />
+              )}
+            />
+            <Controller
+              name="policyType"
+              control={control}
+              rules={{ required: "Policy Type is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Policy Type"
+                  size="small"
+                  select
+                  fullWidth
+                  error={!!errors?.policyType}
+                  helperText={errors?.policyType?.message}
+                >
+                  <MenuItem value="Leave">Leave</MenuItem>
+                  <MenuItem value="Holiday">Holiday</MenuItem>
+                  <MenuItem value="None">None</MenuItem>
+                </TextField>
               )}
             />
 

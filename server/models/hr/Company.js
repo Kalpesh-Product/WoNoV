@@ -59,6 +59,11 @@ const companySchema = new mongoose.Schema({
             type: String,
             required: true,
           },
+          policyType: {
+            type: String,
+            enum: ["Leave", "Holiday", "None"],
+            default: "None",
+          },
           documentLink: {
             type: String,
             required: true,
@@ -297,6 +302,11 @@ const companySchema = new mongoose.Schema({
       name: {
         type: String,
         required: true,
+      },
+      policyType: {
+        type: String,
+        enum: ["Leave", "Holiday", "None"],
+        default: "None",
       },
       documentLink: {
         type: String,

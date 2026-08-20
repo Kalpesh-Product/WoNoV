@@ -23,7 +23,6 @@ import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
 //import { Checkbox, ListItemText } from "@mui/material";
 import { City, State } from "country-state-city";
-import { LuImageUp } from "react-icons/lu";
 import MuiModal from "../../../../../components/MuiModal";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 dayjs.extend(customParseFormat);
@@ -36,6 +35,20 @@ const payrollDropdownOptions = {
   ],
   employeePF: ["10%", "12%"],
   employerPf: ["10%", "12%", "13%"],
+  esiContribution: [
+    "Restrict Contribution to 21,000 of ESI Gross",
+    "No Restriction",
+  ],
+  hraType: [
+    "Metropolitan (50%)",
+    "Non-Metropolitan (40%)",
+    "Custom",
+  ],
+  tdsCalculationBasedOn: [
+    "Tax Slabs (Salaried Employee)",
+    "Tax Percentage (Consultants)",
+  ],
+  incomeTaxRegime: ["Old Tax Regime", "New Tax Regime"],
 };
 
 
@@ -105,6 +118,7 @@ const EditDetails = () => {
     handleSubmit,
     reset,
     watch,
+    setValue,
     setError,
     clearErrors,
     formState: { errors },
@@ -112,8 +126,44 @@ const EditDetails = () => {
     defaultValues: {},
   });
   const selectedStateCode = watch("state");
+  const annualCtc = Number(watch("annualCtc")) || 0;
+  const includePFValue = String(watch("includePF") || "").toLowerCase();
+  const includeEsiValue = String(watch("includeEsi") || "").toLowerCase();
+  const hraTypeValue = watch("hraType");
+  const tdsCalculationValue = watch("tdsCalculationBasedOn");
+  const isEsiIneligible = annualCtc / 12 > 21000;
   const newPasswordValue = watch("newPassword");
   const confirmPasswordValue = watch("confirmPassword");
+
+  useEffect(() => {
+    if (includePFValue === "no") {
+      setValue("pfContributionRate", "");
+      setValue("employeePF", "");
+      setValue("employerPf", "");
+    }
+
+    if (isEsiIneligible) {
+      setValue("includeEsi", "No");
+      setValue("esiContribution", "");
+    } else if (includeEsiValue === "no") {
+      setValue("esiContribution", "");
+    }
+
+    if (hraTypeValue !== "Custom") {
+      setValue("hraPercentage", "");
+    }
+
+    if (tdsCalculationValue !== "Tax Percentage (Consultants)") {
+      setValue("taxPercentage", "");
+    }
+  }, [
+    hraTypeValue,
+    includeEsiValue,
+    includePFValue,
+    isEsiIneligible,
+    setValue,
+    tdsCalculationValue,
+  ]);
   const cityOptions = useMemo(
     () => {
       if (!selectedStateCode) {
@@ -170,6 +220,31 @@ const EditDetails = () => {
       return Array.isArray(response.data) ? response.data : [];
     },
   });
+  const { data: companyPolicies = [] } = useQuery({
+    queryKey: ["policies"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-documents/policies",
+      );
+      return Array.isArray(response.data?.policies)
+        ? response.data.policies
+        : [];
+    },
+  });
+  const policyOptionsByField = {
+    leavePolicy: companyPolicies.filter(
+      (policy) =>
+        policy?.policyType === "Leave" &&
+        policy?.isActive !== false &&
+        policy?.isDeleted !== true,
+    ),
+    holidayPolicy: companyPolicies.filter(
+      (policy) =>
+        policy?.policyType === "Holiday" &&
+        policy?.isActive !== false &&
+        policy?.isDeleted !== true,
+    ),
+  };
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPasswordVerified, setIsPasswordVerified] = useState(false);
@@ -231,25 +306,6 @@ const EditDetails = () => {
     if (typeof value === "string") return value;
     if (value instanceof File) return value.name;
     return "";
-  };
-  const handlePolicyFileChange = (file, onChange, fieldName) => {
-    if (!file) {
-      onChange("");
-      clearErrors(fieldName);
-      return;
-    }
-    const isPdfFile =
-      file.type === "application/pdf" || file.name?.toLowerCase().endsWith(".pdf");
-    if (!isPdfFile) {
-      setError(fieldName, {
-        type: "manual",
-        message: "Invalid file format. Please upload a PDF file.",
-      });
-      onChange("");
-      return;
-    }
-    clearErrors(fieldName);
-    onChange(file);
   };
   const openPolicyPreview = (url, title) => {
     if (!url) return;
@@ -793,6 +849,13 @@ const EditDetails = () => {
             formData?.professionalTaxExemption,
           ),
           includePF: normalizeBoolean(formData?.includePF),
+          includeEsi: normalizeBoolean(formData?.includeEsi),
+          esiContribution: formData?.esiContribution || "",
+          hraType: formData?.hraType || "",
+          hraPercentage: formData?.hraPercentage || "",
+          tdsCalculationBasedOn: formData?.tdsCalculationBasedOn || "",
+          taxPercentage: formData?.taxPercentage || "",
+          incomeTaxRegime: formData?.incomeTaxRegime || "",
         },
         salaryPackage: {
           amount: Number(formData?.annualCtc) || 0,
@@ -1158,6 +1221,18 @@ const EditDetails = () => {
                             <Controller
                               name={fieldKey}
                               control={control}
+                              rules={
+                                fieldKey === "mobilePhone"
+                                  ? {
+                                      required: "Mobile number is required",
+                                      pattern: {
+                                        value: /^[0-9]{10}$/,
+                                        message:
+                                          "Enter a valid 10-digit number",
+                                      },
+                                    }
+                                  : undefined
+                              }
                               render={({ field }) =>
                                 fieldKey === "gender" ? (
                                   <TextField
@@ -1201,6 +1276,16 @@ const EditDetails = () => {
                                       .replace(/^./, (str) => str.toUpperCase())
                                       .replace(/\bI\sD\b/gi, "ID")}
                                     fullWidth
+                                    inputProps={
+                                      fieldKey === "mobilePhone"
+                                        ? {
+                                            inputMode: "numeric",
+                                            maxLength: 10,
+                                          }
+                                        : undefined
+                                    }
+                                    helperText={errors?.[fieldKey]?.message}
+                                    error={Boolean(errors?.[fieldKey])}
                                   />
                                 )
                               }
@@ -1551,46 +1636,78 @@ const EditDetails = () => {
                                   ) : ["leavePolicy", "holidayPolicy"].includes(
                                     fieldKey,
                                   ) ? (
-                                  <>
-                                    <input
-                                      id={`${fieldKey}-upload`}
-                                      type="file"
-                                      accept=".pdf,application/pdf"
-                                      hidden
-                                      onChange={(e) =>
-                                        handlePolicyFileChange(
-                                          e.target.files?.[0],
-                                          field.onChange,
-                                          fieldKey,
-                                        )
-                                      }
-                                    />
                                     <TextField
+                                      {...field}
+                                      value={field.value || ""}
                                       size="small"
                                       label={fieldKey
                                         .replace(/([A-Z])/g, " $1")
                                         .replace(/^./, (str) =>
                                           str.toUpperCase(),
                                         )}
+                                      select
                                       fullWidth
-                                      value={
-                                        field.value?.name || field.value || ""
-                                      }
                                       helperText={errors?.[fieldKey]?.message}
                                       error={Boolean(errors?.[fieldKey])}
-                                      InputProps={{
-                                        readOnly: true,
-                                        endAdornment: (
-                                          <label
-                                            htmlFor={`${fieldKey}-upload`}
-                                            className="text-primary cursor-pointer"
-                                          >
-                                            <LuImageUp size={20} />
-                                          </label>
-                                        ),
+                                      SelectProps={{
+                                        renderValue: (selected) =>
+                                          policyOptionsByField[fieldKey].find(
+                                            (policy) =>
+                                              policy.documentLink === selected,
+                                          )?.name ||
+                                          getPolicyDisplayName(selected),
                                       }}
-                                    />
-                                  </>
+                                    >
+                                      <MenuItem value="" disabled>
+                                        Select {fieldKey === "leavePolicy" ? "Leave" : "Holiday"} Policy
+                                      </MenuItem>
+                                      {employeeData?.[fieldKey] &&
+                                        !policyOptionsByField[fieldKey].some(
+                                          (policy) =>
+                                            policy.documentLink ===
+                                            employeeData[fieldKey],
+                                        ) && (
+                                          <MenuItem
+                                            value={employeeData[fieldKey]}
+                                          >
+                                            {getPolicyDisplayName(
+                                              employeeData[fieldKey],
+                                            )}{" "}
+                                            (Current)
+                                          </MenuItem>
+                                        )}
+                                      {policyOptionsByField[fieldKey].length ? (
+                                        policyOptionsByField[fieldKey].map(
+                                          (policy) => (
+                                            <MenuItem
+                                              key={policy._id}
+                                              value={policy.documentLink}
+                                              className="flex justify-between gap-4"
+                                            >
+                                              <span>{policy.name}</span>
+                                              <a
+                                                href={policy.documentLink}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-primary underline"
+                                                onMouseDown={(event) =>
+                                                  event.stopPropagation()
+                                                }
+                                                onClick={(event) =>
+                                                  event.stopPropagation()
+                                                }
+                                              >
+                                                View
+                                              </a>
+                                            </MenuItem>
+                                          ),
+                                        )
+                                      ) : (
+                                        <MenuItem disabled>
+                                          No {fieldKey === "leavePolicy" ? "leave" : "holiday"} policies found
+                                        </MenuItem>
+                                      )}
+                                    </TextField>
                                 ) : (
                                   <TextField
                                     {...field}
@@ -1969,17 +2086,78 @@ const EditDetails = () => {
                         "pfContributionRate",
                         "employeePF",
                         "employerPf",
-                      ].map((fieldKey) => (
+                        "includeEsi",
+                        "esiContribution",
+                        "hraType",
+                        "hraPercentage",
+                        "tdsCalculationBasedOn",
+                        "taxPercentage",
+                        "incomeTaxRegime",
+                      ]
+                        .filter((fieldKey) => {
+                          if (
+                            includePFValue === "no" &&
+                            [
+                              "pfContributionRate",
+                              "employeePF",
+                              "employerPf",
+                            ].includes(fieldKey)
+                          ) {
+                            return false;
+                          }
+                          if (
+                            fieldKey === "esiContribution" &&
+                            includeEsiValue === "no" &&
+                            !isEsiIneligible
+                          ) {
+                            return false;
+                          }
+                          if (
+                            fieldKey === "hraPercentage" &&
+                            hraTypeValue !== "Custom"
+                          ) {
+                            return false;
+                          }
+                          if (
+                            fieldKey === "taxPercentage" &&
+                            tdsCalculationValue !==
+                              "Tax Percentage (Consultants)"
+                          ) {
+                            return false;
+                          }
+                          return true;
+                        })
+                        .map((fieldKey) => (
                         <div key={fieldKey}>
                           {isEditing ? (
                             <Controller
                               name={fieldKey}
                               control={control}
+                              rules={
+                                ["hraPercentage", "taxPercentage"].includes(
+                                  fieldKey,
+                                )
+                                  ? {
+                                      required: `${fieldKey === "hraPercentage" ? "HRA" : "Tax"} percentage is required`,
+                                      min: {
+                                        value: 0,
+                                        message:
+                                          "Percentage cannot be negative",
+                                      },
+                                      max: {
+                                        value: 100,
+                                        message:
+                                          "Percentage cannot exceed 100",
+                                      },
+                                    }
+                                  : undefined
+                              }
                               render={({ field }) =>
                                 [
                                   "includeInPayroll",
                                   "professionalTaxExemption",
                                   "includePF",
+                                  "includeEsi",
                                 ].includes(fieldKey) ? (
                                   <TextField
                                     {...field}
@@ -1995,6 +2173,16 @@ const EditDetails = () => {
                                     }
                                     select
                                     size="small"
+                                    disabled={
+                                      fieldKey === "includeEsi" &&
+                                      isEsiIneligible
+                                    }
+                                    helperText={
+                                      fieldKey === "includeEsi" &&
+                                      isEsiIneligible
+                                        ? "ESI cannot be enabled when monthly CTC exceeds INR 21,000"
+                                        : undefined
+                                    }
                                     label={fieldKey
                                       .replace(/([A-Z])/g, " $1")
                                       .replace(/^./, (str) => str.toUpperCase())
@@ -2013,6 +2201,10 @@ const EditDetails = () => {
                                     value={field.value || ""}
                                     select
                                     size="small"
+                                    disabled={
+                                      fieldKey === "esiContribution" &&
+                                      isEsiIneligible
+                                    }
                                     label={fieldKey
                                       .replace(/([A-Z])/g, " $1")
                                       .replace(/^./, (str) => str.toUpperCase())
@@ -2034,11 +2226,33 @@ const EditDetails = () => {
                                   <TextField
                                     {...field}
                                     size="small"
+                                    type={
+                                      [
+                                        "hraPercentage",
+                                        "taxPercentage",
+                                      ].includes(fieldKey)
+                                        ? "number"
+                                        : "text"
+                                    }
+                                    inputProps={
+                                      [
+                                        "hraPercentage",
+                                        "taxPercentage",
+                                      ].includes(fieldKey)
+                                        ? {
+                                            min: 0,
+                                            max: 100,
+                                            step: "0.01",
+                                          }
+                                        : undefined
+                                    }
                                     label={fieldKey
                                       .replace(/([A-Z])/g, " $1")
                                       .replace(/^./, (str) => str.toUpperCase())
                                       .replace(/\bP\sF\b/gi, "PF")}
                                     fullWidth
+                                    helperText={errors?.[fieldKey]?.message}
+                                    error={Boolean(errors?.[fieldKey])}
                                   />
                                 )
                               }
@@ -2064,7 +2278,7 @@ const EditDetails = () => {
                             </div>
                           )}
                         </div>
-                      ))}
+                        ))}
                 </div>
               </div>
                <div>
