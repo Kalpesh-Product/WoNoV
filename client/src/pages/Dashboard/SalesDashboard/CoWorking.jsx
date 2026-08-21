@@ -5,7 +5,7 @@ import {
   TextField,
 } from "@mui/material";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useMutation } from "@tanstack/react-query";
@@ -34,6 +34,47 @@ const normalizeAmount = (value) => {
   if (value === null || value === undefined || value === "") return 0;
   const parsed = Number(String(value).replace(/,/g, ""));
   return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const normalizeForMatch = (value) =>
+  String(value || "")
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .toLowerCase();
+
+const resolveClientIdFromRow = (row, clientList = []) => {
+  const directClient = row?.clients || row?.client;
+  if (directClient) {
+    if (typeof directClient === "object") {
+      return String(directClient._id || directClient.id || directClient);
+    }
+    return String(directClient);
+  }
+
+  const rowNames = [row?.clientName, row?.clientInvoiceName]
+    .filter(Boolean)
+    .map(normalizeForMatch)
+    .filter(Boolean);
+
+  if (!rowNames.length) return "";
+
+  const matchedClient = clientList.find((client) => {
+    const clientNames = [client?.clientName, client?.clientInvoiceName, client?.brandName]
+      .filter(Boolean)
+      .map(normalizeForMatch)
+      .filter(Boolean);
+
+    return rowNames.some((rowName) =>
+      clientNames.some(
+        (clientName) =>
+          clientName === rowName ||
+          clientName.includes(rowName) ||
+          rowName.includes(clientName),
+      ),
+    );
+  });
+
+  return matchedClient?._id ? String(matchedClient._id) : "";
 };
 
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
@@ -143,7 +184,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
-  const { control, handleSubmit, reset } = useForm();
+  const { control, handleSubmit, reset, setValue, getValues } = useForm();
 
   const { data: coworkingClients = [] } = useQuery({
     queryKey: ["coworkingInvoiceClients"],
@@ -157,6 +198,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
     setEditRow(row);
     reset({
       ...row,
+      clients: resolveClientIdFromRow(row, coworkingClients),
       invoiceFile: row.invoice?.link
         ? {
             name: row.invoice?.name || "",
@@ -171,6 +213,22 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
       rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
     });
   };
+
+  useEffect(() => {
+    if (!showInvoiceProjections || !editRow) return;
+
+    const resolvedClientId = resolveClientIdFromRow(editRow, coworkingClients);
+    if (!resolvedClientId) return;
+
+    const currentClientValue = getValues("clients");
+    if (String(currentClientValue || "") !== String(resolvedClientId)) {
+      setValue("clients", resolvedClientId, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+    }
+  }, [showInvoiceProjections, coworkingClients, editRow, getValues, setValue]);
 
   const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
     mutationFn: async (values) => {
@@ -309,6 +367,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
       revenue: monthData?.clients?.map((client) => ({
         id: serialNumber++,
        _id: client._id,
+        clients: client.clients,
         service: client.service,
         clientName: client.clientName,
         clientInvoiceName: "",
@@ -430,6 +489,19 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               headerName: "Next Increment Date",
               field: "nextIncrementDate",
             },
+            ...(showInvoiceProjections
+              ? [
+                  { headerName: "Invoice Name", field: "invoiceName", flex: 1,pinned: "right" },
+                  {
+                    headerName: "Invoice Upload Date",
+                    field: "invoiceUploadedAt",
+                    flex: 1,
+                    pinned: "right",
+                    valueFormatter: (params) =>
+                      params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+                  },
+                ]
+              : []),
             {
               headerName: "Rent Status",
               field: "rentStatus",
