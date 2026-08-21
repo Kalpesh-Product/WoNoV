@@ -36,66 +36,6 @@ const normalizeAmount = (value) => {
   return Number.isNaN(parsed) ? 0 : parsed;
 };
 
-
-// const CoworkingInvoiceActions = () => {
-//   const [anchorEl, setAnchorEl] = useState(null);
-
-//   return (
-//     <div className="flex items-center justify-center">
-//       <IconButton size="small" aria-label="View invoice details">
-//         <MdOutlineRemoveRedEye size={20} />
-//       </IconButton>
-//       <IconButton
-//         size="small"
-//         aria-label="Open invoice actions"
-//         onClick={(event) => setAnchorEl(event.currentTarget)}
-//       >
-//         <MoreVertIcon fontSize="small" />
-//       </IconButton>
-//       <Menu
-//         anchorEl={anchorEl}
-//         open={Boolean(anchorEl)}
-//         onClose={() => setAnchorEl(null)}
-//       >
-//         <MenuItem onClick={() => setAnchorEl(null)}>Edit</MenuItem>
-//       </Menu>
-//     </div>
-//   );
-// };
-
-// const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
-//   const targetMonth = dayjs(selectedDate).startOf("month");
-//   if (!targetMonth.isValid() || targetMonth.isBefore(dayjs().startOf("month"))) {
-//     return [];
-//   }
-
-//   const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
-//   if (!validRows.length) return [];
-
-//   const latestMonth = validRows.reduce((latest, row) => {
-//     const rowMonth = dayjs(row.rentDate).startOf("month");
-//     return rowMonth.isAfter(latest) ? rowMonth : latest;
-//   }, dayjs(validRows[0].rentDate).startOf("month"));
-
-//   return validRows
-//     .filter((row) => dayjs(row.rentDate).isSame(latestMonth, "month"))
-//     .map((row, index) => {
-//       const originalRentDate = dayjs(row.rentDate);
-//       const projectedRentDate = targetMonth.date(
-//         Math.min(originalRentDate.date(), targetMonth.daysInMonth())
-//       );
-
-//       return {
-//         ...row,
-//         id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
-//         rentDate: projectedRentDate.toISOString(),
-//         rentStatus: "Unpaid",
-//         normalizedRentStatus: "unpaid",
-//         isProjectedInvoice: true,
-//       };
-//     });
-// };
-
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
   <div className="flex items-center justify-start gap-0.5 w-full pl-2">
     <IconButton
@@ -116,6 +56,9 @@ const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
 
     <ThreeDotMenu
       rowId={row?._id || row?.id}
+      disabled={dayjs(row?.rentDate)
+        .startOf("month")
+        .isAfter(dayjs().startOf("month"))}
       menuItems={[
         {
           label: "Edit",
@@ -126,7 +69,21 @@ const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
   </div>
 );
 
-const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
+// const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
+  const getClientIdentity = (row) => {
+  const clientId = row?.clients?._id || row?.clients;
+  if (clientId) return `id:${String(clientId)}`;
+
+  return `name:${String(row?.clientName || row?.clientInvoiceName || "")
+    .trim()
+    .toLowerCase()}`;
+};
+
+const getUnpaidInvoiceRowsForMonth = (
+  rows,
+  selectedDate,
+  existingMonthRows = [],
+) => {
   const targetMonth = dayjs(selectedDate).startOf("month");
   if (!targetMonth.isValid() || targetMonth.isBefore(dayjs().startOf("month"))) {
     return [];
@@ -134,14 +91,36 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
 
   const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
   if (!validRows.length) return [];
+  const currentMonth = dayjs().startOf("month");
+  const sourceRows = validRows.filter((row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return (
+      rowMonth.isBefore(currentMonth) &&
+      getNormalizedRentStatus(row.rentStatus) === "paid"
+    );
+  });
+  if (!sourceRows.length) return [];
 
-  const latestMonth = validRows.reduce((latest, row) => {
+  const latestSourceMonth = sourceRows.reduce((latest, row) => {
     const rowMonth = dayjs(row.rentDate).startOf("month");
     return rowMonth.isAfter(latest) ? rowMonth : latest;
-  }, dayjs(validRows[0].rentDate).startOf("month"));
+  }, dayjs(sourceRows[0].rentDate).startOf("month"));
 
-  return validRows
-    .filter((row) => dayjs(row.rentDate).isSame(latestMonth, "month"))
+  const templateRows = sourceRows.filter((row) =>
+    dayjs(row.rentDate).isSame(latestSourceMonth, "month"),
+  );
+
+  const existingClients = new Set(existingMonthRows.map(getClientIdentity));
+  const projectedClients = new Set();
+
+  return templateRows
+    .filter((row) => !existingClients.has(getClientIdentity(row)))
+    .filter((row) => {
+      const identity = getClientIdentity(row);
+      if (projectedClients.has(identity)) return false;
+      projectedClients.add(identity);
+      return true;
+    })
     .map((row, index) => {
       const originalRentDate = dayjs(row.rentDate);
       const projectedRentDate = targetMonth.date(
@@ -394,8 +373,14 @@ const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
          preserveCurrentMonthRange={showInvoiceProjections}
           getMissingRangeData={
             showInvoiceProjections
-              ? (selectedDate) =>
-                  getUnpaidInvoiceRowsForMonth(baseRevenueData, selectedDate)
+              // ? (selectedDate) =>
+              //     getUnpaidInvoiceRowsForMonth(baseRevenueData, selectedDate)
+               ? (selectedDate, existingMonthRows) =>
+                  getUnpaidInvoiceRowsForMonth(
+                    baseRevenueData,
+                    selectedDate,
+                    existingMonthRows,
+                  )
               : undefined
           }
           columns={[
