@@ -259,6 +259,200 @@ const getFinancialYear = (dateValue) => {
     [selectedFiscalYearRevenue],
   );
 
+  const revenueTableColumns = [
+    {
+      headerName: "Sr No",
+      field: "srNo",
+      width: 300,
+      minWidth: 80,
+    },
+    {
+      headerName: "Client Name",
+      field: "clientName",
+      flex: 1.9,
+      minWidth: 320,
+    },
+    {
+      headerName: "Revenue (INR)",
+      field: "revenue",
+      flex: 2.5,
+      minWidth: 170,
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "Status",
+      field: "rentStatus",
+      flex: 2.5,
+      cellRenderer: (params) => (
+        <div className="w-full flex justify-center">
+          <StatusChip status={params.value} />
+        </div>
+      ),
+    },
+  ];
+
+  const billingTableColumns = [
+    {
+      headerName: "Sr No",
+      field: "srNo",
+      width: 80,
+      minWidth: 80,
+    },
+    {
+      headerName: "Client Name",
+      field: "clientName",
+      flex: 1.7,
+      minWidth: 220,
+    },
+    {
+      headerName: "Channel",
+      field: "channel",
+      width: 120,
+      minWidth: 120,
+    },
+    {
+      headerName: "Revenue (INR)",
+      field: "revenue",
+      width: 160,
+      minWidth: 160,
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "No. of Desks",
+      field: "noOfDesks",
+      width: 130,
+      minWidth: 130,
+    },
+    {
+      headerName: "Desk Rate",
+      field: "deskRate",
+      width: 150,
+      minWidth: 150,
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Total Term",
+      field: "totalTerm",
+      width: 120,
+      minWidth: 120,
+    },
+    {
+      headerName: "Rent Date",
+      field: "rentDate",
+      width: 130,
+      minWidth: 130,
+    },
+    {
+      headerName: "Past Due Date",
+      field: "pastDueDate",
+      width: 140,
+      minWidth: 140,
+    },
+    {
+      headerName: "Annual Increment (%)",
+      field: "annualIncrement",
+      width: 170,
+      minWidth: 170,
+    },
+    {
+      headerName: "Next Increment Date",
+      field: "nextIncrementDate",
+      width: 170,
+      minWidth: 170,
+    },
+    {
+      headerName: "Invoice Link",
+      field: "invoiceLink",
+      pinned: "right",
+      width: 150,
+      minWidth: 150,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      cellRenderer: ({ value }) =>
+        value ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary underline"
+          >
+            View PDF
+          </a>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      headerName: "Invoice Upload Date",
+      field: "invoiceUploadedAt",
+      pinned: "right",
+      width: 170,
+      minWidth: 170,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      valueFormatter: ({ value }) =>
+        value ? dayjs(value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "Status",
+      field: "rentStatus",
+      pinned: "right",
+      width: 130,
+      minWidth: 130,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      headerName: "Action",
+      field: "actions",
+      pinned: "right",
+      width: 110,
+      minWidth: 110,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      sortable: false,
+      filter: false,
+      cellRenderer: ({ data }) => (
+        <div className="flex items-center">
+          <IconButton
+            size="small"
+            onClick={() => setViewRow(data)}
+            aria-label="View invoice"
+          >
+            <MdOutlineRemoveRedEye size={18} />
+          </IconButton>
+
+          <ThreeDotMenu
+            rowId={data._id}
+            menuItems={[
+              {
+                label: "Edit",
+                onClick: () => openEdit(data),
+              },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
+
   const useLakhsScale = maxVirtualOfficeAmount >= 100000;
 
   const options = useMemo(
@@ -392,166 +586,9 @@ const getFinancialYear = (dateValue) => {
                   )
               : undefined
           }
-          columns={[
-            {
-              headerName: "Sr No",
-              field: "srNo",
-              width: 80,
-              minWidth: 80,
-            },
-            {
-              headerName: "Client Name",
-              field: "clientName",
-              flex: 1.6,
-              minWidth: 220,
-            },
-            { headerName: "Channel", field: "channel"},
-            {
-              headerName: "Revenue (INR)",
-              field: "revenue",
-             
-              cellRenderer: (params) => inrFormat(params.value || 0),
-            },
-            {
-              headerName: "No. of Desk",
-              field: "noOfDesks",
-            
-            },
-            {
-              headerName: "Desk Rate",
-              field: "deskRate",
-             
-              cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
-            },
-            { headerName: "Total Term", field: "totalTerm" },
-            {
-              headerName: "Rent Date",
-              field: "rentDate",
-             
-              valueFormatter: ({ value }) =>
-                value ? dayjs(value).format("DD-MM-YYYY") : "-",
-            },
-            {
-              headerName: "Past Due Date",
-              field: "pastDueDate",
-             
-              valueFormatter: ({ value }) =>
-                value ? dayjs(value).format("DD-MM-YYYY") : "-",
-            },
-            {
-              headerName: "Annual Increment",
-              field: "annualIncrement",
-              
-              cellRenderer: (params) =>
-                params.value !== undefined &&
-                params.value !== null &&
-                params.value !== ""
-                  ? `${params.value}%`
-                  : "-",
-            },
-            {
-              headerName: "Next Increment Date",
-              field: "nextIncrementDate",
-             
-              valueFormatter: ({ value }) =>
-                value ? dayjs(value).format("DD-MM-YYYY") : "-",
-            },
-            ...(showInvoiceProjections
-  ? [
-      {
-        headerName: "Invoice Link",
-        field: "invoiceLink",
-        pinned: "right",
-        flex:1,
-        headerClass: "vo-right-pinned-header",
-        cellClass: "vo-right-pinned-cell",
-        cellStyle: {
-          paddingLeft: "16px",
-          paddingRight: "16px",
-        },
-        cellRenderer: ({ value }) =>
-          value ? (
-            <a
-              href={value}
-              target="_blank"
-              rel="noreferrer"
-              className="text-primary underline"
-            >
-              View PDF
-            </a>
-          ) : (
-            "-"
-          ),
-      },
-      {
-        headerName: "Invoice Upload Date",
-        field: "invoiceUploadedAt",
-        pinned: "right",
-         flex:1,
-        headerClass: "vo-right-pinned-header",
-        cellClass: "vo-right-pinned-cell",
-        cellStyle: {
-          paddingLeft: "16px",
-          paddingRight: "16px",
-        },
-        valueFormatter: ({ value }) =>
-          value
-            ? dayjs(value).format("DD-MM-YYYY")
-            : "-",
-      },
-      {
-        headerName: "Status",
-        field: "rentStatus",
-        pinned: "right",
-        flex:1,
-        headerClass: "vo-right-pinned-header",
-        cellClass: "vo-right-pinned-cell",
-        cellStyle: {
-          paddingLeft: "16px",
-          paddingRight: "16px",
-        },
-        cellRenderer: (params) => (
-          <StatusChip status={params.value} />
-        ),
-      },
-      {
-        headerName: "Action",
-        field: "actions",
-        pinned: "right",
-       flex:1,
-        headerClass: "vo-right-pinned-header",
-        cellClass: "vo-right-pinned-cell",
-        cellStyle: {
-          paddingLeft: "16px",
-          paddingRight: "16px",
-        },
-        sortable: false,
-        filter: false,
-        cellRenderer: ({ data }) => (
-          <div className="flex items-center">
-            <IconButton
-              size="small"
-              onClick={() => setViewRow(data)}
-              aria-label="View invoice"
-            >
-              <MdOutlineRemoveRedEye size={18} />
-            </IconButton>
-
-            <ThreeDotMenu
-              rowId={data._id}
-              menuItems={[
-                {
-                  label: "Edit",
-                  onClick: () => openEdit(data),
-                },
-              ]}
-            />
-          </div>
-        ),
-      },
-    ]
-  : []),
-          ]}
+          columns={
+            showInvoiceProjections ? billingTableColumns : revenueTableColumns
+          }
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
@@ -570,7 +607,7 @@ const getFinancialYear = (dateValue) => {
 
       <DetalisFormatted
         title="Client Invoice Name"
-        detail={viewRow.clientName || viewRow.clientInvoiceName || "-"}
+        detail={viewRow.clientInvoiceName || viewRow.clientName || "-"}
       />
 
       <DetalisFormatted
