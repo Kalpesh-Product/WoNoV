@@ -205,7 +205,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             url: row.invoice.link,
           }
         : null,
-      clientInvoiceName: row.invoice?.name || "",
+      clientInvoiceName: row.clientName || row.clientInvoiceName || row.invoice?.name || "",
       invoiceUploadedAt: dayjs(),
       rentDate: dayjs(row.rentDate),
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
@@ -491,7 +491,25 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             },
             ...(showInvoiceProjections
               ? [
-                  { headerName: "Invoice Name", field: "invoiceName", flex: 1,pinned: "right" },
+                  {
+                    headerName: "Invoice Link",
+                    field: "invoiceLink",
+                    flex: 1,
+                    pinned: "right",
+                    cellRenderer: (params) =>
+                      params.value ? (
+                        <a
+                          href={params.value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >
+                          View PDF
+                        </a>
+                      ) : (
+                        "-"
+                      ),
+                  },
                   {
                     headerName: "Invoice Upload Date",
                     field: "invoiceUploadedAt",
@@ -557,8 +575,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             </span> */}
             <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
             <DetalisFormatted
-              title="Invoice Name"
-              detail={viewRow.invoice?.name || "-"}
+              title="Client Invoice Name"
+              detail={viewRow.clientName || viewRow.clientInvoiceName || "-"}
             />
             <DetalisFormatted
               title="Invoice Link"
@@ -605,7 +623,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               title="Next Increment Date"
               detail={viewRow.nextIncrementDate ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY") : "-"}
             />
-            <DetalisFormatted title="Paid Status" detail={viewRow.rentStatus || "-"} />
+            <DetalisFormatted title="Paid/Rent Status" detail={viewRow.rentStatus || "-"} />
           </div>
         </MuiModal>
       )}
@@ -630,6 +648,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             label="Select Client"
             size="small"
             fullWidth
+            disabled
           >
             {coworkingClients.map((client) => (
               <MenuItem key={client._id} value={client._id}>
@@ -642,7 +661,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
 
       {[
         ["clientName", "Client Name", "text"],
-        ["clientInvoiceName", "Invoice Name", "text"],
+        ["clientInvoiceName", "Client Invoice Name", "text"],
         ["channel", "Channel", "text"],
         ["noOfDesks", "No. of Desks", "number"],
         // ["occupation", "Occupation", "text"],
@@ -657,15 +676,16 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           name={name}
           control={control}
           render={({ field }) => (
-            <TextField
-              {...field}
-              type={type}
-              label={label}
-              size="small"
-              fullWidth
-            />
-          )}
-        />
+          <TextField
+            {...field}
+            type={type}
+            label={label}
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+      />
       ))}
 
       {[
@@ -684,12 +704,12 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               value={field.value ?? null}
               label={label}
               format="DD-MM-YYYY"
-              disabled={name === "invoiceUploadedAt"}
+              disabled
               slotProps={{
                 textField: {
                   size: "small",
                   fullWidth: true,
-                  disabled: name === "invoiceUploadedAt",
+                  disabled: true,
                 },
               }}
             />
@@ -704,7 +724,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           <TextField
             {...field}
             select
-            label="Paid Status"
+            label="Paid/Rent Status"
             size="small"
             fullWidth
           >
