@@ -287,6 +287,90 @@ const fetchUserLeaves = async (req, res, next) => {
   }
 };
 
+const fetchUserLeaveSummary = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const requestedYear = Number(req.query.year);
+    const year = Number.isInteger(requestedYear)
+      ? requestedYear
+      : new Date().getFullYear();
+
+    const user = await UserData.findOne({ empId: id })
+      .select("_id employeeType.leavesCount")
+      .lean();
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const yearStart = new Date(year, 0, 1);
+    const nextYearStart = new Date(year + 1, 0, 1);
+    const yearLeaves = await Leave.find({
+      takenBy: user._id,
+      status: { $ne: "Rejected" },
+      fromDate: { $gte: yearStart, $lt: nextYearStart },
+    })
+      .select("hours leaveType")
+      .lean();
+
+    const leaveSummary = {
+      privileged: { allotted: 0, used: 0 },
+      sick: { allotted: 0, used: 0 },
+    };
+    const getLeaveCategory = (leaveType) => {
+      const normalizedType = String(leaveType || "").trim().toLowerCase();
+      if (normalizedType.includes("sick")) return "sick";
+      if (
+        normalizedType.includes("privileged") ||
+        normalizedType.includes("priviledged") ||
+        normalizedType.includes("abrupt")
+      ) {
+        return "privileged";
+      }
+      return null;
+    };
+
+    (user.employeeType?.leavesCount || []).forEach((leave) => {
+      const category = getLeaveCategory(leave?.leaveType);
+      if (category) {
+        leaveSummary[category].allotted += Number(leave?.count) || 0;
+      }
+    });
+    yearLeaves.forEach((leave) => {
+      const category = getLeaveCategory(leave?.leaveType);
+      if (category) {
+        leaveSummary[category].used += (Number(leave?.hours) || 0) / 9;
+      }
+    });
+
+    Object.values(leaveSummary).forEach((summary) => {
+      summary.allotted = Number(summary.allotted.toFixed(2));
+      summary.used = Number(summary.used.toFixed(2));
+      summary.overflowed = Number(
+        Math.max(summary.used - summary.allotted, 0).toFixed(2),
+      );
+      summary.remaining = Number(
+        Math.max(summary.allotted - summary.used, 0).toFixed(2),
+      );
+    });
+
+    const allotted = leaveSummary.privileged.allotted + leaveSummary.sick.allotted;
+    const used = leaveSummary.privileged.used + leaveSummary.sick.used;
+    const roundedAllotted = Number(allotted.toFixed(2));
+    const roundedUsed = Number(used.toFixed(2));
+
+    return res.status(200).json({
+      year,
+      allotted: roundedAllotted,
+      overflowed: Number(Math.max(roundedUsed - roundedAllotted, 0).toFixed(2)),
+      remaining: Number(Math.max(roundedAllotted - roundedUsed, 0).toFixed(2)),
+      leaveTypes: leaveSummary,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const approveLeave = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Approve Leave Request";
@@ -484,6 +568,7 @@ module.exports = {
   fetchAllLeaves,
   fetchPastLeaves,
   fetchUserLeaves,
+  fetchUserLeaveSummary,
   approveLeave,
   rejectLeave,
   bulkInsertLeaves,
