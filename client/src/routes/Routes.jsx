@@ -962,7 +962,13 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
-                                element: <VirtualOffice showChart={false} />,
+                               // element: <VirtualOffice showChart={false} />,
+                                 element: (
+                                  <VirtualOffice
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "workation-revenue-invoicing",

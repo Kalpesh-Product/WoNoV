@@ -3,6 +3,9 @@ const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
 const { parseAmount } = require("../../utils/parseAmount");
+const Company = require("../../models/hr/Company");
+const { handleDocumentUpload, handleFileDelete } = require("../../config/s3Config");
+const { PDFDocument } = require("pdf-lib");
 const {
   fetchVirtualOfficeRevenueReportService,
 } = require("../../services/reports/revenue");
@@ -93,6 +96,76 @@ const getVirtualOfficeRevenue = async (req, res, next) => {
 
     return res.status(200).json(payload);
   } catch (error) {
+    next(error);
+  }
+};
+const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
+  let uploadedInvoiceId = null;
+  try {
+    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const company = await Company.findById(req.company).lean();
+    if (!company) return res.status(404).json({ message: "Company not found" });
+
+    const existingRevenue = revenueId
+      ? await VirtualOfficeRevenue.findOne({ _id: revenueId, company: req.company }).lean()
+      : null;
+    const previousInvoiceId = existingRevenue?.invoice?.id;
+    const allowedFields = [
+      "client", "location", "channel", "taxableAmount", "revenue", "totalTerm",
+      "dueTerm", "rentDate", "rentStatus", "pastDueDate", "annualIncrement",
+      "nextIncrementDate", "service", "invoiceUploadedAt",
+    ];
+    const payload = allowedFields.reduce((result, field) => {
+      if (updates[field] !== undefined) result[field] = updates[field];
+      return result;
+    }, {});
+
+    if (payload.invoiceUploadedAt) payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Invalid file type. Allowed types: PDF, DOC, DOCX" });
+      }
+      let buffer = req.file.buffer;
+      if (req.file.mimetype === "application/pdf") {
+        const document = await PDFDocument.load(buffer);
+        document.setTitle(req.file.originalname.split(".")[0] || "Invoice");
+        buffer = await document.save();
+      }
+      const result = await handleDocumentUpload(
+        buffer,
+        `${company.companyName}/virtual-office-revenues/${existingRevenue?.client || payload.client || "client"}`,
+        req.file.originalname,
+      );
+      if (!result?.public_id) return res.status(500).json({ message: "Failed to upload document" });
+      uploadedInvoiceId = result.public_id;
+      const date = payload.invoiceUploadedAt || new Date();
+      payload.invoice = { name: req.file.originalname, link: result.secure_url, id: result.public_id, date };
+      payload.invoiceUploadedAt = date;
+    }
+
+    const revenue = revenueId && !isProjected
+      ? await VirtualOfficeRevenue.findOneAndUpdate(
+          { _id: revenueId, company: req.company }, payload, { new: true, runValidators: true },
+        )
+      : await VirtualOfficeRevenue.create({ ...payload, company: req.company });
+    if (!revenue) return res.status(404).json({ message: "Revenue not found" });
+    if (
+      uploadedInvoiceId &&
+      previousInvoiceId &&
+      previousInvoiceId !== uploadedInvoiceId
+    ) {
+      await handleFileDelete(previousInvoiceId).catch(() => null);
+    }
+    return res.status(isProjected ? 201 : 200).json({
+      message: "Virtual office invoice updated successfully", revenue,
+    });
+  } catch (error) {
+    if (uploadedInvoiceId) await handleFileDelete(uploadedInvoiceId).catch(() => null);
     next(error);
   }
 };
@@ -254,4 +327,5 @@ module.exports = {
   getVirtualOfficeRevenue,
   createVirtualOfficeRevenue,
   bulkInsertVirtualOfficeRevenue,
+  updateVirtualOfficeRevenueInvoice,
 };

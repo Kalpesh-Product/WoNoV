@@ -84,6 +84,7 @@ const {
   getVirtualOfficeRevenue,
   createVirtualOfficeRevenue,
   bulkInsertVirtualOfficeRevenue,
+  updateVirtualOfficeRevenueInvoice,
 } = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
 const {
@@ -186,6 +187,11 @@ router.post(
   bulkInsertAlternateRevenue,
 );
 router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
+router.patch(
+  "/virtual-office-revenue-invoice",
+  upload.single("client-invoice"),
+  updateVirtualOfficeRevenueInvoice,
+);
 router.post(
   "/bulk-insert-virtual-office-revenue",
   upload.single("virtual-office-revenue"),

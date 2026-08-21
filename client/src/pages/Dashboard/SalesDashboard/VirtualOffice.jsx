@@ -1,11 +1,23 @@
 import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@mui/material";
+import { IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useMutation } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { queryClient } from "../../../main";
 
 const getNormalizedPaymentStatus = (status) => {
   if (typeof status === "string") return status.trim().toLowerCase();
@@ -14,6 +26,65 @@ const getNormalizedPaymentStatus = (status) => {
 
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
+const getClientIdentity = (row) => {
+  const id = row?.client?._id || row?.client;
+  if (id) return `id:${String(id)}`;
+  return `name:${String(row?.clientName || "").trim().toLowerCase()}`;
+};
+
+const getUnpaidInvoiceRowsForMonth = (
+  rows,
+  selectedDate,
+  existingMonthRows = [],
+) => {
+  const targetMonth = dayjs(selectedDate).startOf("month");
+  const currentMonth = dayjs().startOf("month");
+
+  if (!targetMonth.isValid() || targetMonth.isBefore(currentMonth)) return [];
+
+  const historicalPaidRows = rows.filter((row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return (
+      rowMonth.isValid() &&
+      rowMonth.isBefore(currentMonth) &&
+      getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid"
+    );
+  });
+  if (!historicalPaidRows.length) return [];
+
+  const latestSourceMonth = historicalPaidRows.reduce((latest, row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return rowMonth.isAfter(latest) ? rowMonth : latest;
+  }, dayjs(historicalPaidRows[0].rentDate).startOf("month"));
+
+  const existingClients = new Set(existingMonthRows.map(getClientIdentity));
+  const projectedClients = new Set();
+
+  return historicalPaidRows
+    .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
+    .filter((row) => !existingClients.has(getClientIdentity(row)))
+    .filter((row) => {
+      const identity = getClientIdentity(row);
+      if (projectedClients.has(identity)) return false;
+      projectedClients.add(identity);
+      return true;
+    })
+    .map((row, index) => ({
+      ...row,
+      id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+      rentDate: targetMonth
+        .date(Math.min(dayjs(row.rentDate).date(), targetMonth.daysInMonth()))
+        .toISOString(),
+      rentStatus: "Unpaid",
+      normalizedStatus: "unpaid",
+      invoice: null,
+      invoiceLink: "",
+      invoiceUploadedAt: null,
+      isProjectedInvoice: true,
+    }));
+};
+
 
 const getCurrentFinancialYearLabel = () => {
   const today = new Date();
@@ -34,8 +105,12 @@ const getFinancialYear = (dateValue) => {
 };
 
 // const VirtualOffice = () => {
-  const VirtualOffice = ({ showChart = true }) => {
+  //const VirtualOffice = ({ showChart = true }) => {
+  const VirtualOffice = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const { control, handleSubmit, reset } = useForm();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
   );
@@ -64,10 +139,66 @@ const getFinancialYear = (dateValue) => {
         : virtualOfficeRevenue.map((item) => ({
             ...item,
             clientName: item.client?.clientName,
-            normalizedStatus: getNormalizedPaymentStatus(item.status),
+             normalizedStatus: getNormalizedPaymentStatus(
+              item.rentStatus ?? item.status,
+            ),
+            rentStatus: item.rentStatus || (item.status ? "Paid" : "Unpaid"),
+            invoiceLink: item.invoice?.link || "",
+            invoiceUploadedAt: item.invoice?.date || item.invoiceUploadedAt,
+            //normalizedStatus: getNormalizedPaymentStatus(item.status),
           })),
     [isLoadingVirtualOfficeRevenue, virtualOfficeRevenue],
   );
+
+   const openEdit = (row) => {
+    setEditRow(row);
+    reset({
+      ...row,
+      client: row.client?._id || row.client,
+      rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
+      invoiceUploadedAt: dayjs(),
+      invoiceFile: row.invoice?.link ? { name: row.invoice.name, url: row.invoice.link } : null,
+    });
+  };
+  const { mutate: saveInvoice, isPending } = useMutation({
+    mutationFn: async (values) => {
+      const form = new FormData();
+      form.append("revenueId", editRow._id || "");
+      form.append(
+        "isProjectedInvoice",
+        String(Boolean(editRow.isProjectedInvoice)),
+      );
+      [
+        "client",
+        "location",
+        "channel",
+        "taxableAmount",
+        "revenue",
+        "totalTerm",
+        "rentStatus",
+        "annualIncrement",
+        "service",
+      ].forEach((field) => {
+        if (values[field] !== undefined && values[field] !== null) {
+          form.append(field, values[field]);
+        }
+      });
+      ["dueTerm", "rentDate", "pastDueDate", "nextIncrementDate"].forEach(
+        (field) => {
+          if (values[field]) form.append(field, dayjs(values[field]).toISOString());
+        },
+      );
+      form.append("invoiceUploadedAt", values.invoiceUploadedAt.toISOString());
+      if (values.invoiceFile instanceof File) form.append("client-invoice", values.invoiceFile);
+      return axios.patch("/api/sales/virtual-office-revenue-invoice", form);
+    },
+    onSuccess: () => {
+      toast.success("Virtual office invoice updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+      setEditRow(null);
+    },
+    onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
+  });
 
   const graphData = useMemo(
     () =>
@@ -220,6 +351,17 @@ const getFinancialYear = (dateValue) => {
           redTitle="Unpaid"
           totalTitle="Total"
           summaryChipVariant="ticket"
+          preserveCurrentMonthRange={showInvoiceProjections}
+          getMissingRangeData={
+            showInvoiceProjections
+              ? (selectedDate, existingMonthRows) =>
+                  getUnpaidInvoiceRowsForMonth(
+                    tableData,
+                    selectedDate,
+                    existingMonthRows,
+                  )
+              : undefined
+          }
           columns={[
             { headerName: "Sr No", field: "srNo", flex: 1 },
             { headerName: "Client Name", field: "clientName", flex: 1 },
@@ -231,17 +373,212 @@ const getFinancialYear = (dateValue) => {
             },
             {
               headerName: "Status",
-              field: "status",
+              field: "rentStatus",
               flex: 1,
               cellRenderer: (params) => (
-                <StatusChip status={params.value ? "Paid" : "Unpaid"} />
+                <StatusChip status={params.value} />
               ),
             },
+            ...(showInvoiceProjections
+  ? [
+      {
+        headerName: "Invoice Link",
+        field: "invoiceLink",
+        pinned: "right",
+        cellRenderer: ({ value }) =>
+          value ? (
+            <a
+              href={value}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline"
+            >
+              View PDF
+            </a>
+          ) : (
+            "-"
+          ),
+      },
+      {
+        headerName: "Invoice Upload Date",
+        field: "invoiceUploadedAt",
+        pinned: "right",
+        valueFormatter: ({ value }) =>
+          value
+            ? dayjs(value).format("DD-MM-YYYY")
+            : "-",
+      },
+      {
+        headerName: "Action",
+        field: "actions",
+        pinned: "right",
+        width: 130,
+        sortable: false,
+        filter: false,
+        cellRenderer: ({ data }) => (
+          <div className="flex items-center">
+            <IconButton
+              size="small"
+              onClick={() => setViewRow(data)}
+              aria-label="View invoice"
+            >
+              <MdOutlineRemoveRedEye size={18} />
+            </IconButton>
+
+            <ThreeDotMenu
+              rowId={data._id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => openEdit(data),
+                },
+              ]}
+            />
+          </div>
+        ),
+      },
+    ]
+  : []),
           ]}
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
       )}
+      {viewRow && (
+  <MuiModal
+    open
+    title="View Invoice Details"
+    onClose={() => setViewRow(null)}
+  >
+    <div className="flex flex-col gap-3">
+      <DetalisFormatted
+        title="Client Name"
+        detail={viewRow.clientName}
+      />
+
+      <DetalisFormatted
+        title="Revenue"
+        detail={`INR ${inrFormat(viewRow.revenue)}`}
+      />
+
+      <DetalisFormatted
+        title="Rent Status"
+        detail={viewRow.rentStatus}
+      />
+
+      <DetalisFormatted
+        title="Invoice Link"
+        detail={
+          viewRow.invoiceLink ? (
+            <a
+              href={viewRow.invoiceLink}
+              target="_blank"
+              rel="noreferrer"
+              className="text-primary underline"
+            >
+              View PDF
+            </a>
+          ) : (
+            "-"
+          )
+        }
+      />
+    </div>
+  </MuiModal>
+)}
+
+{editRow && (
+  <MuiModal
+    open
+    title="Edit Invoice"
+    onClose={() => setEditRow(null)}
+  >
+    <form
+      onSubmit={handleSubmit(saveInvoice)}
+      className="grid grid-cols-2 gap-4"
+    >
+      <Controller
+        name="client"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            disabled
+            label="Client"
+            size="small"
+          />
+        )}
+      />
+
+      <Controller
+        name="rentStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Paid/Rent Status"
+            size="small"
+          >
+            <MenuItem value="Paid">
+              Paid
+            </MenuItem>
+
+            <MenuItem value="Unpaid">
+              Unpaid
+            </MenuItem>
+          </TextField>
+        )}
+      />
+
+      <Controller
+        name="invoiceUploadedAt"
+        control={control}
+        render={({ field }) => (
+          <DatePicker
+            {...field}
+            disabled
+            label="Invoice Upload Date"
+            format="DD-MM-YYYY"
+            slotProps={{
+              textField: {
+                size: "small",
+              },
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="invoiceFile"
+        control={control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <UploadFileInput
+              value={field.value}
+              onChange={field.onChange}
+              allowedExtensions={[
+                "pdf",
+                "doc",
+                "docx",
+              ]}
+            />
+          </div>
+        )}
+      />
+
+      <div className="col-span-2">
+        <PrimaryButton
+          type="submit"
+          title="Update Invoice"
+          disabled={isPending}
+          isLoading={isPending}
+          className="w-full"
+        />
+      </div>
+    </form>
+  </MuiModal>
+)}
     </div>
   );
 };
