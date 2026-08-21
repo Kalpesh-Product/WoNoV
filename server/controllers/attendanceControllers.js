@@ -928,7 +928,10 @@ const bulkInsertAttendance = async (req, res, next) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const companyId = req.company;
+    const companyId = req.company?._id || req.company;
+    if (!mongoose.Types.ObjectId.isValid(companyId)) {
+      return res.status(400).json({ message: "Invalid or missing company ID" });
+    }
     const employees = await UserData.find({ company: companyId })
       .select("_id empId reportsTo role shift")
       .lean();
@@ -939,7 +942,14 @@ const bulkInsertAttendance = async (req, res, next) => {
     const employeeMap = new Map(employees.map((emp) => [emp.empId, emp]));
     const reportingManagerByRole = new Map();
     employees.forEach((employee) => {
-      (employee.role || []).forEach((roleId) => {
+      const employeeRoles = Array.isArray(employee.role)
+        ? employee.role
+        : employee.role
+          ? [employee.role]
+          : [];
+
+      employeeRoles.forEach((role) => {
+        const roleId = role?._id || role;
         const key = roleId?.toString();
         if (key && !reportingManagerByRole.has(key)) {
           reportingManagerByRole.set(key, employee._id);
@@ -1209,7 +1219,7 @@ const bulkInsertAttendance = async (req, res, next) => {
         } catch (error) {
           res.status(500).json({
             message: "Error inserting attendance records",
-            error,
+            error: error.message,
           });
         }
       })
@@ -1223,7 +1233,10 @@ const bulkInsertAttendance = async (req, res, next) => {
       });
   } catch (error) {
     if (!res.headersSent) {
-      res.status(500).json({ message: "Unexpected server error", error });
+      res.status(500).json({
+        message: "Unexpected server error",
+        error: error.message,
+      });
     } else {
       next(error);
     }

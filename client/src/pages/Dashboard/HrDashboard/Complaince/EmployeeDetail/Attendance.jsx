@@ -19,7 +19,15 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
-import { CircularProgress, Skeleton, TextField } from "@mui/material";
+import {
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Skeleton,
+  TextField,
+} from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 //import { useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -66,11 +74,21 @@ const Attendance = () => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const currentMonthName = currentDate.toLocaleString("default", {
+  const currentFinancialYearStart = currentMonth >= 3 ? currentYear : currentYear - 1;
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState(
+    currentFinancialYearStart,
+  );
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const selectedCalendarYear =
+    selectedMonth >= 3 ? selectedFinancialYear : selectedFinancialYear + 1;
+  const selectedMonthName = new Date(
+    selectedCalendarYear,
+    selectedMonth,
+  ).toLocaleString("default", {
     month: "long",
   });
-  const currentMonthYearLabel = `${currentMonthName} ${currentYear}`;
-  const currentMonthCardLabel = `${currentMonthName}-${currentYear}`;
+  const selectedMonthYearLabel = `${selectedMonthName} ${selectedCalendarYear}`;
+  const selectedMonthCardLabel = `${selectedMonthName}-${selectedCalendarYear}`;
 
 
   const fetchAttendance = async () => {
@@ -93,6 +111,37 @@ const Attendance = () => {
   const attendance = useMemo(
     () => (Array.isArray(attendanceResponse) ? attendanceResponse : []),
     [attendanceResponse],
+  );
+  const financialYearOptions = useMemo(() => {
+    const years = new Set([
+      currentFinancialYearStart - 2,
+      currentFinancialYearStart - 1,
+      currentFinancialYearStart,
+      currentFinancialYearStart + 1,
+    ]);
+
+    attendance.forEach((entry) => {
+      if (!entry?.inTime) return;
+      const attendanceDate = new Date(entry.inTime);
+      if (Number.isNaN(attendanceDate.getTime())) return;
+      years.add(
+        attendanceDate.getMonth() >= 3
+          ? attendanceDate.getFullYear()
+          : attendanceDate.getFullYear() - 1,
+      );
+    });
+
+    return [...years].sort((a, b) => b - a);
+  }, [attendance, currentFinancialYearStart]);
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, monthIndex) => ({
+        value: monthIndex,
+        label: new Date(2000, monthIndex).toLocaleString("default", {
+          month: "long",
+        }),
+      })),
+    [],
   );
   const { data: employeeData } = useQuery({
     queryKey: ["attendance-employee", employmentID],
@@ -198,8 +247,8 @@ const Attendance = () => {
       .filter((entry) => {
         const inDate = new Date(entry.inTime);
         return (
-          inDate.getMonth() === currentMonth &&
-          inDate.getFullYear() === currentYear
+          inDate.getMonth() === selectedMonth &&
+          inDate.getFullYear() === selectedCalendarYear
         );
       })
       .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))
@@ -257,7 +306,7 @@ const Attendance = () => {
       });
 
     return formatted;
- }, [currentMonth, currentYear, getExpectedShiftTimes]);
+ }, [getExpectedShiftTimes, selectedCalendarYear, selectedMonth]);
 
   const sourceAttendanceForGraph = useMemo(() => {
     if (Array.isArray(filteredAttendanceForGraph)) {
@@ -286,8 +335,8 @@ const Attendance = () => {
 
         const inDate = new Date(entry.inTime);
         if (
-          inDate.getMonth() !== currentMonth ||
-          inDate.getFullYear() !== currentYear
+          inDate.getMonth() !== selectedMonth ||
+          inDate.getFullYear() !== selectedCalendarYear
         ) {
           return summary;
         }
@@ -315,7 +364,12 @@ const Attendance = () => {
         lateCheckOuts: 0,
       }
     );
-  }, [attendance, currentMonth, currentYear, getExpectedShiftTimes]);
+  }, [
+    attendance,
+    getExpectedShiftTimes,
+    selectedCalendarYear,
+    selectedMonth,
+  ]);
 
   const attendanceSeries = [
     {
@@ -549,10 +603,46 @@ const attendanceTableData = useMemo(() => {
         <WidgetSection
           layout={1}
           // titleLabel={"April 2025"}
-          titleLabel={currentMonthYearLabel}
+          titleLabel={selectedMonthYearLabel}
           title={"Attendance"}
           border
         >
+          <div className="flex flex-wrap gap-5 px-4 pb-4">
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel id="attendance-financial-year-label">
+                Financial Year
+              </InputLabel>
+              <Select
+                labelId="attendance-financial-year-label"
+                value={selectedFinancialYear}
+                label="Financial Year"
+                onChange={(event) =>
+                  setSelectedFinancialYear(Number(event.target.value))
+                }
+              >
+                {financialYearOptions.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {`FY ${year}-${String(year + 1).slice(-2)}`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl sx={{ minWidth: 188 }}>
+              <InputLabel id="attendance-month-label">Month</InputLabel>
+              <Select
+                labelId="attendance-month-label"
+                value={selectedMonth}
+                label="Month"
+                onChange={(event) => setSelectedMonth(Number(event.target.value))}
+              >
+                {monthOptions.map((month) => (
+                  <MenuItem key={month.value} value={month.value}>
+                    {month.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
           {!isLoading ? (
             <BarGraph
               data={attendanceSeries}
@@ -568,17 +658,17 @@ const attendanceTableData = useMemo(() => {
              <DataCard
               data={attendanceCardSummary.accurateCheckIns}
               title={"Accurate Check-ins"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             <DataCard
               data={attendanceCardSummary.lateCheckIns}
               title={"Late Check-ins"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             <DataCard
               data={attendanceCardSummary.lateCheckOuts}
               title={"Late Check-outs"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             {/* <DataCard
               data={"27"}
