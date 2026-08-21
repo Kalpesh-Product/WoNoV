@@ -132,6 +132,21 @@ const getFinancialYear = (dateValue) => {
     },
   });
 
+  const { data: virtualOfficeClients = [] } = useQuery({
+    queryKey: ["virtualOfficeClientOptions"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-clients");
+        return Array.isArray(response.data?.virtualOfficeClients)
+          ? response.data.virtualOfficeClients
+          : [];
+      } catch (error) {
+        console.error(error);
+        return [];
+      }
+    },
+  });
+
   const tableData = useMemo(
     () =>
       isLoadingVirtualOfficeRevenue
@@ -155,8 +170,19 @@ const getFinancialYear = (dateValue) => {
     reset({
       ...row,
       client: row.client?._id || row.client,
+      clientName: row.clientName || "",
+      clientInvoiceName: row.clientInvoiceName || row.clientName || "",
+      revenue: row.revenue ?? "",
+      channel: row.channel || "",
+      noOfDesks: row.noOfDesks ?? "",
+      deskRate: row.deskRate ?? "",
+      totalTerm: row.totalTerm ?? "",
+      rentDate: row.rentDate ? dayjs(row.rentDate) : null,
+      pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
+      annualIncrement: row.annualIncrement ?? "",
+      nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
       rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
-      invoiceUploadedAt: dayjs(),
+      invoiceUploadedAt: row.invoice?.date ? dayjs(row.invoice.date) : dayjs(),
       invoiceFile: row.invoice?.link ? { name: row.invoice.name, url: row.invoice.link } : null,
     });
   };
@@ -170,8 +196,12 @@ const getFinancialYear = (dateValue) => {
       );
       [
         "client",
+        "clientName",
+        "clientInvoiceName",
         "location",
         "channel",
+        "noOfDesks",
+        "deskRate",
         "taxableAmount",
         "revenue",
         "totalTerm",
@@ -363,21 +393,68 @@ const getFinancialYear = (dateValue) => {
               : undefined
           }
           columns={[
-            { headerName: "Sr No", field: "srNo", flex: 1 },
-            { headerName: "Client Name", field: "clientName", flex: 1 },
+            {
+              headerName: "Sr No",
+              field: "srNo",
+              width: 80,
+              minWidth: 80,
+            },
+            {
+              headerName: "Client Name",
+              field: "clientName",
+              flex: 1.6,
+              minWidth: 220,
+            },
+            { headerName: "Channel", field: "channel"},
             {
               headerName: "Revenue (INR)",
               field: "revenue",
-              flex: 1,
+             
               cellRenderer: (params) => inrFormat(params.value || 0),
             },
             {
-              headerName: "Status",
-              field: "rentStatus",
-              flex: 1,
-              cellRenderer: (params) => (
-                <StatusChip status={params.value} />
-              ),
+              headerName: "No. of Desk",
+              field: "noOfDesks",
+            
+            },
+            {
+              headerName: "Desk Rate",
+              field: "deskRate",
+             
+              cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+            },
+            { headerName: "Total Term", field: "totalTerm" },
+            {
+              headerName: "Rent Date",
+              field: "rentDate",
+             
+              valueFormatter: ({ value }) =>
+                value ? dayjs(value).format("DD-MM-YYYY") : "-",
+            },
+            {
+              headerName: "Past Due Date",
+              field: "pastDueDate",
+             
+              valueFormatter: ({ value }) =>
+                value ? dayjs(value).format("DD-MM-YYYY") : "-",
+            },
+            {
+              headerName: "Annual Increment",
+              field: "annualIncrement",
+              
+              cellRenderer: (params) =>
+                params.value !== undefined &&
+                params.value !== null &&
+                params.value !== ""
+                  ? `${params.value}%`
+                  : "-",
+            },
+            {
+              headerName: "Next Increment Date",
+              field: "nextIncrementDate",
+             
+              valueFormatter: ({ value }) =>
+                value ? dayjs(value).format("DD-MM-YYYY") : "-",
             },
             ...(showInvoiceProjections
   ? [
@@ -385,6 +462,13 @@ const getFinancialYear = (dateValue) => {
         headerName: "Invoice Link",
         field: "invoiceLink",
         pinned: "right",
+        flex:1,
+        headerClass: "vo-right-pinned-header",
+        cellClass: "vo-right-pinned-cell",
+        cellStyle: {
+          paddingLeft: "16px",
+          paddingRight: "16px",
+        },
         cellRenderer: ({ value }) =>
           value ? (
             <a
@@ -403,16 +487,44 @@ const getFinancialYear = (dateValue) => {
         headerName: "Invoice Upload Date",
         field: "invoiceUploadedAt",
         pinned: "right",
+         flex:1,
+        headerClass: "vo-right-pinned-header",
+        cellClass: "vo-right-pinned-cell",
+        cellStyle: {
+          paddingLeft: "16px",
+          paddingRight: "16px",
+        },
         valueFormatter: ({ value }) =>
           value
             ? dayjs(value).format("DD-MM-YYYY")
             : "-",
       },
       {
+        headerName: "Status",
+        field: "rentStatus",
+        pinned: "right",
+        flex:1,
+        headerClass: "vo-right-pinned-header",
+        cellClass: "vo-right-pinned-cell",
+        cellStyle: {
+          paddingLeft: "16px",
+          paddingRight: "16px",
+        },
+        cellRenderer: (params) => (
+          <StatusChip status={params.value} />
+        ),
+      },
+      {
         headerName: "Action",
         field: "actions",
         pinned: "right",
-        width: 130,
+       flex:1,
+        headerClass: "vo-right-pinned-header",
+        cellClass: "vo-right-pinned-cell",
+        cellStyle: {
+          paddingLeft: "16px",
+          paddingRight: "16px",
+        },
         sortable: false,
         filter: false,
         cellRenderer: ({ data }) => (
@@ -453,17 +565,12 @@ const getFinancialYear = (dateValue) => {
     <div className="flex flex-col gap-3">
       <DetalisFormatted
         title="Client Name"
-        detail={viewRow.clientName}
+        detail={viewRow.clientName || "-"}
       />
 
       <DetalisFormatted
-        title="Revenue"
-        detail={`INR ${inrFormat(viewRow.revenue)}`}
-      />
-
-      <DetalisFormatted
-        title="Rent Status"
-        detail={viewRow.rentStatus}
+        title="Client Invoice Name"
+        detail={viewRow.clientName || viewRow.clientInvoiceName || "-"}
       />
 
       <DetalisFormatted
@@ -482,6 +589,79 @@ const getFinancialYear = (dateValue) => {
             "-"
           )
         }
+      />
+
+      <DetalisFormatted
+        title="Invoice Uploaded Date"
+        detail={
+          viewRow.invoiceUploadedAt
+            ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+            : "-"
+        }
+      />
+
+      <DetalisFormatted
+        title="Channel"
+        detail={viewRow.channel || "-"}
+      />
+
+      <DetalisFormatted
+        title="No. of Desks"
+        detail={viewRow.noOfDesks ?? "-"}
+      />
+
+      <DetalisFormatted
+        title="Desk Rate"
+        detail={`INR ${inrFormat(viewRow.deskRate || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="Revenue"
+        detail={`INR ${inrFormat(viewRow.revenue || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="Total Term"
+        detail={viewRow.totalTerm ?? "-"}
+      />
+
+      <DetalisFormatted
+        title="Rent Date"
+        detail={viewRow.rentDate ? dayjs(viewRow.rentDate).format("DD-MM-YYYY") : "-"}
+      />
+
+      <DetalisFormatted
+        title="Past Due Date"
+        detail={
+          viewRow.pastDueDate
+            ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY")
+            : "-"
+        }
+      />
+
+      <DetalisFormatted
+        title="Annual Increment (%)"
+        detail={
+          viewRow.annualIncrement !== undefined &&
+          viewRow.annualIncrement !== null &&
+          viewRow.annualIncrement !== ""
+            ? viewRow.annualIncrement
+            : "-"
+        }
+      />
+
+      <DetalisFormatted
+        title="Next Increment Date"
+        detail={
+          viewRow.nextIncrementDate
+            ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY")
+            : "-"
+        }
+      />
+
+      <DetalisFormatted
+        title="Paid/Rent Status"
+        detail={viewRow.rentStatus || "-"}
       />
     </div>
   </MuiModal>
@@ -503,12 +683,76 @@ const getFinancialYear = (dateValue) => {
         render={({ field }) => (
           <TextField
             {...field}
-            disabled
-            label="Client"
+            select
+            label="Select Client"
             size="small"
-          />
+            fullWidth
+            disabled
+          >
+            {virtualOfficeClients.map((client) => (
+              <MenuItem key={client._id} value={client._id}>
+                {client.clientName}
+              </MenuItem>
+            ))}
+          </TextField>
         )}
       />
+
+      {[
+        ["clientName", "Client Name", "text"],
+        ["clientInvoiceName", "Client Invoice Name", "text"],
+        ["channel", "Channel", "text"],
+        ["noOfDesks", "No. of Desks", "number"],
+        ["deskRate", "Desk Rate", "number"],
+        ["revenue", "Revenue", "number"],
+        ["totalTerm", "Total Term", "number"],
+        ["annualIncrement", "Annual Increment (%)", "number"],
+      ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      ))}
+
+      {[
+        ["rentDate", "Rent Date"],
+        ["pastDueDate", "Past Due Date"],
+        ["nextIncrementDate", "Next Increment Date"],
+        ["invoiceUploadedAt", "Invoice Upload Date"],
+      ].map(([name, label]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label={label}
+              format="DD-MM-YYYY"
+              disabled
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  disabled: true,
+                },
+              }}
+            />
+          )}
+        />
+      ))}
 
       <Controller
         name="rentStatus"
@@ -519,6 +763,7 @@ const getFinancialYear = (dateValue) => {
             select
             label="Paid/Rent Status"
             size="small"
+            fullWidth
           >
             <MenuItem value="Paid">
               Paid
@@ -528,24 +773,6 @@ const getFinancialYear = (dateValue) => {
               Unpaid
             </MenuItem>
           </TextField>
-        )}
-      />
-
-      <Controller
-        name="invoiceUploadedAt"
-        control={control}
-        render={({ field }) => (
-          <DatePicker
-            {...field}
-            disabled
-            label="Invoice Upload Date"
-            format="DD-MM-YYYY"
-            slotProps={{
-              textField: {
-                size: "small",
-              },
-            }}
-          />
         )}
       />
 
