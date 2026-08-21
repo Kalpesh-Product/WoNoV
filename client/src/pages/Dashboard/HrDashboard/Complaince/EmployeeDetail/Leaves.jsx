@@ -16,7 +16,7 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../../../components/MuiModal";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import useAuth from "../../../../../hooks/useAuth";
@@ -63,7 +63,7 @@ const Leaves = () => {
   }, [auth?.permissions]);
 
   const { data: leaves = [], isLoading } = useQuery({
-    queryKey: ["leaves"],
+    queryKey: ["leaves", id],
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/leaves/view-leaves/${id}`);
@@ -72,6 +72,18 @@ const Leaves = () => {
         throw new Error(error.response.data.message);
       }
     },
+    enabled: Boolean(id),
+  });
+  const currentYear = new Date().getFullYear();
+  const { data: leaveSummary = {} } = useQuery({
+    queryKey: ["leave-summary", id, currentYear],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/leaves/view-leave-summary/${id}?year=${currentYear}`,
+      );
+      return response.data;
+    },
+    enabled: Boolean(id),
   });
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
@@ -103,6 +115,7 @@ const Leaves = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Leave Approved");
       queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-summary", id] });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Approval failed");
@@ -117,6 +130,7 @@ const Leaves = () => {
     onSuccess: (data) => {
       toast.success(data.message || "Leave Rejected");
       queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      queryClient.invalidateQueries({ queryKey: ["leave-summary", id] });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Rejection failed");
@@ -263,13 +277,36 @@ const Leaves = () => {
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
   const leaveCounts = useMemo(() => {
-    const counts = {};
+    const counts = { Sick: 0, Privileged: 0 };
     for (const leave of leaves) {
-      const type = leave.leaveType || "Unknown";
-      counts[type] = (counts[type] || 0) + 1;
+      const leaveDate = new Date(leave.fromDate);
+      if (
+        Number.isNaN(leaveDate.getTime()) ||
+        leaveDate.getFullYear() !== currentYear ||
+        leave.status === "Rejected"
+      ) {
+        continue;
+      }
+
+      const normalizedType = String(leave.leaveType || "").toLowerCase();
+      const type = normalizedType.includes("sick")
+        ? "Sick"
+        : normalizedType.includes("privileged") ||
+            normalizedType.includes("priviledged") ||
+            normalizedType.includes("abrupt")
+          ? "Privileged"
+          : null;
+      if (type) {
+        counts[type] += (Number(leave.hours) || 0) / 9;
+      }
     }
-    return counts;
-  }, [leaves]);
+    return Object.fromEntries(
+      Object.entries(counts).map(([type, count]) => [
+        type,
+        Number(count.toFixed(2)),
+      ]),
+    );
+  }, [currentYear, leaves]);
 
   const chartSeries = [
     {
@@ -322,7 +359,44 @@ const Leaves = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        <WidgetSection layout={1} title={"Leaves Data"} border>
+        <WidgetSection
+          layout={1}
+          title={"Leaves Data"}
+          border
+          normalCase
+          headerRightContent={
+            <div className="flex flex-wrap justify-end gap-3">
+              {[
+                ["PL", leaveSummary.leaveTypes?.privileged],
+                ["SL", leaveSummary.leaveTypes?.sick],
+              ].map(([label, summary]) => (
+                <div
+                  key={label}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-borderGray bg-white px-2 py-1"
+                >
+                  <span className="text-sm font-pmedium text-primary">
+                    {label}
+                  </span>
+                  <Chip
+                    size="small"
+                    label={`Allotted: ${summary?.allotted ?? 0}`}
+                    sx={{ backgroundColor: "#dbe4ff", color: "#274784" }}
+                  />
+                  <Chip
+                    size="small"
+                    label={`Overflowed: ${summary?.overflowed ?? 0}`}
+                    sx={{ backgroundColor: "#fce8e3", color: "#d96b4f" }}
+                  />
+                  <Chip
+                    size="small"
+                    label={`Remaining: ${summary?.remaining ?? 0}`}
+                    sx={{ backgroundColor: "#d8f0df", color: "#16784d" }}
+                  />
+                </div>
+              ))}
+            </div>
+          }
+        >
           {isLoading ? (
             <div className="flex justify-center items-center h-96">
               <CircularProgress />

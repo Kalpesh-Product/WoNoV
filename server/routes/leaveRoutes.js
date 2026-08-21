@@ -7,6 +7,7 @@ const {
   bulkInsertLeaves,
   fetchPastLeaves,
   fetchUserLeaves,
+  fetchUserLeaveSummary,
 } = require("../controllers/leavesControllers/leavesControllers");
 const {
   createLeaveType,
@@ -21,6 +22,7 @@ router.post("/request-leave", requestLeave);
 router.get("/view-all-leaves", fetchAllLeaves);
 router.get("/view-past-leaves", fetchPastLeaves);
 router.get("/view-leaves/:id", fetchUserLeaves);
+router.get("/view-leave-summary/:id", fetchUserLeaveSummary);
 router.patch("/approve-leave/:id", approveLeave);
 router.patch("/reject-leave/:id", rejectLeave);
 router.post("/create-leave-type", createLeaveType);

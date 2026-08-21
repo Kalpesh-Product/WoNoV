@@ -44,8 +44,7 @@ const templateNameMatchesRoute = (templateName, routeConfig) => {
       normalizedTemplateName.includes(normalizedAlias)
     );
   });
-};    
-
+};
 
 export default function BulkUpload() {
   const axios = useAxiosPrivate();
@@ -60,8 +59,9 @@ export default function BulkUpload() {
     const allowedDepartmentIds = new Set([
       "6798ba9de469e809084e2494", // Tech
       "6798bab0e469e809084e249a", // Finance
+      "6798bab9e469e809084e249e", // HR
     ]);
-    const allowedDepartmentNames = ["tech", "finance"];
+    const allowedDepartmentNames = ["tech", "finance", "hr"];
     const topManagementDepartmentId = "67b2cf85b9b6ed5cedeb9a2e"; // Top
 
     const currentDepartmentName = deptDetails?.name?.toLowerCase() || "";
@@ -145,10 +145,9 @@ export default function BulkUpload() {
         //   );
         // });
 
-         const routeConfig = departmentDrop.find((item) =>
+        const routeConfig = departmentDrop.find((item) =>
           templateNameMatchesRoute(templateName, item),
         );
-
 
         return {
           id: template._id || template.documentId || templateName,
@@ -255,7 +254,7 @@ export default function BulkUpload() {
       });
       return response.data;
     },
-   onSuccess: async (data) => {
+    onSuccess: async (data) => {
       try {
         const lastModifiedData = await updateTemplateLastModified(
           selectedTemplate?.id,
@@ -347,7 +346,7 @@ export default function BulkUpload() {
         );
       },
     },
-     {
+    {
       headerName: "Uploaded Date",
       field: "updatedAt",
       flex: 1,
