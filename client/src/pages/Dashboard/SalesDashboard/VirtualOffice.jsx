@@ -43,31 +43,63 @@ const getUnpaidInvoiceRowsForMonth = (
 
   if (!targetMonth.isValid() || targetMonth.isBefore(currentMonth)) return [];
 
-  const historicalPaidRows = rows.filter((row) => {
-    const rowMonth = dayjs(row.rentDate).startOf("month");
-    return (
-      rowMonth.isValid() &&
-      rowMonth.isBefore(currentMonth) &&
-      getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid"
-    );
-  });
-  if (!historicalPaidRows.length) return [];
+  // const historicalPaidRows = rows.filter((row) => {
+  //   const rowMonth = dayjs(row.rentDate).startOf("month");
+  //   return (
+  //     rowMonth.isValid() &&
+  //     rowMonth.isBefore(currentMonth) &&
+  //     getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid"
+  //   );
+  // });
+  // if (!historicalPaidRows.length) return [];
 
-  const latestSourceMonth = historicalPaidRows.reduce((latest, row) => {
+  // const latestSourceMonth = historicalPaidRows.reduce((latest, row) => {
+  //   const rowMonth = dayjs(row.rentDate).startOf("month");
+  //   return rowMonth.isAfter(latest) ? rowMonth : latest;
+  // }, dayjs(historicalPaidRows[0].rentDate).startOf("month"));
+
+  // const existingClients = new Set(existingMonthRows.map(getClientIdentity));
+  // const projectedClients = new Set();
+
+  // return historicalPaidRows
+  //   .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
+  //   .filter((row) => !existingClients.has(getClientIdentity(row)))
+  //   .filter((row) => {
+  //     const identity = getClientIdentity(row);
+  //     if (projectedClients.has(identity)) return false;
+  //     projectedClients.add(identity);
+  //     return true;
+  //   })
+
+  const historicalRows = rows.filter((row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return rowMonth.isValid() && rowMonth.isBefore(currentMonth);
+  });
+  if (!historicalRows.length) return [];
+
+  const latestSourceMonth = historicalRows.reduce((latest, row) => {
     const rowMonth = dayjs(row.rentDate).startOf("month");
     return rowMonth.isAfter(latest) ? rowMonth : latest;
-  }, dayjs(historicalPaidRows[0].rentDate).startOf("month"));
+  }, dayjs(historicalRows[0].rentDate).startOf("month"));
 
-  const existingClients = new Set(existingMonthRows.map(getClientIdentity));
-  const projectedClients = new Set();
+  // Keep occurrences rather than a Set because one client can legitimately have
+  // multiple revenue rows in a month. Existing rows consume only their matching
+  // occurrence; every other row from the latest historical month is projected.
+  const existingClientCounts = existingMonthRows.reduce((counts, row) => {
+    const identity = getClientIdentity(row);
+    counts.set(identity, (counts.get(identity) || 0) + 1);
+    return counts;
+  }, new Map());
 
-  return historicalPaidRows
+  return historicalRows
     .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
-    .filter((row) => !existingClients.has(getClientIdentity(row)))
     .filter((row) => {
       const identity = getClientIdentity(row);
-      if (projectedClients.has(identity)) return false;
-      projectedClients.add(identity);
+      const existingCount = existingClientCounts.get(identity) || 0;
+      if (existingCount > 0) {
+        existingClientCounts.set(identity, existingCount - 1);
+        return false;
+      }
       return true;
     })
     .map((row, index) => ({
