@@ -139,11 +139,19 @@ const getUnpaidInvoiceRowsForMonth = (
 };
 // const CoWorking = () => {
   // const CoWorking = ({ showChart = true }) => {
- const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
+const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
   const { control, handleSubmit, reset } = useForm();
+
+  const { data: coworkingClients = [] } = useQuery({
+    queryKey: ["coworkingInvoiceClients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
 
   const openEdit = (row) => {
     setEditRow(row);
@@ -156,7 +164,7 @@ const getUnpaidInvoiceRowsForMonth = (
           }
         : null,
       clientInvoiceName: row.invoice?.name || "",
-      invoiceUploadedAt: row.invoice?.date ? dayjs(row.invoice.date) : null,
+      invoiceUploadedAt: dayjs(),
       rentDate: dayjs(row.rentDate),
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
       nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
@@ -220,15 +228,6 @@ const getUnpaidInvoiceRowsForMonth = (
       } catch (error) {
         throw new Error(error.response.data.message);
       }
-    },
-  });
-
- const { data: coworkingClients = [] } = useQuery({
-    queryKey: ["coworkingInvoiceClients"],
-    enabled: showInvoiceProjections,
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
@@ -310,7 +309,6 @@ const getUnpaidInvoiceRowsForMonth = (
       revenue: monthData?.clients?.map((client) => ({
         id: serialNumber++,
        _id: client._id,
-        clients: client.clients,
         service: client.service,
         clientName: client.clientName,
         clientInvoiceName: "",
@@ -614,10 +612,12 @@ const getUnpaidInvoiceRowsForMonth = (
               value={field.value ?? null}
               label={label}
               format="DD-MM-YYYY"
+              disabled={name === "invoiceUploadedAt"}
               slotProps={{
                 textField: {
                   size: "small",
                   fullWidth: true,
+                  disabled: name === "invoiceUploadedAt",
                 },
               }}
             />
