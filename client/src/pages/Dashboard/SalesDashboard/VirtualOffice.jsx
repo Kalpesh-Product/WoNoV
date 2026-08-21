@@ -282,12 +282,15 @@ const getFinancialYear = (dateValue) => {
     {
       headerName: "Status",
       field: "rentStatus",
-      flex: 2.5,
-      cellRenderer: (params) => (
-        <div className="w-full flex justify-center">
-          <StatusChip status={params.value} />
-        </div>
-      ),
+     flex:2,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        paddingLeft: "12px",
+        paddingRight: "12px",
+      },
+      cellRenderer: (params) => <StatusChip status={params.value} />,
     },
   ];
 
@@ -301,71 +304,52 @@ const getFinancialYear = (dateValue) => {
     {
       headerName: "Client Name",
       field: "clientName",
-      flex: 1.7,
+      width: 350,
       minWidth: 220,
     },
     {
       headerName: "Channel",
       field: "channel",
-      width: 120,
-      minWidth: 120,
     },
     {
       headerName: "Revenue (INR)",
       field: "revenue",
-      width: 160,
-      minWidth: 160,
       cellRenderer: (params) => inrFormat(params.value || 0),
     },
     {
       headerName: "No. of Desks",
       field: "noOfDesks",
-      width: 130,
-      minWidth: 130,
     },
     {
       headerName: "Desk Rate",
       field: "deskRate",
-      width: 150,
-      minWidth: 150,
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
       headerName: "Total Term",
       field: "totalTerm",
-      width: 120,
-      minWidth: 120,
     },
     {
       headerName: "Rent Date",
       field: "rentDate",
-      width: 130,
-      minWidth: 130,
     },
     {
       headerName: "Past Due Date",
       field: "pastDueDate",
-      width: 140,
-      minWidth: 140,
     },
     {
       headerName: "Annual Increment (%)",
       field: "annualIncrement",
-      width: 170,
-      minWidth: 170,
     },
     {
       headerName: "Next Increment Date",
       field: "nextIncrementDate",
-      width: 170,
-      minWidth: 170,
     },
     {
       headerName: "Invoice Link",
       field: "invoiceLink",
       pinned: "right",
-      width: 150,
-      minWidth: 150,
+      flex:1,
       headerClass: "vo-right-pinned-header",
       cellClass: "vo-right-pinned-cell",
       cellStyle: {
@@ -390,8 +374,7 @@ const getFinancialYear = (dateValue) => {
       headerName: "Invoice Upload Date",
       field: "invoiceUploadedAt",
       pinned: "right",
-      width: 170,
-      minWidth: 170,
+      flex:1,
       headerClass: "vo-right-pinned-header",
       cellClass: "vo-right-pinned-cell",
       cellStyle: {
@@ -405,8 +388,7 @@ const getFinancialYear = (dateValue) => {
       headerName: "Status",
       field: "rentStatus",
       pinned: "right",
-      width: 130,
-      minWidth: 130,
+      flex:1,
       headerClass: "vo-right-pinned-header",
       cellClass: "vo-right-pinned-cell",
       cellStyle: {
@@ -419,8 +401,7 @@ const getFinancialYear = (dateValue) => {
       headerName: "Action",
       field: "actions",
       pinned: "right",
-      width: 110,
-      minWidth: 110,
+      flex:1,
       headerClass: "vo-right-pinned-header",
       cellClass: "vo-right-pinned-cell",
       cellStyle: {
