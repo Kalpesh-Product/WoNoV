@@ -1,10 +1,16 @@
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Service = require("../../models/sales/ClientService");
+const Company = require("../../models/hr/Company");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/s3Config");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const { PDFDocument } = require("pdf-lib");
 const {
   normalizeClientName,
   normalizeAmount,
@@ -252,10 +258,41 @@ const getRevenues = async (req, res, next) => {
   }
 };
 const updateRevenueInvoice = async (req, res, next) => {
+  let uploadedInvoiceId = null;
+  let previousInvoiceId = null;
+
   try {
     const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const file = req.file;
+    const companyId = req.company;
+    const foundCompany = await Company.findById(companyId).lean().exec();
+    if (!foundCompany) {
+      throw new CustomError(
+        "Company not found",
+        "sales/SalesLog",
+        "Update Coworking Revenue Invoice",
+        "revenue",
+      );
+    }
+
+    const existingRevenue = revenueId
+      ? await CoworkingRevenue.findOne({
+          _id: revenueId,
+          company: companyId,
+        })
+          .lean()
+          .exec()
+      : null;
+
+    previousInvoiceId = existingRevenue?.invoice?.id || null;
+
     const allowedFields = [
-    "clients", "service", "clientName", "clientInvoiceName", "channel",
+      "clients",
+      "service",
+      "clientName",
+      "clientInvoiceName",
+      "channel",
       "noOfDesks", "deskRate", "occupation", "revenue", "totalTerm",
       "dueTerm", "rentDate", "invoiceUploadedAt", "rentStatus", "pastDueDate",
       "annualIncrement", "nextIncrementDate",
@@ -265,23 +302,97 @@ const updateRevenueInvoice = async (req, res, next) => {
       return result;
     }, {});
 
+    if (payload.invoiceUploadedAt) {
+      payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    }
+
+    if (file) {
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        throw new CustomError(
+          "Invalid file type. Allowed types: PDF, DOC, DOCX",
+          "sales/SalesLog",
+          "Update Coworking Revenue Invoice",
+          "revenue",
+        );
+      }
+
+      let processedBuffer = file.buffer;
+      const originalFilename = file.originalname;
+
+      if (file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(file.buffer);
+        pdfDoc.setTitle(
+          file.originalname ? file.originalname.split(".")[0] : "Untitled",
+        );
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const uploadResult = await handleDocumentUpload(
+        processedBuffer,
+        `${foundCompany.companyName}/coworking-revenues/${
+          payload.clientName || existingRevenue?.clientName || "client"
+        }`,
+        originalFilename,
+      );
+
+      if (!uploadResult?.public_id) {
+        throw new CustomError(
+          "Failed to upload document",
+          "sales/SalesLog",
+          "Update Coworking Revenue Invoice",
+          "revenue",
+        );
+      }
+
+      uploadedInvoiceId = uploadResult.public_id;
+      payload.invoice = {
+        name: originalFilename,
+        link: uploadResult.secure_url,
+        id: uploadResult.public_id,
+        date: payload.invoiceUploadedAt || new Date(),
+      };
+      payload.invoiceUploadedAt = payload.invoice.date;
+    }
+
     let revenue;
-    if (revenueId && !isProjectedInvoice) {
+    if (revenueId && !isProjected) {
       revenue = await CoworkingRevenue.findOneAndUpdate(
-        { _id: revenueId, company: req.company },
+        { _id: revenueId, company: companyId },
         payload,
         { new: true, runValidators: true },
       );
     } else {
-      revenue = await CoworkingRevenue.create({ ...payload, company: req.company });
+      revenue = await CoworkingRevenue.create({
+        ...payload,
+        company: companyId,
+      });
     }
 
-    if (!revenue) return res.status(404).json({ message: "Revenue not found" });
-    return res.status(isProjectedInvoice ? 201 : 200).json({
+    if (!revenue) {
+      if (uploadedInvoiceId) {
+        await handleFileDelete(uploadedInvoiceId).catch(() => null);
+      }
+      return res.status(404).json({ message: "Revenue not found" });
+    }
+
+    if (previousInvoiceId && previousInvoiceId !== uploadedInvoiceId) {
+      await handleFileDelete(previousInvoiceId).catch(() => null);
+    }
+
+    return res.status(isProjected ? 201 : 200).json({
       message: "Co-working invoice updated successfully",
       revenue,
     });
   } catch (error) {
+    if (uploadedInvoiceId) {
+      await handleFileDelete(uploadedInvoiceId).catch(() => null);
+    }
     next(error);
   }
 };

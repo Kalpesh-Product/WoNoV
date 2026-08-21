@@ -132,13 +132,15 @@ const UploadFileInput = ({
   const fileName =
     value instanceof File
       ? value.name
+      : value && typeof value === "object" && typeof value.name === "string"
+      ? value.name
       : fileUrl
       ? fileUrl.split("/").pop()?.split("?")[0] || "selected-file"
       : "";
   const [previewUrl, setPreviewUrl] = useState(
     value instanceof File
       ? URL.createObjectURL(value)
-      : fileUrl || null
+      : fileUrl || null,
   );
   const [openModal, setOpenModal] = useState(false);
 
@@ -149,6 +151,15 @@ const UploadFileInput = ({
     }
     setPreviewUrl(fileUrl || null);
   }, [value, fileUrl]);
+
+  useEffect(
+    () => () => {
+      if (previewUrl && value instanceof File) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    },
+    [previewUrl, value],
+  );
 
   const getExtension = (fileName) => fileName.split(".").pop().toLowerCase();
 

@@ -56,6 +56,8 @@ const fetchCoworkingRevenueService = async ({
       }
 
       const monthData = monthlyMap.get(monthKey);
+      const invoiceDate = item.invoice?.date || null;
+
       monthData.totalRevenue += item.revenue || 0;
 
       monthData.clients.push({
@@ -72,7 +74,10 @@ const fetchCoworkingRevenueService = async ({
         totalTerm: item.totalTerm,
         ...(!isReport && { dueTerm: item.dueTerm }),
         rentDate: item.rentDate,
-        invoiceUploadedAt: item.invoiceUploadedAt,
+        invoiceName: item.invoice?.name || null,
+        invoiceLink: item.invoice?.link || null,
+        invoiceUploadedAt: invoiceDate,
+        invoice: item.invoice || null,
         rentStatus: item.rentStatus,
         ...(!isReport && { pastDueDate: item.pastDueDate }),
         annualIncrement: item.annualIncrement,

@@ -154,7 +154,11 @@ router.patch(
 //Revenues
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
-router.patch("/coworking-revenue-invoice", updateRevenueInvoice);
+router.patch(
+  "/coworking-revenue-invoice",
+  upload.single("client-invoice"),
+  updateRevenueInvoice,
+);
 router.get(
   "/coworking-client-revenue/:coworkingId",
   getCoworkingClientRevenues,

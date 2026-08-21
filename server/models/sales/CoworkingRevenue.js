@@ -39,6 +39,20 @@ const coworkingClientRevenue = new mongoose.Schema(
     rentDate: {
       type: Date,
     },
+    invoice: {
+      name: {
+        type: String,
+      },
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+      date: {
+        type: Date,
+      },
+    },
     invoiceUploadedAt: {
       type: Date,
     },

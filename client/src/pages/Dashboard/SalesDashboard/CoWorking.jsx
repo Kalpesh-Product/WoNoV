@@ -149,10 +149,14 @@ const getUnpaidInvoiceRowsForMonth = (
     setEditRow(row);
     reset({
       ...row,
-      invoiceFile: null,
-      invoiceUploadedAt: dayjs(
-        row.invoiceUploadedAt || row.updatedAt || row.createdAt || new Date(),
-      ),
+      invoiceFile: row.invoice?.link
+        ? {
+            name: row.invoice?.name || "",
+            url: row.invoice.link,
+          }
+        : null,
+      clientInvoiceName: row.invoice?.name || "",
+      invoiceUploadedAt: row.invoice?.date ? dayjs(row.invoice.date) : null,
       rentDate: dayjs(row.rentDate),
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
       nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
@@ -162,25 +166,43 @@ const getUnpaidInvoiceRowsForMonth = (
 
   const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
     mutationFn: async (values) => {
-      const payload = {
-        ...values,
-        revenueId: editRow._id,
-        isProjectedInvoice: Boolean(editRow.isProjectedInvoice),
-        rentDate: values.rentDate?.toISOString(),
-        pastDueDate: values.pastDueDate?.toISOString(),
-        nextIncrementDate: values.nextIncrementDate?.toISOString(),
-      };
-      delete payload.invoiceFile;
-      delete payload.invoiceUploadedAt;
-      await axios.patch("/api/sales/coworking-revenue-invoice", payload);
+      const formData = new FormData();
+      formData.append("revenueId", editRow._id);
+      formData.append("isProjectedInvoice", String(Boolean(editRow.isProjectedInvoice)));
 
-      if (values.invoiceFile && values.clients) {
-        const formData = new FormData();
+      [
+        ["clients", values.clients],
+        ["service", values.service],
+        ["clientName", values.clientName],
+        ["clientInvoiceName", values.clientInvoiceName],
+        ["channel", values.channel],
+        ["noOfDesks", values.noOfDesks],
+        ["deskRate", values.deskRate],
+        ["occupation", values.occupation],
+        ["revenue", values.revenue],
+        ["totalTerm", values.totalTerm],
+        ["dueTerm", values.dueTerm],
+        ["rentDate", values.rentDate?.toISOString()],
+        ["invoiceUploadedAt", values.invoiceUploadedAt?.toISOString()],
+        ["rentStatus", values.rentStatus],
+        ["pastDueDate", values.pastDueDate?.toISOString()],
+        ["annualIncrement", values.annualIncrement],
+        ["nextIncrementDate", values.nextIncrementDate?.toISOString()],
+      ].forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value);
+        }
+      });
+
+      if (values.invoiceFile instanceof File) {
         formData.append("client-invoice", values.invoiceFile);
-        formData.append("client", values.clients);
-        formData.append("invoiceUploadedAt", values.invoiceUploadedAt?.toISOString());
-        await axios.post("/api/finance/upload-client-invoice", formData);
       }
+
+      await axios.patch("/api/sales/coworking-revenue-invoice", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Invoice updated successfully");
@@ -291,11 +313,11 @@ const getUnpaidInvoiceRowsForMonth = (
         clients: client.clients,
         service: client.service,
         clientName: client.clientName,
-        clientInvoiceName: client.clientInvoiceName,
-        invoiceName: client.invoiceName || client.clientInvoiceName || "-",
-        invoiceLink: client.invoiceLink || client.invoice?.link || "-",
-        invoiceUploadedAt:
-          client.invoiceUploadedAt || client.updatedAt || client.createdAt || null,
+        clientInvoiceName: "",
+        invoice: client.invoice || null,
+        invoiceName: client.invoice?.name || "",
+        invoiceLink: client.invoice?.link || "",
+        invoiceUploadedAt: client.invoice?.date || null,
         channel: client.channel,
         occupation: client.occupation,
         noOfDesks: client.noOfDesks,
@@ -464,13 +486,16 @@ const getUnpaidInvoiceRowsForMonth = (
               Co-Working Revenue Details
             </span> */}
             <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
-            <DetalisFormatted title="Invoice Name" detail={viewRow.clientInvoiceName || "-"} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={viewRow.invoice?.name || "-"}
+            />
             <DetalisFormatted
               title="Invoice Link"
               detail={
-                viewRow.invoiceLink && viewRow.invoiceLink !== "-" ? (
+                viewRow.invoice?.link ? (
                   <a
-                    href={viewRow.invoiceLink}
+                    href={viewRow.invoice?.link}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary underline"
@@ -485,8 +510,8 @@ const getUnpaidInvoiceRowsForMonth = (
             <DetalisFormatted
               title="Invoice Uploaded Date"
               detail={
-                viewRow.invoiceUploadedAt
-                  ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+                viewRow.invoice?.date
+                  ? dayjs(viewRow.invoice?.date).format("DD-MM-YYYY")
                   : "-"
               }
             />
@@ -586,6 +611,7 @@ const getUnpaidInvoiceRowsForMonth = (
           render={({ field }) => (
             <DatePicker
               {...field}
+              value={field.value ?? null}
               label={label}
               format="DD-MM-YYYY"
               slotProps={{
