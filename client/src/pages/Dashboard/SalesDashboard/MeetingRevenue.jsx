@@ -244,6 +244,7 @@ const getFinancialYear = (dateValue) => {
               chartOptions={options}
               selectedFY={selectedFY}
               onSelectedFYChange={setSelectedFY}
+              disableHoverCrosshair
             />
           )}
 

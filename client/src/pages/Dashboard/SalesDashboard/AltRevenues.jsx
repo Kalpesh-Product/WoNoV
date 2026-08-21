@@ -187,6 +187,7 @@ const getFinancialYear = (dateValue) => {
           valueKey="taxableAmount"
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
+          disableHoverCrosshair
         />
       // )}
        ))}

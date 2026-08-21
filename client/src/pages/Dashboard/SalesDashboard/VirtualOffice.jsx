@@ -553,6 +553,7 @@ const getFinancialYear = (dateValue) => {
           chartOptions={options}
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
+          disableHoverCrosshair
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />

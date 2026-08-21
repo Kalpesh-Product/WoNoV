@@ -411,6 +411,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           dateKey="rentDate"
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY CO WORKING REVENUES"
+          disableHoverCrosshair
         />
       ) : (
         <div className="h-72 flex justify-center items-center">
