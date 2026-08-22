@@ -107,10 +107,14 @@ const fetchCoworkingRevenueService = async ({
 };
 
 const fetchAlternateRevenueReportService = async ({
+  company,
   dateFilter,
   isReport = false,
 }) => {
   let filter = {};
+  if (company) {
+    filter.company = company;
+  }
   if (dateFilter) {
     filter.invoiceCreationDate = dateFilter.invoiceCreationDate;
   }
@@ -154,18 +158,23 @@ const fetchAlternateRevenueReportService = async ({
     }
 
     const monthData = monthlyMap.get(monthKey);
+    const invoiceDate = item.invoice?.date || item.invoicePaidDate || null;
 
     monthData.taxable += item.taxableAmount || 0;
 
     monthData.revenue.push({
+      _id: item._id,
       name: item.name,
       particulars: item.particulars,
       taxableAmount: item.taxableAmount,
       invoiceAmount: item.invoiceAmount,
       invoiceCreationDate: item.invoiceCreationDate,
-      invoicePaidDate: item.invoicePaidDate,
+      invoicePaidDate: invoiceDate,
       gst: item.gst,
       status: item.status || "Unpaid",
+      invoiceName: item.invoice?.name || null,
+      invoiceLink: item.invoice?.link || null,
+      invoice: item.invoice || null,
     });
   });
 

@@ -1,13 +1,26 @@
-import { inrFormat } from "../../../utils/currencyFormat";
+import { useEffect, useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
-import { CircularProgress } from "@mui/material";
-import { useMemo, useState } from "react";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { inrFormat } from "../../../utils/currencyFormat";
+import { queryClient } from "../../../main";
 
-const getNormalizedPaymentStatus = (status) =>
+const GST_RATE = 0.18;
+
+const getNormalizedStatus = (status) =>
   String(status || "").trim().toLowerCase();
 
 const getNumericAmount = (value) =>
@@ -31,53 +44,124 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
-//const AltRevenues = () => {
-  const AltRevenues = ({ showChart = true }) => {
+const getAlternateTaxCalculations = (taxableAmount) => {
+  const taxable = getNumericAmount(taxableAmount);
+  if (String(taxableAmount ?? "").trim() === "") {
+    return { gst: "", invoiceAmount: "" };
+  }
+
+  const gst = Number((taxable * GST_RATE).toFixed(2));
+  const invoiceAmount = Number((taxable + gst).toFixed(2));
+
+  return { gst, invoiceAmount };
+};
+
+const getEmptyAlternateFormValues = () => ({
+  name: "",
+  particulars: "",
+  taxableAmount: "",
+  gst: "",
+  invoiceAmount: "",
+  invoiceCreationDate: dayjs(),
+  invoicePaidDate: dayjs(),
+  status: "Unpaid",
+  invoiceFile: null,
+});
+
+const AlternateRevenueActions = ({ row, onView, onEdit }) => (
+  <div className="flex items-center justify-start gap-0.5 w-full pl-2">
+    <button
+      type="button"
+      aria-label="View alternate revenue details"
+      onClick={() => onView(row)}
+      className="rounded p-2 text-gray-500 hover:bg-slate-100 hover:text-primary"
+    >
+      <MdOutlineRemoveRedEye size={18} />
+    </button>
+
+    <ThreeDotMenu
+      rowId={row?._id || row?.id}
+      menuItems={[
+        {
+          label: "Edit",
+          onClick: () => onEdit(row),
+        },
+      ]}
+    />
+  </div>
+);
+
+const AltRevenues = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
-  const [selectedFY, setSelectedFY] = useState(
-    getCurrentFinancialYearLabel(),
-  );
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const [modalMode, setModalMode] = useState(null);
+  const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  const isBillingView = !showChart;
+
+  const { control, handleSubmit, reset, setValue, watch } = useForm({
+    defaultValues: getEmptyAlternateFormValues(),
+  });
+
+  const taxableAmountValue = watch("taxableAmount");
+
   const { data: alternateRevenue = [], isLoading: isLoadingAlternateRevenue } =
     useQuery({
       queryKey: ["alternateRevenue"],
       queryFn: async () => {
-        try {
-          const response = await axios.get(`/api/sales/get-alternate-revenue`);
-          return Array.isArray(response.data) ? response.data : [];
-        } catch (error) {
-          throw new Error(error.response.data.message);
-        }
+        const response = await axios.get("/api/sales/get-alternate-revenue");
+        return Array.isArray(response.data) ? response.data : [];
       },
     });
 
+  useEffect(() => {
+    const { gst, invoiceAmount } =
+      getAlternateTaxCalculations(taxableAmountValue);
+    setValue("gst", gst, { shouldDirty: false });
+    setValue("invoiceAmount", invoiceAmount, { shouldDirty: false });
+  }, [setValue, taxableAmountValue]);
+
   const tableData = useMemo(
     () =>
-      alternateRevenue.map((monthData) => ({
-        clients: (monthData.revenue || []).map((client) => ({
-          ...client,
-          normalizedStatus: getNormalizedPaymentStatus(client.status),
-        })),
-      })),
-    [alternateRevenue],
-  );
+      alternateRevenue.flatMap((monthData) =>
+        (monthData.revenue || []).map((item, index) => {
+          const invoice = item.invoice || {};
 
-  const flattenedRevenueData = useMemo(
-    () => tableData.flatMap((month) => month.clients),
-    [tableData],
+          return {
+            ...item,
+            id: item._id || `${monthData.month}-${index}`,
+            name: item.name || "-",
+            clientName: item.name || "-",
+            particulars: item.particulars || "-",
+            taxableAmount: getNumericAmount(item.taxableAmount),
+            gst: getNumericAmount(item.gst),
+            invoiceAmount: getNumericAmount(item.invoiceAmount),
+            invoiceCreationDate: item.invoiceCreationDate,
+            invoicePaidDate: item.invoicePaidDate || invoice.date || null,
+            status: item.status || "Unpaid",
+            normalizedStatus: getNormalizedStatus(item.status || "Unpaid"),
+            invoice: invoice || null,
+            invoiceName: invoice.name || item.invoiceName || "-",
+            invoiceLink: invoice.link || item.invoiceLink || "-",
+            invoiceAttached: Boolean(invoice.link),
+          };
+        }),
+      ),
+    [alternateRevenue],
   );
 
   const graphData = useMemo(
     () =>
       isLoadingAlternateRevenue
         ? []
-        : flattenedRevenueData
+        : tableData
             .filter((item) => item.normalizedStatus === "paid")
             .map((item) => ({
               ...item,
               taxableAmount: getNumericAmount(item.taxableAmount),
               vertical: "Alternate Revenue",
             })),
-    [flattenedRevenueData, isLoadingAlternateRevenue],
+    [isLoadingAlternateRevenue, tableData],
   );
 
   const selectedFiscalYearRevenue = useMemo(
@@ -171,14 +255,229 @@ const getFinancialYear = (dateValue) => {
     }),
     [useLakhsScale],
   );
+
+  const openCreate = () => {
+    setModalMode("create");
+    setEditRow(null);
+    reset(getEmptyAlternateFormValues());
+  };
+
+  const openEdit = (row) => {
+    setModalMode("edit");
+    setEditRow(row);
+
+    const calculatedAmounts = getAlternateTaxCalculations(row.taxableAmount);
+
+    reset({
+      name: row.name || "",
+      particulars: row.particulars || "",
+      taxableAmount:
+        row.taxableAmount !== undefined && row.taxableAmount !== null
+          ? row.taxableAmount
+          : "",
+      gst: calculatedAmounts.gst,
+      invoiceAmount: calculatedAmounts.invoiceAmount,
+      invoiceCreationDate: row.invoiceCreationDate
+        ? dayjs(row.invoiceCreationDate)
+        : dayjs(),
+      invoicePaidDate: row.invoicePaidDate
+        ? dayjs(row.invoicePaidDate)
+        : dayjs(),
+      status: row.status || "Unpaid",
+      invoiceFile: row.invoice?.link
+        ? { name: row.invoice?.name || "Invoice", url: row.invoice.link }
+        : null,
+    });
+  };
+
+  const closeFormModal = () => {
+    setModalMode(null);
+    setEditRow(null);
+    reset(getEmptyAlternateFormValues());
+  };
+
+  const { mutate: saveAlternateRevenue, isPending: isSavingAlternateRevenue } =
+    useMutation({
+      mutationFn: async (values) => {
+        const formData = new FormData();
+        formData.append("revenueId", editRow?._id || "");
+
+        [
+          ["name", values.name],
+          ["particulars", values.particulars],
+          ["taxableAmount", values.taxableAmount],
+          ["gst", values.gst],
+          ["invoiceAmount", values.invoiceAmount],
+          ["status", values.status],
+        ].forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== "") {
+            formData.append(key, value);
+          }
+        });
+
+        if (values.invoiceCreationDate) {
+          formData.append(
+            "invoiceCreationDate",
+            dayjs(values.invoiceCreationDate).toISOString(),
+          );
+        }
+
+        if (values.invoicePaidDate) {
+          formData.append(
+            "invoicePaidDate",
+            dayjs(values.invoicePaidDate).toISOString(),
+          );
+        }
+
+        if (values.invoiceFile instanceof File) {
+          formData.append("client-invoice", values.invoiceFile);
+        }
+
+        await axios.patch("/api/sales/alternate-revenue-invoice", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      },
+      onSuccess: () => {
+        toast.success(
+          modalMode === "edit"
+            ? "Alternate revenue updated successfully"
+            : "Alternate revenue added successfully",
+        );
+        queryClient.invalidateQueries({ queryKey: ["alternateRevenue"] });
+        closeFormModal();
+      },
+      onError: (error) =>
+        toast.error(
+          error.response?.data?.message || "Unable to save alternate revenue",
+        ),
+    });
+
+  const revenueColumns = [
+    { headerName: "Sr No", field: "srNo", width: 90 },
+    { headerName: "Particulars", field: "particulars", minWidth: 190, flex: 1.2 },
+    {
+      headerName: "Taxable Amount (INR)",
+      field: "taxableAmount",
+      minWidth: 170,
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "Invoice Creation Date",
+      field: "invoiceCreationDate",
+      minWidth: 180,
+      valueFormatter: (params) =>
+        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "Invoice Paid Date",
+      field: "invoicePaidDate",
+      minWidth: 170,
+      valueFormatter: (params) =>
+        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "GST (INR)",
+      field: "gst",
+      minWidth: 130,
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "Status",
+      field: "status",
+      minWidth: 120,
+      pinned: "right",
+      cellRenderer: (params) => <StatusChip status={params.value || "Unpaid"} />,
+    },
+  ];
+
+  const billingColumns = [
+    { headerName: "Sr No", field: "srNo", width: 90 },
+    { headerName: "Client Name", field: "clientName"},
+    { headerName: "Particulars", field: "particulars"},
+    {
+      headerName: "Taxable Amount (INR)",
+      field: "taxableAmount",
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "GST (INR)",
+      field: "gst",
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "Invoice Amount (INR)",
+      field: "invoiceAmount",
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "Invoice Creation Date",
+      field: "invoiceCreationDate",
+      valueFormatter: (params) =>
+        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "Invoice Paid Date",
+      field: "invoicePaidDate",
+      flex:1,
+      pinned:"right",
+      valueFormatter: (params) =>
+        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "Invoice Name",
+      field: "invoiceName",
+      valueFormatter: (params) => params.value || "-",
+    },
+    {
+      headerName: "Invoice Link",
+      field: "invoiceLink",
+      flex:1,
+      pinned:"right",
+      cellRenderer: (params) =>
+        params.value && params.value !== "-" ? (
+          <a
+            href={params.value}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary underline"
+          >
+            View PDF
+          </a>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      headerName: "Status",
+      field: "status",
+      flex:1,
+      pinned: "right",
+      cellRenderer: (params) => <StatusChip status={params.value || "Unpaid"} />,
+    },
+    {
+      headerName: "Actions",
+      field: "actions",
+      minWidth: 110,
+      pinned: "right",
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => (
+        <AlternateRevenueActions
+          row={params.data}
+          onView={setViewRow}
+          onEdit={openEdit}
+        />
+      ),
+    },
+  ];
+
+  const columns = isBillingView ? billingColumns : revenueColumns;
+
   return (
     <div className="flex flex-col gap-4">
-      {/* {isLoadingAlternateRevenue ? ( */}
-       {showChart && (isLoadingAlternateRevenue ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
-      ) : (
+      {showChart && !isLoadingAlternateRevenue ? (
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY ALTERNATE REVENUES"
           chartOptions={options}
@@ -189,23 +488,31 @@ const getFinancialYear = (dateValue) => {
           onSelectedFYChange={setSelectedFY}
           disableHoverCrosshair
         />
-      // )}
-       ))}
+      ) : null}
 
-      {!isLoadingAlternateRevenue ? (
+      {isLoadingAlternateRevenue ? (
+        <div className="flex h-72 justify-center items-center">
+          <CircularProgress />
+        </div>
+      ) : (
         <WidgetTable
-          tableTitle={"Monthly Revenue with Source Details"}
-          data={flattenedRevenueData}
-          dateColumn={"invoiceCreationDate"}
+          tableTitle={
+            isBillingView
+              ? "Monthly Revenue with Alternate Billing Details"
+              : "Monthly Revenue with Source Details"
+          }
+          data={tableData}
+          dateColumn="invoiceCreationDate"
           totalKey="taxableAmount"
           exportData
+          search
           titleAmountOverride=""
           titleAmountGreen={({ filteredData }) =>
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "paid") return sum;
                 return sum + getNumericAmount(item.taxableAmount);
-              }, 0)
+              }, 0),
             )}`
           }
           titleAmountRed={({ filteredData }) =>
@@ -213,7 +520,7 @@ const getFinancialYear = (dateValue) => {
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "unpaid") return sum;
                 return sum + getNumericAmount(item.taxableAmount);
-              }, 0)
+              }, 0),
             )}`
           }
           titleAmountTotal={({ rangeTotal }) => `INR ${inrFormat(rangeTotal)}`}
@@ -221,38 +528,250 @@ const getFinancialYear = (dateValue) => {
           redTitle="Unpaid"
           totalTitle="Total"
           summaryChipVariant="ticket"
-          columns={[
-            { headerName: "Sr No", field: "srNo", width: 100 },
-            { headerName: "Particulars", field: "particulars", width: 350 },
-            {
-              headerName: "Taxable Amount (INR)",
-              field: "taxableAmount",
-              cellRenderer: (params) => inrFormat(params.value),
-            },
-            {
-              headerName: "Invoice Creation Date",
-              field: "invoiceCreationDate",
-            },
-
-            { headerName: "Invoice Paid Date", field: "invoicePaidDate" },
-            {
-              headerName: "GST (INR)",
-              field: "gst",
-              cellRenderer: (params) => inrFormat(params.value || 0),
-            },
-
-            {
-              headerName: "Status",
-              field: "status",
-              pinned: "right",
-              cellRenderer: (params) => <StatusChip status={params.value} />,
-            },
-          ]}
+          headerActions={
+            isBillingView ? (
+              <PrimaryButton
+                type="button"
+                title="Add Alternate"
+                handleSubmit={openCreate}
+              />
+            ) : null
+          }
+          columns={columns}
         />
-      ) : (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+      )}
+
+      {viewRow && (
+        <MuiModal
+          open
+          onClose={() => setViewRow(null)}
+          title="View Alternate Revenue Details"
+        >
+          <div className="flex flex-col gap-3">
+            <DetalisFormatted
+              title="Client Name"
+              detail={viewRow.name || viewRow.clientName || "-"}
+            />
+            <DetalisFormatted
+              title="Particulars"
+              detail={viewRow.particulars || "-"}
+            />
+            <DetalisFormatted
+              title="Taxable Amount"
+              detail={`INR ${inrFormat(viewRow.taxableAmount || 0)}`}
+            />
+            <DetalisFormatted
+              title="GST (18%)"
+              detail={`INR ${inrFormat(viewRow.gst || 0)}`}
+            />
+            <DetalisFormatted
+              title="Invoice Amount"
+              detail={`INR ${inrFormat(viewRow.invoiceAmount || 0)}`}
+            />
+            <DetalisFormatted
+              title="Invoice Creation Date"
+              detail={
+                viewRow.invoiceCreationDate
+                  ? dayjs(viewRow.invoiceCreationDate).format("DD-MM-YYYY")
+                  : "-"
+              }
+            />
+            <DetalisFormatted
+              title="Invoice Paid Date"
+              detail={
+                viewRow.invoicePaidDate
+                  ? dayjs(viewRow.invoicePaidDate).format("DD-MM-YYYY")
+                  : "-"
+              }
+            />
+            <DetalisFormatted
+              title="Status"
+              detail={viewRow.status || "Unpaid"}
+            />
+            <DetalisFormatted
+              title="Invoice Attached"
+              detail={viewRow.invoice?.link ? "Yes" : "No"}
+            />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={viewRow.invoiceName || "-"}
+            />
+            <DetalisFormatted
+              title="Invoice Link"
+              detail={
+                viewRow.invoice?.link ? (
+                  <a
+                    href={viewRow.invoice.link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary underline"
+                  >
+                    View PDF
+                  </a>
+                ) : (
+                  "-"
+                )
+              }
+            />
+          </div>
+        </MuiModal>
+      )}
+
+      {modalMode && (
+        <MuiModal
+          open
+          onClose={closeFormModal}
+          title={modalMode === "edit" ? "Edit Alternate" : "Add Alternate"}
+        >
+          <form
+            onSubmit={handleSubmit(saveAlternateRevenue)}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Client Name"
+                  size="small"
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="particulars"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Particulars"
+                  size="small"
+                  fullWidth
+                  multiline
+                  minRows={2}
+                />
+              )}
+            />
+
+            <Controller
+              name="taxableAmount"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Taxable Amount"
+                  size="small"
+                  fullWidth
+                />
+              )}
+            />
+
+            <Controller
+              name="gst"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="GST (18%)"
+                  size="small"
+                  fullWidth
+                  InputProps={{ readOnly: true }}
+                />
+              )}
+            />
+
+            <Controller
+              name="invoiceAmount"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  type="number"
+                  label="Invoice Amount"
+                  size="small"
+                  fullWidth
+                  InputProps={{ readOnly: true }}
+                />
+              )}
+            />
+
+            <Controller
+              name="invoiceCreationDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value)}
+                  label="Invoice Creation Date"
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
+                />
+              )}
+            />
+
+            <Controller
+              name="invoicePaidDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value)}
+                  label="Invoice Paid Date"
+                  format="DD-MM-YYYY"
+                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
+                />
+              )}
+            />
+
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Paid Status"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+
+            <Controller
+              name="invoiceFile"
+              control={control}
+              render={({ field }) => (
+                <div className="col-span-2">
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    allowedExtensions={["pdf", "doc", "docx"]}
+                    previewType="pdf"
+                  />
+                </div>
+              )}
+            />
+
+            <div className="col-span-2">
+              <PrimaryButton
+                type="submit"
+                title={modalMode === "edit" ? "Update Alternate" : "Add Alternate"}
+                disabled={isSavingAlternateRevenue}
+                isLoading={isSavingAlternateRevenue}
+                className="w-full"
+              />
+            </div>
+          </form>
+        </MuiModal>
       )}
     </div>
   );
