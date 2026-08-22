@@ -14,6 +14,7 @@ const {
 } = require("../controllers/salesControllers/coworkingClientControllers");
 const {
   bulkInsertWorkationClients,
+  getWorkationClients,
 } = require("../controllers/salesControllers/workationControllers");
 const {
   createClientService,
@@ -215,6 +216,7 @@ router.post(
   upload.single("workation-clients"),
   bulkInsertWorkationClients,
 );
+router.get("/get-workation-clients", getWorkationClients);
 router.post("/create-workation-revenue", createWorkationRevenue);
 router.get("/consolidated-revenue", getConsolidatedRevenue);
 router.get("/simple-consolidated-revenue", getSimpleConsolidatedRevenue);

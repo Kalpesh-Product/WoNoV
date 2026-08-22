@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MenuItem, TextField } from "@mui/material";
@@ -24,6 +24,24 @@ const getNormalizedStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const GST_RATE = 0.18;
+
+const getWorkationTaxCalculations = (taxableAmount) => {
+  const hasValue = String(taxableAmount ?? "").trim() !== "";
+  if (!hasValue) {
+    return {
+      gst: "",
+      totalAmount: "",
+    };
+  }
+
+  const taxable = getNumericAmount(taxableAmount);
+  const gst = Number((taxable * GST_RATE).toFixed(2));
+  const totalAmount = Number((taxable + gst).toFixed(2));
+
+  return { gst, totalAmount };
+};
+
 const getCurrentFinancialYearLabel = () => {
   const today = new Date();
   const startYear =
@@ -43,6 +61,7 @@ const getFinancialYear = (dateValue) => {
 };
 
 const getEmptyWorkationFormValues = () => ({
+  selectedClient: "",
   nameOfClient: "",
   clientInvoiceName: "",
   particulars: "",
@@ -85,9 +104,12 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   const [modalMode, setModalMode] = useState(null);
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
 
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, setValue, watch } = useForm({
     defaultValues: getEmptyWorkationFormValues(),
   });
+
+  const selectedClientValue = watch("selectedClient");
+  const taxableAmountValue = watch("taxableAmount");
 
   const { data: workationRevenue = [], isLoading: isWorkationLoading } =
     useQuery({
@@ -97,6 +119,32 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
         return Array.isArray(response.data) ? response.data : [];
       },
     });
+
+  const { data: workationClients = [] } = useQuery({
+    queryKey: ["workationClients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/get-workation-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const clientOptions = useMemo(
+    () =>
+      workationClients
+        .filter((client) => client?.clientName)
+        .map((client) => ({
+          value: client._id ? String(client._id) : `name:${client.clientName}`,
+          label: client.clientName,
+          clientId: client._id ? String(client._id) : "",
+        })),
+    [workationClients],
+  );
+
+  useEffect(() => {
+    const { gst, totalAmount } = getWorkationTaxCalculations(taxableAmountValue);
+    setValue("gst", gst, { shouldDirty: false });
+    setValue("totalAmount", totalAmount, { shouldDirty: false });
+  }, [setValue, taxableAmountValue]);
 
   const tableData = useMemo(
     () =>
@@ -238,7 +286,13 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   const openEdit = (row) => {
     setModalMode("edit");
     setEditRow(row);
+    const calculatedAmounts = getWorkationTaxCalculations(row.taxableAmount);
     reset({
+      selectedClient: row.client?._id
+        ? String(row.client._id)
+        : row.nameOfClient
+          ? `name:${row.nameOfClient}`
+          : "",
       nameOfClient: row.nameOfClient || row.clientName || "",
       clientInvoiceName: row.clientInvoiceName || "",
       particulars: row.particulars || "",
@@ -246,12 +300,8 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
         row.taxableAmount !== undefined && row.taxableAmount !== null
           ? row.taxableAmount
           : "",
-      gst:
-        row.gst !== undefined && row.gst !== null ? row.gst : "",
-      totalAmount:
-        row.totalAmount !== undefined && row.totalAmount !== null
-          ? row.totalAmount
-          : "",
+      gst: calculatedAmounts.gst,
+      totalAmount: calculatedAmounts.totalAmount,
       date: row.date ? dayjs(row.date) : dayjs(),
       status: row.status || "Unpaid",
       invoiceUploadedAt: row.invoiceUploadedAt
@@ -278,6 +328,9 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
     mutationFn: async (values) => {
       const formData = new FormData();
+      const selectedClient = clientOptions.find(
+        (option) => option.value === values.selectedClient,
+      );
       formData.append("revenueId", editRow?._id || "");
       formData.append(
         "isProjectedInvoice",
@@ -297,6 +350,11 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
           formData.append(key, value);
         }
       });
+
+      if (selectedClient?.clientId) {
+        formData.append("clientId", selectedClient.clientId);
+        formData.append("client", selectedClient.clientId);
+      }
 
       if (values.date) {
         formData.append("date", dayjs(values.date).toISOString());
@@ -326,6 +384,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
           : "Workation added successfully",
       );
       queryClient.invalidateQueries({ queryKey: ["workationData"] });
+      queryClient.invalidateQueries({ queryKey: ["workationClients"] });
       closeFormModal();
     },
     onError: (error) =>
@@ -591,6 +650,46 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
             className="grid grid-cols-2 gap-4"
           >
             <Controller
+              name="selectedClient"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Client"
+                  size="small"
+                  fullWidth
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    field.onChange(value);
+
+                    if (!value) {
+                      setValue("nameOfClient", "", { shouldDirty: true });
+                      return;
+                    }
+
+                    const selectedOption = clientOptions.find(
+                      (option) => option.value === value,
+                    );
+
+                    if (selectedOption) {
+                      setValue("nameOfClient", selectedOption.label, {
+                        shouldDirty: true,
+                      });
+                    }
+                  }}
+                >
+                  <MenuItem value="">Select Client</MenuItem>
+                  {clientOptions.map((client) => (
+                    <MenuItem key={client.value} value={client.value}>
+                      {client.label}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+
+            <Controller
               name="nameOfClient"
               control={control}
               render={({ field }) => (
@@ -599,134 +698,157 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   label="Client Name"
                   size="small"
                   fullWidth
+                  InputProps={{ readOnly: Boolean(selectedClientValue) }}
+                  onChange={(event) => {
+                    field.onChange(event);
+                    if (selectedClientValue) {
+                      setValue("selectedClient", "", { shouldDirty: true });
+                    }
+                  }}
                 />
               )}
             />
 
-            <Controller
-              name="clientInvoiceName"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Client Invoice Name"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <Controller
+                name="clientInvoiceName"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Client Invoice Name"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+              />
 
-            <Controller
-              name="particulars"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Particulars"
-                  size="small"
-                  fullWidth
-                  multiline
-                  minRows={2}
-                  className="col-span-2"
-                />
-              )}
-            />
+              <Controller
+                name="particulars"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Particulars"
+                    size="small"
+                    fullWidth
+                    multiline
+                    minRows={2}
+                  />
+                )}
+              />
+            </div>
 
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Status"
-                  size="small"
-                  fullWidth
-                >
-                  <MenuItem value="Paid">Paid</MenuItem>
-                  <MenuItem value="Unpaid">Unpaid</MenuItem>
-                </TextField>
-              )}
-            />
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <Controller
+                name="taxableAmount"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Taxable Amount"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+              />
 
-            <Controller
-              name="taxableAmount"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="Taxable Amount"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
+              <Controller
+                name="gst"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="GST (18%)"
+                    size="small"
+                    fullWidth
+                    InputProps={{ readOnly: true }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="gst"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="GST"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
+              <Controller
+                name="totalAmount"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Total Amount"
+                    size="small"
+                    fullWidth
+                    InputProps={{ readOnly: true }}
+                  />
+                )}
+              />
+            </div>
 
-            <Controller
-              name="totalAmount"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="Total Amount"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <Controller
+                name="date"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value)}
+                    label="Revenue Date"
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: { fullWidth: true, size: "small" },
+                    }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="date"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  value={field.value || null}
-                  onChange={(value) => field.onChange(value)}
-                  label="Revenue Date"
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            />
+              <Controller
+                name="invoiceUploadedAt"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value)}
+                    label="Invoice Upload Date"
+                    format="DD-MM-YYYY"
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        size: "small",
+                        disabled: true,
+                      },
+                    }}
+                    disabled
+                  />
+                )}
+              />
 
-            <Controller
-              name="invoiceUploadedAt"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  value={field.value || null}
-                  onChange={(value) => field.onChange(value)}
-                  label="Invoice Upload Date"
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            />
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Paid/Rent Status"
+                    size="small"
+                    fullWidth
+                  >
+                    <MenuItem value="Paid">Paid</MenuItem>
+                    <MenuItem value="Unpaid">Unpaid</MenuItem>
+                  </TextField>
+                )}
+              />
+            </div>
 
             <Controller
               name="invoiceFile"
               control={control}
               render={({ field }) => (
                 <div className="col-span-2">
-                    <UploadFileInput
+                  <UploadFileInput
                     value={field.value}
                     onChange={field.onChange}
                     allowedExtensions={["pdf", "doc", "docx"]}

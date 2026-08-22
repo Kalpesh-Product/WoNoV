@@ -384,10 +384,10 @@ const WidgetTable = ({
             {buttonTitle && (
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             )}
+            {headerActions}
             {exportData && (
               <PrimaryButton title="Export" handleSubmit={handleExportPass} />
             )}
-            {headerActions}
             {batchButton && selectedRows.length > 0 && (
               <PrimaryButton
                 title={batchButton}

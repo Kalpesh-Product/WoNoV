@@ -13,6 +13,37 @@ const {
 const {
   fetchWorkationRevenueReportService,
 } = require("../../services/reports/revenue");
+
+const escapeRegExp = (value = "") =>
+  value.toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const findOrCreateWorkationClient = async ({
+  clientId,
+  clientName,
+}) => {
+  if (clientId && mongoose.Types.ObjectId.isValid(clientId)) {
+    const existingById = await WorkationClients.findById(clientId).lean();
+    if (existingById) {
+      return existingById;
+    }
+  }
+
+  const normalizedName = clientName?.toString().trim();
+  if (!normalizedName) {
+    return null;
+  }
+
+  const existingByName = await WorkationClients.findOne({
+    clientName: { $regex: new RegExp(`^${escapeRegExp(normalizedName)}$`, "i") },
+  }).lean();
+
+  if (existingByName) {
+    return existingByName;
+  }
+
+  return WorkationClients.create({ clientName: normalizedName });
+};
+
 const createWorkationRevenue = async (req, res, next) => {
   try {
     const {
@@ -26,6 +57,10 @@ const createWorkationRevenue = async (req, res, next) => {
     } = req.body;
 
     const company = req.company;
+    const client = await findOrCreateWorkationClient({
+      clientId,
+      clientName: nameOfClient,
+    });
 
     const newRevenue = new WorkationRevenue({
       company,
@@ -35,7 +70,7 @@ const createWorkationRevenue = async (req, res, next) => {
       taxableAmount,
       gst,
       totalAmount,
-      client: clientId,
+      client: client?._id || clientId || null,
     });
 
     await newRevenue.save();
@@ -54,6 +89,49 @@ const getWorkationRevenues = async (req, res, next) => {
     const payload = await fetchWorkationRevenueReportService({ company });
 
     return res.status(200).json(payload);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getWorkationClients = async (req, res, next) => {
+  try {
+    const [existingClients, revenueNames] = await Promise.all([
+      WorkationClients.find().sort({ clientName: 1 }).lean().exec(),
+      WorkationRevenue.find({}, { nameOfClient: 1 }).lean().exec(),
+    ]);
+
+    const mergedClients = [];
+    const seenNames = new Set();
+
+    existingClients.forEach((client) => {
+      const normalizedName = client.clientName?.toString().trim().toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) {
+        return;
+      }
+
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        _id: client._id,
+        clientName: client.clientName,
+      });
+    });
+
+    revenueNames.forEach((row) => {
+      const clientName = row.nameOfClient?.toString().trim();
+      const normalizedName = clientName?.toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) {
+        return;
+      }
+
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        _id: null,
+        clientName,
+      });
+    });
+
+    return res.status(200).json(mergedClients);
   } catch (error) {
     next(error);
   }
@@ -93,6 +171,7 @@ const updateWorkationRevenueInvoice = async (req, res, next) => {
       "date",
       "status",
       "invoiceUploadedAt",
+      "clientId",
       "client",
     ];
 
@@ -103,10 +182,22 @@ const updateWorkationRevenueInvoice = async (req, res, next) => {
       return result;
     }, {});
 
+    const client = await findOrCreateWorkationClient({
+      clientId: updates.clientId || payload.client,
+      clientName: payload.nameOfClient || existingRevenue?.nameOfClient,
+    });
+
     if (payload.date) payload.date = new Date(payload.date);
     if (payload.invoiceUploadedAt) {
       payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
     }
+
+    if (client?._id) {
+      payload.client = client._id;
+    } else if (payload.clientId && mongoose.Types.ObjectId.isValid(payload.clientId)) {
+      payload.client = payload.clientId;
+    }
+    delete payload.clientId;
 
     if (req.file) {
       const allowedMimeTypes = [
@@ -393,6 +484,7 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
 
 module.exports = {
   getWorkationRevenues,
+  getWorkationClients,
   createWorkationRevenue,
   bulkInsertWorkationRevenue,
   updateWorkationRevenueInvoice,
