@@ -732,8 +732,6 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                     label="Particulars"
                     size="small"
                     fullWidth
-                    multiline
-                    minRows={2}
                   />
                 )}
               />
@@ -764,6 +762,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                     label="GST (18%)"
                     size="small"
                     fullWidth
+                    disabled
                     InputProps={{ readOnly: true }}
                   />
                 )}
@@ -779,6 +778,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                     label="Total Amount"
                     size="small"
                     fullWidth
+                    disabled
                     InputProps={{ readOnly: true }}
                   />
                 )}

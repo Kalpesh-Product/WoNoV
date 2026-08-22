@@ -741,8 +741,6 @@ const AltRevenues = ({ showChart = true }) => {
                   label="Particulars"
                   size="small"
                   fullWidth
-                  multiline
-                  minRows={2}
                 />
               )}
             />
