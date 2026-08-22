@@ -118,6 +118,7 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
 
     const allowedFields = [
       "name",
+      "clientInvoiceName",
       "particulars",
       "taxableAmount",
       "gst",

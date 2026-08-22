@@ -165,6 +165,7 @@ const fetchAlternateRevenueReportService = async ({
     monthData.revenue.push({
       _id: item._id,
       name: item.name,
+      clientInvoiceName: item.clientInvoiceName || null,
       particulars: item.particulars,
       taxableAmount: item.taxableAmount,
       invoiceAmount: item.invoiceAmount,

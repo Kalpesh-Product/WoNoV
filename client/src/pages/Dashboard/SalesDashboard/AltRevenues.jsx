@@ -57,7 +57,9 @@ const getAlternateTaxCalculations = (taxableAmount) => {
 };
 
 const getEmptyAlternateFormValues = () => ({
+  selectedClient: "",
   name: "",
+  clientInvoiceName: "",
   particulars: "",
   taxableAmount: "",
   gst: "",
@@ -121,34 +123,71 @@ const AltRevenues = ({ showChart = true }) => {
     setValue("invoiceAmount", invoiceAmount, { shouldDirty: false });
   }, [setValue, taxableAmountValue]);
 
-  const tableData = useMemo(
+  const alternateRevenueRows = useMemo(
     () =>
-      alternateRevenue.flatMap((monthData) =>
-        (monthData.revenue || []).map((item, index) => {
-          const invoice = item.invoice || {};
-
-          return {
+      alternateRevenue.flatMap((monthData, monthIndex) => {
+        if (Array.isArray(monthData?.revenue)) {
+          return monthData.revenue.map((item, index) => ({
             ...item,
-            id: item._id || `${monthData.month}-${index}`,
-            name: item.name || "-",
-            clientName: item.name || "-",
-            particulars: item.particulars || "-",
-            taxableAmount: getNumericAmount(item.taxableAmount),
-            gst: getNumericAmount(item.gst),
-            invoiceAmount: getNumericAmount(item.invoiceAmount),
-            invoiceCreationDate: item.invoiceCreationDate,
-            invoicePaidDate: item.invoicePaidDate || invoice.date || null,
-            status: item.status || "Unpaid",
-            normalizedStatus: getNormalizedStatus(item.status || "Unpaid"),
-            invoice: invoice || null,
-            invoiceName: invoice.name || item.invoiceName || "-",
-            invoiceLink: invoice.link || item.invoiceLink || "-",
-            invoiceAttached: Boolean(invoice.link),
-          };
-        }),
-      ),
+            id: item._id || `${monthData.month || monthIndex}-${index}`,
+          }));
+        }
+
+        return [
+          {
+            ...monthData,
+            id: monthData?._id || monthData?.id || `alt-${monthIndex}`,
+          },
+        ];
+      }),
     [alternateRevenue],
   );
+
+  const tableData = useMemo(
+    () =>
+      alternateRevenueRows.map((item) => {
+        const invoice = item.invoice || {};
+
+        return {
+          ...item,
+          name: item.name || "-",
+          clientName: item.name || item.clientName || "-",
+          clientInvoiceName: item.clientInvoiceName || "-",
+          particulars: item.particulars || "-",
+          taxableAmount: getNumericAmount(item.taxableAmount),
+          gst: getNumericAmount(item.gst),
+          invoiceAmount: getNumericAmount(item.invoiceAmount),
+          invoiceCreationDate: item.invoiceCreationDate,
+          invoicePaidDate: item.invoicePaidDate || invoice.date || null,
+          status: item.status || "Unpaid",
+          normalizedStatus: getNormalizedStatus(item.status || "Unpaid"),
+          invoice: invoice || null,
+          invoiceName: invoice.name || item.invoiceName || "-",
+          invoiceLink: invoice.link || item.invoiceLink || "-",
+          invoiceAttached: Boolean(invoice.link),
+        };
+      }),
+    [alternateRevenueRows],
+  );
+
+  const clientOptions = useMemo(() => {
+    const clientMap = new Map();
+    const pushName = (value) => {
+      const trimmedName = String(value || "").trim();
+      if (!trimmedName) return;
+
+      const normalizedName = trimmedName.toLowerCase();
+      if (!clientMap.has(normalizedName)) {
+        clientMap.set(normalizedName, trimmedName);
+      }
+    };
+
+    alternateRevenueRows.forEach((item) =>
+      pushName(item?.name || item?.clientName || item?.clientInvoiceName),
+    );
+
+    return [...clientMap.values()].sort((a, b) => a.localeCompare(b));
+  }, [alternateRevenueRows]);
 
   const graphData = useMemo(
     () =>
@@ -269,7 +308,9 @@ const AltRevenues = ({ showChart = true }) => {
     const calculatedAmounts = getAlternateTaxCalculations(row.taxableAmount);
 
     reset({
+      selectedClient: row.name || "",
       name: row.name || "",
+      clientInvoiceName: row.clientInvoiceName || "",
       particulars: row.particulars || "",
       taxableAmount:
         row.taxableAmount !== undefined && row.taxableAmount !== null
@@ -303,7 +344,8 @@ const AltRevenues = ({ showChart = true }) => {
         formData.append("revenueId", editRow?._id || "");
 
         [
-          ["name", values.name],
+          ["name", values.name || values.selectedClient],
+          ["clientInvoiceName", values.clientInvoiceName],
           ["particulars", values.particulars],
           ["taxableAmount", values.taxableAmount],
           ["gst", values.gst],
@@ -418,16 +460,8 @@ const AltRevenues = ({ showChart = true }) => {
         params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
     },
     {
-      headerName: "Invoice Paid Date",
-      field: "invoicePaidDate",
-      flex:1,
-      pinned:"right",
-      valueFormatter: (params) =>
-        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
-    },
-    {
-      headerName: "Invoice Name",
-      field: "invoiceName",
+      headerName: "Client Invoice Name",
+      field: "clientInvoiceName",
       valueFormatter: (params) => params.value || "-",
     },
     {
@@ -448,6 +482,14 @@ const AltRevenues = ({ showChart = true }) => {
         ) : (
           "-"
         ),
+    },
+    {
+      headerName: "Invoice Paid Date",
+      field: "invoicePaidDate",
+      flex:1,
+      pinned:"right",
+      valueFormatter: (params) =>
+        params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
     },
     {
       headerName: "Status",
@@ -506,6 +548,7 @@ const AltRevenues = ({ showChart = true }) => {
           totalKey="taxableAmount"
           exportData
           search
+          preserveCurrentMonthRange={isBillingView}
           titleAmountOverride=""
           titleAmountGreen={({ filteredData }) =>
             `INR ${inrFormat(
@@ -553,6 +596,10 @@ const AltRevenues = ({ showChart = true }) => {
               detail={viewRow.name || viewRow.clientName || "-"}
             />
             <DetalisFormatted
+              title="Client Invoice Name"
+              detail={viewRow.clientInvoiceName || "-"}
+            />
+            <DetalisFormatted
               title="Particulars"
               detail={viewRow.particulars || "-"}
             />
@@ -561,7 +608,7 @@ const AltRevenues = ({ showChart = true }) => {
               detail={`INR ${inrFormat(viewRow.taxableAmount || 0)}`}
             />
             <DetalisFormatted
-              title="GST (18%)"
+              title="GST"
               detail={`INR ${inrFormat(viewRow.gst || 0)}`}
             />
             <DetalisFormatted
@@ -577,24 +624,8 @@ const AltRevenues = ({ showChart = true }) => {
               }
             />
             <DetalisFormatted
-              title="Invoice Paid Date"
-              detail={
-                viewRow.invoicePaidDate
-                  ? dayjs(viewRow.invoicePaidDate).format("DD-MM-YYYY")
-                  : "-"
-              }
-            />
-            <DetalisFormatted
-              title="Status"
-              detail={viewRow.status || "Unpaid"}
-            />
-            <DetalisFormatted
               title="Invoice Attached"
               detail={viewRow.invoice?.link ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title="Invoice Name"
-              detail={viewRow.invoiceName || "-"}
             />
             <DetalisFormatted
               title="Invoice Link"
@@ -613,6 +644,18 @@ const AltRevenues = ({ showChart = true }) => {
                 )
               }
             />
+            <DetalisFormatted
+              title="Invoice Paid Date"
+              detail={
+                viewRow.invoicePaidDate
+                  ? dayjs(viewRow.invoicePaidDate).format("DD-MM-YYYY")
+                  : "-"
+              }
+            />
+              <DetalisFormatted
+              title="Paid/Rent Status"
+              detail={viewRow.status || "Unpaid"}
+            />
           </div>
         </MuiModal>
       )}
@@ -627,15 +670,64 @@ const AltRevenues = ({ showChart = true }) => {
             onSubmit={handleSubmit(saveAlternateRevenue)}
             className="grid grid-cols-2 gap-4"
           >
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <Controller
+                name="selectedClient"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Select Client"
+                    size="small"
+                    fullWidth
+                    displayEmpty
+                    onChange={(event) => {
+                      field.onChange(event);
+                      setValue("name", event.target.value, {
+                        shouldDirty: true,
+                      });
+                    }}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="">Select Client</MenuItem>
+                    {clientOptions.map((client) => (
+                      <MenuItem key={client} value={client}>
+                        {client}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+
+              <Controller
+                name="name"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    label="Client Name"
+                    size="small"
+                    fullWidth
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  />
+                )}
+              />
+            </div>
+
             <Controller
-              name="name"
+              name="clientInvoiceName"
               control={control}
-              render={({ field }) => (
+              render={({ field, fieldState }) => (
                 <TextField
                   {...field}
-                  label="Client Name"
+                  label="Client Invoice Name"
                   size="small"
                   fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
                 />
               )}
             />
@@ -655,96 +747,103 @@ const AltRevenues = ({ showChart = true }) => {
               )}
             />
 
-            <Controller
-              name="taxableAmount"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="Taxable Amount"
-                  size="small"
-                  fullWidth
-                />
-              )}
-            />
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <Controller
+                name="taxableAmount"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Taxable Amount"
+                    size="small"
+                    fullWidth
+                  />
+                )}
+              />
 
-            <Controller
-              name="gst"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="GST (18%)"
-                  size="small"
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              )}
-            />
+              <Controller
+                name="gst"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="GST (18%)"
+                    size="small"
+                    fullWidth
+                    disabled
+                    InputProps={{ readOnly: true }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="invoiceAmount"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  type="number"
-                  label="Invoice Amount"
-                  size="small"
-                  fullWidth
-                  InputProps={{ readOnly: true }}
-                />
-              )}
-            />
+              <Controller
+                name="invoiceAmount"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    type="number"
+                    label="Invoice Amount"
+                    size="small"
+                    fullWidth
+                    disabled
+                    InputProps={{ readOnly: true }}
+                  />
+                )}
+              />
+            </div>
 
-            <Controller
-              name="invoiceCreationDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  value={field.value || null}
-                  onChange={(value) => field.onChange(value)}
-                  label="Invoice Creation Date"
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            />
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <Controller
+                name="invoiceCreationDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value)}
+                    label="Invoice Creation Date"
+                    format="DD-MM-YYYY"
+                    slotProps={{ textField: { fullWidth: true, size: "small" } }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="invoicePaidDate"
-              control={control}
-              render={({ field }) => (
-                <DatePicker
-                  {...field}
-                  value={field.value || null}
-                  onChange={(value) => field.onChange(value)}
-                  label="Invoice Paid Date"
-                  format="DD-MM-YYYY"
-                  slotProps={{ textField: { fullWidth: true, size: "small" } }}
-                />
-              )}
-            />
+              <Controller
+                name="invoicePaidDate"
+                control={control}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value || null}
+                    onChange={(value) => field.onChange(value)}
+                    label="Invoice Paid Date"
+                    format="DD-MM-YYYY"
+                    disabled
+                    slotProps={{ textField: { fullWidth: true, size: "small" } }}
+                  />
+                )}
+              />
 
-            <Controller
-              name="status"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  select
-                  label="Paid Status"
-                  size="small"
-                  fullWidth
-                >
-                  <MenuItem value="Paid">Paid</MenuItem>
-                  <MenuItem value="Unpaid">Unpaid</MenuItem>
-                </TextField>
-              )}
-            />
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    select
+                    label="Paid/Rent Status"
+                    size="small"
+                    fullWidth
+                  >
+                    <MenuItem value="Paid">Paid</MenuItem>
+                    <MenuItem value="Unpaid">Unpaid</MenuItem>
+                  </TextField>
+                )}
+              />
+            </div>
 
             <Controller
               name="invoiceFile"
