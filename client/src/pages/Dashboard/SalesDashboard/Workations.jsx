@@ -44,6 +44,7 @@ const getFinancialYear = (dateValue) => {
 
 const getEmptyWorkationFormValues = () => ({
   nameOfClient: "",
+  clientInvoiceName: "",
   particulars: "",
   taxableAmount: "",
   gst: "",
@@ -111,6 +112,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               id: item._id,
               clientName,
               nameOfClient: item.nameOfClient || clientName,
+              clientInvoiceName: item.clientInvoiceName || "",
               particulars: item.particulars || "-",
               taxableAmount: getNumericAmount(item.taxableAmount),
               gst: getNumericAmount(item.gst),
@@ -238,6 +240,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
     setEditRow(row);
     reset({
       nameOfClient: row.nameOfClient || row.clientName || "",
+      clientInvoiceName: row.clientInvoiceName || "",
       particulars: row.particulars || "",
       taxableAmount:
         row.taxableAmount !== undefined && row.taxableAmount !== null
@@ -283,6 +286,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
 
       [
         ["nameOfClient", values.nameOfClient],
+        ["clientInvoiceName", values.clientInvoiceName],
         ["particulars", values.particulars],
         ["taxableAmount", values.taxableAmount],
         ["gst", values.gst],
@@ -384,7 +388,11 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
       valueFormatter: (params) =>
         params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
     },
-    { headerName: "Invoice Name", field: "invoiceName", flex: 1,pinned:"right" },
+     {
+      headerName: "Client Invoice Name",
+      field: "clientInvoiceName",
+      valueFormatter: (params) => params.value || "-",
+    },
     {
       headerName: "Invoice Link",
       field: "invoiceLink",
@@ -506,6 +514,10 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               detail={viewRow.nameOfClient || viewRow.clientName || "-"}
             />
             <DetalisFormatted
+              title="Client Invoice Name"
+              detail={viewRow.clientInvoiceName || "-"}
+            />
+            <DetalisFormatted
               title="Particulars"
               detail={viewRow.particulars || "-"}
             />
@@ -528,17 +540,13 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               }
             />
             <DetalisFormatted
-              title="Status"
-              detail={viewRow.status || "Unpaid"}
-            />
-            <DetalisFormatted
               title="Invoice Attached"
               detail={viewRow.invoice?.link ? "Yes" : "No"}
             />
-            <DetalisFormatted
-              title="Invoice Name"
-              detail={viewRow.invoiceName || "-"}
-            />
+            {/* <DetalisFormatted
+              title="Client Invoice Name"
+              detail={viewRow.clientInvoiceName || "-"}
+            /> */}
             <DetalisFormatted
               title="Invoice Link"
               detail={
@@ -563,6 +571,10 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
                   : "-"
               }
+            />
+             <DetalisFormatted
+              title="Paid/Rent Status"
+              detail={viewRow.status || "Unpaid"}
             />
           </div>
         </MuiModal>
@@ -592,19 +604,15 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
             />
 
             <Controller
-              name="status"
+              name="clientInvoiceName"
               control={control}
               render={({ field }) => (
                 <TextField
                   {...field}
-                  select
-                  label="Status"
+                  label="Client Invoice Name"
                   size="small"
                   fullWidth
-                >
-                  <MenuItem value="Paid">Paid</MenuItem>
-                  <MenuItem value="Unpaid">Unpaid</MenuItem>
-                </TextField>
+                />
               )}
             />
 
@@ -621,6 +629,23 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   minRows={2}
                   className="col-span-2"
                 />
+              )}
+            />
+
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Status"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
               )}
             />
 
@@ -701,7 +726,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               control={control}
               render={({ field }) => (
                 <div className="col-span-2">
-                  <UploadFileInput
+                    <UploadFileInput
                     value={field.value}
                     onChange={field.onChange}
                     allowedExtensions={["pdf", "doc", "docx"]}

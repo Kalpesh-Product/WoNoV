@@ -17,6 +17,7 @@ const createWorkationRevenue = async (req, res, next) => {
   try {
     const {
       nameOfClient,
+      clientInvoiceName,
       particulars,
       taxableAmount,
       gst,
@@ -29,6 +30,7 @@ const createWorkationRevenue = async (req, res, next) => {
     const newRevenue = new WorkationRevenue({
       company,
       nameOfClient,
+      clientInvoiceName,
       particulars,
       taxableAmount,
       gst,
@@ -83,6 +85,7 @@ const updateWorkationRevenueInvoice = async (req, res, next) => {
 
     const allowedFields = [
       "nameOfClient",
+      "clientInvoiceName",
       "particulars",
       "taxableAmount",
       "gst",
@@ -278,6 +281,11 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
           "Client Name",
           "Client",
         ]);
+        const clientInvoiceName = getCsvValue(row, [
+          "Client Invoice Name",
+          "Invoice Name",
+          "clientInvoiceName",
+        ]);
         const particulars = getCsvValue(row, ["Particulars", "PARTCULARS"]);
         const paidDate = parseCsvDate(
           getCsvValue(row, ["Paid Date", "PAYMENT DATE", "Date"]),
@@ -307,6 +315,7 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
 
         rows.push({
           nameOfClient,
+          clientInvoiceName,
           normalizedName: normalizeClientName(nameOfClient),
           status: getCsvValue(row, ["Status"]),
           particulars,
