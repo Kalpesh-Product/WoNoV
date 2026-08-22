@@ -69,6 +69,7 @@ const {
   createWorkationRevenue,
   getWorkationRevenues,
   bulkInsertWorkationRevenue,
+  updateWorkationRevenueInvoice,
 } = require("../controllers/salesControllers/workationRevenueController");
 const {
   getMembersByUnit,
@@ -199,6 +200,11 @@ router.post(
 );
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
+router.patch(
+  "/workation-revenue-invoice",
+  upload.single("client-invoice"),
+  updateWorkationRevenueInvoice,
+);
 router.post(
   "/bulk-insert-workation-revenue",
   upload.single("workation-revenue"),

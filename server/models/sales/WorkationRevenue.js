@@ -37,6 +37,13 @@ const workationRevenueSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
   },
   { timestamps: true },
 );

@@ -22,6 +22,7 @@ const WidgetTable = ({
   tableTitle,
   buttonTitle,
   handleSubmit,
+  headerActions,
   checkbox,
   checkAll,
   key,
@@ -54,7 +55,6 @@ const WidgetTable = ({
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-  const today = dayjs();
 
   const [dateRange, setDateRange] = useState([]);
   const [isUserChangedRange, setIsUserChangedRange] = useState(false);
@@ -67,8 +67,8 @@ const WidgetTable = ({
   useEffect(() => {
     if (!data.length || !dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
 
-    const currentMonthStart = today.startOf("month");
-    const currentMonthEnd = today.endOf("month");
+    const currentMonthStart = dayjs().startOf("month");
+    const currentMonthEnd = dayjs().endOf("month");
 
     if (preserveCurrentMonthRange) {
       setDateRange([
@@ -279,7 +279,15 @@ const WidgetTable = ({
       ...item,
       srNo: index + 1,
     }));
-  }, [filteredData, groupByKey, totalKey, sortByString, sortByNo, sortOrder]);
+  }, [
+    filteredData,
+    finalTableData,
+    groupByKey,
+    totalKey,
+    sortByString,
+    sortByNo,
+    sortOrder,
+  ]);
 
   const sortedTableData = useMemo(() => {
     let sorted = [...finalTableData];
@@ -379,6 +387,7 @@ const WidgetTable = ({
             {exportData && (
               <PrimaryButton title="Export" handleSubmit={handleExportPass} />
             )}
+            {headerActions}
             {batchButton && selectedRows.length > 0 && (
               <PrimaryButton
                 title={batchButton}

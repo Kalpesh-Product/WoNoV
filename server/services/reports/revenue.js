@@ -410,8 +410,11 @@ const fetchWorkationRevenueReportService = async ({
   isReport = false,
   dateFilter,
 }) => {
-  let filter = {};
+  const filter = {};
 
+  if (company) {
+    filter.company = company;
+  }
   if (dateFilter) {
     filter.date = dateFilter.date;
   }

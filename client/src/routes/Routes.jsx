@@ -972,7 +972,12 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "workation-revenue-invoicing",
-                                element: <Workations showChart={false} />,
+                                element: (
+                                  <Workations
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "alternate-revenue-invoicing",
