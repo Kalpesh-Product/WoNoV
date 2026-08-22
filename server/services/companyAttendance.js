@@ -18,9 +18,11 @@ const getCompanyAttandancesService = async ({
   } = getPagination({ page, limit });
 
  const employeeQuery = { company, isActive: true };
-  let activeEmployeesQuery = UserData.find(employeeQuery).select(
-    "firstName lastName empId startDate isActive",
-  );
+  let activeEmployeesQuery = UserData.find(employeeQuery)
+    .select(
+      "firstName lastName empId startDate isActive departments payrollInformation.payrollBatch",
+    )
+    .populate({ path: "departments", select: "name" });
 
   if (shouldPaginate) {
     activeEmployeesQuery = activeEmployeesQuery
@@ -43,7 +45,9 @@ const getCompanyAttandancesService = async ({
   };
     const attendanceFindQuery = Attandance.find(attendanceQuery).populate({
     path: "user",
-    select: "firstName lastName empId startDate isActive",
+    select:
+      "firstName lastName empId startDate isActive departments payrollInformation.payrollBatch",
+    populate: { path: "departments", select: "name" },
   });
 
   // if (shouldPaginate) {
@@ -58,12 +62,15 @@ const getCompanyAttandancesService = async ({
   //   shouldPaginate
   //     ? Attandance.countDocuments(attendanceQuery)
   //     : Promise.resolve(0),
-   const [companyAttandances, holidays, allLeaves] = await Promise.all([
+  const [companyAttandances, holidays, allLeaves] = await Promise.all([
+    attendanceFindQuery.lean().exec(),
     Events.find({ company, type: "Holiday" }).lean().exec(),
     Leaves.find({ company, takenBy: { $in: activeEmployeeIds } })
       .populate({
         path: "takenBy",
-        select: "firstName lastName empId startDate isActive",
+        select:
+          "firstName lastName empId startDate isActive departments payrollInformation.payrollBatch",
+        populate: { path: "departments", select: "name" },
       })
       .lean()
       .exec(),

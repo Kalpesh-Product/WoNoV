@@ -294,6 +294,7 @@ const fetchUserLeaveSummary = async (req, res, next) => {
     const year = Number.isInteger(requestedYear)
       ? requestedYear
       : new Date().getFullYear();
+    const isFinancialYear = req.query.financialYear === "true";
 
     const user = await UserData.findOne({ empId: id })
       .select("_id employeeType.leavesCount")
@@ -303,8 +304,8 @@ const fetchUserLeaveSummary = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const yearStart = new Date(year, 0, 1);
-    const nextYearStart = new Date(year + 1, 0, 1);
+    const yearStart = new Date(year, isFinancialYear ? 3 : 0, 1);
+    const nextYearStart = new Date(year + 1, isFinancialYear ? 3 : 0, 1);
     const yearLeaves = await Leave.find({
       takenBy: user._id,
       status: { $ne: "Rejected" },
