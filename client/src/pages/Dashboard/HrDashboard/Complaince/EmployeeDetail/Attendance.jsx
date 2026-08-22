@@ -531,7 +531,31 @@ const Attendance = () => {
   const onSubmit = (data) => {
     correctionPost(data);
   };
-const attendanceTableData = useMemo(() => {
+
+  const formatBreakDuration = (durationInMinutes) => {
+    if (
+      durationInMinutes === null ||
+      durationInMinutes === undefined ||
+      Number.isNaN(Number(durationInMinutes))
+    ) {
+      return "N/A";
+    }
+
+    const totalSeconds = Math.max(
+      0,
+      Math.round(Number(durationInMinutes) * 60),
+    );
+    if (totalSeconds < 60) return `${totalSeconds} sec`;
+
+    const totalMinutes = Math.round(totalSeconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
+  };
+
+  const attendanceTableData = useMemo(() => {
     if (isLoading || attendance.length === 0) {
       return [
         {
@@ -556,7 +580,7 @@ const attendanceTableData = useMemo(() => {
         record?.inTime && record?.outTime
           ? formatDuration(record.inTime, record.outTime)
           : "N/A",
-      breakHours: record?.breakDuration ?? "N/A",
+      breakHours: formatBreakDuration(record?.breakDuration),
       totalHours:
         record?.inTime && record?.outTime
           ? formatDuration(record.inTime, record.outTime)
