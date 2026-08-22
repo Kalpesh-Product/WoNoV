@@ -105,6 +105,7 @@ const AltRevenues = ({ showChart = true }) => {
     defaultValues: getEmptyAlternateFormValues(),
   });
 
+  const selectedClientValue = watch("selectedClient");
   const taxableAmountValue = watch("taxableAmount");
 
   const { data: alternateRevenue = [], isLoading: isLoadingAlternateRevenue } =
@@ -342,6 +343,9 @@ const AltRevenues = ({ showChart = true }) => {
       mutationFn: async (values) => {
         const formData = new FormData();
         formData.append("revenueId", editRow?._id || "");
+        if (values.selectedClient) {
+          formData.append("originalClientName", values.selectedClient);
+        }
 
         [
           ["name", values.name || values.selectedClient],
@@ -710,6 +714,7 @@ const AltRevenues = ({ showChart = true }) => {
                     label="Client Name"
                     size="small"
                     fullWidth
+                    disabled={Boolean(selectedClientValue)}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                   />

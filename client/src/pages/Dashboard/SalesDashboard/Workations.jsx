@@ -698,6 +698,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   label="Client Name"
                   size="small"
                   fullWidth
+                  disabled={Boolean(selectedClientValue)}
                   InputProps={{ readOnly: Boolean(selectedClientValue) }}
                   onChange={(event) => {
                     field.onChange(event);

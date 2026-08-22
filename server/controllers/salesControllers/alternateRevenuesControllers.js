@@ -106,6 +106,9 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
     }
 
     const { revenueId, ...updates } = req.body;
+    const originalClientName = updates.originalClientName
+      ? updates.originalClientName.toString().trim()
+      : "";
     const hasValidRevenueId =
       revenueId && mongoose.Types.ObjectId.isValid(revenueId);
 
@@ -147,6 +150,24 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
       payload.taxableAmount = calculatedAmounts.taxableAmount;
       payload.gst = calculatedAmounts.gst;
       payload.invoiceAmount = calculatedAmounts.invoiceAmount;
+    }
+
+    if (
+      originalClientName &&
+      payload.name &&
+      originalClientName !== payload.name
+    ) {
+      await AlternateRevenue.updateMany(
+        {
+          company: req.company,
+          name: originalClientName,
+        },
+        {
+          $set: {
+            name: payload.name,
+          },
+        },
+      );
     }
 
     if (req.file) {
