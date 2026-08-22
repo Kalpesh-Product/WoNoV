@@ -341,7 +341,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
       return Array.isArray(response.data)
         ? response.data
-        : response.data.data || [];
+      : response.data.data || [];
     },
   });
   const transformedMeetings = meetings
@@ -549,9 +549,28 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
       return respone.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
-      toast.success(data.message || "UPDATED");
+    onSuccess: (data, paymentStatus) => {
+      const meetingQueryKey = financeView
+        ? "finance-external-meetings"
+        : "external-meetings";
+
+      queryClient.setQueriesData({ queryKey: [meetingQueryKey] }, (oldData) => {
+        if (!Array.isArray(oldData)) return oldData;
+
+        return oldData.map((meeting) =>
+          meeting?._id === selectedMeeting?._id
+            ? { ...meeting, paymentVerification: paymentStatus }
+            : meeting,
+        );
+      });
+
+      queryClient.invalidateQueries({ queryKey: [meetingQueryKey] });
+      const successMessage =
+        paymentStatus === "Completed"
+          ? "Verification Completed. Please Upload the Invoice in Billing"
+          : data.message || "Review Payment Updated";
+
+      toast.success(successMessage);
       setDetailsModal(false);
     },
     onError: (error) => {
@@ -835,9 +854,11 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     ).toLowerCase();
 
     if (!isPaid) return "Wait for Payment";
-    if (paymentVerificationStatus === "under review") return "Verify Payment";
-    if (paymentVerificationStatus === "verified") return "Completed";
-    return "Review Payment";
+    if (paymentVerificationStatus === "pending") return "Pending";
+    if (paymentVerificationStatus === "under review") return "Review Payment";
+    if (paymentVerificationStatus === "verified") return "Verify Payment";
+    if (paymentVerificationStatus === "completed") return "Completed";
+    return "Pending";
   };
 
   const getFinanceStatusChipStyle = (status) => {
@@ -845,6 +866,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
     if (normalizedStatus === "completed") {
       return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "pending") {
+      return { backgroundColor: "#FFF7ED", color: "#F97316" };
     }
     if (normalizedStatus === "verify payment") {
       return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
@@ -1031,6 +1055,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             isFinance &&
             paymentVerificationStatus === "Verified" && {
               label: "Completed",
+              onClick: () => handleVerifyPayment(params.data, "Completed"),
             },
 
           // Show the following only when NOT finance
@@ -1079,7 +1104,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               </span>
             </div>
 
-            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {!isCancelled && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )}
             {/* {shouldHideMenu && menuItems.length > 0 && (
               <ThreeDotMenu menuItems={menuItems} />
             )} */}
