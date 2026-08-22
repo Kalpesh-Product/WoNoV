@@ -25,6 +25,7 @@ import { useSelector } from "react-redux";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import {
   noOnlyWhitespace,
   isAlphanumeric,
@@ -53,6 +54,10 @@ const Leaves = () => {
     },
   });
   const [openModal, setOpenModal] = useState(false);
+  const today = new Date();
+  const currentFiscalYear =
+    today.getMonth() >= 3 ? today.getFullYear() : today.getFullYear() - 1;
+  const [selectedYear, setSelectedYear] = useState(currentFiscalYear);
   const name = localStorage.getItem("employeeName") || "Employee";
   const { auth } = useAuth();
 
@@ -74,12 +79,11 @@ const Leaves = () => {
     },
     enabled: Boolean(id),
   });
-  const currentYear = new Date().getFullYear();
   const { data: leaveSummary = {} } = useQuery({
-    queryKey: ["leave-summary", id, currentYear],
+    queryKey: ["leave-summary", id, selectedYear],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/leaves/view-leave-summary/${id}?year=${currentYear}`,
+        `/api/leaves/view-leave-summary/${id}?year=${selectedYear}&financialYear=true`,
       );
       return response.data;
     },
@@ -277,12 +281,15 @@ const Leaves = () => {
   const months = leavesData.monthlyData.map((entry) => entry.month);
 
   const leaveCounts = useMemo(() => {
-    const counts = { Sick: 0, Privileged: 0 };
+    const counts = { Sick: 0, Privileged: 0, "Comp Off": 0 };
+    const fiscalYearStart = new Date(selectedYear, 3, 1);
+    const nextFiscalYearStart = new Date(selectedYear + 1, 3, 1);
     for (const leave of leaves) {
       const leaveDate = new Date(leave.fromDate);
       if (
         Number.isNaN(leaveDate.getTime()) ||
-        leaveDate.getFullYear() !== currentYear ||
+        leaveDate < fiscalYearStart ||
+        leaveDate >= nextFiscalYearStart ||
         leave.status === "Rejected"
       ) {
         continue;
@@ -291,6 +298,8 @@ const Leaves = () => {
       const normalizedType = String(leave.leaveType || "").toLowerCase();
       const type = normalizedType.includes("sick")
         ? "Sick"
+        : normalizedType.replace(/[\s-]/g, "").includes("compoff")
+          ? "Comp Off"
         : normalizedType.includes("privileged") ||
             normalizedType.includes("priviledged") ||
             normalizedType.includes("abrupt")
@@ -306,7 +315,7 @@ const Leaves = () => {
         Number(count.toFixed(2)),
       ]),
     );
-  }, [currentYear, leaves]);
+  }, [leaves, selectedYear]);
 
   const chartSeries = [
     {
@@ -344,7 +353,7 @@ const Leaves = () => {
       title: { text: "Leave Type" },
     },
     yaxis: {
-      max: 12,
+      max: Math.max(12, Math.ceil(Math.max(...Object.values(leaveCounts), 0))),
       title: { text: "Number of Leaves" },
       dataLabels: {
         positon: "top",
@@ -402,12 +411,28 @@ const Leaves = () => {
               <CircularProgress />
             </div>
           ) : (
-            <BarGraph
-              chartId="leave-type-bar"
-              data={chartSeries}
-              options={chartOptions}
-              height={350}
-            />
+            <div className="flex flex-col gap-4">
+              <BarGraph
+                chartId="leave-type-bar"
+                data={chartSeries}
+                options={chartOptions}
+                height={350}
+              />
+              <div className="flex items-center justify-center gap-4 pb-4">
+                <SecondaryButton
+                  title={<MdNavigateBefore />}
+                  handleSubmit={() => setSelectedYear((year) => year - 1)}
+                />
+                <span className="min-w-20 text-center font-psemibold text-primary">
+                  {`FY ${selectedYear}\u2013${String(selectedYear + 1).slice(-2)}`}
+                </span>
+                <SecondaryButton
+                  title={<MdNavigateNext />}
+                  handleSubmit={() => setSelectedYear((year) => year + 1)}
+                  disabled={selectedYear >= currentFiscalYear}
+                />
+              </div>
+            </div>
           )}
         </WidgetSection>
       </div>
