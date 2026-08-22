@@ -175,6 +175,19 @@ const MeetingFormLayout = () => {
 
     return nextSlotTime.format("HH:mm:ss");
   }, [currentTime]);
+  const calendarEvents = useMemo(
+    () => [
+      ...events,
+      {
+        id: "elapsed-time-today",
+        start: currentTime.startOf("day").toISOString(),
+        end: currentTime.toISOString(),
+        display: "background",
+        backgroundColor: "#fff3bf",
+      },
+    ],
+    [currentTime, events],
+  );
   useEffect(() => {
     if (meetingType !== "External") return;
 
@@ -839,6 +852,9 @@ const MeetingFormLayout = () => {
             // plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
+            validRange={{
+              start: currentTime.startOf("day").format("YYYY-MM-DD"),
+            }}
             contentHeight={555}
             dayMaxEvents={2}
             eventDisplay="auto"
@@ -854,27 +870,15 @@ const MeetingFormLayout = () => {
             }}
             select={handleDateClick}
             selectAllow={({ start }) => {
-              const now = new Date();
-              return start.getTime() > now.getTime();
-            }}
-            datesSet={() => {
-              setTimeout(() => {
-                const now = new Date();
-                const today = now.toISOString().slice(0, 10);
-                const allSlots = document.querySelectorAll(`.fc-timegrid-slot`);
+              const selectedSlot = dayjs(start);
+              const today = currentTime.startOf("day");
 
-                allSlots.forEach((slot) => {
-                  const timeAttr = slot.getAttribute("data-time");
-                  if (!timeAttr) return;
+              if (selectedSlot.isBefore(today, "day")) return false;
+              if (selectedSlot.isAfter(today, "day")) return true;
 
-                  const slotTime = new Date(`${today}T${timeAttr}`);
-                  if (slotTime < now) {
-                    slot.classList.add("fc-slot-past");
-                  }
-                });
-              }, 0);
+              return selectedSlot.isAfter(currentTime);
             }}
-            events={events}
+            events={calendarEvents}
           />
         )}
       </div>

@@ -86,7 +86,7 @@ const MainLayout = () => {
   const unreadCount = notifications.reduce((total, notification) => {
     const count = notification.users.filter(
       (user) =>
-        user.userActions?.hasRead === false &&
+        user.userActions?.hasRead !== true &&
         String(user.userActions?.whichUser?._id || user.userActions?.whichUser) ===
           String(auth?.user?._id)
     ).length;
