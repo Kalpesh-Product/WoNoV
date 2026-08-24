@@ -7,6 +7,49 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
 const Company = require("../models/hr/Company");
+const DEFAULT_CHECK_IN_GRACE_MINUTES = 15;
+
+const normalizeShiftName = (shiftName) =>
+  String(shiftName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "");
+
+const getSnapshotShiftWindow = (shiftSnapshot, referenceTime) => {
+  const snapshotStart = new Date(shiftSnapshot?.startTime);
+  const snapshotEnd = new Date(shiftSnapshot?.endTime);
+  const reference = new Date(referenceTime);
+  if (
+    Number.isNaN(snapshotStart.getTime()) ||
+    Number.isNaN(snapshotEnd.getTime()) ||
+    Number.isNaN(reference.getTime())
+  ) {
+    return null;
+  }
+
+  const startMinuteOfDay =
+    snapshotStart.getHours() * 60 + snapshotStart.getMinutes();
+  const endMinuteOfDay = snapshotEnd.getHours() * 60 + snapshotEnd.getMinutes();
+  const referenceMinuteOfDay =
+    reference.getHours() * 60 + reference.getMinutes();
+  const isOvernight = endMinuteOfDay <= startMinuteOfDay;
+  const shiftStart = new Date(reference);
+  shiftStart.setHours(
+    snapshotStart.getHours(),
+    snapshotStart.getMinutes(),
+    0,
+    0,
+  );
+  if (isOvernight && referenceMinuteOfDay <= endMinuteOfDay) {
+    shiftStart.setDate(shiftStart.getDate() - 1);
+  }
+
+  const shiftEnd = new Date(shiftStart);
+  shiftEnd.setHours(snapshotEnd.getHours(), snapshotEnd.getMinutes(), 0, 0);
+  if (isOvernight) shiftEnd.setDate(shiftEnd.getDate() + 1);
+
+  return { shiftStart, shiftEnd };
+};
 
 const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
   const [employee, companyData] = await Promise.all([
@@ -14,15 +57,12 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
     Company.findById(companyId).select("shifts").lean(),
   ]);
   const shiftName = String(employee?.shift || "").trim();
-  const normalizedShiftName = shiftName
-    .toLowerCase()
-    .replace(/[\s-]+/g, "");
+  const normalizedShiftName = normalizeShiftName(shiftName);
   const configuredShift = (companyData?.shifts || []).find(
     (shift) =>
       shift?.isActive !== false &&
       shift?.isDeleted !== true &&
-      String(shift?.name || "").trim().toLowerCase() ===
-        shiftName.toLowerCase(),
+      normalizeShiftName(shift?.name) === normalizedShiftName,
   );
   const configuredStart = configuredShift?.startTime
     ? new Date(configuredShift.startTime)
@@ -31,14 +71,12 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
     ? new Date(configuredShift.endTime)
     : null;
   const isNightShift = normalizedShiftName === "nightshift";
-  const startHours = isNightShift
-    ? 19
-    : (configuredStart?.getHours() ?? 9);
-  const startMinutes = isNightShift
-    ? 0
-    : (configuredStart?.getMinutes() ?? 30);
-  const endHours = isNightShift ? 4 : (configuredEnd?.getHours() ?? 18);
-  const endMinutes = isNightShift ? 0 : (configuredEnd?.getMinutes() ?? 30);
+  const startHours =
+    configuredStart?.getHours() ?? (isNightShift ? 19 : 9);
+  const startMinutes =
+    configuredStart?.getMinutes() ?? (isNightShift ? 0 : 30);
+  const endHours = configuredEnd?.getHours() ?? (isNightShift ? 4 : 18);
+  const endMinutes = configuredEnd?.getMinutes() ?? (isNightShift ? 0 : 30);
   const startMinuteOfDay = startHours * 60 + startMinutes;
   const endMinuteOfDay = endHours * 60 + endMinutes;
   const isOvernight = endMinuteOfDay <= startMinuteOfDay;
@@ -48,7 +86,7 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
   shiftStart.setHours(startHours, startMinutes, 0, 0);
   if (
     isOvernight &&
-    reference.getHours() * 60 + reference.getMinutes() < startMinuteOfDay
+    reference.getHours() * 60 + reference.getMinutes() <= endMinuteOfDay
   ) {
     shiftStart.setDate(shiftStart.getDate() - 1);
   }
@@ -58,9 +96,11 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
   if (isOvernight) shiftEnd.setDate(shiftEnd.getDate() + 1);
 
   return {
+    shiftId: configuredShift?._id || null,
+    shiftName: configuredShift?.name || shiftName || null,
     shiftStart,
     shiftEnd,
-    earliestCheckIn: new Date(shiftStart.getTime() - 30 * 60 * 1000),
+    earliestCheckIn: new Date(shiftStart.getTime() - 60 * 60 * 1000),
     latestCheckOut: new Date(shiftEnd.getTime() + 60 * 60 * 1000),
   };
 };
@@ -90,31 +130,36 @@ const clockIn = async (req, res, next) => {
       company,
       clockInTime,
     );
-    if (
-      clockInTime < shiftWindow.earliestCheckIn ||
-      clockInTime > shiftWindow.shiftEnd
-    ) {
-      return res.status(400).json({
-        message:
-          "Check-in is allowed from 30 minutes before the shift starts until the shift ends",
-      });
-    }
 
-    // Check if the user has already clocked in today
-    const existingToday = await Attendance.findOne({
+    // Check attendance before validating the time window. Otherwise a second
+    // attempt after clock-out can incorrectly look like a shift-timing error.
+    const existingAttendance = await Attendance.findOne({
       user,
       inTime: {
         $gte: shiftWindow.earliestCheckIn,
         $lte: shiftWindow.shiftEnd,
       },
     })
+      .select("outTime")
       .lean()
       .exec();
 
-    if (existingToday) {
-      return res
-        .status(400)
-        .json({ message: "You have already clocked out for the day" });
+    if (existingAttendance) {
+      return res.status(400).json({
+        message: existingAttendance.outTime
+          ? "Attendance is already completed for this shift"
+          : "You have already clocked in for this shift",
+      });
+    }
+
+    if (
+      clockInTime < shiftWindow.earliestCheckIn ||
+      clockInTime > shiftWindow.shiftEnd
+    ) {
+      return res.status(400).json({
+        message:
+          "Check-in is allowed from 1 hour before the shift starts until the shift ends",
+      });
     }
 
     const newAttendance = new Attendance({
@@ -122,6 +167,13 @@ const clockIn = async (req, res, next) => {
       entryType,
       user,
       company,
+      shiftSnapshot: {
+        shiftId: shiftWindow.shiftId,
+        shiftName: shiftWindow.shiftName,
+        startTime: shiftWindow.shiftStart,
+        endTime: shiftWindow.shiftEnd,
+        checkInGraceMinutes: DEFAULT_CHECK_IN_GRACE_MINUTES,
+      },
     });
 
     const savedAttandance = await newAttendance.save();
@@ -190,11 +242,17 @@ const clockOut = async (req, res, next) => {
         .json({ message: "Check-out cannot be before check-in" });
     }
 
-    const shiftWindow = await getEmployeeShiftWindow(
-      user,
-      company,
+    const snapshotWindow = getSnapshotShiftWindow(
+      attendance.shiftSnapshot,
       attendance.inTime,
     );
+    const shiftWindow = !snapshotWindow
+      ? await getEmployeeShiftWindow(user, company, attendance.inTime)
+      : {
+          latestCheckOut: new Date(
+            snapshotWindow.shiftEnd.getTime() + 60 * 60 * 1000,
+          ),
+        };
     if (clockOutTime > shiftWindow.latestCheckOut) {
       return res.status(400).json({
         message: "Check-out is allowed up to 1 hour after the shift ends",
@@ -633,26 +691,47 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    function mergeDateWithTime(dateOnly, timeString) {
+    const correctionShiftWindow =
+      getSnapshotShiftWindow(foundDate.shiftSnapshot, foundDate.inTime) ||
+      (await getEmployeeShiftWindow(
+        foundUser._id,
+        company,
+        foundDate.inTime,
+      ));
+    const shiftStartMinutes =
+      correctionShiftWindow.shiftStart.getHours() * 60 +
+      correctionShiftWindow.shiftStart.getMinutes();
+    const shiftEndMinutes =
+      correctionShiftWindow.shiftEnd.getHours() * 60 +
+      correctionShiftWindow.shiftEnd.getMinutes();
+    const isOvernightShift = shiftEndMinutes <= shiftStartMinutes;
+    const afterMidnightLimit = isOvernightShift
+      ? shiftEndMinutes +
+        Math.floor((shiftStartMinutes - shiftEndMinutes) / 2)
+      : 0;
+
+    function mergeShiftDateWithTime(timeString) {
       const time = new Date(timeString);
-      const merged = new Date(dateOnly);
+      if (Number.isNaN(time.getTime())) return new Date(NaN);
+
+      const merged = new Date(correctionShiftWindow.shiftStart);
       merged.setHours(
         time.getHours(),
         time.getMinutes(),
         time.getSeconds(),
         time.getMilliseconds()
       );
+      const timeMinutes = time.getHours() * 60 + time.getMinutes();
+      if (isOvernightShift && timeMinutes <= afterMidnightLimit) {
+        merged.setDate(merged.getDate() + 1);
+      }
       return merged;
     }
 
-    const clockIn = inTime ? mergeDateWithTime(targetedDate, inTime) : null;
-    const clockOut = outTime ? mergeDateWithTime(targetedDate, outTime) : null;
-    const breakStart = startBreak
-      ? mergeDateWithTime(targetedDate, startBreak)
-      : null;
-    const breakEnd = endBreak
-      ? mergeDateWithTime(targetedDate, endBreak)
-      : null;
+    const clockIn = inTime ? mergeShiftDateWithTime(inTime) : null;
+    const clockOut = outTime ? mergeShiftDateWithTime(outTime) : null;
+    const breakStart = startBreak ? mergeShiftDateWithTime(startBreak) : null;
+    const breakEnd = endBreak ? mergeShiftDateWithTime(endBreak) : null;
 
     // Validate provided fields
     if (inTime && isNaN(clockIn))
@@ -684,9 +763,45 @@ const correctAttendance = async (req, res, next) => {
         logSourceKey
       );
 
-    const correctedBreaks = [];
+    if ((startBreak && !endBreak) || (!startBreak && endBreak)) {
+      throw new CustomError(
+        "Both break start and break end are required",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
 
-    correctedBreaks.push({ startBreak: breakStart, endBreak: breakEnd });
+    const effectiveInTime = clockIn || foundDate.inTime;
+    const effectiveOutTime = clockOut || foundDate.outTime;
+    if (
+      effectiveInTime &&
+      effectiveOutTime &&
+      effectiveOutTime <= effectiveInTime
+    ) {
+      throw new CustomError(
+        "Corrected clock-out must be after clock-in",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+    if (
+      breakStart &&
+      (breakEnd <= breakStart ||
+        breakStart < effectiveInTime ||
+        (effectiveOutTime && breakEnd > effectiveOutTime))
+    ) {
+      throw new CustomError(
+        "Corrected break must fall between clock-in and clock-out",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const correctedBreaks =
+      breakStart && breakEnd ? [{ startBreak: breakStart, endBreak: breakEnd }] : [];
 
     const originalBreaks = foundDate.breaks || [];
 
@@ -788,7 +903,8 @@ const approveCorrectionRequest = async (req, res, next) => {
       user: userId,
       inTime,
       outTime,
-      breaks = [],
+      correctedBreaks = [],
+      originalBreaks = [],
       originalInTime,
       originalOutTime,
     } = correction;
@@ -799,8 +915,11 @@ const approveCorrectionRequest = async (req, res, next) => {
     const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
 
     // ✅ Calculate total breakDuration
+    const effectiveBreaks = correctedBreaks.length
+      ? correctedBreaks
+      : originalBreaks;
     let totalBreakDuration = 0;
-    breaks.forEach((b) => {
+    effectiveBreaks.forEach((b) => {
       if (b.startBreak && b.endBreak) {
         const diff = new Date(b.endBreak) - new Date(b.startBreak);
         totalBreakDuration += diff > 0 ? diff : 0;
@@ -823,9 +942,9 @@ const approveCorrectionRequest = async (req, res, next) => {
         $set: {
           inTime: inTime ? inTime : originalInTime,
           outTime: outTime ? outTime : originalOutTime,
-          breaks: breaks.length > 0 ? breaks : [],
+          breaks: effectiveBreaks,
           breakDuration: breakDurationInMinutes,
-          breakCount: breaks.length,
+          breakCount: effectiveBreaks.length,
           status: "Approved",
         },
       },
@@ -961,7 +1080,7 @@ const bulkInsertAttendance = async (req, res, next) => {
         .filter(
           (shift) => shift?.isActive !== false && shift?.isDeleted !== true,
         )
-        .map((shift) => [String(shift.name || "").trim().toLowerCase(), shift]),
+        .map((shift) => [normalizeShiftName(shift.name), shift]),
     );
 
     const newAttendanceRecords = [];
@@ -1024,7 +1143,7 @@ const bulkInsertAttendance = async (req, res, next) => {
 
           const employee = employeeMap.get(empId);
           const employeeShift = shiftByName.get(
-            String(employee?.shift || "").trim().toLowerCase(),
+            normalizeShiftName(employee?.shift),
           );
           const shiftStart = employeeShift?.startTime
             ? new Date(employeeShift.startTime)
@@ -1033,20 +1152,17 @@ const bulkInsertAttendance = async (req, res, next) => {
             ? new Date(employeeShift.endTime)
             : null;
           const isNightShift =
-            String(employee?.shift || "")
-              .trim()
-              .toLowerCase()
-              .replace(/[\s-]+/g, "") === "nightshift";
-          const shiftStartMinutes = isNightShift
-            ? 19 * 60
-            : shiftStart
+            normalizeShiftName(employee?.shift) === "nightshift";
+          const shiftStartMinutes = shiftStart
             ? shiftStart.getHours() * 60 + shiftStart.getMinutes()
-            : 9 * 60 + 30;
-          const shiftEndMinutes = isNightShift
-            ? 4 * 60
-            : shiftEnd
+            : isNightShift
+              ? 19 * 60
+              : 9 * 60 + 30;
+          const shiftEndMinutes = shiftEnd
             ? shiftEnd.getHours() * 60 + shiftEnd.getMinutes()
-            : 18 * 60 + 30;
+            : isNightShift
+              ? 4 * 60
+              : 18 * 60 + 30;
           const isOvernightShift =
             shiftStartMinutes !== null &&
             shiftEndMinutes !== null &&
@@ -1093,7 +1209,7 @@ const bulkInsertAttendance = async (req, res, next) => {
             expectedShiftEnd.setDate(expectedShiftEnd.getDate() + 1);
           }
           const earliestCheckIn = new Date(
-            expectedShiftStart.getTime() - 30 * 60 * 1000,
+            expectedShiftStart.getTime() - 60 * 60 * 1000,
           );
           const latestCheckOut = new Date(
             expectedShiftEnd.getTime() + 60 * 60 * 1000,
@@ -1187,6 +1303,13 @@ const bulkInsertAttendance = async (req, res, next) => {
             date: new Date(dateStr),
             inTime,
             outTime,
+            shiftSnapshot: {
+              shiftId: employeeShift?._id || null,
+              shiftName: employeeShift?.name || employee?.shift || null,
+              startTime: expectedShiftStart,
+              endTime: expectedShiftEnd,
+              checkInGraceMinutes: DEFAULT_CHECK_IN_GRACE_MINUTES,
+            },
             breaks,
             breakDuration,
             entryType: row["Entry Type"] || "web",

@@ -114,7 +114,7 @@ const Shifts = () => {
         toast.success("Shift updated");
       }
 
-      queryClient.invalidateQueries(["shifts"]);
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
       setOpenModal(false);
       resetEditForm();
     },
