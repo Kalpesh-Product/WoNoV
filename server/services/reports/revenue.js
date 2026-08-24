@@ -332,6 +332,7 @@ const fetchMeetingRevenueReportService = async ({
     monthData.actual += item.taxable || 0;
 
     monthData.revenue.push({
+       id: item._id,
       clientName: item.client,
       meetingType:
         item.source === "day-pass"
@@ -346,6 +347,10 @@ const fetchMeetingRevenueReportService = async ({
       taxable: item.taxable,
       gst: item.gst,
       status: item.status,
+       financeStatus: item.financeStatus || "Upload Invoice",
+      invoiceLink: item.invoice?.link || "",
+      invoiceName: item.invoice?.name || "",
+      invoiceUploadedAt: item.invoiceUploadedAt || item.invoice?.date || null,
       totalAmount: item.totalAmount,
       date: item.date,
       paymentDate: item.paymentDate,
@@ -479,9 +484,13 @@ const fetchVerticalRevenueReportService = async ({ company, dateFilter }) => {
     workationRevenues,
     coworkingRevenues,
   ] = await Promise.all([
-    MeetingRevenue.find(
-      buildVerticalRevenueFilter(company, dateFilter, "date", status),
-    )
+    // MeetingRevenue.find(
+    //   buildVerticalRevenueFilter(company, dateFilter, "date", status),
+    // )
+     MeetingRevenue.find({
+      ...buildVerticalRevenueFilter(company, dateFilter, "date", status),
+      invoiceUploadedAt: { $ne: null },
+    })
       .select("taxable")
       .lean()
       .exec(),

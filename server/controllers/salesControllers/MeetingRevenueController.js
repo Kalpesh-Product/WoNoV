@@ -2,6 +2,11 @@ const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const { parseAmount } = require("../../utils/parseAmount");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const Company = require("../../models/hr/Company");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/s3Config");
 const {
   fetchMeetingRevenueReportService,
 } = require("../../services/reports/revenue");
@@ -42,14 +47,78 @@ const createMeetingRevenue = async (req, res, next) => {
   }
 };
 
+// const updateMeetingRevenue = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const company = req.company;
+
+//     const updatedRevenue = await MeetingRevenue.findOneAndUpdate(
+//       { _id: id, company },
+//       { ...req.body },
+//       { new: true, runValidators: true },
+//     );
+
+//     if (!updatedRevenue) {
+//       return res.status(404).json({ message: "Meeting revenue not found" });
+//     }
+
+//     res.status(200).json(updatedRevenue);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
 const updateMeetingRevenue = async (req, res, next) => {
+  let uploadedInvoiceId;
   try {
     const { id } = req.params;
     const company = req.company;
+    const existingRevenue = await MeetingRevenue.findOne({ _id: id, company });
+
+    if (!existingRevenue) {
+      return res.status(404).json({ message: "Meeting revenue not found" });
+    }
+
+    const financeStatus = req.body.financeStatus || "Upload Invoice";
+    if (!["Upload Invoice", "Verified"].includes(financeStatus)) {
+      return res.status(400).json({ message: "Invalid finance status" });
+    }
+
+    const payload = { financeStatus };
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          message: "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        });
+      }
+
+      const companyRecord = await Company.findById(company).select("companyName");
+      const uploaded = await handleDocumentUpload(
+        req.file.buffer,
+        `${companyRecord?.companyName || "company"}/meeting-revenues/${existingRevenue.client || "client"}`,
+        req.file.originalname,
+      );
+      if (!uploaded?.public_id) {
+        return res.status(500).json({ message: "Failed to upload invoice" });
+      }
+      uploadedInvoiceId = uploaded.public_id;
+      payload.invoiceUploadedAt = new Date();
+      payload.invoice = {
+        name: req.file.originalname,
+        link: uploaded.secure_url,
+        id: uploaded.public_id,
+        date: payload.invoiceUploadedAt,
+      };
+    }
 
     const updatedRevenue = await MeetingRevenue.findOneAndUpdate(
       { _id: id, company },
-      { ...req.body },
+      payload,
       { new: true, runValidators: true },
     );
 
@@ -57,8 +126,15 @@ const updateMeetingRevenue = async (req, res, next) => {
       return res.status(404).json({ message: "Meeting revenue not found" });
     }
 
+    if (uploadedInvoiceId && existingRevenue.invoice?.id) {
+      await handleFileDelete(existingRevenue.invoice.id).catch(() => null);
+    }
+
     res.status(200).json(updatedRevenue);
   } catch (error) {
+    if (uploadedInvoiceId) {
+      await handleFileDelete(uploadedInvoiceId).catch(() => null);
+    }
     next(error);
   }
 };

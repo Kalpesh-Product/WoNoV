@@ -62,6 +62,18 @@ const meetingClientRevenueSchema = new mongoose.Schema(
     status: {
       type: String,
     },
+     invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
+    financeStatus: {
+      type: String,
+      enum: ["Upload Invoice", "Verified"],
+      default: "Upload Invoice",
+    },
     remarks: {
       type: String,
       // required: false,

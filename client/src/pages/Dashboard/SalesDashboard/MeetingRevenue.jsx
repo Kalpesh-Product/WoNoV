@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
 import { inrFormat } from "../../../utils/currencyFormat";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdEdit, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
@@ -80,10 +80,19 @@ const getFinancialYear = (dateValue) => {
 };
 
 // const MeetingRevenue = () => {
+  // const MeetingRevenue = ({ showChart = true }) => {
+  // const axios = useAxiosPrivate();
+  // const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  // const [selectedRevenue, setSelectedRevenue] = useState(null);
+
   const MeetingRevenue = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   const [selectedRevenue, setSelectedRevenue] = useState(null);
+  const [editingRevenue, setEditingRevenue] = useState(null);
+  const [invoiceFile, setInvoiceFile] = useState(null);
+  const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
 
   const {
     data: meetingsData = [],
@@ -115,7 +124,34 @@ const getFinancialYear = (dateValue) => {
     })),
   }));
 
-  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  const allRevenueData = tableData.flatMap((month) => month.revenue);
+  const flattenedRevenueData = showChart
+    ? allRevenueData.filter((item) => Boolean(item.invoiceUploadedAt))
+    : allRevenueData;
+
+  const updateInvoice = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append("financeStatus", financeStatus);
+      if (invoiceFile) formData.append("client-invoice", invoiceFile);
+      return axios.patch(
+        `/api/sales/update-meeting-revenue/${editingRevenue.id}`,
+        formData,
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["meetings-revenue"] });
+      setEditingRevenue(null);
+      setInvoiceFile(null);
+    },
+  });
+
+  const openEditModal = (row) => {
+    setEditingRevenue(row);
+    setFinanceStatus(row.financeStatus || "Upload Invoice");
+    setInvoiceFile(null);
+  };
   const graphData = useMemo(
     () =>
       isMeetingsLoading
@@ -250,7 +286,12 @@ const getFinancialYear = (dateValue) => {
 
           <WidgetTable
             data={flattenedRevenueData}
-            tableTitle={"Monthly Revenue with Client Details"}
+              tableTitle={
+              showChart
+                ? "Monthly Revenue with Client Details"
+                : "Meeting Invoicing"
+            }
+           // tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
             formatDate
             exportData
@@ -313,11 +354,45 @@ const getFinancialYear = (dateValue) => {
               { headerName: "Payment Date", field: "paymentDate" },
               { headerName: "Remarks", field: "remarks" },
               {
-                headerName: "Status",
+                 headerName: "Admin Status",
                 field: "status",
                 pinned: "right",
                 cellRenderer: (params) => <StatusChip status={params.value} />,
               },
+               ...(!showChart
+                ? [
+                    {
+                      headerName: "Invoice Uploaded On",
+                      field: "invoiceUploadedAt",
+                      valueFormatter: ({ value }) =>
+                        value ? humanDate(value) : "-",
+                    },
+                    {
+                      headerName: "Invoice Link",
+                      field: "invoiceLink",
+                      cellRenderer: ({ value }) =>
+                        value ? (
+                          <a
+                            className="text-primary underline"
+                            href={value}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View Invoice
+                          </a>
+                        ) : (
+                          "-"
+                        ),
+                    },
+                    {
+                      headerName: "Finance Status",
+                      field: "financeStatus",
+                      cellRenderer: ({ value }) => (
+                        <StatusChip status={value} />
+                      ),
+                    },
+                  ]
+                : []),
               {
                 headerName: "Actions",
                 field: "actions",
@@ -325,14 +400,34 @@ const getFinancialYear = (dateValue) => {
                 sortable: false,
                 filter: false,
                 cellRenderer: (params) => (
-                  <button
-                    type="button"
-                    aria-label="View meeting revenue details"
-                    className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-                    onClick={() => setSelectedRevenue(params.data)}
-                  >
-                    <MdOutlineRemoveRedEye size={20} />
-                  </button>
+                  // <button
+                  //   type="button"
+                  //   aria-label="View meeting revenue details"
+                  //   className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+                  //   onClick={() => setSelectedRevenue(params.data)}
+                  // >
+                  //   <MdOutlineRemoveRedEye size={20} />
+                  // </button>
+                   <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="View meeting revenue details"
+                      className="p-2 rounded-full hover:bg-gray-200"
+                      onClick={() => setSelectedRevenue(params.data)}
+                    >
+                      <MdOutlineRemoveRedEye size={20} />
+                    </button>
+                    {!showChart && params.data.id && (
+                      <button
+                        type="button"
+                        aria-label="Edit meeting invoice"
+                        className="p-2 rounded-full hover:bg-gray-200"
+                        onClick={() => openEditModal(params.data)}
+                      >
+                        <MdEdit size={20} />
+                      </button>
+                    )}
+                  </div>
                 ),
               },
             ]}
@@ -389,14 +484,104 @@ const getFinancialYear = (dateValue) => {
                   detail={`INR ${inrFormat(selectedRevenue.totalAmount || 0)}`}
                 />
                 <DetalisFormatted
-                  title="Status"
+                  title="Admin Status"
                   detail={selectedRevenue.status || "N/A"}
+                />
+                 <DetalisFormatted
+                  title="Invoice Uploaded On"
+                  detail={
+                    selectedRevenue.invoiceUploadedAt
+                      ? humanDate(selectedRevenue.invoiceUploadedAt)
+                      : "N/A"
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={selectedRevenue.invoiceLink || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Finance Status"
+                  detail={selectedRevenue.financeStatus || "Upload Invoice"}
                 />
                 <DetalisFormatted
                   title="Remarks"
                   detail={selectedRevenue.remarks || "N/A"}
                 />
               </div>
+            )}
+          </MuiModal>
+          <MuiModal
+            title="Edit Meeting Invoice"
+            open={Boolean(editingRevenue)}
+            onClose={() => setEditingRevenue(null)}
+          >
+            {editingRevenue && (
+              <form
+                className="grid grid-cols-1 gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  updateInvoice.mutate();
+                }}
+              >
+                {[
+                  ["Client Name", editingRevenue.clientName],
+                  ["Meeting Type", editingRevenue.meetingType],
+                  ["Taxable (INR)", editingRevenue.taxable],
+                  ["GST (INR)", editingRevenue.gst],
+                  ["Total Amount (INR)", editingRevenue.totalAmount],
+                  ["Admin Status", editingRevenue.status],
+                ].map(([label, value]) => (
+                  <label
+                    key={label}
+                    className="flex flex-col gap-1 text-sm font-medium"
+                  >
+                    {label}
+                    <input
+                      className="rounded border bg-gray-100 p-2 text-gray-600"
+                      value={value ?? ""}
+                      disabled
+                    />
+                  </label>
+                ))}
+                <label className="flex flex-col gap-1 text-sm font-medium">
+                  Upload Invoice
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(event) =>
+                      setInvoiceFile(event.target.files?.[0] || null)
+                    }
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm font-medium">
+                  Finance Status
+                  <select
+                    className="rounded border p-2"
+                    value={financeStatus}
+                    onChange={(event) => setFinanceStatus(event.target.value)}
+                  >
+                    <option value="Upload Invoice">Upload Invoice</option>
+                    <option value="Verified">Verified</option>
+                  </select>
+                </label>
+                {updateInvoice.isError && (
+                  <p className="text-sm text-red-600">
+                    {updateInvoice.error?.response?.data?.message ||
+                      "Unable to update invoice."}
+                  </p>
+                )}
+                <button
+                  className="rounded bg-primary px-4 py-2 text-white disabled:opacity-60"
+                  type="submit"
+                  disabled={
+                    updateInvoice.isPending ||
+                    (!invoiceFile &&
+                      financeStatus === editingRevenue.financeStatus)
+                  }
+                >
+                  {updateInvoice.isPending ? "Saving..." : "Save"}
+                </button>
+              </form>
             )}
           </MuiModal>
         </>

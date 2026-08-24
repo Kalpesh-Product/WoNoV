@@ -174,7 +174,12 @@ router.post(
 );
 
 router.post("/create-meeting-revenue", createMeetingRevenue);
-router.patch("/update-meeting-revenue", updateMeetingRevenue);
+//router.patch("/update-meeting-revenue", updateMeetingRevenue);
+router.patch(
+  "/update-meeting-revenue/:id",
+  upload.single("client-invoice"),
+  updateMeetingRevenue,
+);
 router.get("/get-meeting-revenue", getMeetingRevenue);
 router.post(
   "/bulk-insert-meeting-revenue",

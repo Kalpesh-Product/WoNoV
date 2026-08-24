@@ -15,7 +15,10 @@ const getConsolidatedRevenue = async (req, res, next) => {
       workationRevenues,
       coworkingRevenues,
     ] = await Promise.all([
-      MeetingRevenue.find({ company }).lean().exec(),
+      // MeetingRevenue.find({ company }).lean().exec(),
+       MeetingRevenue.find({ company, invoiceUploadedAt: { $ne: null } })
+        .lean()
+        .exec(),
       AlternateRevenues.find({ company }).lean().exec(),
       VirtualOfficeRevenues.find({ company }).lean().exec(),
       WorkationRevenues.find({ company }).lean().exec(),
@@ -130,7 +133,10 @@ const getSimpleConsolidatedRevenue = async (req, res, next) => {
       workationRevenues,
       coworkingRevenues,
     ] = await Promise.all([
-      MeetingRevenue.find({ company }).lean().exec(),
+     // MeetingRevenue.find({ company }).lean().exec(),
+      MeetingRevenue.find({ company, invoiceUploadedAt: { $ne: null } })
+        .lean()
+        .exec(),
       AlternateRevenues.find({ company }).lean().exec(),
       VirtualOfficeRevenues.find({ company }).lean().exec(),
       WorkationRevenues.find({ company }).lean().exec(),
