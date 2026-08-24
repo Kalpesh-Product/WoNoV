@@ -96,7 +96,8 @@ const getFinancialYear = (dateValue) => {
   const [selectedRevenue, setSelectedRevenue] = useState(null);
   const [editingRevenue, setEditingRevenue] = useState(null);
   const [invoiceFile, setInvoiceFile] = useState(null);
-  const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
+  const [financeStatus, setFinanceStatus] = useState("Pending");
+ // const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
 
   const {
     data: meetingsData = [],
@@ -157,7 +158,8 @@ const getFinancialYear = (dateValue) => {
 
   const openEditModal = (row) => {
     setEditingRevenue(row);
-    setFinanceStatus(row.financeStatus || "Upload Invoice");
+    setFinanceStatus(row.financeStatus || "Pending");
+   // setFinanceStatus(row.financeStatus || "Upload Invoice");
     setInvoiceFile(null);
   };
   const formatDateValue = (value) => {
@@ -469,6 +471,9 @@ const getFinancialYear = (dateValue) => {
                     {!showChart && params.data.id && (
                       <ThreeDotMenu
                         rowId={params.data.id}
+                          disabled={
+                          (params.data.financeStatus || "Pending") === "Pending"
+                        }
                         menuItems={[
                           {
                             label: "Edit",
@@ -564,7 +569,8 @@ const getFinancialYear = (dateValue) => {
                 />
                 <DetalisFormatted
                   title="Finance Status"
-                  detail={selectedRevenue.financeStatus || "Upload Invoice"}
+                  detail={selectedRevenue.financeStatus || "Pending"}
+                  //detail={selectedRevenue.financeStatus || "Upload Invoice"}
                 />
                 <DetalisFormatted
                   title="Remarks"

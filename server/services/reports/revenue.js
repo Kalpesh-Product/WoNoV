@@ -221,10 +221,11 @@ const fetchMeetingRevenueReportService = async ({
 
   const [meetingRevenues, dayPassVisits] = await Promise.all([
     MeetingRevenue.find(filter)
-      .sort({ date: -1 })
+      .sort({ date: -1, updatedAt: -1, createdAt: -1 })
       .populate({
         path: "meeting",
-        select: "meetingType bookedRoom",
+        //select: "meetingType bookedRoom",
+        select: "meetingType bookedRoom paymentVerification paymentStatus",
         populate: {
           path: "bookedRoom",
           select: "location",
@@ -252,6 +253,21 @@ const fetchMeetingRevenueReportService = async ({
       .lean()
       .exec(),
   ]);
+
+  const uniqueMeetingRevenues = [];
+  const seenMeetingKeys = new Set();
+
+  meetingRevenues.forEach((item) => {
+    const meetingKey =
+      item?.meeting?._id?.toString?.() ||
+      item?.meeting?.toString?.() ||
+      item?._id?.toString?.();
+
+    if (!meetingKey || seenMeetingKeys.has(meetingKey)) return;
+
+    seenMeetingKeys.add(meetingKey);
+    uniqueMeetingRevenues.push(item);
+  });
 
   const dayPassRevenues = dayPassVisits.map((visit) => {
     const visitorName = [
@@ -290,7 +306,7 @@ const fetchMeetingRevenueReportService = async ({
     };
   });
 
-  const revenues = [...meetingRevenues, ...dayPassRevenues].sort(
+  const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
     (a, b) => new Date(b.date || 0) - new Date(a.date || 0),
   );
 
@@ -347,7 +363,13 @@ const fetchMeetingRevenueReportService = async ({
       taxable: item.taxable,
       gst: item.gst,
       status: item.status,
-       financeStatus: item.financeStatus || "Upload Invoice",
+      // financeStatus: item.financeStatus || "Upload Invoice",
+      financeStatus:
+        item.financeStatus === "Verified"
+          ? "Verified"
+          : item.meeting?.paymentVerification === "Completed"
+            ? "Upload Invoice"
+            : "Pending",
       invoiceLink: item.invoice?.link || "",
       invoiceName: item.invoice?.name || "",
       invoiceUploadedAt: item.invoiceUploadedAt || item.invoice?.date || null,
@@ -355,6 +377,12 @@ const fetchMeetingRevenueReportService = async ({
       date: item.date,
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
+      status:
+        item.source === "day-pass"
+          ? item.status
+          : item.meeting?.paymentStatus
+            ? "Paid"
+            : item.status || "Unpaid",
       unit:
         item.source === "day-pass"
           ? item.unit
