@@ -41,6 +41,15 @@ import PageFrame from "../../../../../components/Pages/PageFrame";
 import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
 
+const DEFAULT_CHECK_IN_GRACE_MINUTES = 15;
+
+const getCheckInGraceMinutes = (shiftSnapshot) => {
+  const configuredGrace = Number(shiftSnapshot?.checkInGraceMinutes);
+  return Number.isFinite(configuredGrace) && configuredGrace >= 0
+    ? configuredGrace
+    : DEFAULT_CHECK_IN_GRACE_MINUTES;
+};
+
 const Attendance = () => {
   const axios = useAxiosPrivate();
 
@@ -153,18 +162,70 @@ const Attendance = () => {
     },
     enabled: Boolean(employmentID),
   });
+  const { data: configuredShifts = [] } = useQuery({
+    queryKey: ["shifts"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-data/?field=shifts",
+      );
+      return response.data?.shifts || [];
+    },
+  });
   const selectedShift = useMemo(() => {
-    const shifts = auth?.user?.company?.shifts || [];
+    const shifts = configuredShifts;
+    const employeeShiftName = String(employeeData?.shift || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "");
     return shifts.find(
       (shift) =>
         shift?.isActive !== false &&
         shift?.isDeleted !== true &&
-        String(shift?.name || "").trim().toLowerCase() ===
-          String(employeeData?.shift || "").trim().toLowerCase(),
+        String(shift?.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, "") === employeeShiftName,
     );
-  }, [auth?.user?.company?.shifts, employeeData?.shift]);
+  }, [configuredShifts, employeeData?.shift]);
   const getExpectedShiftTimes = useCallback(
-    (attendanceDate) => {
+    (attendanceDate, shiftSnapshot) => {
+      const snapshotStart = new Date(shiftSnapshot?.startTime);
+      const snapshotEnd = new Date(shiftSnapshot?.endTime);
+      if (
+        !Number.isNaN(snapshotStart.getTime()) &&
+        !Number.isNaN(snapshotEnd.getTime())
+      ) {
+        const expectedIn = new Date(attendanceDate);
+        const expectedOut = new Date(attendanceDate);
+        const startMinutes =
+          snapshotStart.getHours() * 60 + snapshotStart.getMinutes();
+        const endMinutes =
+          snapshotEnd.getHours() * 60 + snapshotEnd.getMinutes();
+        const attendanceMinutes =
+          expectedIn.getHours() * 60 + expectedIn.getMinutes();
+        const isOvernight = endMinutes <= startMinutes;
+
+        expectedIn.setHours(
+          snapshotStart.getHours(),
+          snapshotStart.getMinutes(),
+          0,
+          0,
+        );
+        if (isOvernight && attendanceMinutes <= endMinutes) {
+          expectedIn.setDate(expectedIn.getDate() - 1);
+        }
+        expectedOut.setTime(expectedIn.getTime());
+        expectedOut.setHours(
+          snapshotEnd.getHours(),
+          snapshotEnd.getMinutes(),
+          0,
+          0,
+        );
+        if (isOvernight) expectedOut.setDate(expectedOut.getDate() + 1);
+
+        return { expectedIn, expectedOut };
+      }
+
       const expectedIn = new Date(attendanceDate);
       const expectedOut = new Date(attendanceDate);
       const configuredStart = selectedShift?.startTime
@@ -179,18 +240,13 @@ const Attendance = () => {
           .toLowerCase()
           .replace(/[\s-]+/g, "") === "nightshift";
 
-      const startHours = isNightShift
-        ? 19
-        : (configuredStart?.getHours() ?? 9);
-      const startMinutes = isNightShift
-        ? 0
-        : (configuredStart?.getMinutes() ?? 30);
-      const endHours = isNightShift
-        ? 4
-        : (configuredEnd?.getHours() ?? 18);
-      const endMinutes = isNightShift
-        ? 0
-        : (configuredEnd?.getMinutes() ?? 30);
+      const startHours =
+        configuredStart?.getHours() ?? (isNightShift ? 19 : 9);
+      const startMinutes =
+        configuredStart?.getMinutes() ?? (isNightShift ? 0 : 30);
+      const endHours = configuredEnd?.getHours() ?? (isNightShift ? 4 : 18);
+      const endMinutes =
+        configuredEnd?.getMinutes() ?? (isNightShift ? 0 : 30);
 
       expectedIn.setHours(startHours, startMinutes, 0, 0);
       expectedOut.setHours(endHours, endMinutes, 0, 0);
@@ -264,9 +320,19 @@ const Attendance = () => {
         const outLocal = new Date(outDate);
 
         // Expected office hours
-        const { expectedIn, expectedOut } = getExpectedShiftTimes(inLocal);
+        const { expectedIn, expectedOut } = getExpectedShiftTimes(
+          inLocal,
+          entry.shiftSnapshot,
+        );
 
-        const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
+        const checkInGraceEnd = new Date(
+          expectedIn.getTime() +
+            getCheckInGraceMinutes(entry.shiftSnapshot) * 60 * 1000,
+        );
+        const lateCheckIn = Math.max(
+          0,
+          (inLocal - checkInGraceEnd) / (1000 * 60),
+        );
         const earlyCheckOut = Math.max(
           0,
           (expectedOut - outLocal) / (1000 * 60)
@@ -341,9 +407,16 @@ const Attendance = () => {
           return summary;
         }
 
-        const { expectedIn, expectedOut } = getExpectedShiftTimes(inDate);
+        const { expectedIn, expectedOut } = getExpectedShiftTimes(
+          inDate,
+          entry.shiftSnapshot,
+        );
 
-        if (inDate <= expectedIn) {
+        const checkInGraceEnd = new Date(
+          expectedIn.getTime() +
+            getCheckInGraceMinutes(entry.shiftSnapshot) * 60 * 1000,
+        );
+        if (inDate <= checkInGraceEnd) {
           summary.accurateCheckIns += 1;
         } else {
           summary.lateCheckIns += 1;

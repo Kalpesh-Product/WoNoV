@@ -1,5 +1,29 @@
 const mongoose = require("mongoose");
 
+const shiftSnapshotSchema = new mongoose.Schema(
+  {
+    shiftId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    shiftName: {
+      type: String,
+    },
+    startTime: {
+      type: Date,
+      required: true,
+    },
+    endTime: {
+      type: Date,
+      required: true,
+    },
+    checkInGraceMinutes: {
+      type: Number,
+      default: 15,
+    },
+  },
+  { _id: false },
+);
+
 const attendanceSchema = new mongoose.Schema(
   {
     inTime: {
@@ -33,6 +57,9 @@ const attendanceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+    shiftSnapshot: {
+      type: shiftSnapshotSchema,
+    },
     status: {
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
@@ -49,7 +76,7 @@ const attendanceSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Attendance = mongoose.model("Attendance", attendanceSchema);
