@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
@@ -56,6 +56,7 @@ const refreshMeetingQueries = () => {
 
 const ExternalMeetingCLients = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { auth } = useAuth();
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
@@ -592,6 +593,13 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
       toast.success(successMessage);
       setDetailsModal(false);
+
+      if (paymentStatus === "Completed") {
+        navigate(
+          "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+          { replace: true },
+        );
+      }
     },
     onError: (error) => {
       toast.error(error.message);

@@ -225,7 +225,8 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "meeting",
         //select: "meetingType bookedRoom",
-        select: "meetingType bookedRoom paymentVerification paymentStatus",
+        select:
+          "meetingType bookedRoom paymentVerification paymentStatus paymentProof",
         populate: {
           path: "bookedRoom",
           select: "location",
@@ -383,6 +384,8 @@ const fetchMeetingRevenueReportService = async ({
           : item.meeting?.paymentStatus
             ? "Paid"
             : item.status || "Unpaid",
+      paymentProofLink: item.meeting?.paymentProof?.link || "",
+      paymentProofName: item.meeting?.paymentProof?.name || "",
       unit:
         item.source === "day-pass"
           ? item.unit

@@ -127,6 +127,8 @@ const getFinancialYear = (dateValue) => {
       normalizedStatus: getNormalizedPaymentStatus(client.status),
       normalizedFinanceStatus: getNormalizedPaymentStatus(client.financeStatus),
       hasUploadedInvoice: Boolean(client.invoiceUploadedAt || client.invoiceLink),
+      paymentProofLink: client.paymentProofLink || "",
+      paymentProofName: client.paymentProofName || "",
       remarks: client.remarks || "-",
     })),
   }));
@@ -416,6 +418,24 @@ const getFinancialYear = (dateValue) => {
                ...(!showChart
                 ? [
                     {
+                      headerName: "Admin Payment Proof",
+                      field: "paymentProofLink",
+                      pinned:"right",
+                      cellRenderer: ({ value }) =>
+                        value ? (
+                          <a
+                            className="text-primary underline"
+                            href={value}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View File
+                          </a>
+                        ) : (
+                          "-"
+                        ),
+                    },
+                    {
                       headerName: "Invoice Link",
                       field: "invoiceLink",
                       pinned:"right",
@@ -541,6 +561,23 @@ const getFinancialYear = (dateValue) => {
                 <DetalisFormatted
                   title="Admin Status"
                   detail={selectedRevenue.status || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Admin Payment Proof"
+                  detail={
+                    selectedRevenue.paymentProofLink ? (
+                      <a
+                        href={selectedRevenue.paymentProofLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        {selectedRevenue.paymentProofName || "View File"}
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
                 />
                 <DetalisFormatted
                   title="Invoice Link"
