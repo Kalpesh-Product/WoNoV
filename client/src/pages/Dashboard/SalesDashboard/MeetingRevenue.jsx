@@ -399,6 +399,18 @@ const getFinancialYear = (dateValue) => {
                 pinned: "right",
                 cellRenderer: (params) => <StatusChip status={params.value} />,
               },
+              ...(showChart
+                ? [
+                    {
+                      headerName: "Finance Status",
+                      field: "financeStatus",
+                      pinned: "right",
+                      cellRenderer: (params) => (
+                        <StatusChip status={params.value} />
+                      ),
+                    },
+                  ]
+                : []),
                ...(!showChart
                 ? [
                     {
@@ -428,7 +440,7 @@ const getFinancialYear = (dateValue) => {
                       valueFormatter: ({ value }) =>
                         value ? humanDate(value) : "-",
                     },
-                    {
+                      {
                       headerName: "Finance Status",
                       field: "financeStatus",
                       pinned:"right",
