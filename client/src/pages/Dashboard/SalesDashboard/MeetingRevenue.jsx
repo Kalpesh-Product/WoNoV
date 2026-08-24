@@ -2,14 +2,18 @@ import { useMemo, useState } from "react";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
-import { MdEdit, MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import dayjs from "dayjs";
 
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
@@ -120,14 +124,18 @@ const getFinancialYear = (dateValue) => {
       date: client.date,
       paymentDate: client.paymentDate,
       normalizedStatus: getNormalizedPaymentStatus(client.status),
+      normalizedFinanceStatus: getNormalizedPaymentStatus(client.financeStatus),
+      hasUploadedInvoice: Boolean(client.invoiceUploadedAt || client.invoiceLink),
       remarks: client.remarks || "-",
     })),
   }));
 
   //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
   const allRevenueData = tableData.flatMap((month) => month.revenue);
+  const isVerifiedFinanceRow = (item) =>
+    item?.normalizedFinanceStatus === "verified";
   const flattenedRevenueData = showChart
-    ? allRevenueData.filter((item) => Boolean(item.invoiceUploadedAt))
+    ? allRevenueData.filter(isVerifiedFinanceRow)
     : allRevenueData;
 
   const updateInvoice = useMutation({
@@ -152,12 +160,40 @@ const getFinancialYear = (dateValue) => {
     setFinanceStatus(row.financeStatus || "Upload Invoice");
     setInvoiceFile(null);
   };
+  const formatDateValue = (value) => {
+    if (!value) return "-";
+    const date = dayjs(value);
+    return date.isValid() ? date.format("DD-MM-YYYY") : "-";
+  };
+  const formatNumberValue = (value) => {
+    if (value === 0) return "0";
+    if (value === null || value === undefined || value === "") return "-";
+    const numericValue = Number(String(value).replace(/,/g, ""));
+    return Number.isNaN(numericValue)
+      ? String(value)
+      : numericValue.toLocaleString("en-IN");
+  };
+  const editableInvoiceFile =
+    invoiceFile ||
+    (editingRevenue?.invoiceLink
+      ? {
+          name: editingRevenue?.invoiceName || "Uploaded Invoice",
+          url: editingRevenue.invoiceLink,
+        }
+      : null);
+  const clientLabel = editingRevenue?.clientName || editingRevenue?.client || "-";
+  const meetingTypeLabel = editingRevenue?.meetingType || "-";
+  const meetingRoomLabel = editingRevenue?.meetingRoomName || "-";
+  const hoursBookedLabel =
+    editingRevenue?.hoursBooked || editingRevenue?.unitsOrHours || "-";
+  const isUpdateDisabled = updateInvoice.isPending;
+
   const graphData = useMemo(
     () =>
       isMeetingsLoading
         ? []
         : flattenedRevenueData
-            .filter((item) => item.normalizedStatus === "paid")
+            .filter(isVerifiedFinanceRow)
             .map((item) => ({
               date: item.date,
               taxable: getNumericAmount(item.taxable),
@@ -300,7 +336,9 @@ const getFinancialYear = (dateValue) => {
             titleAmountGreen={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (item.normalizedStatus !== "paid") return sum;
+                  if (!isVerifiedFinanceRow(item)) {
+                    return sum;
+                  }
                   return sum + getNumericAmount(item.taxable);
                 }, 0),
               )}`
@@ -308,7 +346,9 @@ const getFinancialYear = (dateValue) => {
             titleAmountRed={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (item.normalizedStatus !== "unpaid") return sum;
+                  if (isVerifiedFinanceRow(item)) {
+                    return sum;
+                  }
                   return sum + getNumericAmount(item.taxable);
                 }, 0),
               )}`
@@ -362,31 +402,36 @@ const getFinancialYear = (dateValue) => {
                ...(!showChart
                 ? [
                     {
+                      headerName: "Invoice Link",
+                      field: "invoiceLink",
+                      pinned:"right",
+                      cellRenderer: ({ value, data }) => {
+                        const link = value || data?.invoice?.link;
+                        return link ? (
+                          <a
+                            className="text-primary underline"
+                            href={link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View PDF
+                          </a>
+                        ) : (
+                          "-"
+                        );
+                      },
+                    },
+                    {
                       headerName: "Invoice Uploaded On",
                       field: "invoiceUploadedAt",
+                      pinned:"right",
                       valueFormatter: ({ value }) =>
                         value ? humanDate(value) : "-",
                     },
                     {
-                      headerName: "Invoice Link",
-                      field: "invoiceLink",
-                      cellRenderer: ({ value }) =>
-                        value ? (
-                          <a
-                            className="text-primary underline"
-                            href={value}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View Invoice
-                          </a>
-                        ) : (
-                          "-"
-                        ),
-                    },
-                    {
                       headerName: "Finance Status",
                       field: "financeStatus",
+                      pinned:"right",
                       cellRenderer: ({ value }) => (
                         <StatusChip status={value} />
                       ),
@@ -400,32 +445,25 @@ const getFinancialYear = (dateValue) => {
                 sortable: false,
                 filter: false,
                 cellRenderer: (params) => (
-                  // <button
-                  //   type="button"
-                  //   aria-label="View meeting revenue details"
-                  //   className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-                  //   onClick={() => setSelectedRevenue(params.data)}
-                  // >
-                  //   <MdOutlineRemoveRedEye size={20} />
-                  // </button>
-                   <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1">
                     <button
                       type="button"
                       aria-label="View meeting revenue details"
                       className="p-2 rounded-full hover:bg-gray-200"
                       onClick={() => setSelectedRevenue(params.data)}
-                    >
-                      <MdOutlineRemoveRedEye size={20} />
-                    </button>
-                    {!showChart && params.data.id && (
-                      <button
-                        type="button"
-                        aria-label="Edit meeting invoice"
-                        className="p-2 rounded-full hover:bg-gray-200"
-                        onClick={() => openEditModal(params.data)}
                       >
-                        <MdEdit size={20} />
+                        <MdOutlineRemoveRedEye size={20} />
                       </button>
+                    {!showChart && params.data.id && (
+                      <ThreeDotMenu
+                        rowId={params.data.id}
+                        menuItems={[
+                          {
+                            label: "Edit",
+                            onClick: () => openEditModal(params.data),
+                          },
+                        ]}
+                      />
                     )}
                   </div>
                 ),
@@ -487,6 +525,23 @@ const getFinancialYear = (dateValue) => {
                   title="Admin Status"
                   detail={selectedRevenue.status || "N/A"}
                 />
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={
+                    selectedRevenue.invoiceLink ? (
+                      <a
+                        href={selectedRevenue.invoiceLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
                  <DetalisFormatted
                   title="Invoice Uploaded On"
                   detail={
@@ -494,10 +549,6 @@ const getFinancialYear = (dateValue) => {
                       ? humanDate(selectedRevenue.invoiceUploadedAt)
                       : "N/A"
                   }
-                />
-                <DetalisFormatted
-                  title="Invoice Link"
-                  detail={selectedRevenue.invoiceLink || "N/A"}
                 />
                 <DetalisFormatted
                   title="Finance Status"
@@ -511,9 +562,10 @@ const getFinancialYear = (dateValue) => {
             )}
           </MuiModal>
           <MuiModal
-            title="Edit Meeting Invoice"
+          title="Edit Meeting Invoice"
             open={Boolean(editingRevenue)}
             onClose={() => setEditingRevenue(null)}
+            widthClassName="w-[94vw] max-w-[920px]"
           >
             {editingRevenue && (
               <form
@@ -523,64 +575,182 @@ const getFinancialYear = (dateValue) => {
                   updateInvoice.mutate();
                 }}
               >
-                {[
-                  ["Client Name", editingRevenue.clientName],
-                  ["Meeting Type", editingRevenue.meetingType],
-                  ["Taxable (INR)", editingRevenue.taxable],
-                  ["GST (INR)", editingRevenue.gst],
-                  ["Total Amount (INR)", editingRevenue.totalAmount],
-                  ["Admin Status", editingRevenue.status],
-                ].map(([label, value]) => (
-                  <label
-                    key={label}
-                    className="flex flex-col gap-1 text-sm font-medium"
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <TextField
+                    select
+                    size="small"
+                    fullWidth
+                    label="Select Client"
+                    value={clientLabel}
+                    disabled
                   >
-                    {label}
-                    <input
-                      className="rounded border bg-gray-100 p-2 text-gray-600"
-                      value={value ?? ""}
-                      disabled
-                    />
-                  </label>
-                ))}
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                  Upload Invoice
-                  <input
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(event) =>
-                      setInvoiceFile(event.target.files?.[0] || null)
-                    }
+                    <MenuItem value={clientLabel}>{clientLabel}</MenuItem>
+                  </TextField>
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Client Name"
+                    value={clientLabel}
+                    disabled
                   />
-                </label>
-                <label className="flex flex-col gap-1 text-sm font-medium">
-                  Finance Status
-                  <select
-                    className="rounded border p-2"
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Type"
+                    value={meetingTypeLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Room"
+                    value={meetingRoomLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Unit"
+                    value={getUnitLabel(editingRevenue.unit)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Building"
+                    value={editingRevenue.building || "-"}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="No. of Hours"
+                    value={hoursBookedLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Cost Per Hour"
+                    value={formatNumberValue(editingRevenue.costPerHour)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Taxable"
+                    value={formatNumberValue(editingRevenue.taxable)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="GST"
+                    value={formatNumberValue(editingRevenue.gst)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Total Amount"
+                    value={formatNumberValue(editingRevenue.totalAmount)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Date"
+                    value={formatDateValue(editingRevenue.date)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Payment Date"
+                    value={formatDateValue(editingRevenue.paymentDate)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Invoice Upload Date"
+                    value={formatDateValue(
+                      editingRevenue.invoiceUploadedAt ||
+                        editingRevenue.invoice?.date,
+                    )}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Admin Status"
+                    value={editingRevenue.status || "-"}
+                    disabled
+                  />
+
+                  <TextField
+                    select
+                    size="small"
+                    fullWidth
+                    label="Finance Status"
                     value={financeStatus}
                     onChange={(event) => setFinanceStatus(event.target.value)}
                   >
-                    <option value="Upload Invoice">Upload Invoice</option>
-                    <option value="Verified">Verified</option>
-                  </select>
-                </label>
+                    <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
+                    <MenuItem value="Verified">Verified</MenuItem>
+                  </TextField>
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Remarks"
+                    value={editingRevenue.remarks || "-"}
+                    disabled
+                    multiline
+                    minRows={2}
+                    className="md:col-span-2"
+                  />
+
+                  <div className="md:col-span-2">
+                    <UploadFileInput
+                      value={editableInvoiceFile}
+                      onChange={setInvoiceFile}
+                      label="Upload File"
+                      allowedExtensions={["pdf", "doc", "docx"]}
+                      previewType="pdf"
+                    />
+                  </div>
+                </div>
+
                 {updateInvoice.isError && (
                   <p className="text-sm text-red-600">
                     {updateInvoice.error?.response?.data?.message ||
                       "Unable to update invoice."}
                   </p>
                 )}
-                <button
-                  className="rounded bg-primary px-4 py-2 text-white disabled:opacity-60"
+
+                <PrimaryButton
                   type="submit"
-                  disabled={
-                    updateInvoice.isPending ||
-                    (!invoiceFile &&
-                      financeStatus === editingRevenue.financeStatus)
-                  }
+                  title="Update Invoice"
+                  className="w-full py-3 text-[15px]"
+                  disabled={isUpdateDisabled}
+                  isLoading={updateInvoice.isPending}
                 >
-                  {updateInvoice.isPending ? "Saving..." : "Save"}
-                </button>
+                </PrimaryButton>
               </form>
             )}
           </MuiModal>

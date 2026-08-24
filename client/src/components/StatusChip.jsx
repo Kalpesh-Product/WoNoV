@@ -13,6 +13,8 @@ const statusColorMap = {
   approved: { backgroundColor: "#90EE90", color: "#006400" },
   paid: { backgroundColor: "#90EE90", color: "#006400" },
   unpaid: { backgroundColor: "#FDECEA", color: "#B71C1C" },
+  "upload invoice": { backgroundColor: "#FFF4E5", color: "#9A6700" },
+  verified: { backgroundColor: "#E8F5E9", color: "#1B5E20" },
   closed: { backgroundColor: "#90EE90", color: "#006400" },
   rejected: { backgroundColor: "#FFCCCC", color: "#B22222" },
   revoked: { backgroundColor: "#EADCFD", color: "#6B3FA0" },
