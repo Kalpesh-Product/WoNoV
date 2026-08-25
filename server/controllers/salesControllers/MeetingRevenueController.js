@@ -3,6 +3,7 @@ const { parseAmount } = require("../../utils/parseAmount");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Company = require("../../models/hr/Company");
+const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const {
   handleDocumentUpload,
   handleFileDelete,
@@ -73,7 +74,19 @@ const updateMeetingRevenue = async (req, res, next) => {
   try {
     const { id } = req.params;
     const company = req.company;
-    const existingRevenue = await MeetingRevenue.findOne({ _id: id, company });
+   // const existingRevenue = await MeetingRevenue.findOne({ _id: id, company });
+    let revenueModel = MeetingRevenue;
+    let existingRevenue = await MeetingRevenue.findOne({ _id: id, company });
+
+    if (!existingRevenue) {
+      existingRevenue = await ExternalVisits.findOne({
+        _id: id,
+        company,
+        visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+        meeting: null,
+      });
+      revenueModel = ExternalVisits;
+    }
     const uploadedBy = req.user || null;
 
     if (!existingRevenue) {
@@ -107,7 +120,8 @@ const updateMeetingRevenue = async (req, res, next) => {
       const companyRecord = await Company.findById(company).select("companyName");
       const uploaded = await handleDocumentUpload(
         req.file.buffer,
-        `${companyRecord?.companyName || "company"}/meeting-revenues/${existingRevenue.client || "client"}`,
+          `${companyRecord?.companyName || "company"}/meeting-revenues/${existingRevenue.client || existingRevenue.visitorType || "client"}`,
+      //  `${companyRecord?.companyName || "company"}/meeting-revenues/${existingRevenue.client || "client"}`,
         req.file.originalname,
       );
       if (!uploaded?.public_id) {
@@ -124,7 +138,8 @@ const updateMeetingRevenue = async (req, res, next) => {
       };
     }
 
-    const updatedRevenue = await MeetingRevenue.findOneAndUpdate(
+    //const updatedRevenue = await MeetingRevenue.findOneAndUpdate(
+     const updatedRevenue = await revenueModel.findOneAndUpdate(
       { _id: id, company },
       payload,
       { new: true, runValidators: true },

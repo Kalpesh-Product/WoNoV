@@ -103,6 +103,22 @@ const externalVisitSchema = new mongoose.Schema(
         type: String,
       },
     },
+    invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    financeStatus: {
+      type: String,
+      enum: ["Pending", "Upload Invoice", "Verified"],
+      default: "Pending",
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",

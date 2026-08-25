@@ -220,13 +220,14 @@ const fetchMeetingRevenueReportService = async ({
     return date < currentMonthStart;
   };
 
+  //  const getFinanceStatus = (item) => {
+  //   if (
+  //     item.source === "day-pass" &&
+  //     item.paymentVerification === "Completed"
+  //   ) {
+  //     return "Upload Invoice";
+  //   }
    const getFinanceStatus = (item) => {
-    if (
-      item.source === "day-pass" &&
-      item.paymentVerification === "Completed"
-    ) {
-      return "Upload Invoice";
-    }
     if (isHistoricalRevenue(item.date) || item.financeStatus === "Verified") {
       return "Verified";
     }
@@ -299,6 +300,10 @@ const fetchMeetingRevenueReportService = async ({
       .exec(),
     ExternalVisits.find(dayPassFilter)
       .sort({ dateOfVisit: -1 })
+        .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName",
+      })
       .populate({
         path: "visitorId",
         select:
@@ -373,6 +378,10 @@ const fetchMeetingRevenueReportService = async ({
   paymentVerification: visit.paymentVerification || "Pending",
       status: getPaymentStatusLabel(visit.paymentStatus),
       paymentProof: visit.paymentProof || null,
+      invoice: visit.invoice,
+      invoiceUploadedAt: visit.invoiceUploadedAt,
+      invoiceUploadedBy: visit.invoiceUploadedBy,
+      financeStatus: visit.financeStatus,
       remarks: visit.paymentMode || "-",
       source: "day-pass",
     };
