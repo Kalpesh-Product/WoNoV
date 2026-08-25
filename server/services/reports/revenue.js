@@ -202,6 +202,15 @@ const fetchMeetingRevenueReportService = async ({
   dateFilter,
   isReport = false,
 }) => {
+  const isHistoricalRevenue = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return date < currentMonthStart;
+  };
+
   const filter = {};
 
   if (company) {
@@ -223,19 +232,40 @@ const fetchMeetingRevenueReportService = async ({
     MeetingRevenue.find(filter)
       .sort({ date: -1, updatedAt: -1, createdAt: -1 })
       .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName",
+      })
+      .populate({
         path: "meeting",
-        //select: "meetingType bookedRoom",
         select:
-          "meetingType bookedRoom paymentVerification paymentStatus paymentProof",
-        populate: {
-          path: "bookedRoom",
-          select: "location",
-          populate: {
-            path: "location",
-            select: "unitNo unitName building",
-            populate: { path: "building", select: "buildingName" },
+          "meetingType subject agenda startTime endTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentProof",
+        populate: [
+          {
+            path: "bookedBy",
+            select: "firstName middleName lastName employeeName",
           },
-        },
+          {
+            path: "receptionist",
+            select: "firstName middleName lastName employeeName",
+          },
+          {
+            path: "client",
+            select: "clientName",
+          },
+          {
+            path: "externalClient",
+            select: "registeredClientCompany",
+          },
+          {
+            path: "bookedRoom",
+            select: "name location",
+            populate: {
+              path: "location",
+              select: "unitNo unitName building",
+              populate: { path: "building", select: "buildingName" },
+            },
+          },
+        ],
       })
       .lean()
       .exec(),
@@ -302,6 +332,7 @@ const fetchMeetingRevenueReportService = async ({
       date: visit.dateOfVisit,
       paymentDate: visit.paymentStatus ? visit.updatedAt : null,
       status: visit.paymentStatus ? "Paid" : "Unpaid",
+      paymentProof: visit.paymentProof || null,
       remarks: visit.paymentMode || "-",
       source: "day-pass",
     };
@@ -374,6 +405,7 @@ const fetchMeetingRevenueReportService = async ({
       invoiceLink: item.invoice?.link || "",
       invoiceName: item.invoice?.name || "",
       invoiceUploadedAt: item.invoiceUploadedAt || item.invoice?.date || null,
+      invoiceUploadedBy: item.invoiceUploadedBy,
       totalAmount: item.totalAmount,
       date: item.date,
       paymentDate: item.paymentDate,
@@ -384,8 +416,30 @@ const fetchMeetingRevenueReportService = async ({
           : item.meeting?.paymentStatus
             ? "Paid"
             : item.status || "Unpaid",
-      paymentProofLink: item.meeting?.paymentProof?.link || "",
-      paymentProofName: item.meeting?.paymentProof?.name || "",
+      paymentProofLink:
+        item.source === "day-pass"
+          ? item.paymentProof?.url || ""
+          : item.meeting?.paymentProof?.link || "",
+      paymentProofName:
+        item.source === "day-pass"
+          ? item.paymentProof?.name || "View File"
+          : item.meeting?.paymentProof?.name || "",
+      paymentVerification: item.meeting?.paymentVerification || "N/A",
+      paymentMode: item.meeting?.paymentMode || item.remarks || "N/A",
+      meetingTitle: item.meeting?.subject || "",
+      meetingAgenda: item.meeting?.agenda || "",
+      meetingStartTime: item.meeting?.startTime || null,
+      meetingEndTime: item.meeting?.endTime || null,
+      meetingStatus: item.meeting?.status || "N/A",
+      meetingTypeRaw: item.meeting?.meetingType || item.meetingType || "N/A",
+      meetingHousekeepingStatus: item.meeting?.houeskeepingStatus || "N/A",
+      meetingBookedBy: item.meeting?.bookedBy || null,
+      meetingReceptionist: item.meeting?.receptionist || null,
+      meetingCompanyName:
+        item.meeting?.client?.clientName ||
+        item.meeting?.externalClient?.registeredClientCompany ||
+        item.client ||
+        "N/A",
       unit:
         item.source === "day-pass"
           ? item.unit
@@ -395,6 +449,13 @@ const fetchMeetingRevenueReportService = async ({
           ? item.building
           : item.meeting?.bookedRoom?.location?.building?.buildingName ||
             "N/A",
+      financeStatus: isHistoricalRevenue(item.date)
+        ? "Verified"
+        : item.financeStatus === "Verified"
+          ? "Verified"
+          : item.meeting?.paymentVerification === "Completed"
+            ? "Upload Invoice"
+            : "Pending",
       remarks: item.remarks || "",
     });
   });

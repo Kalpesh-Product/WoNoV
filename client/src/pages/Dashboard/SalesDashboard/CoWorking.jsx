@@ -426,7 +426,11 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           dateColumn={"rentDate"}
           exportData
           formatDate
-          tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
+          tableTitle={
+            showInvoiceProjections
+              ? "Co-Working Revenue Client Invoicing"
+              : "MONTHLY REVENUE WITH CLIENT DETAILS"
+          }
           totalKey="revenue"
           titleAmountOverride=""
           titleAmountGreen={({ filteredData }) =>

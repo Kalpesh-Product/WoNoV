@@ -562,7 +562,11 @@ const getFinancialYear = (dateValue) => {
 
       {!isLoadingVirtualOfficeRevenue ? (
         <WidgetTable
-          tableTitle={"Monthly Revenue with Client Details"}
+          tableTitle={
+            showInvoiceProjections
+              ? "Virtual Office Revenue Client Invoicing"
+              : "Monthly Revenue with Client Details"
+          }
           data={tableData}
           totalKey="revenue"
           exportData

@@ -74,6 +74,7 @@ const updateMeetingRevenue = async (req, res, next) => {
     const { id } = req.params;
     const company = req.company;
     const existingRevenue = await MeetingRevenue.findOne({ _id: id, company });
+    const uploadedBy = req.user || null;
 
     if (!existingRevenue) {
       return res.status(404).json({ message: "Meeting revenue not found" });
@@ -108,6 +109,7 @@ const updateMeetingRevenue = async (req, res, next) => {
       }
       uploadedInvoiceId = uploaded.public_id;
       payload.invoiceUploadedAt = new Date();
+      payload.invoiceUploadedBy = uploadedBy;
       payload.invoice = {
         name: req.file.originalname,
         link: uploaded.secure_url,

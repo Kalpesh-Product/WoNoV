@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -83,6 +84,44 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ")
+  );
+};
+
+const formatMeetingTimeRange = (startTime, endTime) => {
+  const start = dayjs(startTime);
+  const end = dayjs(endTime);
+
+  if (!start.isValid() || !end.isValid()) return "N/A";
+
+  return `${start.format("h:mm a")} - ${end.format("h:mm a")}`;
+};
+
+const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
+  const start = dayjs(startTime);
+  const end = dayjs(endTime);
+
+  if (start.isValid() && end.isValid() && end.isAfter(start)) {
+    const minutes = end.diff(start, "minute");
+    if (minutes < 60) return `${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}min`
+      : `${hours}h`;
+  }
+
+  const numericHours = Number(fallbackHours || 0);
+  if (!Number.isFinite(numericHours) || numericHours <= 0) return "N/A";
+  if (numericHours < 1) return `${Math.round(numericHours * 60)}min`;
+  return `${numericHours}h`;
+};
+
 // const MeetingRevenue = () => {
   // const MeetingRevenue = ({ showChart = true }) => {
   // const axios = useAxiosPrivate();
@@ -92,6 +131,7 @@ const getFinancialYear = (dateValue) => {
   const MeetingRevenue = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   const [selectedRevenue, setSelectedRevenue] = useState(null);
   const [editingRevenue, setEditingRevenue] = useState(null);
@@ -129,6 +169,33 @@ const getFinancialYear = (dateValue) => {
       hasUploadedInvoice: Boolean(client.invoiceUploadedAt || client.invoiceLink),
       paymentProofLink: client.paymentProofLink || "",
       paymentProofName: client.paymentProofName || "",
+      paymentVerification: client.paymentVerification || "N/A",
+      paymentMode: client.paymentMode || "N/A",
+      meetingTitle: client.meetingTitle || "",
+      meetingAgenda: client.meetingAgenda || "",
+      meetingStartTime: client.meetingStartTime || null,
+      meetingEndTime: client.meetingEndTime || null,
+      meetingStatus: client.meetingStatus || "N/A",
+      meetingTypeRaw: client.meetingTypeRaw || client.meetingType || "N/A",
+      meetingHousekeepingStatus: client.meetingHousekeepingStatus || "N/A",
+      meetingBookedByName: getUserDisplayName(client.meetingBookedBy),
+      meetingReceptionistName: getUserDisplayName(client.meetingReceptionist),
+      meetingCompanyName: client.meetingCompanyName || client.clientName || "N/A",
+      meetingLocationLabel:
+        client.unit?.unitNo && client.unit?.unitName
+          ? `${client.unit.unitNo} (${client.unit.unitName})`
+          : getUnitLabel(client.unit),
+      meetingTimeLabel: formatMeetingTimeRange(
+        client.meetingStartTime,
+        client.meetingEndTime,
+      ),
+      meetingDurationLabel: formatMeetingDuration(
+        client.meetingStartTime,
+        client.meetingEndTime,
+        client.hoursBooked,
+      ),
+      invoiceUploadedBy: client.invoiceUploadedBy || null,
+      invoiceUploadedByName: getUserDisplayName(client.invoiceUploadedBy),
       remarks: client.remarks || "-",
     })),
   }));
@@ -326,10 +393,22 @@ const getFinancialYear = (dateValue) => {
 
           <WidgetTable
             data={flattenedRevenueData}
+            headerActions={
+              !showChart ? (
+                <PrimaryButton
+                  title="Manage Meeting"
+                  handleSubmit={() =>
+                    navigate(
+                      "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+                    )
+                  }
+                />
+              ) : null
+            }
               tableTitle={
               showChart
                 ? "Monthly Revenue with Client Details"
-                : "Meeting Invoicing"
+                : "Meeting Revenue Client Invoicing"
             }
            // tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
@@ -514,21 +593,76 @@ const getFinancialYear = (dateValue) => {
           >
             {selectedRevenue && (
               <div className="grid grid-cols-1 gap-4 w-full">
+                <div className="font-bold text-lg">Basic Info</div>
                 <DetalisFormatted
-                  title="Client Name"
-                  detail={selectedRevenue.clientName || "N/A"}
+                  title="Title"
+                  detail={selectedRevenue.meetingTitle || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Meeting Type"
-                  detail={selectedRevenue.meetingType || "N/A"}
+                  title="Agenda"
+                  detail={selectedRevenue.meetingAgenda || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Meeting Date"
+                  title="Date"
                   detail={humanDate(selectedRevenue.date)}
                 />
                 <DetalisFormatted
+                  title="Time"
+                  detail={selectedRevenue.meetingTimeLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Duration"
+                  detail={selectedRevenue.meetingDurationLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedRevenue.meetingStatus || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Type"
+                  detail={selectedRevenue.meetingTypeRaw || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Company"
+                  detail={selectedRevenue.meetingCompanyName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Booked By"
+                  detail={selectedRevenue.meetingBookedByName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Receptionist"
+                  detail={selectedRevenue.meetingReceptionistName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Client"
+                  detail={selectedRevenue.clientName || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Venue Details</div>
+                <DetalisFormatted
+                  title="Room"
+                  detail={selectedRevenue.meetingRoomName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Location"
+                  detail={selectedRevenue.meetingLocationLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Building"
+                  detail={selectedRevenue.building || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Housekeeping Status"
+                  detail={selectedRevenue.meetingHousekeepingStatus || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Payment Details</div>
+                <DetalisFormatted
                   title="Payment Date"
-                  detail={humanDate(selectedRevenue.paymentDate)}
+                  detail={
+                    selectedRevenue.paymentDate
+                      ? humanDate(selectedRevenue.paymentDate)
+                      : "N/A"
+                  }
                 />
                 <DetalisFormatted
                   title="Unit"
@@ -580,6 +714,15 @@ const getFinancialYear = (dateValue) => {
                   }
                 />
                 <DetalisFormatted
+                  title="Payment Verification"
+                  detail={selectedRevenue.paymentVerification || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Remarks"
+                  detail={selectedRevenue.remarks || selectedRevenue.paymentMode || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Finance Invoice Details</div>
+                <DetalisFormatted
                   title="Invoice Link"
                   detail={
                     selectedRevenue.invoiceLink ? (
@@ -596,7 +739,7 @@ const getFinancialYear = (dateValue) => {
                     )
                   }
                 />
-                 <DetalisFormatted
+                <DetalisFormatted
                   title="Invoice Uploaded On"
                   detail={
                     selectedRevenue.invoiceUploadedAt
@@ -605,13 +748,13 @@ const getFinancialYear = (dateValue) => {
                   }
                 />
                 <DetalisFormatted
+                  title="Invoice Uploaded By"
+                  detail={selectedRevenue.invoiceUploadedByName || "N/A"}
+                />
+                <DetalisFormatted
                   title="Finance Status"
                   detail={selectedRevenue.financeStatus || "Pending"}
                   //detail={selectedRevenue.financeStatus || "Upload Invoice"}
-                />
-                <DetalisFormatted
-                  title="Remarks"
-                  detail={selectedRevenue.remarks || "N/A"}
                 />
               </div>
             )}

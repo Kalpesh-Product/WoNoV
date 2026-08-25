@@ -442,7 +442,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
       cellRenderer: (params) => inrFormat(params.value || 0),
     },
     {
-      headerName: "Date",
+      headerName: "Revenue Collection Date",
       field: "date",
       valueFormatter: (params) =>
         params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
@@ -520,7 +520,11 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
 
       <WidgetTable
         data={tableData}
-        tableTitle="Monthly Revenue with Client Details"
+        tableTitle={
+          showInvoiceProjections
+            ? "Workation Revenue Client Invoicing"
+            : "Monthly Revenue with Client Details"
+        }
         totalKey="taxableAmount"
         dateColumn="date"
         exportData
@@ -567,7 +571,8 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
           onClose={() => setViewRow(null)}
           title="View Workation Invoice Details"
         >
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-1 gap-4 w-full">
+            <div className="font-bold text-lg">Client Details</div>
             <DetalisFormatted
               title="Client Name"
               detail={viewRow.nameOfClient || viewRow.clientName || "-"}
@@ -580,12 +585,14 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               title="Particulars"
               detail={viewRow.particulars || "-"}
             />
+
+            <div className="font-bold text-lg pt-4">Payment Details</div>
             <DetalisFormatted
               title="Taxable Amount"
               detail={`INR ${inrFormat(viewRow.taxableAmount || 0)}`}
             />
             <DetalisFormatted
-              title="GST"
+              title="GST Amount"
               detail={`INR ${inrFormat(viewRow.gst || 0)}`}
             />
             <DetalisFormatted
@@ -593,19 +600,17 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               detail={`INR ${inrFormat(viewRow.totalAmount || 0)}`}
             />
             <DetalisFormatted
-              title="Date"
+              title="Revenue Collection Date"
               detail={
                 viewRow.date ? dayjs(viewRow.date).format("DD-MM-YYYY") : "-"
               }
             />
+
+            <div className="font-bold text-lg pt-4">Finance Invoice Details</div>
             <DetalisFormatted
               title="Invoice Attached"
               detail={viewRow.invoice?.link ? "Yes" : "No"}
             />
-            {/* <DetalisFormatted
-              title="Client Invoice Name"
-              detail={viewRow.clientInvoiceName || "-"}
-            /> */}
             <DetalisFormatted
               title="Invoice Link"
               detail={
@@ -631,7 +636,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   : "-"
               }
             />
-             <DetalisFormatted
+            <DetalisFormatted
               title="Paid/Rent Status"
               detail={viewRow.status || "Unpaid"}
             />
@@ -795,7 +800,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                     {...field}
                     value={field.value || null}
                     onChange={(value) => field.onChange(value)}
-                    label="Revenue Date"
+                    label="Revenue Collection Date"
                     format="DD-MM-YYYY"
                     slotProps={{
                       textField: { fullWidth: true, size: "small" },
