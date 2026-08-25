@@ -5,6 +5,15 @@ const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 
+const getPaymentStatusLabel = (value) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  return value === true || normalized === "paid" || normalized === "true"
+    ? "Paid"
+    : "Unpaid";
+};
 const fetchCoworkingRevenueService = async ({
   dateFilter,
   query,
@@ -285,20 +294,21 @@ const fetchMeetingRevenueReportService = async ({
       .exec(),
   ]);
 
-  const uniqueMeetingRevenues = [];
-  const seenMeetingKeys = new Set();
+  // const uniqueMeetingRevenues = [];
+  // const seenMeetingKeys = new Set();
 
-  meetingRevenues.forEach((item) => {
-    const meetingKey =
-      item?.meeting?._id?.toString?.() ||
-      item?.meeting?.toString?.() ||
-      item?._id?.toString?.();
+  // meetingRevenues.forEach((item) => {
+  //   const meetingKey =
+  //     item?.meeting?._id?.toString?.() ||
+  //     item?.meeting?.toString?.() ||
+  //     item?._id?.toString?.();
 
-    if (!meetingKey || seenMeetingKeys.has(meetingKey)) return;
+  //   if (!meetingKey || seenMeetingKeys.has(meetingKey)) return;
 
-    seenMeetingKeys.add(meetingKey);
-    uniqueMeetingRevenues.push(item);
-  });
+  //   seenMeetingKeys.add(meetingKey);
+  //   uniqueMeetingRevenues.push(item);
+  // });
+
 
   const dayPassRevenues = dayPassVisits.map((visit) => {
     const visitorName = [
@@ -331,14 +341,21 @@ const fetchMeetingRevenueReportService = async ({
       totalAmount: Number(visit.totalAmount || 0),
       date: visit.dateOfVisit,
       paymentDate: visit.paymentStatus ? visit.updatedAt : null,
-      status: visit.paymentStatus ? "Paid" : "Unpaid",
+  //     status: visit.paymentStatus ? "Paid" : "Unpaid",
+  //     paymentProof: visit.paymentProof || null,
+  //     remarks: visit.paymentMode || "-",
+  //     source: "day-pass",
+  //   };
+  // });
+
+  // const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
+   status: getPaymentStatusLabel(visit.paymentStatus),
       paymentProof: visit.paymentProof || null,
       remarks: visit.paymentMode || "-",
       source: "day-pass",
     };
   });
-
-  const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
+  const revenues = [...meetingRevenues, ...dayPassRevenues].sort(
     (a, b) => new Date(b.date || 0) - new Date(a.date || 0),
   );
 
@@ -411,11 +428,16 @@ const fetchMeetingRevenueReportService = async ({
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
       status:
-        item.source === "day-pass"
-          ? item.status
-          : item.meeting?.paymentStatus
-            ? "Paid"
-            : item.status || "Unpaid",
+        // item.source === "day-pass"
+        //   ? item.status
+        //   : item.meeting?.paymentStatus
+        //     ? "Paid"
+        //     : item.status || "Unpaid",
+         item.source === "day-pass"
+          ? getPaymentStatusLabel(item.status)
+          : item.meeting
+            ? getPaymentStatusLabel(item.meeting.paymentStatus)
+            : getPaymentStatusLabel(item.status),
       paymentProofLink:
         item.source === "day-pass"
           ? item.paymentProof?.url || ""

@@ -84,6 +84,12 @@ const updateMeetingRevenue = async (req, res, next) => {
     if (!["Upload Invoice", "Verified"].includes(financeStatus)) {
       return res.status(400).json({ message: "Invalid finance status" });
     }
+     const hasInvoice = Boolean(existingRevenue.invoice?.link);
+    if (financeStatus === "Verified" && !req.file && !hasInvoice) {
+      return res.status(400).json({
+        message: "Upload an invoice before verifying meeting revenue",
+      });
+    }
 
     const payload = { financeStatus };
     if (req.file) {

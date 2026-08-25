@@ -84,6 +84,15 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const isPreviousMonth = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const today = new Date();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  return date < currentMonthStart;
+};
+
 const getUserDisplayName = (user) => {
   if (!user) return "";
   if (typeof user === "string") return user;
@@ -204,6 +213,7 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
   const allRevenueData = tableData.flatMap((month) => month.revenue);
   const isVerifiedFinanceRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
+  const isPaidRow = (item) => item?.normalizedStatus === "paid";
   const flattenedRevenueData = showChart
     ? allRevenueData.filter(isVerifiedFinanceRow)
     : allRevenueData;
@@ -264,7 +274,7 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
       isMeetingsLoading
         ? []
         : flattenedRevenueData
-            .filter(isVerifiedFinanceRow)
+            .filter(isPaidRow)
             .map((item) => ({
               date: item.date,
               taxable: getNumericAmount(item.taxable),
@@ -419,7 +429,7 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
             titleAmountGreen={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (!isVerifiedFinanceRow(item)) {
+                 if (!isPaidRow(item)) {
                     return sum;
                   }
                   return sum + getNumericAmount(item.taxable);
@@ -429,7 +439,7 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
             titleAmountRed={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (isVerifiedFinanceRow(item)) {
+                  if (isPaidRow(item)) { 
                     return sum;
                   }
                   return sum + getNumericAmount(item.taxable);
