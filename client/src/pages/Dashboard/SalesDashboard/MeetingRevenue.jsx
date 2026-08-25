@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
@@ -214,9 +214,20 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
   const isVerifiedFinanceRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
   const isPaidRow = (item) => item?.normalizedStatus === "paid";
+  const isFinancePaidRow = (item) =>
+    item?.normalizedFinanceStatus === "verified" && item?.hasUploadedInvoice;
   const flattenedRevenueData = showChart
     ? allRevenueData.filter(isVerifiedFinanceRow)
     : allRevenueData;
+  const financePaidTaxable = useMemo(
+    () =>
+      flattenedRevenueData.reduce(
+        (sum, item) =>
+          isFinancePaidRow(item) ? sum + getNumericAmount(item.taxable) : sum,
+        0,
+      ),
+    [flattenedRevenueData],
+  );
 
   const updateInvoice = useMutation({
     mutationFn: async () => {
@@ -405,14 +416,33 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
             data={flattenedRevenueData}
             headerActions={
               !showChart ? (
-                <PrimaryButton
-                  title="Manage Meeting"
-                  handleSubmit={() =>
-                    navigate(
-                      "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
-                    )
-                  }
-                />
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Chip
+                    label={`FINANCE PAID : INR ${inrFormat(financePaidTaxable)}`}
+                    sx={{
+                      backgroundColor: "#e3f2fd",
+                      color: "#1565c0",
+                      border: "1px solid #bbdefb",
+                      fontWeight: 800,
+                      fontSize: "0.84rem",
+                      height: "36px",
+                      borderRadius: "8px",
+                      px: 1.15,
+                      "& .MuiChip-label": {
+                        px: 0.9,
+                        fontWeight: 800,
+                      },
+                    }}
+                  />
+                  <PrimaryButton
+                    title="Manage Meeting"
+                    handleSubmit={() =>
+                      navigate(
+                        "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+                      )
+                    }
+                  />
+                </div>
               ) : null
             }
               tableTitle={
@@ -449,8 +479,8 @@ const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
             titleAmountTotal={({ rangeTotal }) =>
               `INR ${inrFormat(rangeTotal)}`
             }
-            greenTitle="Paid"
-            redTitle="Unpaid"
+            greenTitle={showChart ? "Paid" : "Admin Paid"}
+            redTitle={showChart ? "Unpaid" : "Admin UnPaid"}
             totalTitle="Total"
             summaryChipVariant="ticket"
             columns={[
