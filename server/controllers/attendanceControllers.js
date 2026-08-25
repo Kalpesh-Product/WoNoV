@@ -57,6 +57,13 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
     Company.findById(companyId).select("shifts").lean(),
   ]);
   const shiftName = String(employee?.shift || "").trim();
+  if (!employee) {
+    throw new CustomError("Logged-in employee record was not found");
+  }
+  if (!shiftName) {
+    throw new CustomError("No shift is assigned to this employee");
+  }
+
   const normalizedShiftName = normalizeShiftName(shiftName);
   const configuredShift = (companyData?.shifts || []).find(
     (shift) =>
@@ -70,13 +77,26 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
   const configuredEnd = configuredShift?.endTime
     ? new Date(configuredShift.endTime)
     : null;
-  const isNightShift = normalizedShiftName === "nightshift";
-  const startHours =
-    configuredStart?.getHours() ?? (isNightShift ? 19 : 9);
-  const startMinutes =
-    configuredStart?.getMinutes() ?? (isNightShift ? 0 : 30);
-  const endHours = configuredEnd?.getHours() ?? (isNightShift ? 4 : 18);
-  const endMinutes = configuredEnd?.getMinutes() ?? (isNightShift ? 0 : 30);
+  if (!configuredShift) {
+    throw new CustomError(
+      `Active company shift configuration not found for ${shiftName}`,
+    );
+  }
+  if (
+    !configuredStart ||
+    !configuredEnd ||
+    Number.isNaN(configuredStart.getTime()) ||
+    Number.isNaN(configuredEnd.getTime())
+  ) {
+    throw new CustomError(
+      `Start and end times are not configured for ${configuredShift.name}`,
+    );
+  }
+
+  const startHours = configuredStart.getHours();
+  const startMinutes = configuredStart.getMinutes();
+  const endHours = configuredEnd.getHours();
+  const endMinutes = configuredEnd.getMinutes();
   const startMinuteOfDay = startHours * 60 + startMinutes;
   const endMinuteOfDay = endHours * 60 + endMinutes;
   const isOvernight = endMinuteOfDay <= startMinuteOfDay;
@@ -296,6 +316,9 @@ const clockOut = async (req, res, next) => {
     return res.status(200).json({ message: "You clocked out" });
   } catch (error) {
     console.error("Clock-out error:", error);
+    if (error instanceof CustomError) {
+      return next(error);
+    }
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
@@ -1151,18 +1174,23 @@ const bulkInsertAttendance = async (req, res, next) => {
           const shiftEnd = employeeShift?.endTime
             ? new Date(employeeShift.endTime)
             : null;
-          const isNightShift =
-            normalizeShiftName(employee?.shift) === "nightshift";
-          const shiftStartMinutes = shiftStart
-            ? shiftStart.getHours() * 60 + shiftStart.getMinutes()
-            : isNightShift
-              ? 19 * 60
-              : 9 * 60 + 30;
-          const shiftEndMinutes = shiftEnd
-            ? shiftEnd.getHours() * 60 + shiftEnd.getMinutes()
-            : isNightShift
-              ? 4 * 60
-              : 18 * 60 + 30;
+          if (
+            !employeeShift ||
+            !shiftStart ||
+            !shiftEnd ||
+            Number.isNaN(shiftStart.getTime()) ||
+            Number.isNaN(shiftEnd.getTime())
+          ) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Active company shift configuration not found for employee ${empId}`,
+            });
+          }
+          const shiftStartMinutes =
+            shiftStart.getHours() * 60 + shiftStart.getMinutes();
+          const shiftEndMinutes =
+            shiftEnd.getHours() * 60 + shiftEnd.getMinutes();
           const isOvernightShift =
             shiftStartMinutes !== null &&
             shiftEndMinutes !== null &&
@@ -1304,8 +1332,8 @@ const bulkInsertAttendance = async (req, res, next) => {
             inTime,
             outTime,
             shiftSnapshot: {
-              shiftId: employeeShift?._id || null,
-              shiftName: employeeShift?.name || employee?.shift || null,
+              shiftId: employeeShift._id,
+              shiftName: employeeShift.name,
               startTime: expectedShiftStart,
               endTime: expectedShiftEnd,
               checkInGraceMinutes: DEFAULT_CHECK_IN_GRACE_MINUTES,
