@@ -220,6 +220,25 @@ const fetchMeetingRevenueReportService = async ({
     return date < currentMonthStart;
   };
 
+   const getFinanceStatus = (item) => {
+    if (
+      item.source === "day-pass" &&
+      item.paymentVerification === "Completed"
+    ) {
+      return "Upload Invoice";
+    }
+    if (isHistoricalRevenue(item.date) || item.financeStatus === "Verified") {
+      return "Verified";
+    }
+    if (
+      item.paymentVerification === "Completed" ||
+      item.meeting?.paymentVerification === "Completed"
+    ) {
+      return "Upload Invoice";
+    }
+    return "Pending";
+  };
+
   const filter = {};
 
   if (company) {
@@ -320,6 +339,7 @@ const fetchMeetingRevenueReportService = async ({
       .join(" ");
 
     return {
+       _id: visit._id,
       client:
         visit.visitorId?.registeredClientCompany ||
         visit.visitorId?.brandName ||
@@ -341,15 +361,17 @@ const fetchMeetingRevenueReportService = async ({
       totalAmount: Number(visit.totalAmount || 0),
       date: visit.dateOfVisit,
       paymentDate: visit.paymentStatus ? visit.updatedAt : null,
-  //     status: visit.paymentStatus ? "Paid" : "Unpaid",
-  //     paymentProof: visit.paymentProof || null,
-  //     remarks: visit.paymentMode || "-",
-  //     source: "day-pass",
-  //   };
-  // });
+  // //     status: visit.paymentStatus ? "Paid" : "Unpaid",
+  // //     paymentProof: visit.paymentProof || null,
+  // //     remarks: visit.paymentMode || "-",
+  // //     source: "day-pass",
+  // //   };
+  // // });
 
-  // const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
-   status: getPaymentStatusLabel(visit.paymentStatus),
+  // // const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
+  //  status: getPaymentStatusLabel(visit.paymentStatus),
+  paymentVerification: visit.paymentVerification || "Pending",
+      status: getPaymentStatusLabel(visit.paymentStatus),
       paymentProof: visit.paymentProof || null,
       remarks: visit.paymentMode || "-",
       source: "day-pass",
@@ -397,7 +419,7 @@ const fetchMeetingRevenueReportService = async ({
     monthData.actual += item.taxable || 0;
 
     monthData.revenue.push({
-       id: item._id,
+      id: item._id,
       clientName: item.client,
       meetingType:
         item.source === "day-pass"
@@ -411,14 +433,14 @@ const fetchMeetingRevenueReportService = async ({
       costPerHour: item.costPerHour,
       taxable: item.taxable,
       gst: item.gst,
-      status: item.status,
-      // financeStatus: item.financeStatus || "Upload Invoice",
-      financeStatus:
-        item.financeStatus === "Verified"
-          ? "Verified"
-          : item.meeting?.paymentVerification === "Completed"
-            ? "Upload Invoice"
-            : "Pending",
+      // status: item.status,
+      // // financeStatus: item.financeStatus || "Upload Invoice",
+      // financeStatus:
+      //   item.financeStatus === "Verified"
+      //     ? "Verified"
+      //     : item.meeting?.paymentVerification === "Completed"
+      //       ? "Upload Invoice"
+      //       : "Pending",
       invoiceLink: item.invoice?.link || "",
       invoiceName: item.invoice?.name || "",
       invoiceUploadedAt: item.invoiceUploadedAt || item.invoice?.date || null,
@@ -446,7 +468,9 @@ const fetchMeetingRevenueReportService = async ({
         item.source === "day-pass"
           ? item.paymentProof?.name || "View File"
           : item.meeting?.paymentProof?.name || "",
-      paymentVerification: item.meeting?.paymentVerification || "N/A",
+            paymentVerification:
+        item.paymentVerification || item.meeting?.paymentVerification || "N/A",
+      //paymentVerification: item.meeting?.paymentVerification || "N/A",
       paymentMode: item.meeting?.paymentMode || item.remarks || "N/A",
       meetingTitle: item.meeting?.subject || "",
       meetingAgenda: item.meeting?.agenda || "",
@@ -471,13 +495,14 @@ const fetchMeetingRevenueReportService = async ({
           ? item.building
           : item.meeting?.bookedRoom?.location?.building?.buildingName ||
             "N/A",
-      financeStatus: isHistoricalRevenue(item.date)
-        ? "Verified"
-        : item.financeStatus === "Verified"
-          ? "Verified"
-          : item.meeting?.paymentVerification === "Completed"
-            ? "Upload Invoice"
-            : "Pending",
+      // financeStatus: isHistoricalRevenue(item.date)
+      //   ? "Verified"
+      //   : item.financeStatus === "Verified"
+      //     ? "Verified"
+      //     : item.meeting?.paymentVerification === "Completed"
+      //       ? "Upload Invoice"
+      //       : "Pending",
+       financeStatus: getFinanceStatus(item),
       remarks: item.remarks || "",
     });
   });
