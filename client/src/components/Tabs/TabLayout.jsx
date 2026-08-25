@@ -16,6 +16,7 @@ const TabLayout = ({
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile(768);
+  const normalizedBasePath = basePath.replace(/\/+$/, "");
   const { auth } = useAuth(); // 🆕 get user
   const userPermissions = auth?.user?.permissions?.permissions || []; // 🆕
 
@@ -48,19 +49,29 @@ const TabLayout = ({
   // Redirect to first allowed default tab if on basePath
   useEffect(() => {
     if (
-      location.pathname === basePath &&
+      location.pathname === normalizedBasePath &&
       defaultTabPath &&
       filteredTabs.length > 0
     ) {
-      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true });
+      navigate(`${normalizedBasePath}/${filteredTabs[0].path}`, {
+        replace: true,
+      });
     }
-  }, [location, navigate, basePath, defaultTabPath, filteredTabs]);
+  }, [
+    location,
+    navigate,
+    normalizedBasePath,
+    defaultTabPath,
+    filteredTabs,
+  ]);
 
    useEffect(() => {
     if (!isAuthorized && filteredTabs.length > 0) {
-      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true });
+      navigate(`${normalizedBasePath}/${filteredTabs[0].path}`, {
+        replace: true,
+      });
     }
-  }, [isAuthorized, filteredTabs, navigate, basePath]);
+  }, [isAuthorized, filteredTabs, navigate, normalizedBasePath]);
 
   // const activeTab = filteredTabs.findIndex((tab) =>
   //   location.pathname.includes(tab.path)
@@ -114,7 +125,7 @@ const TabLayout = ({
             <NavLink
               key={index}
               className="border-r-[1px] border-borderGray"
-              to={`${basePath}/${tab.path}`}
+              to={`${normalizedBasePath}/${tab.path}`}
               state={location.state}
               end
               style={({ isActive }) => ({

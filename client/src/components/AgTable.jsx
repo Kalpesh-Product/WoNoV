@@ -61,6 +61,7 @@ const AgTableComponent = React.memo(
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
     const gridRef = useRef(null);
+    const previousServerPageRef = useRef(paginationPage);
 
     useEffect(() => {
       setFilteredData(data || []);
@@ -75,6 +76,19 @@ const AgTableComponent = React.memo(
         tableRef.current = gridRef.current;
       }
     }, [gridRef, tableRef]);
+
+    useEffect(() => {
+      const previousPage = previousServerPageRef.current;
+      previousServerPageRef.current = paginationPage;
+
+      if (!serverPagination || previousPage === paginationPage) return;
+
+      const frameId = requestAnimationFrame(() => {
+        gridRef.current?.api?.ensureIndexVisible(0, "top");
+      });
+
+      return () => cancelAnimationFrame(frameId);
+    }, [paginationPage, serverPagination]);
 
     const defaultColDef = {
       resizable: true,
@@ -270,8 +284,25 @@ const AgTableComponent = React.memo(
       [columns],
     );
 
+    const stateSafeColumns = useMemo(
+      () =>
+        columns.map((column) => {
+          if (column.sort === undefined && column.sortIndex === undefined) {
+            return column;
+          }
+
+          const { sort, sortIndex, ...columnWithoutSortState } = column;
+          return {
+            ...columnWithoutSortState,
+            initialSort: column.initialSort ?? sort,
+            initialSortIndex: column.initialSortIndex ?? sortIndex,
+          };
+        }),
+      [columns],
+    );
+
     const modifiedColumns = useMemo(() => {
-      if (!enableCheckbox) return columns;
+      if (!enableCheckbox) return stateSafeColumns;
 
       return [
         {
@@ -280,9 +311,9 @@ const AgTableComponent = React.memo(
           checkboxSelection: true,
           width: 50,
         },
-        ...columns,
+        ...stateSafeColumns,
       ];
-    }, [columns, enableCheckbox, checkAll]);
+    }, [stateSafeColumns, enableCheckbox, checkAll]);
 
     const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
@@ -491,6 +522,7 @@ const AgTableComponent = React.memo(
             cacheBlockSize={paginationPageSize} // ✅ Controls how many rows to fetch per block
             suppressRowVirtualization={false} // ✅ Ensures row virtualization is active
             suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
+            suppressScrollOnNewData
           />
         </div>
         {serverPagination && paginationTotal > 0 && (

@@ -228,25 +228,27 @@ const Attendance = () => {
 
       const expectedIn = new Date(attendanceDate);
       const expectedOut = new Date(attendanceDate);
+      if (!selectedShift) return null;
+
       const configuredStart = selectedShift?.startTime
         ? new Date(selectedShift.startTime)
         : null;
       const configuredEnd = selectedShift?.endTime
         ? new Date(selectedShift.endTime)
         : null;
-      const isNightShift =
-        String(employeeData?.shift || "")
-          .trim()
-          .toLowerCase()
-          .replace(/[\s-]+/g, "") === "nightshift";
+      if (
+        !configuredStart ||
+        !configuredEnd ||
+        Number.isNaN(configuredStart.getTime()) ||
+        Number.isNaN(configuredEnd.getTime())
+      ) {
+        return null;
+      }
 
-      const startHours =
-        configuredStart?.getHours() ?? (isNightShift ? 19 : 9);
-      const startMinutes =
-        configuredStart?.getMinutes() ?? (isNightShift ? 0 : 30);
-      const endHours = configuredEnd?.getHours() ?? (isNightShift ? 4 : 18);
-      const endMinutes =
-        configuredEnd?.getMinutes() ?? (isNightShift ? 0 : 30);
+      const startHours = configuredStart.getHours();
+      const startMinutes = configuredStart.getMinutes();
+      const endHours = configuredEnd.getHours();
+      const endMinutes = configuredEnd.getMinutes();
 
       expectedIn.setHours(startHours, startMinutes, 0, 0);
       expectedOut.setHours(endHours, endMinutes, 0, 0);
@@ -259,7 +261,7 @@ const Attendance = () => {
 
       return { expectedIn, expectedOut };
     },
-    [employeeData?.shift, selectedShift],
+    [selectedShift],
   );
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
@@ -320,10 +322,12 @@ const Attendance = () => {
         const outLocal = new Date(outDate);
 
         // Expected office hours
-        const { expectedIn, expectedOut } = getExpectedShiftTimes(
+        const expectedShiftTimes = getExpectedShiftTimes(
           inLocal,
           entry.shiftSnapshot,
         );
+        if (!expectedShiftTimes) return null;
+        const { expectedIn, expectedOut } = expectedShiftTimes;
 
         const checkInGraceEnd = new Date(
           expectedIn.getTime() +
@@ -369,7 +373,8 @@ const Attendance = () => {
             },
           ],
         };
-      });
+      })
+      .filter(Boolean);
 
     return formatted;
  }, [getExpectedShiftTimes, selectedCalendarYear, selectedMonth]);
@@ -407,10 +412,12 @@ const Attendance = () => {
           return summary;
         }
 
-        const { expectedIn, expectedOut } = getExpectedShiftTimes(
+        const expectedShiftTimes = getExpectedShiftTimes(
           inDate,
           entry.shiftSnapshot,
         );
+        if (!expectedShiftTimes) return summary;
+        const { expectedIn, expectedOut } = expectedShiftTimes;
 
         const checkInGraceEnd = new Date(
           expectedIn.getTime() +

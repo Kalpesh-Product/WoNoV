@@ -51,6 +51,17 @@ const payrollDropdownOptions = {
   incomeTaxRegime: ["Old Tax Regime", "New Tax Regime"],
 };
 
+const getCanonicalShiftName = (shiftName) => {
+  const normalized = String(shiftName || "").trim().toLowerCase();
+  if (normalized === "general" || normalized === "general shift") {
+    return "General Shift";
+  }
+  if (normalized === "night" || normalized === "night shift") {
+    return "Night Shift";
+  }
+  return "";
+};
+
 
 
 const EditDetails = () => {
@@ -616,8 +627,10 @@ const EditDetails = () => {
         .map((item) => (typeof item === "object" ? item?._id : item))
         .filter(Boolean),
       reportsTo: normalizedReportsTo,
-      shift: employeeData?.shift || "",
-      workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+      workSchedulePolicy:
+        getCanonicalShiftName(
+          employeeData?.shift || employeeData?.workSchedulePolicy,
+        ),
       attendanceSource: employeeData?.attendanceSource || "",
       leavePolicy: employeeData?.leavePolicy || "",
       holidayPolicy: employeeData?.holidayPolicy || "",
@@ -796,7 +809,6 @@ const EditDetails = () => {
           : [],
         designation: formData?.jobTitle || "",
         jobDescription: formData?.jobDescription || "",
-        shift: formData?.shift || "",
         attendanceSource: formData?.attendanceSource || "",
 
         leavePolicy: resolvedLeavePolicy,
@@ -1081,7 +1093,10 @@ const EditDetails = () => {
           })
           .filter(Boolean)
           .join(", "),
-        workSchedulePolicy: employeeData?.workSchedulePolicy || "",
+        workSchedulePolicy:
+          getCanonicalShiftName(
+            employeeData?.shift || employeeData?.workSchedulePolicy,
+          ),
         attendanceSource: employeeData?.attendanceSource || "",
         leavePolicy: employeeData?.leavePolicy || "",
         holidayPolicy: employeeData?.holidayPolicy || "",
@@ -1573,7 +1588,6 @@ const EditDetails = () => {
                   {isLoading
                     ? []
                     : [
-                        "shift",
                         "workSchedulePolicy",
                         "attendanceSource",
                         "leavePolicy",
@@ -1612,7 +1626,7 @@ const EditDetails = () => {
                                     {...field}
                                     select
                                     size="small"
-                                    label="Work Schedule Policy"
+                                    label="Shift"
                                     fullWidth
                                   >
                                     <MenuItem value="General Shift">
@@ -1726,9 +1740,13 @@ const EditDetails = () => {
                             <div className="py-2 flex justify-between items-center gap-2">
                               <div className="w-[100%] justify-start flex">
                                 <span className="font-pmedium text-gray-600 text-content">
-                                  {fieldKey
-                                    .replace(/([A-Z])/g, " $1")
-                                    .replace(/^./, (str) => str.toUpperCase())}
+                                  {fieldKey === "workSchedulePolicy"
+                                    ? "Shift"
+                                    : fieldKey
+                                        .replace(/([A-Z])/g, " $1")
+                                        .replace(/^./, (str) =>
+                                          str.toUpperCase(),
+                                        )}
                                 </span>{" "}
                               </div>
                               <div className="">

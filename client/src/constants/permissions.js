@@ -1838,7 +1838,7 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "hr_completed_leaves_tab",
     title: "Completed Leaves",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed",
+    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed-approvals",
   },
   HR_PENDING_APPROVALS_ATTENDANCE: {
     value: "hr_pending_approvals_attendance_tab",

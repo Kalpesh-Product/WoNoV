@@ -211,6 +211,7 @@ const HrLeaves = () => {
         status: leave.status,
         fromDate: leave.fromDate,
         toDate: leave.toDate,
+        leavePeriod: leave.leavePeriod,
         hours: leave.hours,
         description: leave.description,
       });
@@ -307,7 +308,7 @@ const HrLeaves = () => {
     const finalRows = Object.entries(groupedUsers)
       .map(([userId, userInfo], index) => {
         const row = {
-          srno: index + 1,
+          srNo: index + 1,
           ...userInfo,
         };
 
@@ -349,7 +350,28 @@ const HrLeaves = () => {
       })
       .filter(Boolean);
 
-    return finalRows;
+    if (!hasActiveLeaveCriteria) return finalRows;
+
+    return finalRows
+      .flatMap((row) =>
+        row.matchedLeaves
+          .slice()
+          .sort((first, second) =>
+            dayjs(first.fromDate).diff(dayjs(second.fromDate)),
+          )
+          .map((leave) => ({
+            ...row,
+            leaveRecordId: leave.id,
+            fromDate: leave.fromDate,
+            toDate: leave.toDate,
+            leaveType: leave.leaveType,
+            leavePeriod: leave.leavePeriod,
+            leaveHours: leave.hours,
+            leaveStatus: leave.status,
+            leaveDescription: leave.description,
+          })),
+      )
+      .map((row, index) => ({ ...row, srNo: index + 1 }));
   }, [
     appliedFilters,
     attendanceData,
@@ -491,8 +513,9 @@ const HrLeaves = () => {
     ...(hasActiveLeaveCriteria
       ? [
           {
-            field: "matchedLeaves",
+            field: "actionMatchedLeaves",
             headerName: "Matched Leaves",
+            hide: true,
             width: 300,
             minWidth: 260,
             pinned: "left",
@@ -531,6 +554,31 @@ const HrLeaves = () => {
                 })}
               </div>
             ),
+          },
+          {
+            field: "fromDate",
+            headerName: "From Date",
+            width: 140,
+            valueFormatter: (params) =>
+              params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
+          },
+          {
+            field: "toDate",
+            headerName: "To Date",
+            width: 140,
+            valueFormatter: (params) =>
+              params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
+          },
+          { field: "leaveType", headerName: "Leave Type", width: 150 },
+          { field: "leavePeriod", headerName: "Leave Period", width: 140 },
+          { field: "leaveHours", headerName: "Hours", width: 100 },
+          { field: "leaveStatus", headerName: "Status", width: 130 },
+          {
+            field: "leaveDescription",
+            headerName: "Description",
+            minWidth: 220,
+            flex: 1,
+            valueFormatter: (params) => params.value || "N/A",
           },
         ]
       : []),
