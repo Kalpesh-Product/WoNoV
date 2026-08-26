@@ -1,5 +1,5 @@
-import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+// import AgTable from "../../../../components/AgTable";
+// import { Chip } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -20,22 +20,46 @@ const ClientRevenue = () => {
   const axios = useAxiosPrivate();
   const getValueOrNA = (value) => value ?? "N/A";
 
+  // const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
+  //   queryKey: ["clientRevenue", selectedClient?._id],
+  //   enabled: !!selectedClient?._id,
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `/api/sales/coworking-client-revenue/${selectedClient?._id}`
+  //       );
+  //       return response?.data || [];
+  //     } catch (error) {
+  //       console.error("Error fetching revenue data:", error.message);
+  //       return [];
+  //     }
+  //   },
+  // });
+
   const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
-    queryKey: ["clientRevenue", selectedClient?._id],
+    queryKey: ["coWorkingData"],
     enabled: !!selectedClient?._id,
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/sales/coworking-client-revenue/${selectedClient?._id}`
+          "/api/sales/fetch-coworking-revenues",
+          { params: { useClientDetails: true } },
         );
-        return response?.data || [];
+        return Array.isArray(response?.data) ? response.data : [];
       } catch (error) {
         console.error("Error fetching revenue data:", error.message);
         return [];
       }
     },
+    select: (monthlyRevenue) =>
+      monthlyRevenue
+        .flatMap((month) => month?.clients || [])
+        .filter(
+          (revenue) =>
+            String(revenue?.clients?._id || revenue?.clients || "") ===
+            String(selectedClient?._id || ""),
+        ),
   });
-
   const viewEmployeeColumns = [
     { field: "srNo", headerName: "SR No", width: 100 },
     {

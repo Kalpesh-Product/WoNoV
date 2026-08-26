@@ -282,11 +282,13 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
     // queryFn: async () => {
     //   try {
     //     const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
-    queryKey: ["coWorkingData", { useClientDetails: showInvoiceProjections }],
+    //queryKey: ["coWorkingData", { useClientDetails: showInvoiceProjections }],
+     queryKey: ["coWorkingData"],
     queryFn: async () => {
       try {
         const response = await axios.get(`/api/sales/fetch-coworking-revenues`, {
-          params: showInvoiceProjections ? { useClientDetails: true } : undefined,
+         // params: showInvoiceProjections ? { useClientDetails: true } : undefined,
+          params: { useClientDetails: true },
         });
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
