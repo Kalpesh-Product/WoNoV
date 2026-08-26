@@ -1,12 +1,80 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import dayjs from "dayjs";
 import humanDate from "../../../utils/humanDateForamt";
 import PrimaryButton from "../../../components/PrimaryButton";
 
+const calculateCurrentRate = (
+  cabinRate,
+  openRate,
+  annualIncrement,
+  startDate,
+  referenceDate = dayjs(),
+) => {
+  const base = [cabinRate, openRate]
+    .map((rate) => Number(rate))
+    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!base) {
+    return 0;
+  }
+
+  const start = dayjs(startDate);
+  if (!start.isValid()) {
+    return base;
+  }
+
+  const yearsElapsed = Math.max(referenceDate.diff(start, "year"), 0);
+  const rate = base * Math.pow(1 + increment / 100, yearsElapsed);
+
+  return rate;
+};
+
+const formatExactNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+
+  return String(value);
+};
+
+const useCurrentMonthStartDate = () => {
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
+    () => dayjs().startOf("month").toISOString(),
+  );
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleNextUpdate = () => {
+      const now = dayjs();
+      const nextMonthStart = now.add(1, "month").startOf("month");
+      const delay = Math.max(nextMonthStart.diff(now), 0);
+
+      timeoutId = window.setTimeout(() => {
+        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        scheduleNextUpdate();
+      }, delay);
+    };
+
+    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    scheduleNextUpdate();
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return currentMonthStartDate;
+};
+
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  const computedRentDate = useCurrentMonthStartDate();
   const computedLockinPeriod = useMemo(() => {
     const startDate = selectedClient?.startDate;
     const endDate = selectedClient?.endDate;
@@ -24,6 +92,31 @@ const AdminClientDetails = () => {
 
     return end.diff(start, "month");
   }, [selectedClient?.endDate, selectedClient?.lockinPeriod, selectedClient?.startDate]);
+  const computedCurrentRate = useMemo(
+    () =>
+      calculateCurrentRate(
+        selectedClient?.ratePerCabinDesk,
+        selectedClient?.ratePerOpenDesk,
+        selectedClient?.annualIncrement,
+        selectedClient?.startDate,
+      ),
+    [
+      selectedClient?.annualIncrement,
+      selectedClient?.ratePerCabinDesk,
+      selectedClient?.ratePerOpenDesk,
+      selectedClient?.startDate,
+    ],
+  );
+  const computedRevenue = useMemo(
+    () => {
+      const noOfDesks =
+        Number(selectedClient?.cabinDesks || 0) +
+        Number(selectedClient?.openDesks || 0);
+
+      return noOfDesks * computedCurrentRate;
+    },
+    [computedCurrentRate, selectedClient?.cabinDesks, selectedClient?.openDesks],
+  );
 
   const { control, reset } = useForm({
     defaultValues: {
@@ -90,7 +183,7 @@ const AdminClientDetails = () => {
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
         lockinPeriod: computedLockinPeriod,
-        rentDate: selectedClient.rentDate,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPocName || "",
         localPocEmail: selectedClient.localPocEmail || "",
@@ -103,7 +196,7 @@ const AdminClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [computedLockinPeriod, selectedClient, reset]);
+  }, [computedLockinPeriod, computedRentDate, selectedClient, reset]);
 
   const displayField = (label, value, isDate = false) => (
     <div className="py-2 flex justify-between items-start gap-2">
@@ -149,6 +242,7 @@ const AdminClientDetails = () => {
               {displayField("HO City", _defaultValues.hoCity)}
               {displayField("HO State", _defaultValues.hoState)}
               {displayField("Booking Type", _defaultValues.bookingType)}
+              {displayField("Revenue", formatExactNumber(computedRevenue))}
             </div>
           </div>
 
@@ -176,6 +270,7 @@ const AdminClientDetails = () => {
                 Number(_defaultValues.cabinDesks || 0) +
                   Number(_defaultValues.openDesks || 0)
               )}
+              {displayField("Current Rate", formatExactNumber(computedCurrentRate))}
             </div>
           </div>
 
@@ -203,7 +298,7 @@ const AdminClientDetails = () => {
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
               {displayField("Lock-in Period", computedLockinPeriod)}
-              {displayField("Rent Date", _defaultValues.rentDate, true)}
+              {displayField("Rent Date", computedRentDate, true)}
               {displayField(
                 "Next Increment",
                 _defaultValues.nextIncrement,

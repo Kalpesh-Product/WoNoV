@@ -32,6 +32,73 @@ const calculateLockinPeriod = (startDate, endDate, fallback = 0) => {
   return end.diff(start, "month");
 };
 
+const calculateCurrentRate = (
+  cabinRate,
+  openRate,
+  annualIncrement,
+  startDate,
+  referenceDate = dayjs(),
+) => {
+  const base = [cabinRate, openRate]
+    .map((rate) => Number(rate))
+    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!base) {
+    return 0;
+  }
+
+  const start = dayjs(startDate);
+  if (!start.isValid()) {
+    return base;
+  }
+
+  const yearsElapsed = Math.max(referenceDate.diff(start, "year"), 0);
+  const rate = base * Math.pow(1 + increment / 100, yearsElapsed);
+
+  return rate;
+};
+
+const formatExactNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+
+  return String(value);
+};
+
+const useCurrentMonthStartDate = () => {
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
+    () => dayjs().startOf("month").toISOString(),
+  );
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleNextUpdate = () => {
+      const now = dayjs();
+      const nextMonthStart = now.add(1, "month").startOf("month");
+      const delay = Math.max(nextMonthStart.diff(now), 0);
+
+      timeoutId = window.setTimeout(() => {
+        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        scheduleNextUpdate();
+      }, delay);
+    };
+
+    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    scheduleNextUpdate();
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return currentMonthStartDate;
+};
+
 const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
@@ -154,6 +221,9 @@ const ClientDetails = () => {
   const watchedOpenDesks = useWatch({ control, name: "openDesks" });
   const watchedStartDate = useWatch({ control, name: "startDate" });
   const watchedEndDate = useWatch({ control, name: "endDate" });
+  const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
+  const watchedCabinRate = useWatch({ control, name: "ratePerCabinDesk" });
+  const watchedOpenRate = useWatch({ control, name: "ratePerOpenDesk" });
   const computedNoOfDesks = useMemo(
     () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
     [watchedCabinDesks, watchedOpenDesks],
@@ -162,6 +232,21 @@ const ClientDetails = () => {
     () => calculateLockinPeriod(watchedStartDate, watchedEndDate, 0),
     [watchedStartDate, watchedEndDate],
   );
+  const computedCurrentRate = useMemo(
+    () =>
+      calculateCurrentRate(
+        watchedCabinRate,
+        watchedOpenRate,
+        watchedAnnualIncrement,
+        watchedStartDate,
+      ),
+    [watchedAnnualIncrement, watchedCabinRate, watchedOpenRate, watchedStartDate],
+  );
+  const computedRevenue = useMemo(
+    () => computedNoOfDesks * computedCurrentRate,
+    [computedCurrentRate, computedNoOfDesks],
+  );
+  const computedRentDate = useCurrentMonthStartDate();
 
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "client-details"],
@@ -227,7 +312,7 @@ const ClientDetails = () => {
           selectedClient.endDate,
           selectedClient.lockinPeriod || 0,
         ),
-        rentDate: selectedClient.rentDate,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
         localPocEmail: selectedClient.localPoc?.email || "",
@@ -240,7 +325,7 @@ const ClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [reset, selectedClient, selectedUnitDetails]);
+  }, [computedRentDate, reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
     if (!selectedBuilding) {
       return [];
@@ -307,7 +392,7 @@ const ClientDetails = () => {
       startDate: data.startDate,
       endDate: data.endDate,
       lockinPeriod: computedLockinPeriod,
-      rentDate: data.rentDate,
+      rentDate: computedRentDate,
       nextIncrement: data.nextIncrement,
       localPocName: data.localPocName,
       localPocEmail: data.localPocEmail,
@@ -389,7 +474,7 @@ const ClientDetails = () => {
           selectedClient.endDate,
           selectedClient.lockinPeriod || 0,
         ),
-        rentDate: selectedClient.rentDate,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
         localPocEmail: selectedClient.localPoc?.email || "",
@@ -412,12 +497,13 @@ const ClientDetails = () => {
     setValue("lockinPeriod", computedLockinPeriod);
   }, [computedLockinPeriod, isEditing, setValue]);
 
-  const renderDatePickerField = (field, label) => (
+  const renderDatePickerField = (field, label, disabled = false) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
         label={label}
         format="DD-MM-YYYY"
         value={field.value ? dayjs(field.value) : null}
+        disabled={disabled}
         onChange={(dateValue) =>
           field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
         }
@@ -467,6 +553,7 @@ const ClientDetails = () => {
                     "hoCity",
                     "hoState",
                     "bookingType",
+                    "revenue",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -488,6 +575,15 @@ const ClientDetails = () => {
                                   </MenuItem>
                                 ))}
                               </TextField>
+                            ) : fieldKey === "revenue" ? (
+                              <TextField
+                                {...field}
+                                value={formatExactNumber(computedRevenue)}
+                                disabled
+                                size="small"
+                                label="Revenue"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -514,7 +610,9 @@ const ClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey] || "N/A"}
+                              {fieldKey === "revenue"
+                                ? formatExactNumber(computedRevenue)
+                                : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -576,6 +674,7 @@ const ClientDetails = () => {
                         "openDesks",
                         "ratePerOpenDesk",
                         "noOfDesks",
+                        "currentRate",
                         "isActive",
                       ].map((fieldKey) => (
                         <Controller
@@ -595,6 +694,15 @@ const ClientDetails = () => {
                                 disabled
                                 size="small"
                                 label="No of Desk"
+                                fullWidth
+                              />
+                            ) : fieldKey === "currentRate" ? (
+                              <TextField
+                                {...field}
+                                value={formatExactNumber(computedCurrentRate)}
+                                disabled
+                                size="small"
+                                label="Current Rate"
                                 fullWidth
                               />
                             ) : (
@@ -620,6 +728,7 @@ const ClientDetails = () => {
                       "openDesks",
                       "ratePerOpenDesk",
                       "noOfDesks",
+                      "currentRate",
                       "isActive",
                     ].map((fieldKey) => (
                       <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
@@ -629,6 +738,8 @@ const ClientDetails = () => {
                               ? "Status"
                               : fieldKey === "noOfDesks"
                                 ? "No of Desk"
+                                : fieldKey === "currentRate"
+                                  ? "Current Rate"
                               : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
@@ -646,6 +757,8 @@ const ClientDetails = () => {
                               : fieldKey === "noOfDesks"
                                 ? Number(control._defaultValues.cabinDesks || 0) +
                                   Number(control._defaultValues.openDesks || 0)
+                              : fieldKey === "currentRate"
+                                ? formatExactNumber(computedCurrentRate)
                               : control._defaultValues[fieldKey] || "N/A"}
                           </span>
                         </div>
@@ -865,7 +978,11 @@ const ClientDetails = () => {
                         name="rentDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date")
+                          renderDatePickerField(
+                            { ...field, value: computedRentDate },
+                            "Rent Date",
+                            true,
+                          )
                         }
                       />
                     ) : (
@@ -880,7 +997,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.rentDate)}
+                            {humanDate(computedRentDate)}
                           </span>
                         </div>
                       </div>
