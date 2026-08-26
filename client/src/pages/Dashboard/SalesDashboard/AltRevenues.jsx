@@ -44,6 +44,17 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getUserDisplayName = (user) => {
+  if (!user) return "-";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    "-"
+  );
+};
+
 const getAlternateTaxCalculations = (taxableAmount) => {
   const taxable = getNumericAmount(taxableAmount);
   if (String(taxableAmount ?? "").trim() === "") {
@@ -166,6 +177,7 @@ const AltRevenues = ({ showChart = true }) => {
           invoiceName: invoice.name || item.invoiceName || "-",
           invoiceLink: invoice.link || item.invoiceLink || "-",
           invoiceAttached: Boolean(invoice.link),
+          invoiceUploadedByName: getUserDisplayName(item.invoiceUploadedBy),
         };
       }),
     [alternateRevenueRows],
@@ -660,6 +672,10 @@ const AltRevenues = ({ showChart = true }) => {
                   ? dayjs(viewRow.invoicePaidDate).format("DD-MM-YYYY")
                   : "-"
               }
+            />
+            <DetalisFormatted
+              title="Invoice Uploaded By"
+              detail={viewRow.invoiceUploadedByName || "-"}
             />
             <DetalisFormatted
               title="Paid/Rent Status"

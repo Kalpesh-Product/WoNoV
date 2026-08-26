@@ -60,6 +60,17 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getUserDisplayName = (user) => {
+  if (!user) return "-";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    "-"
+  );
+};
+
 const getEmptyWorkationFormValues = () => ({
   selectedClient: "",
   nameOfClient: "",
@@ -173,6 +184,9 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               invoiceLink: invoice.link || item.invoiceLink || "-",
               invoiceUploadedAt:
                 item.invoiceUploadedAt || invoice.date || null,
+              invoiceUploadedByName: getUserDisplayName(
+                item.invoiceUploadedBy,
+              ),
               invoiceAttached: Boolean(invoice.link),
             };
           })
@@ -635,6 +649,10 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
                   : "-"
               }
+            />
+            <DetalisFormatted
+              title="Invoice Uploaded By"
+              detail={viewRow.invoiceUploadedByName || "-"}
             />
             <DetalisFormatted
               title="Paid/Rent Status"

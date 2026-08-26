@@ -374,7 +374,7 @@ const DayPassRevenueDetails = ({ revenue }) => {
       />
 
       <DetalisFormatted
-        title="Invoice Uploaded On"
+        title="Invoice Uploaded At"
         detail={
           revenue.invoiceUploadedAt
             ? humanDate(revenue.invoiceUploadedAt)
@@ -1257,7 +1257,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   }
                 />
                 <DetalisFormatted
-                  title="Invoice Uploaded On"
+                  title="Invoice Uploaded At"
                   detail={
                     selectedRevenue.invoiceUploadedAt
                       ? humanDate(selectedRevenue.invoiceUploadedAt)
