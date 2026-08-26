@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import humanDate from "../../../utils/humanDateForamt";
 import PrimaryButton from "../../../components/PrimaryButton";
+import { useDispatch } from "react-redux";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { setSelectedClient } from "../../../redux/slices/clientSlice";
+import { useParams } from "react-router-dom";
 
 const calculateCurrentRate = (
   cabinRate,
@@ -73,7 +78,14 @@ const useCurrentMonthStartDate = () => {
 };
 
 const AdminClientDetails = () => {
+  const dispatch = useDispatch();
+  const axios = useAxiosPrivate();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    [clientName],
+  );
   const computedRentDate = useCurrentMonthStartDate();
   const computedLockinPeriod = useMemo(() => {
     const startDate = selectedClient?.startDate;
@@ -117,6 +129,27 @@ const AdminClientDetails = () => {
     },
     [computedCurrentRate, selectedClient?.cabinDesks, selectedClient?.openDesks],
   );
+
+  const { isLoading: isClientLoading } = useQuery({
+    queryKey: ["adminCoWorkingClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
 
   const { control, reset } = useForm({
     defaultValues: {
@@ -197,6 +230,14 @@ const AdminClientDetails = () => {
       });
     }
   }, [computedLockinPeriod, computedRentDate, selectedClient, reset]);
+
+  if (isClientLoading && !selectedClient) {
+    return (
+      <div className="border-2 border-gray-200 p-4 rounded-md flex items-center justify-center min-h-[240px]">
+        <div className="p-4 font-semibold">Loading client details...</div>
+      </div>
+    );
+  }
 
   const displayField = (label, value, isDate = false) => (
     <div className="py-2 flex justify-between items-start gap-2">

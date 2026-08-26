@@ -77,7 +77,11 @@ const MonthlyBudgetCommon = () => {
   );
 
   const columns = [
-    { headerName: "Sr No", field: "srNo", width: 100 },
+    {
+      headerName: "Sr No",
+      width: 100,
+      valueGetter: (params) => (params.node ? params.node.rowIndex + 1 : ""),
+    },
    // { headerName: "Section", field: "section", flex: 1.6 },
     { headerName: "Department", field: "department", flex: 1,hide:true },
     { headerName: "Expense Name", field: "expanseName", flex: 1 },
