@@ -1,11 +1,29 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
+import dayjs from "dayjs";
 import humanDate from "../../../utils/humanDateForamt";
 import PrimaryButton from "../../../components/PrimaryButton";
 
 const AdminClientDetails = () => {
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  const computedLockinPeriod = useMemo(() => {
+    const startDate = selectedClient?.startDate;
+    const endDate = selectedClient?.endDate;
+
+    if (!startDate || !endDate) {
+      return selectedClient?.lockinPeriod || 0;
+    }
+
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+
+    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) {
+      return selectedClient?.lockinPeriod || 0;
+    }
+
+    return end.diff(start, "month");
+  }, [selectedClient?.endDate, selectedClient?.lockinPeriod, selectedClient?.startDate]);
 
   const { control, reset } = useForm({
     defaultValues: {
@@ -71,7 +89,7 @@ const AdminClientDetails = () => {
         bookingType: selectedClient.bookingType,
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
+        lockinPeriod: computedLockinPeriod,
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPocName || "",
@@ -85,7 +103,7 @@ const AdminClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [selectedClient, reset]);
+  }, [computedLockinPeriod, selectedClient, reset]);
 
   const displayField = (label, value, isDate = false) => (
     <div className="py-2 flex justify-between items-start gap-2">
@@ -153,6 +171,11 @@ const AdminClientDetails = () => {
                 "Rate Per Open Desk",
                 _defaultValues.ratePerOpenDesk
               )}
+              {displayField(
+                "No of Desk",
+                Number(_defaultValues.cabinDesks || 0) +
+                  Number(_defaultValues.openDesks || 0)
+              )}
             </div>
           </div>
 
@@ -179,7 +202,7 @@ const AdminClientDetails = () => {
               )}
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
-              {displayField("Lock-in Period", _defaultValues.lockinPeriod)}
+              {displayField("Lock-in Period", computedLockinPeriod)}
               {displayField("Rent Date", _defaultValues.rentDate, true)}
               {displayField(
                 "Next Increment",

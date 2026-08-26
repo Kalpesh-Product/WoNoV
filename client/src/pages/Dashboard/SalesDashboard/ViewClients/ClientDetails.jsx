@@ -17,6 +17,21 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useParams } from "react-router-dom";
 
+const calculateLockinPeriod = (startDate, endDate, fallback = 0) => {
+  if (!startDate || !endDate) {
+    return fallback;
+  }
+
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) {
+    return fallback;
+  }
+
+  return end.diff(start, "month");
+};
+
 const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
@@ -135,6 +150,18 @@ const ClientDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const selectedBuilding = useWatch({ control, name: "building" });
+  const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
+  const watchedOpenDesks = useWatch({ control, name: "openDesks" });
+  const watchedStartDate = useWatch({ control, name: "startDate" });
+  const watchedEndDate = useWatch({ control, name: "endDate" });
+  const computedNoOfDesks = useMemo(
+    () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
+    [watchedCabinDesks, watchedOpenDesks],
+  );
+  const computedLockinPeriod = useMemo(
+    () => calculateLockinPeriod(watchedStartDate, watchedEndDate, 0),
+    [watchedStartDate, watchedEndDate],
+  );
 
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "client-details"],
@@ -195,7 +222,11 @@ const ClientDetails = () => {
         startDate: selectedClient.startDate,
         bookingType: selectedClient.bookingType,
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
+        lockinPeriod: calculateLockinPeriod(
+          selectedClient.startDate,
+          selectedClient.endDate,
+          selectedClient.lockinPeriod || 0,
+        ),
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -275,7 +306,7 @@ const ClientDetails = () => {
       totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
       startDate: data.startDate,
       endDate: data.endDate,
-      lockinPeriod: Number(data.lockinPeriod) || 0,
+      lockinPeriod: computedLockinPeriod,
       rentDate: data.rentDate,
       nextIncrement: data.nextIncrement,
       localPocName: data.localPocName,
@@ -353,7 +384,11 @@ const ClientDetails = () => {
         startDate: selectedClient.startDate,
         bookingType: selectedClient.bookingType,
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
+        lockinPeriod: calculateLockinPeriod(
+          selectedClient.startDate,
+          selectedClient.endDate,
+          selectedClient.lockinPeriod || 0,
+        ),
         rentDate: selectedClient.rentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -368,6 +403,15 @@ const ClientDetails = () => {
       });
     }
   };
+
+  useEffect(() => {
+    if (!isEditing) {
+      return;
+    }
+
+    setValue("lockinPeriod", computedLockinPeriod);
+  }, [computedLockinPeriod, isEditing, setValue]);
+
   const renderDatePickerField = (field, label) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
@@ -531,6 +575,7 @@ const ClientDetails = () => {
                         "ratePerCabinDesk",
                         "openDesks",
                         "ratePerOpenDesk",
+                        "noOfDesks",
                         "isActive",
                       ].map((fieldKey) => (
                         <Controller
@@ -543,6 +588,15 @@ const ClientDetails = () => {
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
+                            ) : fieldKey === "noOfDesks" ? (
+                              <TextField
+                                {...field}
+                                value={computedNoOfDesks}
+                                disabled
+                                size="small"
+                                label="No of Desk"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -565,6 +619,7 @@ const ClientDetails = () => {
                       "ratePerCabinDesk",
                       "openDesks",
                       "ratePerOpenDesk",
+                      "noOfDesks",
                       "isActive",
                     ].map((fieldKey) => (
                       <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
@@ -572,6 +627,8 @@ const ClientDetails = () => {
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "isActive"
                               ? "Status"
+                              : fieldKey === "noOfDesks"
+                                ? "No of Desk"
                               : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
@@ -586,6 +643,9 @@ const ClientDetails = () => {
                               ? control._defaultValues.isActive
                                 ? "Active"
                                 : "Inactive"
+                              : fieldKey === "noOfDesks"
+                                ? Number(control._defaultValues.cabinDesks || 0) +
+                                  Number(control._defaultValues.openDesks || 0)
                               : control._defaultValues[fieldKey] || "N/A"}
                           </span>
                         </div>
@@ -771,8 +831,10 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={computedLockinPeriod}
+                            disabled
                             size="small"
-                            label="Lock-in Period"
+                            label="Lock-in Period (Months)"
                             fullWidth
                           />
                         )}
@@ -789,7 +851,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.lockinPeriod}
+                            {computedLockinPeriod}
                           </span>
                         </div>
                       </div>
