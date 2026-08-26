@@ -307,7 +307,16 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "visitorId",
         select:
-          "firstName middleName lastName registeredClientCompany brandName visitorCompany",
+          // "firstName middleName lastName registeredClientCompany brandName visitorCompany",
+           "firstName middleName lastName email phoneNumber gender purposeOfVisit registeredClientCompany brandName visitorCompany state city sector gstNumber gstFile idProof otherFile",
+      })
+      .populate({
+        path: "checkedInBy",
+        select: "firstName middleName lastName employeeName",
+      })
+      .populate({
+        path: "checkedOutBy",
+        select: "firstName middleName lastName employeeName",
       })
       .populate({
         path: "unit",
@@ -362,10 +371,33 @@ const fetchMeetingRevenueReportService = async ({
         Number(visit.amount || 0) - Number(visit.discount || 0),
         0,
       ),
-      gst: Number(visit.gstAmount || 0),
+     gst: Number(visit.gstAmount || 0),
+      discount: Number(visit.discount || 0),
       totalAmount: Number(visit.totalAmount || 0),
       date: visit.dateOfVisit,
       paymentDate: visit.paymentStatus ? visit.updatedAt : null,
+      visitorDetails: {
+        firstName: visit.visitorId?.firstName || "",
+        lastName: visit.visitorId?.lastName || "",
+        email: visit.visitorId?.email || "",
+        phoneNumber: visit.visitorId?.phoneNumber || "",
+        gender: visit.visitorId?.gender || "",
+        purposeOfVisit: visit.purposeOfVisit || visit.visitorId?.purposeOfVisit || visit.visitorType,
+        brandName: visit.visitorId?.brandName || "",
+        registeredClientCompany: visit.visitorId?.registeredClientCompany || "",
+        state: visit.visitorId?.state || "",
+        city: visit.visitorId?.city || "",
+        sector: visit.visitorId?.sector || "",
+        gstNumber: visit.visitorId?.gstNumber || "",
+        gstFile: visit.visitorId?.gstFile || null,
+        idType: visit.visitorId?.idProof?.idType || "",
+        idNumber: visit.visitorId?.idProof?.idNumber || "",
+        otherFile: visit.visitorId?.otherFile || null,
+        checkIn: visit.checkIn || null,
+        checkOut: visit.checkOut || null,
+        checkedInBy: visit.checkedInBy || null,
+        checkedOutBy: visit.checkedOutBy || null,
+      },
   // //     status: visit.paymentStatus ? "Paid" : "Unpaid",
   // //     paymentProof: visit.paymentProof || null,
   // //     remarks: visit.paymentMode || "-",
@@ -429,6 +461,8 @@ const fetchMeetingRevenueReportService = async ({
 
     monthData.revenue.push({
       id: item._id,
+      source: item.source || "meeting-revenue",
+      visitorDetails: item.visitorDetails || null,
       clientName: item.client,
       meetingType:
         item.source === "day-pass"
@@ -442,6 +476,7 @@ const fetchMeetingRevenueReportService = async ({
       costPerHour: item.costPerHour,
       taxable: item.taxable,
       gst: item.gst,
+      discount: item.discount || 0,
       // status: item.status,
       // // financeStatus: item.financeStatus || "Upload Invoice",
       // financeStatus:
