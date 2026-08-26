@@ -205,7 +205,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             url: row.invoice.link,
           }
         : null,
-      clientInvoiceName: row.clientName || row.clientInvoiceName || row.invoice?.name || "",
+        clientInvoiceName: row.clientInvoiceName || row.clientName || row.invoice?.name || "",
+     // clientInvoiceName: row.clientName || row.clientInvoiceName || row.invoice?.name || "",
       invoiceUploadedAt: dayjs(),
       rentDate: dayjs(row.rentDate),
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
@@ -378,7 +379,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         clients: client.clients,
         service: client.service,
         clientName: client.clientName,
-        clientInvoiceName: "",
+        clientInvoiceName: client.clientInvoiceName || "",
         invoice: client.invoice || null,
         invoiceName: client.invoice?.name || "",
         invoiceLink: client.invoice?.link || "",
@@ -615,67 +616,91 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         <MuiModal
           open
           onClose={() => setViewRow(null)}
-          title="View Invoice Details"
+          // title={viewRow.clientName || "View Invoice Details"}
+            title="View Invoice Details"
         >
-          <div className="flex flex-col gap-3">
-            {/* <span className="text-subtitle font-pmedium text-primary uppercase">
-              Co-Working Revenue Details
-            </span> */}
-            <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
-            <DetalisFormatted
-              title="Client Invoice Name"
-              detail={viewRow.clientName || viewRow.clientInvoiceName || "-"}
-            />
-            <DetalisFormatted
-              title="Invoice Link"
-              detail={
-                viewRow.invoice?.link ? (
-                  <a
-                    href={viewRow.invoice?.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline"
-                  >
-                    View PDF
-                  </a>
-                ) : (
-                  "-"
-                )
-              }
-            />
-            <DetalisFormatted
-              title="Invoice Uploaded Date"
-              detail={
-                viewRow.invoice?.date
-                  ? dayjs(viewRow.invoice?.date).format("DD-MM-YYYY")
-                  : "-"
-              }
-            />
-            <DetalisFormatted title="Channel" detail={viewRow.channel || "-"} />
-            {/* <DetalisFormatted title="Occupation" detail={viewRow.occupation || "-"} /> */}
-            <DetalisFormatted title="No. of Desks" detail={viewRow.noOfDesks || "-"} />
-            <DetalisFormatted title="Desk Rate" detail={`INR ${inrFormat(normalizeAmount(viewRow.deskRate))}`} />
-            <DetalisFormatted title="Revenue" detail={`INR ${inrFormat(normalizeAmount(viewRow.revenue))}`} />
-            <DetalisFormatted title="Total Term" detail={viewRow.totalTerm || "-"} />
-            {/* <DetalisFormatted title="Due Term" detail={viewRow.dueTerm || "-"} /> */}
-            <DetalisFormatted
-              title="Rent Date"
-              detail={viewRow.rentDate ? dayjs(viewRow.rentDate).format("DD-MM-YYYY") : "-"}
-            />
-            <DetalisFormatted
-              title="Past Due Date"
-              detail={viewRow.pastDueDate ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY") : "-"}
-            />
-            <DetalisFormatted title="Annual Increment (%)" detail={viewRow.annualIncrement || "-"} />
-            <DetalisFormatted
-              title="Next Increment Date"
-              detail={viewRow.nextIncrementDate ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY") : "-"}
-            />
-            <DetalisFormatted title="Paid/Rent Status" detail={viewRow.rentStatus || "-"} />
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Client Info</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
+                <DetalisFormatted
+                  title="Client Invoice Name"
+                  detail={viewRow.clientInvoiceName || viewRow.clientName || "-"}
+                />
+                <DetalisFormatted title="Channel" detail={viewRow.channel || "-"} />
+              </div>
+            </div>
+
+            <hr className="my-2" />
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Financials</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted title="No. of Desks" detail={viewRow.noOfDesks ?? "-"} />
+                <DetalisFormatted title="Desk Rate" detail={`INR ${inrFormat(normalizeAmount(viewRow.deskRate))}`} />
+                <DetalisFormatted title="Revenue" detail={`INR ${inrFormat(normalizeAmount(viewRow.revenue))}`} />
+                <DetalisFormatted title="Annual Increment (%)" detail={`${viewRow.annualIncrement ?? 0}%`} />
+              </div>
+            </div>
+
+            <hr className="my-2" />
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Rental Terms</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Rent Date"
+                  detail={viewRow.rentDate ? dayjs(viewRow.rentDate).format("DD-MM-YYYY") : "-"}
+                />
+                <DetalisFormatted title="Paid/Rent Status" detail={viewRow.rentStatus || "-"} />
+                <DetalisFormatted title="Total Term" detail={viewRow.totalTerm ?? "-"} />
+                <DetalisFormatted
+                  title="Next Increment Date"
+                  detail={viewRow.nextIncrementDate ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY") : "-"}
+                />
+                <DetalisFormatted
+                  title="Past Due Date"
+                  detail={viewRow.pastDueDate ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY") : "-"}
+                />
+              </div>
+            </div>
+
+            <hr className="my-2" />
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Finance Invoice Details</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={
+                    viewRow.invoiceLink ? (
+                      <a
+                        href={viewRow.invoiceLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded Date"
+                  detail={
+                    viewRow.invoiceUploadedAt
+                      ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+              </div>
+            </div>
           </div>
         </MuiModal>
       )}
-
 {editRow && (
   <MuiModal
     open
