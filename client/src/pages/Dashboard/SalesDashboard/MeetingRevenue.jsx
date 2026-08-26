@@ -426,11 +426,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
 
   return (
     <>
-      {/* Client Details */}
-      <div className="font-bold text-base md:col-span-2">
-        Client Details
-      </div>
-
       <DisabledInvoiceField
         label="First Name"
         value={visitor.firstName}
@@ -474,11 +469,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
         value={getUnitLabel(revenue.unit)}
       />
 
-      {/* Company Details */}
-      <div className="font-bold text-base pt-2 md:col-span-2">
-        Company Details
-      </div>
-
       <DisabledInvoiceField
         label="Brand Name"
         value={visitor.brandName}
@@ -489,100 +479,92 @@ const DayPassInvoiceFields = ({ revenue }) => {
         value={visitor.registeredClientCompany}
       />
 
-      <DisabledInvoiceField
-        label="State"
-        value={visitor.state}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="State"
+          value={visitor.state}
+        />
 
-      <DisabledInvoiceField
-        label="City"
-        value={visitor.city}
-      />
+        <DisabledInvoiceField
+          label="City"
+          value={visitor.city}
+        />
 
-      <DisabledInvoiceField
-        label="Sector"
-        value={visitor.sector}
-      />
-
-      {/* GST & Verification */}
-      <div className="font-bold text-base pt-2 md:col-span-2">
-        GST & Verification
+        <DisabledInvoiceField
+          label="Sector"
+          value={visitor.sector}
+        />
       </div>
 
-      <DisabledInvoiceField
-        label="GST Number"
-        value={visitor.gstNumber}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="GST Number"
+          value={visitor.gstNumber}
+        />
 
-      <DisabledInvoiceField
-        label="GST File"
-        value={getFileLink(visitor.gstFile)}
-      />
-
-      <DisabledInvoiceField
-        label="ID Type"
-        value={visitor.idType}
-      />
-
-      <DisabledInvoiceField
-        label="ID Number"
-        value={visitor.idNumber}
-      />
-
-      <DisabledInvoiceField
-        label="ID File"
-        value={getFileLink(visitor.otherFile)}
-      />
-
-      {/* Visit Details */}
-      <div className="font-bold text-base pt-2 md:col-span-2">
-        Visit Details
+        <DisabledInvoiceField
+          label="GST File"
+          value={getFileLink(visitor.gstFile)}
+        />
       </div>
 
-      <DisabledInvoiceField
-        label="Date of Visit"
-        value={dateValue(revenue.date)}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="ID Type"
+          value={visitor.idType}
+        />
 
-      <DisabledInvoiceField
-        label="Checkin Time"
-        value={formatTimeValue(visitor.checkIn)}
-      />
+        <DisabledInvoiceField
+          label="ID Number"
+          value={visitor.idNumber}
+        />
 
-      <DisabledInvoiceField
-        label="Checkin By"
-        value={getUserDisplayName(visitor.checkedInBy)}
-      />
-
-      <DisabledInvoiceField
-        label="Checkout Time"
-        value={formatTimeValue(visitor.checkOut)}
-      />
-
-      <DisabledInvoiceField
-        label="Checkout By"
-        value={getUserDisplayName(visitor.checkedOutBy)}
-      />
-
-      {/* Payment Details */}
-      <div className="font-bold text-base pt-2 md:col-span-2">
-        Payment Details
+        <DisabledInvoiceField
+          label="ID File"
+          value={getFileLink(visitor.otherFile)}
+        />
       </div>
 
-      <DisabledInvoiceField
-        label="Taxable Amount"
-        value={amountValue(revenue.taxable)}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="Checkin Time"
+          value={formatTimeValue(visitor.checkIn)}
+        />
 
-      <DisabledInvoiceField
-        label="GST Amount"
-        value={amountValue(revenue.gst)}
-      />
+        <DisabledInvoiceField
+          label="Checkin By"
+          value={getUserDisplayName(visitor.checkedInBy)}
+        />
+      </div>
 
-      <DisabledInvoiceField
-        label="Total Amount"
-        value={amountValue(revenue.totalAmount)}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="Checkout Time"
+          value={formatTimeValue(visitor.checkOut)}
+        />
+
+        <DisabledInvoiceField
+          label="Checkout By"
+          value={getUserDisplayName(visitor.checkedOutBy)}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="Taxable Amount"
+          value={amountValue(revenue.taxable)}
+        />
+
+        <DisabledInvoiceField
+          label="GST Amount"
+          value={amountValue(revenue.gst)}
+        />
+
+        <DisabledInvoiceField
+          label="Total Amount"
+          value={amountValue(revenue.totalAmount)}
+        />
+      </div>
 
       <DisabledInvoiceField
         label="Discount"
@@ -597,20 +579,22 @@ const DayPassInvoiceFields = ({ revenue }) => {
         }
       />
 
-      <DisabledInvoiceField
-        label="Admin Status"
-        value={revenue.status}
-      />
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="Admin Status"
+          value={revenue.status}
+        />
 
-      <DisabledInvoiceField
-        label="Payment Verification"
-        value={revenue.paymentVerification}
-      />
+        <DisabledInvoiceField
+          label="Payment Verification"
+          value={revenue.paymentVerification}
+        />
 
-      <DisabledInvoiceField
-        label="Admin Payment Proof"
-        value={revenue.paymentProofLink}
-      />
+        <DisabledInvoiceField
+          label="Admin Payment Proof"
+          value={revenue.paymentProofLink}
+        />
+      </div>
     </>
   );
 };
@@ -1305,8 +1289,53 @@ const DayPassInvoiceFields = ({ revenue }) => {
                 }}
               >
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                   {editingRevenue.source === "day-pass" ? (
-                    <DayPassInvoiceFields revenue={editingRevenue} />
+                  {editingRevenue.source === "day-pass" ? (
+                    <>
+                      <DayPassInvoiceFields revenue={editingRevenue} />
+
+                      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          label="Date of Visit"
+                          value={formatDateValue(editingRevenue.date)}
+                          disabled
+                        />
+
+                        <TextField
+                          size="small"
+                          fullWidth
+                          label="Invoice Upload Date"
+                          value={formatDateValue(
+                            editingRevenue.invoiceUploadedAt ||
+                              editingRevenue.invoice?.date,
+                          )}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <UploadFileInput
+                          value={editableInvoiceFile}
+                          onChange={setInvoiceFile}
+                          label="Upload File"
+                          allowedExtensions={["pdf", "doc", "docx"]}
+                          previewType="pdf"
+                        />
+
+                        <TextField
+                          select
+                          size="small"
+                          fullWidth
+                          label="Finance Status"
+                          value={financeStatus}
+                          onChange={(event) => setFinanceStatus(event.target.value)}
+                        >
+                          <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
+                          <MenuItem value="Verified">Verified</MenuItem>
+                        </TextField>
+                      </div>
+                    </>
                   ) : (
                     <>
                   <TextField
@@ -1419,21 +1448,15 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   <TextField
                     size="small"
                     fullWidth
-                    label="Invoice Upload Date"
+                    label="Admin Status"
                     value={editingRevenue.status || "-"}
                     disabled
                   />
-                   </>
-                  )}
-
-                  <div className="font-bold text-base pt-2 md:col-span-2">
-                    Finance Invoice Details
-                  </div>
 
                   <TextField
                     size="small"
                     fullWidth
-                     label="Invoice Upload Date"
+                    label="Invoice Upload Date"
                     value={formatDateValue(
                       editingRevenue.invoiceUploadedAt ||
                         editingRevenue.invoice?.date,
@@ -1452,6 +1475,8 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
                     <MenuItem value="Verified">Verified</MenuItem>
                   </TextField>
+                   </>
+                  )}
 
                   <TextField
                     size="small"
@@ -1463,16 +1488,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     minRows={2}
                     className="md:col-span-2"
                   />
-
-                  <div className="md:col-span-2">
-                    <UploadFileInput
-                      value={editableInvoiceFile}
-                      onChange={setInvoiceFile}
-                      label="Upload File"
-                      allowedExtensions={["pdf", "doc", "docx"]}
-                      previewType="pdf"
-                    />
-                  </div>
                 </div>
 
                 {updateInvoice.isError && (
