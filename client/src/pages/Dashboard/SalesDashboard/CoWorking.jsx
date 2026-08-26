@@ -540,8 +540,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               pinned: "right",
               cellRenderer: (params) => <StatusChip status={params.value} />,
             },
-             ...(showInvoiceProjections
-                ? [
+            ...(showInvoiceProjections
+              ? [
                   {
                     headerName: "Action",
                     field: "actions",
@@ -567,7 +567,42 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                     ),
                   },
                 ]
-              : []),
+              : [
+                  {
+                    headerName: "Action",
+                    field: "actions",
+                    pinned: "right",
+                    flex: 1,
+                    minWidth: 110,
+                    maxWidth: 110,
+                    sortable: false,
+                    filter: false,
+                    cellStyle: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                    },
+                    cellRenderer: (params) => (
+                      <IconButton
+                        size="small"
+                        aria-label="View invoice details"
+                        onClick={() => setViewRow(params.data)}
+                        sx={{
+                          padding: "6px",
+                          color: "#6B7280",
+                          "&:hover": {
+                            backgroundColor: "rgba(30, 61, 115, 0.08)",
+                            color: "#1E3D73",
+                          },
+                        }}
+                      >
+                        <MdOutlineRemoveRedEye size={18} />
+                      </IconButton>
+                    ),
+                  },
+                ]),
           ]}
         />
       ) : (
