@@ -46,6 +46,10 @@ const fetchCoworkingRevenueService = async ({
         select:
           "clientName bookingType cabinDesks openDesks ratePerCabinDesk ratePerOpenDesk annualIncrement nextIncrement startDate endDate lockinPeriod rentDate",
       })
+      .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName name",
+      })
       .lean()
       .exec();
 
@@ -168,6 +172,14 @@ const fetchCoworkingRevenueService = async ({
         invoiceName: item.invoice?.name || null,
         invoiceLink: item.invoice?.link || null,
         invoiceUploadedAt: invoiceDate,
+        invoiceUploadedBy: item.invoiceUploadedBy || null,
+        invoiceUploadedByName:
+          item.invoiceUploadedBy?.employeeName ||
+          [item.invoiceUploadedBy?.firstName, item.invoiceUploadedBy?.middleName, item.invoiceUploadedBy?.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          item.invoiceUploadedBy?.name ||
+          null,
         invoice: item.invoice || null,
         rentStatus: item.rentStatus,
         ...(!isReport && { pastDueDate: item.pastDueDate }),

@@ -42,6 +42,18 @@ const normalizeForMatch = (value) =>
     .replace(/[^a-zA-Z0-9]+/g, "")
     .toLowerCase();
 
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    ""
+  ).trim();
+};
+
 const resolveClientIdFromRow = (row, clientList = []) => {
   const directClient = row?.clients || row?.client;
   if (directClient) {
@@ -384,6 +396,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         invoiceName: client.invoice?.name || "",
         invoiceLink: client.invoice?.link || "",
         invoiceUploadedAt: client.invoice?.date || null,
+        invoiceUploadedBy: client.invoiceUploadedBy || null,
+        invoiceUploadedByName: getUserDisplayName(client.invoiceUploadedBy),
         channel: client.channel,
         occupation: client.occupation,
         noOfDesks: client.noOfDesks,
@@ -632,8 +646,6 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               </div>
             </div>
 
-            <hr className="my-2" />
-
             <div>
               <div className="text-subtitle font-pmedium mb-4">Financials</div>
               <div className="grid grid-cols-1 gap-2 mt-2">
@@ -643,8 +655,6 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                 <DetalisFormatted title="Annual Increment (%)" detail={`${viewRow.annualIncrement ?? 0}%`} />
               </div>
             </div>
-
-            <hr className="my-2" />
 
             <div>
               <div className="text-subtitle font-pmedium mb-4">Rental Terms</div>
@@ -665,8 +675,6 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                 />
               </div>
             </div>
-
-            <hr className="my-2" />
 
             <div>
               <div className="text-subtitle font-pmedium mb-4">Finance Invoice Details</div>
@@ -695,6 +703,10 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                       ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
                       : "-"
                   }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded by"
+                  detail={viewRow.invoiceUploadedByName || "-"}
                 />
               </div>
             </div>

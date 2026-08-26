@@ -295,7 +295,7 @@ const updateRevenueInvoice = async (req, res, next) => {
       "channel",
       "noOfDesks", "deskRate", "occupation", "revenue", "totalTerm",
       "dueTerm", "rentDate", "invoiceUploadedAt", "rentStatus", "pastDueDate",
-      "annualIncrement", "nextIncrementDate",
+      "annualIncrement", "nextIncrementDate", "invoiceUploadedBy",
     ];
     const payload = allowedFields.reduce((result, field) => {
       if (updates[field] !== undefined) result[field] = updates[field];
@@ -304,6 +304,10 @@ const updateRevenueInvoice = async (req, res, next) => {
 
     if (payload.invoiceUploadedAt) {
       payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    }
+
+    if (!payload.invoiceUploadedBy) {
+      payload.invoiceUploadedBy = existingRevenue?.invoiceUploadedBy || req.user || null;
     }
 
     if (file) {
@@ -358,6 +362,7 @@ const updateRevenueInvoice = async (req, res, next) => {
         date: payload.invoiceUploadedAt || new Date(),
       };
       payload.invoiceUploadedAt = payload.invoice.date;
+      payload.invoiceUploadedBy = req.user || existingRevenue?.invoiceUploadedBy || null;
     }
 
     let revenue;

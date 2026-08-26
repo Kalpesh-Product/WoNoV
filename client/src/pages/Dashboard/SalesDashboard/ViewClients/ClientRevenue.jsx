@@ -19,6 +19,17 @@ const ClientRevenue = () => {
   const [clientDetails, setClientDetails] = useState(null);
   const axios = useAxiosPrivate();
   const getValueOrNA = (value) => value ?? "N/A";
+  const getUserDisplayName = (user) => {
+    if (!user) return "";
+    if (typeof user === "string") return user;
+
+    return (
+      user.employeeName ||
+      [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+      user.name ||
+      ""
+    ).trim();
+  };
 
   // const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
   //   queryKey: ["clientRevenue", selectedClient?._id],
@@ -134,6 +145,9 @@ const ClientRevenue = () => {
     : Array.isArray(revenueDetails)
       ? revenueDetails.map((item, index) => ({
         ...item,
+        invoiceUploadedAt: item?.invoiceUploadedAt || item?.invoice?.date || null,
+        invoiceUploadedBy: item?.invoiceUploadedBy || null,
+        invoiceUploadedByName: getUserDisplayName(item?.invoiceUploadedBy),
         clientName:
           item?.clientName ?? item?.clients?.clientName ?? selectedClient?.clientName,
         srNo: index + 1,
@@ -227,6 +241,45 @@ const ClientRevenue = () => {
               <DetalisFormatted
                 title="Past Due Date"
                 detail={humanDate(clientDetails?.pastDueDate) || "N/A"}
+              />
+            </div>
+          </div>
+
+          <div>
+            <span className="text-subtitle font-pmedium mb-4">
+              Finance Invoice Details
+            </span>
+            <div className="grid grid-cols-1 gap-2 mt-2">
+              <DetalisFormatted
+                title="Invoice Link"
+                detail={
+                  clientDetails?.invoice?.link || clientDetails?.invoiceLink ? (
+                    <a
+                      href={clientDetails?.invoice?.link || clientDetails?.invoiceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline"
+                    >
+                      View PDF
+                    </a>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
+              <DetalisFormatted
+                title="Invoice Uploaded Date"
+                detail={
+                  clientDetails?.invoiceUploadedAt || clientDetails?.invoice?.date
+                    ? humanDate(
+                        clientDetails?.invoiceUploadedAt || clientDetails?.invoice?.date,
+                      )
+                    : "-"
+                }
+              />
+              <DetalisFormatted
+                title="Invoice Uploaded by"
+                detail={clientDetails?.invoiceUploadedByName || "-"}
               />
             </div>
           </div>
