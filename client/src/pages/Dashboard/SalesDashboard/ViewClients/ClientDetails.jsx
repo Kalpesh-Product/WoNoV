@@ -17,6 +17,13 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useParams } from "react-router-dom";
 
+const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
+const normalizeBookingType = (bookingType) =>
+  String(bookingType || "")
+    .trim()
+    .toLowerCase() === "spv booking"
+    ? "SPV Booking"
+    : "Direct";
 const calculateLockinPeriod = (startDate, endDate, fallback = 0) => {
   if (!startDate || !endDate) {
     return fallback;
@@ -127,7 +134,7 @@ const ClientDetails = () => {
       cabinDesks: 0,
       openDesks: 0,
       totalDesks: 0,
-      bookingType: "",
+      bookingType: "Direct",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -305,7 +312,7 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+        bookingType: normalizeBookingType(selectedClient.bookingType),
         endDate: selectedClient.endDate,
         lockinPeriod: calculateLockinPeriod(
           selectedClient.startDate,
@@ -345,21 +352,22 @@ const ClientDetails = () => {
     }
   }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
-  const bookingTypeOptions = React.useMemo(() => {
-    const options = new Set();
+  // const bookingTypeOptions = React.useMemo(() => {
+  //   const options = new Set();
 
-    clientsData?.forEach((client) => {
-      if (client?.bookingType) {
-        options.add(client.bookingType);
-      }
-    });
+  //   clientsData?.forEach((client) => {
+  //     if (client?.bookingType) {
+  //       options.add(client.bookingType);
+  //     }
+  //   });
 
-    if (selectedClient?.bookingType) {
-      options.add(selectedClient.bookingType);
-    }
+  //   if (selectedClient?.bookingType) {
+  //     options.add(selectedClient.bookingType);
+  //   }
 
-    return [...options];
-  }, [clientsData, selectedClient?.bookingType]);
+  //   return [...options];
+  // }, [clientsData, selectedClient?.bookingType]);
+
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -467,7 +475,7 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+       bookingType: normalizeBookingType(selectedClient.bookingType),
         endDate: selectedClient.endDate,
         lockinPeriod: calculateLockinPeriod(
           selectedClient.startDate,
@@ -569,7 +577,9 @@ const ClientDetails = () => {
                                 label="Booking Type"
                                 fullWidth
                               >
-                                {bookingTypeOptions.map((bookingType) => (
+                                {/* {bookingTypeOptions.map((bookingType) => (
+                                   */}
+                                  {BOOKING_TYPE_OPTIONS.map((bookingType) => (
                                   <MenuItem key={bookingType} value={bookingType}>
                                     {bookingType}
                                   </MenuItem>

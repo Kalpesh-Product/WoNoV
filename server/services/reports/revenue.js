@@ -15,6 +15,12 @@ const getPaymentStatusLabel = (value) => {
     ? "Paid"
     : "Unpaid";
 };
+const normalizeCoworkingChannel = (bookingType) =>
+  String(bookingType || "")
+    .trim()
+    .toLowerCase() === "spv booking"
+    ? "SPV Booking"
+    : "Direct";
 const fetchCoworkingRevenueService = async ({
   dateFilter,
   query,
