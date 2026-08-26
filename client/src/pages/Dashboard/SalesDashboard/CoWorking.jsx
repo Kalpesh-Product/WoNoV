@@ -278,10 +278,16 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
     onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
   });
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
-    queryKey: ["coWorkingData"],
+    // queryKey: ["coWorkingData"],
+    // queryFn: async () => {
+    //   try {
+    //     const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
+    queryKey: ["coWorkingData", { useClientDetails: showInvoiceProjections }],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
+        const response = await axios.get(`/api/sales/fetch-coworking-revenues`, {
+          params: showInvoiceProjections ? { useClientDetails: true } : undefined,
+        });
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
         throw new Error(error.response.data.message);

@@ -4,6 +4,7 @@ const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const dayjs = require("dayjs");
 
 const getPaymentStatusLabel = (value) => {
   const normalized = String(value ?? "")
@@ -22,6 +23,8 @@ const fetchCoworkingRevenueService = async ({
   type,
 }) => {
   try {
+    const useClientDetails =
+      String(query?.useClientDetails || "").toLowerCase() === "true";
     const filter = { company };
     if (query && query.serviceId) {
       filter.service = query.serviceId;
@@ -30,7 +33,15 @@ const fetchCoworkingRevenueService = async ({
       filter.rentDate = dateFilter.rentDate;
     }
 
-    const revenues = await CoworkingRevenue.find(filter).lean().exec();
+   // const revenues = await CoworkingRevenue.find(filter).lean().exec();
+    const revenues = await CoworkingRevenue.find(filter)
+      .populate({
+        path: "clients",
+        select:
+          "clientName bookingType cabinDesks openDesks ratePerCabinDesk ratePerOpenDesk annualIncrement startDate endDate lockinPeriod rentDate",
+      })
+      .lean()
+      .exec();
 
     const MONTHS_SHORT = [
       "Jan",
@@ -50,6 +61,39 @@ const fetchCoworkingRevenueService = async ({
     const monthlyMap = new Map();
 
     revenues.forEach((item) => {
+       let clientBillingValues = {};
+
+      if (useClientDetails && item.clients) {
+        const client = item.clients;
+        const noOfDesks =
+          Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+        const baseRate = [client.ratePerCabinDesk, client.ratePerOpenDesk]
+          .map(Number)
+          .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+        const startDate = dayjs(client.startDate);
+        const endDate = dayjs(client.endDate);
+        const annualIncrement = Number(client.annualIncrement) || 0;
+        const yearsElapsed = startDate.isValid()
+          ? Math.max(dayjs().diff(startDate, "year"), 0)
+          : 0;
+        const currentRate =
+          baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+
+        clientBillingValues = {
+          clientName: client.clientName,
+          channel: client.bookingType,
+          revenue: noOfDesks * currentRate,
+          noOfDesks,
+          deskRate: currentRate,
+          totalTerm:
+            startDate.isValid() &&
+            endDate.isValid() &&
+            endDate.isAfter(startDate)
+              ? endDate.diff(startDate, "month")
+              : Number(client.lockinPeriod) || 0,
+          rentDate: client.rentDate,
+        };
+      }
       const referenceDate = item.rentDate || item.createdAt;
       const dateObj = new Date(referenceDate);
       const month = MONTHS_SHORT[dateObj.getMonth()];
@@ -64,25 +108,55 @@ const fetchCoworkingRevenueService = async ({
         });
       }
 
+    //   const monthData = monthlyMap.get(monthKey);
+    //   const invoiceDate = item.invoice?.date || null;
+
+    //   monthData.totalRevenue += item.revenue || 0;
+
+    //   monthData.clients.push({
+    //     _id: item._id,
+    //     clients: item.clients,
+    //     service: item.service,
+    //     clientName: item.clientName || item.client?.clientName,
+    //     clientInvoiceName: item.clientInvoiceName,
+    //     channel: item.channel,
+    //     noOfDesks: item.noOfDesks,
+    //     deskRate: item.deskRate,
+    //     occupation: item.occupation,
+    //     revenue: item.revenue,
+    //     totalTerm: item.totalTerm,
+    //     ...(!isReport && { dueTerm: item.dueTerm }),
+    //     rentDate: item.rentDate,
+    //     invoiceName: item.invoice?.name || null,
+    //     invoiceLink: item.invoice?.link || null,
+    //     invoiceUploadedAt: invoiceDate,
+    //     invoice: item.invoice || null,
+    //     rentStatus: item.rentStatus,
+    //     ...(!isReport && { pastDueDate: item.pastDueDate }),
+    //     annualIncrement: item.annualIncrement,
+    //     nextIncrementDate: item.nextIncrementDate,
+    //     ...(!isReport && { serviceName: item.service?.serviceName }),
+    //   });
+    // });
       const monthData = monthlyMap.get(monthKey);
       const invoiceDate = item.invoice?.date || null;
 
-      monthData.totalRevenue += item.revenue || 0;
+      monthData.totalRevenue += clientBillingValues.revenue ?? item.revenue ?? 0;
 
       monthData.clients.push({
         _id: item._id,
-        clients: item.clients,
+        clients: item.clients?._id || item.clients,
         service: item.service,
-        clientName: item.clientName || item.client?.clientName,
+        clientName: clientBillingValues.clientName ?? item.clientName,
         clientInvoiceName: item.clientInvoiceName,
-        channel: item.channel,
-        noOfDesks: item.noOfDesks,
-        deskRate: item.deskRate,
+        channel: clientBillingValues.channel ?? item.channel,
+        noOfDesks: clientBillingValues.noOfDesks ?? item.noOfDesks,
+        deskRate: clientBillingValues.deskRate ?? item.deskRate,
         occupation: item.occupation,
-        revenue: item.revenue,
-        totalTerm: item.totalTerm,
+        revenue: clientBillingValues.revenue ?? item.revenue,
+        totalTerm: clientBillingValues.totalTerm ?? item.totalTerm,
         ...(!isReport && { dueTerm: item.dueTerm }),
-        rentDate: item.rentDate,
+        rentDate: item.rentDate || clientBillingValues.rentDate,
         invoiceName: item.invoice?.name || null,
         invoiceLink: item.invoice?.link || null,
         invoiceUploadedAt: invoiceDate,
@@ -94,6 +168,7 @@ const fetchCoworkingRevenueService = async ({
         ...(!isReport && { serviceName: item.service?.serviceName }),
       });
     });
+
 
     const transformedData = Array.from(monthlyMap.values());
 
