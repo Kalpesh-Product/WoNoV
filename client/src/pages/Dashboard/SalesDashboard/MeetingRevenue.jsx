@@ -689,6 +689,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
   const flattenedRevenueData = showChart
     ? allRevenueData.filter(isVerifiedFinanceRow)
     : allRevenueData;
+  const visibleRevenueData = showChart
+    ? flattenedRevenueData
+    : flattenedRevenueData.filter(isPaidRow);
   const financePaidTaxable = useMemo(
     () =>
       flattenedRevenueData.reduce(
@@ -883,7 +886,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
           )}
 
           <WidgetTable
-            data={flattenedRevenueData}
+            data={visibleRevenueData}
             headerActions={
               !showChart ? (
                 <div className="flex flex-wrap items-center justify-end gap-2">
@@ -1306,10 +1309,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                           size="small"
                           fullWidth
                           label="Invoice Upload Date"
-                          value={formatDateValue(
-                            editingRevenue.invoiceUploadedAt ||
-                              editingRevenue.invoice?.date,
-                          )}
+                          value={formatDateValue(new Date())}
                           disabled
                         />
                       </div>
@@ -1453,30 +1453,27 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     disabled
                   />
 
-                  <TextField
-                    size="small"
-                    fullWidth
-                    label="Invoice Upload Date"
-                    value={formatDateValue(
-                      editingRevenue.invoiceUploadedAt ||
-                        editingRevenue.invoice?.date,
-                    )}
-                    disabled
-                  />
+                  <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label="Invoice Upload Date"
+                      value={formatDateValue(new Date())}
+                      disabled
+                    />
 
-                  <TextField
-                    select
-                    size="small"
-                    fullWidth
-                    label="Finance Status"
-                    value={financeStatus}
-                    onChange={(event) => setFinanceStatus(event.target.value)}
-                  >
-                    <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
-                    <MenuItem value="Verified">Verified</MenuItem>
-                  </TextField>
-                   </>
-                  )}
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      label="Finance Status"
+                      value={financeStatus}
+                      onChange={(event) => setFinanceStatus(event.target.value)}
+                      >
+                      <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
+                      <MenuItem value="Verified">Verified</MenuItem>
+                    </TextField>
+                  </div>
 
                   <TextField
                     size="small"
@@ -1488,6 +1485,18 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     minRows={2}
                     className="md:col-span-2"
                   />
+
+                  <div className="md:col-span-2">
+                    <UploadFileInput
+                      value={editableInvoiceFile}
+                      onChange={setInvoiceFile}
+                      label="Upload File"
+                      allowedExtensions={["pdf", "doc", "docx"]}
+                      previewType="pdf"
+                    />
+                  </div>
+                   </>
+                  )}
                 </div>
 
                 {updateInvoice.isError && (
