@@ -19,7 +19,9 @@ const VirtualOfficeClientRevenue = () => {
         queryKey: ["virtualOfficeClientRevenue", selectedClient?._id, selectedClient?.clientName],
         enabled: Boolean(selectedClient?._id || selectedClient?.clientName),
         queryFn: async () => {
-            const response = await axios.get("/api/sales/get-virtual-office-revenue");
+            const response = await axios.get("/api/sales/get-virtual-office-revenue", {
+                params: { useClientDetails: true },
+            });
             const allRevenues = Array.isArray(response?.data) ? response.data : [];
             const selectedName = (selectedClient?.clientName || "").trim().toLowerCase();
 
@@ -50,6 +52,17 @@ const VirtualOfficeClientRevenue = () => {
                     Number(item?.client?.openDeskRate) ||
                     Number(item?.client?.cabinDeskRate) ||
                     0,
+                revenue:
+                    Number(item?.revenue) ||
+                    (Number(item?.noOfDesks) ||
+                        Number(item?.client?.totalDesks) ||
+                        Number(item?.client?.cabinDesks || 0) +
+                            Number(item?.client?.openDesks || 0) ||
+                        0) *
+                        (Number(item?.deskRate) ||
+                            Number(item?.client?.openDeskRate) ||
+                            Number(item?.client?.cabinDeskRate) ||
+                            0),
             })),
         [revenueRows, selectedClient?.clientName],
     );
