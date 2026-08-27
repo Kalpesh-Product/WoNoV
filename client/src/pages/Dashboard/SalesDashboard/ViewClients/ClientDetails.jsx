@@ -273,11 +273,26 @@ const ClientDetails = () => {
   const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
   const watchedCabinRate = useWatch({ control, name: "ratePerCabinDesk" });
   const watchedOpenRate = useWatch({ control, name: "ratePerOpenDesk" });
+  const watchedLockinPeriod = useWatch({ control, name: "lockinPeriod" });
   const computedNoOfDesks = useMemo(
     () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
     [watchedCabinDesks, watchedOpenDesks],
   );
   const computedLockinPeriod = useMemo(
+    () =>
+      Number(
+        watchedLockinPeriod ??
+          selectedClient?.lockinPeriod ??
+          selectedClient?.lockInPeriodMonths ??
+          0,
+      ),
+    [
+      selectedClient?.lockInPeriodMonths,
+      selectedClient?.lockinPeriod,
+      watchedLockinPeriod,
+    ],
+  );
+  const computedTotalTerm = useMemo(
     () => calculateLockinPeriod(watchedStartDate, watchedEndDate, 0),
     [watchedStartDate, watchedEndDate],
   );
@@ -360,11 +375,8 @@ const ClientDetails = () => {
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
         endDate: selectedClient.endDate,
-        lockinPeriod: calculateLockinPeriod(
-          selectedClient.startDate,
-          selectedClient.endDate,
-          selectedClient.lockinPeriod || 0,
-        ),
+        lockinPeriod:
+          selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
         rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -445,7 +457,7 @@ const ClientDetails = () => {
       totalMeetingCredits: Number(data.totalMeetingCredits) || 0,
       startDate: data.startDate,
       endDate: data.endDate,
-      lockinPeriod: computedLockinPeriod,
+      lockinPeriod: Number(data.lockinPeriod) || 0,
       rentDate: computedRentDate,
       nextIncrement: data.nextIncrement,
       localPocName: data.localPocName,
@@ -521,13 +533,10 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
-       bookingType: normalizeBookingType(selectedClient.bookingType),
+        bookingType: normalizeBookingType(selectedClient.bookingType),
         endDate: selectedClient.endDate,
-        lockinPeriod: calculateLockinPeriod(
-          selectedClient.startDate,
-          selectedClient.endDate,
-          selectedClient.lockinPeriod || 0,
-        ),
+        lockinPeriod:
+          selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
         rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -542,14 +551,6 @@ const ClientDetails = () => {
       });
     }
   };
-
-  useEffect(() => {
-    if (!isEditing) {
-      return;
-    }
-
-    setValue("lockinPeriod", computedLockinPeriod);
-  }, [computedLockinPeriod, isEditing, setValue]);
 
   const renderDatePickerField = (field, label, disabled = false) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -1000,8 +1001,6 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField
                             {...field}
-                            value={computedLockinPeriod}
-                            disabled
                             size="small"
                             label="Lock-in Period (Months)"
                             fullWidth
@@ -1020,7 +1019,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {computedLockinPeriod}
+                            {computedLockinPeriod} months
                           </span>
                         </div>
                       </div>
@@ -1083,6 +1082,35 @@ const ClientDetails = () => {
                         <div className="w-full">
                           <span className="text-gray-500">
                             {humanDate(control._defaultValues.nextIncrement)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total Term */}
+                  <div>
+                    {isEditing ? (
+                      <TextField
+                        value={`${computedTotalTerm} months`}
+                        size="small"
+                        label="Total Term"
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Total Term
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {computedTotalTerm} months
                           </span>
                         </div>
                       </div>
