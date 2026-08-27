@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
@@ -279,26 +279,22 @@ const HrLeaves = () => {
         : leave.leaveType?.toLowerCase().includes("comp")
           ? "CO"
           : "PL";
-      const matchesFilter =
-        appliedFilters.statuses.includes(leave.status) &&
-        (!appliedFilters.leaveType ||
-          normalizeLeaveType(leave.leaveType) === appliedFilters.leaveType);
-
       const from = dayjs(leave.fromDate);
       const to = dayjs(leave.toDate);
 
       for (let d = from; d.isSameOrBefore(to, "day"); d = d.add(1, "day")) {
         const dateKey = d.format("YYYY-MM-DD");
         leaveMap[`${userId}-${dateKey}`] = {
+          id: leave._id?.toString(),
           kind: "leave",
           code: leaveCode,
           leaveType: leave.leaveType,
+          leavePeriod: leave.leavePeriod,
           status: leave.status,
           hours: leave.hours,
           description: leave.description,
           fromDate: leave.fromDate,
           toDate: leave.toDate,
-          matchesFilter,
         };
       }
 
@@ -321,6 +317,7 @@ const HrLeaves = () => {
         displayDates.forEach((date, index) => {
           const day = index + 1;
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
+          const hasAttendance = Boolean(attendanceMap[key]);
           const isWeekend = date.day() === 0 || date.day() === 7;
 
           const beforeJoining =
@@ -329,9 +326,8 @@ const HrLeaves = () => {
           if (leaveMap[key]) {
             row[`day${day}`] = leaveMap[key];
             hasData = true;
-          } else if (attendanceMap[key]) {
+          } else if (hasAttendance) {
             row[`day${day}`] = "✅";
-            workedDays += 1;
             hasData = true;
           } else if (beforeJoining) {
             row[`day${day}`] = "N/A";
@@ -340,6 +336,14 @@ const HrLeaves = () => {
             hasData = true;
           } else {
             row[`day${day}`] = "H";
+          }
+
+          // A partial leave with attendance represents half a worked day.
+          // Other attendance records continue to count as one worked day.
+          if (hasAttendance) {
+            const isPartialLeave =
+              leaveMap[key]?.leavePeriod?.toLowerCase() === "partial";
+            workedDays += isPartialLeave ? 0.5 : 1;
           }
         });
 
@@ -394,6 +398,9 @@ const HrLeaves = () => {
         const value = params.value;
         const leaveDetails = value?.kind === "leave" ? value : null;
         const displayValue = leaveDetails?.code || value;
+        const isSelectedLeave =
+          hasActiveLeaveCriteria &&
+          leaveDetails?.id === params.data?.leaveRecordId?.toString();
 
         let bgColor = "";
         let textColor = "";
@@ -479,18 +486,13 @@ const HrLeaves = () => {
                   fontWeight: 500,
                   width: "100%",
                   opacity:
-                    hasActiveLeaveCriteria &&
-                    (!leaveDetails || !leaveDetails.matchesFilter)
-                      ? 0.3
-                      : 1,
-                  border:
-                    hasActiveLeaveCriteria && leaveDetails?.matchesFilter
-                      ? "2px solid #1E3D73"
-                      : "2px solid transparent",
-                  boxShadow:
-                    hasActiveLeaveCriteria && leaveDetails?.matchesFilter
-                      ? "0 0 0 2px rgba(30, 61, 115, 0.14)"
-                      : "none",
+                    hasActiveLeaveCriteria && !isSelectedLeave ? 0.3 : 1,
+                  border: isSelectedLeave
+                    ? "2px solid #1E3D73"
+                    : "2px solid transparent",
+                  boxShadow: isSelectedLeave
+                    ? "0 0 0 2px rgba(30, 61, 115, 0.14)"
+                    : "none",
                 }}
               >
                 {label}
@@ -501,6 +503,31 @@ const HrLeaves = () => {
       },
     };
   }), [displayDates, hasActiveLeaveCriteria]);
+
+  const processLeaveExportCell = useCallback((params) => {
+    const field = params?.column?.getColDef?.()?.field || "";
+    const value = params?.value;
+
+    if (field === "fromDate" || field === "toDate") {
+      return value && dayjs(value).isValid()
+        ? dayjs(value).format("DD-MM-YYYY")
+        : "";
+    }
+
+    if (/^day\d+$/.test(field)) {
+      if (value?.kind === "leave") {
+        const rowLeaveId = params?.node?.data?.leaveRecordId?.toString();
+        if (rowLeaveId && value.id !== rowLeaveId) return "";
+        return value.code || "";
+      }
+      if (value === "✅") return "P";
+      if (value === "N/A" || value === null || value === undefined) return "";
+      return String(value);
+    }
+
+    return undefined;
+  }, []);
+
   const columns = useMemo(() => [
     { field: "srNo", headerName: "SR No", width: 80, pinned: "left" },
     { field: "empId", headerName: "Employee ID", width: 130, pinned: "left" },
@@ -572,7 +599,6 @@ const HrLeaves = () => {
           { field: "leaveType", headerName: "Leave Type", width: 150 },
           { field: "leavePeriod", headerName: "Leave Period", width: 140 },
           { field: "leaveHours", headerName: "Hours", width: 100 },
-          { field: "leaveStatus", headerName: "Status", width: 130 },
           {
             field: "leaveDescription",
             headerName: "Description",
@@ -580,6 +606,7 @@ const HrLeaves = () => {
             flex: 1,
             valueFormatter: (params) => params.value || "N/A",
           },
+          { field: "leaveStatus", headerName: "Status", width: 130 },
         ]
       : []),
     {
@@ -776,6 +803,7 @@ const HrLeaves = () => {
             searchColumn="empName"
             exportData
             hideFilter
+            processExportCell={processLeaveExportCell}
           />
         ) : (
           <Skeleton width={"100%"} height={600} />
