@@ -52,6 +52,12 @@ const VirtualOfficeClientRevenue = () => {
                 ...item,
                 srNo: index + 1,
                 clientName: item?.client?.clientName || selectedClient?.clientName || "N/A",
+                invoiceLink: item?.invoice?.link || item?.invoiceLink || "",
+                invoiceUploadedAt: item?.invoice?.date || item?.invoiceUploadedAt || null,
+                invoiceUploadedByName:
+                    item?.invoiceUploadedByName ||
+                    getUserDisplayName(item?.invoiceUploadedBy) ||
+                    "",
                 noOfDesks:
                     Number(item?.noOfDesks) ||
                     Number(item?.client?.totalDesks) ||
