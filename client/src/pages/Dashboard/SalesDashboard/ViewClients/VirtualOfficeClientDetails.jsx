@@ -17,6 +17,104 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useParams } from "react-router-dom";
 
+const buildRateSchedule = (
+  startDate,
+  endDate,
+  openDeskRate,
+  annualIncrement,
+) => {
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  const baseRate = Number(openDeskRate) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start, "day") || !baseRate) {
+    return [];
+  }
+
+  const schedule = [];
+  let periodStart = start.startOf("day");
+  let year = 1;
+  let currentRate = baseRate;
+
+  while (!periodStart.isAfter(end, "day")) {
+    let periodEnd = periodStart.add(1, "year").subtract(1, "day");
+    if (periodEnd.isAfter(end, "day")) {
+      periodEnd = end;
+    }
+
+    schedule.push({
+      year,
+      startDate: periodStart,
+      endDate: periodEnd,
+      rate: currentRate,
+    });
+
+    if (!periodEnd.isBefore(end, "day")) {
+      break;
+    }
+
+    periodStart = periodEnd.add(1, "day");
+    currentRate *= 1 + increment / 100;
+    year += 1;
+  }
+
+  return schedule;
+};
+
+const formatCurrency = (value) => {
+  const amount = Number(value);
+
+  if (!Number.isFinite(amount)) {
+    return "N/A";
+  }
+
+  return `₹${Math.round(amount).toLocaleString("en-IN")}`;
+};
+
+const useCurrentMonthStartDate = () => {
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
+    () => dayjs().startOf("month").toISOString(),
+  );
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleNextUpdate = () => {
+      const now = dayjs();
+      const nextMonthStart = now.add(1, "month").startOf("month");
+      const delay = Math.max(nextMonthStart.diff(now), 0);
+
+      timeoutId = window.setTimeout(() => {
+        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        scheduleNextUpdate();
+      }, delay);
+    };
+
+    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    scheduleNextUpdate();
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return currentMonthStartDate;
+};
+
+const calculateTotalTermMonths = (startDate, endDate) => {
+  if (!startDate || !endDate) return 0;
+
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return 0;
+
+  return end.diff(start, "month");
+};
+
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
@@ -24,6 +122,9 @@ const VirtualOfficeClientDetails = () => {
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
+  const currentMonthStartDate = useCurrentMonthStartDate();
+  const DEFAULT_BOOKING_TYPE = "Direct";
+  const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
   const normalizedClientName = useMemo(
     () => decodeURIComponent(clientId || "").trim().toLowerCase(),
     [clientId],
@@ -45,7 +146,7 @@ const VirtualOfficeClientDetails = () => {
       securityDeposit: 0,
       openDesks: 0,
       totalDesks: 0,
-      bookingType: "",
+      bookingType: DEFAULT_BOOKING_TYPE,
       openDeskRate: 0,
       cabinDeskRate: 0,
       annualIncrement: 0,
@@ -54,7 +155,7 @@ const VirtualOfficeClientDetails = () => {
       termStartDate: "",
       termEnd: "",
       lockInPeriodMonths: 0,
-      rentDate: "",
+      rentDate: currentMonthStartDate,
       nextIncrementDate: "",
       localPocName: "",
       localPocEmail: "",
@@ -77,12 +178,19 @@ const VirtualOfficeClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.city || selectedClient.hoCity,
         hoState: selectedClient.state || selectedClient.hoState,
-        building: selectedClient.unit?.building?._id || "",
-        unit: selectedClient.unit?._id || "",
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        building: resolveBuildingId(selectedClient),
+        unit: resolveUnitId(selectedClient),
+        unitName: selectedClient.unit?.unitName || selectedClient.unitName || "",
+        unitNo:
+          selectedClient.unit?.unitNo || selectedClient.unitNo || "",
+        buildingName:
+          selectedClient.unit?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedClient.unit?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
         cabinDesks: selectedClient.cabinDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
         openDesks: selectedClient.openDesks || 0,
@@ -93,11 +201,11 @@ const VirtualOfficeClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
         totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
         termStartDate: selectedClient.termStartDate || selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+        bookingType: DEFAULT_BOOKING_TYPE,
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
           selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
+        rentDate: currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -111,7 +219,7 @@ const VirtualOfficeClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [selectedClient, reset]);
+  }, [currentMonthStartDate, selectedClient, reset]);
 
   const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
     ? clientId
@@ -169,20 +277,69 @@ const VirtualOfficeClientDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const selectedBuilding = useWatch({ control, name: "building" });
-
+  const watchedOpenDeskRate = useWatch({ control, name: "openDeskRate" });
+  const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
+  const watchedTotalDesks = useWatch({ control, name: "totalDesks" });
   const termStartDateValue = useWatch({ control, name: "termStartDate" });
   const termEndValue = useWatch({ control, name: "termEnd" });
+  const resolveUnitId = (client) =>
+    typeof client?.unit === "object" ? client?.unit?._id || "" : client?.unit || "";
+  const resolveBuildingId = (client) => {
+    if (typeof client?.unit === "object" && client?.unit?.building) {
+      return typeof client.unit.building === "object"
+        ? client.unit.building._id || ""
+        : client.unit.building || "";
+    }
 
-  const calculateTotalTermMonths = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0;
+    if (typeof client?.building === "object") {
+      return client.building?._id || "";
+    }
 
-    const start = dayjs(startDate);
-    const end = dayjs(endDate);
-
-    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return 0;
-
-    return end.diff(start, "month");
+    return client?.building || "";
   };
+  const calculatedLockInPeriodMonths = useMemo(() => {
+    const startDate =
+      termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate;
+    const endDate = termEndValue || selectedClient?.termEnd || selectedClient?.endDate;
+
+    return calculateTotalTermMonths(startDate, endDate);
+  }, [
+    selectedClient?.endDate,
+    selectedClient?.startDate,
+    selectedClient?.termEnd,
+    selectedClient?.termStartDate,
+    termEndValue,
+    termStartDateValue,
+  ]);
+  const rateSchedule = useMemo(
+    () =>
+      buildRateSchedule(
+        termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate,
+        termEndValue || selectedClient?.termEnd || selectedClient?.endDate,
+        watchedOpenDeskRate,
+        watchedAnnualIncrement,
+      ),
+    [
+      selectedClient?.endDate,
+      selectedClient?.startDate,
+      selectedClient?.termEnd,
+      selectedClient?.termStartDate,
+      termEndValue,
+      termStartDateValue,
+      watchedAnnualIncrement,
+      watchedOpenDeskRate,
+    ],
+  );
+  const computedCurrentRate = useMemo(() => {
+    if (!rateSchedule.length) {
+      return Number(watchedOpenDeskRate) || selectedClient?.openDeskRate || 0;
+    }
+    return rateSchedule[rateSchedule.length - 1].rate;
+  }, [rateSchedule, selectedClient?.openDeskRate, watchedOpenDeskRate]);
+  const computedRevenue = useMemo(
+    () => Number(watchedTotalDesks || selectedClient?.totalDesks || 0) * Number(computedCurrentRate || 0),
+    [computedCurrentRate, selectedClient?.totalDesks, watchedTotalDesks],
+  );
 
   const totalTermMonths = useMemo(() => {
     if (isEditing) {
@@ -227,21 +384,13 @@ const VirtualOfficeClientDetails = () => {
     }
   }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
-  const bookingTypeOptions = React.useMemo(() => {
-    const options = new Set();
+  useEffect(() => {
+    setValue("rentDate", currentMonthStartDate);
+  }, [currentMonthStartDate, setValue]);
 
-    clientsData?.forEach((client) => {
-      if (client?.bookingType) {
-        options.add(client.bookingType);
-      }
-    });
-
-    if (selectedClient?.bookingType) {
-      options.add(selectedClient.bookingType);
-    }
-
-    return [...options];
-  }, [clientsData, selectedClient?.bookingType]);
+  useEffect(() => {
+    setValue("lockInPeriodMonths", calculatedLockInPeriodMonths);
+  }, [calculatedLockInPeriodMonths, setValue]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -259,7 +408,7 @@ const VirtualOfficeClientDetails = () => {
       city: data.hoCity,
       state: data.hoState,
       clientStatus: data.clientStatus === true || data.clientStatus === "true",
-      bookingType: data.bookingType,
+      bookingType: data.bookingType || DEFAULT_BOOKING_TYPE,
       building: data.building,
       unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
@@ -271,8 +420,8 @@ const VirtualOfficeClientDetails = () => {
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
       termStartDate: data.termStartDate,
       termEnd: data.termEnd,
-      lockInPeriodMonths: Number(data.lockInPeriodMonths) || 0,
-      rentDate: data.rentDate,
+      lockInPeriodMonths: calculatedLockInPeriodMonths,
+      rentDate: data.rentDate || currentMonthStartDate,
       nextIncrementDate: data.nextIncrementDate,
       localPoc: {
         name: data.localPocName,
@@ -295,12 +444,35 @@ const VirtualOfficeClientDetails = () => {
 
       console.log("Server response:", response.data);
       const serverData = response?.data?.data || response?.data?.client || {};
+      const submittedUnit =
+        units.find((item) => item._id === data.unit) || null;
+      const submittedBuildingId =
+        submittedUnit?.building?._id ||
+        submittedUnit?.building ||
+        data.building ||
+        resolveBuildingId(selectedClient);
 
       const updatedClient = {
         ...selectedClient,
         ...serverData,
+        building: submittedBuildingId,
+        unit: submittedUnit || serverData.unit || data.unit,
+        buildingName:
+          submittedUnit?.building?.buildingName ||
+          serverData.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          submittedUnit?.building?.fullAddress ||
+          serverData.buildingAddress ||
+          selectedClient.buildingAddress ||
+          "",
         // Map POC data back to flattened fields for UI consistency
-        unitNo: serverData.unitNo ?? serverData.unitNumber ?? data.unitNo,
+        unitNo:
+          submittedUnit?.unitNo ??
+          serverData.unitNo ??
+          serverData.unitNumber ??
+          data.unitNo,
         localPocName: payload.localPoc.name,
         localPocEmail: payload.localPoc.email,
         localPocPhone: payload.localPoc.phone,
@@ -311,7 +483,10 @@ const VirtualOfficeClientDetails = () => {
         hoCity: serverData.city || serverData.hoCity || data.hoCity,
         hoState: serverData.state || serverData.hoState || data.hoState,
         clientStatus: serverData.clientStatus ?? serverData.isActive ?? data.clientStatus,
-        lockInPeriodMonths: serverData.lockInPeriodMonths ?? serverData.lockinPeriod ?? data.lockInPeriodMonths,
+        lockInPeriodMonths:
+          serverData.lockInPeriodMonths ??
+          serverData.lockinPeriod ??
+          calculatedLockInPeriodMonths,
         termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
         termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
         nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
@@ -335,6 +510,12 @@ const VirtualOfficeClientDetails = () => {
       reset({
         ...data,
         ...updatedClient,
+        building: submittedBuildingId,
+        unit: submittedUnit?._id || data.unit || "",
+        buildingName: updatedClient.buildingName || "",
+        buildingAddress: updatedClient.buildingAddress || "",
+        unitName: submittedUnit?.unitName || data.unitName || "",
+        unitNo: submittedUnit?.unitNo || data.unitNo || "",
         totalDesks: serverData.totalDesks || payload.cabinDesks + payload.openDesks,
         totalMeetingCredits: serverData.totalMeetingCredits,
       });
@@ -353,6 +534,13 @@ const VirtualOfficeClientDetails = () => {
 
   const handleReset = () => {
     if (selectedClient) {
+      const resetUnit =
+        units.find((item) => item._id === resolveUnitId(selectedClient)) || null;
+      const resetBuildingId =
+        resetUnit?.building?._id ||
+        resetUnit?.building ||
+        resolveBuildingId(selectedClient);
+
       reset({
         clientName: selectedClient.clientName,
         serviceName: selectedClient.service?.serviceName || "",
@@ -360,12 +548,24 @@ const VirtualOfficeClientDetails = () => {
         sector: selectedClient.sector,
         hoCity: selectedClient.city || selectedClient.hoCity,
         hoState: selectedClient.state || selectedClient.hoState,
-        building: selectedClient.unit?.building?._id || "",
-        unit: selectedClient.unit?._id || "",
-        unitName: selectedClient.unit?.unitName || "",
-        unitNo: selectedClient.unit?.unitNo || selectedClient.unitNo || "",
-        buildingName: selectedClient.unit?.building?.buildingName || "",
-        buildingAddress: selectedClient.unit?.building?.fullAddress || "",
+        building: resetBuildingId,
+        unit: resolveUnitId(selectedClient),
+        unitName: selectedClient.unit?.unitName || selectedClient.unitName || resetUnit?.unitName || "",
+        unitNo:
+          selectedClient.unit?.unitNo ||
+          selectedClient.unitNo ||
+          resetUnit?.unitNo ||
+          "",
+        buildingName:
+          selectedClient.unit?.building?.buildingName ||
+          selectedClient.buildingName ||
+          resetUnit?.building?.buildingName ||
+          "",
+        buildingAddress:
+          selectedClient.unit?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          resetUnit?.building?.fullAddress ||
+          "",
         cabinDesks: selectedClient.cabinDesks || 0,
         openDesks: selectedClient.openDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
@@ -376,11 +576,13 @@ const VirtualOfficeClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
         totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
         termStartDate: selectedClient.termStartDate || selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+        bookingType: DEFAULT_BOOKING_TYPE,
         termEnd: selectedClient.termEnd || selectedClient.endDate,
-        lockInPeriodMonths:
-          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
+        lockInPeriodMonths: calculateTotalTermMonths(
+          selectedClient.termStartDate || selectedClient.startDate,
+          selectedClient.termEnd || selectedClient.endDate,
+        ),
+        rentDate: currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -396,12 +598,13 @@ const VirtualOfficeClientDetails = () => {
     }
   };
 
-  const renderDatePickerField = (field, label) => (
+  const renderDatePickerField = (field, label, disabled = false) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
         label={label}
         format="DD-MM-YYYY"
         value={field.value ? dayjs(field.value) : null}
+        disabled={disabled}
         onChange={(dateValue) =>
           field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
         }
@@ -451,6 +654,7 @@ const VirtualOfficeClientDetails = () => {
                     "hoCity",
                     "hoState",
                     "bookingType",
+                    "revenue",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -461,17 +665,27 @@ const VirtualOfficeClientDetails = () => {
                             fieldKey === "bookingType" ? (
                               <TextField
                                 {...field}
-                                select
                                 size="small"
                                 label="Booking Type"
+                                select
+                                value={field.value || DEFAULT_BOOKING_TYPE}
                                 fullWidth
                               >
-                                {bookingTypeOptions.map((bookingType) => (
-                                  <MenuItem key={bookingType} value={bookingType}>
-                                    {bookingType}
+                                {BOOKING_TYPE_OPTIONS.map((option) => (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
                                   </MenuItem>
                                 ))}
                               </TextField>
+                            ) : fieldKey === "revenue" ? (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label="Revenue"
+                                value={formatCurrency(computedRevenue)}
+                                fullWidth
+                                disabled
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -498,7 +712,11 @@ const VirtualOfficeClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {(fieldKey === "hoCity"
+                              {fieldKey === "bookingType"
+                                ? selectedClient?.bookingType || DEFAULT_BOOKING_TYPE
+                                : fieldKey === "revenue"
+                                  ? formatCurrency(computedRevenue)
+                                  : (fieldKey === "hoCity"
                                 ? selectedClient?.city || selectedClient?.hoCity
                                 : fieldKey === "hoState"
                                   ? selectedClient?.state || selectedClient?.hoState
@@ -559,12 +777,13 @@ const VirtualOfficeClientDetails = () => {
                         )}
                       />
                       {[
-                        "cabinDesks",
+                        // "cabinDesks",
                         "securityDeposit",
-                        "cabinDeskRate",
+                        // "cabinDeskRate",
                         "openDesks",
                         "openDeskRate",
                         "totalDesks",
+                        "currentRate",
                         "clientStatus",
                       ].map((fieldKey) => (
                         <Controller
@@ -578,7 +797,16 @@ const VirtualOfficeClientDetails = () => {
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
                             ) : fieldKey === "totalDesks" ? (
-                              <TextField {...field} disabled size="small" label="Total Desks" fullWidth />
+                              <TextField {...field} disabled size="small" label="No Of Desk" fullWidth />
+                            ) : fieldKey === "currentRate" ? (
+                              <TextField
+                                {...field}
+                                value={formatCurrency(computedCurrentRate)}
+                                disabled
+                                size="small"
+                                label="Current Rate"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -597,12 +825,13 @@ const VirtualOfficeClientDetails = () => {
                     [
                       "buildingName",
                       "unitNo",
-                      "cabinDesks",
+                      // "cabinDesks",
                       "securityDeposit",
-                      "cabinDeskRate",
+                      // "cabinDeskRate",
                       "openDesks",
                       "openDeskRate",
                       "totalDesks",
+                      "currentRate",
                       "clientStatus",
                     ].map((fieldKey) => (
                       <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
@@ -610,6 +839,10 @@ const VirtualOfficeClientDetails = () => {
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "clientStatus"
                               ? "Status"
+                              : fieldKey === "totalDesks"
+                                ? "No Of Desk"
+                              : fieldKey === "currentRate"
+                                  ? "Current Rate"
                               : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
@@ -624,6 +857,8 @@ const VirtualOfficeClientDetails = () => {
                               ? (selectedClient?.clientStatus ?? selectedClient?.isActive)
                                 ? "Active"
                                 : "Inactive"
+                              : fieldKey === "currentRate"
+                                ? formatCurrency(computedCurrentRate)
                               : fieldKey === "buildingName"
                                 ? selectedClient?.unit?.building?.buildingName || control._defaultValues.buildingName || "N/A"
                                 : fieldKey === "unitNo"
@@ -677,6 +912,55 @@ const VirtualOfficeClientDetails = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* <div className="md:col-span-2">
+                    <div className="py-2 flex justify-between items-start gap-2">
+                      <div className="w-[100%] justify-start flex">
+                        <span className="font-pmedium text-gray-600 text-content">
+                          Yearly Rate Schedule
+                        </span>{" "}
+                      </div>
+                    </div>
+                    {rateSchedule.length > 0 ? (
+                      <div className="overflow-x-auto rounded-md border border-gray-200">
+                        <table className="min-w-full text-sm">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left font-pmedium text-gray-700">
+                                Year
+                              </th>
+                              <th className="px-4 py-3 text-left font-pmedium text-gray-700">
+                                Period
+                              </th>
+                              <th className="px-4 py-3 text-left font-pmedium text-gray-700">
+                                Rate
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rateSchedule.map((row) => (
+                              <tr key={row.year} className="border-t border-gray-200">
+                                <td className="px-4 py-3 text-gray-600">
+                                  Year {row.year}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {row.startDate.format("DD-MM-YYYY")} →{" "}
+                                  {row.endDate.format("DD-MM-YYYY")}
+                                </td>
+                                <td className="px-4 py-3 text-gray-600">
+                                  {formatCurrency(row.rate)}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="text-sm text-gray-500">
+                        No rate schedule available.
+                      </div>
+                    )}
+                  </div> */}
 
                   {/* Per Desk Meeting Credits */}
                   <div>
@@ -807,18 +1091,20 @@ const VirtualOfficeClientDetails = () => {
                   {/* Lock-in Period */}
                   <div>
                     {isEditing ? (
-                      <Controller
-                        name="lockInPeriodMonths"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Lock-in Period"
-                            fullWidth
-                          />
-                        )}
-                      />
+                        <Controller
+                          name="lockInPeriodMonths"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              size="small"
+                              label="Lock-in Period"
+                              value={`${calculatedLockInPeriodMonths} months`}
+                              fullWidth
+                              disabled
+                            />
+                          )}
+                        />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
                         <div className="w-[100%] justify-start flex">
@@ -831,7 +1117,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {selectedClient?.lockInPeriodMonths || selectedClient?.lockinPeriod}
+                            {calculatedLockInPeriodMonths} months
                           </span>
                         </div>
                       </div>
@@ -845,7 +1131,7 @@ const VirtualOfficeClientDetails = () => {
                         name="rentDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date")
+                          renderDatePickerField(field, "Rent Date", true)
                         }
                       />
                     ) : (
@@ -860,7 +1146,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(selectedClient?.rentDate)}
+                            {humanDate(currentMonthStartDate)}
                           </span>
                         </div>
                       </div>
@@ -895,8 +1181,8 @@ const VirtualOfficeClientDetails = () => {
                       </div>
                     )}
                   </div>
-                   {/* Total Term */}
-                  <div>
+                  {/* Total Term */}
+                  {/* <div>
                     {isEditing ? (
                       <Controller
                         name="totalTerm"
@@ -927,7 +1213,7 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                       </div>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </div>
               <div>

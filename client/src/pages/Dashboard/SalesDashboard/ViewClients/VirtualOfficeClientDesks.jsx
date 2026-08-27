@@ -53,9 +53,9 @@ const VirtualOfficeClientDesks = () => {
                     tableTitle={`${selectedClient?.clientName || "Client"} Desk Details`}
                     data={tableData}
                     columns={[
-                        { field: "srNo", headerName: "SR No", width: 90 },
-                        { field: "openDesks", headerName: "Open Desks", flex: 1 },
-                        { field: "cabinDesks", headerName: "Cabin Desks", flex: 1 },
+                        { field: "srNo", headerName: "SR No", flex:2 },
+                        { field: "openDesks", headerName: "Open Desks", flex: 2 },
+                        // { field: "cabinDesks", headerName: "Cabin Desks", flex: 1 },
                         { field: "totalDesks", headerName: "Total Desks", flex: 1 },
                         // { field: "location", headerName: "Location", flex: 1 },
                         // { field: "channel", headerName: "Channel", flex: 1 },
