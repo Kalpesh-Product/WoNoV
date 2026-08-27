@@ -13,17 +13,6 @@ import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAuth from "../../../hooks/useAuth";
 
-const calculateLockInPeriodMonths = (startDate, endDate) => {
-  if (!startDate || !endDate) return 0;
-
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-
-  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return 0;
-
-  return Math.max(end.diff(start, "month"), 1);
-};
-
 const VirtualOfficeForm = () => {
   const {
     control,
@@ -77,16 +66,10 @@ const VirtualOfficeForm = () => {
   const openDesks = useWatch({ control, name: "openDesks" });
   const openDesksRate = useWatch({ control, name: "ratePerOpenDesk" });
   const selectedBuilding = useWatch({ control, name: "building" });
-  const startDateValue = useWatch({ control, name: "startDate" });
-  const endDateValue = useWatch({ control, name: "endDate" });
   const totalOpenDeskCost =
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
   const perDeskCredit = useWatch({ control, name: "perDeskMeetingCredits" });
-  const calculatedLockInPeriodMonths = useMemo(
-    () => calculateLockInPeriodMonths(startDateValue, endDateValue),
-    [endDateValue, startDateValue],
-  );
   const totalMeetingCredits =
     (parseFloat(openDesks || 0) + parseFloat(cabinDesks || 0)) *
     (perDeskCredit || 0);
@@ -99,10 +82,6 @@ const VirtualOfficeForm = () => {
 
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
-
-  useEffect(() => {
-    setValue("lockinPeriod", calculatedLockInPeriodMonths);
-  }, [calculatedLockInPeriodMonths, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -206,7 +185,7 @@ const VirtualOfficeForm = () => {
         ? dayjs(data.startDate).format("YYYY-MM-DD")
         : null,
       termEnd: data.endDate ? dayjs(data.endDate).format("YYYY-MM-DD") : null,
-      lockInPeriodMonths: calculatedLockInPeriodMonths,
+      lockInPeriodMonths: data.lockinPeriod ? Number(data.lockinPeriod) : 0,
       rentDate: data.rentDate
         ? dayjs(data.rentDate).format("YYYY-MM-DD")
         : null,
@@ -733,10 +712,8 @@ const VirtualOfficeForm = () => {
                         {...field}
                         size="small"
                         label="Lock-in Period (Months)"
-                        value={calculatedLockInPeriodMonths}
                         type="number"
                         fullWidth
-                        disabled
                       />
                     )}
                   />

@@ -7,24 +7,12 @@ import { State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAuth from "../../../hooks/useAuth";
-
-const calculateLockinPeriodMonths = (startDate, endDate) => {
-  if (!startDate || !endDate) return 0;
-
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-
-  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) return 0;
-
-  return Math.max(end.diff(start, "month"), 1);
-};
 
 const ClientOnboarding = () => {
   const {
@@ -85,12 +73,6 @@ const ClientOnboarding = () => {
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
   const perDeskCredit = useWatch({ control, name: "perDeskMeetingCredits" });
-  const startDateValue = useWatch({ control, name: "startDate" });
-  const endDateValue = useWatch({ control, name: "endDate" });
-  const calculatedLockinPeriodMonths = useMemo(
-    () => calculateLockinPeriodMonths(startDateValue, endDateValue),
-    [endDateValue, startDateValue],
-  );
   const totalMeetingCredits =
     (parseFloat(openDesks || 0) + parseFloat(cabinDesks || 0)) *
     (perDeskCredit || 0);
@@ -103,10 +85,6 @@ const ClientOnboarding = () => {
 
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
-
-  useEffect(() => {
-    setValue("lockinPeriod", calculatedLockinPeriodMonths);
-  }, [calculatedLockinPeriodMonths, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -202,7 +180,6 @@ const ClientOnboarding = () => {
   const onSubmit = (data) => {
     mutateClientData({
       ...data,
-      lockinPeriod: calculatedLockinPeriodMonths,
     });
   };
 
@@ -686,10 +663,8 @@ const ClientOnboarding = () => {
                         {...field}
                         size="small"
                         label="Lock-in Period (Months)"
-                        value={calculatedLockinPeriodMonths}
                         type="number"
                         fullWidth
-                        disabled
                       />
                     )}
                   />
