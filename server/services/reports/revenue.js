@@ -681,23 +681,71 @@ const fetchVirtualOfficeRevenueReportService = async ({
   isReport = false,
 }) => {
   let filter = { company };
-
+  const useClientDetails =
+    String(query?.useClientDetails || "").toLowerCase() === "true";
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
 
   const revenues = await VirtualOfficeRevenue.find(filter)
-    .populate([{ path: "client", select: "clientName" }])
+     .populate([
+      {
+        path: "client",
+        select:
+          "clientName bookingType cabinDesks openDesks totalDesks cabinDeskRate openDeskRate annualIncrement termStartDate termEnd totalTerm rentDate nextIncrementDate",
+      },
+    ])
     .lean()
     .exec();
+    const billingRevenues = revenues.map((item) => {
+    if (!useClientDetails || !item.client) return item;
+
+    const client = item.client;
+    const noOfDesks =
+      Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+    const baseRate = [client.cabinDeskRate, client.openDeskRate]
+      .map(Number)
+      .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+    const startDate = dayjs(client.termStartDate);
+    const endDate = dayjs(client.termEnd);
+    const annualIncrement = Number(client.annualIncrement) || 0;
+    const yearsElapsed = startDate.isValid()
+      ? Math.max(dayjs().diff(startDate, "year"), 0)
+      : 0;
+    const currentRate =
+      baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+    const totalTerm =
+      typeof client.totalTerm === "number" && client.totalTerm >= 0
+        ? client.totalTerm
+        : startDate.isValid() && endDate.isValid() && endDate.isAfter(startDate)
+          ? endDate.diff(startDate, "month")
+          : item.totalTerm;
+
+    return {
+      ...item,
+      client: {
+        _id: client._id,
+        clientName: client.clientName,
+      },
+      channel: client.bookingType ?? item.channel,
+      noOfDesks,
+      deskRate: currentRate,
+      revenue: noOfDesks * currentRate,
+      totalTerm,
+      rentDate: item.rentDate || client.rentDate,
+      annualIncrement: client.annualIncrement ?? item.annualIncrement,
+      nextIncrementDate:
+        client.nextIncrementDate || item.nextIncrementDate,
+    };
+  });
 
   if (isReport) {
-    return revenues.map(
+     return billingRevenues.map(
       ({ pastDueDate, unitNo, unitName, buildingName, ...item }) => item,
     );
   }
 
-  return revenues;
+  return billingRevenues;
 };
 
 const fetchWorkationRevenueReportService = async ({

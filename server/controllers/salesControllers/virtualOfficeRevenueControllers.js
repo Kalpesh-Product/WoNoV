@@ -92,7 +92,11 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
 const getVirtualOfficeRevenue = async (req, res, next) => {
   try {
     const { company } = req;
-    const payload = await fetchVirtualOfficeRevenueReportService({ company });
+    //const payload = await fetchVirtualOfficeRevenueReportService({ company });
+    const payload = await fetchVirtualOfficeRevenueReportService({
+      company,
+      query: req.query,
+    });
 
     return res.status(200).json(payload);
   } catch (error) {

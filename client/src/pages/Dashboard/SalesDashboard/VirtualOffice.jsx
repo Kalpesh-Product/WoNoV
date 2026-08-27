@@ -151,11 +151,20 @@ const getFinancialYear = (dateValue) => {
     data: virtualOfficeRevenue,
     isLoading: isLoadingVirtualOfficeRevenue = [],
   } = useQuery({
-    queryKey: ["virtualOfficeRevenue"],
+   // queryKey: ["virtualOfficeRevenue"],
+    queryKey: [
+      "virtualOfficeRevenue",
+      { useClientDetails: showInvoiceProjections },
+    ],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/sales/get-virtual-office-revenue`,
+           {
+            params: showInvoiceProjections
+              ? { useClientDetails: true }
+              : undefined,
+          },    
         );
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
