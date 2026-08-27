@@ -211,58 +211,6 @@ const VirtualOfficeClientDetails = () => {
     },
   });
 
-  useEffect(() => {
-    if (selectedClient) {
-      reset({
-        clientName: selectedClient.clientName,
-        serviceName: selectedClient.service?.serviceName || "",
-        serviceDescription: selectedClient.service?.description || "",
-        sector: selectedClient.sector,
-        hoCity: selectedClient.city || selectedClient.hoCity,
-        hoState: selectedClient.state || selectedClient.hoState,
-        building: resolveBuildingId(selectedClient),
-        unit: resolveUnitId(selectedClient),
-        unitName: selectedClient.unit?.unitName || selectedClient.unitName || "",
-        unitNo:
-          selectedClient.unit?.unitNo || selectedClient.unitNo || "",
-        buildingName:
-          selectedClient.unit?.building?.buildingName ||
-          selectedClient.buildingName ||
-          "",
-        buildingAddress:
-          selectedClient.unit?.building?.fullAddress ||
-          selectedClient.buildingAddress ||
-          "",
-        cabinDesks: selectedClient.cabinDesks || 0,
-        securityDeposit: selectedClient.securityDeposit || 0,
-        openDesks: selectedClient.openDesks || 0,
-        totalDesks: selectedClient.totalDesks || 0,
-        openDeskRate: selectedClient.openDeskRate || 0,
-        cabinDeskRate: selectedClient.cabinDeskRate || 0,
-        annualIncrement: selectedClient.annualIncrement || 0,
-        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
-        totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
-        termStartDate: selectedClient.termStartDate || selectedClient.startDate,
-        bookingType: DEFAULT_BOOKING_TYPE,
-        termEnd: selectedClient.termEnd || selectedClient.endDate,
-        lockInPeriodMonths:
-          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
-        rentDate: currentMonthStartDate,
-        nextIncrementDate:
-          selectedClient.nextIncrementDate || selectedClient.nextIncrement,
-        localPocName: selectedClient.localPoc?.name || "",
-        localPocEmail: selectedClient.localPoc?.email || "",
-        localPocPhone: selectedClient.localPoc?.phone || "",
-        hoPocName: selectedClient.hoPoc?.name || "",
-        hoPocEmail: selectedClient.hoPoc?.email || "",
-        hoPocPhone: selectedClient.hoPoc?.phone || "",
-        clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
-        createdAt: selectedClient.createdAt,
-        updatedAt: selectedClient.updatedAt,
-      });
-    }
-  }, [currentMonthStartDate, selectedClient, reset]);
-
   const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
     ? clientId
     : selectedClient?._id;
@@ -422,6 +370,85 @@ const VirtualOfficeClientDetails = () => {
   });
 
   const availableBuildings = auth?.user?.company?.workLocations || [];
+  const selectedUnitDetails = useMemo(() => {
+    const selectedUnit = selectedClient?.unit;
+    const selectedUnitId =
+      typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
+
+    if (!selectedUnitId) {
+      return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
+    }
+
+    return (
+      units.find((item) => item._id === selectedUnitId) ||
+      (typeof selectedUnit === "object" ? selectedUnit : null)
+    );
+  }, [selectedClient?.unit, units]);
+
+  useEffect(() => {
+    if (selectedClient) {
+      reset({
+        clientName: selectedClient.clientName,
+        serviceName: selectedClient.service?.serviceName || "",
+        serviceDescription: selectedClient.service?.description || "",
+        sector: selectedClient.sector,
+        hoCity: selectedClient.city || selectedClient.hoCity,
+        hoState: selectedClient.state || selectedClient.hoState,
+        building:
+          selectedUnitDetails?.building?._id ||
+          resolveBuildingId(selectedClient),
+        unit:
+          selectedUnitDetails?._id ||
+          resolveUnitId(selectedClient),
+        unitName:
+          selectedUnitDetails?.unitName ||
+          selectedClient.unit?.unitName ||
+          selectedClient.unitName ||
+          "",
+        unitNo:
+          selectedUnitDetails?.unitNo ||
+          selectedClient.unit?.unitNo ||
+          selectedClient.unitNo ||
+          "",
+        buildingName:
+          selectedUnitDetails?.building?.buildingName ||
+          selectedClient.unit?.building?.buildingName ||
+          selectedClient.buildingName ||
+          "",
+        buildingAddress:
+          selectedUnitDetails?.building?.fullAddress ||
+          selectedClient.unit?.building?.fullAddress ||
+          selectedClient.buildingAddress ||
+          "",
+        cabinDesks: selectedClient.cabinDesks || 0,
+        securityDeposit: selectedClient.securityDeposit || 0,
+        openDesks: selectedClient.openDesks || 0,
+        totalDesks: selectedClient.totalDesks || 0,
+        openDeskRate: selectedClient.openDeskRate || 0,
+        cabinDeskRate: selectedClient.cabinDeskRate || 0,
+        annualIncrement: selectedClient.annualIncrement || 0,
+        perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
+        totalMeetingCredits: selectedClient.totalMeetingCredits || 0,
+        termStartDate: selectedClient.termStartDate || selectedClient.startDate,
+        bookingType: DEFAULT_BOOKING_TYPE,
+        termEnd: selectedClient.termEnd || selectedClient.endDate,
+        lockInPeriodMonths:
+          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
+        rentDate: currentMonthStartDate,
+        nextIncrementDate:
+          selectedClient.nextIncrementDate || selectedClient.nextIncrement,
+        localPocName: selectedClient.localPoc?.name || "",
+        localPocEmail: selectedClient.localPoc?.email || "",
+        localPocPhone: selectedClient.localPoc?.phone || "",
+        hoPocName: selectedClient.hoPoc?.name || "",
+        hoPocEmail: selectedClient.hoPoc?.email || "",
+        hoPocPhone: selectedClient.hoPoc?.phone || "",
+        clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
+        createdAt: selectedClient.createdAt,
+        updatedAt: selectedClient.updatedAt,
+      });
+    }
+  }, [currentMonthStartDate, reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
     if (!selectedBuilding) {
       return [];
@@ -917,9 +944,17 @@ const VirtualOfficeClientDetails = () => {
                               : fieldKey === "currentRate"
                                 ? formatCurrency(computedCurrentRate)
                               : fieldKey === "buildingName"
-                                ? selectedClient?.unit?.building?.buildingName || control._defaultValues.buildingName || "N/A"
+                                ? selectedUnitDetails?.building?.buildingName ||
+                                  selectedClient?.unit?.building?.buildingName ||
+                                  selectedClient?.buildingName ||
+                                  control._defaultValues.buildingName ||
+                                  "N/A"
                                 : fieldKey === "unitNo"
-                                  ? selectedClient?.unit?.unitNo || control._defaultValues.unitNo || "N/A"
+                                  ? selectedUnitDetails?.unitNo ||
+                                    selectedClient?.unit?.unitNo ||
+                                    selectedClient?.unitNo ||
+                                    control._defaultValues.unitNo ||
+                                    "N/A"
                                   : selectedClient?.[fieldKey] || "N/A"}
                           </span>
                         </div>
