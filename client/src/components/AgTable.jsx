@@ -53,6 +53,7 @@ const AgTableComponent = React.memo(
     searchValue = "",
     onSearchChange,
     headerBottomContent,
+    processExportCell,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -219,6 +220,9 @@ const AgTableComponent = React.memo(
       const field = params?.column?.getColDef?.()?.field || "";
       const value = params?.value;
 
+      const pageFormattedValue = processExportCell?.(params);
+      if (pageFormattedValue !== undefined) return pageFormattedValue;
+
       if (value === null || value === undefined) return "";
 
       const normalizedField = field.toLowerCase();
@@ -233,7 +237,7 @@ const AgTableComponent = React.memo(
 
       // Prefix with an apostrophe so Excel keeps the literal date/time text.
       return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
-    }, []);
+    }, [processExportCell]);
 
     const renderExportButton = () =>
       exportData ? (

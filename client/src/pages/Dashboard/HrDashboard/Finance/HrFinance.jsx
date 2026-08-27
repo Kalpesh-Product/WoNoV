@@ -8,7 +8,7 @@ const HrFinance = () => {
       path: "budget",
       permission: PERMISSIONS.HR_BUDGET.value,
     },
-     {
+    {
       label: "Budget History",
       path: "budget-history",
       permission: PERMISSIONS.HR_BUDGET_HISTORY.value,
@@ -23,21 +23,21 @@ const HrFinance = () => {
       path: "voucher",
       permission: PERMISSIONS.HR_VOUCHER.value,
     },
-     {
-    label: "Reject Voucher",
-    path: "reject-voucher",
-    permission: PERMISSIONS.HR_REJECT_VOUCHER.value,
-  },
-       {
+    {
+      label: "Reject Voucher",
+      path: "reject-voucher",
+      permission: PERMISSIONS.HR_REJECT_VOUCHER.value,
+    },
+    {
       label: "Voucher History",
       path: "voucher-history",
       permission: PERMISSIONS.HR_VOUCHER_HISTORY.value,
     },
-    // {
-    //   label: "Payroll",
-    //   path: "payroll",
-    //   permission: PERMISSIONS.HR_PAYROLL.value,
-    // },
+    {
+      label: "Payroll",
+      path: "payroll",
+      permission: PERMISSIONS.HR_PAYROLL.value,
+    },
   ];
 
   const hideTabsCondition = (pathname) => pathname.includes("budget/");

@@ -1,8 +1,7 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import AgTable from "../../../../components/AgTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import SecondaryButton from "../../../../components/SecondaryButton";
 import { useLocation, useNavigate } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -12,7 +11,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { queryClient } from "../../../../main";
@@ -21,10 +20,136 @@ import StatusChip from "../../../../components/StatusChip";
 import dayjs from "dayjs";
 import html2pdf from "html2pdf.js";
 
+const formatPayrollAmount = (value) =>
+  `₹${Number(value || 0).toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+
+const CompensationRow = ({ label, value, period }) => (
+  <div className="flex items-start justify-between gap-6 py-2 text-sm">
+    <span className="text-gray-600">{label}</span>
+    <span className="text-right font-pmedium text-gray-800">
+      {value}
+      {period ? <span className="font-pregular text-gray-500"> / {period}</span> : null}
+    </span>
+  </div>
+);
+
+const PayrollSection = ({ title, total, period = "Month", children }) => (
+  <section className="rounded-xl border border-borderGray bg-white p-5">
+    <div className="mb-3 flex items-center justify-between gap-4 border-b border-borderGray pb-3">
+      <h3 className="text-subtitle font-pmedium text-primary">{title}</h3>
+      {total !== undefined ? (
+        <span className="text-sm font-pmedium text-gray-800">
+          {formatPayrollAmount(total)}
+          <span className="font-pregular text-gray-500"> / {period}</span>
+        </span>
+      ) : null}
+    </div>
+    <div>{children}</div>
+  </section>
+);
+
+const deductionOptions = ["Provident Fund"];
+
+const createInitialCompensationDetails = (earnings = {}, deductions = {}, month) => {
+  const grossPay = [
+    earnings.basicPay,
+    earnings.hra,
+    earnings.specialAllowance,
+    earnings.otherAllowance,
+    earnings.bonus,
+  ].reduce((total, value) => total + (Number(value) || 0), 0);
+  const allowanceRows = [
+    ["Conveyance Allowance", earnings.conveyanceAllowance],
+    ["Medical Allowance", earnings.medicalAllowance],
+    ["Special Allowance", earnings.specialAllowance],
+  ];
+  const deductionRows = [
+    ["Provident Fund", deductions.employeePf],
+  ].filter(([, value]) => Number(value) !== 0);
+
+  return {
+    compensation: {
+      grossPay,
+      basicPay: Number(earnings.basicPay) || 0,
+      variablePay: Number(earnings.bonus) || 0,
+      gratuity: Number(earnings.gratuity) || 0,
+      ctc: Number(earnings.ctc) || 0,
+      appraisalDate: "",
+      effectivePayPeriod: dayjs(month).format("MMMM YYYY"),
+      paymentMethod: "",
+      bankName: "",
+      accountNumber: "",
+    },
+    allowances: allowanceRows.map(([label, value], index) => ({
+      id: `allowance-${index}-${label}`,
+      label,
+      value: Number(value) || 0,
+    })),
+    deductions: deductionRows.map(([label, value], index) => ({
+      id: `deduction-${index}-${label}`,
+      label,
+      value: Number(value) || 0,
+    })),
+  };
+};
+
+const EditableAmountRow = ({
+  row,
+  options,
+  usedLabels,
+  placeholder,
+  onChange,
+  onRemove,
+}) => (
+  <div className="grid grid-cols-1 gap-3 border-b border-borderGray py-3 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)_auto] md:items-center">
+    <TextField
+      select
+      size="small"
+      label="Type"
+      value={row.label}
+      onChange={(event) => onChange({ ...row, label: event.target.value })}
+    >
+      <MenuItem value="" disabled>
+        {placeholder}
+      </MenuItem>
+      {options
+        .filter(
+          (option) => option === row.label || !usedLabels.includes(option)
+        )
+        .map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+    </TextField>
+    <TextField
+      size="small"
+      type="number"
+      label="Amount"
+      value={row.value}
+      onChange={(event) => onChange({ ...row, value: event.target.value })}
+      InputProps={{ startAdornment: <span className="mr-2 text-gray-500">₹</span> }}
+    />
+    <button
+      type="button"
+      onClick={onRemove}
+      className="rounded-md border border-red-200 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
+    >
+      Remove
+    </button>
+  </div>
+);
+
 const ViewPayroll = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const payslipRef = useRef();
   const [openModal, setOpenModal] = useState(false);
+  const [isEditingCompensation, setIsEditingCompensation] = useState(false);
+  const [compensationDetails, setCompensationDetails] = useState(null);
+  const [compensationDraft, setCompensationDraft] = useState(null);
   const payrollColumns = [
     { field: "srNo", headerName: "SrNo", flex: 1 },
     { field: "empId", headerName: "Employee ID", flex: 1 },
@@ -353,38 +478,120 @@ const ViewPayroll = () => {
   const earnings = isLoading ? [] : [userPayrollData.earnings];
   const deductions = isLoading ? [] : [userPayrollData.deductions];
 
-  const formatKeyLabel = (key) => {
-    return key
-      .replace(/([A-Z])/g, " $1") // Convert camelCase to space-separated
-      .replace(/_/g, " ") // Convert snake_case to space-separated
-      .replace(/\s+/g, " ") // Replace multiple spaces with one
-      .trim() // Trim leading/trailing spaces
-      .replace(/\b\w/g, (char) => char.toUpperCase()); // Capitalize first letter of each word
+  const earningDetails = userPayrollData?.earnings || {};
+  const deductionDetails = userPayrollData?.deductions || {};
+  const employerCostRows = [
+    ["Employer ESI", deductionDetails.employerEsi],
+    ["Employer PF", deductionDetails.employerPf],
+    ["Employer EPF", deductionDetails.employerEpf],
+    ["Employer EPS", deductionDetails.employerEps],
+    ["Employer EDLI", deductionDetails.employerEdli],
+    ["EPF (Admin Charges)", deductionDetails.epfAdminCharges],
+    ["EDLI (Admin Charges)", deductionDetails.edliAdminCharges],
+  ];
+
+  const initialCompensationDetails = createInitialCompensationDetails(
+    earningDetails,
+    deductionDetails,
+    month
+  );
+
+  useEffect(() => {
+    if (isLoading) return;
+    const nextDetails = createInitialCompensationDetails(
+      userPayrollData?.earnings,
+      userPayrollData?.deductions,
+      month
+    );
+    setCompensationDetails(nextDetails);
+    setCompensationDraft(nextDetails);
+  }, [isLoading, month, userPayrollData?.deductions, userPayrollData?.earnings]);
+
+  const visibleCompensation =
+    (isEditingCompensation ? compensationDraft : compensationDetails) ||
+    initialCompensationDetails;
+  const allowanceTotal = visibleCompensation.allowances.reduce(
+    (total, row) => total + (Number(row.value) || 0),
+    0
+  );
+  const deductionTotal = visibleCompensation.deductions.reduce(
+    (total, row) => total + (Number(row.value) || 0),
+    0
+  );
+  const employerCostTotal = employerCostRows.reduce(
+    (total, [, value]) => total + (Number(value) || 0),
+    0
+  );
+  const netPay =
+    Number(earningDetails.netPay) ||
+    Math.max(
+      0,
+      Number(visibleCompensation.compensation.grossPay || 0) - deductionTotal
+    );
+
+  const cloneCompensation = (details) => JSON.parse(JSON.stringify(details));
+  const handleEditCompensation = () => {
+    setCompensationDraft(cloneCompensation(visibleCompensation));
+    setIsEditingCompensation(true);
   };
-
-  console.log("payment breakup : ", deductions);
-
-  const netPay = (() => {
-    const totalEarnings = earnings.reduce(
-      (sum, item) =>
-        sum +
-        Object.values(item || {}).reduce(
-          (acc, val) => acc + (Number(val) || 0),
-          0
-        ),
-      0
+  const handleCancelCompensation = () => {
+    setCompensationDraft(cloneCompensation(compensationDetails));
+    setIsEditingCompensation(false);
+  };
+  const handleSaveCompensation = () => {
+    const hasIncompleteRow = [
+      ...compensationDraft.allowances,
+      ...compensationDraft.deductions,
+    ].some((row) => !row.label || row.value === "");
+    if (hasIncompleteRow) {
+      toast.error("Select a type and enter an amount before saving");
+      return;
+    }
+    setCompensationDetails(cloneCompensation(compensationDraft));
+    setIsEditingCompensation(false);
+    toast.success("Compensation changes saved on this screen only");
+  };
+  const updateCompensationField = (field, value) => {
+    setCompensationDraft((current) => ({
+      ...current,
+      compensation: { ...current.compensation, [field]: value },
+    }));
+  };
+  const updateDynamicRow = (section, rowId, updatedRow) => {
+    setCompensationDraft((current) => ({
+      ...current,
+      [section]: current[section].map((row) =>
+        row.id === rowId ? updatedRow : row
+      ),
+    }));
+  };
+  const removeDynamicRow = (section, rowId) => {
+    setCompensationDraft((current) => ({
+      ...current,
+      [section]: current[section].filter((row) => row.id !== rowId),
+    }));
+  };
+  const addDynamicRow = (section, options) => {
+    const usedLabels = compensationDraft[section].map((row) => row.label);
+    const hasAvailableOption = options.some(
+      (option) => !usedLabels.includes(option)
     );
-    const totalDeductions = deductions.reduce(
-      (sum, item) =>
-        sum +
-        Object.values(item || {}).reduce(
-          (acc, val) => acc + (Number(val) || 0),
-          0
-        ),
-      0
-    );
-    return totalEarnings - totalDeductions;
-  })();
+    if (!hasAvailableOption) {
+      toast.info(`All ${section} have already been added`);
+      return;
+    }
+    if (usedLabels.includes("")) {
+      toast.info(`Select the pending ${section.slice(0, -1)} first`);
+      return;
+    }
+    setCompensationDraft((current) => ({
+      ...current,
+      [section]: [
+        ...current[section],
+        { id: `${section}-${Date.now()}`, label: "", value: "" },
+      ],
+    }));
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -410,123 +617,354 @@ const ViewPayroll = () => {
 
       <WidgetSection
         border
-        button
-        buttonTitle={"Edit"}
         layout={1}
         title={"Payslip Generator"}
+        headerRightContent={
+          isEditingCompensation ? (
+            <div className="flex items-center gap-2">
+              <PrimaryButton
+                title="Save"
+                handleSubmit={handleSaveCompensation}
+              />
+              <button
+                type="button"
+                onClick={handleCancelCompensation}
+                className="rounded-md border border-borderGray px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          ) : (
+            <PrimaryButton
+              title="Edit"
+              handleSubmit={handleEditCompensation}
+            />
+          )
+        }
       >
-        <div className="flex flex-col gap-4 justify-center items-center">
+        <div className="flex flex-col gap-5">
           <div
             ref={payslipRef}
-            className="border-default border-borderGray p-6 rounded-xl"
+            className="rounded-xl bg-[#f7f9fc] p-4 sm:p-6"
           >
-            <span className="text-center text-title font-pmedium mb-4">
-              Pay Slip
-            </span>
-            <div className="border-t border-b py-4">
-              <div className="flex gap-4 py-4 text-sm">
-                <div className="flex flex-col w-full">
-                  <span className="text-content">Employee Name:</span>{" "}
-                  <span className="text-content text-gray-600">
-                    {" "}
-                    {employeeName || ""}{" "}
-                  </span>
+            <div className="mb-5 rounded-xl border border-borderGray bg-white p-5">
+              <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Employee
+                  </p>
+                  <h2 className="mt-1 text-title font-pmedium text-primary">
+                    {employeeName || "N/A"}
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {employeeId || "N/A"}
+                    {designation ? ` • ${designation}` : ""}
+                  </p>
                 </div>
-                <div className="flex flex-col w-full">
-                  <span className="text-content">Employee ID:</span>{" "}
-                  <span className="text-content text-gray-600">
-                    {employeeId}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-4 py-4 text-sm">
-                <div className="flex flex-col w-full">
-                  <span className="text-content">Designation:</span>{" "}
-                  <span className="text-content text-gray-600">
-                    {designation || ""}
-                  </span>
-                </div>
-                <div className="flex flex-col w-full">
-                  <span className="text-content">Department</span>{" "}
-                  <span className="text-content text-gray-600">
-                    {departmentName || ""}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-4  items-center w-full">
-                <div className="flex flex-col w-full">
-                  <span className="text-content">Start Date</span>
-                  <span className="text-content text-gray-600">
-                    {dayjs(month).format("MMM DD, YYYY")}
-                  </span>
-                </div>
-                <div className="flex flex-col w-full">
-                  <span className="text-content">End Date</span>
-                  <span className="text-content text-gray-600">
-                    {dayjs(month).endOf("month").format("MMM DD, YYYY")}
-                  </span>
+                <div className="text-left md:text-right">
+                  <p className="text-xs uppercase tracking-wide text-gray-500">
+                    Effective pay period
+                  </p>
+                  <p className="mt-1 font-pmedium text-gray-800">
+                    {dayjs(month).format("MMMM YYYY")}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {departmentName || "N/A"}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="p-2 bg-gray-200 ">
-                <span className="text-content font-pmedium text-gray-700">
-                  Earnings
-                </span>
-              </div>
-              <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex flex-col text-content py-4 gap-4">
-                  {earnings.map((item, index) =>
-                    Object.entries(item).map(([key, value]) => (
+            <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+              <PayrollSection title="Compensation Information">
+                {isEditingCompensation ? (
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {[
+                      ["grossPay", "Gross Pay"],
+                      ["basicPay", "Basic Pay"],
+                      ["variablePay", "Variable Pay"],
+                      ["gratuity", "Gratuity"],
+                      ["ctc", "CTC"],
+                    ].map(([field, label]) => (
+                      <TextField
+                        key={field}
+                        size="small"
+                        type="number"
+                        label={label}
+                        value={visibleCompensation.compensation[field]}
+                        onChange={(event) =>
+                          updateCompensationField(field, event.target.value)
+                        }
+                        InputProps={{
+                          startAdornment: (
+                            <span className="mr-2 text-gray-500">₹</span>
+                          ),
+                        }}
+                      />
+                    ))}
+                    <TextField
+                      size="small"
+                      type="date"
+                      label="Appraisal/Offered Date"
+                      value={visibleCompensation.compensation.appraisalDate}
+                      onChange={(event) =>
+                        updateCompensationField(
+                          "appraisalDate",
+                          event.target.value
+                        )
+                      }
+                      InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                      size="small"
+                      label="Effective Pay Period"
+                      value={
+                        visibleCompensation.compensation.effectivePayPeriod
+                      }
+                      onChange={(event) =>
+                        updateCompensationField(
+                          "effectivePayPeriod",
+                          event.target.value
+                        )
+                      }
+                    />
+                    <TextField
+                      select
+                      size="small"
+                      label="Payment Method"
+                      value={visibleCompensation.compensation.paymentMethod}
+                      onChange={(event) =>
+                        updateCompensationField(
+                          "paymentMethod",
+                          event.target.value
+                        )
+                      }
+                    >
+                      <MenuItem value="Cash Only">Cash Only</MenuItem>
+                      <MenuItem value="Bank Deposit">Bank Deposit</MenuItem>
+                    </TextField>
+                    <TextField
+                      size="small"
+                      label="Bank Name"
+                      value={visibleCompensation.compensation.bankName}
+                      onChange={(event) =>
+                        updateCompensationField("bankName", event.target.value)
+                      }
+                    />
+                    <TextField
+                      size="small"
+                      label="Account Number"
+                      value={visibleCompensation.compensation.accountNumber}
+                      onChange={(event) =>
+                        updateCompensationField(
+                          "accountNumber",
+                          event.target.value
+                        )
+                      }
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <CompensationRow
+                      label="Gross Pay"
+                      value={formatPayrollAmount(
+                        visibleCompensation.compensation.grossPay
+                      )}
+                      period="Month"
+                    />
+                    <CompensationRow
+                      label="Basic Pay"
+                      value={formatPayrollAmount(
+                        visibleCompensation.compensation.basicPay
+                      )}
+                      period="Month"
+                    />
+                    <CompensationRow
+                      label="Variable Pay"
+                      value={formatPayrollAmount(
+                        visibleCompensation.compensation.variablePay
+                      )}
+                      period="Year"
+                    />
+                    <CompensationRow
+                      label="Gratuity"
+                      value={formatPayrollAmount(
+                        visibleCompensation.compensation.gratuity
+                      )}
+                      period="Year"
+                    />
+                    <CompensationRow
+                      label="CTC"
+                      value={formatPayrollAmount(
+                        visibleCompensation.compensation.ctc
+                      )}
+                      period="Year"
+                    />
+                    <CompensationRow
+                      label="Appraisal/Offered Date"
+                      value={
+                        visibleCompensation.compensation.appraisalDate || "N/A"
+                      }
+                    />
+                    <CompensationRow
+                      label="Effective Pay Period"
+                      value={
+                        visibleCompensation.compensation.effectivePayPeriod ||
+                        "N/A"
+                      }
+                    />
+                    <CompensationRow
+                      label="Payment Method"
+                      value={
+                        visibleCompensation.compensation.paymentMethod || "N/A"
+                      }
+                    />
+                    <CompensationRow
+                      label="Bank Name"
+                      value={
+                        visibleCompensation.compensation.bankName || "N/A"
+                      }
+                    />
+                    <CompensationRow
+                      label="Account Number"
+                      value={
+                        visibleCompensation.compensation.accountNumber || "N/A"
+                      }
+                    />
+                  </>
+                )}
+              </PayrollSection>
+
+              <PayrollSection title="Allowances" total={allowanceTotal}>
+                {isEditingCompensation ? (
+                  <div className="flex flex-col gap-3">
+                    {visibleCompensation.allowances.map((row) => (
                       <div
-                        key={`${index}-${key}`}
-                        className="flex justify-between py-1 border-b border-borderGray"
+                        key={row.id}
+                        className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)] md:items-center"
                       >
-                        <span>{formatKeyLabel(key)}</span>
-                        <span>{inrFormat(value) || 0}</span>
+                        <span className="text-sm text-gray-600">
+                          {row.label}
+                        </span>
+                        <TextField
+                          size="small"
+                          type="number"
+                          label="Amount"
+                          value={row.value}
+                          onChange={(event) =>
+                            updateDynamicRow("allowances", row.id, {
+                              ...row,
+                              value: event.target.value,
+                            })
+                          }
+                          InputProps={{
+                            startAdornment: (
+                              <span className="mr-2 text-gray-500">₹</span>
+                            ),
+                          }}
+                        />
                       </div>
-                    ))
-                  )}
+                    ))}
+                  </div>
+                ) : (
+                  visibleCompensation.allowances.map((row) => (
+                    <CompensationRow
+                      key={row.id}
+                      label={row.label}
+                      value={formatPayrollAmount(row.value)}
+                    />
+                  ))
+                )}
+              </PayrollSection>
+
+              <PayrollSection title="Deductions" total={deductionTotal}>
+                {isEditingCompensation ? (
+                  <>
+                    {visibleCompensation.deductions.map((row) => (
+                      <EditableAmountRow
+                        key={row.id}
+                        row={row}
+                        options={deductionOptions}
+                        placeholder="Select Deduction"
+                        usedLabels={visibleCompensation.deductions.map(
+                          (item) => item.label
+                        )}
+                        onChange={(updatedRow) =>
+                          updateDynamicRow("deductions", row.id, updatedRow)
+                        }
+                        onRemove={() =>
+                          removeDynamicRow("deductions", row.id)
+                        }
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addDynamicRow("deductions", deductionOptions)
+                      }
+                      className="mt-4 text-sm font-pmedium text-primary hover:underline"
+                    >
+                      + Add New
+                    </button>
+                  </>
+                ) : visibleCompensation.deductions.length ? (
+                  visibleCompensation.deductions.map((row) => (
+                    <CompensationRow
+                      key={row.id}
+                      label={row.label}
+                      value={formatPayrollAmount(row.value)}
+                    />
+                  ))
+                ) : (
+                  <p className="py-5 text-center text-sm text-gray-500">
+                    No deductions configured.
+                  </p>
+                )}
+              </PayrollSection>
+
+              <PayrollSection title="Employer Costs" total={employerCostTotal}>
+                {employerCostRows.map(([label, value]) => (
+                  <CompensationRow
+                    key={label}
+                    label={label}
+                    value={formatPayrollAmount(value)}
+                  />
+                ))}
+              </PayrollSection>
+
+              <PayrollSection title="IT Declarations" total={0} period="Year">
+                <div className="flex min-h-28 items-center justify-center text-center text-sm text-gray-500">
+                  No IT declarations found for the employee.
                 </div>
-              </div>
-            </div>
-            <div className="mb-4">
-              <div className="p-2 bg-gray-200 ">
-                <span className="text-content font-pmedium text-gray-700">
-                  Deductions
-                </span>
-              </div>
+              </PayrollSection>
 
-              <div className="flex flex-col text-content py-4 gap-4">
-                <div className="flex flex-col text-content py-4 gap-4">
-                  {deductions.map((item, index) =>
-                    Object.entries(item).map(([key, value]) => (
-                      <div
-                        key={`${index}-${key}`}
-                        className="flex justify-between py-1 border-b border-borderGray"
-                      >
-                        <span>{formatKeyLabel(key)}</span>
-                        <span>{inrFormat(value) || 0}</span>
-                      </div>
-                    ))
+              <PayrollSection title="Pay Summary">
+                <CompensationRow
+                  label="Gross Earnings"
+                  value={formatPayrollAmount(
+                    visibleCompensation.compensation.grossPay
                   )}
+                />
+                <CompensationRow
+                  label="Total Deductions"
+                  value={formatPayrollAmount(deductionTotal)}
+                />
+                <div className="mt-2 border-t border-borderGray pt-2">
+                  <CompensationRow
+                    label="Net Pay"
+                    value={formatPayrollAmount(netPay)}
+                  />
                 </div>
-              </div>
+              </PayrollSection>
             </div>
 
-            <div className="text-sm text-right font-semibold text-gray-800">
-              <span>Net Pay : </span>{" "}
-              <span className="text-lg">{inrFormat(netPay || 0)}</span>
-            </div>
-
-            <p className="text-xs text-gray-500 mt-4 text-center">
-              *This is a computer-generated document and does not require a
-              signature.
+            <p className="mt-5 text-center text-xs text-gray-500">
+              Compensation edits are currently saved on this screen only and
+              are not sent to the backend.
             </p>
           </div>
 
-          <div className="flex items-center gap-[8.5rem]">
+          <div className="flex flex-wrap items-center justify-center gap-4">
             {status !== "Completed" && (
               <PrimaryButton
                 title={"Generate Payslip"}
@@ -536,7 +974,10 @@ const ViewPayroll = () => {
               />
             )}
 
-            <PrimaryButton title={"Download Payslip"} handleSubmit={handleDownloadPayslip}  />
+            <PrimaryButton
+              title={"Download Payslip"}
+              handleSubmit={handleDownloadPayslip}
+            />
           </div>
         </div>
       </WidgetSection>
