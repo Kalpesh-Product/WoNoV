@@ -27,10 +27,46 @@ const getNormalizedPaymentStatus = (status) => {
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const formatBillingNumber = (value) => {
+  const numberValue = Number(String(value ?? "").replace(/,/g, ""));
+  if (!Number.isFinite(numberValue)) return "";
+
+  const truncatedValue = Math.trunc(numberValue * 100) / 100;
+  return Number.isInteger(truncatedValue)
+    ? String(Math.trunc(truncatedValue))
+    : truncatedValue.toFixed(2);
+};
+
 const getClientIdentity = (row) => {
   const id = row?.client?._id || row?.client;
   if (id) return `id:${String(id)}`;
   return `name:${String(row?.clientName || "").trim().toLowerCase()}`;
+};
+
+const getVirtualOfficeCurrentRate = (row) => {
+  const client = row?.client || {};
+  const startDate = dayjs(
+    client.termStartDate || client.startDate || row?.rentDate || row?.createdAt,
+  );
+  const endDate = dayjs(client.termEnd || client.endDate || row?.pastDueDate);
+  const annualIncrement = Number(
+    client.annualIncrement ?? row?.annualIncrement ?? 0,
+  ) || 0;
+  const baseRate = Number(
+    client.openDeskRate ?? row?.deskRate ?? client.cabinDeskRate ?? 0,
+  ) || 0;
+
+  if (
+    !startDate.isValid() ||
+    !endDate.isValid() ||
+    !endDate.isAfter(startDate, "day")
+  ) {
+    return baseRate;
+  }
+
+  const yearsElapsed = Math.max(endDate.diff(startDate, "year"), 0);
+
+  return baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
 };
 
 const getUnpaidInvoiceRowsForMonth = (
@@ -194,6 +230,18 @@ const getFinancialYear = (dateValue) => {
         ? []
         : virtualOfficeRevenue.map((item) => ({
             ...item,
+            ...(showInvoiceProjections && item.client
+              ? {
+                  deskRate: getVirtualOfficeCurrentRate(item),
+                  revenue:
+                    (Number(
+                      item.client?.totalDesks ||
+                        item.noOfDesks ||
+                        Number(item.client?.cabinDesks || 0) +
+                          Number(item.client?.openDesks || 0),
+                    ) || 0) * getVirtualOfficeCurrentRate(item),
+                }
+              : {}),
             clientName: item.client?.clientName,
              normalizedStatus: getNormalizedPaymentStatus(
               item.rentStatus ?? item.status,
@@ -203,7 +251,7 @@ const getFinancialYear = (dateValue) => {
             invoiceUploadedAt: item.invoice?.date || item.invoiceUploadedAt,
             //normalizedStatus: getNormalizedPaymentStatus(item.status),
           })),
-    [isLoadingVirtualOfficeRevenue, virtualOfficeRevenue],
+    [isLoadingVirtualOfficeRevenue, showInvoiceProjections, virtualOfficeRevenue],
   );
 
    const openEdit = (row) => {
@@ -213,10 +261,10 @@ const getFinancialYear = (dateValue) => {
       client: row.client?._id || row.client,
       clientName: row.clientName || "",
       clientInvoiceName: row.clientInvoiceName || row.clientName || "",
-      revenue: row.revenue ?? "",
+      revenue: formatBillingNumber(row.revenue),
       channel: row.channel || "",
       noOfDesks: row.noOfDesks ?? "",
-      deskRate: row.deskRate ?? "",
+      deskRate: formatBillingNumber(row.deskRate),
       totalTerm: row.totalTerm ?? "",
       rentDate: row.rentDate ? dayjs(row.rentDate) : null,
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
@@ -321,9 +369,19 @@ const getFinancialYear = (dateValue) => {
       cellRenderer: (params) => inrFormat(params.value || 0),
     },
     {
-      headerName: "Status",
+      headerName: "No. of Desks",
+      field: "noOfDesks",
+    },
+    {
+      headerName: "Open Desk Rate",
+      field: "deskRate",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Rent Status",
       field: "rentStatus",
      flex:2,
+     pinned: "right",
       cellStyle: {
         display: "flex",
         alignItems: "center",
@@ -332,6 +390,31 @@ const getFinancialYear = (dateValue) => {
         paddingRight: "12px",
       },
       cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      headerName: "Action",
+      field: "actions",
+      pinned: "right",
+      width: 100,
+      minWidth: 90,
+      sortable: false,
+      filter: false,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingLeft: "8px",
+        paddingRight: "8px",
+      },
+      cellRenderer: ({ data }) => (
+        <IconButton
+          size="small"
+          onClick={() => setViewRow(data)}
+          aria-label="View invoice"
+        >
+          <MdOutlineRemoveRedEye size={18} />
+        </IconButton>
+      ),
     },
   ];
 
@@ -362,7 +445,7 @@ const getFinancialYear = (dateValue) => {
       field: "noOfDesks",
     },
     {
-      headerName: "Desk Rate",
+      headerName: "Open Desk Rate",
       field: "deskRate",
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
@@ -426,7 +509,7 @@ const getFinancialYear = (dateValue) => {
         value ? dayjs(value).format("DD-MM-YYYY") : "-",
     },
     {
-      headerName: "Status",
+      headerName: "Rent Status",
       field: "rentStatus",
       pinned: "right",
       flex:1,
@@ -675,7 +758,7 @@ const getFinancialYear = (dateValue) => {
       />
 
       <DetalisFormatted
-        title="Desk Rate"
+        title="Open Desk Rate(Current)"
         detail={`INR ${inrFormat(viewRow.deskRate || 0)}`}
       />
 
@@ -767,7 +850,7 @@ const getFinancialYear = (dateValue) => {
         ["clientInvoiceName", "Client Invoice Name", "text"],
         ["channel", "Channel", "text"],
         ["noOfDesks", "No. of Desks", "number"],
-        ["deskRate", "Desk Rate", "number"],
+        ["deskRate", "Open Desk Rate", "number"],
         ["revenue", "Revenue", "number"],
         ["totalTerm", "Total Term", "number"],
         ["annualIncrement", "Annual Increment (%)", "number"],

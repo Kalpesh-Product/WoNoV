@@ -15,6 +15,21 @@ const getPaymentStatusLabel = (value) => {
     ? "Paid"
     : "Unpaid";
 };
+
+const getVirtualOfficeCurrentRate = (startDate, endDate, baseRate, annualIncrement) => {
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  const normalizedBaseRate = Number(baseRate) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start, "day")) {
+    return normalizedBaseRate;
+  }
+
+  const yearsElapsed = Math.max(end.diff(start, "year"), 0);
+
+  return normalizedBaseRate * Math.pow(1 + increment / 100, yearsElapsed);
+};
 const normalizeCoworkingChannel = (bookingType) =>
   String(bookingType || "")
     .trim()
@@ -709,11 +724,12 @@ const fetchVirtualOfficeRevenueReportService = async ({
     const startDate = dayjs(client.termStartDate);
     const endDate = dayjs(client.termEnd);
     const annualIncrement = Number(client.annualIncrement) || 0;
-    const yearsElapsed = startDate.isValid()
-      ? Math.max(dayjs().diff(startDate, "year"), 0)
-      : 0;
-    const currentRate =
-      baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+    const currentRate = getVirtualOfficeCurrentRate(
+      startDate,
+      endDate,
+      baseRate,
+      annualIncrement,
+    );
     const totalTerm =
       typeof client.totalTerm === "number" && client.totalTerm >= 0
         ? client.totalTerm
