@@ -267,6 +267,8 @@ const VirtualOfficeClientDetails = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const selectedBuilding = useWatch({ control, name: "building" });
+  const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
+  const watchedOpenDesks = useWatch({ control, name: "openDesks" });
   const watchedOpenDeskRate = useWatch({ control, name: "openDeskRate" });
   const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
   const watchedTotalDesks = useWatch({ control, name: "totalDesks" });
@@ -326,9 +328,13 @@ const VirtualOfficeClientDetails = () => {
     }
     return rateSchedule[rateSchedule.length - 1].rate;
   }, [rateSchedule, selectedClient?.openDeskRate, watchedOpenDeskRate]);
+  const computedTotalDesks = useMemo(
+    () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
+    [watchedCabinDesks, watchedOpenDesks],
+  );
   const computedRevenue = useMemo(
-    () => Number(watchedTotalDesks || selectedClient?.totalDesks || 0) * Number(computedCurrentRate || 0),
-    [computedCurrentRate, selectedClient?.totalDesks, watchedTotalDesks],
+    () => Number(watchedTotalDesks || selectedClient?.totalDesks || computedTotalDesks || 0) * Number(computedCurrentRate || 0),
+    [computedCurrentRate, computedTotalDesks, selectedClient?.totalDesks, watchedTotalDesks],
   );
 
   const totalTermMonths = useMemo(() => {
@@ -423,7 +429,9 @@ const VirtualOfficeClientDetails = () => {
         cabinDesks: selectedClient.cabinDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
         openDesks: selectedClient.openDesks || 0,
-        totalDesks: selectedClient.totalDesks || 0,
+        totalDesks:
+          Number(selectedClient.cabinDesks || 0) +
+          Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
@@ -475,6 +483,10 @@ const VirtualOfficeClientDetails = () => {
   useEffect(() => {
     setValue("lockInPeriodMonths", calculatedLockInPeriodMonths);
   }, [calculatedLockInPeriodMonths, setValue]);
+
+  useEffect(() => {
+    setValue("totalDesks", computedTotalDesks);
+  }, [computedTotalDesks, setValue]);
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -600,7 +612,7 @@ const VirtualOfficeClientDetails = () => {
         buildingAddress: updatedClient.buildingAddress || "",
         unitName: submittedUnit?.unitName || data.unitName || "",
         unitNo: submittedUnit?.unitNo || data.unitNo || "",
-        totalDesks: serverData.totalDesks || payload.cabinDesks + payload.openDesks,
+      totalDesks: serverData.totalDesks || computedTotalDesks,
         totalMeetingCredits: serverData.totalMeetingCredits,
       });
 
@@ -653,7 +665,9 @@ const VirtualOfficeClientDetails = () => {
         cabinDesks: selectedClient.cabinDesks || 0,
         openDesks: selectedClient.openDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
-        totalDesks: selectedClient.totalDesks || 0,
+        totalDesks:
+          Number(selectedClient.cabinDesks || 0) +
+          Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
