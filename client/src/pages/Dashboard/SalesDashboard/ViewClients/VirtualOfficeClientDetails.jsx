@@ -289,7 +289,7 @@ const VirtualOfficeClientDetails = () => {
 
     return client?.building || "";
   };
-  const calculatedLockInPeriodMonths = useMemo(() => {
+  const calculatedTotalTermMonths = useMemo(() => {
     const startDate =
       termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate;
     const endDate = termEndValue || selectedClient?.termEnd || selectedClient?.endDate;
@@ -337,20 +337,6 @@ const VirtualOfficeClientDetails = () => {
     [computedCurrentRate, computedTotalDesks, selectedClient?.totalDesks, watchedTotalDesks],
   );
 
-  const totalTermMonths = useMemo(() => {
-    if (isEditing) {
-      return calculateTotalTermMonths(termStartDateValue, termEndValue);
-    }
-
-    const startDate = selectedClient?.termStartDate || selectedClient?.startDate;
-    const endDate = selectedClient?.termEnd || selectedClient?.endDate;
-
-    if (typeof selectedClient?.totalTerm === "number" && selectedClient?.totalTerm >= 0) {
-      return selectedClient.totalTerm;
-    }
-
-    return calculateTotalTermMonths(startDate, endDate);
-  }, [isEditing, termStartDateValue, termEndValue, selectedClient]);
   const calculatedAgreementExpiry = useMemo(
     () =>
       calculateAgreementExpiry(
@@ -441,7 +427,7 @@ const VirtualOfficeClientDetails = () => {
         bookingType: DEFAULT_BOOKING_TYPE,
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
-          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod,
+          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
         rentDate: currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
@@ -481,10 +467,6 @@ const VirtualOfficeClientDetails = () => {
   }, [currentMonthStartDate, setValue]);
 
   useEffect(() => {
-    setValue("lockInPeriodMonths", calculatedLockInPeriodMonths);
-  }, [calculatedLockInPeriodMonths, setValue]);
-
-  useEffect(() => {
     setValue("totalDesks", computedTotalDesks);
   }, [computedTotalDesks, setValue]);
 
@@ -516,7 +498,7 @@ const VirtualOfficeClientDetails = () => {
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
       termStartDate: data.termStartDate,
       termEnd: data.termEnd,
-      lockInPeriodMonths: calculatedLockInPeriodMonths,
+      lockInPeriodMonths: Number(data.lockInPeriodMonths) || 0,
       rentDate: data.rentDate || currentMonthStartDate,
       nextIncrementDate: data.nextIncrementDate,
       localPoc: {
@@ -580,9 +562,9 @@ const VirtualOfficeClientDetails = () => {
         hoState: serverData.state || serverData.hoState || data.hoState,
         clientStatus: serverData.clientStatus ?? serverData.isActive ?? data.clientStatus,
         lockInPeriodMonths:
-          serverData.lockInPeriodMonths ??
-          serverData.lockinPeriod ??
-          calculatedLockInPeriodMonths,
+          (serverData.lockInPeriodMonths ??
+            serverData.lockinPeriod ??
+            Number(data.lockInPeriodMonths)) || 0,
         termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
         termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
         nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
@@ -612,7 +594,7 @@ const VirtualOfficeClientDetails = () => {
         buildingAddress: updatedClient.buildingAddress || "",
         unitName: submittedUnit?.unitName || data.unitName || "",
         unitNo: submittedUnit?.unitNo || data.unitNo || "",
-      totalDesks: serverData.totalDesks || computedTotalDesks,
+        totalDesks: serverData.totalDesks || computedTotalDesks,
         totalMeetingCredits: serverData.totalMeetingCredits,
       });
 
@@ -676,10 +658,8 @@ const VirtualOfficeClientDetails = () => {
         termStartDate: selectedClient.termStartDate || selectedClient.startDate,
         bookingType: DEFAULT_BOOKING_TYPE,
         termEnd: selectedClient.termEnd || selectedClient.endDate,
-        lockInPeriodMonths: calculateTotalTermMonths(
-          selectedClient.termStartDate || selectedClient.startDate,
-          selectedClient.termEnd || selectedClient.endDate,
-        ),
+        lockInPeriodMonths:
+          selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
         rentDate: currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
@@ -1197,20 +1177,19 @@ const VirtualOfficeClientDetails = () => {
                   {/* Lock-in Period */}
                   <div>
                     {isEditing ? (
-                        <Controller
-                          name="lockInPeriodMonths"
-                          control={control}
-                          render={({ field }) => (
-                            <TextField
-                              {...field}
-                              size="small"
-                              label="Lock-in Period"
-                              value={`${calculatedLockInPeriodMonths} months`}
-                              fullWidth
-                              disabled
-                            />
-                          )}
-                        />
+                      <Controller
+                        name="lockInPeriodMonths"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Lock-in Period"
+                            type="number"
+                            fullWidth
+                          />
+                        )}
+                      />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
                         <div className="w-[100%] justify-start flex">
@@ -1223,7 +1202,10 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {calculatedLockInPeriodMonths} months
+                            {selectedClient?.lockInPeriodMonths ||
+                              selectedClient?.lockinPeriod ||
+                              0}{" "}
+                            months
                           </span>
                         </div>
                       </div>
@@ -1287,6 +1269,35 @@ const VirtualOfficeClientDetails = () => {
                       </div>
                     )}
                   </div>
+                  {/* Total Term */}
+                  <div>
+                    {isEditing ? (
+                      <TextField
+                        value={`${calculatedTotalTermMonths} months`}
+                        size="small"
+                        label="Total Term"
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Total Term
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {calculatedTotalTermMonths} months
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Agreement Expiry */}
                   <div>
                     {isEditing ? (
