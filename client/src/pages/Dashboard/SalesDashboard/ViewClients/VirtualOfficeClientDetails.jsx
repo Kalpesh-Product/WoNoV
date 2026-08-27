@@ -115,6 +115,48 @@ const calculateTotalTermMonths = (startDate, endDate) => {
   return end.diff(start, "month");
 };
 
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getCalendarDateInUtc = (value) => {
+  const date = new Date(value);
+  const dateParts =
+    typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (dateParts) {
+    return Date.UTC(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    );
+  }
+
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  const startDay = getCalendarDateInUtc(startDate);
+  const endDay = getCalendarDateInUtc(endDate);
+
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDay) ||
+    Number.isNaN(endDay) ||
+    endDay < startDay
+  ) {
+    return "-";
+  }
+
+  const today = getCalendarDateInUtc(new Date());
+  const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
@@ -355,6 +397,21 @@ const VirtualOfficeClientDetails = () => {
 
     return calculateTotalTermMonths(startDate, endDate);
   }, [isEditing, termStartDateValue, termEndValue, selectedClient]);
+  const calculatedAgreementExpiry = useMemo(
+    () =>
+      calculateAgreementExpiry(
+        termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate,
+        termEndValue || selectedClient?.termEnd || selectedClient?.endDate,
+      ),
+    [
+      selectedClient?.endDate,
+      selectedClient?.startDate,
+      selectedClient?.termEnd,
+      selectedClient?.termStartDate,
+      termEndValue,
+      termStartDateValue,
+    ],
+  );
 
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "virtual-office-client-details"],
@@ -1181,39 +1238,34 @@ const VirtualOfficeClientDetails = () => {
                       </div>
                     )}
                   </div>
-                  {/* Total Term */}
-                  {/* <div>
+                  {/* Agreement Expiry */}
+                  <div>
                     {isEditing ? (
-                      <Controller
-                        name="totalTerm"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            value={`${totalTermMonths} months`}
-                            size="small"
-                            label="Total Term"
-                            fullWidth
-                            disabled
-                          />
-                        )}
+                      <TextField
+                        value={calculatedAgreementExpiry}
+                        size="small"
+                        label="Agreement Expiry"
+                        fullWidth
+                        disabled
                       />
                     ) : (
                       <div className="py-2 flex justify-between items-start gap-2">
                         <div className="w-[100%] justify-start flex">
                           <span className="font-pmedium text-gray-600 text-content">
-                            Total Term
+                            Agreement Expiry
                           </span>{" "}
                         </div>
                         <div className="">
                           <span>:</span>
                         </div>
                         <div className="w-full">
-                          <span className="text-gray-500">{totalTermMonths} months</span>
+                          <span className="text-gray-500">
+                            {calculatedAgreementExpiry}
+                          </span>
                         </div>
                       </div>
                     )}
-                  </div> */}
+                  </div>
                 </div>
               </div>
               <div>
