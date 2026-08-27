@@ -709,6 +709,10 @@ const fetchVirtualOfficeRevenueReportService = async ({
         select:
           "clientName bookingType cabinDesks openDesks totalDesks cabinDeskRate openDeskRate annualIncrement termStartDate termEnd totalTerm rentDate nextIncrementDate",
       },
+      {
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName name",
+      },
     ])
     .lean()
     .exec();
@@ -752,6 +756,14 @@ const fetchVirtualOfficeRevenueReportService = async ({
       annualIncrement: client.annualIncrement ?? item.annualIncrement,
       nextIncrementDate:
         client.nextIncrementDate || item.nextIncrementDate,
+      invoiceUploadedBy: item.invoiceUploadedBy || null,
+      invoiceUploadedByName:
+        item.invoiceUploadedBy?.employeeName ||
+        [item.invoiceUploadedBy?.firstName, item.invoiceUploadedBy?.middleName, item.invoiceUploadedBy?.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        item.invoiceUploadedBy?.name ||
+        null,
     };
   });
 

@@ -172,6 +172,17 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    ""
+  ).trim();
+};
+
 // const VirtualOffice = () => {
   //const VirtualOffice = ({ showChart = true }) => {
   const VirtualOffice = ({ showChart = true, showInvoiceProjections = false }) => {
@@ -184,8 +195,8 @@ const getFinancialYear = (dateValue) => {
   );
 
   const {
-    data: virtualOfficeRevenue,
-    isLoading: isLoadingVirtualOfficeRevenue = [],
+    data: virtualOfficeRevenue = [],
+    isLoading: isLoadingVirtualOfficeRevenue = false,
   } = useQuery({
     queryKey: ["virtualOfficeRevenue", { useClientDetails: true }],
    // queryKey: ["virtualOfficeRevenue"],
@@ -230,7 +241,7 @@ const getFinancialYear = (dateValue) => {
     () =>
       isLoadingVirtualOfficeRevenue
         ? []
-        : virtualOfficeRevenue.map((item) => ({
+        : (Array.isArray(virtualOfficeRevenue) ? virtualOfficeRevenue : []).map((item) => ({
             ...item,
             ...(showInvoiceProjections && item.client
               ? {
@@ -822,7 +833,11 @@ const getFinancialYear = (dateValue) => {
                 />
                 <DetalisFormatted
                   title="Invoice Uploaded by"
-                  detail={viewRow.invoiceUploadedByName || "-"}
+                  detail={
+                    viewRow.invoiceUploadedByName ||
+                    getUserDisplayName(viewRow.invoiceUploadedBy) ||
+                    "-"
+                  }
                 />
               </div>
             </div>

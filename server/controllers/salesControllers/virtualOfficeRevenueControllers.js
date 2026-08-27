@@ -41,6 +41,26 @@ const parseValidDate = (value) => {
   return isNaN(date.getTime()) ? null : date;
 };
 
+const normalizeVirtualOfficeChannel = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "spv booking" || normalized === "spv") {
+    return "SPV";
+  }
+
+  if (
+    normalized === "direct booking" ||
+    normalized === "direct" ||
+    normalized === ""
+  ) {
+    return "Direct";
+  }
+
+  return value;
+};
+
 const createVirtualOfficeRevenue = async (req, res, next) => {
   try {
     const {
@@ -64,7 +84,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
     const newRevenue = new VirtualOfficeRevenue({
       client,
       location,
-      channel,
+      channel: normalizeVirtualOfficeChannel(channel),
       taxableAmount,
       revenue,
       totalTerm,
@@ -125,7 +145,15 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
       return result;
     }, {});
 
+    if (payload.channel !== undefined) {
+      payload.channel = normalizeVirtualOfficeChannel(payload.channel);
+    }
+
     if (payload.invoiceUploadedAt) payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    if (!payload.invoiceUploadedBy) {
+      payload.invoiceUploadedBy =
+        existingRevenue?.invoiceUploadedBy || req.user || null;
+    }
     if (req.file) {
       const allowedMimeTypes = [
         "application/pdf", "application/msword",
@@ -150,6 +178,7 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
       const date = payload.invoiceUploadedAt || new Date();
       payload.invoice = { name: req.file.originalname, link: result.secure_url, id: result.public_id, date };
       payload.invoiceUploadedAt = date;
+      payload.invoiceUploadedBy = req.user || existingRevenue?.invoiceUploadedBy || null;
     }
 
     const revenue = revenueId && !isProjected
@@ -280,7 +309,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           client: clientId,
           company,
           location: location?.trim(),
-          channel: channel?.trim(),
+          channel: normalizeVirtualOfficeChannel(channel),
           taxableAmount: parseAmount(taxableAmount) || 0,
           revenue: parseAmount(revenue) || 0,
           totalTerm: parseInt(totalTerm) || 0,

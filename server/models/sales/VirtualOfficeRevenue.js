@@ -44,6 +44,10 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       date: Date,
     },
     invoiceUploadedAt: Date,
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     status: {
       type: Boolean,
       default: true,

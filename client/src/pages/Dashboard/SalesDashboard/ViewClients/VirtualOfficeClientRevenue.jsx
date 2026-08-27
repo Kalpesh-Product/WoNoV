@@ -10,6 +10,17 @@ import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
 
+const getUserDisplayName = (user) => {
+    if (!user) return "";
+    if (typeof user === "string") return user;
+    return (
+        user.employeeName ||
+        [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+        user.name ||
+        ""
+    ).trim();
+};
+
 const VirtualOfficeClientRevenue = () => {
     const axios = useAxiosPrivate();
     const selectedClient = useSelector((state) => state?.client?.selectedClient);
@@ -255,7 +266,11 @@ const VirtualOfficeClientRevenue = () => {
                                 />
                                 <DetalisFormatted
                                     title="Invoice Uploaded by"
-                                    detail={viewRow.invoiceUploadedByName || "-"}
+                                    detail={
+                                        viewRow.invoiceUploadedByName ||
+                                        getUserDisplayName(viewRow.invoiceUploadedBy) ||
+                                        "-"
+                                    }
                                 />
                             </div>
                         </div>
