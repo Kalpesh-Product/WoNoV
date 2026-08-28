@@ -51,47 +51,93 @@ const PayrollSection = ({ title, total, period = "Month", children }) => (
   </section>
 );
 
-const deductionOptions = ["Provident Fund"];
+const baseAllowanceOptions = [
+  "Special Allowance",
+  "Conveyance Allowance",
+  "Medical Allowance",
+  "Children Education Allowance",
+  "Dearness Allowance",
+  "Other Allowance",
+  "Arrears",
+];
 
-const createInitialCompensationDetails = (earnings = {}, deductions = {}, month) => {
+const getEmployeePf = (basicPay) => {
+  const basic = Number(basicPay) || 0;
+  return basic >= 15000 ? 1800 : basic * 0.12;
+};
+
+const getEmployeeEsi = (grossPay) => (Number(grossPay) || 0) * 0.0075;
+
+const isEsiApplicable = (employee) => {
+  const annualCtc = Number(employee?.annualCtc) || 0;
+  return annualCtc > 0 && annualCtc / 12 < 21000;
+};
+
+const createInitialCompensationDetails = (
+  earnings = {},
+  deductions = {},
+  month,
+  employee = {}
+) => {
+  const basicPay = Number(earnings.basicPay) || 0;
+  const hraType = String(employee?.hraType || "").trim().toLowerCase();
+  const shouldAddHra = Boolean(hraType) && hraType !== "custom";
+  const hraAmount = shouldAddHra
+    ? basicPay * 0.5
+    : Number(earnings.hra) || 0;
   const grossPay = [
-    earnings.basicPay,
-    earnings.hra,
+    basicPay,
+    hraAmount,
     earnings.specialAllowance,
     earnings.otherAllowance,
     earnings.bonus,
   ].reduce((total, value) => total + (Number(value) || 0), 0);
   const allowanceRows = [
-    ["Conveyance Allowance", earnings.conveyanceAllowance],
-    ["Medical Allowance", earnings.medicalAllowance],
-    ["Special Allowance", earnings.specialAllowance],
+    {
+      label: "Special Allowance",
+      value: earnings.specialAllowance,
+    },
+    ...(shouldAddHra
+      ? [{ label: "House Rent Allowance", value: hraAmount }]
+      : []),
   ];
+  const esiApplicable = isEsiApplicable(employee);
   const deductionRows = [
-    ["Provident Fund", deductions.employeePf],
-  ].filter(([, value]) => Number(value) !== 0);
+    {
+      label: "Provident Fund",
+      value: Number(deductions.employeePf) || getEmployeePf(basicPay),
+    },
+    {
+      label: "ESI",
+      value: esiApplicable
+        ? Number(deductions.employeesStateInsurance) || getEmployeeEsi(grossPay)
+        : 0,
+    },
+  ];
 
   return {
     compensation: {
       grossPay,
-      basicPay: Number(earnings.basicPay) || 0,
+      basicPay,
       variablePay: Number(earnings.bonus) || 0,
       gratuity: Number(earnings.gratuity) || 0,
-      ctc: Number(earnings.ctc) || 0,
+      ctc: Number(employee?.annualCtc) || Number(earnings.ctc) || 0,
       appraisalDate: "",
       effectivePayPeriod: dayjs(month).format("MMMM YYYY"),
-      paymentMethod: "",
-      bankName: "",
-      accountNumber: "",
+      paymentMethod:
+        employee?.bankName && employee?.accountNumber ? "Bank Deposit" : "",
+      bankName: employee?.bankName || "",
+      accountNumber: employee?.accountNumber || "",
     },
-    allowances: allowanceRows.map(([label, value], index) => ({
-      id: `allowance-${index}-${label}`,
-      label,
-      value: Number(value) || 0,
+    allowances: allowanceRows.map((row, index) => ({
+      id: `allowance-${index}-${row.label}`,
+      label: row.label,
+      value: Number(row.value) || 0,
     })),
-    deductions: deductionRows.map(([label, value], index) => ({
-      id: `deduction-${index}-${label}`,
-      label,
-      value: Number(value) || 0,
+    deductions: deductionRows.map((row, index) => ({
+      id: `deduction-${index}-${row.label}`,
+      label: row.label,
+      value: Number(row.value) || 0,
     })),
   };
 };
@@ -103,6 +149,7 @@ const EditableAmountRow = ({
   placeholder,
   onChange,
   onRemove,
+  amountReadOnly = false,
 }) => (
   <div className="grid grid-cols-1 gap-3 border-b border-borderGray py-3 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)_auto] md:items-center">
     <TextField
@@ -130,6 +177,7 @@ const EditableAmountRow = ({
       type="number"
       label="Amount"
       value={row.value}
+      disabled={amountReadOnly}
       onChange={(event) => onChange({ ...row, value: event.target.value })}
       InputProps={{ startAdornment: <span className="mr-2 text-gray-500">₹</span> }}
     />
@@ -275,6 +323,17 @@ const ViewPayroll = () => {
           error.response?.data?.message || "Failed to fetch employees"
         );
       }
+    },
+  });
+
+  const { data: employeeRecord = {}, isLoading: isEmployeeLoading } = useQuery({
+    queryKey: ["payrollEmployee", employeeId],
+    enabled: Boolean(employeeId),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/users/fetch-single-user/${employeeId}`
+      );
+      return response.data;
     },
   });
   //Attendance correction
@@ -493,19 +552,38 @@ const ViewPayroll = () => {
   const initialCompensationDetails = createInitialCompensationDetails(
     earningDetails,
     deductionDetails,
-    month
+    month,
+    employeeRecord
   );
 
+  const deductionOptions = ["Provident Fund", "ESI"];
+  const employeeHraType = String(employeeRecord?.hraType || "")
+    .trim()
+    .toLowerCase();
+  const canAddCalculatedHra =
+    Boolean(employeeHraType) && employeeHraType !== "custom";
+  const availableAllowanceOptions = canAddCalculatedHra
+    ? [...baseAllowanceOptions, "House Rent Allowance"]
+    : baseAllowanceOptions;
+
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading || isEmployeeLoading) return;
     const nextDetails = createInitialCompensationDetails(
       userPayrollData?.earnings,
       userPayrollData?.deductions,
-      month
+      month,
+      employeeRecord
     );
     setCompensationDetails(nextDetails);
     setCompensationDraft(nextDetails);
-  }, [isLoading, month, userPayrollData?.deductions, userPayrollData?.earnings]);
+  }, [
+    employeeRecord,
+    isEmployeeLoading,
+    isLoading,
+    month,
+    userPayrollData?.deductions,
+    userPayrollData?.earnings,
+  ]);
 
   const visibleCompensation =
     (isEditingCompensation ? compensationDraft : compensationDetails) ||
@@ -522,16 +600,20 @@ const ViewPayroll = () => {
     (total, [, value]) => total + (Number(value) || 0),
     0
   );
-  const netPay =
-    Number(earningDetails.netPay) ||
-    Math.max(
-      0,
-      Number(visibleCompensation.compensation.grossPay || 0) - deductionTotal
-    );
+  const netPay = Math.max(
+    0,
+    Number(visibleCompensation.compensation.grossPay || 0) - deductionTotal
+  );
 
   const cloneCompensation = (details) => JSON.parse(JSON.stringify(details));
   const handleEditCompensation = () => {
     setCompensationDraft(cloneCompensation(visibleCompensation));
+    setIsEditingCompensation(true);
+  };
+  const handleAddBankDetails = () => {
+    const nextDetails = cloneCompensation(visibleCompensation);
+    nextDetails.compensation.paymentMethod = "Bank Deposit";
+    setCompensationDraft(nextDetails);
     setIsEditingCompensation(true);
   };
   const handleCancelCompensation = () => {
@@ -552,10 +634,40 @@ const ViewPayroll = () => {
     toast.success("Compensation changes saved on this screen only");
   };
   const updateCompensationField = (field, value) => {
-    setCompensationDraft((current) => ({
-      ...current,
-      compensation: { ...current.compensation, [field]: value },
-    }));
+    setCompensationDraft((current) => {
+      const next = {
+        ...current,
+        compensation: { ...current.compensation, [field]: value },
+      };
+
+      if (field === "basicPay") {
+        next.allowances = current.allowances.map((row) =>
+          row.label === "House Rent Allowance"
+            ? { ...row, value: (Number(value) || 0) * 0.5 }
+            : row
+        );
+        next.deductions = current.deductions.map((row) =>
+          row.label === "Provident Fund"
+            ? { ...row, value: getEmployeePf(value) }
+            : row
+        );
+      }
+
+      if (field === "grossPay") {
+        next.deductions = next.deductions.map((row) =>
+          row.label === "ESI"
+            ? {
+                ...row,
+                value: isEsiApplicable(employeeRecord)
+                  ? getEmployeeEsi(value)
+                  : 0,
+              }
+            : row
+        );
+      }
+
+      return next;
+    });
   };
   const updateDynamicRow = (section, rowId, updatedRow) => {
     setCompensationDraft((current) => ({
@@ -743,25 +855,33 @@ const ViewPayroll = () => {
                       <MenuItem value="Cash Only">Cash Only</MenuItem>
                       <MenuItem value="Bank Deposit">Bank Deposit</MenuItem>
                     </TextField>
-                    <TextField
-                      size="small"
-                      label="Bank Name"
-                      value={visibleCompensation.compensation.bankName}
-                      onChange={(event) =>
-                        updateCompensationField("bankName", event.target.value)
-                      }
-                    />
-                    <TextField
-                      size="small"
-                      label="Account Number"
-                      value={visibleCompensation.compensation.accountNumber}
-                      onChange={(event) =>
-                        updateCompensationField(
-                          "accountNumber",
-                          event.target.value
-                        )
-                      }
-                    />
+                    {visibleCompensation.compensation.paymentMethod ===
+                      "Bank Deposit" && (
+                      <>
+                        <TextField
+                          size="small"
+                          label="Bank Name"
+                          value={visibleCompensation.compensation.bankName}
+                          onChange={(event) =>
+                            updateCompensationField(
+                              "bankName",
+                              event.target.value
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Account Number"
+                          value={visibleCompensation.compensation.accountNumber}
+                          onChange={(event) =>
+                            updateCompensationField(
+                              "accountNumber",
+                              event.target.value
+                            )
+                          }
+                        />
+                      </>
+                    )}
                   </div>
                 ) : (
                   <>
@@ -819,18 +939,46 @@ const ViewPayroll = () => {
                         visibleCompensation.compensation.paymentMethod || "N/A"
                       }
                     />
-                    <CompensationRow
-                      label="Bank Name"
-                      value={
-                        visibleCompensation.compensation.bankName || "N/A"
-                      }
-                    />
-                    <CompensationRow
-                      label="Account Number"
-                      value={
-                        visibleCompensation.compensation.accountNumber || "N/A"
-                      }
-                    />
+                    {visibleCompensation.compensation.paymentMethod ===
+                      "Bank Deposit" && (
+                      <>
+                        <CompensationRow
+                          label="Bank Name"
+                          value={
+                            visibleCompensation.compensation.bankName || "N/A"
+                          }
+                        />
+                        <CompensationRow
+                          label="Account Number"
+                          value={
+                            visibleCompensation.compensation.accountNumber ||
+                            "N/A"
+                          }
+                        />
+                        {!visibleCompensation.compensation.bankName &&
+                          !visibleCompensation.compensation.accountNumber && (
+                            <button
+                              type="button"
+                              onClick={handleAddBankDetails}
+                              className="mt-3 text-sm font-pmedium text-primary hover:underline"
+                            >
+                              + Add Bank Details
+                            </button>
+                          )}
+                      </>
+                    )}
+                    {visibleCompensation.compensation.paymentMethod !==
+                      "Bank Deposit" &&
+                      !visibleCompensation.compensation.bankName &&
+                      !visibleCompensation.compensation.accountNumber && (
+                        <button
+                          type="button"
+                          onClick={handleAddBankDetails}
+                          className="mt-3 text-sm font-pmedium text-primary hover:underline"
+                        >
+                          + Add Bank Details
+                        </button>
+                      )}
                   </>
                 )}
               </PayrollSection>
@@ -838,7 +986,8 @@ const ViewPayroll = () => {
               <PayrollSection title="Allowances" total={allowanceTotal}>
                 {isEditingCompensation ? (
                   <div className="flex flex-col gap-3">
-                    {visibleCompensation.allowances.map((row) => (
+                    {visibleCompensation.allowances.map((row) =>
+                      row.fixed ? (
                       <div
                         key={row.id}
                         className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)] md:items-center"
@@ -851,6 +1000,7 @@ const ViewPayroll = () => {
                           type="number"
                           label="Amount"
                           value={row.value}
+                          disabled={row.label === "House Rent Allowance"}
                           onChange={(event) =>
                             updateDynamicRow("allowances", row.id, {
                               ...row,
@@ -864,7 +1014,47 @@ const ViewPayroll = () => {
                           }}
                         />
                       </div>
-                    ))}
+                      ) : (
+                        <EditableAmountRow
+                          key={row.id}
+                          row={row}
+                          options={availableAllowanceOptions}
+                          placeholder="Select Allowance"
+                          usedLabels={visibleCompensation.allowances.map(
+                            (item) => item.label
+                          )}
+                          onChange={(updatedRow) =>
+                            updateDynamicRow("allowances", row.id, {
+                              ...updatedRow,
+                              value:
+                                updatedRow.label === "House Rent Allowance"
+                                  ? Number(
+                                      visibleCompensation.compensation.basicPay
+                                    ) * 0.5
+                                  : updatedRow.value,
+                            })
+                          }
+                          onRemove={() =>
+                            removeDynamicRow("allowances", row.id)
+                          }
+                          amountReadOnly={
+                            row.label === "House Rent Allowance"
+                          }
+                        />
+                      )
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        addDynamicRow(
+                          "allowances",
+                          availableAllowanceOptions
+                        )
+                      }
+                      className="mt-4 text-sm font-pmedium text-primary hover:underline"
+                    >
+                      + Add New
+                    </button>
                   </div>
                 ) : (
                   visibleCompensation.allowances.map((row) => (
@@ -890,11 +1080,24 @@ const ViewPayroll = () => {
                           (item) => item.label
                         )}
                         onChange={(updatedRow) =>
-                          updateDynamicRow("deductions", row.id, updatedRow)
+                          updateDynamicRow("deductions", row.id, {
+                            ...updatedRow,
+                            value:
+                              updatedRow.label === "Provident Fund"
+                                ? getEmployeePf(
+                                    visibleCompensation.compensation.basicPay
+                                  )
+                                : isEsiApplicable(employeeRecord)
+                                  ? getEmployeeEsi(
+                                      visibleCompensation.compensation.grossPay
+                                    )
+                                  : 0,
+                          })
                         }
                         onRemove={() =>
                           removeDynamicRow("deductions", row.id)
                         }
+                        amountReadOnly
                       />
                     ))}
                     <button
@@ -906,6 +1109,13 @@ const ViewPayroll = () => {
                     >
                       + Add New
                     </button>
+                    {!isEsiApplicable(employeeRecord) && (
+                      <p className="mt-3 text-xs text-gray-500">
+                        {Number(employeeRecord?.annualCtc) > 0
+                          ? "This employee is not eligible for ESI, so its amount is kept at ₹0."
+                          : "Employee CTC is unavailable, so the ESI amount is kept at ₹0."}
+                      </p>
+                    )}
                   </>
                 ) : visibleCompensation.deductions.length ? (
                   visibleCompensation.deductions.map((row) => (
