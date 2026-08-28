@@ -3692,6 +3692,20 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/investor-dashboard/income-expense",
   },
+   INVESTOR_UNIQUE_CLIENTS_GRAPH: {
+    value: "investor_unique_clients_graph",
+    title: "INVESTOR UNIQUE CLIENTS GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/unique-clients",
+  },
+  INVESTOR_INVENTORY_OVERVIEW: {
+    value: "investor_inventory_overview",
+    title: "INVESTOR INVENTORY OVERVIEW",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/inventory",
+  },
   INVESTOR_ANNUAL_AVERAGE_PROFIT_LOSS: {
     value: "investor_annual_average_profit_loss",
     title: "INVESTOR ANNUAL AVERAGE PROFIT LOSS",

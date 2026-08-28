@@ -676,6 +676,14 @@ export const routes = createBrowserRouter([
                     path: "investor-dashboard/income-expense",
                     element: <InvestorDashboard />,
                   },
+                   {
+                    path: "investor-dashboard/unique-clients",
+                    element: <InvestorDashboard />,
+                  },
+                  {
+                    path: "investor-dashboard/inventory",
+                    element: <InvestorDashboard />,
+                  },
                   {
                     path: "investor-dashboard/monthly-profit-loss",
                     element: (

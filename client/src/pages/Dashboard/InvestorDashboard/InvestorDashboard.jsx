@@ -12,6 +12,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import FinanceCard from "../../../components/FinanceCard";
+import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
+import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -25,6 +27,70 @@ const fiscalMonthIndex = (date) => {
 };
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
+const investorClientType = (collection, client) => {
+  if (collection === "coworkingClients") return "Coworking";
+  if (collection === "virtualOfficeClients") return "Virtualoffice";
+
+  if (collection === "meetingClients") {
+    const purpose = String(client?.purposeOfVisit || "").toLowerCase();
+    return purpose.includes("pass") ? "Open Desk" : "External Meetings";
+  }
+
+  return null;
+};
+
+const InvestorUniqueClientsGraph = () => {
+  const axios = useAxiosPrivate();
+  const { data: consolidatedClients = {} } = useQuery({
+    queryKey: ["investor-unique-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/consolidated-clients");
+      return response.data && typeof response.data === "object"
+        ? response.data
+        : {};
+    },
+  });
+
+  const clientsByMonth = useMemo(() => {
+    const groupedClients = new Map();
+
+    Object.entries(consolidatedClients).forEach(([collection, clients]) => {
+      asArray(clients).forEach((client) => {
+        const typeOfClient = investorClientType(collection, client);
+        if (!typeOfClient) return;
+
+        const rawDate =
+          client.startDate ||
+          client.termStartDate ||
+          client.rentDate ||
+          client.dateOfVisit ||
+          client.scheduledDate;
+        const date = dayjs(rawDate);
+        if (!date.isValid()) return;
+
+        const month = date.format("YYYY-MM");
+        const monthClients = groupedClients.get(month) || [];
+        monthClients.push({
+          client:
+            client.clientName ||
+            [client.firstName, client.lastName].filter(Boolean).join(" ") ||
+            "Unknown",
+          typeOfClient,
+          date: date.format("YYYY-MM-DD"),
+        });
+        groupedClients.set(month, monthClients);
+      });
+    });
+
+    return [...groupedClients.entries()].map(([month, clients]) => ({
+      month,
+      clients,
+    }));
+  }, [consolidatedClients]);
+
+  return <LeadsLayout data={clientsByMonth} hideAccordion />;
+};
+
 
 const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
   const axios = useAxiosPrivate();
@@ -255,6 +321,8 @@ const InvestorDashboard = () => {
   const { hasPermission } = useUserPermissions();
   const showDetails = location.pathname.endsWith("/historical-P&L");
  const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
+  const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
+  const showInventoryPage = location.pathname.endsWith("/inventory");
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
   const canViewHistoricalPnlGraph = hasPermission(
     PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
@@ -264,6 +332,12 @@ const InvestorDashboard = () => {
   );
    const canViewFinanceSummaryCards = hasPermission(
     PERMISSIONS.INVESTOR_FINANCE_SUMMARY_CARDS.value,
+  );
+ const canViewUniqueClientsGraph = hasPermission(
+    PERMISSIONS.INVESTOR_UNIQUE_CLIENTS_GRAPH.value,
+  );
+  const canViewInventoryOverview = hasPermission(
+    PERMISSIONS.INVESTOR_INVENTORY_OVERVIEW.value,
   );
 
   const { data: revenueExpenseData = [], isLoading } = useQuery({
@@ -468,6 +542,12 @@ const InvestorDashboard = () => {
             showSummaryCards={canViewFinanceSummaryCards}
           />
         </WidgetSection>
+      )}
+         {(showDashboardHome || showUniqueClientsPage) &&
+        canViewUniqueClientsGraph && <InvestorUniqueClientsGraph />}
+
+      {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
+        <CheckAvailability cardsFirst />
       )}
 
       {showDetails && (

@@ -9,7 +9,7 @@ import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import FinanceCard from "../../../../components/FinanceCard";
 
-const CheckAvailability = () => {
+const CheckAvailability = ({ cardsFirst = false }) => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
@@ -503,53 +503,109 @@ const CheckAvailability = () => {
     ],
   };
 
+  // return (
+  //   <div className="flex flex-col gap-4 p-4">
+  //     <WidgetSection
+  //       layout={1}
+  //       border
+  //       normalCase={true} 
+  //       title={"TOTAL v/s OCCUPIED"}
+  //       //titleLabel={`Total Inventory : ${totalInventoryCount}`}
+  //        TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+  //     >
+  //       {chartData.length > 0 ? (
+  //         <NormalBarGraph
+  //           data={barGraphSeries}
+  //           options={barGraphOptions}
+  //           height={400}
+  //         />
+  //       ) : (
+  //         <div className="text-center text-gray-500 text-sm py-10">
+  //           No data available to display chart.
+  //         </div>
+  //       )}
+  //     </WidgetSection>
+  //     <WidgetSection layout={3} padding>
+  //       <FinanceCard
+  //         cardTitle="Inventory"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.inventory}
+  //       />
+
+  //       <FinanceCard
+  //         cardTitle="Occupancy"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.occupancy}
+  //       />
+
+  //       <FinanceCard
+  //         cardTitle="Free Inventory"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.freeInventory}
+  //       />
+  //     </WidgetSection>
+
+  const inventoryGraph = (
+    <WidgetSection
+      layout={1}
+      border
+      normalCase
+      title="TOTAL v/s OCCUPIED"
+      TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+    >
+      {chartData.length > 0 ? (
+        <NormalBarGraph
+          data={barGraphSeries}
+          options={barGraphOptions}
+          height={400}
+        />
+      ) : (
+        <div className="text-center text-gray-500 text-sm py-10">
+          No data available to display chart.
+        </div>
+      )}
+    </WidgetSection>
+  );
+
+  const inventorySummaryCards = (
+    <WidgetSection layout={3} padding>
+      <FinanceCard
+        cardTitle="Inventory"
+        titleCenter
+        highlightNegativePositive
+        disableColorChange
+        descriptionData={inventoryCards.inventory}
+      />
+
+      <FinanceCard
+        cardTitle="Occupancy"
+        titleCenter
+        highlightNegativePositive
+        disableColorChange
+        descriptionData={inventoryCards.occupancy}
+      />
+
+      <FinanceCard
+        cardTitle="Free Inventory"
+        titleCenter
+        highlightNegativePositive
+        disableColorChange
+        descriptionData={inventoryCards.freeInventory}
+      />
+    </WidgetSection>
+  );
+
   return (
     <div className="flex flex-col gap-4 p-4">
-      <WidgetSection
-        layout={1}
-        border
-        normalCase={true} 
-        title={"TOTAL v/s OCCUPIED"}
-        //titleLabel={`Total Inventory : ${totalInventoryCount}`}
-         TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
-      >
-        {chartData.length > 0 ? (
-          <NormalBarGraph
-            data={barGraphSeries}
-            options={barGraphOptions}
-            height={400}
-          />
-        ) : (
-          <div className="text-center text-gray-500 text-sm py-10">
-            No data available to display chart.
-          </div>
-        )}
-      </WidgetSection>
-      <WidgetSection layout={3} padding>
-        <FinanceCard
-          cardTitle="Inventory"
-          titleCenter
-          highlightNegativePositive
-          disableColorChange
-          descriptionData={inventoryCards.inventory}
-        />
+      {cardsFirst ? inventorySummaryCards : inventoryGraph}
+      {cardsFirst ? inventoryGraph : inventorySummaryCards}
 
-        <FinanceCard
-          cardTitle="Occupancy"
-          titleCenter
-          highlightNegativePositive
-          disableColorChange
-          descriptionData={inventoryCards.occupancy}
-        />
-
-        <FinanceCard
-          cardTitle="Free Inventory"
-          titleCenter
-          highlightNegativePositive
-          disableColorChange
-          descriptionData={inventoryCards.freeInventory}
-        />
-      </WidgetSection>
 
       <div className="border-default border-borderGray p-4 rounded-md text-center">
         <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
