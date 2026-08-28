@@ -689,6 +689,18 @@ export const routes = createBrowserRouter([
                     path: "investor-dashboard/monthly-profit-loss/income-details",
                     element: <IncomeDetails />,
                   },
+                    {
+                    path: "investor-dashboard/annual-average-profit-loss",
+                    element: <AverageProfitLoss />,
+                  },
+                  {
+                    path: "investor-dashboard/overall-profit-loss",
+                    element: <OverallProfitLoss />,
+                  },
+                  {
+                    path: "investor-dashboard/sqft-wise-data",
+                    element: <SqWiseData />,
+                  },
                   {
                     path: "investor-dashboard/department-wise-budget",
                     element: <DeptWiseBudget />,  

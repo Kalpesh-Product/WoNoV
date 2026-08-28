@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
+import FinanceCard from "../../../components/FinanceCard";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -25,7 +26,7 @@ const fiscalMonthIndex = (date) => {
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
 
-const InvestorIncomeExpenseGraph = () => {
+const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const currentFiscalYear = fiscalYearLabel(dayjs());
@@ -49,7 +50,7 @@ const InvestorIncomeExpenseGraph = () => {
     },
   });
 
-  const { series, totals } = useMemo(() => {
+ const { series, totals, selectedIncome, selectedExpense } = useMemo(() => {
     const incomeByYear = new Map();
     const expenseByYear = new Map();
     const addAmount = (map, date, amount) => {
@@ -99,8 +100,56 @@ const InvestorIncomeExpenseGraph = () => {
         income: income.reduce((sum, value) => sum + value, 0),
         expense: expense.reduce((sum, value) => sum + value, 0),
       },
+    selectedIncome: income,
+      selectedExpense: expense,
     };
   }, [budgetData, currentFiscalYear, revenueExpenseData, selectedFiscalYear]);
+   const totalSqft = useMemo(
+    () =>
+      revenueExpenseData
+        .filter((item) => item?.units)
+        .flatMap((item) => asArray(item.units))
+        .reduce((sum, item) => sum + (Number(item?.sqft) || 0), 0),
+    [revenueExpenseData],
+  );
+
+  const previousMonthIndex = fiscalMonthIndex(dayjs().subtract(1, "month"));
+  const selectedYearStart = Number(selectedFiscalYear.match(/\d{4}/)?.[0]);
+  const selectedMonthDate = Number.isFinite(selectedYearStart)
+    ? dayjs(`${selectedYearStart}-04-01`).add(previousMonthIndex, "month")
+    : null;
+  const summaryMonthLabel = selectedMonthDate?.format("MMM-YY") || "-";
+  const summaryMonthIncome = selectedIncome[previousMonthIndex] || 0;
+  const summaryMonthExpense = selectedExpense[previousMonthIndex] || 0;
+  const perSqft = (value) => (totalSqft ? value / totalSqft : 0);
+
+  const buildCardData = (cardTitle, values, highlightNegativePositive = false) => ({
+    cardTitle,
+    timePeriod: selectedFiscalYear,
+    highlightNegativePositive,
+    descriptionData: [
+      {
+        title: summaryMonthLabel,
+        value: `INR ${inrFormat(values.month)}`,
+        route: "/app/dashboard/investor-dashboard/monthly-profit-loss",
+      },
+      {
+        title: "Annual Average",
+        value: `INR ${inrFormat(values.total / 12)}`,
+        route: "/app/dashboard/investor-dashboard/annual-average-profit-loss",
+      },
+      {
+        title: "Overall",
+        value: `INR ${inrFormat(values.total)}`,
+        route: "/app/dashboard/investor-dashboard/overall-profit-loss",
+      },
+      {
+        title: "Per Sq. Ft.",
+        value: `INR ${inrFormat(perSqft(values.total))}`,
+        route: "/app/dashboard/investor-dashboard/sqft-wise-data",
+      },
+    ],
+  });
 
   const options = {
     chart: {
@@ -126,17 +175,45 @@ const InvestorIncomeExpenseGraph = () => {
   };
 
   return (
-    <YearlyGraph
-      data={series}
-      options={options}
-      chartId="bargraph-investor-income-expense"
-      title="BIZNest FINANCE INCOME V/S EXPENSE"
-      TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
-      TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
-      currentYear={selectedFiscalYear}
-      onYearChange={setSelectedFiscalYear}
-      refreshOnDataChange
-    />
+   <div className="flex flex-col gap-8">
+      <YearlyGraph
+        data={series}
+        options={options}
+        chartId="bargraph-investor-income-expense"
+        title="BIZNest FINANCE INCOME V/S EXPENSE"
+        TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
+        TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
+        currentYear={selectedFiscalYear}
+        onYearChange={setSelectedFiscalYear}
+        refreshOnDataChange
+      />
+      {showSummaryCards && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <FinanceCard
+            {...buildCardData("Income", {
+              month: summaryMonthIncome,
+              total: totals.income,
+            })}
+          />
+          <FinanceCard
+            {...buildCardData("Expense", {
+              month: summaryMonthExpense,
+              total: totals.expense,
+            })}
+          />
+          <FinanceCard
+            {...buildCardData(
+              "Profit & Loss",
+              {
+                month: summaryMonthIncome - summaryMonthExpense,
+                total: totals.income - totals.expense,
+              },
+              true,
+            )}
+          />
+        </div>
+      )}
+    </div>      
   );
 };
 
@@ -184,6 +261,9 @@ const InvestorDashboard = () => {
   );
   const canViewIncomeExpenseGraph = hasPermission(
     PERMISSIONS.INVESTOR_INCOME_EXPENSE_GRAPH.value,
+  );
+   const canViewFinanceSummaryCards = hasPermission(
+    PERMISSIONS.INVESTOR_FINANCE_SUMMARY_CARDS.value,
   );
 
   const { data: revenueExpenseData = [], isLoading } = useQuery({
@@ -384,7 +464,9 @@ const InvestorDashboard = () => {
 
       {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
         <WidgetSection layout={1}>
-          <InvestorIncomeExpenseGraph />
+          <InvestorIncomeExpenseGraph
+            showSummaryCards={canViewFinanceSummaryCards}
+          />
         </WidgetSection>
       )}
 
