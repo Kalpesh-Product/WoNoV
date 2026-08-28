@@ -345,11 +345,6 @@ const InvestorDashboard = () => {
 
   return (
     <div className="flex flex-col gap-8">
-        {/* {!showDetails && canViewHistoricalPnlGraph && ( */}
-         {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
-        <InvestorIncomeExpenseGraph />
-      )}
-
       {showDashboardHome && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1}>
           <WidgetSection border title={"Historical P&L"}>
@@ -385,6 +380,10 @@ const InvestorDashboard = () => {
             )}
           </WidgetSection>
         </WidgetSection>
+      )}
+
+      {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
+        <InvestorIncomeExpenseGraph />
       )}
 
       {showDetails && (
