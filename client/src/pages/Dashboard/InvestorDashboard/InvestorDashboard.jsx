@@ -8,6 +8,8 @@ import dayjs from "dayjs";
 import { CircularProgress } from "@mui/material";
 import { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { PERMISSIONS } from "../../../constants/permissions";
+import useUserPermissions from "../../../hooks/useUserPermissions";
 
 const yearCategories = {
   "FY 2024-2025": [
@@ -44,7 +46,11 @@ const InvestorDashboard = () => {
   const axios = useAxiosPrivate();
   const location = useLocation();
   const navigate = useNavigate();
+  const { hasPermission } = useUserPermissions();
   const showDetails = location.pathname.endsWith("/historical-P&L");
+  const canViewHistoricalPnlGraph = hasPermission(
+    PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
+  );
 
   const { data: revenueExpenseData = [], isLoading } = useQuery({
     queryKey: ["historicalIncomeExpense"],
@@ -52,6 +58,7 @@ const InvestorDashboard = () => {
       const response = await axios.get("/api/finance/income-expense");
       return Array.isArray(response.data?.response) ? response.data.response : [];
     },
+     enabled: showDetails || canViewHistoricalPnlGraph,
   });
 
   //-----------------------------------------------------Graph------------------------------------------------------//
@@ -204,7 +211,7 @@ const InvestorDashboard = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      {!showDetails && (
+        {!showDetails && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1} padding>
           <WidgetSection border title={"Historical P&L"}>
             {isLoading ? (
