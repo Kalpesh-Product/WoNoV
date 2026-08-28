@@ -383,7 +383,9 @@ const InvestorDashboard = () => {
       )}
 
       {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
-        <InvestorIncomeExpenseGraph />
+        <WidgetSection layout={1}>
+          <InvestorIncomeExpenseGraph />
+        </WidgetSection>
       )}
 
       {showDetails && (
