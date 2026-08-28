@@ -103,7 +103,7 @@ const Shifts = () => {
     mutationFn: async (payload) => {
       const response = await axios.patch(
         "/api/company/update-company-data",
-        payload
+        payload,
       );
       return response.data;
     },
@@ -126,7 +126,7 @@ const Shifts = () => {
   const fetchShifts = async () => {
     try {
       const response = await axios.get(
-        "/api/company/get-company-data/?field=shifts"
+        "/api/company/get-company-data/?field=shifts",
       );
       return response.data.shifts;
     } catch (error) {
@@ -156,7 +156,7 @@ const Shifts = () => {
   };
 
   const departmentsColumn = [
-    { field: "id", headerName: "Sr No" ,width: 300},
+    { field: "id", headerName: "Sr No", width: 300 },
     {
       field: "shift",
       headerName: "Shift List",
@@ -197,8 +197,20 @@ const Shifts = () => {
         );
       },
     },
-    {field: "startTime", headerName: "Start Time", flex: 1,hide: true, valueGetter: (params) => humanTime(params?.data?.startTime) || "N/A"},
-    {field: "endTime", headerName: "End Time", flex: 1, hide: true, valueGetter: (params) => humanTime(params?.data?.endTime) || "N/A"},
+    {
+      field: "startTime",
+      headerName: "Start Time",
+      flex: 1,
+      hide: true,
+      valueGetter: (params) => humanTime(params?.data?.startTime) || "N/A",
+    },
+    {
+      field: "endTime",
+      headerName: "End Time",
+      flex: 1,
+      hide: true,
+      valueGetter: (params) => humanTime(params?.data?.endTime) || "N/A",
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -440,7 +452,13 @@ const Shifts = () => {
                   name="isActive"
                   control={editControl}
                   render={({ field }) => (
-                    <TextField {...field} size="small" select fullWidth>
+                    <TextField
+                      {...field}
+                      size="small"
+                      label="Active Status"
+                      select
+                      fullWidth
+                    >
                       <MenuItem value="" disabled>
                         Select Active Status
                       </MenuItem>
