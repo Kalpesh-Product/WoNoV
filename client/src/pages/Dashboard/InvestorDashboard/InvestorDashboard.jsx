@@ -212,7 +212,7 @@ const InvestorDashboard = () => {
   return (
     <div className="flex flex-col gap-8">
         {!showDetails && canViewHistoricalPnlGraph && (
-        <WidgetSection layout={1} padding>
+        <WidgetSection layout={1}>
           <WidgetSection border title={"Historical P&L"}>
             {isLoading ? (
               <div className="h-72 flex items-center justify-center">
@@ -249,22 +249,24 @@ const InvestorDashboard = () => {
       )}
 
       {showDetails && (
-        <WidgetSection title={"Historical P&L Details"} border>
-          <AgTable
-            columns={[
-              { field: "srNo", headerName: "Sr No", sort: "desc" },
-              { field: "name", headerName: "Financial Year", flex: 1 },
-              { field: "totalIncome", headerName: "Total Income (INR)" },
-              { field: "totalExpense", headerName: "Total Expense (INR)" },
-              {
-                field: "totalProfitLoss",
-                headerName: "Total Profit / Loss (INR)",
-              },
-            ]}
-            hideFilter
-            data={historicalTableData}
-            exportData
-          />
+        <WidgetSection layout={1}>
+          <WidgetSection title={"Historical P&L Details"} border>
+            <AgTable
+              columns={[
+                { field: "srNo", headerName: "Sr No", sort: "desc" },
+                { field: "name", headerName: "Financial Year", flex: 1 },
+                { field: "totalIncome", headerName: "Total Income (INR)" },
+                { field: "totalExpense", headerName: "Total Expense (INR)" },
+                {
+                  field: "totalProfitLoss",
+                  headerName: "Total Profit / Loss (INR)",
+                },
+              ]}
+              hideFilter
+              data={historicalTableData}
+              exportData
+            />
+          </WidgetSection>
         </WidgetSection>
       )}
     </div>
