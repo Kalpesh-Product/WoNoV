@@ -1121,21 +1121,31 @@ const ClientDetails = () => {
 
                   {/* Agreement Expiry */}
                   <div>
-                    <div className="py-2 flex justify-between items-start gap-2">
-                      <div className="w-[100%] justify-start flex">
-                        <span className="font-pmedium text-gray-600 text-content">
-                          Agreement Expiry
-                        </span>{" "}
+                    {isEditing ? (
+                      <TextField
+                        value={computedAgreementExpiry}
+                        size="small"
+                        label="Agreement Expiry"
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Agreement Expiry
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {computedAgreementExpiry}
+                          </span>
+                        </div>
                       </div>
-                      <div className="">
-                        <span>:</span>
-                      </div>
-                      <div className="w-full">
-                        <span className="text-gray-500">
-                          {computedAgreementExpiry}
-                        </span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
