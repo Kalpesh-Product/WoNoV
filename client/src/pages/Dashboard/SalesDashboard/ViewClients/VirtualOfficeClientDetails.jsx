@@ -133,9 +133,12 @@ const getCalendarDateInUtc = (value) => {
   return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
 };
 
-const calculateAgreementExpiry = (startDate, endDate) => {
+const calculateAgreementExpiry = (startDate, endDate, referenceStartDate) => {
   const startDay = getCalendarDateInUtc(startDate);
   const endDay = getCalendarDateInUtc(endDate);
+  const referenceStartDay = referenceStartDate
+    ? getCalendarDateInUtc(referenceStartDate)
+    : startDay;
 
   if (
     !startDate ||
@@ -149,9 +152,16 @@ const calculateAgreementExpiry = (startDate, endDate) => {
 
   const today = getCalendarDateInUtc(new Date());
   const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const baselineRemainingDays = Math.max(
+    0,
+    Math.round((endDay - today) / MILLISECONDS_PER_DAY),
+  );
+  const startShiftDays = Math.round(
+    (startDay - referenceStartDay) / MILLISECONDS_PER_DAY,
+  );
   const remainingDays = Math.min(
     totalDays,
-    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+    Math.max(0, baselineRemainingDays - startShiftDays),
   );
 
   return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
@@ -342,6 +352,7 @@ const VirtualOfficeClientDetails = () => {
       calculateAgreementExpiry(
         termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate,
         termEndValue || selectedClient?.termEnd || selectedClient?.endDate,
+        selectedClient?.termStartDate || selectedClient?.startDate,
       ),
     [
       selectedClient?.endDate,
