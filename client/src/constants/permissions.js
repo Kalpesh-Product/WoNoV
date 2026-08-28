@@ -3657,13 +3657,13 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     type: "read",
     access: "page",
   },
-INVESTOR_HISTORICAL_PNL: {
-    value: "investor_historical_pnl_tab",
-    title: "INVESTOR HISTORICAL P&L",
-    type: "read",
-    access: "page",
-    route: "/app/dashboard/investor-dashboard/historical-P&L",
-  },
+// INVESTOR_HISTORICAL_PNL: {
+//     value: "investor_historical_pnl_tab",
+//     title: "INVESTOR HISTORICAL P&L",
+//     type: "read",
+//     access: "page",
+//     route: "/app/dashboard/investor-dashboard/historical-P&L",
+//   },
    INVESTOR_HISTORICAL_PNL_GRAPH: {
     value: "investor_historical_pnl_graph",
     title: "INVESTOR HISTORICAL P&L GRAPH",
