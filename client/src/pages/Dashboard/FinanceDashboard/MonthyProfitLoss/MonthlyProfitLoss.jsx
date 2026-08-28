@@ -13,7 +13,10 @@ import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const MonthlyProfitLoss = () => {
+const MonthlyProfitLoss = ({
+  routeBase = "/app/dashboard/finance-dashboard",
+  departmentBudgetRoute = "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
@@ -358,7 +361,8 @@ const MonthlyProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/monthly-profit-loss/income-details"
+                `${routeBase}/monthly-profit-loss/income-details`
+              //"/app/dashboard/finance-dashboard/monthly-profit-loss/income-details"
             )
           }
           className="text-primary underline cursor-pointer"
@@ -377,7 +381,8 @@ const MonthlyProfitLoss = () => {
           onClick={() =>
             navigate(
              // "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
-              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+             // "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+              departmentBudgetRoute
             )
           }
           className="text-primary underline cursor-pointer"

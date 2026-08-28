@@ -3,6 +3,11 @@ const AlternateRevenues = require("../../models/sales/AlternateRevenue");
 const VirtualOfficeRevenues = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenues = require("../../models/sales/WorkationRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const {
+  fetchCoworkingRevenueService,
+  fetchMeetingRevenueReportService,
+  fetchVirtualOfficeRevenueReportService,
+} = require("../../services/reports/revenue");
 
 const getConsolidatedRevenue = async (req, res, next) => {
   try {
@@ -132,27 +137,56 @@ const getSimpleConsolidatedRevenue = async (req, res, next) => {
       virtualOfficeRevenues,
       workationRevenues,
       coworkingRevenues,
-    ] = await Promise.all([
-     // MeetingRevenue.find({ company }).lean().exec(),
-      MeetingRevenue.find({ company, invoiceUploadedAt: { $ne: null } })
-        .lean()
-        .exec(),
+      ] = await Promise.all([
+      fetchMeetingRevenueReportService({ company }),
       AlternateRevenues.find({ company }).lean().exec(),
-      VirtualOfficeRevenues.find({ company }).lean().exec(),
+      fetchVirtualOfficeRevenueReportService({
+        company,
+        query: { useClientDetails: true },
+      }),
       WorkationRevenues.find({ company }).lean().exec(),
-      CoworkingRevenue.find({ company }).lean().exec(),
+      fetchCoworkingRevenueService({
+        company,
+        query: { useClientDetails: true },
+      }),
     ]);
 
     return res.status(200).json({
-      meetingRevenue,
+      meetingRevenue: meetingRevenue.flatMap(
+        (month) => month.revenue || [],
+      ),
       alternateRevenues,
       virtualOfficeRevenues,
       workationRevenues,
-      coworkingRevenues,
+      coworkingRevenues: coworkingRevenues.flatMap(
+        (month) => month.clients || [],
+      ),
     });
   } catch (error) {
     next(error);
   }
 };
+//     ] = await Promise.all([
+//      // MeetingRevenue.find({ company }).lean().exec(),
+//       MeetingRevenue.find({ company, invoiceUploadedAt: { $ne: null } })
+//         .lean()
+//         .exec(),
+//       AlternateRevenues.find({ company }).lean().exec(),
+//       VirtualOfficeRevenues.find({ company }).lean().exec(),
+//       WorkationRevenues.find({ company }).lean().exec(),
+//       CoworkingRevenue.find({ company }).lean().exec(),
+//     ]);
+
+//     return res.status(200).json({
+//       meetingRevenue,
+//       alternateRevenues,
+//       virtualOfficeRevenues,
+//       workationRevenues,
+//       coworkingRevenues,
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// };
 
 module.exports = { getConsolidatedRevenue, getSimpleConsolidatedRevenue };

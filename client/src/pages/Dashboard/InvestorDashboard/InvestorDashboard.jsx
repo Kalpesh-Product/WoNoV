@@ -4,12 +4,141 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../utils/currencyFormat";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
+import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import dayjs from "dayjs";
 import { CircularProgress } from "@mui/material";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
+
+const fiscalYearLabel = (date) => {
+  const value = dayjs(date);
+  const startYear = value.month() >= 3 ? value.year() : value.year() - 1;
+  return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+};
+
+const fiscalMonthIndex = (date) => {
+  const month = dayjs(date).month();
+  return month >= 3 ? month - 3 : month + 9;
+};
+
+const asArray = (value) => (Array.isArray(value) ? value : []);
+
+const InvestorIncomeExpenseGraph = () => {
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const currentFiscalYear = fiscalYearLabel(dayjs());
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(currentFiscalYear);
+
+  const { data: revenueExpenseData = [] } = useQuery({
+    queryKey: ["revenueExpenseData"],
+    queryFn: async () => {
+      const response = await axios.get("/api/finance/income-expense");
+      return Array.isArray(response.data?.response) ? response.data.response : [];
+    },
+  });
+
+  const { data: budgetData = [] } = useQuery({
+    queryKey: ["budgetData", "investor-income-expense"],
+    queryFn: async () => {
+      const response = await axios.get("/api/budget/company-budget", {
+        params: { view: "dashboard" },
+      });
+      return Array.isArray(response.data?.allBudgets) ? response.data.allBudgets : [];
+    },
+  });
+
+  const { series, totals } = useMemo(() => {
+    const incomeByYear = new Map();
+    const expenseByYear = new Map();
+    const addAmount = (map, date, amount) => {
+      if (!date || !dayjs(date).isValid()) return;
+      const year = fiscalYearLabel(date);
+      const values = map.get(year) || Array(12).fill(0);
+      values[fiscalMonthIndex(date)] += Number(amount) || 0;
+      map.set(year, values);
+    };
+
+    revenueExpenseData.forEach((entry) => {
+      const income = entry?.income || {};
+      [
+        ...asArray(income.meetingRevenue),
+        ...asArray(income.alternateRevenues),
+        ...asArray(income.virtualOfficeRevenues),
+        ...asArray(income.workationRevenues),
+        ...asArray(income.coworkingRevenues),
+      ].forEach((item) =>
+        addAmount(
+          incomeByYear,
+          item.date || item.rentDate || item.invoiceCreationDate,
+          item.taxableAmount || item.revenue || item.taxable,
+        ),
+      );
+    });
+
+    budgetData.forEach((item) =>
+      addAmount(expenseByYear, item?.dueDate, item?.actualAmount),
+    );
+
+    const years = new Set([
+      ...incomeByYear.keys(),
+      ...expenseByYear.keys(),
+      currentFiscalYear,
+    ]);
+    const graphSeries = [...years].flatMap((group) => [
+      { name: "Income", group, data: incomeByYear.get(group) || Array(12).fill(0) },
+      { name: "Expense", group, data: expenseByYear.get(group) || Array(12).fill(0) },
+    ]);
+    const income = incomeByYear.get(selectedFiscalYear) || [];
+    const expense = expenseByYear.get(selectedFiscalYear) || [];
+
+    return {
+      series: graphSeries,
+      totals: {
+        income: income.reduce((sum, value) => sum + value, 0),
+        expense: expense.reduce((sum, value) => sum + value, 0),
+      },
+    };
+  }, [budgetData, currentFiscalYear, revenueExpenseData, selectedFiscalYear]);
+
+  const options = {
+    chart: {
+      id: "investor-income-vs-expense",
+      animations: { enabled: false },
+      events: {
+        dataPointSelection: () =>
+          navigate("/app/dashboard/investor-dashboard/monthly-profit-loss"),
+      },
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    colors: ["#54C4A7", "#EB5C45"],
+    plotOptions: { bar: { horizontal: false, columnWidth: "70%", borderRadius: 6 } },
+    dataLabels: { enabled: false },
+    legend: { show: true, position: "top" },
+    yaxis: {
+      min: 0,
+      title: { text: "Amount In Lakhs (INR)" },
+      labels: { formatter: (value) => `${Math.round(value / 100000)}` },
+    },
+    tooltip: { y: { formatter: (value) => `INR ${inrFormat(value)}` } },
+  };
+
+  return (
+    <YearlyGraph
+      data={series}
+      options={options}
+      chartId="bargraph-investor-income-expense"
+      title="BIZNest FINANCE INCOME V/S EXPENSE"
+      TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
+      TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
+      currentYear={selectedFiscalYear}
+      onYearChange={setSelectedFiscalYear}
+      refreshOnDataChange
+    />
+  );
+};
 
 const yearCategories = {
   "FY 2024-2025": [
@@ -48,8 +177,13 @@ const InvestorDashboard = () => {
   const navigate = useNavigate();
   const { hasPermission } = useUserPermissions();
   const showDetails = location.pathname.endsWith("/historical-P&L");
+ const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
+  const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
   const canViewHistoricalPnlGraph = hasPermission(
     PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
+  );
+  const canViewIncomeExpenseGraph = hasPermission(
+    PERMISSIONS.INVESTOR_INCOME_EXPENSE_GRAPH.value,
   );
 
   const { data: revenueExpenseData = [], isLoading } = useQuery({
@@ -211,7 +345,12 @@ const InvestorDashboard = () => {
 
   return (
     <div className="flex flex-col gap-8">
-        {!showDetails && canViewHistoricalPnlGraph && (
+        {/* {!showDetails && canViewHistoricalPnlGraph && ( */}
+         {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
+        <InvestorIncomeExpenseGraph />
+      )}
+
+      {showDashboardHome && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1}>
           <WidgetSection border title={"Historical P&L"}>
             {isLoading ? (

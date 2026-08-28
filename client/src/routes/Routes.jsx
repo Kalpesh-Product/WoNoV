@@ -671,6 +671,27 @@ export const routes = createBrowserRouter([
                   {
                     path: "investor-dashboard/historical-P&L",
                     element: <InvestorDashboard />,
+                   },
+                  {
+                    path: "investor-dashboard/income-expense",
+                    element: <InvestorDashboard />,
+                  },
+                  {
+                    path: "investor-dashboard/monthly-profit-loss",
+                    element: (
+                      <MonthlyProfitLoss
+                        routeBase="/app/dashboard/investor-dashboard"
+                        departmentBudgetRoute="/app/dashboard/investor-dashboard/department-wise-budget"
+                      />
+                    ),
+                  },
+                  {
+                    path: "investor-dashboard/monthly-profit-loss/income-details",
+                    element: <IncomeDetails />,
+                  },
+                  {
+                    path: "investor-dashboard/department-wise-budget",
+                    element: <DeptWiseBudget />,  
                   },
                    {
                     path: "investor-dashboard/historical-P&L/details",

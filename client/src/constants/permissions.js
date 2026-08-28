@@ -3671,6 +3671,34 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/investor-dashboard/historical-P&L",
   },
+   INVESTOR_INCOME_EXPENSE_GRAPH: {
+    value: "investor_income_expense_graph",
+    title: "INVESTOR INCOME V/S EXPENSE GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/income-expense",
+  },
+  INVESTOR_MONTHLY_PROFIT_LOSS: {
+    value: "investor_monthly_profit_loss",
+    title: "INVESTOR MONTHLY PROFIT LOSS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-profit-loss",
+  },
+  INVESTOR_PROFIT_LOSS_INCOME_DETAILS: {
+    value: "investor_profit_loss_income_details",
+    title: "INVESTOR PROFIT LOSS INCOME DETAILS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-profit-loss/income-details",
+  },
+  INVESTOR_DEPARTMENT_WISE_BUDGET: {
+    value: "investor_department_wise_budget",
+    title: "INVESTOR DEPARTMENT WISE BUDGET",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/department-wise-budget",
+  },
   // Cafe Finance
   SIDEBAR_CAFE_DASHBOARD: {
     value: "sidebar_cafe_dashboard",
