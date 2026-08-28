@@ -1001,9 +1001,11 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={`${computedLockinPeriod} months`}
                             size="small"
                             label="Lock-in Period (Months)"
                             fullWidth
+                            disabled
                           />
                         )}
                       />
