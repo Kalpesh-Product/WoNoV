@@ -3602,7 +3602,6 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
   },
 
   // Sidebar
-  // Sidebar
   SIDEBAR_DASHBOARD: {
     value: "sidebar_dashboard",
     title: "DASHBOARD",
@@ -3650,6 +3649,27 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     title: "IT DASHBOARD",
     type: "read",
     access: "page",
+  },
+  //Invenstor
+ SIDEBAR_INVESTOR_DASHBOARD: {
+    value: "sidebar_investor_dashboard",
+    title: "INVESTOR DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+INVESTOR_HISTORICAL_PNL: {
+    value: "investor_historical_pnl_tab",
+    title: "INVESTOR HISTORICAL P&L",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/historical-P&L",
+  },
+   INVESTOR_HISTORICAL_PNL_GRAPH: {
+    value: "investor_historical_pnl_graph",
+    title: "INVESTOR HISTORICAL P&L GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/historical-P&L",
   },
   // Cafe Finance
   SIDEBAR_CAFE_DASHBOARD: {

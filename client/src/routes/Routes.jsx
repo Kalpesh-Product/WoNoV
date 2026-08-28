@@ -164,6 +164,7 @@ import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClie
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
+import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard/AdminDashboard";
 import MaintainanceLayout from "../pages/Dashboard/MaintainanceDashboard/MaintainanceLayout";
@@ -662,6 +663,18 @@ export const routes = createBrowserRouter([
                         ],
                       },
                     ],
+                  },
+                  {
+                    path: "investor-dashboard",
+                    element: <InvestorDashboard />,
+                  },
+                  {
+                    path: "investor-dashboard/historical-P&L",
+                    element: <InvestorDashboard />,
+                  },
+                   {
+                    path: "investor-dashboard/historical-P&L/details",
+                    element: <InvestorDashboard />,
                   },
                   {
                     path: "finance-dashboard",

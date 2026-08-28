@@ -32,6 +32,7 @@ import { VscPersonAdd } from "react-icons/vsc";
 import { GrDocumentPerformance } from "react-icons/gr";
 import { FaClipboardUser } from "react-icons/fa6";
 import { IoPrintOutline } from "react-icons/io5";
+import { RiStockLine } from "react-icons/ri";
 import useAuth from "../hooks/useAuth";
 import { PERMISSIONS } from "../constants/permissions";
 
@@ -174,6 +175,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "/app/dashboard",
       permission: PERMISSIONS.SIDEBAR_DASHBOARD.value,
       submenus: [
+         {
+          id: 11,
+          title: "Investor Dashboard",
+          codeName: "Investor",
+          route: "/app/dashboard/investor-dashboard",
+          icon: <RiStockLine />,
+          permission: PERMISSIONS.SIDEBAR_INVESTOR_DASHBOARD.value,
+        },
         {
           id: 4,
           title: "Finance Dashboard",
