@@ -28,25 +28,31 @@ const getSnapshotShiftWindow = (shiftSnapshot, referenceTime) => {
   }
 
   const startMinuteOfDay =
-    snapshotStart.getHours() * 60 + snapshotStart.getMinutes();
-  const endMinuteOfDay = snapshotEnd.getHours() * 60 + snapshotEnd.getMinutes();
+    snapshotStart.getUTCHours() * 60 + snapshotStart.getUTCMinutes();
+  const endMinuteOfDay =
+    snapshotEnd.getUTCHours() * 60 + snapshotEnd.getUTCMinutes();
   const referenceMinuteOfDay =
-    reference.getHours() * 60 + reference.getMinutes();
+    reference.getUTCHours() * 60 + reference.getUTCMinutes();
   const isOvernight = endMinuteOfDay <= startMinuteOfDay;
   const shiftStart = new Date(reference);
-  shiftStart.setHours(
-    snapshotStart.getHours(),
-    snapshotStart.getMinutes(),
+  shiftStart.setUTCHours(
+    snapshotStart.getUTCHours(),
+    snapshotStart.getUTCMinutes(),
     0,
     0,
   );
   if (isOvernight && referenceMinuteOfDay <= endMinuteOfDay) {
-    shiftStart.setDate(shiftStart.getDate() - 1);
+    shiftStart.setUTCDate(shiftStart.getUTCDate() - 1);
   }
 
   const shiftEnd = new Date(shiftStart);
-  shiftEnd.setHours(snapshotEnd.getHours(), snapshotEnd.getMinutes(), 0, 0);
-  if (isOvernight) shiftEnd.setDate(shiftEnd.getDate() + 1);
+  shiftEnd.setUTCHours(
+    snapshotEnd.getUTCHours(),
+    snapshotEnd.getUTCMinutes(),
+    0,
+    0,
+  );
+  if (isOvernight) shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
 
   return { shiftStart, shiftEnd };
 };
@@ -93,27 +99,27 @@ const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
     );
   }
 
-  const startHours = configuredStart.getHours();
-  const startMinutes = configuredStart.getMinutes();
-  const endHours = configuredEnd.getHours();
-  const endMinutes = configuredEnd.getMinutes();
+  const startHours = configuredStart.getUTCHours();
+  const startMinutes = configuredStart.getUTCMinutes();
+  const endHours = configuredEnd.getUTCHours();
+  const endMinutes = configuredEnd.getUTCMinutes();
   const startMinuteOfDay = startHours * 60 + startMinutes;
   const endMinuteOfDay = endHours * 60 + endMinutes;
   const isOvernight = endMinuteOfDay <= startMinuteOfDay;
 
   const reference = new Date(referenceTime);
   const shiftStart = new Date(reference);
-  shiftStart.setHours(startHours, startMinutes, 0, 0);
+  shiftStart.setUTCHours(startHours, startMinutes, 0, 0);
   if (
     isOvernight &&
-    reference.getHours() * 60 + reference.getMinutes() <= endMinuteOfDay
+    reference.getUTCHours() * 60 + reference.getUTCMinutes() <= endMinuteOfDay
   ) {
-    shiftStart.setDate(shiftStart.getDate() - 1);
+    shiftStart.setUTCDate(shiftStart.getUTCDate() - 1);
   }
 
   const shiftEnd = new Date(shiftStart);
-  shiftEnd.setHours(endHours, endMinutes, 0, 0);
-  if (isOvernight) shiftEnd.setDate(shiftEnd.getDate() + 1);
+  shiftEnd.setUTCHours(endHours, endMinutes, 0, 0);
+  if (isOvernight) shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
 
   return {
     shiftId: configuredShift?._id || null,
