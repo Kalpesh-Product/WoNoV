@@ -30,6 +30,21 @@ const fiscalMonthIndex = (date) => {
 };
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
+const visitorTypes = [
+  "Half-Day Pass",
+  "Full-Day Pass",
+  "Walk In",
+  "Meeting",
+  "Scheduled",
+];
+
+const normalizeVisitorType = (value) => {
+  const normalized = String(value || "").trim().toLowerCase();
+
+  return visitorTypes.find(
+    (type) => type.toLowerCase() === normalized,
+  );
+};
 const investorClientType = (collection, client) => {
   if (collection === "coworkingClients") return "Coworking";
   if (collection === "virtualOfficeClients") return "Virtualoffice";
@@ -143,9 +158,13 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   });
 
   const { data: visitors = [] } = useQuery({
-    queryKey: ["visitors"],
-    queryFn: async () =>
-      (await axios.get("/api/visitors/fetch-visitors")).data,
+     queryKey: ["investor-visitors-with-visits"],
+    queryFn: async () => {
+      const response = await axios.get("/api/visitors/fetch-visitors", {
+        params: { multipleVisits: true },
+      });
+      return Array.isArray(response.data) ? response.data : [];
+    },
   });
 
   const analytics = useMemo(() => {
@@ -217,13 +236,35 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     const guestCounts = Object.fromEntries(
       months.map((month) => [month, 0]),
     );
+    const visitorTypeCounts = Object.fromEntries(
+      visitorTypes.map((type) => [
+        type,
+        Object.fromEntries(months.map((month) => [month, 0])),
+      ]),
+    );
 
     visitors.forEach((visitor) => {
-      const label = dayjs(visitor.dateOfVisit).format("MMM-YY");
+     const visits = asArray(visitor.externalVisits);
+      const visitorVisits = visits.length
+        ? visits
+        : [visitor];
 
-      if (label in guestCounts) {
-        guestCounts[label] += 1;
-      }
+      visitorVisits.forEach((visit) => {
+        const date = dayjs(
+          visit.checkIn || visit.dateOfVisit || visit.createdAt,
+        );
+        const label = date.format("MMM-YY");
+        const visitorType = normalizeVisitorType(
+          visit.visitorType || visitor.visitorType,
+        );
+
+        if (date.isValid() && label in guestCounts) {
+          guestCounts[label] += 1;
+          if (visitorType) {
+            visitorTypeCounts[visitorType][label] += 1;
+          }
+        }
+      });
     });
 
     // const roomNames = activeRooms
@@ -342,6 +383,15 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       bookedHours,
       utilization,
       guestCounts,
+       visitorTypeCounts,
+      totalVisitors: Object.values(visitorTypeCounts).reduce(
+        (total, monthlyCounts) =>
+          total + Object.values(monthlyCounts).reduce(
+            (typeTotal, count) => typeTotal + count,
+            0,
+          ),
+        0,
+      ),
       roomNames,
       roomHours,
       occupancy,
@@ -400,13 +450,13 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
     yaxis: {
       max: yTitle.includes("Occupancy") ? 100 : undefined,
-            min: 0,
+      min: 0,
       tickAmount: yTitle.includes("Occupancy") ? 5 : undefined,
       forceNiceScale: false,
       title: {
         text: yTitle,
       },
-       labels: {
+      labels: {
         formatter: (value) =>
           yTitle.includes("Occupancy")
             ? `${Math.round(value)}%`
@@ -478,6 +528,15 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           ],
         },
       },
+    },
+  };
+  const visitorOptions = {
+    ...barOptions(months, "No. of Visitors", (value) => value.toFixed(0)),
+    colors: ["#2196F3", "#16B8C4", "#3498DB", "#174EA6", "#5C6BC0"],
+    legend: {
+      show: true,
+      position: "top",
+      horizontalAlign: "center",
     },
   };
 
@@ -581,22 +640,43 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         </WidgetSection>
       )}
 
-        {show("busy") && (
-        <WidgetSection >
-          <WidgetSection border title="BUSY TIME DURING THE WEEK">
-            <div
-              onClick={goTo("busy-time-during-week")}
-              className="cursor-pointer"
-            >
-              <HeatMap
-                data={analytics.heatmap}
-                options={heatmapOptions}
-                height={395}
-              />
-            </div>
-          </WidgetSection>
-
+      {show("busy") && (
+        <WidgetSection border title="BUSY TIME DURING THE WEEK">
+          <div
+            onClick={goTo("busy-time-during-week")}
+            className="cursor-pointer"
+          >
+            <HeatMap
+              data={analytics.heatmap}
+              options={heatmapOptions}
+              height={395}
+            />
+          </div>
         </WidgetSection>
+      )}
+       {show("visitors") && (
+        <div
+          onClick={goTo("monthly-total-visitors")}
+          className="cursor-pointer"
+        >
+          <YearlyGraph
+            title={`MONTHLY TOTAL VISITORS ${fiscalLabel}`}
+            headerRightContent={
+              <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium">
+                TOTAL COUNT: {analytics.totalVisitors}
+              </span>
+            }
+            data={visitorTypes.map((type) => ({
+              name: type,
+              group: fiscalLabel,
+              data: months.map(
+                (month) => analytics.visitorTypeCounts[type][month],
+              ),
+            }))}
+            options={visitorOptions}
+            currentYear={fiscalLabel}
+          />
+        </div>
       )}
     </div>
   );
@@ -839,6 +919,7 @@ const InvestorDashboard = () => {
     guests: "/external-guests-visited",
     occupancy: "/average-room-occupancy",
     busy: "/busy-time-during-week",
+    visitors: "/monthly-total-visitors",
    // duration: "/meeting-duration-breakdown",
   };
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
@@ -863,6 +944,7 @@ const InvestorDashboard = () => {
     occupancy: PERMISSIONS.INVESTOR_AVERAGE_ROOM_OCCUPANCY.value,
     busy: PERMISSIONS.INVESTOR_BUSY_TIME_WEEK.value,
    // duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
+       visitors: PERMISSIONS.INVESTOR_MONTHLY_TOTAL_VISITORS.value,
   };
   const visibleMeetingGraphs = Object.keys(meetingGraphRoutes).filter(
     (key) =>

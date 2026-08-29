@@ -3734,6 +3734,13 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/investor-dashboard/busy-time-during-week",
   },
+  INVESTOR_MONTHLY_TOTAL_VISITORS: {
+    value: "investor_monthly_total_visitors",
+    title: "INVESTOR MONTHLY TOTAL VISITORS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-total-visitors",
+  },
   // INVESTOR_MEETING_DURATION_BREAKDOWN: {
   //   value: "investor_meeting_duration_breakdown",
   //   title: "INVESTOR MEETING DURATION BREAKDOWN",
@@ -3741,6 +3748,7 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
   //   access: "page",
   //   route: "/app/dashboard/investor-dashboard/meeting-duration-breakdown",
   // },
+  
   INVESTOR_ANNUAL_AVERAGE_PROFIT_LOSS: {
     value: "investor_annual_average_profit_loss",
     title: "INVESTOR ANNUAL AVERAGE PROFIT LOSS",

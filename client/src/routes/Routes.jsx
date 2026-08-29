@@ -689,6 +689,7 @@ export const routes = createBrowserRouter([
                     "external-guests-visited",
                     "average-room-occupancy",
                     "busy-time-during-week",
+                      "monthly-total-visitors",
                     //"meeting-duration-breakdown",
                   ].map((path) => ({
                     path: `investor-dashboard/${path}`,
