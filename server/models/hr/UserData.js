@@ -277,6 +277,37 @@ const userDataSchema = new mongoose.Schema(
       allowances: { type: Number, min: 0, default: 0 },
       deductions: { type: Number, min: 0, default: 0 },
     },
+    payrollCompensation: {
+      grossPay: { type: Number, min: 0, default: 0 },
+      basicPay: { type: Number, min: 0, default: 0 },
+      variablePay: { type: Number, min: 0, default: 0 },
+      gratuity: { type: Number, min: 0, default: 0 },
+      appraisalDate: { type: Date, default: null },
+      effectivePayPeriod: { type: String, default: "" },
+      paymentMethod: {
+        type: String,
+        enum: ["", "Cash Only", "Bank Deposit"],
+        default: "",
+      },
+      allowances: [
+        {
+          _id: false,
+          label: { type: String, required: true },
+          amount: { type: Number, min: 0, default: 0 },
+        },
+      ],
+      deductions: [
+        {
+          _id: false,
+          label: { type: String, required: true },
+          amount: { type: Number, min: 0, default: 0 },
+        },
+      ],
+      totalAllowances: { type: Number, min: 0, default: 0 },
+      totalDeductions: { type: Number, min: 0, default: 0 },
+      netPay: { type: Number, min: 0, default: 0 },
+      updatedAt: { type: Date, default: null },
+    },
     internshipIsUnpaid: { type: Boolean, default: false },
 
     familyInformation: {
