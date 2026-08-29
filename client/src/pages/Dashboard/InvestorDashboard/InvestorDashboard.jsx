@@ -16,7 +16,7 @@ import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 import BarGraph from "../../../components/graphs/BarGraph";
 import HeatMap from "../../../components/graphs/HeatMap";
-import PieChartMui from "../../../components/graphs/PieChartMui";
+//import PieChartMui from "../../../components/graphs/PieChartMui";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -121,7 +121,9 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   ).slice(-2)}`;
 
   const months = Array.from({ length: 12 }, (_, index) =>
-     now.subtract(11 - index, "month").format("MMM-YY"),
+   dayjs(`${fiscalStartYear}-04-01`)
+      .add(index, "month")
+      .format("MMM-YY"),
   );
 
   const { data: meetings = [] } = useQuery({
@@ -315,26 +317,26 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       })),
     }));
 
-    const bucketLabels = [
-      "15",
-      "30",
-      "60",
-      "90",
-      "120",
-      "Others",
-    ];
+    // const bucketLabels = [
+    //   "15",
+    //   "30",
+    //   "60",
+    //   "90",
+    //   "120",
+    //   "Others",
+    // ];
 
-    const bucketCounts = Array(6).fill(0);
+    // const bucketCounts = Array(6).fill(0);
 
-    meetings.forEach((meeting) => {
-      const minutes = parseMeetingMinutes(meeting.duration);
+    // meetings.forEach((meeting) => {
+    //   const minutes = parseMeetingMinutes(meeting.duration);
 
-      const index = [15, 30, 60, 90, 120].findIndex(
-        (limit) => minutes <= limit,
-      );
+    //   const index = [15, 30, 60, 90, 120].findIndex(
+    //     (limit) => minutes <= limit,
+    //   );
 
-      bucketCounts[index < 0 ? 5 : index] += 1;
-    });
+    //   bucketCounts[index < 0 ? 5 : index] += 1;
+    // });
 
     return {
       bookedHours,
@@ -344,10 +346,10 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       roomHours,
       occupancy,
       heatmap,
-      duration: bucketLabels.map((label, index) => ({
-        label,
-        value: bucketCounts[index],
-      })),
+      // duration: bucketLabels.map((label, index) => ({
+      //   label,
+      //   value: bucketCounts[index],
+      // })),
     };
   }, [fiscalLabel, meetings, months, now, rooms, visitors]);
 
@@ -479,24 +481,24 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
   };
 
-  const pieOptions = {
-    labels: analytics.duration.map((item) => item.label),
-    legend: {
-      position: "bottom",
-    },
-    colors: [
-      "#1E3D73",
-      "#34528A",
-      "#4A68A1",
-      "#608DB8",
-      "#76A2CF",
-      "#8CB8E6",
-    ],
-    dataLabels: {
-      enabled: true,
-      formatter: (value) => `${value.toFixed(1)}%`,
-    },
-  };
+  // const pieOptions = {
+  //   labels: analytics.duration.map((item) => item.label),
+  //   legend: {
+  //     position: "bottom",
+  //   },
+  //   colors: [
+  //     "#1E3D73",
+  //     "#34528A",
+  //     "#4A68A1",
+  //     "#608DB8",
+  //     "#76A2CF",
+  //     "#8CB8E6",
+  //   ],
+  //   dataLabels: {
+  //     enabled: true,
+  //     formatter: (value) => `${value.toFixed(1)}%`,
+  //   },
+  // };
 
   const show = (key) => visibleGraphs.includes(key);
 
@@ -578,42 +580,21 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         </WidgetSection>
       )}
 
-      {(show("busy") || show("duration")) && (
-        <WidgetSection
-          layout={Number(show("busy")) + Number(show("duration"))}
-        >
-          {show("busy") && (
-              <WidgetSection border title="BUSY TIME DURING THE WEEK">
-              <div
-                onClick={goTo("busy-time-during-week")}
-                className="cursor-pointer"
-              >
-                <HeatMap
-                  data={analytics.heatmap}
-                  options={heatmapOptions}
-                  height={395}
-                />
-              </div>
-            </WidgetSection>
-          )}
+        {show("busy") && (
+        <WidgetSection layout={1}>
+          <WidgetSection border title="BUSY TIME DURING THE WEEK">
+            <div
+              onClick={goTo("busy-time-during-week")}
+              className="cursor-pointer"
+            >
+              <HeatMap
+                data={analytics.heatmap}
+                options={heatmapOptions}
+                height={395}
+              />
+            </div>
+          </WidgetSection>
 
-          {show("duration") && (
-             <WidgetSection border padding title="MEETING DURATION BREAKDOWN">
-          {/* <WidgetSection border padding title="MEETING DURATION BREAKDOWN"> */}
-              <div
-                onClick={goTo("meeting-duration-breakdown")}
-                className="cursor-pointer"
-              >
-                <PieChartMui
-                  data={analytics.duration}
-                  options={pieOptions}
-                  height={410}
-                  width={550}
-                  centerAlign
-                />
-              </div>
-            </WidgetSection>
-          )}
         </WidgetSection>
       )}
     </div>
@@ -857,7 +838,7 @@ const InvestorDashboard = () => {
     guests: "/external-guests-visited",
     occupancy: "/average-room-occupancy",
     busy: "/busy-time-during-week",
-    duration: "/meeting-duration-breakdown",
+   // duration: "/meeting-duration-breakdown",
   };
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
   const canViewHistoricalPnlGraph = hasPermission(
@@ -880,7 +861,7 @@ const InvestorDashboard = () => {
     guests: PERMISSIONS.INVESTOR_EXTERNAL_GUESTS_VISITED.value,
     occupancy: PERMISSIONS.INVESTOR_AVERAGE_ROOM_OCCUPANCY.value,
     busy: PERMISSIONS.INVESTOR_BUSY_TIME_WEEK.value,
-    duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
+   // duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
   };
   const visibleMeetingGraphs = Object.keys(meetingGraphRoutes).filter(
     (key) =>
