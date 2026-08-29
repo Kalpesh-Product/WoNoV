@@ -16,6 +16,7 @@ import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 import BarGraph from "../../../components/graphs/BarGraph";
 import HeatMap from "../../../components/graphs/HeatMap";
+import InvestorOperationalCharts from "./InvestorOperationalCharts";
 //import PieChartMui from "../../../components/graphs/PieChartMui";
 
 const fiscalYearLabel = (date) => {
@@ -906,6 +907,16 @@ const InvestorDashboard = () => {
     visitors: "/monthly-total-visitors",
    // duration: "/meeting-duration-breakdown",
   };
+   const operationalGraphRoutes = {
+    sector: "/app/dashboard/investor-dashboard/sector-wise-occupancy",
+    client: "/app/dashboard/investor-dashboard/client-wise-occupancy",
+    gender: "/app/dashboard/investor-dashboard/client-member-gender-wise-data",
+    india: "/app/dashboard/investor-dashboard/india-wise-members",
+    desks: "/app/dashboard/investor-dashboard/total-desks-company-wise",
+    visitorCategory: "/app/dashboard/investor-dashboard/overall-visitor-category",
+    visitorClientType: "/app/dashboard/investor-dashboard/overall-visitor-client-type",
+    visitorGender: "/app/dashboard/investor-dashboard/overall-visitor-gender-data",
+  };
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
   const canViewHistoricalPnlGraph = hasPermission(
     PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
@@ -935,7 +946,21 @@ const InvestorDashboard = () => {
       hasPermission(meetingGraphPermissions[key]) &&
       (showDashboardHome || location.pathname.endsWith(meetingGraphRoutes[key])),
   );
-
+ const operationalGraphPermissions = {
+    sector: PERMISSIONS.INVESTOR_SECTOR_WISE_OCCUPANCY.value,
+    client: PERMISSIONS.INVESTOR_CLIENT_WISE_OCCUPANCY.value,
+    gender: PERMISSIONS.INVESTOR_CLIENT_MEMBER_GENDER_WISE_DATA.value,
+    india: PERMISSIONS.INVESTOR_INDIA_WISE_MEMBERS.value,
+    desks: PERMISSIONS.INVESTOR_TOTAL_DESKS_COMPANY_WISE.value,
+    visitorCategory: PERMISSIONS.INVESTOR_OVERALL_VISITOR_CATEGORY.value,
+    visitorClientType: PERMISSIONS.INVESTOR_OVERALL_VISITOR_CLIENT_TYPE.value,
+    visitorGender: PERMISSIONS.INVESTOR_OVERALL_VISITOR_GENDER_DATA.value,
+  };
+  const visibleOperationalGraphs = Object.keys(operationalGraphRoutes).filter(
+    (key) =>
+      hasPermission(operationalGraphPermissions[key]) &&
+      (showDashboardHome || location.pathname.endsWith(operationalGraphRoutes[key])),
+  );
   const { data: revenueExpenseData = [], isLoading } = useQuery({
     queryKey: ["historicalIncomeExpense"],
     queryFn: async () => {
@@ -1149,6 +1174,12 @@ const InvestorDashboard = () => {
         <WidgetSection layout={1}>
           <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
         </WidgetSection>
+      )}
+       {visibleOperationalGraphs.length > 0 && (
+        <InvestorOperationalCharts
+          visibleCharts={visibleOperationalGraphs}
+          routes={operationalGraphRoutes}
+        />
       )}
 
 
