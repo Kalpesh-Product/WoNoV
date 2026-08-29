@@ -96,10 +96,15 @@ const InvestorUniqueClientsGraph = () => {
 
 //Meetings
 const parseMeetingMinutes = (duration = "") => {
-  const hours = Number(duration.match(/(\d+(?:\.\d+)?)h/)?.[1] || 0);
-  const minutes = Number(duration.match(/(\d+(?:\.\d+)?)m/)?.[1] || 0);
+  // const hours = Number(duration.match(/(\d+(?:\.\d+)?)h/)?.[1] || 0);
+  // const minutes = Number(duration.match(/(\d+(?:\.\d+)?)m/)?.[1] || 0);
 
-  return hours * 60 + minutes;
+  // return hours * 60 + minutes;
+    const match = String(duration).match(/(\d+)(m|h)/);
+  if (!match) return 0;
+
+  const value = Number(match[1]);
+  return match[2] === "h" ? value * 60 : value;
 };
 
 const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
@@ -116,21 +121,23 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   ).slice(-2)}`;
 
   const months = Array.from({ length: 12 }, (_, index) =>
-    dayjs(`${fiscalStartYear}-04-01`)
-      .add(index, "month")
-      .format("MMM-YY"),
+     now.subtract(11 - index, "month").format("MMM-YY"),
   );
 
   const { data: meetings = [] } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () =>
       (await axios.get("/api/meetings/get-meetings")).data,
+     refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () =>
       (await axios.get("/api/meetings/get-rooms")).data,
+     refetchInterval: 30000,
+    refetchOnWindowFocus: true,
   });
 
   const { data: visitors = [] } = useQuery({
@@ -140,7 +147,8 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   });
 
   const analytics = useMemo(() => {
-    const activeRooms = rooms.filter((room) => room.isActive !== false);
+     const activeRooms = rooms.filter((room) => room.isActive === true);
+    //const activeRooms = rooms.filter((room) => room.isActive !== false);
 
     const activeRoomNames = new Set(
       activeRooms.map((room) => room.name),
@@ -216,9 +224,12 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       }
     });
 
-    const roomNames = activeRooms
-      .map((room) => room.name)
-      .sort();
+    // const roomNames = activeRooms
+    //   .map((room) => room.name)
+    //   .sort();
+
+    const roomNames = rooms.map((room) => room.name).sort();
+
 
     const roomHours = Object.fromEntries(
       roomNames.map((name) => [name, 0]),
@@ -270,24 +281,29 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         .format("hA")}`;
     });
 
-    const weekStart = now.startOf("week");
+    // const weekStart = now.startOf("week");
 
-    const matrix = timeSlots.map(() => Array(7).fill(0));
+   const matrix = timeSlots.map(() => Array(7).fill(0));
+
+    const monday = now
+      .subtract((now.day() + 6) % 7, "day")
+      .startOf("day");
+    const meetingWeekDays = Array.from({ length: 6 }, (_, index) =>
+      monday.add(index, "day").format("YYYY-MM-DD"),
+    );
 
     meetings.forEach((meeting) => {
-      const date = dayjs(meeting.startTime || meeting.date);
+      const date = dayjs(meeting.startTime);
       const slot = date.hour() - 8;
+      const dayIndex = meetingWeekDays.indexOf(date.format("YYYY-MM-DD"));
 
       if (
         date.isValid() &&
-        date.isAfter(
-          weekStart.subtract(1, "millisecond"),
-        ) &&
-        date.isBefore(weekStart.add(7, "day")) &&
+        dayIndex !== -1 &&
         slot >= 0 &&
         slot < 12
       ) {
-        matrix[slot][date.day()] += 1;
+        matrix[slot][dayIndex] += 1;
       }
     });
 
@@ -382,8 +398,17 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
     yaxis: {
       max: yTitle.includes("Occupancy") ? 100 : undefined,
+            min: 0,
+      tickAmount: yTitle.includes("Occupancy") ? 5 : undefined,
+      forceNiceScale: false,
       title: {
         text: yTitle,
+      },
+       labels: {
+        formatter: (value) =>
+          yTitle.includes("Occupancy")
+            ? `${Math.round(value)}%`
+            : Math.round(value),
       },
     },
     colors: ["#2DC1C6"],
@@ -476,7 +501,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   const show = (key) => visibleGraphs.includes(key);
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {show("utilization") && (
         <div
           onClick={goTo("meeting-room-utilization")}
@@ -558,7 +583,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           layout={Number(show("busy")) + Number(show("duration"))}
         >
           {show("busy") && (
-            <WidgetSection border title="BUSY TIME DURING THE WEEK">
+              <WidgetSection border title="BUSY TIME DURING THE WEEK">
               <div
                 onClick={goTo("busy-time-during-week")}
                 className="cursor-pointer"
@@ -573,7 +598,8 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           )}
 
           {show("duration") && (
-            <WidgetSection border title="MEETING DURATION BREAKDOWN">
+             <WidgetSection border padding title="MEETING DURATION BREAKDOWN">
+          {/* <WidgetSection border padding title="MEETING DURATION BREAKDOWN"> */}
               <div
                 onClick={goTo("meeting-duration-breakdown")}
                 className="cursor-pointer"
