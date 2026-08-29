@@ -524,11 +524,12 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       {(show("guests") || show("occupancy")) && (
         <WidgetSection
           layout={Number(show("guests")) + Number(show("occupancy"))}
+           padding
         >
           {show("guests") && (
             <WidgetSection
               border
-              padding
+             // padding
               title="EXTERNAL GUESTS VISITED"
               titleLabel={currentMonthLabel}
             >
@@ -581,7 +582,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       )}
 
         {show("busy") && (
-        <WidgetSection layout={1}>
+        <WidgetSection >
           <WidgetSection border title="BUSY TIME DURING THE WEEK">
             <div
               onClick={goTo("busy-time-during-week")}
