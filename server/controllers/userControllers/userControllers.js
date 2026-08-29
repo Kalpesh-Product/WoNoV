@@ -1491,6 +1491,65 @@ const updateEmployeePasswordByEmpId = async (req, res, next) => {
   }
 };
 
+const updateEmployeeBankDetails = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { company } = req;
+    const {
+      bankName,
+      bankIFSC = "",
+      branchName = "",
+      nameOnAccount = "",
+      accountNumber,
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid employee ID" });
+    }
+
+    const normalizedBankName = String(bankName || "").trim();
+    const normalizedAccountNumber = String(accountNumber || "").trim();
+    const normalizedIfsc = String(bankIFSC || "").trim().toUpperCase();
+
+    if (!normalizedBankName || !normalizedAccountNumber) {
+      return res.status(400).json({
+        message: "Bank name and account number are required",
+      });
+    }
+
+    if (normalizedIfsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(normalizedIfsc)) {
+      return res.status(400).json({ message: "Invalid bank IFSC code" });
+    }
+
+    const bankInformation = {
+      bankName: normalizedBankName,
+      bankIFSC: normalizedIfsc,
+      branchName: String(branchName || "").trim(),
+      nameOnAccount: String(nameOnAccount || "").trim(),
+      accountNumber: normalizedAccountNumber,
+    };
+
+    const employee = await User.findOneAndUpdate(
+      { _id: userId, company },
+      { $set: { bankInformation } },
+      { new: true, runValidators: true },
+    )
+      .select("bankInformation")
+      .lean();
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({
+      message: "Bank details updated successfully",
+      bankInformation: employee.bankInformation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createUser,
   fetchUser,
@@ -1501,5 +1560,6 @@ module.exports = {
   checkPassword,
   updatePassword,
   updateEmployeePasswordByEmpId,
+  updateEmployeeBankDetails,
   getEmployeePoliciesByEmpId,
 };

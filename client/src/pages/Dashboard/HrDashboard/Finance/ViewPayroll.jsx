@@ -21,7 +21,7 @@ import dayjs from "dayjs";
 import html2pdf from "html2pdf.js";
 
 const formatPayrollAmount = (value) =>
-  `₹${Number(value || 0).toLocaleString("en-IN", {
+  `INR ${Number(value || 0).toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
@@ -127,6 +127,9 @@ const createInitialCompensationDetails = (
       paymentMethod:
         employee?.bankName && employee?.accountNumber ? "Bank Deposit" : "",
       bankName: employee?.bankName || "",
+      bankIfsc: employee?.bankIfsc || "",
+      branchName: employee?.branchName || "",
+      nameOnAccount: employee?.nameOnAccount || "",
       accountNumber: employee?.accountNumber || "",
     },
     allowances: allowanceRows.map((row, index) => ({
@@ -179,7 +182,9 @@ const EditableAmountRow = ({
       value={row.value}
       disabled={amountReadOnly}
       onChange={(event) => onChange({ ...row, value: event.target.value })}
-      InputProps={{ startAdornment: <span className="mr-2 text-gray-500">₹</span> }}
+      InputProps={{
+        startAdornment: <span className="mr-2 text-gray-500">INR</span>,
+      }}
     />
     <button
       type="button"
@@ -198,6 +203,7 @@ const ViewPayroll = () => {
   const [isEditingCompensation, setIsEditingCompensation] = useState(false);
   const [compensationDetails, setCompensationDetails] = useState(null);
   const [compensationDraft, setCompensationDraft] = useState(null);
+  const initializedCompensationKey = useRef(null);
   const payrollColumns = [
     { field: "srNo", headerName: "SrNo", flex: 1 },
     { field: "empId", headerName: "Employee ID", flex: 1 },
@@ -326,7 +332,11 @@ const ViewPayroll = () => {
     },
   });
 
-  const { data: employeeRecord = {}, isLoading: isEmployeeLoading } = useQuery({
+  const {
+    data: employeeRecord = {},
+    isLoading: isEmployeeLoading,
+    refetch: refetchEmployee,
+  } = useQuery({
     queryKey: ["payrollEmployee", employeeId],
     enabled: Boolean(employeeId),
     queryFn: async () => {
@@ -336,6 +346,27 @@ const ViewPayroll = () => {
       return response.data;
     },
   });
+
+  const { data: employerCosts = {} } = useQuery({
+    queryKey: ["companyEmployerCosts"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-data?field=employerCosts"
+      );
+      return response.data?.employerCosts || {};
+    },
+  });
+
+  const { mutateAsync: saveBankDetails, isPending: isSavingBankDetails } =
+    useMutation({
+      mutationFn: async (bankDetails) => {
+        const response = await axios.patch(
+          `/api/users/${employeeRecord?._id || empId}/bank-details`,
+          bankDetails
+        );
+        return response.data;
+      },
+    });
   //Attendance correction
   const { mutate: approveRequest, isPending: approveRequestPending } =
     useMutation({
@@ -540,13 +571,13 @@ const ViewPayroll = () => {
   const earningDetails = userPayrollData?.earnings || {};
   const deductionDetails = userPayrollData?.deductions || {};
   const employerCostRows = [
-    ["Employer ESI", deductionDetails.employerEsi],
-    ["Employer PF", deductionDetails.employerPf],
-    ["Employer EPF", deductionDetails.employerEpf],
-    ["Employer EPS", deductionDetails.employerEps],
-    ["Employer EDLI", deductionDetails.employerEdli],
-    ["EPF (Admin Charges)", deductionDetails.epfAdminCharges],
-    ["EDLI (Admin Charges)", deductionDetails.edliAdminCharges],
+    ["Employer ESI", employerCosts.employerEsi],
+    ["Employer PF", employerCosts.employerPf],
+    ["Employer EPF", employerCosts.employerEpf, true],
+    ["Employer EPS", employerCosts.employerEps, true],
+    ["Employer EDLI", employerCosts.employerEdli, true],
+    ["EPF (Admin Charges)", employerCosts.epfAdminCharges, true],
+    ["EDLI (Admin Charges)", employerCosts.edliAdminCharges, true],
   ];
 
   const initialCompensationDetails = createInitialCompensationDetails(
@@ -568,6 +599,8 @@ const ViewPayroll = () => {
 
   useEffect(() => {
     if (isLoading || isEmployeeLoading) return;
+    const initializationKey = `${empId}-${month}`;
+    if (initializedCompensationKey.current === initializationKey) return;
     const nextDetails = createInitialCompensationDetails(
       userPayrollData?.earnings,
       userPayrollData?.deductions,
@@ -576,8 +609,10 @@ const ViewPayroll = () => {
     );
     setCompensationDetails(nextDetails);
     setCompensationDraft(nextDetails);
+    initializedCompensationKey.current = initializationKey;
   }, [
     employeeRecord,
+    empId,
     isEmployeeLoading,
     isLoading,
     month,
@@ -596,10 +631,9 @@ const ViewPayroll = () => {
     (total, row) => total + (Number(row.value) || 0),
     0
   );
-  const employerCostTotal = employerCostRows.reduce(
-    (total, [, value]) => total + (Number(value) || 0),
-    0
-  );
+  const employerCostTotal =
+    (Number(employerCosts.employerEsi) || 0) +
+    (Number(employerCosts.employerPf) || 0);
   const netPay = Math.max(
     0,
     Number(visibleCompensation.compensation.grossPay || 0) - deductionTotal
@@ -620,7 +654,7 @@ const ViewPayroll = () => {
     setCompensationDraft(cloneCompensation(compensationDetails));
     setIsEditingCompensation(false);
   };
-  const handleSaveCompensation = () => {
+  const handleSaveCompensation = async () => {
     const hasIncompleteRow = [
       ...compensationDraft.allowances,
       ...compensationDraft.deductions,
@@ -629,9 +663,44 @@ const ViewPayroll = () => {
       toast.error("Select a type and enter an amount before saving");
       return;
     }
+
+    if (compensationDraft.compensation.paymentMethod === "Bank Deposit") {
+      const {
+        bankName,
+        bankIfsc,
+        branchName,
+        nameOnAccount,
+        accountNumber,
+      } = compensationDraft.compensation;
+
+      if (!String(bankName || "").trim() || !String(accountNumber || "").trim()) {
+        toast.error("Bank name and account number are required");
+        return;
+      }
+
+      try {
+        const response = await saveBankDetails({
+          bankName,
+          bankIFSC: bankIfsc,
+          branchName,
+          nameOnAccount,
+          accountNumber,
+        });
+        await refetchEmployee();
+        toast.success(response?.message || "Bank details updated successfully");
+      } catch (error) {
+        toast.error(
+          error?.response?.data?.message || "Failed to update bank details"
+        );
+        return;
+      }
+    }
+
     setCompensationDetails(cloneCompensation(compensationDraft));
     setIsEditingCompensation(false);
-    toast.success("Compensation changes saved on this screen only");
+    if (compensationDraft.compensation.paymentMethod !== "Bank Deposit") {
+      toast.success("Compensation changes saved on this screen only");
+    }
   };
   const updateCompensationField = (field, value) => {
     setCompensationDraft((current) => {
@@ -737,6 +806,8 @@ const ViewPayroll = () => {
               <PrimaryButton
                 title="Save"
                 handleSubmit={handleSaveCompensation}
+                disabled={isSavingBankDetails}
+                isLoading={isSavingBankDetails}
               />
               <button
                 type="button"
@@ -809,7 +880,7 @@ const ViewPayroll = () => {
                         }
                         InputProps={{
                           startAdornment: (
-                            <span className="mr-2 text-gray-500">₹</span>
+                            <span className="mr-2 text-gray-500">INR</span>
                           ),
                         }}
                       />
@@ -871,11 +942,44 @@ const ViewPayroll = () => {
                         />
                         <TextField
                           size="small"
+                          label="Name on Account"
+                          value={visibleCompensation.compensation.nameOnAccount}
+                          onChange={(event) =>
+                            updateCompensationField(
+                              "nameOnAccount",
+                              event.target.value
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
                           label="Account Number"
                           value={visibleCompensation.compensation.accountNumber}
                           onChange={(event) =>
                             updateCompensationField(
                               "accountNumber",
+                              event.target.value
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Bank IFSC"
+                          value={visibleCompensation.compensation.bankIfsc}
+                          onChange={(event) =>
+                            updateCompensationField(
+                              "bankIfsc",
+                              event.target.value.toUpperCase()
+                            )
+                          }
+                        />
+                        <TextField
+                          size="small"
+                          label="Branch Name"
+                          value={visibleCompensation.compensation.branchName}
+                          onChange={(event) =>
+                            updateCompensationField(
+                              "branchName",
                               event.target.value
                             )
                           }
@@ -949,9 +1053,29 @@ const ViewPayroll = () => {
                           }
                         />
                         <CompensationRow
+                          label="Name on Account"
+                          value={
+                            visibleCompensation.compensation.nameOnAccount ||
+                            "N/A"
+                          }
+                        />
+                        <CompensationRow
                           label="Account Number"
                           value={
                             visibleCompensation.compensation.accountNumber ||
+                            "N/A"
+                          }
+                        />
+                        <CompensationRow
+                          label="Bank IFSC"
+                          value={
+                            visibleCompensation.compensation.bankIfsc || "N/A"
+                          }
+                        />
+                        <CompensationRow
+                          label="Branch Name"
+                          value={
+                            visibleCompensation.compensation.branchName ||
                             "N/A"
                           }
                         />
@@ -1009,7 +1133,7 @@ const ViewPayroll = () => {
                           }
                           InputProps={{
                             startAdornment: (
-                              <span className="mr-2 text-gray-500">₹</span>
+                              <span className="mr-2 text-gray-500">INR</span>
                             ),
                           }}
                         />
@@ -1112,8 +1236,8 @@ const ViewPayroll = () => {
                     {!isEsiApplicable(employeeRecord) && (
                       <p className="mt-3 text-xs text-gray-500">
                         {Number(employeeRecord?.annualCtc) > 0
-                          ? "This employee is not eligible for ESI, so its amount is kept at ₹0."
-                          : "Employee CTC is unavailable, so the ESI amount is kept at ₹0."}
+                          ? "This employee is not eligible for ESI, so its amount is kept at INR 0."
+                          : "Employee CTC is unavailable, so the ESI amount is kept at INR 0."}
                       </p>
                     )}
                   </>
@@ -1133,10 +1257,10 @@ const ViewPayroll = () => {
               </PayrollSection>
 
               <PayrollSection title="Employer Costs" total={employerCostTotal}>
-                {employerCostRows.map(([label, value]) => (
+                {employerCostRows.map(([label, value, isBreakdown]) => (
                   <CompensationRow
                     key={label}
-                    label={label}
+                    label={isBreakdown ? `› ${label}` : label}
                     value={formatPayrollAmount(value)}
                   />
                 ))}
