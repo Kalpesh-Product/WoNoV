@@ -351,8 +351,12 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       min: 0,
       max: 100,
       tickAmount: 4,
+      forceNiceScale: false,
       title: {
         text: "Utilization (%)",
+      },
+      labels: {
+        formatter: (value) => Math.round(value),
       },
     },
     dataLabels: {
@@ -554,10 +558,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           layout={Number(show("busy")) + Number(show("duration"))}
         >
           {show("busy") && (
-            <WidgetSection
-              border
-              title="BUSY TIME DURING THE WEEK"
-            >
+            <WidgetSection border title="BUSY TIME DURING THE WEEK">
               <div
                 onClick={goTo("busy-time-during-week")}
                 className="cursor-pointer"
@@ -572,10 +573,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           )}
 
           {show("duration") && (
-            <WidgetSection
-              border
-              title="MEETING DURATION BREAKDOWN"
-            >
+            <WidgetSection border title="MEETING DURATION BREAKDOWN">
               <div
                 onClick={goTo("meeting-duration-breakdown")}
                 className="cursor-pointer"
@@ -1074,7 +1072,9 @@ const InvestorDashboard = () => {
         <CheckAvailability />
       )}
       {visibleMeetingGraphs.length > 0 && (
-        <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
+        <WidgetSection layout={1}>
+          <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
+        </WidgetSection>
       )}
 
 
