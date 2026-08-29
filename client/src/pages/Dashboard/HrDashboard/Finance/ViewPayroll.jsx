@@ -12,6 +12,8 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { queryClient } from "../../../../main";
@@ -31,7 +33,9 @@ const CompensationRow = ({ label, value, period }) => (
     <span className="text-gray-600">{label}</span>
     <span className="text-right font-pmedium text-gray-800">
       {value}
-      {period ? <span className="font-pregular text-gray-500"> / {period}</span> : null}
+      {period ? (
+        <span className="font-pregular text-gray-500"> / {period}</span>
+      ) : null}
     </span>
   </div>
 );
@@ -68,64 +72,116 @@ const getEmployeePf = (basicPay) => {
 
 const getEmployeeEsi = (grossPay) => (Number(grossPay) || 0) * 0.0075;
 
+const isPayrollFlagEnabled = (employee, field) => {
+  const value = employee?.[field] ?? employee?.payrollInformation?.[field];
+  return value === true || ["true", "yes"].includes(String(value).toLowerCase());
+};
+
+const isPfEnabled = (employee) => isPayrollFlagEnabled(employee, "includePF");
+
 const isEsiApplicable = (employee) => {
   const annualCtc = Number(employee?.annualCtc) || 0;
-  return annualCtc > 0 && annualCtc / 12 < 21000;
+  return (
+    isPayrollFlagEnabled(employee, "includeEsi") &&
+    annualCtc > 0 &&
+    annualCtc / 12 < 21000
+  );
+};
+
+const usesTdsDeduction = (employee) => {
+  const employeeType = String(employee?.employeeType || "").toLowerCase();
+  return employeeType.includes("intern") || employeeType.includes("consultant");
 };
 
 const createInitialCompensationDetails = (
   earnings = {},
   deductions = {},
   month,
-  employee = {}
+  employee = {},
 ) => {
-  const basicPay = Number(earnings.basicPay) || 0;
-  const hraType = String(employee?.hraType || "").trim().toLowerCase();
+  const savedCompensation = employee?.payrollCompensation || {};
+  const hasSavedCompensation = Boolean(savedCompensation?.updatedAt);
+  const basicPay = hasSavedCompensation
+    ? Number(savedCompensation.basicPay) || 0
+    : Number(earnings.basicPay) || 0;
+  const hraType = String(employee?.hraType || "")
+    .trim()
+    .toLowerCase();
   const shouldAddHra = Boolean(hraType) && hraType !== "custom";
-  const hraAmount = shouldAddHra
-    ? basicPay * 0.5
-    : Number(earnings.hra) || 0;
-  const grossPay = [
+  const hraAmount = shouldAddHra ? basicPay * 0.5 : Number(earnings.hra) || 0;
+  const calculatedGrossPay = [
     basicPay,
     hraAmount,
     earnings.specialAllowance,
     earnings.otherAllowance,
     earnings.bonus,
   ].reduce((total, value) => total + (Number(value) || 0), 0);
-  const allowanceRows = [
-    {
-      label: "Special Allowance",
-      value: earnings.specialAllowance,
-    },
-    ...(shouldAddHra
-      ? [{ label: "House Rent Allowance", value: hraAmount }]
-      : []),
-  ];
+  const grossPay = hasSavedCompensation
+    ? Number(savedCompensation.grossPay) || 0
+    : calculatedGrossPay;
+  const allowanceRows = hasSavedCompensation
+    ? (savedCompensation.allowances || []).map((row) => ({
+        label: row.label,
+        value: row.amount,
+      }))
+    : [
+        {
+          label: "Special Allowance",
+          value: earnings.specialAllowance,
+        },
+        ...(shouldAddHra
+          ? [{ label: "House Rent Allowance", value: hraAmount }]
+          : []),
+      ];
   const esiApplicable = isEsiApplicable(employee);
-  const deductionRows = [
-    {
-      label: "Provident Fund",
-      value: Number(deductions.employeePf) || getEmployeePf(basicPay),
-    },
-    {
-      label: "ESI",
-      value: esiApplicable
-        ? Number(deductions.employeesStateInsurance) || getEmployeeEsi(grossPay)
-        : 0,
-    },
-  ];
+  const deductionRows = hasSavedCompensation
+    ? (savedCompensation.deductions || []).map((row) => ({
+        label: row.label,
+        value:
+          row.label === "Provident Fund" && !isPfEnabled(employee)
+            ? 0
+            : row.label === "ESI" && !esiApplicable
+              ? 0
+              : row.amount,
+      }))
+    : usesTdsDeduction(employee)
+      ? [{ label: "TDS", value: basicPay * 0.1 }]
+      : [
+          {
+            label: "Provident Fund",
+            value: isPfEnabled(employee)
+              ? Number(deductions.employeePf) || getEmployeePf(basicPay)
+              : 0,
+          },
+          {
+            label: "ESI",
+            value: esiApplicable
+              ? Number(deductions.employeesStateInsurance) ||
+                getEmployeeEsi(grossPay)
+              : 0,
+          },
+        ];
 
   return {
     compensation: {
       grossPay,
       basicPay,
-      variablePay: Number(earnings.bonus) || 0,
-      gratuity: Number(earnings.gratuity) || 0,
+      variablePay: hasSavedCompensation
+        ? Number(savedCompensation.variablePay) || 0
+        : Number(earnings.bonus) || 0,
+      gratuity: hasSavedCompensation
+        ? Number(savedCompensation.gratuity) || 0
+        : Number(earnings.gratuity) || 0,
       ctc: Number(employee?.annualCtc) || Number(earnings.ctc) || 0,
-      appraisalDate: "",
-      effectivePayPeriod: dayjs(month).format("MMMM YYYY"),
+      appraisalDate: savedCompensation?.appraisalDate
+        ? dayjs(savedCompensation.appraisalDate).format("YYYY-MM-DD")
+        : "",
+      effectivePayPeriod:
+        savedCompensation?.effectivePayPeriod ||
+        dayjs(month).format("MMMM YYYY"),
       paymentMethod:
-        employee?.bankName && employee?.accountNumber ? "Bank Deposit" : "",
+        savedCompensation?.paymentMethod ||
+        (employee?.bankName && employee?.accountNumber ? "Bank Deposit" : ""),
       bankName: employee?.bankName || "",
       bankIfsc: employee?.bankIfsc || "",
       branchName: employee?.branchName || "",
@@ -167,7 +223,7 @@ const EditableAmountRow = ({
       </MenuItem>
       {options
         .filter(
-          (option) => option === row.label || !usedLabels.includes(option)
+          (option) => option === row.label || !usedLabels.includes(option),
         )
         .map((option) => (
           <MenuItem key={option} value={option}>
@@ -262,7 +318,7 @@ const ViewPayroll = () => {
               label: "Reject",
               onClick: () => rejectRequest(params.data.correctionId),
               isLoading: isLoading,
-            }
+            },
           );
         }
         return (
@@ -310,7 +366,15 @@ const ViewPayroll = () => {
   ];
   const location = useLocation();
   const navigate = useNavigate();
-  const { empId, month, status, employeeName, departmentName, employeeId, designation } = location.state;
+  const {
+    empId,
+    month,
+    status,
+    employeeName,
+    departmentName,
+    employeeId,
+    designation,
+  } = location.state;
 
   console.log("status : ", status);
   const axios = useAxiosPrivate();
@@ -320,13 +384,13 @@ const ViewPayroll = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/payroll/get-user-payrolls/${empId}?month=${month}`
+          `/api/payroll/get-user-payrolls/${empId}?month=${month}`,
         );
 
         return response.data;
       } catch (error) {
         throw new Error(
-          error.response?.data?.message || "Failed to fetch employees"
+          error.response?.data?.message || "Failed to fetch employees",
         );
       }
     },
@@ -341,17 +405,21 @@ const ViewPayroll = () => {
     enabled: Boolean(employeeId),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/users/fetch-single-user/${employeeId}`
+        `/api/users/fetch-single-user/${employeeId}`,
       );
       return response.data;
     },
   });
 
-  const { data: employerCosts = {} } = useQuery({
+  const {
+    data: employerCosts = {},
+    isLoading: isEmployerCostsLoading,
+    isError: isEmployerCostsError,
+  } = useQuery({
     queryKey: ["companyEmployerCosts"],
     queryFn: async () => {
       const response = await axios.get(
-        "/api/company/get-company-data?field=employerCosts"
+        "/api/company/get-company-data?field=employerCosts",
       );
       return response.data?.employerCosts || {};
     },
@@ -362,17 +430,30 @@ const ViewPayroll = () => {
       mutationFn: async (bankDetails) => {
         const response = await axios.patch(
           `/api/users/${employeeRecord?._id || empId}/bank-details`,
-          bankDetails
+          bankDetails,
         );
         return response.data;
       },
     });
+
+  const {
+    mutateAsync: savePayrollCompensation,
+    isPending: isSavingPayrollCompensation,
+  } = useMutation({
+    mutationFn: async (compensation) => {
+      const response = await axios.patch(
+        `/api/users/${employeeRecord?._id || empId}/payroll-compensation`,
+        compensation,
+      );
+      return response.data;
+    },
+  });
   //Attendance correction
   const { mutate: approveRequest, isPending: approveRequestPending } =
     useMutation({
       mutationFn: async (id) => {
         const response = await axios.patch(
-          `/api/attendance/approve-correct-attendance/${id}`
+          `/api/attendance/approve-correct-attendance/${id}`,
         );
         return response.data;
       },
@@ -391,7 +472,7 @@ const ViewPayroll = () => {
     useMutation({
       mutationFn: async (id) => {
         const response = await axios.patch(
-          `/api/attendance/reject-correct-attendance/${id}`
+          `/api/attendance/reject-correct-attendance/${id}`,
         );
         return response.data;
       },
@@ -441,7 +522,7 @@ const ViewPayroll = () => {
     },
   });
 
-  const { mutate: payrollMutate, isPending: isPayrollPending } = useMutation({
+  const { mutate: payrollMutate } = useMutation({
     mutationKey: ["batchPayrollMutate"],
     mutationFn: async (data) => {
       const response = await axios.post("/api/payroll/generate-payroll", data);
@@ -497,24 +578,23 @@ const ViewPayroll = () => {
   };
 
   const handleDownloadPayslip = async () => {
-  const element = payslipRef.current;
+    const element = payslipRef.current;
 
-  const opt = {
-    margin: 0.3,
-    filename: `${userData.empId}-${dayjs(month).format("MMMM-YYYY")}.pdf`,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2 },
-    jsPDF: {
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait",
-    },
-    pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    const opt = {
+      margin: 0.3,
+      filename: `${userData.empId}-${dayjs(month).format("MMMM-YYYY")}.pdf`,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: {
+        unit: "mm",
+        format: "a4",
+        orientation: "portrait",
+      },
+      pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+    };
+
+    await html2pdf().set(opt).from(element).save(); // Directly triggers download
   };
-
-  await html2pdf().set(opt).from(element).save(); // Directly triggers download
-};
-
 
   const attendanceData = isLoading
     ? []
@@ -551,16 +631,16 @@ const ViewPayroll = () => {
     department: [
       ...new Set(
         attendanceData.flatMap(
-          (item) => item.user?.departments?.map((d) => d.name) || []
-        )
+          (item) => item.user?.departments?.map((d) => d.name) || [],
+        ),
       ),
     ],
 
     role: [
       ...new Set(
         attendanceData.flatMap(
-          (item) => item.user?.role?.map((r) => r.roleTitle) || []
-        )
+          (item) => item.user?.role?.map((r) => r.roleTitle) || [],
+        ),
       ),
     ],
   };
@@ -570,24 +650,35 @@ const ViewPayroll = () => {
 
   const earningDetails = userPayrollData?.earnings || {};
   const deductionDetails = userPayrollData?.deductions || {};
+  const employeePfEnabled = isPfEnabled(employeeRecord);
+  const employeeEsiEnabled = isEsiApplicable(employeeRecord);
   const employerCostRows = [
-    ["Employer ESI", employerCosts.employerEsi],
-    ["Employer PF", employerCosts.employerPf],
-    ["Employer EPF", employerCosts.employerEpf, true],
-    ["Employer EPS", employerCosts.employerEps, true],
-    ["Employer EDLI", employerCosts.employerEdli, true],
-    ["EPF (Admin Charges)", employerCosts.epfAdminCharges, true],
-    ["EDLI (Admin Charges)", employerCosts.edliAdminCharges, true],
+    ["Employer ESI", employeeEsiEnabled ? employerCosts.employerEsi : 0],
+    ["Employer PF", employeePfEnabled ? employerCosts.employerPf : 0],
+    ["Employer EPF", employeePfEnabled ? employerCosts.employerEpf : 0, true],
+    ["Employer EPS", employeePfEnabled ? employerCosts.employerEps : 0, true],
+    ["Employer EDLI", employeePfEnabled ? employerCosts.employerEdli : 0, true],
+    [
+      "EPF (Admin Charges)",
+      employeePfEnabled ? employerCosts.epfAdminCharges : 0,
+      true,
+    ],
+    [
+      "EDLI (Admin Charges)",
+      employeePfEnabled ? employerCosts.edliAdminCharges : 0,
+      true,
+    ],
   ];
 
   const initialCompensationDetails = createInitialCompensationDetails(
     earningDetails,
     deductionDetails,
     month,
-    employeeRecord
+    employeeRecord,
   );
 
-  const deductionOptions = ["Provident Fund", "ESI"];
+  const isTdsWorker = usesTdsDeduction(employeeRecord);
+  const deductionOptions = isTdsWorker ? ["TDS"] : ["Provident Fund", "ESI"];
   const employeeHraType = String(employeeRecord?.hraType || "")
     .trim()
     .toLowerCase();
@@ -605,7 +696,7 @@ const ViewPayroll = () => {
       userPayrollData?.earnings,
       userPayrollData?.deductions,
       month,
-      employeeRecord
+      employeeRecord,
     );
     setCompensationDetails(nextDetails);
     setCompensationDraft(nextDetails);
@@ -625,19 +716,31 @@ const ViewPayroll = () => {
     initialCompensationDetails;
   const allowanceTotal = visibleCompensation.allowances.reduce(
     (total, row) => total + (Number(row.value) || 0),
-    0
+    0,
   );
   const deductionTotal = visibleCompensation.deductions.reduce(
     (total, row) => total + (Number(row.value) || 0),
-    0
+    0,
   );
   const employerCostTotal =
-    (Number(employerCosts.employerEsi) || 0) +
-    (Number(employerCosts.employerPf) || 0);
-  const netPay = Math.max(
-    0,
-    Number(visibleCompensation.compensation.grossPay || 0) - deductionTotal
-  );
+    (employeeEsiEnabled ? Number(employerCosts.employerEsi) || 0 : 0) +
+    (employeePfEnabled ? Number(employerCosts.employerPf) || 0 : 0);
+  const grossEarnings =
+    Number(visibleCompensation.compensation.grossPay || 0) + allowanceTotal;
+  const calculatedCtc =
+    grossEarnings * 12 +
+    employerCostTotal * 12 +
+    Number(visibleCompensation.compensation.variablePay || 0) +
+    Number(visibleCompensation.compensation.gratuity || 0);
+  const storedCtc = Number(employeeRecord?.annualCtc) || 0;
+  const canValidateCtc =
+    !isEmployeeLoading && !isEmployerCostsLoading && !isEmployerCostsError;
+  const isCtcMismatch =
+    canValidateCtc && Math.abs(calculatedCtc - storedCtc) > 0.01;
+  const storedCtcMismatchMessage = isCtcMismatch
+    ? `Does not match CTC: ${formatPayrollAmount(storedCtc)}`
+    : "";
+  const netPay = Math.max(0, grossEarnings - deductionTotal);
 
   const cloneCompensation = (details) => JSON.parse(JSON.stringify(details));
   const handleEditCompensation = () => {
@@ -655,51 +758,123 @@ const ViewPayroll = () => {
     setIsEditingCompensation(false);
   };
   const handleSaveCompensation = async () => {
-    const hasIncompleteRow = [
-      ...compensationDraft.allowances,
-      ...compensationDraft.deductions,
-    ].some((row) => !row.label || row.value === "");
-    if (hasIncompleteRow) {
-      toast.error("Select a type and enter an amount before saving");
+    if (!canValidateCtc || isCtcMismatch) {
+      toast.error(
+        isCtcMismatch
+          ? "Calculated CTC must match the stored CTC before saving"
+          : "Please wait until CTC validation is complete",
+      );
+      return;
+    }
+
+    const hasIncompleteAllowance = compensationDraft.allowances.some(
+      (row) => !row.label || row.value === "",
+    );
+    const hasIncompleteDeduction = compensationDraft.deductions.some(
+      (row) => !row.label || row.value === "",
+    );
+    if (hasIncompleteAllowance || hasIncompleteDeduction) {
+      const section =
+        hasIncompleteAllowance && hasIncompleteDeduction
+          ? "allowance and deduction"
+          : hasIncompleteAllowance
+            ? "allowance"
+            : "deduction";
+      toast.error(
+        `Select the ${section} type and enter an amount before saving`,
+      );
       return;
     }
 
     if (compensationDraft.compensation.paymentMethod === "Bank Deposit") {
-      const {
-        bankName,
-        bankIfsc,
-        branchName,
-        nameOnAccount,
-        accountNumber,
-      } = compensationDraft.compensation;
+      const { bankName, bankIfsc, branchName, nameOnAccount, accountNumber } =
+        compensationDraft.compensation;
 
-      if (!String(bankName || "").trim() || !String(accountNumber || "").trim()) {
+      if (
+        !String(bankName || "").trim() ||
+        !String(accountNumber || "").trim()
+      ) {
         toast.error("Bank name and account number are required");
         return;
       }
 
       try {
-        const response = await saveBankDetails({
+        await saveBankDetails({
           bankName,
           bankIFSC: bankIfsc,
           branchName,
           nameOnAccount,
           accountNumber,
         });
-        await refetchEmployee();
-        toast.success(response?.message || "Bank details updated successfully");
       } catch (error) {
         toast.error(
-          error?.response?.data?.message || "Failed to update bank details"
+          error?.response?.data?.message || "Failed to update bank details",
         );
         return;
       }
     }
 
-    setCompensationDetails(cloneCompensation(compensationDraft));
-    setIsEditingCompensation(false);
-    if (compensationDraft.compensation.paymentMethod !== "Bank Deposit") {
-      toast.success("Compensation changes saved on this screen only");
+    try {
+      const { compensation } = compensationDraft;
+      const response = await savePayrollCompensation({
+        grossPay: compensation.grossPay,
+        basicPay: compensation.basicPay,
+        variablePay: compensation.variablePay,
+        gratuity: compensation.gratuity,
+        appraisalDate: compensation.appraisalDate || null,
+        effectivePayPeriod: compensation.effectivePayPeriod,
+        paymentMethod: compensation.paymentMethod,
+        allowances: compensationDraft.allowances.map((row) => ({
+          label: row.label,
+          amount: Number(row.value) || 0,
+        })),
+        deductions: compensationDraft.deductions.map((row) => ({
+          label: row.label,
+          amount: Number(row.value) || 0,
+        })),
+      });
+      const savedCompensation = response?.payrollCompensation;
+      const nextDetails = cloneCompensation(compensationDraft);
+      if (savedCompensation) {
+        nextDetails.compensation = {
+          ...nextDetails.compensation,
+          grossPay: savedCompensation.grossPay,
+          basicPay: savedCompensation.basicPay,
+          variablePay: savedCompensation.variablePay,
+          gratuity: savedCompensation.gratuity,
+          appraisalDate: savedCompensation.appraisalDate
+            ? dayjs(savedCompensation.appraisalDate).format("YYYY-MM-DD")
+            : "",
+          effectivePayPeriod: savedCompensation.effectivePayPeriod,
+          paymentMethod: savedCompensation.paymentMethod,
+        };
+        nextDetails.allowances = (savedCompensation.allowances || []).map(
+          (row, index) => ({
+            id: `allowance-saved-${index}-${row.label}`,
+            label: row.label,
+            value: row.amount,
+          }),
+        );
+        nextDetails.deductions = (savedCompensation.deductions || []).map(
+          (row, index) => ({
+            id: `deduction-saved-${index}-${row.label}`,
+            label: row.label,
+            value: row.amount,
+          }),
+        );
+      }
+      setCompensationDetails(nextDetails);
+      setCompensationDraft(nextDetails);
+      setIsEditingCompensation(false);
+      await refetchEmployee();
+      toast.success(
+        response?.message || "Payroll compensation updated successfully",
+      );
+    } catch (error) {
+      toast.error(
+        error?.response?.data?.message ||
+          "Failed to update payroll compensation",
+      );
     }
   };
   const updateCompensationField = (field, value) => {
@@ -713,12 +888,27 @@ const ViewPayroll = () => {
         next.allowances = current.allowances.map((row) =>
           row.label === "House Rent Allowance"
             ? { ...row, value: (Number(value) || 0) * 0.5 }
-            : row
+            : row,
         );
         next.deductions = current.deductions.map((row) =>
           row.label === "Provident Fund"
-            ? { ...row, value: getEmployeePf(value) }
-            : row
+            ? {
+                ...row,
+                value: employeePfEnabled ? getEmployeePf(value) : 0,
+              }
+            : row.label === "TDS"
+              ? { ...row, value: (Number(value) || 0) * 0.1 }
+              : row,
+        );
+        next.deductions = next.deductions.map((row) =>
+          row.label === "ESI"
+            ? {
+                ...row,
+                value: employeeEsiEnabled
+                  ? getEmployeeEsi(next.compensation.grossPay)
+                  : 0,
+              }
+            : row,
         );
       }
 
@@ -727,11 +917,11 @@ const ViewPayroll = () => {
           row.label === "ESI"
             ? {
                 ...row,
-                value: isEsiApplicable(employeeRecord)
+                value: employeeEsiEnabled
                   ? getEmployeeEsi(value)
                   : 0,
               }
-            : row
+            : row,
         );
       }
 
@@ -742,7 +932,7 @@ const ViewPayroll = () => {
     setCompensationDraft((current) => ({
       ...current,
       [section]: current[section].map((row) =>
-        row.id === rowId ? updatedRow : row
+        row.id === rowId ? updatedRow : row,
       ),
     }));
   };
@@ -755,7 +945,7 @@ const ViewPayroll = () => {
   const addDynamicRow = (section, options) => {
     const usedLabels = compensationDraft[section].map((row) => row.label);
     const hasAvailableOption = options.some(
-      (option) => !usedLabels.includes(option)
+      (option) => !usedLabels.includes(option),
     );
     if (!hasAvailableOption) {
       toast.info(`All ${section} have already been added`);
@@ -806,8 +996,13 @@ const ViewPayroll = () => {
               <PrimaryButton
                 title="Save"
                 handleSubmit={handleSaveCompensation}
-                disabled={isSavingBankDetails}
-                isLoading={isSavingBankDetails}
+                disabled={
+                  isSavingBankDetails ||
+                  isSavingPayrollCompensation ||
+                  !canValidateCtc ||
+                  isCtcMismatch
+                }
+                isLoading={isSavingBankDetails || isSavingPayrollCompensation}
               />
               <button
                 type="button"
@@ -818,18 +1013,12 @@ const ViewPayroll = () => {
               </button>
             </div>
           ) : (
-            <PrimaryButton
-              title="Edit"
-              handleSubmit={handleEditCompensation}
-            />
+            <PrimaryButton title="Edit" handleSubmit={handleEditCompensation} />
           )
         }
       >
         <div className="flex flex-col gap-5">
-          <div
-            ref={payslipRef}
-            className="rounded-xl bg-[#f7f9fc] p-4 sm:p-6"
-          >
+          <div ref={payslipRef} className="rounded-xl bg-[#f7f9fc] p-4 sm:p-6">
             <div className="mb-5 rounded-xl border border-borderGray bg-white p-5">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                 <div>
@@ -867,7 +1056,6 @@ const ViewPayroll = () => {
                       ["basicPay", "Basic Pay"],
                       ["variablePay", "Variable Pay"],
                       ["gratuity", "Gratuity"],
-                      ["ctc", "CTC"],
                     ].map(([field, label]) => (
                       <TextField
                         key={field}
@@ -887,17 +1075,43 @@ const ViewPayroll = () => {
                     ))}
                     <TextField
                       size="small"
-                      type="date"
-                      label="Appraisal/Offered Date"
-                      value={visibleCompensation.compensation.appraisalDate}
-                      onChange={(event) =>
-                        updateCompensationField(
-                          "appraisalDate",
-                          event.target.value
-                        )
-                      }
-                      InputLabelProps={{ shrink: true }}
+                      type="number"
+                      label="CTC"
+                      value={calculatedCtc.toFixed(2)}
+                      disabled
+                      error={isCtcMismatch}
+                      helperText={storedCtcMismatchMessage}
+                      InputProps={{
+                        startAdornment: (
+                          <span className="mr-2 text-gray-500">INR</span>
+                        ),
+                      }}
                     />
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        label="Appraisal/Offered Date"
+                        value={
+                          visibleCompensation.compensation.appraisalDate
+                            ? dayjs(
+                                visibleCompensation.compensation.appraisalDate,
+                              )
+                            : null
+                        }
+                        onChange={(value) =>
+                          updateCompensationField(
+                            "appraisalDate",
+                            value?.isValid() ? value.format("YYYY-MM-DD") : "",
+                          )
+                        }
+                        format="DD-MM-YYYY"
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
                     <TextField
                       size="small"
                       label="Effective Pay Period"
@@ -907,7 +1121,7 @@ const ViewPayroll = () => {
                       onChange={(event) =>
                         updateCompensationField(
                           "effectivePayPeriod",
-                          event.target.value
+                          event.target.value,
                         )
                       }
                     />
@@ -919,7 +1133,7 @@ const ViewPayroll = () => {
                       onChange={(event) =>
                         updateCompensationField(
                           "paymentMethod",
-                          event.target.value
+                          event.target.value,
                         )
                       }
                     >
@@ -936,7 +1150,7 @@ const ViewPayroll = () => {
                           onChange={(event) =>
                             updateCompensationField(
                               "bankName",
-                              event.target.value
+                              event.target.value,
                             )
                           }
                         />
@@ -947,7 +1161,7 @@ const ViewPayroll = () => {
                           onChange={(event) =>
                             updateCompensationField(
                               "nameOnAccount",
-                              event.target.value
+                              event.target.value,
                             )
                           }
                         />
@@ -958,7 +1172,7 @@ const ViewPayroll = () => {
                           onChange={(event) =>
                             updateCompensationField(
                               "accountNumber",
-                              event.target.value
+                              event.target.value,
                             )
                           }
                         />
@@ -969,7 +1183,7 @@ const ViewPayroll = () => {
                           onChange={(event) =>
                             updateCompensationField(
                               "bankIfsc",
-                              event.target.value.toUpperCase()
+                              event.target.value.toUpperCase(),
                             )
                           }
                         />
@@ -980,7 +1194,7 @@ const ViewPayroll = () => {
                           onChange={(event) =>
                             updateCompensationField(
                               "branchName",
-                              event.target.value
+                              event.target.value,
                             )
                           }
                         />
@@ -992,38 +1206,41 @@ const ViewPayroll = () => {
                     <CompensationRow
                       label="Gross Pay"
                       value={formatPayrollAmount(
-                        visibleCompensation.compensation.grossPay
+                        visibleCompensation.compensation.grossPay,
                       )}
                       period="Month"
                     />
                     <CompensationRow
                       label="Basic Pay"
                       value={formatPayrollAmount(
-                        visibleCompensation.compensation.basicPay
+                        visibleCompensation.compensation.basicPay,
                       )}
                       period="Month"
                     />
                     <CompensationRow
                       label="Variable Pay"
                       value={formatPayrollAmount(
-                        visibleCompensation.compensation.variablePay
+                        visibleCompensation.compensation.variablePay,
                       )}
                       period="Year"
                     />
                     <CompensationRow
                       label="Gratuity"
                       value={formatPayrollAmount(
-                        visibleCompensation.compensation.gratuity
+                        visibleCompensation.compensation.gratuity,
                       )}
                       period="Year"
                     />
                     <CompensationRow
                       label="CTC"
-                      value={formatPayrollAmount(
-                        visibleCompensation.compensation.ctc
-                      )}
+                      value={formatPayrollAmount(calculatedCtc)}
                       period="Year"
                     />
+                    {isCtcMismatch && (
+                      <p className="mb-2 text-xs text-red-600">
+                        {storedCtcMismatchMessage}
+                      </p>
+                    )}
                     <CompensationRow
                       label="Appraisal/Offered Date"
                       value={
@@ -1075,8 +1292,7 @@ const ViewPayroll = () => {
                         <CompensationRow
                           label="Branch Name"
                           value={
-                            visibleCompensation.compensation.branchName ||
-                            "N/A"
+                            visibleCompensation.compensation.branchName || "N/A"
                           }
                         />
                         {!visibleCompensation.compensation.bankName &&
@@ -1112,32 +1328,32 @@ const ViewPayroll = () => {
                   <div className="flex flex-col gap-3">
                     {visibleCompensation.allowances.map((row) =>
                       row.fixed ? (
-                      <div
-                        key={row.id}
-                        className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)] md:items-center"
-                      >
-                        <span className="text-sm text-gray-600">
-                          {row.label}
-                        </span>
-                        <TextField
-                          size="small"
-                          type="number"
-                          label="Amount"
-                          value={row.value}
-                          disabled={row.label === "House Rent Allowance"}
-                          onChange={(event) =>
-                            updateDynamicRow("allowances", row.id, {
-                              ...row,
-                              value: event.target.value,
-                            })
-                          }
-                          InputProps={{
-                            startAdornment: (
-                              <span className="mr-2 text-gray-500">INR</span>
-                            ),
-                          }}
-                        />
-                      </div>
+                        <div
+                          key={row.id}
+                          className="grid grid-cols-1 gap-2 md:grid-cols-[minmax(0,1fr)_minmax(180px,0.7fr)] md:items-center"
+                        >
+                          <span className="text-sm text-gray-600">
+                            {row.label}
+                          </span>
+                          <TextField
+                            size="small"
+                            type="number"
+                            label="Amount"
+                            value={row.value}
+                            disabled={row.label === "House Rent Allowance"}
+                            onChange={(event) =>
+                              updateDynamicRow("allowances", row.id, {
+                                ...row,
+                                value: event.target.value,
+                              })
+                            }
+                            InputProps={{
+                              startAdornment: (
+                                <span className="mr-2 text-gray-500">INR</span>
+                              ),
+                            }}
+                          />
+                        </div>
                       ) : (
                         <EditableAmountRow
                           key={row.id}
@@ -1145,7 +1361,7 @@ const ViewPayroll = () => {
                           options={availableAllowanceOptions}
                           placeholder="Select Allowance"
                           usedLabels={visibleCompensation.allowances.map(
-                            (item) => item.label
+                            (item) => item.label,
                           )}
                           onChange={(updatedRow) =>
                             updateDynamicRow("allowances", row.id, {
@@ -1153,7 +1369,7 @@ const ViewPayroll = () => {
                               value:
                                 updatedRow.label === "House Rent Allowance"
                                   ? Number(
-                                      visibleCompensation.compensation.basicPay
+                                      visibleCompensation.compensation.basicPay,
                                     ) * 0.5
                                   : updatedRow.value,
                             })
@@ -1161,19 +1377,14 @@ const ViewPayroll = () => {
                           onRemove={() =>
                             removeDynamicRow("allowances", row.id)
                           }
-                          amountReadOnly={
-                            row.label === "House Rent Allowance"
-                          }
+                          amountReadOnly={row.label === "House Rent Allowance"}
                         />
-                      )
+                      ),
                     )}
                     <button
                       type="button"
                       onClick={() =>
-                        addDynamicRow(
-                          "allowances",
-                          availableAllowanceOptions
-                        )
+                        addDynamicRow("allowances", availableAllowanceOptions)
                       }
                       className="mt-4 text-sm font-pmedium text-primary hover:underline"
                     >
@@ -1201,26 +1412,31 @@ const ViewPayroll = () => {
                         options={deductionOptions}
                         placeholder="Select Deduction"
                         usedLabels={visibleCompensation.deductions.map(
-                          (item) => item.label
+                          (item) => item.label,
                         )}
                         onChange={(updatedRow) =>
                           updateDynamicRow("deductions", row.id, {
                             ...updatedRow,
                             value:
                               updatedRow.label === "Provident Fund"
-                                ? getEmployeePf(
-                                    visibleCompensation.compensation.basicPay
-                                  )
-                                : isEsiApplicable(employeeRecord)
-                                  ? getEmployeeEsi(
-                                      visibleCompensation.compensation.grossPay
+                                ? employeePfEnabled
+                                  ? getEmployeePf(
+                                      visibleCompensation.compensation.basicPay,
                                     )
-                                  : 0,
+                                  : 0
+                                : updatedRow.label === "TDS"
+                                  ? Number(
+                                      visibleCompensation.compensation.basicPay,
+                                    ) * 0.1
+                                  : employeeEsiEnabled
+                                    ? getEmployeeEsi(
+                                        visibleCompensation.compensation
+                                          .grossPay,
+                                      )
+                                    : 0,
                           })
                         }
-                        onRemove={() =>
-                          removeDynamicRow("deductions", row.id)
-                        }
+                        onRemove={() => removeDynamicRow("deductions", row.id)}
                         amountReadOnly
                       />
                     ))}
@@ -1233,10 +1449,10 @@ const ViewPayroll = () => {
                     >
                       + Add New
                     </button>
-                    {!isEsiApplicable(employeeRecord) && (
+                    {!isTdsWorker && !isEsiApplicable(employeeRecord) && (
                       <p className="mt-3 text-xs text-gray-500">
                         {Number(employeeRecord?.annualCtc) > 0
-                          ? "This employee is not eligible for ESI, so its amount is kept at INR 0."
+                          ? "This employee is not eligible for ESI, so the amount is kept at INR 0."
                           : "Employee CTC is unavailable, so the ESI amount is kept at INR 0."}
                       </p>
                     )}
@@ -1275,9 +1491,7 @@ const ViewPayroll = () => {
               <PayrollSection title="Pay Summary">
                 <CompensationRow
                   label="Gross Earnings"
-                  value={formatPayrollAmount(
-                    visibleCompensation.compensation.grossPay
-                  )}
+                  value={formatPayrollAmount(grossEarnings)}
                 />
                 <CompensationRow
                   label="Total Deductions"
@@ -1291,11 +1505,6 @@ const ViewPayroll = () => {
                 </div>
               </PayrollSection>
             </div>
-
-            <p className="mt-5 text-center text-xs text-gray-500">
-              Compensation edits are currently saved on this screen only and
-              are not sent to the backend.
-            </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4">
@@ -1303,14 +1512,14 @@ const ViewPayroll = () => {
               <PrimaryButton
                 title={"Generate Payslip"}
                 handleSubmit={handleGeneratePayslip}
-                disabled={isPayrollPending}
-                isLoading={isPayrollPending}
+                disabled
               />
             )}
 
             <PrimaryButton
               title={"Download Payslip"}
               handleSubmit={handleDownloadPayslip}
+              disabled
             />
           </div>
         </div>
