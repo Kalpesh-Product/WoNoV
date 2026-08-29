@@ -684,6 +684,16 @@ export const routes = createBrowserRouter([
                     path: "investor-dashboard/inventory",
                     element: <InvestorDashboard />,
                   },
+                     ...[
+                    "meeting-room-utilization",
+                    "external-guests-visited",
+                    "average-room-occupancy",
+                    "busy-time-during-week",
+                    "meeting-duration-breakdown",
+                  ].map((path) => ({
+                    path: `investor-dashboard/${path}`,
+                    element: <InvestorDashboard />,
+                  })),
                   {
                     path: "investor-dashboard/monthly-profit-loss",
                     element: (

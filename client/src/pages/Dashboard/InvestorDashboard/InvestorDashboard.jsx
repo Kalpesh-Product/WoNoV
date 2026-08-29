@@ -14,6 +14,9 @@ import useUserPermissions from "../../../hooks/useUserPermissions";
 import FinanceCard from "../../../components/FinanceCard";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
+import BarGraph from "../../../components/graphs/BarGraph";
+import HeatMap from "../../../components/graphs/HeatMap";
+import PieChartMui from "../../../components/graphs/PieChartMui";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -89,6 +92,508 @@ const InvestorUniqueClientsGraph = () => {
   }, [consolidatedClients]);
 
   return <LeadsLayout data={clientsByMonth} hideAccordion />;
+};
+
+//Meetings
+const parseMeetingMinutes = (duration = "") => {
+  const hours = Number(duration.match(/(\d+(?:\.\d+)?)h/)?.[1] || 0);
+  const minutes = Number(duration.match(/(\d+(?:\.\d+)?)m/)?.[1] || 0);
+
+  return hours * 60 + minutes;
+};
+
+const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+
+  const now = dayjs();
+  const currentMonthLabel = now.format("MMM-YY");
+
+  const fiscalStartYear = now.month() >= 3 ? now.year() : now.year() - 1;
+
+  const fiscalLabel = `FY ${fiscalStartYear}-${String(
+    fiscalStartYear + 1,
+  ).slice(-2)}`;
+
+  const months = Array.from({ length: 12 }, (_, index) =>
+    dayjs(`${fiscalStartYear}-04-01`)
+      .add(index, "month")
+      .format("MMM-YY"),
+  );
+
+  const { data: meetings = [] } = useQuery({
+    queryKey: ["meetings"],
+    queryFn: async () =>
+      (await axios.get("/api/meetings/get-meetings")).data,
+  });
+
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["rooms"],
+    queryFn: async () =>
+      (await axios.get("/api/meetings/get-rooms")).data,
+  });
+
+  const { data: visitors = [] } = useQuery({
+    queryKey: ["visitors"],
+    queryFn: async () =>
+      (await axios.get("/api/visitors/fetch-visitors")).data,
+  });
+
+  const analytics = useMemo(() => {
+    const activeRooms = rooms.filter((room) => room.isActive !== false);
+
+    const activeRoomNames = new Set(
+      activeRooms.map((room) => room.name),
+    );
+
+    const workingDays = (date) => {
+      let count = 0;
+
+      for (let day = 1; day <= date.daysInMonth(); day += 1) {
+        const weekday = date.date(day).day();
+
+        if (weekday >= 1 && weekday <= 6) {
+          count += 1;
+        }
+      }
+
+      return count;
+    };
+
+    const bookedByMonth = Object.fromEntries(
+      months.map((month) => [month, 0]),
+    );
+
+    meetings.forEach((meeting) => {
+      if (
+        activeRoomNames.size &&
+        !activeRoomNames.has(meeting.roomName)
+      ) {
+        return;
+      }
+
+      const date = dayjs(meeting.date || meeting.startTime);
+      const label = date.format("MMM-YY");
+
+      if (date.isValid() && label in bookedByMonth) {
+        bookedByMonth[label] +=
+          parseMeetingMinutes(meeting.duration) / 60;
+      }
+    });
+
+    const bookedHours = Object.values(bookedByMonth).reduce(
+      (sum, value) => sum + value,
+      0,
+    );
+
+    const utilization = [
+      {
+        group: fiscalLabel,
+        data: months.map((month) => {
+          const date = dayjs(month, "MMM-YY");
+          const capacity =
+            activeRooms.length * 9 * workingDays(date);
+
+          return {
+            x: month,
+            y: capacity
+              ? (bookedByMonth[month] / capacity) * 100
+              : 0,
+          };
+        }),
+      },
+    ];
+
+    const guestCounts = Object.fromEntries(
+      months.map((month) => [month, 0]),
+    );
+
+    visitors.forEach((visitor) => {
+      const label = dayjs(visitor.dateOfVisit).format("MMM-YY");
+
+      if (label in guestCounts) {
+        guestCounts[label] += 1;
+      }
+    });
+
+    const roomNames = activeRooms
+      .map((room) => room.name)
+      .sort();
+
+    const roomHours = Object.fromEntries(
+      roomNames.map((name) => [name, 0]),
+    );
+
+    meetings.forEach((meeting) => {
+      const date = dayjs(meeting.date || meeting.startTime);
+
+      if (
+        date.isSame(now, "month") &&
+        meeting.roomName in roomHours
+      ) {
+        roomHours[meeting.roomName] +=
+          parseMeetingMinutes(meeting.duration) / 60;
+      }
+    });
+
+    const monthlyCapacity = 9 * workingDays(now);
+
+    const occupancy = [
+      {
+        name: "Average Occupancy",
+        data: roomNames.map((name) => ({
+          x: name,
+          y: monthlyCapacity
+            ? (roomHours[name] / monthlyCapacity) * 100
+            : 0,
+        })),
+      },
+    ];
+
+    const dayNames = [
+      "Sun",
+      "Mon",
+      "Tue",
+      "Wed",
+      "Thu",
+      "Fri",
+      "Sat",
+    ];
+
+    const timeSlots = Array.from({ length: 12 }, (_, index) => {
+      const start = dayjs()
+        .hour(index + 8)
+        .minute(0);
+
+      return `${start.format("hA")}-${start
+        .add(1, "hour")
+        .format("hA")}`;
+    });
+
+    const weekStart = now.startOf("week");
+
+    const matrix = timeSlots.map(() => Array(7).fill(0));
+
+    meetings.forEach((meeting) => {
+      const date = dayjs(meeting.startTime || meeting.date);
+      const slot = date.hour() - 8;
+
+      if (
+        date.isValid() &&
+        date.isAfter(
+          weekStart.subtract(1, "millisecond"),
+        ) &&
+        date.isBefore(weekStart.add(7, "day")) &&
+        slot >= 0 &&
+        slot < 12
+      ) {
+        matrix[slot][date.day()] += 1;
+      }
+    });
+
+    const heatmap = timeSlots.map((name, index) => ({
+      name,
+      data: dayNames.map((day, dayIndex) => ({
+        x: day,
+        y: matrix[index][dayIndex],
+      })),
+    }));
+
+    const bucketLabels = [
+      "15",
+      "30",
+      "60",
+      "90",
+      "120",
+      "Others",
+    ];
+
+    const bucketCounts = Array(6).fill(0);
+
+    meetings.forEach((meeting) => {
+      const minutes = parseMeetingMinutes(meeting.duration);
+
+      const index = [15, 30, 60, 90, 120].findIndex(
+        (limit) => minutes <= limit,
+      );
+
+      bucketCounts[index < 0 ? 5 : index] += 1;
+    });
+
+    return {
+      bookedHours,
+      utilization,
+      guestCounts,
+      roomNames,
+      roomHours,
+      occupancy,
+      heatmap,
+      duration: bucketLabels.map((label, index) => ({
+        label,
+        value: bucketCounts[index],
+      })),
+    };
+  }, [fiscalLabel, meetings, months, now, rooms, visitors]);
+
+  const goTo = (route) => () =>
+    navigate(`/app/dashboard/investor-dashboard/${route}`);
+
+  const utilizationOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    xaxis: {
+      categories: months,
+    },
+    yaxis: {
+      min: 0,
+      max: 100,
+      tickAmount: 4,
+      title: {
+        text: "Utilization (%)",
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (value) => `${value.toFixed(1)}%`,
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        columnWidth: "40%",
+      },
+    },
+  };
+
+  const barOptions = (categories, yTitle, formatter) => ({
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+    xaxis: {
+      categories,
+    },
+    yaxis: {
+      max: yTitle.includes("Occupancy") ? 100 : undefined,
+      title: {
+        text: yTitle,
+      },
+    },
+    colors: ["#2DC1C6"],
+    dataLabels: {
+      enabled: true,
+      formatter,
+      offsetY: -18,
+      style: {
+        colors: ["#111"],
+      },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        columnWidth: "55%",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+  });
+
+  const heatmapOptions = {
+    chart: {
+      type: "heatmap",
+      toolbar: { show: false },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    plotOptions: {
+      heatmap: {
+        colorScale: {
+          ranges: [
+            {
+              from: 0,
+              to: 0,
+              color: "#d1d5db",
+              name: "No Bookings",
+            },
+            {
+              from: 1,
+              to: 5,
+              color: "#B2FFB2",
+              name: "Low (1-5)",
+            },
+            {
+              from: 6,
+              to: 10,
+              color: "#4CAF50",
+              name: "Moderate (6-10)",
+            },
+            {
+              from: 11,
+              to: 15,
+              color: "#2E7D32",
+              name: "High (11-15)",
+            },
+            {
+              from: 16,
+              to: 999,
+              color: "#1B5E20",
+              name: "Very High (16-20)",
+            },
+          ],
+        },
+      },
+    },
+  };
+
+  const pieOptions = {
+    labels: analytics.duration.map((item) => item.label),
+    legend: {
+      position: "bottom",
+    },
+    colors: [
+      "#1E3D73",
+      "#34528A",
+      "#4A68A1",
+      "#608DB8",
+      "#76A2CF",
+      "#8CB8E6",
+    ],
+    dataLabels: {
+      enabled: true,
+      formatter: (value) => `${value.toFixed(1)}%`,
+    },
+  };
+
+  const show = (key) => visibleGraphs.includes(key);
+
+  return (
+    <div className="flex flex-col gap-8">
+      {show("utilization") && (
+        <div
+          onClick={goTo("meeting-room-utilization")}
+          className="cursor-pointer"
+        >
+          <YearlyGraph
+            title="AVERAGE MEETING ROOM UTILIZATION"
+            titleAmount={`TOTAL BOOKED HOURS : ${analytics.bookedHours.toFixed(
+              0,
+            )}`}
+            data={analytics.utilization}
+            options={utilizationOptions}
+            currentYear={fiscalLabel}
+          />
+        </div>
+      )}
+
+      {(show("guests") || show("occupancy")) && (
+        <WidgetSection
+          layout={Number(show("guests")) + Number(show("occupancy"))}
+        >
+          {show("guests") && (
+            <WidgetSection
+              border
+              padding
+              title="EXTERNAL GUESTS VISITED"
+              titleLabel={currentMonthLabel}
+            >
+              <div
+                onClick={goTo("external-guests-visited")}
+                className="cursor-pointer"
+              >
+                <BarGraph
+                  data={[
+                    {
+                      name: "Visitors",
+                      data: months.map(
+                        (month) => analytics.guestCounts[month],
+                      ),
+                    },
+                  ]}
+                  options={barOptions(
+                    months,
+                    "Guest Count",
+                    (value) => value.toFixed(0),
+                  )}
+                />
+              </div>
+            </WidgetSection>
+          )}
+
+          {show("occupancy") && (
+            <WidgetSection
+              border
+              padding
+              title="AVERAGE OCCUPANCY OF ROOMS IN %"
+              titleLabel={currentMonthLabel}
+            >
+              <div
+                onClick={goTo("average-room-occupancy")}
+                className="cursor-pointer"
+              >
+                <BarGraph
+                  data={analytics.occupancy}
+                  options={barOptions(
+                    analytics.roomNames,
+                    "Occupancy (%)",
+                    (value) => `${value.toFixed(0)}%`,
+                  )}
+                />
+              </div>
+            </WidgetSection>
+          )}
+        </WidgetSection>
+      )}
+
+      {(show("busy") || show("duration")) && (
+        <WidgetSection
+          layout={Number(show("busy")) + Number(show("duration"))}
+        >
+          {show("busy") && (
+            <WidgetSection
+              border
+              title="BUSY TIME DURING THE WEEK"
+            >
+              <div
+                onClick={goTo("busy-time-during-week")}
+                className="cursor-pointer"
+              >
+                <HeatMap
+                  data={analytics.heatmap}
+                  options={heatmapOptions}
+                  height={395}
+                />
+              </div>
+            </WidgetSection>
+          )}
+
+          {show("duration") && (
+            <WidgetSection
+              border
+              title="MEETING DURATION BREAKDOWN"
+            >
+              <div
+                onClick={goTo("meeting-duration-breakdown")}
+                className="cursor-pointer"
+              >
+                <PieChartMui
+                  data={analytics.duration}
+                  options={pieOptions}
+                  height={410}
+                  width={550}
+                  centerAlign
+                />
+              </div>
+            </WidgetSection>
+          )}
+        </WidgetSection>
+      )}
+    </div>
+  );
 };
 
 
@@ -320,9 +825,16 @@ const InvestorDashboard = () => {
   const navigate = useNavigate();
   const { hasPermission } = useUserPermissions();
   const showDetails = location.pathname.endsWith("/historical-P&L");
- const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
+  const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
   const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
   const showInventoryPage = location.pathname.endsWith("/inventory");
+   const meetingGraphRoutes = {
+    utilization: "/meeting-room-utilization",
+    guests: "/external-guests-visited",
+    occupancy: "/average-room-occupancy",
+    busy: "/busy-time-during-week",
+    duration: "/meeting-duration-breakdown",
+  };
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
   const canViewHistoricalPnlGraph = hasPermission(
     PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
@@ -338,6 +850,18 @@ const InvestorDashboard = () => {
   );
   const canViewInventoryOverview = hasPermission(
     PERMISSIONS.INVESTOR_INVENTORY_OVERVIEW.value,
+  );
+  const meetingGraphPermissions = {
+    utilization: PERMISSIONS.INVESTOR_MEETING_ROOM_UTILIZATION.value,
+    guests: PERMISSIONS.INVESTOR_EXTERNAL_GUESTS_VISITED.value,
+    occupancy: PERMISSIONS.INVESTOR_AVERAGE_ROOM_OCCUPANCY.value,
+    busy: PERMISSIONS.INVESTOR_BUSY_TIME_WEEK.value,
+    duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
+  };
+  const visibleMeetingGraphs = Object.keys(meetingGraphRoutes).filter(
+    (key) =>
+      hasPermission(meetingGraphPermissions[key]) &&
+      (showDashboardHome || location.pathname.endsWith(meetingGraphRoutes[key])),
   );
 
   const { data: revenueExpenseData = [], isLoading } = useQuery({
@@ -549,6 +1073,10 @@ const InvestorDashboard = () => {
       {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
         <CheckAvailability />
       )}
+      {visibleMeetingGraphs.length > 0 && (
+        <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
+      )}
+
 
       {showDetails && (
         <WidgetSection layout={1}>
