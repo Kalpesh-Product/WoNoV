@@ -363,27 +363,21 @@ const CheckAvailability = ({ cardsFirst = false }) => {
 
   const onSubmit = (data) => {
     const { location, floor } = data;
-    address.pathname?.includes("mix-bag")
-      ? navigate(
-        `/app/dashboard/sales-dashboard/mix-bag/inventory/${location}/${floor}`,
-        {
-          state: {
-            unitId: selectedUnitId[0],
-            unitNo: floor,
-            building: location,
-          },
-        }
-      )
-      : navigate(
-        `/app/dashboard/sales-dashboard/inventory/${location}/${floor}`,
-        {
-          state: {
-            unitId: selectedUnitId[0],
-            unitNo: floor,
-            building: location,
-          },
-        }
-      );
+
+    if (!location || !floor) return;
+
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURIComponent(
+        location,
+      )}/${encodeURIComponent(floor)}`,
+      {
+        state: {
+          unitId: selectedUnitId[0],
+          unitNo: floor,
+          building: location,
+        },
+      },
+    );
   };
 
   const inventoryStats = {

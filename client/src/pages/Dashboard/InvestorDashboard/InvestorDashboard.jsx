@@ -547,7 +547,7 @@ const InvestorDashboard = () => {
         canViewUniqueClientsGraph && <InvestorUniqueClientsGraph />}
 
       {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
-        <CheckAvailability cardsFirst />
+        <CheckAvailability />
       )}
 
       {showDetails && (
