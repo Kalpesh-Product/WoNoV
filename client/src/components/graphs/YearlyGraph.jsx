@@ -14,6 +14,7 @@ const YearlyGraph = ({
   TitleAmountGreen,
   TitleAmountRed,
   TitleAmountTotal,
+  headerRightContent,
    greenTitle,
   redTitle,
   totalTitle,
@@ -135,6 +136,7 @@ const YearlyGraph = ({
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
         totalTitle={totalTitle}
+        headerRightContent={headerRightContent}
          greenTitle={greenTitle}
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}

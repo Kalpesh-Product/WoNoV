@@ -38,13 +38,6 @@ const visitorTypes = [
   "Scheduled",
 ];
 
-const normalizeVisitorType = (value) => {
-  const normalized = String(value || "").trim().toLowerCase();
-
-  return visitorTypes.find(
-    (type) => type.toLowerCase() === normalized,
-  );
-};
 const investorClientType = (collection, client) => {
   if (collection === "coworkingClients") return "Coworking";
   if (collection === "virtualOfficeClients") return "Virtualoffice";
@@ -158,11 +151,9 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   });
 
   const { data: visitors = [] } = useQuery({
-     queryKey: ["investor-visitors-with-visits"],
+     queryKey: ["investor-visitors"],
     queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors", {
-        params: { multipleVisits: true },
-      });
+      const response = await axios.get("/api/visitors/fetch-visitors");
       return Array.isArray(response.data) ? response.data : [];
     },
   });
@@ -233,9 +224,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       },
     ];
 
-    const guestCounts = Object.fromEntries(
-      months.map((month) => [month, 0]),
-    );
+    const guestCounts = Object.fromEntries(months.map((month) => [month, 0]));
     const visitorTypeCounts = Object.fromEntries(
       visitorTypes.map((type) => [
         type,
@@ -244,27 +233,16 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     );
 
     visitors.forEach((visitor) => {
-     const visits = asArray(visitor.externalVisits);
-      const visitorVisits = visits.length
-        ? visits
-        : [visitor];
+      const date = dayjs(visitor.dateOfVisit || visitor.checkIn || visitor.createdAt);
+      const label = date.format("MMM-YY");
+      const visitorType = visitor.visitorType;
 
-      visitorVisits.forEach((visit) => {
-        const date = dayjs(
-          visit.checkIn || visit.dateOfVisit || visit.createdAt,
-        );
-        const label = date.format("MMM-YY");
-        const visitorType = normalizeVisitorType(
-          visit.visitorType || visitor.visitorType,
-        );
-
-        if (date.isValid() && label in guestCounts) {
-          guestCounts[label] += 1;
-          if (visitorType) {
-            visitorTypeCounts[visitorType][label] += 1;
-          }
+      if (date.isValid() && label in guestCounts) {
+        guestCounts[label] += 1;
+        if (visitorType && visitorTypeCounts[visitorType]) {
+          visitorTypeCounts[visitorType][label] += 1;
         }
-      });
+      }
     });
 
     // const roomNames = activeRooms
@@ -383,13 +361,9 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       bookedHours,
       utilization,
       guestCounts,
-       visitorTypeCounts,
-      totalVisitors: Object.values(visitorTypeCounts).reduce(
-        (total, monthlyCounts) =>
-          total + Object.values(monthlyCounts).reduce(
-            (typeTotal, count) => typeTotal + count,
-            0,
-          ),
+      visitorTypeCounts,
+      totalVisitors: Object.values(guestCounts).reduce(
+        (total, count) => total + count,
         0,
       ),
       roomNames,
@@ -439,7 +413,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
   };
 
-  const barOptions = (categories, yTitle, formatter) => ({
+  const barOptions = (categories, yTitle, formatter, showDataLabels = true) => ({
     chart: {
       type: "bar",
       toolbar: { show: false },
@@ -465,7 +439,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
     colors: ["#2DC1C6"],
     dataLabels: {
-      enabled: true,
+      enabled: showDataLabels,
       formatter,
       offsetY: -18,
       style: {
@@ -531,12 +505,22 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
   };
   const visitorOptions = {
-    ...barOptions(months, "No. of Visitors", (value) => value.toFixed(0)),
+    ...barOptions(
+      months,
+      "No. of Visitors",
+      (value) => value.toFixed(0),
+      false,
+    ),
     colors: ["#2196F3", "#16B8C4", "#3498DB", "#174EA6", "#5C6BC0"],
     legend: {
       show: true,
       position: "top",
       horizontalAlign: "center",
+    },
+    tooltip: {
+      y: {
+        formatter: (value) => `${Number(value || 0).toFixed(0)}`,
+      },
     },
   };
 
@@ -654,7 +638,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           </div>
         </WidgetSection>
       )}
-       {show("visitors") && (
+      {show("visitors") && (
         <div
           onClick={goTo("monthly-total-visitors")}
           className="cursor-pointer"
@@ -666,13 +650,13 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
                 TOTAL COUNT: {analytics.totalVisitors}
               </span>
             }
-            data={visitorTypes.map((type) => ({
-              name: type,
-              group: fiscalLabel,
-              data: months.map(
-                (month) => analytics.visitorTypeCounts[type][month],
-              ),
-            }))}
+            data={[
+              ...visitorTypes.map((type) => ({
+                name: type,
+                group: fiscalLabel,
+                data: months.map((month) => analytics.visitorTypeCounts[type][month]),
+              })),
+            ]}
             options={visitorOptions}
             currentYear={fiscalLabel}
           />
