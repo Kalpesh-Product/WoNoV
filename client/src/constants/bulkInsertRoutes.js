@@ -54,7 +54,14 @@ const bulkInsertRoutes = [
     bulkInsertRoutes: [
       {
         name: "performance",
-        aliases: ["KRA", "KPA", "KRA KPA", "KRA/KPA", "performance"],
+        aliases: [
+          "KRA",
+          "KPA",
+          "KRA KPA",
+          "KRA/KPA",
+          "KRA And KPA",
+          "performance",
+        ],
         fileKey: "performance",
         route:
           "/api/performance/bulk-upload-performance-tasks",
@@ -65,6 +72,68 @@ const bulkInsertRoutes = [
         route:
           "api/tasks/bulk-insert",
       },
+      {
+        name: "assets",
+        aliases: ["Asset - Overall"],
+        fileKey: "assets",
+        route: "/api/assets/bulk-insert-assets/6798ba9de469e809084e2494",
+      },
+      {
+        name: "vendors",
+        aliases: ["Vendor - Overall"],
+        fileKey: "vendors",
+        route: "/api/vendors/bulk-insert-vendors/6798ba9de469e809084e2494",
+      },
+      {
+        name: "inventory",
+        aliases: ["Inventory - Overall"],
+        fileKey: "inventory",
+        route: "/api/invenotry/bulk-insert-inventory/6798ba9de469e809084e2494",
+      },
+      {
+        name: "Expense And Budget",
+        aliases: [
+          "Expense And Budget - Overall",
+          "Expense & Budget",
+          "Budget",
+          "Budgets",
+        ],
+        fileKey: "budgets",
+        sourceDepartmentId: "6798bab0e469e809084e249a",
+        route: "/api/budget/bulk-insert-budget/6798ba9de469e809084e2494",
+      },
+      {
+        name: "Coworking Revenue",
+        aliases: ["Coworking Revenue - Finance & Sales"],
+        fileKey: "coworking-revenues",
+        sourceDepartmentId: "6798bab0e469e809084e249a",
+        route: "/api/sales/bulk-insert-coworking-client-revenue",
+      },
+      {
+        name: "Virtual Office Revenue",
+        aliases: ["Virtual Office Revenue - Finance & Sales"],
+        fileKey: "virtual-office-revenue",
+        sourceDepartmentId: "6798bab0e469e809084e249a",
+        route: "/api/sales/bulk-insert-virtual-office-revenue",
+      },
+      {
+        name: "Alternate Revenue",
+        aliases: ["Alternate Revenue - Finance & Sales"],
+        fileKey: "alternate-revenue",
+        sourceDepartmentId: "6798bab0e469e809084e249a",
+        route: "/api/sales/bulk-insert-alternate-revenue",
+      },
+      {
+        name: "Workation Revenue",
+        aliases: [
+          "Workation Revenues",
+          "Workation Revenue - Finance & Sales",
+          "Workation Revenues - Finance & Sales",
+        ],
+        fileKey: "workation-revenue",
+        sourceDepartmentId: "6798bab0e469e809084e249a",
+        route: "/api/sales/bulk-insert-workation-revenue",
+      },
     ],
   },
   {
@@ -72,21 +141,29 @@ const bulkInsertRoutes = [
     bulkInsertRoutes: [
       {
         name: "Alternate Revenue",
+        aliases: ["Alternate Revenue - Finance & Sales"],
         fileKey: "alternate-revenue",
         route: "/api/sales/bulk-insert-alternate-revenue",
       },
       {
         name: "Coworking Revenue",
+        aliases: ["Coworking Revenue - Finance & Sales"],
         fileKey: "coworking-revenues",
         route: "/api/sales/bulk-insert-coworking-client-revenue",
       },
       {
         name: "Virtual Office Revenue",
+        aliases: ["Virtual Office Revenue - Finance & Sales"],
         fileKey: "virtual-office-revenue",
         route: "/api/sales/bulk-insert-virtual-office-revenue",
       },
       {
-        name: "Workation Revenues",
+        name: "Workation Revenue",
+        aliases: [
+          "Workation Revenues",
+          "Workation Revenue - Finance & Sales",
+          "Workation Revenues - Finance & Sales",
+        ],
         fileKey: "workation-revenue",
         route: "/api/sales/bulk-insert-workation-revenue",
       },
@@ -135,7 +212,10 @@ const bulkInsertRoutes = [
       },
       {
         name: "Virtual Office Revenue",
-        aliases: ["Virtual Office Revenues"],
+        aliases: [
+          "Virtual Office Revenues",
+          "Virtual Office Revenue - Finance & Sales",
+        ],
         fileKey: "virtual-office-revenue",
         route: "/api/sales/bulk-insert-virtual-office-revenue",
       },

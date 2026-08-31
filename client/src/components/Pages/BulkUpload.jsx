@@ -29,6 +29,77 @@ const normalizeTemplateName = (value) =>
 const hasNormalizedToken = (value, token) =>
   new RegExp(`(^| )${token}( |$)`).test(value);
 
+const FRONTEND_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const FINANCE_DEPARTMENT_ID = "6798bab0e469e809084e249a";
+
+const financeSalesTemplateLabels = [
+  {
+    match: ["coworking revenue", "coworking revenues"],
+    label: "Coworking Revenue - Finance & Sales",
+  },
+  {
+    match: ["virtual office revenue", "virtual office revenues"],
+    label: "Virtual Office Revenue - Finance & Sales",
+  },
+  {
+    match: ["alternate revenue", "alternate revenues"],
+    label: "Alternate Revenue - Finance & Sales",
+  },
+  {
+    match: ["workation revenue", "workation revenues"],
+    label: "Workation Revenue - Finance & Sales",
+  },
+];
+
+const frontendOverallTemplateLabels = [
+  {
+    match: ["assets", "asset"],
+    label: "Asset - Overall",
+  },
+  {
+    match: ["vendors", "vendor"],
+    label: "Vendor - Overall",
+  },
+  {
+    match: ["inventory"],
+    label: "Inventory - Overall",
+  },
+  {
+    match: ["tasks", "task"],
+    label: "Tasks - Overall",
+  },
+  {
+    match: ["performance", "kra and kpa", "kra kpa", "kra", "kpa"],
+    label: "KRA And KPA - Overall",
+  },
+  {
+    match: ["expense and budget", "expense & budget", "budget", "budgets"],
+    label: "Expense And Budget - Overall",
+  },
+];
+
+const getTemplateDisplayName = (templateName, departmentId) => {
+  if (departmentId !== FRONTEND_DEPARTMENT_ID) {
+    return templateName?.trim() || "Untitled Template";
+  }
+
+  const normalizedTemplateName = normalizeTemplateName(templateName);
+  const matchedLabel = [...financeSalesTemplateLabels, ...frontendOverallTemplateLabels].find(({ match }) =>
+    match.some((candidate) => {
+      const normalizedCandidate = normalizeTemplateName(candidate);
+
+      return (
+        normalizedCandidate === normalizedTemplateName ||
+        hasNormalizedToken(normalizedTemplateName, normalizedCandidate) ||
+        normalizedTemplateName.includes(normalizedCandidate) ||
+        normalizedCandidate.includes(normalizedTemplateName)
+      );
+    }),
+  );
+
+  return matchedLabel?.label || templateName?.trim() || "Untitled Template";
+};
+
 const templateNameMatchesRoute = (templateName, routeConfig) => {
   const normalizedTemplateName = normalizeTemplateName(templateName);
   const normalizedRouteName = normalizeTemplateName(routeConfig?.name);
@@ -45,6 +116,11 @@ const templateNameMatchesRoute = (templateName, routeConfig) => {
     );
   });
 };    
+
+const isTemplateNotFoundError = (error) =>
+  String(error?.response?.data?.message || error?.message || "")
+    .toLowerCase()
+    .includes("template not found");
 
 
 export default function BulkUpload() {
@@ -91,6 +167,18 @@ export default function BulkUpload() {
     return departmentFilter?.bulkInsertRoutes || [];
   }, [deptDetails?._id]);
 
+  const sourceDepartmentIds = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          departmentDrop
+            .map((item) => item.sourceDepartmentId)
+            .filter(Boolean),
+        ),
+      ),
+    [departmentDrop],
+  );
+
   const { data: departmentDocuments = [], isPending: isTemplatesPending } =
     useQuery({
       queryKey: ["department-templates", deptDetails?._id],
@@ -102,6 +190,34 @@ export default function BulkUpload() {
       },
       enabled: !!deptDetails?._id,
     });
+
+  const { data: sourceDepartmentTemplates = [] } = useQuery({
+    queryKey: [
+      "department-templates",
+      "source",
+      deptDetails?._id,
+      sourceDepartmentIds.join(","),
+    ],
+    queryFn: async () => {
+      if (!sourceDepartmentIds.length) return [];
+
+      const responses = await Promise.all(
+        sourceDepartmentIds.map(async (departmentId) => {
+          const response = await axios.get(
+            `/api/company/department-templates/${departmentId}`,
+          );
+
+          return (response.data?.templates || []).map((template) => ({
+            ...template,
+            __departmentId: departmentId,
+          }));
+        }),
+      );
+
+      return responses.flat();
+    },
+    enabled: !!deptDetails?._id && sourceDepartmentIds.length > 0,
+  });
   const {
     handleSubmit,
     reset,
@@ -125,39 +241,144 @@ export default function BulkUpload() {
   //     .trim();
 
   const selectedDoc = watch("documentName");
-  const templateOptions = useMemo(() => {
+
+  const findMatchingTemplate = (templateName, templates = []) =>
+    templates.find((template) =>
+      templateNameMatchesRoute(templateName, {
+        name: template.name,
+        aliases: template.aliases || [],
+      }),
+    );
+
+  const documentTemplateOptions = useMemo(() => {
     if (!departmentDocuments?.templates?.length) return [];
 
     return departmentDocuments.templates
       .filter((template) => template.isActive !== false)
-      .map((template) => {
+      .flatMap((template) => {
         const templateName = template.name?.trim() || "Untitled Template";
-        // const routeConfig = departmentDrop.find(
-        //   (item) => item.name?.toLowerCase() === templateName.toLowerCase(),
-        // );
-        const normalizedTemplateName = normalizeTemplateName(templateName);
-        // const routeConfig = departmentDrop.find((item) => {
-        //   const configuredNames = [item.name, ...(item.aliases || [])];
-
-        //   return configuredNames.some(
-        //     (configuredName) =>
-        //       normalizeTemplateName(configuredName) === normalizedTemplateName,
-        //   );
-        // });
-
-         const routeConfig = departmentDrop.find((item) =>
+        const routeConfig = departmentDrop.find((item) =>
           templateNameMatchesRoute(templateName, item),
         );
 
+        if (routeConfig?.sourceDepartmentId) {
+          return [];
+        }
+
+        const sourceDepartmentId = deptDetails?._id;
+        const sourceTemplate =
+          routeConfig?.sourceDepartmentId
+            ? findMatchingTemplate(
+                templateName,
+                sourceDepartmentTemplates.filter(
+                  (item) => item.__departmentId === routeConfig.sourceDepartmentId,
+                ),
+              )
+            : null;
+        const resolvedTemplate = sourceTemplate || template;
+        const templateId =
+          resolvedTemplate._id || resolvedTemplate.documentId || templateName;
 
         return {
-          id: template._id || template.documentId || templateName,
+          id: templateId,
+          templateId,
           name: templateName,
+          displayName: getTemplateDisplayName(templateName, deptDetails?._id),
           route: routeConfig?.route,
           fileKey: routeConfig?.fileKey,
+          documentLink: resolvedTemplate.documentLink,
+          downloadedAt: resolvedTemplate.downloadedAt,
+          uploadedAt: resolvedTemplate.uploadedAt,
+          templateDepartmentId: sourceDepartmentId,
+          source: sourceTemplate ? "source-document" : "document",
         };
       });
-  }, [departmentDocuments, departmentDrop]);
+  }, [
+    departmentDocuments,
+    departmentDrop,
+    deptDetails?._id,
+    sourceDepartmentTemplates,
+  ]);
+
+  const sourceDocumentTemplateOptions = useMemo(() => {
+    if (!sourceDepartmentTemplates?.length) return [];
+
+    return sourceDepartmentTemplates.map((template) => {
+      const templateName = template.name?.trim() || "Untitled Template";
+      const routeConfig = departmentDrop.find((item) =>
+        templateNameMatchesRoute(templateName, item),
+      );
+
+      return {
+        id: template._id || template.documentId || templateName,
+        templateId: template._id || template.documentId || templateName,
+        name: templateName,
+        displayName: getTemplateDisplayName(templateName, deptDetails?._id),
+        route: routeConfig?.route,
+        fileKey: routeConfig?.fileKey,
+        documentLink: template.documentLink,
+        downloadedAt: template.downloadedAt,
+        uploadedAt: template.uploadedAt,
+        templateDepartmentId: template.__departmentId || deptDetails?._id,
+        source: "source-document",
+      };
+    });
+  }, [sourceDepartmentTemplates, departmentDrop, deptDetails?._id]);
+
+  const fallbackTemplateOptions = useMemo(() => {
+    if (!departmentDrop?.length) return [];
+
+    return departmentDrop
+      .filter(
+        (routeConfig) =>
+          !documentTemplateOptions.some((template) =>
+            templateNameMatchesRoute(template.name, routeConfig),
+          ) &&
+          !sourceDocumentTemplateOptions.some((template) =>
+            templateNameMatchesRoute(template.name, routeConfig),
+          ),
+      )
+      .map((item) => ({
+        id: item.name,
+        templateId: null,
+        name: item.name,
+        displayName: getTemplateDisplayName(item.name, deptDetails?._id),
+        route: item.route,
+        fileKey: item.fileKey,
+        documentLink: null,
+        downloadedAt: null,
+        uploadedAt: null,
+        templateDepartmentId: item.sourceDepartmentId || deptDetails?._id,
+        source: "config",
+      }));
+  }, [
+    departmentDrop,
+    documentTemplateOptions,
+    sourceDocumentTemplateOptions,
+    deptDetails?._id,
+  ]);
+
+  const templateOptions = useMemo(
+    () =>
+      [
+        ...documentTemplateOptions,
+        ...sourceDocumentTemplateOptions,
+        ...fallbackTemplateOptions,
+      ].filter(
+        (template, index, templates) =>
+          index ===
+          templates.findIndex(
+            (candidate) =>
+              normalizeTemplateName(candidate.name) ===
+              normalizeTemplateName(template.name),
+          ),
+      ),
+    [
+      documentTemplateOptions,
+      sourceDocumentTemplateOptions,
+      fallbackTemplateOptions,
+    ],
+  );
 
   const selectedTemplate = templateOptions.find(
     (item) => item.id === selectedDoc,
@@ -174,11 +395,15 @@ export default function BulkUpload() {
     return formattedValue && formattedValue !== "N/A" ? formattedValue : "-";
   };
 
-  const updateTemplateLastModified = async (templateId, type) => {
-    if (!deptDetails?._id || !templateId) return null;
+  const updateTemplateLastModified = async (
+    departmentId,
+    templateId,
+    type,
+  ) => {
+    if (!departmentId || !templateId) return null;
 
     const response = await axios.patch(
-      `/api/company/department-templates/${deptDetails._id}/${templateId}/${type}/lastmodified`,
+      `/api/company/department-templates/${departmentId}/${templateId}/${type}/lastmodified`,
     );
 
     return response.data;
@@ -203,17 +428,27 @@ export default function BulkUpload() {
     }
 
     try {
-      const data = await updateTemplateLastModified(templateId, "download");
+      const data = await updateTemplateLastModified(
+        template?.templateDepartmentId || deptDetails._id,
+        templateId,
+        "download",
+      );
       setDownloadedAtByTemplate((prev) => ({
         ...prev,
         [templateId]: data?.downloadedAt,
       }));
     } catch (error) {
-      toast.error(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Failed to update template download time.",
-      );
+      if (!isTemplateNotFoundError(error)) {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to update template download time.",
+        );
+      }
+      setDownloadedAtByTemplate((prev) => ({
+        ...prev,
+        [templateId]: new Date().toISOString(),
+      }));
     }
 
     const extension =
@@ -256,22 +491,36 @@ export default function BulkUpload() {
       return response.data;
     },
    onSuccess: async (data) => {
-      try {
-        const lastModifiedData = await updateTemplateLastModified(
-          selectedTemplate?.id,
-          "upload",
-        );
+      if (selectedTemplate?.templateId) {
+        try {
+          const lastModifiedData = await updateTemplateLastModified(
+            selectedTemplate.templateDepartmentId || deptDetails._id,
+            selectedTemplate.templateId,
+            "upload",
+          );
 
+          setUploadedAtByTemplate((prev) => ({
+            ...prev,
+            [selectedTemplate.templateId]: lastModifiedData?.uploadedAt,
+          }));
+        } catch (error) {
+          if (!isTemplateNotFoundError(error)) {
+            toast.error(
+              error?.response?.data?.message ||
+                error?.message ||
+                "Failed to update template upload time.",
+            );
+          }
+          setUploadedAtByTemplate((prev) => ({
+            ...prev,
+            [selectedTemplate.templateId]: new Date().toISOString(),
+          }));
+        }
+      } else if (selectedTemplate?.id) {
         setUploadedAtByTemplate((prev) => ({
           ...prev,
-          [selectedTemplate?.id]: lastModifiedData?.uploadedAt,
+          [selectedTemplate.id]: new Date().toISOString(),
         }));
-      } catch (error) {
-        toast.error(
-          error?.response?.data?.message ||
-            error?.message ||
-            "Failed to update template upload time.",
-        );
       }
       toast.success(data.message || "DATA UPLOADED");
       setOpenModal(false);
@@ -288,25 +537,30 @@ export default function BulkUpload() {
   });
 
   const formattedTemplates = useMemo(() => {
-    if (!departmentDocuments?.templates) return [];
-    return departmentDocuments.templates
-      .filter((template) => template.isActive === true)
-      .map((template, index) => ({
-        srNo: index + 1,
-        id: template._id || template.documentId || template.name,
-        name: template.name,
-        documentLink: template.documentLink,
-        isActive: template.isActive ? "Active" : "Inactive",
-        date: formatTemplateTimestamp(
-          downloadedAtByTemplate[getTemplateRowId(template)] ||
-            template.downloadedAt,
-        ),
-        updatedAt: formatTemplateTimestamp(
-          uploadedAtByTemplate[getTemplateRowId(template)] ||
-            template.uploadedAt,
-        ),
-      }));
-  }, [departmentDocuments, downloadedAtByTemplate, uploadedAtByTemplate]);
+    if (!templateOptions?.length) return [];
+
+    return templateOptions.map((template, index) => ({
+      srNo: index + 1,
+      id: template.id,
+      templateId: template.templateId,
+      name: template.name,
+      displayName: template.displayName,
+      documentLink: template.documentLink,
+      isActive: "Active",
+      date: formatTemplateTimestamp(
+        downloadedAtByTemplate[getTemplateRowId(template)] ||
+          template.downloadedAt,
+      ),
+      updatedAt: formatTemplateTimestamp(
+        uploadedAtByTemplate[getTemplateRowId(template)] ||
+          template.uploadedAt,
+      ),
+    }));
+  }, [
+    templateOptions,
+    downloadedAtByTemplate,
+    uploadedAtByTemplate,
+  ]);
 
   const templateColumns = [
     {
@@ -316,7 +570,7 @@ export default function BulkUpload() {
     },
     {
       headerName: "Template Name",
-      field: "name",
+      field: "displayName",
       flex: 1,
     },
     {
@@ -363,15 +617,19 @@ export default function BulkUpload() {
       flex: 1,
       cellRenderer: (params) => (
         <div className="p-2">
-          <a
-            href={params.data.documentLink}
-            onClick={(event) => {
-              event.preventDefault();
-              handleTemplateDownload(params.data);
-            }}
-          >
-            <IoMdDownload size={20} />
-          </a>
+          {params.data.documentLink ? (
+            <a
+              href={params.data.documentLink}
+              onClick={(event) => {
+                event.preventDefault();
+                handleTemplateDownload(params.data);
+              }}
+            >
+              <IoMdDownload size={20} />
+            </a>
+          ) : (
+            <span className="text-gray-400">-</span>
+          )}
         </div>
       ),
     },
@@ -424,18 +682,18 @@ export default function BulkUpload() {
                     <MenuItem value="" disabled>
                       Select A Document Type
                     </MenuItem>
-                    {isTemplatesPending
-                      ? []
-                      : // : departmentDrop?.map((item) => (
+                    {
+                      // : departmentDrop?.map((item) => (
                         //   <MenuItem key={item.name} value={item.route}>
                         //     {item.name}
                         //   </MenuItem>
                         // ))}
-                        templateOptions.map((item) => (
-                          <MenuItem key={item.id} value={item.id}>
-                            {item.name}
-                          </MenuItem>
-                        ))}
+                      templateOptions.map((item) => (
+                        <MenuItem key={item.id} value={item.id}>
+                          {item.displayName}
+                        </MenuItem>
+                      ))
+                    }
                   </TextField>
                 )}
               />
