@@ -258,6 +258,12 @@ const MeetingDashboard = () => {
       data: months.map((m) => monthlyVisitorMap[m]),
     },
   ];
+  const externalGuestsMax = Math.max(
+    120,
+    Math.ceil(
+      Math.max(...months.map((month) => monthlyVisitorMap[month]), 0) / 20,
+    ) * 20,
+  );
   // const externalGuestsData = [
   //   {
   //     name: "Guests Visited",
@@ -287,7 +293,10 @@ const MeetingDashboard = () => {
       },
     },
     yaxis: {
-      max: 100, // Maximum count on Y-axis
+      max: externalGuestsMax, // Dynamic ceiling so the tallest bar fits cleanly
+      min: 0,
+      tickAmount: 4,
+      forceNiceScale: false,
       title: {
         text: "Guest Count",
       },

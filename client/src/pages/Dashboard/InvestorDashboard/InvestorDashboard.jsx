@@ -356,6 +356,12 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         data: guestMonths.map((month) => monthlyGuestMap[month]),
       },
     ];
+    const externalGuestsMax = Math.max(
+      120,
+      Math.ceil(
+        Math.max(...guestMonths.map((month) => monthlyGuestMap[month]), 0) / 20,
+      ) * 20,
+    );
 
     const externalGuestsOptions = {
       chart: {
@@ -379,7 +385,10 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         },
       },
       yaxis: {
-        max: 100,
+        max: externalGuestsMax,
+        min: 0,
+        tickAmount: 4,
+        forceNiceScale: false,
         title: {
           text: "Guest Count",
         },
