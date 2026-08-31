@@ -1,14 +1,19 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import { IoFilter } from "react-icons/io5";
-import { Box, Chip, Popover, Skeleton, Tooltip } from "@mui/material";
+import { Box, Chip, Popover, Skeleton, TextField, Tooltip } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import HrLeavesAdvancedFilter from "./HrLeavesAdvancedFilter";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import MuiModal from "../../../../components/MuiModal";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import { queryClient } from "../../../../main";
+import { toast } from "sonner";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -59,6 +64,9 @@ const normalizeLeaveType = (leaveType = "") => {
 const HrLeaves = () => {
   const axios = useAxiosPrivate();
   const [filterOpen, setFilterOpen] = useState(false);
+  const [manageLeavesOpen, setManageLeavesOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [leaveCounts, setLeaveCounts] = useState({ privileged: "", sick: "" });
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [appliedFilters, setAppliedFilters] = useState(createDefaultFilters);
   const [dateRange, setDateRange] = useState(() => [
@@ -132,6 +140,68 @@ const HrLeaves = () => {
       return response.data;
     },
   });
+
+  const updateLeaveCountsMutation = useMutation({
+    mutationFn: async ({ employeeId, leaves }) => {
+      const response = await axios.patch("/api/users/employee-leaves", {
+        employeeId,
+        leaves,
+      });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      toast.success("Employee leave counts updated successfully");
+      setManageLeavesOpen(false);
+      setSelectedEmployee(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Unable to update leave counts",
+      );
+    },
+  });
+
+  const openManageLeaves = useCallback((employee) => {
+    const storedLeaves = employee?.leavesCount || [];
+    const getCount = (type) =>
+      storedLeaves.find(
+        (leave) => normalizeLeaveType(leave?.leaveType) === type,
+      )?.count ?? 0;
+
+    setSelectedEmployee(employee);
+    setLeaveCounts({
+      privileged: String(getCount("privileged")),
+      sick: String(getCount("sick")),
+    });
+    setManageLeavesOpen(true);
+  }, []);
+
+  const handleLeaveCountSubmit = (event) => {
+    event.preventDefault();
+    const privileged = Number(leaveCounts.privileged);
+    const sick = Number(leaveCounts.sick);
+
+    if (
+      !Number.isFinite(privileged) ||
+      !Number.isFinite(sick) ||
+      privileged < 0 ||
+      sick < 0
+    ) {
+      toast.error("Leave counts must be valid non-negative numbers");
+      return;
+    }
+
+    updateLeaveCountsMutation.mutate({
+      employeeId: selectedEmployee.empId,
+      leaves: [
+        { leaveType: "Privileged", count: privileged },
+        { leaveType: "Sick", count: sick },
+      ],
+    });
+  };
 
   const generateMonthOptions = (startDate, endDate) => {
     const months = [];
@@ -252,9 +322,11 @@ const HrLeaves = () => {
       if (hasActiveLeaveCriteria && !matchingLeaveUsers.has(userId)) return;
 
       groupedUsers[userId] = {
+        userId,
         empId: employee.empId || "",
         empName: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
         startDate: employee.startDate,
+        leavesCount: employee.employeeType?.leavesCount || [],
         matchedLeaves: matchingLeavesByUser[userId] || [],
       };
     });
@@ -534,7 +606,7 @@ const HrLeaves = () => {
     {
       field: "empName",
       headerName: "Employee Name",
-      width: 200,
+      width: 175,
       pinned: "left",
     },
     ...(hasActiveLeaveCriteria
@@ -612,7 +684,7 @@ const HrLeaves = () => {
     {
       field: "totalDays",
       headerName: "Working Days",
-      width: 130,
+      width: 115,
       headerClass: "ag-center-header",
       pinned: "left",
       cellStyle: { textAlign: "center" },
@@ -620,13 +692,34 @@ const HrLeaves = () => {
     {
       field: "workedDays",
       headerName: "Worked Days",
-      width: 130,
+      width: 115,
       headerClass: "ag-center-header",
       pinned: "left",
       cellStyle: { textAlign: "center" },
     },
     ...dayColumns,
-  ], [dayColumns, hasActiveLeaveCriteria]);
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 100,
+      pinned: "right",
+      lockPinned: true,
+      sortable: false,
+      filter: false,
+      suppressCsvExport: true,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data.userId}
+          menuItems={[
+            {
+              label: "Manage Leaves",
+              onClick: () => openManageLeaves(params.data),
+            },
+          ]}
+        />
+      ),
+    },
+  ], [dayColumns, hasActiveLeaveCriteria, openManageLeaves]);
 
   const departmentOptions = useMemo(
     () =>
@@ -822,6 +915,63 @@ const HrLeaves = () => {
           departments={departmentOptions}
           employees={employeeOptions}
         />
+
+        <MuiModal
+          open={manageLeavesOpen}
+          onClose={() => {
+            if (updateLeaveCountsMutation.isPending) return;
+            setManageLeavesOpen(false);
+            setSelectedEmployee(null);
+          }}
+          title="Manage Leaves"
+        >
+          <form onSubmit={handleLeaveCountSubmit} className="flex flex-col gap-5">
+            <div>
+              <p className="text-sm text-gray-500">Employee</p>
+              <p className="font-pmedium text-primary">
+                {selectedEmployee?.empName || "N/A"}
+                {selectedEmployee?.empId ? ` (${selectedEmployee.empId})` : ""}
+              </p>
+            </div>
+            <TextField
+              type="number"
+              size="small"
+              fullWidth
+              required
+              label="Privileged Leaves"
+              value={leaveCounts.privileged}
+              onChange={(event) =>
+                setLeaveCounts((current) => ({
+                  ...current,
+                  privileged: event.target.value,
+                }))
+              }
+              inputProps={{ min: 0, step: 0.5 }}
+            />
+            <TextField
+              type="number"
+              size="small"
+              fullWidth
+              required
+              label="Sick Leaves"
+              value={leaveCounts.sick}
+              onChange={(event) =>
+                setLeaveCounts((current) => ({
+                  ...current,
+                  sick: event.target.value,
+                }))
+              }
+              inputProps={{ min: 0, step: 0.5 }}
+            />
+            <div className="flex justify-end">
+              <PrimaryButton
+                title="Update Leaves"
+                type="submit"
+                isLoading={updateLeaveCountsMutation.isPending}
+              />
+            </div>
+          </form>
+        </MuiModal>
       </div>
     </PageFrame>
   );

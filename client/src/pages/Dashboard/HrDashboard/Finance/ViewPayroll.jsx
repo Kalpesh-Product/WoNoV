@@ -65,6 +65,14 @@ const baseAllowanceOptions = [
   "Arrears",
 ];
 
+const additionalDeductionOptions = [
+  "Adjustments",
+  "Voluntary Provident Fund",
+  "LWF",
+  "Employer LWF",
+  "Recovery",
+];
+
 const getEmployeePf = (basicPay) => {
   const basic = Number(basicPay) || 0;
   return basic >= 15000 ? 1800 : basic * 0.12;
@@ -678,7 +686,10 @@ const ViewPayroll = () => {
   );
 
   const isTdsWorker = usesTdsDeduction(employeeRecord);
-  const deductionOptions = isTdsWorker ? ["TDS"] : ["Provident Fund", "ESI"];
+  const deductionOptions = [
+    ...(isTdsWorker ? ["TDS"] : ["Provident Fund", "ESI"]),
+    ...additionalDeductionOptions,
+  ];
   const employeeHraType = String(employeeRecord?.hraType || "")
     .trim()
     .toLowerCase();
@@ -1428,16 +1439,22 @@ const ViewPayroll = () => {
                                   ? Number(
                                       visibleCompensation.compensation.basicPay,
                                     ) * 0.1
-                                  : employeeEsiEnabled
-                                    ? getEmployeeEsi(
-                                        visibleCompensation.compensation
-                                          .grossPay,
-                                      )
-                                    : 0,
+                                  : updatedRow.label === "ESI"
+                                    ? employeeEsiEnabled
+                                      ? getEmployeeEsi(
+                                          visibleCompensation.compensation
+                                            .grossPay,
+                                        )
+                                      : 0
+                                    : updatedRow.value,
                           })
                         }
                         onRemove={() => removeDynamicRow("deductions", row.id)}
-                        amountReadOnly
+                        amountReadOnly={[
+                          "Provident Fund",
+                          "ESI",
+                          "TDS",
+                        ].includes(row.label)}
                       />
                     ))}
                     <button
