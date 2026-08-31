@@ -414,49 +414,59 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
   };
 
-  const barOptions = (categories, yTitle, formatter, showDataLabels = true) => ({
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "Poppins-Regular",
-    },
-    xaxis: {
-      categories,
-    },
-    yaxis: {
-      max: yTitle.includes("Occupancy") ? 100 : undefined,
-      min: 0,
-      tickAmount: yTitle.includes("Occupancy") ? 5 : undefined,
-      forceNiceScale: false,
-      title: {
-        text: yTitle,
+  const barOptions = (categories, yTitle, formatter, showDataLabels = true) => {
+    const isOccupancy = yTitle.includes("Occupancy");
+
+    return {
+      chart: {
+        type: "bar",
+        toolbar: { show: false },
+        fontFamily: "Poppins-Regular",
       },
-      labels: {
-        formatter: (value) =>
-          yTitle.includes("Occupancy")
-            ? `${Math.round(value)}%`
-            : Math.round(value),
-      },
-    },
-    colors: ["#2DC1C6"],
-    dataLabels: {
-      enabled: showDataLabels,
-      formatter,
-      offsetY: -18,
-      style: {
-        colors: ["#111"],
-      },
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 5,
-        columnWidth: "55%",
-        dataLabels: {
-          position: "top",
+      xaxis: {
+        categories,
+        labels: {
+          rotate: isOccupancy ? -45 : 0,
+          trim: true,
+          hideOverlappingLabels: true,
+          style: {
+            fontSize: isOccupancy ? "10px" : "12px",
+          },
         },
       },
-    },
-  });
+      yaxis: {
+        max: isOccupancy ? 100 : undefined,
+        min: 0,
+        tickAmount: isOccupancy ? 5 : undefined,
+        forceNiceScale: false,
+        title: {
+          text: yTitle,
+        },
+        labels: {
+          formatter: (value) =>
+            isOccupancy ? `${Math.round(value)}%` : Math.round(value),
+        },
+      },
+      colors: ["#2DC1C6"],
+      dataLabels: {
+        enabled: showDataLabels,
+        formatter,
+        offsetY: -18,
+        style: {
+          colors: ["#111"],
+        },
+      },
+      plotOptions: {
+        bar: {
+          borderRadius: 5,
+          columnWidth: "55%",
+          dataLabels: {
+            position: "top",
+          },
+        },
+      },
+    };
+  };
 
   const heatmapOptions = {
     chart: {
@@ -603,7 +613,6 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           {show("occupancy") && (
             <WidgetSection
               border
-              padding
               title="AVERAGE OCCUPANCY OF ROOMS IN %"
               titleLabel={currentMonthLabel}
             >
