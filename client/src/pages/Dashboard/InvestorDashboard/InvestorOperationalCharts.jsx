@@ -2,10 +2,11 @@ import { CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import DonutChart from "../../../components/graphs/DonutChart";
+import ReactApexChart from "react-apexcharts";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import useResponsiveChart from "../../../hooks/useResponsiveChart";
 
 const palette = [
   "#121A33",
@@ -67,6 +68,94 @@ const pieOptions = (labels, suffix, colors = palette) => ({
   },
   tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
 });
+
+const InvestorDonutChart = ({
+  centerLabel,
+  labels,
+  colors,
+  series,
+  tooltipValue,
+  legendFormatter,
+  legendPosition = "bottom",
+  height = 350,
+}) => {
+  const { chartKey, containerRef } = useResponsiveChart();
+
+  const chartOptions = {
+    chart: {
+      type: "donut",
+      animations: { enabled: false },
+      fontFamily: "Poppins-Regular",
+    },
+    colors,
+    labels,
+    legend: {
+      position: legendPosition,
+      formatter: legendFormatter,
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val) => `${val.toFixed(0)}%`,
+    },
+    tooltip: {
+      enabled: true,
+      custom: function ({ seriesIndex }) {
+        const fullLabel = labels[seriesIndex];
+        const tooltipDetail = tooltipValue?.[seriesIndex];
+        return `<div style="padding: 8px">
+                  <strong>${fullLabel}</strong>${
+                    tooltipDetail ? `<br/><span>${tooltipDetail}</span>` : ""
+                  }
+                </div>`;
+      },
+      y: {
+        formatter: (val, { seriesIndex }) => `${tooltipValue[seriesIndex]}`,
+      },
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "65%",
+          labels: {
+            show: true,
+            value: {
+              show: true,
+              fontSize: "14px",
+              fontWeight: 500,
+              formatter: function (val) {
+                const numericVal = parseFloat(val);
+                return `${numericVal.toLocaleString("en-IN")}`;
+              },
+            },
+            total: {
+              show: true,
+              label: `${centerLabel}`,
+              fontSize: "16px",
+              fontWeight: "bold",
+              formatter: function (w) {
+                const total = w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                return `${total.toLocaleString("en-IN")}`;
+              },
+            },
+          },
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="rounded-md" ref={containerRef}>
+      <ReactApexChart
+        key={chartKey}
+        options={chartOptions}
+        series={series}
+        type="donut"
+        height={height}
+        width="100%"
+      />
+    </div>
+  );
+};
 
 const topWithOther = (entries, limit = 6, includeOther = true) => {
   const sorted = entries.sort((a, b) => b.value - a.value);
@@ -230,7 +319,7 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
                   <CircularProgress />
                 </div>
               ) : chart.donut ? (
-                <DonutChart
+                <InvestorDonutChart
                   centerLabel="Visitors"
                   labels={labels}
                   colors={chart.colors || palette}
