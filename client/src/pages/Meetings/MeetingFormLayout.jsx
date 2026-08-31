@@ -14,6 +14,7 @@ import { IoMdClose } from "react-icons/io";
 import { useForm, Controller } from "react-hook-form";
 import {
   Autocomplete,
+  Checkbox,
   Chip,
   CircularProgress,
   FormControl,
@@ -40,6 +41,27 @@ import { useFieldArray } from "react-hook-form";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import { inrFormat } from "../../utils/currencyFormat";
 
+const isTechUserDataEmployee = (user) => {
+  const hasTechRole = (Array.isArray(user?.role) ? user.role : []).some(
+    (role) =>
+      ["tech employee", "tech admin"].includes(
+        String(role?.roleTitle || role || "")
+          .trim()
+          .toLowerCase(),
+      ),
+  );
+  const hasTechDepartment = (
+    Array.isArray(user?.departments) ? user.departments : []
+  ).some(
+    (department) =>
+      String(department?.name || department || "")
+        .trim()
+        .toLowerCase() === "tech",
+  );
+
+  return hasTechRole || hasTechDepartment;
+};
+
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
   const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
@@ -50,7 +72,7 @@ const MeetingFormLayout = () => {
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
   const repeatMeetingClient = locationState.state?.repeatMeetingClient;
-  const { perHourCredit, perHourPrice } = locationState.state;
+  const { perHourCredit = 0, perHourPrice = 0 } = locationState.state || {};
   const [events, setEvents] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => dayjs());
   const axios = useAxiosPrivate();
@@ -119,6 +141,9 @@ const MeetingFormLayout = () => {
   } = useForm({
     defaultValues: {
       meetingType: "Internal",
+      building: "",
+      location: "",
+      meetingRoom: meetingRoomId,
       startDate: null, // Ensure null
       endDate: null, // Ensure null
       startTime: null, // Watch startTime dynamically
@@ -148,6 +173,9 @@ const MeetingFormLayout = () => {
   // }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
+  const selectedBuildingId = watch("building");
+  const selectedLocationId = watch("location");
+  const selectedMeetingRoomId = watch("meetingRoom");
   const startDate = watch("startDate"); // Watch startDate
   const endDate = watch("endDate"); // Watch endDate
   const startTime = watch("startTime");
@@ -240,6 +268,112 @@ const MeetingFormLayout = () => {
   const shouldCheckAvailability =
     !!startDateTime && !!endDateTime && shouldFetchParticipants;
   //-------------------------------API-------------------------------//
+  const { data: meetingRooms = [], isLoading: isMeetingRoomsLoading } =
+    useQuery({
+      queryKey: ["meetingRooms"],
+      queryFn: async () => {
+        const response = await axios.get("/api/meetings/get-rooms");
+        return response.data || [];
+      },
+    });
+
+  const activeMeetingRooms = useMemo(
+    () => meetingRooms.filter((room) => room?.isActive),
+    [meetingRooms],
+  );
+
+  const meetingBuildings = useMemo(() => {
+    const seen = new Set();
+
+    return activeMeetingRooms.reduce((buildings, room) => {
+      const building = room?.location?.building;
+      const id = String(building?._id || "");
+      if (!id || seen.has(id)) return buildings;
+
+      seen.add(id);
+      buildings.push({
+        id,
+        label: building?.buildingName || "Unnamed location",
+      });
+      return buildings;
+    }, []);
+  }, [activeMeetingRooms]);
+
+  const meetingLocations = useMemo(() => {
+    const seen = new Set();
+
+    return activeMeetingRooms.reduce((locations, room) => {
+      const location = room?.location;
+      const id = String(location?._id || "");
+      const buildingId = String(location?.building?._id || "");
+      if (!id || buildingId !== String(selectedBuildingId) || seen.has(id)) {
+        return locations;
+      }
+
+      seen.add(id);
+      locations.push({
+        id,
+        label: location?.unitName || location?.unitNo || "Unnamed location",
+      });
+      return locations;
+    }, []);
+  }, [activeMeetingRooms, selectedBuildingId]);
+
+  const roomsAtSelectedLocation = useMemo(
+    () =>
+      activeMeetingRooms.filter(
+        (room) =>
+          String(room?.location?._id || "") ===
+          String(selectedLocationId || ""),
+      ),
+    [activeMeetingRooms, selectedLocationId],
+  );
+
+  const selectedMeetingRoom = useMemo(
+    () =>
+      activeMeetingRooms.find(
+        (room) => String(room?._id) === String(selectedMeetingRoomId),
+      ),
+    [activeMeetingRooms, selectedMeetingRoomId],
+  );
+
+  const selectedMeetingLocation = useMemo(
+    () =>
+      meetingLocations.find(
+        (location) => String(location.id) === String(selectedLocationId),
+      ),
+    [meetingLocations, selectedLocationId],
+  );
+
+  useEffect(() => {
+    if (!meetingRoomId || !activeMeetingRooms.length) return;
+
+    const initialRoom = activeMeetingRooms.find(
+      (room) => String(room?._id) === String(meetingRoomId),
+    );
+    if (!initialRoom) return;
+
+    setValue("meetingRoom", initialRoom._id);
+    setValue("building", initialRoom?.location?.building?._id || "");
+    setValue("location", initialRoom?.location?._id || "");
+  }, [activeMeetingRooms, meetingRoomId, setValue]);
+
+  const displayedLocationName =
+    selectedMeetingRoom?.location?.building?.buildingName ||
+    selectedMeetingLocation?.label ||
+    locationName;
+  const displayedMeetingRoomName =
+    selectedMeetingRoom?.name ||
+    (selectedMeetingRoomId === meetingRoomId ? meetingRoomName : "");
+  const displayedPerHourCredit =
+    selectedMeetingRoomId === meetingRoomId
+      ? selectedMeetingRoom?.perHourCredit ?? perHourCredit
+      : selectedMeetingRoom?.perHourCredit ?? 0;
+  const displayedPerHourPrice =
+    selectedMeetingRoomId === meetingRoomId
+      ? selectedMeetingRoom?.perHourPrice ?? perHourPrice
+      : selectedMeetingRoom?.perHourPrice ?? 0;
+
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
@@ -417,10 +551,15 @@ const MeetingFormLayout = () => {
   });
 
   const internalParticipantOptions = useMemo(() => {
-    if (company !== wonoClient?._id) return participantOptions;
+    if (company !== wonoClient?._id) {
+      return participantOptions.filter(
+        (user) => !isTechUserDataEmployee(user),
+      );
+    }
 
     const seen = new Set();
     return [...participantOptions, ...biznestEmployees].filter((user) => {
+      if (isTechUserDataEmployee(user)) return false;
       const key = String(user?.email || user?._id || "")
         .trim()
         .toLowerCase();
@@ -578,16 +717,17 @@ const MeetingFormLayout = () => {
 
   const { data: checkAvailability = [], isPending: isCheckingAvailability } =
     useQuery({
-      queryKey: ["checkAvailability", meetingRoomId],
+      queryKey: ["checkAvailability", selectedMeetingRoomId],
       queryFn: async () => {
         const response = await axios.get(
-          `/api/meetings/get-room-meetings/${meetingRoomId}`,
+          `/api/meetings/get-room-meetings/${selectedMeetingRoomId}`,
         );
         return response.data;
       },
       onError: (error) => {
         toast.error("Error checking meeting room availability");
       },
+      enabled: !!selectedMeetingRoomId,
     });
   //-------------------------------API-------------------------------//
 
@@ -707,7 +847,7 @@ const MeetingFormLayout = () => {
       );
 
       await axios.post("/api/meetings/create-meeting", {
-        bookedRoom: meetingRoomId,
+        bookedRoom: data.meetingRoom,
         meetingType: data.meetingType,
         startDate: startDate,
         endDate: endDate,
@@ -830,7 +970,8 @@ const MeetingFormLayout = () => {
     <div className="p-4">
       <div className="w-full text-center">
         <span className="text-title text-primary font-pregular mb-4">
-          Schedule Meeting in {locationName}-{meetingRoomName}
+          Schedule Meeting in {displayedLocationName}
+          {displayedMeetingRoomName ? `-${displayedMeetingRoomName}` : ""}
         </span>
       </div>
       <div className="w-full h-full overflow-y-auto">
@@ -896,32 +1037,23 @@ const MeetingFormLayout = () => {
             <span className="text-content">Date : {humanDate(startDate)}</span>
           </div>
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-black">
-            <div className="w-fit flex gap-8 items-center">
-              <span className="text-content">Location : {locationName}</span>
-            </div>
-            <div className="w-full flex gap-8 items-center justify-end">
-              <span className="text-content">
-                Selected Room : {meetingRoomName}
-              </span>
-            </div>
-
             <div className="w-full flex gap-8 items-center justify-start">
               <div className="flex flex-col">
                 <span className="text-content">
-                  Per Hour Credit : {perHourCredit}
+                  Per Hour Credit : {displayedPerHourCredit}
                 </span>
                 <span className="text-content">
-                  Per Half Hour Credit : {perHourCredit / 2}
+                  Per Half Hour Credit : {displayedPerHourCredit / 2}
                 </span>
               </div>
             </div>
             <div className="w-full flex gap-8 items-center justify-end">
               <div className="flex flex-col">
                 <span className="text-content">
-                  Per Hour Price : {`INR ${inrFormat(perHourPrice)}`}
+                  Per Hour Price : {`INR ${inrFormat(displayedPerHourPrice)}`}
                 </span>
                 <span className="text-content">
-                  Per Half Hour Price : {`INR  ${inrFormat(perHourPrice / 2)}`}
+                  Per Half Hour Price : {`INR  ${inrFormat(displayedPerHourPrice / 2)}`}
                 </span>
               </div>
             </div>
@@ -1033,6 +1165,116 @@ const MeetingFormLayout = () => {
                 )}
               />
             </LocalizationProvider>
+            <Controller
+              name="building"
+              control={control}
+              rules={{ required: "Building is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  size="small"
+                  label="Building"
+                  disabled={isMeetingRoomsLoading}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  onChange={(event) => {
+                    field.onChange(event.target.value);
+                    setValue("location", "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                    setValue("meetingRoom", "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
+                  {meetingBuildings.length ? (
+                    meetingBuildings.map((building) => (
+                      <MenuItem key={building.id} value={building.id}>
+                        {building.label}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No Buildings Available</MenuItem>
+                  )}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: "Location is required" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  size="small"
+                  label="Location"
+                  disabled={!selectedBuildingId || isMeetingRoomsLoading}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  onChange={(event) => {
+                    field.onChange(event.target.value);
+                    setValue("meetingRoom", "", {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                >
+                  <MenuItem value="" disabled>
+                    Select Location
+                  </MenuItem>
+                  {meetingLocations.length ? (
+                    meetingLocations.map((location) => (
+                      <MenuItem key={location.id} value={location.id}>
+                        {location.label}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem disabled>No Locations Available</MenuItem>
+                  )}
+                </TextField>
+              )}
+            />
+            <div className="col-span-2">
+              <Controller
+                name="meetingRoom"
+                control={control}
+                rules={{ required: "Meeting room is required" }}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    {...field}
+                    select
+                    fullWidth
+                    size="small"
+                    label="Meeting Room"
+                    disabled={!selectedLocationId || isMeetingRoomsLoading}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    <MenuItem value="" disabled>
+                      Select Meeting Room
+                    </MenuItem>
+                    {roomsAtSelectedLocation.length ? (
+                      roomsAtSelectedLocation.map((room) => (
+                        <MenuItem key={room._id} value={room._id}>
+                          {room.name}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      <MenuItem disabled>No Meeting Rooms Available</MenuItem>
+                    )}
+                  </TextField>
+                )}
+              />
+            </div>
             {meetingType === "Internal" ? (
               <>
              {isReceptionist || isTechManager ? (
@@ -1224,9 +1466,13 @@ const MeetingFormLayout = () => {
                       render={({ field }) => (
                         <Autocomplete
                           multiple
+                          disableCloseOnSelect
                           options={internalParticipantOptions}
                           loading={isAvailableEmployees}
                           getOptionLabel={getInternalParticipantLabel}
+                          isOptionEqualToValue={(option, value) =>
+                            option?._id === value?._id
+                          }
                           onFocus={() => {
                             setShouldFetchParticipants(true);
                             if (shouldCheckAvailability) {
@@ -1239,6 +1485,16 @@ const MeetingFormLayout = () => {
                           onChange={(_, newValue) =>
                             field.onChange(newValue.map((user) => user._id))
                           }
+                          renderOption={(props, user, { selected }) => (
+                            <li {...props} key={user._id}>
+                              <Checkbox
+                                checked={selected}
+                                size="small"
+                                sx={{ marginRight: 1 }}
+                              />
+                              {getInternalParticipantLabel(user)}
+                            </li>
+                          )}
                           renderTags={(selected, getTagProps) =>
                             selected.map((user, index) => (
                               <Chip
