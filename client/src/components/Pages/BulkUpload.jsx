@@ -26,6 +26,15 @@ const normalizeTemplateName = (value) =>
     .replace(/\s+/g, " ")
     .trim();
 
+const getTemplateDedupKey = (template, departmentId) => {
+  const sourceValue =
+    departmentId === FRONTEND_DEPARTMENT_ID
+      ? template?.displayName || template?.name
+      : template?.name;
+
+  return normalizeTemplateName(sourceValue);
+};
+
 const hasNormalizedToken = (value, token) =>
   new RegExp(`(^| )${token}( |$)`).test(value);
 
@@ -34,8 +43,15 @@ const FINANCE_DEPARTMENT_ID = "6798bab0e469e809084e249a";
 
 const financeSalesTemplateLabels = [
   {
-    match: ["coworking revenue", "coworking revenues"],
-    label: "Coworking Revenue - Finance & Sales",
+    match: [
+      "coworking revenue",
+      "coworking revenues",
+      "co working revenue",
+      "co working revenues",
+      "co-working revenue",
+      "co-working revenues",
+    ],
+    label: "Co-working Revenue - Finance & Sales",
   },
   {
     match: ["virtual office revenue", "virtual office revenues"],
@@ -50,6 +66,59 @@ const financeSalesTemplateLabels = [
     label: "Workation Revenue - Finance & Sales",
   },
 ];
+
+const frontendSalesTemplateLabels = [
+  {
+    match: ["co working client data", "co working clients", "co working client"],
+    label: "Co-working Client Data - Sales",
+  },
+  {
+    match: ["virtual office clients", "virtual office client"],
+    label: "Virtual Office Clients - Sales",
+  },
+  {
+    match: ["workation clients data", "workation clients", "workation client"],
+    label: "Workation Clients Data - Sales",
+  },
+  {
+    match: ["leads", "lead"],
+    label: "Leads - Sales",
+  },
+];
+
+const frontendHrTemplateLabels = [
+  {
+    match: ["holidays and events", "holidays / events", "holiday events", "events"],
+    label: "Holidays And Events - Hr",
+  },
+  {
+    match: [
+      "housekeeping members data",
+      "housekeeping membres data",
+      "housekeeping members",
+      "housekeeping membres",
+      "housekeeping member data",
+    ],
+    label: "Housekeeping Membres Data - Hr",
+  },
+  {
+    match: ["employee leaves", "leaves", "leave"],
+    label: "Employee Leaves - Hr",
+  },
+  {
+    match: ["attendance", "attandance"],
+    label: "Attendance - Hr",
+  },
+  {
+    match: ["employee data", "users", "employee"],
+    label: "Employee Data -Hr",
+  },
+];
+
+const frontendHiddenTemplateNames = new Set([
+  "coworking revenue",
+  "coworking revenue finance and sales",
+]);
 
 const frontendOverallTemplateLabels = [
   {
@@ -84,7 +153,12 @@ const getTemplateDisplayName = (templateName, departmentId) => {
   }
 
   const normalizedTemplateName = normalizeTemplateName(templateName);
-  const matchedLabel = [...financeSalesTemplateLabels, ...frontendOverallTemplateLabels].find(({ match }) =>
+  const matchedLabel = [
+    ...financeSalesTemplateLabels,
+    ...frontendSalesTemplateLabels,
+    ...frontendHrTemplateLabels,
+    ...frontendOverallTemplateLabels,
+  ].find(({ match }) =>
     match.some((candidate) => {
       const normalizedCandidate = normalizeTemplateName(candidate);
 
@@ -365,18 +439,26 @@ export default function BulkUpload() {
         ...sourceDocumentTemplateOptions,
         ...fallbackTemplateOptions,
       ].filter(
+        (template) =>
+          deptDetails?._id !== FRONTEND_DEPARTMENT_ID ||
+          !frontendHiddenTemplateNames.has(
+            normalizeTemplateName(template.name || template.displayName),
+          ),
+      )
+      .filter(
         (template, index, templates) =>
           index ===
           templates.findIndex(
             (candidate) =>
-              normalizeTemplateName(candidate.name) ===
-              normalizeTemplateName(template.name),
+              getTemplateDedupKey(candidate, deptDetails?._id) ===
+              getTemplateDedupKey(template, deptDetails?._id),
           ),
       ),
     [
       documentTemplateOptions,
       sourceDocumentTemplateOptions,
       fallbackTemplateOptions,
+      deptDetails?._id,
     ],
   );
 
