@@ -20,7 +20,7 @@ const getCompanyAttandancesService = async ({
  const employeeQuery = { company, isActive: true };
   let activeEmployeesQuery = UserData.find(employeeQuery)
     .select(
-      "firstName lastName empId startDate isActive departments payrollInformation.payrollBatch",
+      "firstName lastName empId startDate isActive departments employeeType payrollInformation.payrollBatch",
     )
     .populate({ path: "departments", select: "name" });
 
