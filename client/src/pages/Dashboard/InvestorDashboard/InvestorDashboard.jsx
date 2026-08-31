@@ -225,6 +225,15 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       },
     ];
 
+    const guestMonths = [];
+    const monthlyGuestMap = {};
+    for (let i = 0; i < 12; i += 1) {
+      const month = now.subtract(11 - i, "month");
+      const label = month.format("MMM-YY");
+      guestMonths.push(label);
+      monthlyGuestMap[label] = 0;
+    }
+
     const guestCounts = Object.fromEntries(months.map((month) => [month, 0]));
     const visitorTypeCounts = Object.fromEntries(
       visitorTypes.map((type) => [
@@ -243,6 +252,10 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         if (visitorType && visitorTypeCounts[visitorType]) {
           visitorTypeCounts[visitorType][label] += 1;
         }
+      }
+
+      if (date.isValid() && monthlyGuestMap[label] !== undefined) {
+        monthlyGuestMap[label] += 1;
       }
     });
 
@@ -337,6 +350,61 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       })),
     }));
 
+    const externalGuestsData = [
+      {
+        name: "Visitors",
+        data: guestMonths.map((month) => monthlyGuestMap[month]),
+      },
+    ];
+
+    const externalGuestsOptions = {
+      chart: {
+        type: "bar",
+        fontFamily: "Poppins-Regular",
+        toolbar: {
+          show: false,
+        },
+      },
+      xaxis: {
+        categories: guestMonths,
+        title: {
+          text: "",
+        },
+        labels: {
+          style: {
+            fontSize: "8px",
+            fontFamily: "Poppins-Regular",
+            colors: "#333",
+          },
+        },
+      },
+      yaxis: {
+        max: 100,
+        title: {
+          text: "Guest Count",
+        },
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: "65%",
+          borderRadius: 5,
+          dataLabels: {
+            position: "top",
+          },
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        style: {
+          fontSize: "12px",
+          colors: ["#000"],
+        },
+        offsetY: -22,
+      },
+      colors: ["#08b6bc"],
+    };
+
     // const bucketLabels = [
     //   "15",
     //   "30",
@@ -363,6 +431,8 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       utilization,
       guestCounts,
       visitorTypeCounts,
+      externalGuestsData,
+      externalGuestsOptions,
       totalVisitors: Object.values(guestCounts).reduce(
         (total, count) => total + count,
         0,
@@ -583,7 +653,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           {show("guests") && (
             <WidgetSection
               border
-             // padding
+              padding
               title="EXTERNAL GUESTS VISITED"
               titleLabel={currentMonthLabel}
             >
@@ -592,19 +662,8 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
                 className="cursor-pointer"
               >
                 <BarGraph
-                  data={[
-                    {
-                      name: "Visitors",
-                      data: months.map(
-                        (month) => analytics.guestCounts[month],
-                      ),
-                    },
-                  ]}
-                  options={barOptions(
-                    months,
-                    "Guest Count",
-                    (value) => value.toFixed(0),
-                  )}
+                  data={analytics.externalGuestsData}
+                  options={analytics.externalGuestsOptions}
                 />
               </div>
             </WidgetSection>
