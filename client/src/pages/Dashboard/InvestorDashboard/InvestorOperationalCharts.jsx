@@ -8,26 +8,70 @@ import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 
 const palette = [
+  "#121A33",
+  "#28324A",
+  "#2F57E5",
+  "#3773FF",
+  "#4D86FF",
+  "#1F8ED6",
+  "#0D78AD",
+];
+
+const sectorPalette = [
   "#1E3D73",
   "#34528A",
   "#4A68A1",
-  "#54C4A7",
-  "#F7B801",
-  "#8E44AD",
-  "#FF6B6B",
+  "#608DB8",
+  "#76A2CF",
+  "#8CB8E6",
 ];
 
-const pieOptions = (labels, suffix) => ({
+const genderPalette = ["#1E3D73", "#54C4A7"];
+
+const locationChartColors = [
+  "#1E3D73",
+  "#FF6B6B",
+  "#4ECDC4",
+  "#F7B801",
+  "#8E44AD",
+  "#2ECC71",
+  "#FF8C42",
+];
+
+const visitorCategoryColors = [
+  "#54C4A7",
+  "#FFB946",
+  "#FF4D4F",
+  "#6A5ACD",
+  "#00C49F",
+];
+
+const visitorClientTypeColors = ["#4BC0C0", "#36A2EB"];
+const visitorGenderColors = ["#0056B3", "#FD507E"];
+
+const legendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`;
+
+const pieOptions = (labels, suffix, colors = palette) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
-  colors: palette,
-  legend: { position: "right" },
+  colors,
+  legend: {
+    position: "bottom",
+    horizontalAlign: "center",
+    itemMargin: {
+      horizontal: 4,
+      vertical: 2,
+    },
+    formatter: legendFormatter,
+  },
   tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
 });
 
-const topWithOther = (entries, limit = 6) => {
+const topWithOther = (entries, limit = 6, includeOther = true) => {
   const sorted = entries.sort((a, b) => b.value - a.value);
   const visible = sorted.slice(0, limit);
+  if (!includeOther) return visible;
   const other = sorted.slice(limit).reduce((sum, item) => sum + item.value, 0);
   return other ? [...visible, { label: "Other", value: other }] : visible;
 };
@@ -72,16 +116,24 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
         .filter((item) => item.value > 0),
     );
 
-    const countBy = (items, getLabel) =>
+    const countBy = (items, getLabel, { skipUnknown = false } = {}) =>
       Object.entries(
         items.reduce((counts, item) => {
-          const label = getLabel(item) || "Unknown";
-          counts[label] = (counts[label] || 0) + 1;
+          const label = String(getLabel(item) || "").trim();
+          if (skipUnknown && (!label || label.toLowerCase() === "unknown")) {
+            return counts;
+          }
+          const finalLabel = label || "Unknown";
+          counts[finalLabel] = (counts[finalLabel] || 0) + 1;
           return counts;
         }, {}),
       ).map(([label, value]) => ({ label, value }));
 
-    const sectors = topWithOther(countBy(clients, (client) => client.sector));
+    const sectors = topWithOther(
+      countBy(clients, (client) => client.sector, { skipUnknown: true }),
+      5,
+      true,
+    );
     const states = topWithOther(
       countBy(clients, (client) => client.hostate?.trim() || client.hoState?.trim()),
     );
@@ -109,15 +161,31 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
     const external = visitors.length - internal;
 
     return {
-      sector: { title: "Sector-wise Occupancy", data: sectors, suffix: "Clients" },
+      sector: {
+        title: "Sector-wise Occupancy",
+        data: sectors,
+        suffix: "Clients",
+        colors: sectorPalette,
+      },
       client: { title: "Client-wise Occupancy", data: deskEntries, suffix: "Desks" },
-      gender: { title: "Client Member Gender Wise Data", data: memberGender, suffix: "Members" },
-      india: { title: "India-wise Members", data: states, suffix: "Companies" },
+      gender: {
+        title: "Client Member Gender Wise Data",
+        data: memberGender,
+        suffix: "Members",
+        colors: genderPalette,
+      },
+      india: {
+        title: "India-wise Members",
+        data: states,
+        suffix: "Companies",
+        colors: locationChartColors,
+      },
       desks: { title: "Total Desks Company Wise", data: deskEntries, suffix: "Desks" },
       visitorCategory: {
         title: "Overall visitor category",
         donut: true,
         data: visitorCategories,
+        colors: visitorCategoryColors,
       },
       visitorClientType: {
         title: "Overall visitor Internal & External Clients",
@@ -126,11 +194,13 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
           { label: "Internal Visitors", value: internal },
           { label: "External Clients", value: external },
         ],
+        colors: visitorClientTypeColors,
       },
       visitorGender: {
         title: "Overall Visitor Gender Data",
         data: visitorGender,
         suffix: "Visitors",
+        colors: visitorGenderColors,
       },
     };
   }, [clients, visitors]);
@@ -163,14 +233,15 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
                 <DonutChart
                   centerLabel="Visitors"
                   labels={labels}
-                  colors={palette}
+                  colors={chart.colors || palette}
                   series={series}
                   tooltipValue={series.map((value) => `${value} Visitors`)}
+                  legendFormatter={legendFormatter}
                 />
               ) : (
-                <PieChartMui
+              <PieChartMui
                   data={chart.data}
-                  options={pieOptions(labels, chart.suffix)}
+                  options={pieOptions(labels, chart.suffix, chart.colors || palette)}
                   width={500}
                   height={320}
                   centerAlign

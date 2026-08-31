@@ -12,6 +12,8 @@ const DonutChart = ({
   onSliceClick,
   width,
   isMonetary = false,
+  legendFormatter,
+  legendPosition = "bottom",
 }) => {
   const chartData = {
     series: series,
@@ -45,7 +47,8 @@ const DonutChart = ({
     colors: chartData.colors,
      labels: chartData.labels,
     legend: {
-      position: "bottom",
+      position: legendPosition,
+      formatter: legendFormatter,
     },
     dataLabels: {
       enabled: true,
