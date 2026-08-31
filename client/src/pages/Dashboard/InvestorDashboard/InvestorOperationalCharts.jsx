@@ -243,7 +243,7 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
                   data={chart.data}
                   options={pieOptions(labels, chart.suffix, chart.colors || palette)}
                   width={500}
-                  height={320}
+                  height={350}
                   centerAlign
                 />
               )}

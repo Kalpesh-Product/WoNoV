@@ -654,6 +654,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
             <WidgetSection
               border
               padding
+              height="min-h-[430px]"
               title="EXTERNAL GUESTS VISITED"
               titleLabel={currentMonthLabel}
             >
@@ -664,6 +665,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
                 <BarGraph
                   data={analytics.externalGuestsData}
                   options={analytics.externalGuestsOptions}
+                  height={450}
                 />
               </div>
             </WidgetSection>
@@ -672,6 +674,8 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           {show("occupancy") && (
             <WidgetSection
               border
+              padding
+              height="min-h-[430px]"
               title="AVERAGE OCCUPANCY OF ROOMS IN %"
               titleLabel={currentMonthLabel}
             >
@@ -686,6 +690,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
                     "Occupancy (%)",
                     (value) => `${value.toFixed(0)}%`,
                   )}
+                  height={450}
                 />
               </div>
             </WidgetSection>
@@ -702,7 +707,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
             <HeatMap
               data={analytics.heatmap}
               options={heatmapOptions}
-              height={395}
+              height={500}
             />
           </div>
         </WidgetSection>
