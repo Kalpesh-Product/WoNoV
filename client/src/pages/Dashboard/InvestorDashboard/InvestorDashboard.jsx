@@ -855,22 +855,22 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       {
         title: summaryMonthLabel,
         value: `INR ${inrFormat(values.month)}`,
-        route: "/app/dashboard/investor-dashboard/monthly-profit-loss",
+        route: "#",
       },
       {
         title: "Annual Average",
         value: `INR ${inrFormat(values.total / 12)}`,
-        route: "/app/dashboard/investor-dashboard/annual-average-profit-loss",
+        route: "#",
       },
       {
         title: "Overall",
         value: `INR ${inrFormat(values.total)}`,
-        route: "/app/dashboard/investor-dashboard/overall-profit-loss",
+        route: "#",
       },
       {
         title: "Per Sq. Ft.",
         value: `INR ${inrFormat(perSqft(values.total))}`,
-        route: "/app/dashboard/investor-dashboard/sqft-wise-data",
+        route: "#",
       },
     ],
   });
@@ -904,7 +904,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         data={series}
         options={options}
         chartId="bargraph-investor-income-expense"
-        title="BIZNest FINANCE INCOME V/S EXPENSE"
+        title={`BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}
         TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
         TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
         currentYear={selectedFiscalYear}
@@ -918,12 +918,14 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
               month: summaryMonthIncome,
               total: totals.income,
             })}
+            disableLinks
           />
           <FinanceCard
             {...buildCardData("Expense", {
               month: summaryMonthExpense,
               total: totals.expense,
             })}
+            disableLinks
           />
           <FinanceCard
             {...buildCardData(
@@ -934,6 +936,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
               },
               true,
             )}
+            disableLinks
           />
         </div>
       )}
@@ -981,6 +984,7 @@ const InvestorDashboard = () => {
   const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
   const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
   const showInventoryPage = location.pathname.endsWith("/inventory");
+  const selectedHistoricalFiscalYear = fiscalYearLabel(dayjs());
    const meetingGraphRoutes = {
     utilization: "/meeting-room-utilization",
     guests: "/external-guests-visited",
@@ -1202,9 +1206,12 @@ const InvestorDashboard = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      {showDashboardHome && canViewHistoricalPnlGraph && (
+      {(showDashboardHome || showDetails) && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1}>
-          <WidgetSection border title={"Historical P&L"}>
+          <WidgetSection
+            border
+            title={`BIZNest Historical P&L - ${selectedHistoricalFiscalYear}`}
+          >
             {isLoading ? (
               <div className="h-72 flex items-center justify-center">
                 <CircularProgress />
@@ -1267,7 +1274,10 @@ const InvestorDashboard = () => {
 
       {showDetails && (
         <WidgetSection layout={1}>
-          <WidgetSection title={"Historical P&L Details"} border>
+          <WidgetSection
+            title={`BIZNEST Historical P&L Details ${selectedHistoricalFiscalYear}`}
+            border
+          >
             <AgTable
               columns={[
                 { field: "srNo", headerName: "Sr No", sort: "desc" },
@@ -1281,7 +1291,6 @@ const InvestorDashboard = () => {
               ]}
               hideFilter
               data={historicalTableData}
-              exportData
             />
           </WidgetSection>
         </WidgetSection>

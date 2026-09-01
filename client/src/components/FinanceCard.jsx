@@ -6,6 +6,7 @@ const FinanceCard = ({
   descriptionData,
   highlightNegativePositive,
   disableColorChange,
+  disableLinks = false,
   titleCenter,
   stateData,
 }) => {
@@ -31,6 +32,7 @@ const FinanceCard = ({
 
       <div className="flex flex-col gap-2">
         {descriptionData.map((item, index) => {
+          const isLink = !disableLinks && item.route && item.route !== "#";
           const numericValue =
             typeof item.value === "number"
               ? item.value
@@ -47,11 +49,14 @@ const FinanceCard = ({
             <>
               <div key={index} className="flex justify-between items-center ">
                 <span
-                  onClick={() =>
-                    navigate(item.route || "", { state: item.stateData || {} })
+                  onClick={
+                    isLink
+                      ? () =>
+                          navigate(item.route, { state: item.stateData || {} })
+                      : undefined
                   }
                   className={`text-content   ${
-                    item.route !== "#"
+                    isLink
                       ? "hover:underline cursor-pointer text-primary"
                       : "text-black"
                   } `}>
