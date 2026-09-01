@@ -8,7 +8,13 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
-const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
+const LeadsLayout = ({
+  hideAccordion,
+  data,
+  additionalData,
+  children,
+  title = "Unique Clients",
+}) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
     [data]
@@ -194,7 +200,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
         layout={1}
         border
         padding
-        title={"Unique Clients"}
+        title={title}
         TitleAmount={`CLIENTS : ${selectedFinancialYearClientsCount}`}
       >
         <div className="p-1"></div>

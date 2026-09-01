@@ -1,8 +1,10 @@
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Chip } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
+import dayjs from "dayjs";
+import AgTable from "../../../components/AgTable";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import WidgetSection from "../../../components/WidgetSection";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
@@ -52,6 +54,22 @@ const visitorGenderColors = ["#0056B3", "#FD507E"];
 
 const legendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`;
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  if (!startDate || !endDate) return "-";
+
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  if (!start.isValid() || !end.isValid() || end.isBefore(start)) return "-";
+
+  const totalDays = end.diff(start, "day");
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, end.diff(dayjs(), "day")),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
 
 const pieOptions = (labels, suffix, colors = palette) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
@@ -185,6 +203,29 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
     },
     enabled: needsClients,
   });
+  const showClientDetails =
+    visibleCharts.length === 1 &&
+    ["client", "desks"].includes(visibleCharts[0]);
+  const showGenderDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "gender";
+  const showIndiaDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "india";
+  const showSectorDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "sector";
+  const showVisitorCategoryDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "visitorCategory";
+  const showVisitorClientTypeDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "visitorClientType";
+  const showVisitorGenderDetails =
+    visibleCharts.length === 1 && visibleCharts[0] === "visitorGender";
+  const { data: allCoworkingClients = [] } = useQuery({
+    queryKey: ["investor-client-wise-occupancy-details"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: showClientDetails,
+  });
 
   const { data: visitors = [], isPending: visitorsPending } = useQuery({
     queryKey: ["investor-operational-visitors"],
@@ -296,51 +337,293 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
 
   const isLoading = clientsPending || visitorsPending;
 
-  return (
-    <WidgetSection layout={2}>
-      {visibleCharts.map((key) => {
-        const chart = chartData[key];
-        const labels = chart.data.map((item) => item.label);
-        const series = chart.data.map((item) => item.value);
-        return (
-          <WidgetSection key={key} title={chart.title} border>
-            <div
-              className="cursor-pointer"
-              role="button"
-              tabIndex={0}
-              aria-label={`View ${chart.title}`}
-              onClick={() => navigate(routes[key])}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") navigate(routes[key]);
-              }}
-            >
-              {isLoading ? (
-                <div className="flex h-80 items-center justify-center">
-                  <CircularProgress />
-                </div>
-              ) : chart.donut ? (
-                <InvestorDonutChart
-                  centerLabel="Visitors"
-                  labels={labels}
-                  colors={chart.colors || palette}
-                  series={series}
-                  tooltipValue={series.map((value) => `${value} Visitors`)}
-                  legendFormatter={legendFormatter}
-                />
-              ) : (
-              <PieChartMui
-                  data={chart.data}
-                  options={pieOptions(labels, chart.suffix, chart.colors || palette)}
-                  width={500}
-                  height={350}
-                  centerAlign
-                />
-              )}
+  const renderChart = (key) => {
+    const chart = chartData[key];
+    const labels = chart.data.map((item) => item.label);
+    const series = chart.data.map((item) => item.value);
+
+    return (
+      <WidgetSection key={key} title={chart.title} border>
+        <div
+          className="cursor-pointer"
+          role="button"
+          tabIndex={0}
+          aria-label={`View ${chart.title}`}
+          onClick={() => navigate(routes[key])}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" || event.key === " ") navigate(routes[key]);
+          }}
+        >
+          {isLoading ? (
+            <div className="flex h-80 items-center justify-center">
+              <CircularProgress />
             </div>
+          ) : chart.donut ? (
+            <InvestorDonutChart
+              centerLabel="Visitors"
+              labels={labels}
+              colors={chart.colors || palette}
+              series={series}
+              tooltipValue={series.map((value) => `${value} Visitors`)}
+              legendFormatter={legendFormatter}
+            />
+          ) : (
+            <PieChartMui
+              data={chart.data}
+              options={pieOptions(labels, chart.suffix, chart.colors || palette)}
+              width={500}
+              height={350}
+              centerAlign
+            />
+          )}
+        </div>
+      </WidgetSection>
+    );
+  };
+
+  const fullWidthChartKeys = ["desks", "visitorGender"];
+  const regularCharts = visibleCharts.filter(
+    (key) => !fullWidthChartKeys.includes(key),
+  );
+  const fullWidthCharts = visibleCharts.filter((key) =>
+    fullWidthChartKeys.includes(key),
+  );
+  const clientDetailsData = useMemo(
+    () =>
+      [...allCoworkingClients]
+        .sort(
+          (a, b) =>
+            Number(b.openDesks || 0) + Number(b.cabinDesks || 0) -
+            (Number(a.openDesks || 0) + Number(a.cabinDesks || 0)),
+        )
+        .map((client, index) => {
+          const desks =
+            Number(client.openDesks || 0) + Number(client.cabinDesks || 0);
+
+          return {
+            id: index + 1,
+            clientName: client.clientName || "Unknown",
+            desks,
+            occupancy: ((desks / 589) * 100).toFixed(1),
+            agreementExpiry: calculateAgreementExpiry(
+              client.startDate,
+              client.endDate,
+            ),
+            status: Boolean(client.isActive),
+          };
+        }),
+    [allCoworkingClients],
+  );
+
+  const clientDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "desks", headerName: "Desks", flex: 0.5 },
+    {
+      field: "occupancy",
+      headerName: "Occupancy (%)",
+      flex: 0.5,
+      cellRenderer: (params) => `${params.value}%`,
+    },
+    { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5 },
+    {
+      field: "status",
+      headerName: "Status",
+      sort: "desc",
+      flex: 1,
+      cellRenderer: (params) => (
+        <Chip
+          label={params.value ? "Active" : "Inactive"}
+          style={
+            params.value
+              ? { backgroundColor: "#90EE90", color: "#006400" }
+              : { backgroundColor: "#FFECC5", color: "#CC8400" }
+          }
+        />
+      ),
+    },
+  ];
+  const desksDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "clientName", headerName: "Client Name", flex: 1 },
+    { field: "desks", headerName: "Desks", flex: 0.5 },
+  ];
+  const genderDetailsData = [
+    {
+      id: 1,
+      male:
+        chartData.gender?.data.find((item) => item.label === "Male")?.value ||
+        0,
+      female:
+        chartData.gender?.data.find((item) => item.label === "Female")?.value ||
+        0,
+    },
+  ];
+  const genderDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "male", headerName: "Male", flex: 1 },
+    { field: "female", headerName: "Female", flex: 1 },
+  ];
+  const indiaDetailsData = chartData.india?.data.map((item, index) => ({
+    id: index + 1,
+    state: item.label,
+    memberCount: item.value,
+  }));
+  const indiaDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "state", headerName: "State", flex: 1 },
+    { field: "memberCount", headerName: "Member Count", flex: 1 },
+  ];
+  const sectorDetailsData = chartData.sector?.data.map((item, index) => ({
+    id: index + 1,
+    sector: item.label,
+    clientCount: item.value,
+  }));
+  const sectorDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "sector", headerName: "Sector", flex: 1 },
+    { field: "clientCount", headerName: "Client Count", flex: 1 },
+  ];
+  const visitorCategoryDetailsData = chartData.visitorCategory?.data.map(
+    (item, index) => ({
+      id: index + 1,
+      visitorType: item.label,
+      visitorCount: item.value,
+    }),
+  );
+  const visitorCategoryDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "visitorType", headerName: "Visitor Type", flex: 1 },
+    { field: "visitorCount", headerName: "Visitor Count", flex: 1 },
+  ];
+  const visitorGenderDetailsData = chartData.visitorGender?.data.map(
+    (item, index) => ({
+      id: index + 1,
+      gender: item.label,
+      visitorCount: item.value,
+    }),
+  );
+  const visitorGenderDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "gender", headerName: "Gender", flex: 1 },
+    { field: "visitorCount", headerName: "Visitor Count", flex: 1 },
+  ];
+  const visitorCategoryTotal = visitorCategoryDetailsData.reduce(
+    (total, item) => total + Number(item.visitorCount || 0),
+    0,
+  );
+  const visitorClientTypeDetailsData = chartData.visitorClientType?.data.map(
+    (item, index) => ({
+      id: index + 1,
+      visitorType: item.label,
+      visitorCount: item.value,
+    }),
+  );
+  const visitorClientTypeTotal = visitorClientTypeDetailsData.reduce(
+    (total, item) => total + Number(item.visitorCount || 0),
+    0,
+  );
+
+  return (
+    <>
+      {regularCharts.length > 0 && (
+        <WidgetSection layout={2} gridGap="gap-x-4 gap-y-6">
+          {regularCharts.map(renderChart)}
+        </WidgetSection>
+      )}
+      {fullWidthCharts.length > 0 && (
+        <div className="-mt-2">
+          <WidgetSection layout={1}>
+            {fullWidthCharts.map(renderChart)}
           </WidgetSection>
-        );
-      })}
-    </WidgetSection>
+        </div>
+      )}
+      {showClientDetails && (
+        <div className="px-4">
+          <WidgetSection title="CO-WORKING CLIENT DETAILS" border>
+            <AgTable
+              data={clientDetailsData}
+              columns={
+                visibleCharts[0] === "desks"
+                  ? desksDetailsColumns
+                  : clientDetailsColumns
+              }
+              search
+            />
+          </WidgetSection>
+        </div>
+      )}
+      {showGenderDetails && (
+        <div className="px-4">
+          <WidgetSection title="CLIENT MEMBER GENDER WISE DETAILS" border>
+            <AgTable
+              data={genderDetailsData}
+              columns={genderDetailsColumns}
+              search
+            />
+          </WidgetSection>
+        </div>
+      )}
+      {showIndiaDetails && (
+        <div className="px-4">
+          <WidgetSection title="INDIA-WISE MEMBERS DETAILS" border>
+            <AgTable data={indiaDetailsData} columns={indiaDetailsColumns} search />
+          </WidgetSection>
+        </div>
+      )}
+      {showSectorDetails && (
+        <div className="px-4">
+          <WidgetSection title="SECTOR-WISE OCCUPANCY DETAILS" border>
+            <AgTable data={sectorDetailsData} columns={sectorDetailsColumns} search />
+          </WidgetSection>
+        </div>
+      )}
+      {showVisitorCategoryDetails && (
+        <div className="px-4">
+          <WidgetSection
+            title="OVERALL VISITOR CATEGORY DETAILS"
+            TitleAmountTotal={visitorCategoryTotal}
+            totalTitle="TOTAL"
+            summaryChipVariant="ticket"
+            border
+          >
+            <AgTable
+              data={visitorCategoryDetailsData}
+              columns={visitorCategoryDetailsColumns}
+              search
+            />
+          </WidgetSection>
+        </div>
+      )}
+      {showVisitorClientTypeDetails && (
+        <div className="px-4">
+          <WidgetSection
+            title="OVERALL VISITOR INTERNAL & EXTERNAL CLIENTS DETAILS"
+            TitleAmountTotal={visitorClientTypeTotal}
+            totalTitle="TOTAL"
+            summaryChipVariant="ticket"
+            border
+          >
+            <AgTable
+              data={visitorClientTypeDetailsData}
+              columns={visitorCategoryDetailsColumns}
+              search
+            />
+          </WidgetSection>
+        </div>
+      )}
+      {showVisitorGenderDetails && (
+        <div className="px-4">
+          <WidgetSection title="OVERALL VISITOR GENDER DETAILS" border>
+            <AgTable
+              data={visitorGenderDetailsData}
+              columns={visitorGenderDetailsColumns}
+              search
+            />
+          </WidgetSection>
+        </div>
+      )}
+    </>
   );
 };
 

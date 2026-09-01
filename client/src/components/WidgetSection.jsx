@@ -29,6 +29,7 @@ const WidgetSection = ({
   normalCase,
   summaryChipVariant,
   headerRightContent,
+  gridGap = "gap-4",
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -181,7 +182,7 @@ const WidgetSection = ({
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
-           className={`w-full grid gap-4 ${gridClasses[effectiveLayout]} h-full py-4`}>
+           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
           {visibleChildren.map((child, index) => (
             <div key={index}>{child}</div>
           ))}

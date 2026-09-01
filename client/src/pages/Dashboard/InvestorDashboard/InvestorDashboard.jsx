@@ -177,10 +177,14 @@ const InvestorUniqueClientsGraph = () => {
   }, [coWorkingClients, consolidatedClients]);
 
   return (
-    <LeadsLayout data={clientsByMonth} hideAccordion>
+    <LeadsLayout
+      data={clientsByMonth}
+      hideAccordion
+      title="BIZNEST Unique Clients"
+    >
       <div className="border-b border-borderGray px-4 pb-4">
         <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
-          Overall Clients
+          BIZNEST Overall Clients
         </h2>
       </div>
       <div className="pt-4">
@@ -732,17 +736,14 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   const show = (key) => visibleGraphs.includes(key);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {show("utilization") && (
         <div
           onClick={goTo("meeting-room-utilization")}
           className="cursor-pointer"
         >
           <YearlyGraph
-            title="AVERAGE MEETING ROOM UTILIZATION"
-            titleAmount={`TOTAL BOOKED HOURS : ${analytics.bookedHours.toFixed(
-              0,
-            )}`}
+            title="BIZNEST AVERAGE MEETING ROOM UTILIZATION"
             data={analytics.utilization}
             options={utilizationOptions}
             currentYear={fiscalLabel}
@@ -754,6 +755,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
         <WidgetSection
           layout={Number(show("guests")) + Number(show("occupancy"))}
            padding
+          gridGap="gap-x-6 gap-y-6"
         >
           {show("guests") && (
             <WidgetSection
@@ -823,7 +825,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
           className="cursor-pointer"
         >
           <YearlyGraph
-            title={`MONTHLY TOTAL VISITORS ${fiscalLabel}`}
+            title={`BIZNEST MONTHLY TOTAL VISITORS ${fiscalLabel}`}
             headerRightContent={
               <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium">
                 TOTAL COUNT: {analytics.totalVisitors}
@@ -837,6 +839,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
               })),
             ]}
             options={visitorOptions}
+            chartHeight={380}
             currentYear={fiscalLabel}
           />
         </div>
@@ -995,12 +998,13 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
   };
 
   return (
-   <div className="flex flex-col gap-8">
+   <div className="flex flex-col gap-4">
       <YearlyGraph
         data={series}
         options={options}
         chartId="bargraph-investor-income-expense"
         title={`BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}
+        chartHeight={450}
         TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
         TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
         currentYear={selectedFiscalYear}
@@ -1008,39 +1012,41 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         refreshOnDataChange
       />
       {showSummaryCards && (
-        <WidgetSection
-          border
-          height="min-h-[340px]"
-          title={"BIZNEST PROFIT & LOSS - LAST MONTHS"}
-        >
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <FinanceCard
-              {...buildCardData("Income", {
-                month: summaryMonthIncome,
-                total: totals.income,
-              })}
-              disableLinks
-            />
-            <FinanceCard
-              {...buildCardData("Expense", {
-                month: summaryMonthExpense,
-                total: totals.expense,
-              })}
-              disableLinks
-            />
-            <FinanceCard
-              {...buildCardData(
-                "Profit & Loss",
-                {
-                  month: summaryMonthIncome - summaryMonthExpense,
-                  total: totals.income - totals.expense,
-                },
-                true,
-              )}
-              disableLinks
-            />
-          </div>
-        </WidgetSection>
+        <div className="mt-2">
+          <WidgetSection
+            border
+            height="min-h-[340px]"
+            title={"BIZNEST PROFIT & LOSS - LAST MONTHS"}
+          >
+            <div className="mt-4 mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <FinanceCard
+                {...buildCardData("Income", {
+                  month: summaryMonthIncome,
+                  total: totals.income,
+                })}
+                disableLinks
+              />
+              <FinanceCard
+                {...buildCardData("Expense", {
+                  month: summaryMonthExpense,
+                  total: totals.expense,
+                })}
+                disableLinks
+              />
+              <FinanceCard
+                {...buildCardData(
+                  "Profit & Loss",
+                  {
+                    month: summaryMonthIncome - summaryMonthExpense,
+                    total: totals.income - totals.expense,
+                  },
+                  true,
+                )}
+                disableLinks
+              />
+            </div>
+          </WidgetSection>
+        </div>
       )}
     </div>      
   );
@@ -1149,6 +1155,13 @@ const InvestorDashboard = () => {
       hasPermission(operationalGraphPermissions[key]) &&
       (showDashboardHome || location.pathname.endsWith(operationalGraphRoutes[key])),
   );
+  const operationalGraphsBeforeMeeting = [
+    "sector",
+    "client",
+    "gender",
+    "india",
+    "desks",
+  ];
   const { data: revenueExpenseData = [], isLoading } = useQuery({
     queryKey: ["historicalIncomeExpense"],
     queryFn: async () => {
@@ -1307,7 +1320,7 @@ const InvestorDashboard = () => {
   });
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
       {(showDashboardHome || showDetails) && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1}>
           <WidgetSection
@@ -1341,6 +1354,7 @@ const InvestorDashboard = () => {
                 <NormalBarGraph
                   data={incomeExpenseData}
                   options={incomeExpenseOptions}
+                  height={450}
                 />
               </div>
             )}
@@ -1349,29 +1363,64 @@ const InvestorDashboard = () => {
       )}
 
       {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
-        <WidgetSection layout={1}>
-          <InvestorIncomeExpenseGraph
-            showSummaryCards={canViewFinanceSummaryCards}
-          />
-        </WidgetSection>
+        <div className="-mt-6">
+          <WidgetSection layout={1}>
+            <InvestorIncomeExpenseGraph
+              showSummaryCards={canViewFinanceSummaryCards}
+            />
+          </WidgetSection>
+        </div>
       )}
       {(showDashboardHome || showUniqueClientsPage) &&
-        canViewUniqueClientsGraph && <InvestorUniqueClientsGraph />}
+        canViewUniqueClientsGraph && (
+          <div className="-mt-6">
+            <InvestorUniqueClientsGraph />
+          </div>
+        )}
 
       {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
-        <CheckAvailability disableCardLinks hideCheckInventory />
+        <div className="-mt-6">
+          <CheckAvailability
+            disableCardLinks
+            hideCheckInventory
+            graphHeight={450}
+            cardsBorder
+            cardsTitle="BIZNEST INVENTORY DETAILS"
+            graphTitle="BIZNEST TOTAL v/s OCCUPIED"
+          />
+        </div>
       )}
 
-      {visibleMeetingGraphs.length > 0 && (
-        <WidgetSection layout={1}>
-          <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
-        </WidgetSection>
+      {visibleOperationalGraphs.some((key) =>
+        operationalGraphsBeforeMeeting.includes(key),
+      ) && (
+        <div className="-mt-6">
+          <InvestorOperationalCharts
+            visibleCharts={visibleOperationalGraphs.filter((key) =>
+              operationalGraphsBeforeMeeting.includes(key),
+            )}
+            routes={operationalGraphRoutes}
+          />
+        </div>
       )}
-       {visibleOperationalGraphs.length > 0 && (
-        <InvestorOperationalCharts
-          visibleCharts={visibleOperationalGraphs}
-          routes={operationalGraphRoutes}
-        />
+      {visibleMeetingGraphs.length > 0 && (
+        <div className="-mt-6">
+          <WidgetSection layout={1}>
+            <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
+          </WidgetSection>
+        </div>
+      )}
+      {visibleOperationalGraphs.some(
+        (key) => !operationalGraphsBeforeMeeting.includes(key),
+      ) && (
+        <div className="-mt-6">
+          <InvestorOperationalCharts
+            visibleCharts={visibleOperationalGraphs.filter(
+              (key) => !operationalGraphsBeforeMeeting.includes(key),
+            )}
+            routes={operationalGraphRoutes}
+          />
+        </div>
       )}
 
 

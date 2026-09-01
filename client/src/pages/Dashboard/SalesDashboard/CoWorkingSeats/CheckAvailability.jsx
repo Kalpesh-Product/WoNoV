@@ -13,6 +13,10 @@ const CheckAvailability = ({
   cardsFirst = false,
   disableCardLinks = false,
   hideCheckInventory = false,
+  graphHeight = 400,
+  cardsBorder = false,
+  cardsTitle = "",
+  graphTitle = "TOTAL v/s OCCUPIED",
 }) => {
   const navigate = useNavigate();
   const address = useLocation();
@@ -554,14 +558,14 @@ const CheckAvailability = ({
       layout={1}
       border
       normalCase
-      title="TOTAL v/s OCCUPIED"
+      title={graphTitle}
       TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
     >
       {chartData.length > 0 ? (
         <NormalBarGraph
           data={barGraphSeries}
           options={barGraphOptions}
-          height={400}
+          height={graphHeight}
         />
       ) : (
         <div className="text-center text-gray-500 text-sm py-10">
@@ -572,34 +576,41 @@ const CheckAvailability = ({
   );
 
   const inventorySummaryCards = (
-    <WidgetSection layout={3} padding>
-      <FinanceCard
-        cardTitle="Inventory"
-        titleCenter
-        highlightNegativePositive
-        disableColorChange
-        disableLinks={disableCardLinks}
-        descriptionData={inventoryCards.inventory}
-      />
+    <div className={cardsBorder ? "mt-2" : ""}>
+      <WidgetSection
+        layout={3}
+        padding={!cardsBorder}
+        border={cardsBorder}
+        title={cardsTitle}
+      >
+        <FinanceCard
+          cardTitle="Inventory"
+          titleCenter
+          highlightNegativePositive
+          disableColorChange
+          disableLinks={disableCardLinks}
+          descriptionData={inventoryCards.inventory}
+        />
 
-      <FinanceCard
-        cardTitle="Occupancy"
-        titleCenter
-        highlightNegativePositive
-        disableColorChange
-        disableLinks={disableCardLinks}
-        descriptionData={inventoryCards.occupancy}
-      />
+        <FinanceCard
+          cardTitle="Occupancy"
+          titleCenter
+          highlightNegativePositive
+          disableColorChange
+          disableLinks={disableCardLinks}
+          descriptionData={inventoryCards.occupancy}
+        />
 
-      <FinanceCard
-        cardTitle="Free Inventory"
-        titleCenter
-        highlightNegativePositive
-        disableColorChange
-        disableLinks={disableCardLinks}
-        descriptionData={inventoryCards.freeInventory}
-      />
-    </WidgetSection>
+        <FinanceCard
+          cardTitle="Free Inventory"
+          titleCenter
+          highlightNegativePositive
+          disableColorChange
+          disableLinks={disableCardLinks}
+          descriptionData={inventoryCards.freeInventory}
+        />
+      </WidgetSection>
+    </div>
   );
 
   return (
