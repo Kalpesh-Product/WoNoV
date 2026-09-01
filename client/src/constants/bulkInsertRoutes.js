@@ -189,8 +189,9 @@ const bulkInsertRoutes = [
         route: "/api/sales/bulk-insert-co-working-client-members",
       },
       {
-        name: "house-keeping schedule",
+        name: "Housekeeping Weekly Shift Schedule - Admin",
         aliases: [
+          "house-keeping schedule",
           "housekeeping weekly shift schedule",
           "housekeeping weekly shift schedule -admin",
           "housekeeping weekly shift schedule - admin",

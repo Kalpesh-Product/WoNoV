@@ -7,7 +7,7 @@ import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 //import { MdUpload } from "react-icons/md";
 import { IoMdDownload } from "react-icons/io";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Chip, MenuItem, TextField } from "@mui/material";
 import PageFrame from "./PageFrame";
 import MuiModal from "../MuiModal";
@@ -180,7 +180,7 @@ const frontendHrScheduleTemplateLabels = [
       "housekeeping schedule",
       "house keeping schedule",
     ],
-    label: "Housekeeping Weekly Shift Schedule - Hr",
+    label: "Housekeeping Weekly Shift Schedule - Admin",
     sourceDepartmentIds: [HR_DEPARTMENT_ID],
   },
 ];
@@ -268,6 +268,9 @@ const frontendHiddenTemplateDisplayNames = new Set([
   "workation revenue",
 ]);
 
+const housekeepingScheduleTemplateLink =
+  "data:text/csv;charset=utf-8,Location%2CHK%20Member%20ID%2CEmployee%20Is%20Active%2CStart%20Date%2CEnd%20Date%0A";
+
 const frontendOverallTemplateLabels = [
   {
     match: ["assets", "asset"],
@@ -350,6 +353,29 @@ export default function BulkUpload() {
   const [modalMode, setModalMode] = useState("");
   const [downloadedAtByTemplate, setDownloadedAtByTemplate] = useState({});
   const [uploadedAtByTemplate, setUploadedAtByTemplate] = useState({});
+
+  useEffect(() => {
+    if (!deptDetails?._id) return;
+
+    const storageKey = `bulk-upload-downloaded-at-${deptDetails._id}`;
+
+    try {
+      const savedTimestamps = window.localStorage.getItem(storageKey);
+      setDownloadedAtByTemplate(savedTimestamps ? JSON.parse(savedTimestamps) : {});
+    } catch {
+      setDownloadedAtByTemplate({});
+    }
+  }, [deptDetails?._id]);
+
+  useEffect(() => {
+    if (!deptDetails?._id) return;
+
+    const storageKey = `bulk-upload-downloaded-at-${deptDetails._id}`;
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify(downloadedAtByTemplate),
+    );
+  }, [downloadedAtByTemplate, deptDetails?._id]);
 
   const canUploadDocuments = useMemo(() => {
     const allowedDepartmentIds = new Set([
@@ -537,9 +563,13 @@ export default function BulkUpload() {
 
     return sourceDepartmentTemplates.map((template) => {
       const templateName = template.name?.trim() || "Untitled Template";
-      const routeConfig = departmentDrop.find((item) =>
-        templateNameMatchesRoute(templateName, item),
-      );
+      const routeConfig =
+        departmentDrop.find(
+          (item) =>
+            item.sourceDepartmentId === template.__departmentId &&
+            templateNameMatchesRoute(templateName, item),
+        ) ||
+        departmentDrop.find((item) => templateNameMatchesRoute(templateName, item));
 
       return {
         id: template._id || template.documentId || templateName,
@@ -571,6 +601,7 @@ export default function BulkUpload() {
             templateNameMatchesRoute(template.name, routeConfig),
           ) &&
           !sourceDocumentTemplateOptions.some((template) =>
+            template.templateDepartmentId === routeConfig.sourceDepartmentId &&
             templateNameMatchesRoute(template.name, routeConfig),
           ),
       )
@@ -585,7 +616,10 @@ export default function BulkUpload() {
         ),
         route: item.route,
         fileKey: item.fileKey,
-        documentLink: null,
+        documentLink:
+          item.fileKey === "housekeeping-schedule"
+            ? housekeepingScheduleTemplateLink
+            : null,
         downloadedAt: null,
         uploadedAt: null,
         templateDepartmentId: item.sourceDepartmentId || deptDetails?._id,
@@ -640,6 +674,9 @@ export default function BulkUpload() {
   const getTemplateRowId = (template) =>
     template?._id || template?.id || template?.documentId || template?.name;
 
+  const getTemplateTimestampKey = (template) =>
+    normalizeTemplateName(template?.displayName || template?.name);
+
   const formatTemplateTimestamp = (value) => {
     if (!value) return "-";
 
@@ -680,27 +717,34 @@ export default function BulkUpload() {
       return;
     }
 
-    try {
-      const data = await updateTemplateLastModified(
-        template?.templateDepartmentId || deptDetails._id,
-        templateId,
-        "download",
-      );
-      setDownloadedAtByTemplate((prev) => ({
-        ...prev,
-        [templateId]: data?.downloadedAt,
-      }));
-    } catch (error) {
-      if (!isTemplateNotFoundError(error)) {
-        toast.error(
-          error?.response?.data?.message ||
-            error?.message ||
-            "Failed to update template download time.",
+    if (template?.templateId) {
+      try {
+        const data = await updateTemplateLastModified(
+          template?.templateDepartmentId || deptDetails._id,
+          templateId,
+          "download",
         );
+        setDownloadedAtByTemplate((prev) => ({
+          ...prev,
+          [getTemplateTimestampKey(template)]: data?.downloadedAt,
+        }));
+      } catch (error) {
+        if (!isTemplateNotFoundError(error)) {
+          toast.error(
+            error?.response?.data?.message ||
+              error?.message ||
+              "Failed to update template download time.",
+          );
+        }
+        setDownloadedAtByTemplate((prev) => ({
+          ...prev,
+          [getTemplateTimestampKey(template)]: new Date().toISOString(),
+        }));
       }
+    } else {
       setDownloadedAtByTemplate((prev) => ({
         ...prev,
-        [templateId]: new Date().toISOString(),
+        [getTemplateTimestampKey(template)]: new Date().toISOString(),
       }));
     }
 
@@ -809,7 +853,7 @@ export default function BulkUpload() {
       documentLink: template.documentLink,
       isActive: "Active",
       date: formatTemplateTimestamp(
-        downloadedAtByTemplate[getTemplateRowId(template)] ||
+        downloadedAtByTemplate[getTemplateTimestampKey(template)] ||
           template.downloadedAt,
       ),
       updatedAt: formatTemplateTimestamp(
