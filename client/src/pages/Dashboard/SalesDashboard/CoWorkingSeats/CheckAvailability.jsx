@@ -9,7 +9,11 @@ import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import FinanceCard from "../../../../components/FinanceCard";
 
-const CheckAvailability = ({ cardsFirst = false }) => {
+const CheckAvailability = ({
+  cardsFirst = false,
+  disableCardLinks = false,
+  hideCheckInventory = false,
+}) => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
@@ -574,6 +578,7 @@ const CheckAvailability = ({ cardsFirst = false }) => {
         titleCenter
         highlightNegativePositive
         disableColorChange
+        disableLinks={disableCardLinks}
         descriptionData={inventoryCards.inventory}
       />
 
@@ -582,6 +587,7 @@ const CheckAvailability = ({ cardsFirst = false }) => {
         titleCenter
         highlightNegativePositive
         disableColorChange
+        disableLinks={disableCardLinks}
         descriptionData={inventoryCards.occupancy}
       />
 
@@ -590,6 +596,7 @@ const CheckAvailability = ({ cardsFirst = false }) => {
         titleCenter
         highlightNegativePositive
         disableColorChange
+        disableLinks={disableCardLinks}
         descriptionData={inventoryCards.freeInventory}
       />
     </WidgetSection>
@@ -601,7 +608,8 @@ const CheckAvailability = ({ cardsFirst = false }) => {
       {cardsFirst ? inventoryGraph : inventorySummaryCards}
 
 
-      <div className="border-default border-borderGray p-4 rounded-md text-center">
+      {!hideCheckInventory && (
+        <div className="border-default border-borderGray p-4 rounded-md text-center">
         <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
           Check Inventory
         </h2>
@@ -682,7 +690,8 @@ const CheckAvailability = ({ cardsFirst = false }) => {
             externalStyles="w-48 mb-20"
           />
         </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

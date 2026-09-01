@@ -12,6 +12,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import FinanceCard from "../../../components/FinanceCard";
+import DataCard from "../../../components/DataCard";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 import BarGraph from "../../../components/graphs/BarGraph";
@@ -62,6 +63,13 @@ const InvestorUniqueClientsGraph = () => {
         : {};
     },
   });
+  const { data: coWorkingClients = [] } = useQuery({
+    queryKey: ["investor-unique-clients-coworking"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
 
   const clientsByMonth = useMemo(() => {
     const groupedClients = new Map();
@@ -100,7 +108,95 @@ const InvestorUniqueClientsGraph = () => {
     }));
   }, [consolidatedClients]);
 
-  return <LeadsLayout data={clientsByMonth} hideAccordion />;
+  const clientSummaryCards = useMemo(() => {
+    const virtualOfficeClients = asArray(
+      consolidatedClients.virtualOfficeClients,
+    );
+    const meetingClients = asArray(consolidatedClients.meetingClients);
+    const externalVisitors = meetingClients.filter(
+      (client) =>
+        String(client?.visitorFlag || "").trim().toLowerCase() === "client",
+    );
+    const externalMeetings = externalVisitors.filter(
+      (client) =>
+        String(client?.purposeOfVisit || "").trim().toLowerCase() ===
+        "meeting room booking",
+    );
+    const openDesk = externalVisitors.filter((client) => {
+      const purpose = String(client?.purposeOfVisit || "")
+        .trim()
+        .toLowerCase();
+
+      return (
+        purpose === "half-day pass" ||
+        purpose === "full-day pass" ||
+        purpose === "half day pass" ||
+        purpose === "full day pass" ||
+        Boolean(client?.convertedFromInternal)
+      );
+    });
+
+    const buildSummary = (clients) => {
+      const active = clients.filter((client) =>
+        typeof client?.isActive === "boolean"
+          ? client.isActive
+          : Boolean(client?.clientStatus),
+      ).length;
+
+      return {
+        active,
+        inactive: Math.max(0, clients.length - active),
+      };
+    };
+
+    return [
+      {
+        id: "coworking",
+        name: "Co-Working",
+        clients: coWorkingClients,
+      },
+      {
+        id: "virtual-office",
+        name: "Virtual-Office",
+        clients: virtualOfficeClients,
+      },
+      {
+        id: "external-meetings",
+        name: "External Meetings",
+        clients: externalMeetings,
+      },
+      {
+        id: "open-desk",
+        name: "Open Desk",
+        clients: openDesk,
+      },
+    ].map((item) => ({
+      ...item,
+      statusSummary: buildSummary(item.clients),
+    }));
+  }, [coWorkingClients, consolidatedClients]);
+
+  return (
+    <LeadsLayout data={clientsByMonth} hideAccordion>
+      <div className="border-b border-borderGray px-4 pb-4">
+        <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
+          Overall Clients
+        </h2>
+      </div>
+      <div className="pt-4">
+        <WidgetSection layout={2}>
+          {clientSummaryCards.map((item) => (
+            <DataCard
+              key={item.id}
+              data={item.clients.length}
+              title={item.name}
+              statusSummary={item.statusSummary}
+            />
+          ))}
+        </WidgetSection>
+      </div>
+    </LeadsLayout>
+  );
 };
 
 //Meetings
@@ -912,33 +1008,39 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         refreshOnDataChange
       />
       {showSummaryCards && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <FinanceCard
-            {...buildCardData("Income", {
-              month: summaryMonthIncome,
-              total: totals.income,
-            })}
-            disableLinks
-          />
-          <FinanceCard
-            {...buildCardData("Expense", {
-              month: summaryMonthExpense,
-              total: totals.expense,
-            })}
-            disableLinks
-          />
-          <FinanceCard
-            {...buildCardData(
-              "Profit & Loss",
-              {
-                month: summaryMonthIncome - summaryMonthExpense,
-                total: totals.income - totals.expense,
-              },
-              true,
-            )}
-            disableLinks
-          />
-        </div>
+        <WidgetSection
+          border
+          height="min-h-[340px]"
+          title={"BIZNEST PROFIT & LOSS - LAST MONTHS"}
+        >
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <FinanceCard
+              {...buildCardData("Income", {
+                month: summaryMonthIncome,
+                total: totals.income,
+              })}
+              disableLinks
+            />
+            <FinanceCard
+              {...buildCardData("Expense", {
+                month: summaryMonthExpense,
+                total: totals.expense,
+              })}
+              disableLinks
+            />
+            <FinanceCard
+              {...buildCardData(
+                "Profit & Loss",
+                {
+                  month: summaryMonthIncome - summaryMonthExpense,
+                  total: totals.income - totals.expense,
+                },
+                true,
+              )}
+              disableLinks
+            />
+          </div>
+        </WidgetSection>
       )}
     </div>      
   );
@@ -1253,12 +1355,13 @@ const InvestorDashboard = () => {
           />
         </WidgetSection>
       )}
-         {(showDashboardHome || showUniqueClientsPage) &&
+      {(showDashboardHome || showUniqueClientsPage) &&
         canViewUniqueClientsGraph && <InvestorUniqueClientsGraph />}
 
       {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
-        <CheckAvailability />
+        <CheckAvailability disableCardLinks hideCheckInventory />
       )}
+
       {visibleMeetingGraphs.length > 0 && (
         <WidgetSection layout={1}>
           <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
