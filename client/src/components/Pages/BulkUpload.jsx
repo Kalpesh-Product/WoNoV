@@ -39,7 +39,38 @@ const hasNormalizedToken = (value, token) =>
   new RegExp(`(^| )${token}( |$)`).test(value);
 
 const FRONTEND_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const ADMIN_DEPARTMENT_ID = "6798bae6e469e809084e24a4";
+const HR_DEPARTMENT_ID = "6798bab9e469e809084e249e";
+const IT_DEPARTMENT_ID = "6798baa8e469e809084e2497";
+const MAINTENANCE_DEPARTMENT_ID = "6798bafbe469e809084e24a7";
 const FINANCE_DEPARTMENT_ID = "6798bab0e469e809084e249a";
+const SALES_DEPARTMENT_ID = "6798bacce469e809084e24a1";
+
+const matchesTemplateLabel = (
+  templateName,
+  templateLabel,
+  sourceDepartmentId,
+) => {
+  const normalizedTemplateName = normalizeTemplateName(templateName);
+
+  if (
+    templateLabel.sourceDepartmentIds?.length &&
+    !templateLabel.sourceDepartmentIds.includes(sourceDepartmentId)
+  ) {
+    return false;
+  }
+
+  return templateLabel.match.some((candidate) => {
+    const normalizedCandidate = normalizeTemplateName(candidate);
+
+    return (
+      normalizedCandidate === normalizedTemplateName ||
+      hasNormalizedToken(normalizedTemplateName, normalizedCandidate) ||
+      normalizedTemplateName.includes(normalizedCandidate) ||
+      normalizedCandidate.includes(normalizedTemplateName)
+    );
+  });
+};
 
 const financeSalesTemplateLabels = [
   {
@@ -52,18 +83,22 @@ const financeSalesTemplateLabels = [
       "co-working revenues",
     ],
     label: "Co-working Revenue - Finance & Sales",
+    sourceDepartmentIds: [FINANCE_DEPARTMENT_ID, SALES_DEPARTMENT_ID],
   },
   {
     match: ["virtual office revenue", "virtual office revenues"],
     label: "Virtual Office Revenue - Finance & Sales",
+    sourceDepartmentIds: [FINANCE_DEPARTMENT_ID, SALES_DEPARTMENT_ID],
   },
   {
     match: ["alternate revenue", "alternate revenues"],
     label: "Alternate Revenue - Finance & Sales",
+    sourceDepartmentIds: [FINANCE_DEPARTMENT_ID],
   },
   {
     match: ["workation revenue", "workation revenues"],
     label: "Workation Revenue - Finance & Sales",
+    sourceDepartmentIds: [FINANCE_DEPARTMENT_ID],
   },
 ];
 
@@ -71,18 +106,125 @@ const frontendSalesTemplateLabels = [
   {
     match: ["co working client data", "co working clients", "co working client"],
     label: "Co-working Client Data - Sales",
+    sourceDepartmentIds: [SALES_DEPARTMENT_ID],
   },
   {
     match: ["virtual office clients", "virtual office client"],
     label: "Virtual Office Clients - Sales",
+    sourceDepartmentIds: [SALES_DEPARTMENT_ID],
   },
   {
     match: ["workation clients data", "workation clients", "workation client"],
     label: "Workation Clients Data - Sales",
+    sourceDepartmentIds: [SALES_DEPARTMENT_ID],
   },
   {
     match: ["leads", "lead"],
     label: "Leads - Sales",
+    sourceDepartmentIds: [SALES_DEPARTMENT_ID],
+  },
+];
+
+const frontendItMaintenanceTemplateLabels = [
+  {
+    match: [
+      "amc records",
+      "amc record",
+      "it amc records",
+      "amc records it",
+      "amc records maintenance",
+      "amc records it and maintainence",
+      "amc records it and maintenance",
+    ],
+    label: "AMC Records - IT & Maintainence",
+    sourceDepartmentIds: [IT_DEPARTMENT_ID],
+  },
+  {
+    match: [
+      "maintenance weekly shift schedule",
+      "maintenance weekly shift schedule maintainence",
+      "maintenance weekly shift schedule maintenance",
+      "maintenance weekly shift",
+    ],
+    label: "Maintenance Weekly Shift Schedule - Maintainence",
+    sourceDepartmentIds: [MAINTENANCE_DEPARTMENT_ID],
+  },
+  {
+    match: [
+      "it weekly shift timings",
+      "it weekly shift timing",
+      "weekly shift timings",
+      "weekly shift timing",
+    ],
+    label: "IT Weekly Shift Timings - IT",
+    sourceDepartmentIds: [IT_DEPARTMENT_ID],
+  },
+  {
+    match: [
+      "monthly invoice report",
+      "monthly invoice reports",
+      "invoice report",
+      "invoice reports",
+    ],
+    label: "Monthly Invoice Report - IT",
+    sourceDepartmentIds: [IT_DEPARTMENT_ID],
+  },
+];
+
+const frontendHrScheduleTemplateLabels = [
+  {
+    match: [
+      "housekeeping weekly shift schedule",
+      "housekeeping weekly shift schedule hr",
+      "housekeeping weekly shift schedule - hr",
+      "housekeeping schedule",
+      "house keeping schedule",
+    ],
+    label: "Housekeeping Weekly Shift Schedule - Hr",
+    sourceDepartmentIds: [HR_DEPARTMENT_ID],
+  },
+];
+
+const frontendAdminTemplateLabels = [
+  {
+    match: [
+      "weekly shift",
+      "weekly shift schedule",
+      "admin weekly shift schedule",
+      "weekly shift schedule admin",
+    ],
+    label: "Admin Weekly Shift Schedule - Admin",
+    sourceDepartmentIds: [ADMIN_DEPARTMENT_ID],
+  },
+  {
+    match: ["client events", "client event", "client events admin"],
+    label: "Client Events -Admin",
+    sourceDepartmentIds: [ADMIN_DEPARTMENT_ID],
+  },
+  {
+    match: [
+      "co working client members",
+      "co working members",
+      "client member details",
+      "client member details admin",
+    ],
+    label: "Client Member Details -Admin",
+    sourceDepartmentIds: [ADMIN_DEPARTMENT_ID],
+  },
+  {
+    match: [
+      "house keeping schedule",
+      "housekeeping schedule",
+      "housekeeping weekly shift schedule",
+      "housekeeping weekly shift schedule admin",
+    ],
+    label: "Housekeeping Weekly Shift Schedule - Admin",
+    sourceDepartmentIds: [ADMIN_DEPARTMENT_ID],
+  },
+  {
+    match: ["unitwise data", "unitwise", "unitwise data admin"],
+    label: "Unitwise Data -Admin",
+    sourceDepartmentIds: [ADMIN_DEPARTMENT_ID],
   },
 ];
 
@@ -147,28 +289,25 @@ const frontendOverallTemplateLabels = [
   },
 ];
 
-const getTemplateDisplayName = (templateName, departmentId) => {
+const getTemplateDisplayName = (
+  templateName,
+  departmentId,
+  sourceDepartmentId = departmentId,
+) => {
   if (departmentId !== FRONTEND_DEPARTMENT_ID) {
     return templateName?.trim() || "Untitled Template";
   }
 
-  const normalizedTemplateName = normalizeTemplateName(templateName);
   const matchedLabel = [
     ...financeSalesTemplateLabels,
     ...frontendSalesTemplateLabels,
+    ...frontendHrScheduleTemplateLabels,
+    ...frontendItMaintenanceTemplateLabels,
+    ...frontendAdminTemplateLabels,
     ...frontendHrTemplateLabels,
     ...frontendOverallTemplateLabels,
-  ].find(({ match }) =>
-    match.some((candidate) => {
-      const normalizedCandidate = normalizeTemplateName(candidate);
-
-      return (
-        normalizedCandidate === normalizedTemplateName ||
-        hasNormalizedToken(normalizedTemplateName, normalizedCandidate) ||
-        normalizedTemplateName.includes(normalizedCandidate) ||
-        normalizedCandidate.includes(normalizedTemplateName)
-      );
-    }),
+  ].find((templateLabel) =>
+    matchesTemplateLabel(templateName, templateLabel, sourceDepartmentId),
   );
 
   return matchedLabel?.label || templateName?.trim() || "Untitled Template";
@@ -292,6 +431,14 @@ export default function BulkUpload() {
     },
     enabled: !!deptDetails?._id && sourceDepartmentIds.length > 0,
   });
+  const { data: buildings = [] } = useQuery({
+    queryKey: ["company-buildings", deptDetails?._id],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/buildings");
+      return response.data || [];
+    },
+    enabled: !!deptDetails?._id,
+  });
   const {
     handleSubmit,
     reset,
@@ -302,6 +449,7 @@ export default function BulkUpload() {
     defaultValues: {
       file: null,
       documentName: "",
+      buildingId: "",
     },
   });
 
@@ -357,7 +505,11 @@ export default function BulkUpload() {
           id: templateId,
           templateId,
           name: templateName,
-          displayName: getTemplateDisplayName(templateName, deptDetails?._id),
+          displayName: getTemplateDisplayName(
+            templateName,
+            deptDetails?._id,
+            sourceDepartmentId,
+          ),
           route: routeConfig?.route,
           fileKey: routeConfig?.fileKey,
           documentLink: resolvedTemplate.documentLink,
@@ -387,7 +539,11 @@ export default function BulkUpload() {
         id: template._id || template.documentId || templateName,
         templateId: template._id || template.documentId || templateName,
         name: templateName,
-        displayName: getTemplateDisplayName(templateName, deptDetails?._id),
+        displayName: getTemplateDisplayName(
+          templateName,
+          deptDetails?._id,
+          template.__departmentId,
+        ),
         route: routeConfig?.route,
         fileKey: routeConfig?.fileKey,
         documentLink: template.documentLink,
@@ -416,7 +572,11 @@ export default function BulkUpload() {
         id: item.name,
         templateId: null,
         name: item.name,
-        displayName: getTemplateDisplayName(item.name, deptDetails?._id),
+        displayName: getTemplateDisplayName(
+          item.name,
+          deptDetails?._id,
+          item.sourceDepartmentId || deptDetails?._id,
+        ),
         route: item.route,
         fileKey: item.fileKey,
         documentLink: null,
@@ -465,6 +625,8 @@ export default function BulkUpload() {
   const selectedTemplate = templateOptions.find(
     (item) => item.id === selectedDoc,
   );
+  const requiresBuildingSelection =
+    selectedTemplate?.route === "/api/company/bulk-add-locations";
 
   const getTemplateRowId = (template) =>
     template?._id || template?.id || template?.documentId || template?.name;
@@ -554,7 +716,7 @@ export default function BulkUpload() {
 
   const { mutate: uploadDocument, isPending: isUploading } = useMutation({
     // mutationFn: async ({ file, documentName }) => {
-    mutationFn: async ({ file }) => {
+    mutationFn: async ({ file, buildingId }) => {
       if (!selectedTemplate?.route || !selectedTemplate?.fileKey) {
         console.log("!selectedTemplate?.route", selectedTemplate?.route);
         console.log("!selectedTemplate?.fileKey", selectedTemplate?.fileKey);
@@ -562,8 +724,16 @@ export default function BulkUpload() {
           "Bulk upload route is not configured for the selected template.",
         );
       }
+
+      if (requiresBuildingSelection && !buildingId) {
+        throw new Error("Building is required for this template.");
+      }
+
       const formData = new FormData();
       formData.append(selectedTemplate.fileKey, file);
+      if (requiresBuildingSelection && buildingId) {
+        formData.append("buildingId", buildingId);
+      }
 
       const response = await axios.post(selectedTemplate.route, formData, {
         headers: {
@@ -795,6 +965,35 @@ export default function BulkUpload() {
                   />
                 )}
               />
+              {requiresBuildingSelection && (
+                <Controller
+                  name="buildingId"
+                  control={control}
+                  rules={{ required: "Building is required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      size="small"
+                      label="Building"
+                      error={!!errors.buildingId}
+                      helperText={
+                        errors.buildingId ? errors.buildingId.message : null
+                      }
+                    >
+                      <MenuItem value="" disabled>
+                        Select a Building
+                      </MenuItem>
+                      {buildings.map((building) => (
+                        <MenuItem key={building._id} value={building._id}>
+                          {building.buildingName}
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  )}
+                />
+              )}
               <PrimaryButton
                 title="Upload"
                 type="submit"

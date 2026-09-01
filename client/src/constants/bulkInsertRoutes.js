@@ -148,6 +148,17 @@ const bulkInsertRoutes = [
         route: "/api/sales/bulk-insert-leads",
       },
       {
+        name: "weekly shift",
+        aliases: [
+          "weekly shift schedule",
+          "admin weekly shift schedule",
+          "weekly shift schedule - admin",
+        ],
+        fileKey: "schedule",
+        sourceDepartmentId: "6798bae6e469e809084e24a4",
+        route: "/api/administration/bulk-insert-weekly-shift-schedule/6798bae6e469e809084e24a4",
+      },
+      {
         name: "Holidays And Events",
         aliases: [
           "Holidays / Events",
@@ -158,6 +169,97 @@ const bulkInsertRoutes = [
         fileKey: "events",
         sourceDepartmentId: "6798bab9e469e809084e249e",
         route: "/api/events/bulk-insert-events",
+      },
+      {
+        name: "client events",
+        aliases: ["Client Events -Admin"],
+        fileKey: "client-events",
+        sourceDepartmentId: "6798bae6e469e809084e24a4",
+        route: "/api/administration/bulk-insert-client-events",
+      },
+      {
+        name: "co-working client members",
+        aliases: [
+          "client member details",
+          "client member details -admin",
+          "co-working members",
+        ],
+        fileKey: "members",
+        sourceDepartmentId: "6798bae6e469e809084e24a4",
+        route: "/api/sales/bulk-insert-co-working-client-members",
+      },
+      {
+        name: "house-keeping schedule",
+        aliases: [
+          "housekeeping weekly shift schedule",
+          "housekeeping weekly shift schedule -admin",
+          "housekeeping weekly shift schedule - admin",
+          "housekeeping schedule",
+        ],
+        fileKey: "housekeeping-schedule",
+        sourceDepartmentId: "6798bae6e469e809084e24a4",
+        route: "/api/company/bulk-insert-housekeeping-schedule",
+      },
+      {
+        name: "unitwise data",
+        aliases: ["unitwise", "unitwise data -admin"],
+        fileKey: "units",
+        sourceDepartmentId: "6798bae6e469e809084e24a4",
+        route: "/api/company/bulk-add-locations",
+      },
+      {
+        name: "AMC Records",
+        aliases: [
+          "AMC Records - IT & Maintainence",
+          "AMC Records - IT & Maintenance",
+          "AMC Records - Maintenance",
+          "AMC Records - IT",
+          "AMC",
+        ],
+        fileKey: "amc-records",
+        sourceDepartmentId: "6798baa8e469e809084e2497",
+        route: "/api/amc/bulk-insert-amc-records/6798baa8e469e809084e2497",
+      },
+      {
+        name: "Maintenance Weekly Shift Schedule",
+        aliases: [
+          "Maintenance Weekly Shift Schedule - Maintainence",
+          "Maintenance Weekly Shift Schedule - Maintenance",
+          "Maintenance Weekly Shift",
+          "Maintenance Weekly Schedule",
+          "Maintenance Shift Schedule",
+        ],
+        fileKey: "schedule",
+        sourceDepartmentId: "6798bafbe469e809084e24a7",
+        route:
+          "/api/administration/bulk-insert-weekly-shift-schedule/6798bafbe469e809084e24a7",
+      },
+      {
+        name: "Housekeeping Weekly Shift Schedule",
+        aliases: [
+          "Housekeeping Weekly Shift Schedule - Hr",
+          "Housekeeping Weekly Shift Schedule - HR",
+          "Housekeeping Weekly Shift",
+          "Housekeeping Schedule - Hr",
+          "Housekeeping Schedule",
+        ],
+        fileKey: "housekeeping-schedule",
+        sourceDepartmentId: "6798bab9e469e809084e249e",
+        route: "/api/company/bulk-insert-housekeeping-schedule",
+      },
+      {
+        name: "IT Weekly Shift Timings",
+        aliases: [
+          "IT Weekly Shift Timings - IT",
+          "IT Weekly Shift Timing - IT",
+          "weekly shift timings",
+          "weekly shift timing",
+          "IT Weekly Shift",
+        ],
+        fileKey: "schedule",
+        sourceDepartmentId: "6798baa8e469e809084e2497",
+        route:
+          "/api/administration/bulk-insert-weekly-shift-schedule/6798baa8e469e809084e2497",
       },
       {
         name: "Employee Leaves",
