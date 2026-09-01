@@ -208,8 +208,9 @@ const bulkInsertRoutes = [
         route: "/api/company/bulk-add-locations",
       },
       {
-        name: "AMC Records",
+        name: "AMC Records - IT & Maintainence",
         aliases: [
+          "AMC Records",
           "AMC Records - IT & Maintainence",
           "AMC Records - IT & Maintenance",
           "AMC Records - Maintenance",

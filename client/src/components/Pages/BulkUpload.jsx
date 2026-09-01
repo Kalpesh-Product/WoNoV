@@ -262,6 +262,12 @@ const frontendHiddenTemplateNames = new Set([
   "coworking revenue finance and sales",
 ]);
 
+const frontendHiddenTemplateDisplayNames = new Set([
+  "amc records",
+  "alternate revenue",
+  "workation revenue",
+]);
+
 const frontendOverallTemplateLabels = [
   {
     match: ["assets", "asset"],
@@ -601,6 +607,9 @@ export default function BulkUpload() {
       ].filter(
         (template) =>
           deptDetails?._id !== FRONTEND_DEPARTMENT_ID ||
+          !frontendHiddenTemplateDisplayNames.has(
+            normalizeTemplateName(template.displayName),
+          ) &&
           !frontendHiddenTemplateNames.has(
             normalizeTemplateName(template.name || template.displayName),
           ),
