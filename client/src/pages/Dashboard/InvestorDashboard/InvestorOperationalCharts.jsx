@@ -391,6 +391,11 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
   const clientDetailsData = useMemo(
     () =>
       [...allCoworkingClients]
+        .filter((client) => {
+          const desks =
+            Number(client.openDesks || 0) + Number(client.cabinDesks || 0);
+          return desks > 0;
+        })
         .sort(
           (a, b) =>
             Number(b.openDesks || 0) + Number(b.cabinDesks || 0) -
@@ -425,60 +430,81 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
       flex: 0.5,
       cellRenderer: (params) => `${params.value}%`,
     },
-    { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5 },
-    {
-      field: "status",
-      headerName: "Status",
-      sort: "desc",
-      flex: 1,
-      cellRenderer: (params) => (
-        <Chip
-          label={params.value ? "Active" : "Inactive"}
-          style={
-            params.value
-              ? { backgroundColor: "#90EE90", color: "#006400" }
-              : { backgroundColor: "#FFECC5", color: "#CC8400" }
-          }
-        />
-      ),
-    },
+  //  { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5 },
+    // {
+    //   field: "status",
+    //   headerName: "Status",
+    //   sort: "desc",
+    //   flex: 1,
+    //   cellRenderer: (params) => (
+    //     <Chip
+    //       label={params.value ? "Active" : "Inactive"}
+    //       style={
+    //         params.value
+    //           ? { backgroundColor: "#90EE90", color: "#006400" }
+    //           : { backgroundColor: "#FFECC5", color: "#CC8400" }
+    //       }
+    //     />
+    //     />
+    //   ),
+    // },
   ];
   const desksDetailsColumns = [
     { field: "id", headerName: "Sr No", width: 150 },
     { field: "clientName", headerName: "Client Name", flex: 1 },
     { field: "desks", headerName: "Desks", flex: 0.5 },
   ];
-  const genderDetailsData = [
-    {
-      id: 1,
-      male:
-        chartData.gender?.data.find((item) => item.label === "Male")?.value ||
-        0,
-      female:
-        chartData.gender?.data.find((item) => item.label === "Female")?.value ||
-        0,
-    },
-  ];
+  const genderDetailsData = (chartData.gender?.data || [])
+    .filter((item) => ["Male", "Female"].includes(item.label))
+    .map((item, index) => ({
+      id: index + 1,
+      gender: item.label,
+      count: item.value,
+    }));
   const genderDetailsColumns = [
     { field: "id", headerName: "Sr No", width: 150 },
-    { field: "male", headerName: "Male", flex: 1 },
-    { field: "female", headerName: "Female", flex: 1 },
+    { field: "gender", headerName: "Gender", flex: 1 },
+    { field: "count", headerName: "Count", flex: 1 },
   ];
-  const indiaDetailsData = chartData.india?.data.map((item, index) => ({
-    id: index + 1,
-    state: item.label,
-    memberCount: item.value,
-  }));
+  const indiaDetailsData = useMemo(() => {
+    const stateCounts = clients.reduce((counts, client) => {
+      const state = String(
+        client.hostate?.trim() || client.hoState?.trim() || "",
+      );
+      if (!state || state.toLowerCase() === "unknown") return counts;
+      counts[state] = (counts[state] || 0) + 1;
+      return counts;
+    }, {});
+
+    return Object.entries(stateCounts)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .map(([state, memberCount], index) => ({
+        id: index + 1,
+        state,
+        memberCount,
+      }));
+  }, [clients]);
   const indiaDetailsColumns = [
     { field: "id", headerName: "Sr No", width: 150 },
     { field: "state", headerName: "State", flex: 1 },
     { field: "memberCount", headerName: "Member Count", flex: 1 },
   ];
-  const sectorDetailsData = chartData.sector?.data.map((item, index) => ({
-    id: index + 1,
-    sector: item.label,
-    clientCount: item.value,
-  }));
+  const sectorDetailsData = useMemo(() => {
+    const sectorCounts = clients.reduce((counts, client) => {
+      const sector = String(client.sector || "").trim();
+      if (!sector || sector.toLowerCase() === "unknown") return counts;
+      counts[sector] = (counts[sector] || 0) + 1;
+      return counts;
+    }, {});
+
+    return Object.entries(sectorCounts)
+      .sort(([, countA], [, countB]) => countB - countA)
+      .map(([sector, clientCount], index) => ({
+        id: index + 1,
+        sector,
+        clientCount,
+      }));
+  }, [clients]);
   const sectorDetailsColumns = [
     { field: "id", headerName: "Sr No", width: 150 },
     { field: "sector", headerName: "Sector", flex: 1 },
