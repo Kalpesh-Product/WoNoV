@@ -3797,13 +3797,13 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/investor-dashboard/overall-visitor-gender-data",
   },
-  // INVESTOR_MEETING_DURATION_BREAKDOWN: {
-  //   value: "investor_meeting_duration_breakdown",
-  //   title: "INVESTOR MEETING DURATION BREAKDOWN",
-  //   type: "read",
-  //   access: "page",
-  //   route: "/app/dashboard/investor-dashboard/meeting-duration-breakdown",
-  // },
+  INVESTOR_MEETING_DURATION_BREAKDOWN: {
+    value: "investor_meeting_duration_breakdown",
+    title: "INVESTOR MEETING DURATION BREAKDOWN",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/meeting-duration-breakdown",
+  },
   
   INVESTOR_ANNUAL_AVERAGE_PROFIT_LOSS: {
     value: "investor_annual_average_profit_loss",

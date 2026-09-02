@@ -219,6 +219,8 @@ const parseMeetingMinutes = (duration = "") => {
 const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const showDurationDetails =
+    visibleGraphs.length === 1 && visibleGraphs[0] === "duration";
 
   const now = dayjs();
   const currentMonthLabel = now.format("MMM-YY");
@@ -450,6 +452,21 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       })),
     }));
 
+    const durationBuckets = [15, 30, 60, 90, 120, 150, "Others"];
+    const durationCounts = Array(durationBuckets.length).fill(0);
+    const longerDurationCounts = {};
+
+    meetings.forEach((meeting) => {
+      const minutes = parseMeetingMinutes(meeting.duration);
+      const bucketIndex = [15, 30, 60, 90, 120, 150].findIndex(
+        (limit) => minutes <= limit,
+      );
+      if (bucketIndex === -1) {
+        longerDurationCounts[minutes] = (longerDurationCounts[minutes] || 0) + 1;
+      }
+      durationCounts[bucketIndex === -1 ? 6 : bucketIndex] += 1;
+    });
+
     const externalGuestsData = [
       {
         name: "Visitors",
@@ -550,10 +567,22 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       roomHours,
       occupancy,
       heatmap,
-      // duration: bucketLabels.map((label, index) => ({
-      //   label,
-      //   value: bucketCounts[index],
-      // })),
+      duration: durationBuckets.map((bucket, index) => ({
+        label: bucket === "Others" ? bucket : `${bucket} min`,
+        value: durationCounts[index],
+      })),
+      durationDetails: [
+        ...durationBuckets.slice(0, -1).map((bucket, index) => ({
+          label: `${bucket} min`,
+          value: durationCounts[index],
+        })),
+        ...Object.entries(longerDurationCounts)
+          .sort(([minutesA], [minutesB]) => Number(minutesA) - Number(minutesB))
+          .map(([minutes, value]) => ({
+            label: `${minutes} min`,
+            value,
+          })),
+      ],
     };
   }, [fiscalLabel, meetings, months, now, rooms, visitors]);
 
@@ -714,6 +743,55 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
     },
   };
 
+  const meetingDurationOptions = {
+    ...barOptions(
+      analytics.duration.map((item) => item.label),
+      "Meeting Count",
+      (value) => Math.round(value),
+    ),
+    xaxis: {
+      ...barOptions(
+        analytics.duration.map((item) => item.label),
+        "Meeting Count",
+        (value) => Math.round(value),
+      ).xaxis,
+      title: {
+        text: "Minutes",
+      },
+      crosshairs: {
+        show: false,
+      },
+    },
+    yaxis: {
+      ...barOptions(
+        analytics.duration.map((item) => item.label),
+        "Meeting Count",
+        (value) => Math.round(value),
+      ).yaxis,
+      crosshairs: {
+        show: false,
+      },
+    },
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        columnWidth: "35%",
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (value) => Math.round(value),
+      offsetY: -26,
+      style: {
+        colors: ["#111"],
+      },
+    },
+    colors: ["#9FA1FF"],
+  };
+
   // const pieOptions = {
   //   labels: analytics.duration.map((item) => item.label),
   //   legend: {
@@ -806,7 +884,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
       )}
 
       {show("busy") && (
-        <WidgetSection border title="BUSY TIME DURING THE WEEK">
+        <WidgetSection border title="BIZNEST BUSY TIME DURING THE WEEK">
           <div
             onClick={goTo("busy-time-during-week")}
             className="cursor-pointer"
@@ -817,6 +895,45 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
               height={500}
             />
           </div>
+        </WidgetSection>
+      )}
+      {show("duration") && (
+        <WidgetSection border title="BIZNEST MEETING DURATION BREAKDOWN">
+          <div
+            onClick={goTo("meeting-duration-breakdown")}
+            className="cursor-pointer"
+          >
+            <BarGraph
+              data={[
+                {
+                  name: "Meetings",
+                  data: analytics.duration.map((item) => item.value),
+                },
+              ]}
+              options={meetingDurationOptions}
+              height={450}
+            />
+          </div>
+        </WidgetSection>
+      )}
+      {showDurationDetails && (
+        <WidgetSection
+          border
+          title="BIZNEST MEETING DURATION BREAKDOWN DETAILS"
+        >
+          <AgTable
+            data={analytics.durationDetails.map((item, index) => ({
+              id: index + 1,
+              minute: item.label,
+              meeting: item.value,
+            }))}
+            columns={[
+              { field: "id", headerName: "Sr No", flex: 1.5 },
+              { field: "minute", headerName: "Minute", flex: 1.5 },
+              { field: "meeting", headerName: "Meeting Count", flex: 1 },
+                ]}
+            search
+              />
         </WidgetSection>
       )}
       {show("visitors") && (
@@ -1099,7 +1216,7 @@ const InvestorDashboard = () => {
     occupancy: "/average-room-occupancy",
     busy: "/busy-time-during-week",
     visitors: "/monthly-total-visitors",
-   // duration: "/meeting-duration-breakdown",
+    duration: "/meeting-duration-breakdown",
   };
    const operationalGraphRoutes = {
     sector: "/app/dashboard/investor-dashboard/sector-wise-occupancy",
@@ -1132,7 +1249,7 @@ const InvestorDashboard = () => {
     guests: PERMISSIONS.INVESTOR_EXTERNAL_GUESTS_VISITED.value,
     occupancy: PERMISSIONS.INVESTOR_AVERAGE_ROOM_OCCUPANCY.value,
     busy: PERMISSIONS.INVESTOR_BUSY_TIME_WEEK.value,
-   // duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
+    duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
        visitors: PERMISSIONS.INVESTOR_MONTHLY_TOTAL_VISITORS.value,
   };
   const visibleMeetingGraphs = Object.keys(meetingGraphRoutes).filter(
@@ -1394,7 +1511,7 @@ const InvestorDashboard = () => {
       {visibleOperationalGraphs.some((key) =>
         operationalGraphsBeforeMeeting.includes(key),
       ) && (
-        <div className="-mt-6">
+        <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
           <InvestorOperationalCharts
             visibleCharts={visibleOperationalGraphs.filter((key) =>
               operationalGraphsBeforeMeeting.includes(key),
@@ -1404,7 +1521,7 @@ const InvestorDashboard = () => {
         </div>
       )}
       {visibleMeetingGraphs.length > 0 && (
-        <div className="-mt-6">
+        <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
           <WidgetSection layout={1}>
             <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
           </WidgetSection>
@@ -1413,7 +1530,7 @@ const InvestorDashboard = () => {
       {visibleOperationalGraphs.some(
         (key) => !operationalGraphsBeforeMeeting.includes(key),
       ) && (
-        <div className="-mt-6">
+        <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
           <InvestorOperationalCharts
             visibleCharts={visibleOperationalGraphs.filter(
               (key) => !operationalGraphsBeforeMeeting.includes(key),
