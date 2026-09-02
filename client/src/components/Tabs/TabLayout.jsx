@@ -12,6 +12,7 @@ const TabLayout = ({
   hideTabsCondition = () => false,
   hideTabsOnPaths = [], // NEW PROP
   contentClassName = "py-4",
+  fitTabLabels = false,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -113,7 +114,8 @@ const TabLayout = ({
               fontWeight: "medium",
               padding: "12px 16px",
               borderRight: "0.1px solid #d1d5db",
-              minWidth: isMobile ? "fit-content" : "auto",
+              minWidth: isMobile || fitTabLabels ? "max-content" : "auto",
+              whiteSpace: fitTabLabels ? "nowrap" : "normal",
             },
             "& .Mui-selected": {
               backgroundColor: "#1E3D73",
@@ -135,7 +137,12 @@ const TabLayout = ({
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-                minWidth: isMobile ? "70%" : `${tabPercent}%`,
+                minWidth: isMobile
+                  ? "70%"
+                  : fitTabLabels
+                    ? "max-content"
+                    : `${tabPercent}%`,
+                flex: !isMobile && fitTabLabels ? "1 1 auto" : undefined,
               })}
             >
               {tab.label}

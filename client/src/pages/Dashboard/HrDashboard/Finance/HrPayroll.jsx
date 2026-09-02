@@ -1,7 +1,7 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, CircularProgress, selectClasses } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -29,6 +29,8 @@ import { queryClient } from "../../../../main";
 
 const HrPayroll = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMixBagPayroll = location.pathname.includes("/mix-bag/payroll");
 
   const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -63,7 +65,9 @@ const HrPayroll = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
+              isMixBagPayroll
+                ? `/app/dashboard/HR-dashboard/mix-bag/payroll/${params.value}`
+                : `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
               {
                 state: {
                   empId: params.data.id,

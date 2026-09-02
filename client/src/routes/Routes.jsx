@@ -40,6 +40,7 @@ import HrLayout from "../pages/Dashboard/HrDashboard/HrLayout";
 import ViewEmployees from "../pages/Dashboard/HrDashboard/Complaince/ViewEmployees";
 import OnBoarding from "../pages/Dashboard/HrDashboard/OnBoarding/OnBoarding";
 import EmployeeOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/EmployeeOnboard";
+import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import MemberOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/MemberOnboard";
 import VendorOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/VendorOnboard";
 import EmployeeDetail from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/EmployeeDetails";
@@ -2801,6 +2802,14 @@ export const routes = createBrowserRouter([
                         element: <MonthlyAttendanceSummary />,
                       },
                       {
+                        path: "mix-bag/payroll",
+                        element: <HrPayroll />,
+                      },
+                      {
+                        path: "mix-bag/payroll/:id",
+                        element: <ViewPayroll hideCompensationStructure />,
+                      },
+                      {
                         path: "mix-bag/leaves",
                         element: <LeavesLayout />,
                         children: [
@@ -2942,6 +2951,10 @@ export const routes = createBrowserRouter([
                             path: "employee-onboarding",
 
                             element: <EmployeeOnboard />,
+                          },
+                          {
+                            path: "compensation-structure",
+                            element: <CompensationStructure />,
                           },
                           {
                             path: "past-employees",
