@@ -54,8 +54,6 @@ const EmployeeOnboard = () => {
       employerPf: "",
       includeInPayroll: "",
       annualCtc: "",
-      allowancesAmount: "0",
-      deductionsAmount: "0",
       internshipIsUnpaid: false,
       payrollBatch: "",
       professionTaxExemption: "",
@@ -292,8 +290,6 @@ const EmployeeOnboard = () => {
         grossAnnual: toOptionalNumber(data.annualCtc),
         currency: "INR",
         payFrequency: "annual",
-        allowances: toOptionalNumber(data.allowancesAmount) ?? 0,
-        deductions: toOptionalNumber(data.deductionsAmount) ?? 0,
       },
       familyInformation: {
         fatherName: data.fatherName?.trim(),
@@ -1116,54 +1112,6 @@ const EmployeeOnboard = () => {
                       ? Number(watch("annualCtc")) / 12 / 26
                       : 0
                     ).toFixed(2)}
-                  />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Controller
-                    name="allowancesAmount"
-                    control={control}
-                    rules={{
-                      min: {
-                        value: 0,
-                        message: "Allowances cannot be negative",
-                      },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        label="Monthly Fixed Allowances (INR)"
-                        fullWidth
-                        disabled={watch("internshipIsUnpaid")}
-                        inputProps={{ min: 0, step: "0.01" }}
-                        helperText={errors?.allowancesAmount?.message}
-                        error={!!errors.allowancesAmount}
-                      />
-                    )}
-                  />
-                  <Controller
-                    name="deductionsAmount"
-                    control={control}
-                    rules={{
-                      min: {
-                        value: 0,
-                        message: "Deductions cannot be negative",
-                      },
-                    }}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        label="Monthly Fixed Deductions (INR)"
-                        fullWidth
-                        disabled={watch("internshipIsUnpaid")}
-                        inputProps={{ min: 0, step: "0.01" }}
-                        helperText={errors?.deductionsAmount?.message}
-                        error={!!errors.deductionsAmount}
-                      />
-                    )}
                   />
                 </div>
               </div>
