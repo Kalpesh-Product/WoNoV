@@ -462,6 +462,7 @@ const getCompanyAttandances = async (req, res, next) => {
     );
     const payload = await getCompanyAttandancesService({
       company,
+      employeeId: req.query?.employeeId,
       page: req.query?.page,
       limit: req.query?.limit,
       ...(hasDateFilter && {

@@ -729,20 +729,23 @@ const ViewPayroll = () => {
     (total, row) => total + (Number(row.value) || 0),
     0,
   );
-  const deductionTotal = visibleCompensation.deductions.reduce(
-    (total, row) => total + (Number(row.value) || 0),
-    0,
-  );
   const employerCostTotal =
     (employeeEsiEnabled ? Number(employerCosts.employerEsi) || 0 : 0) +
     (employeePfEnabled ? Number(employerCosts.employerPf) || 0 : 0);
-  const grossEarnings =
-    Number(visibleCompensation.compensation.grossPay || 0) + allowanceTotal;
-  const calculatedCtc =
-    grossEarnings * 12 +
-    employerCostTotal * 12 +
-    Number(visibleCompensation.compensation.variablePay || 0) +
-    Number(visibleCompensation.compensation.gratuity || 0);
+  const calculatedGrossPay =
+    Number(visibleCompensation.compensation.basicPay || 0) + allowanceTotal;
+  const getEffectiveDeductionValue = (row) =>
+    row.label === "ESI"
+      ? employeeEsiEnabled
+        ? getEmployeeEsi(calculatedGrossPay)
+        : 0
+      : Number(row.value) || 0;
+  const deductionTotal = visibleCompensation.deductions.reduce(
+    (total, row) => total + getEffectiveDeductionValue(row),
+    0,
+  );
+  const grossEarnings = calculatedGrossPay;
+  const calculatedCtc = (grossEarnings + employerCostTotal) * 12;
   const storedCtc = Number(employeeRecord?.annualCtc) || 0;
   const canValidateCtc =
     !isEmployeeLoading && !isEmployerCostsLoading && !isEmployerCostsError;
@@ -828,7 +831,7 @@ const ViewPayroll = () => {
     try {
       const { compensation } = compensationDraft;
       const response = await savePayrollCompensation({
-        grossPay: compensation.grossPay,
+        grossPay: calculatedGrossPay,
         basicPay: compensation.basicPay,
         variablePay: compensation.variablePay,
         gratuity: compensation.gratuity,
@@ -841,7 +844,7 @@ const ViewPayroll = () => {
         })),
         deductions: compensationDraft.deductions.map((row) => ({
           label: row.label,
-          amount: Number(row.value) || 0,
+          amount: getEffectiveDeductionValue(row),
         })),
       });
       const savedCompensation = response?.payrollCompensation;
@@ -917,19 +920,6 @@ const ViewPayroll = () => {
                 ...row,
                 value: employeeEsiEnabled
                   ? getEmployeeEsi(next.compensation.grossPay)
-                  : 0,
-              }
-            : row,
-        );
-      }
-
-      if (field === "grossPay") {
-        next.deductions = next.deductions.map((row) =>
-          row.label === "ESI"
-            ? {
-                ...row,
-                value: employeeEsiEnabled
-                  ? getEmployeeEsi(value)
                   : 0,
               }
             : row,
@@ -1073,7 +1063,12 @@ const ViewPayroll = () => {
                         size="small"
                         type="number"
                         label={label}
-                        value={visibleCompensation.compensation[field]}
+                        value={
+                          field === "grossPay"
+                            ? calculatedGrossPay
+                            : visibleCompensation.compensation[field]
+                        }
+                        disabled={field === "grossPay"}
                         onChange={(event) =>
                           updateCompensationField(field, event.target.value)
                         }
@@ -1216,9 +1211,7 @@ const ViewPayroll = () => {
                   <>
                     <CompensationRow
                       label="Gross Pay"
-                      value={formatPayrollAmount(
-                        visibleCompensation.compensation.grossPay,
-                      )}
+                      value={formatPayrollAmount(calculatedGrossPay)}
                       period="Month"
                     />
                     <CompensationRow
@@ -1419,7 +1412,11 @@ const ViewPayroll = () => {
                     {visibleCompensation.deductions.map((row) => (
                       <EditableAmountRow
                         key={row.id}
-                        row={row}
+                        row={
+                          row.label === "ESI"
+                            ? { ...row, value: getEffectiveDeductionValue(row) }
+                            : row
+                        }
                         options={deductionOptions}
                         placeholder="Select Deduction"
                         usedLabels={visibleCompensation.deductions.map(
@@ -1441,10 +1438,7 @@ const ViewPayroll = () => {
                                     ) * 0.1
                                   : updatedRow.label === "ESI"
                                     ? employeeEsiEnabled
-                                      ? getEmployeeEsi(
-                                          visibleCompensation.compensation
-                                            .grossPay,
-                                        )
+                                      ? getEmployeeEsi(calculatedGrossPay)
                                       : 0
                                     : updatedRow.value,
                           })
@@ -1479,7 +1473,9 @@ const ViewPayroll = () => {
                     <CompensationRow
                       key={row.id}
                       label={row.label}
-                      value={formatPayrollAmount(row.value)}
+                      value={formatPayrollAmount(
+                        getEffectiveDeductionValue(row),
+                      )}
                     />
                   ))
                 ) : (
