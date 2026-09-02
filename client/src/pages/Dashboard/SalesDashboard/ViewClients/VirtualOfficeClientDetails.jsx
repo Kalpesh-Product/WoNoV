@@ -196,6 +196,7 @@ const VirtualOfficeClientDetails = () => {
       unitNo: "",
       cabinDesks: 0,
       securityDeposit: 0,
+      billingFrequency: "Yearly",
       openDesks: 0,
       totalDesks: 0,
       bookingType: DEFAULT_BOOKING_TYPE,
@@ -425,6 +426,7 @@ const VirtualOfficeClientDetails = () => {
           "",
         cabinDesks: selectedClient.cabinDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
+        billingFrequency: selectedClient.billingFrequency || "Yearly",
         openDesks: selectedClient.openDesks || 0,
         totalDesks:
           Number(selectedClient.cabinDesks || 0) +
@@ -502,6 +504,7 @@ const VirtualOfficeClientDetails = () => {
       unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
       securityDeposit: Number(data.securityDeposit) || 0,
+      billingFrequency: data.billingFrequency,
       openDesks: Number(data.openDesks) || 0,
       cabinDeskRate: Number(data.cabinDeskRate) || 0,
       openDeskRate: Number(data.openDeskRate) || 0,
@@ -865,9 +868,28 @@ const VirtualOfficeClientDetails = () => {
                           </TextField>
                         )}
                       />
+                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <Controller
+                          name="securityDeposit"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField {...field} size="small" label="Security Deposit" fullWidth />
+                          )}
+                        />
+                        <Controller
+                          name="billingFrequency"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
+                              <MenuItem value="Monthly">Monthly</MenuItem>
+                              <MenuItem value="Yearly">Yearly</MenuItem>
+                            </TextField>
+                          )}
+                        />
+                      </div>
                       {[
                         // "cabinDesks",
-                        "securityDeposit",
+                       // "securityDeposit",
                         // "cabinDeskRate",
                         "openDesks",
                         "openDeskRate",
@@ -916,6 +938,7 @@ const VirtualOfficeClientDetails = () => {
                       "unitNo",
                       // "cabinDesks",
                       "securityDeposit",
+                       "billingFrequency",
                       // "cabinDeskRate",
                       "openDesks",
                       "openDeskRate",

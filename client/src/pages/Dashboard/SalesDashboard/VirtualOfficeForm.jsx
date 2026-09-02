@@ -34,6 +34,7 @@ const VirtualOfficeForm = () => {
       unit: "",
       cabinDesks: "",
       securityDeposit: "",
+      billingFrequency: "Yearly",
       ratePerCabinDesk: "10000",
       openDesks: "",
       ratePerOpenDesk: "8000",
@@ -191,6 +192,7 @@ const VirtualOfficeForm = () => {
         : null,
       cabinDesks: Number(data.cabinDesks) || 0,
       securityDeposit: Number(data.securityDeposit) || 0,
+      billingFrequency: data.billingFrequency,
       cabinDeskRate: Number(data.ratePerCabinDesk) || 0,
       openDesks: Number(data.openDesks) || 0,
       openDeskRate: Number(data.ratePerOpenDesk) || 0,
@@ -506,7 +508,7 @@ const VirtualOfficeForm = () => {
                         )}
                       />
                     </div> */}
-                  <div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <Controller
                       name="securityDeposit"
                       control={control}
@@ -521,6 +523,22 @@ const VirtualOfficeForm = () => {
                           helperText={errors.securityDeposit?.message}
                           fullWidth
                         />
+                      )}
+                    />
+                     <Controller
+                      name="billingFrequency"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          select
+                          label="Billing Frequency"
+                          fullWidth
+                        >
+                          <MenuItem value="Monthly">Monthly</MenuItem>
+                          <MenuItem value="Yearly">Yearly</MenuItem>
+                        </TextField>
                       )}
                     />
                   </div>
