@@ -189,7 +189,16 @@ const getUserDisplayName = (user) => {
   const axios = useAxiosPrivate();
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
+  const [addRow, setAddRow] = useState(false);
+  const [addedRevenueIds, setAddedRevenueIds] = useState([]);
   const { control, handleSubmit, reset } = useForm();
+  const {
+    control: addControl,
+    handleSubmit: handleAddSubmit,
+    reset: resetAdd,
+    setValue: setAddValue,
+    watch: watchAdd,
+  } = useForm();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
   );
@@ -237,6 +246,16 @@ const getUserDisplayName = (user) => {
     },
   });
 
+  const activeVirtualOfficeClients = useMemo(
+    () =>
+      virtualOfficeClients.filter((client) =>
+        typeof client?.isActive === "boolean"
+          ? client.isActive
+          : Boolean(client?.clientStatus),
+      ),
+    [virtualOfficeClients],
+  );
+
   const tableData = useMemo(
     () =>
       isLoadingVirtualOfficeRevenue
@@ -256,7 +275,7 @@ const getUserDisplayName = (user) => {
                 }
               : {}),
             clientName: item.client?.clientName,
-            securityDeposit: item.client?.securityDeposit ?? item.securityDeposit,
+             securityDeposit: item.client?.securityDeposit ?? item.securityDeposit,
             billingFrequency: item.client?.billingFrequency || item.billingFrequency,
             normalizedStatus: getNormalizedPaymentStatus(
               item.rentStatus ?? item.status,
@@ -337,6 +356,82 @@ const getUserDisplayName = (user) => {
     },
     onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
   });
+
+  const selectedAddClientId = watchAdd("client");
+  const selectedAddClient = activeVirtualOfficeClients.find(
+    (client) => client._id === selectedAddClientId,
+  );
+  const addTotalDesks =
+    Number(selectedAddClient?.totalDesks) ||
+    Number(selectedAddClient?.cabinDesks || 0) +
+      Number(selectedAddClient?.openDesks || 0);
+  const addDeskRate = selectedAddClient
+    ? getVirtualOfficeCurrentRate({ client: selectedAddClient })
+    : 0;
+  const addRevenue = addTotalDesks * addDeskRate;
+
+  const { mutate: addVirtualInvoice, isPending: isAddingVirtualInvoice } =
+    useMutation({
+      mutationFn: async (values) => {
+        const payload = {
+          client: values.client,
+          location: selectedAddClient?.buildingAddress || selectedAddClient?.city || "",
+          channel: selectedAddClient?.bookingType || "Direct",
+          taxableAmount: addRevenue,
+          revenue: addRevenue,
+          totalTerm: selectedAddClient?.totalTerm || 0,
+          rentDate: selectedAddClient?.rentDate || null,
+          rentStatus: values.rentStatus,
+          annualIncrement: selectedAddClient?.annualIncrement || 0,
+          nextIncrementDate: selectedAddClient?.nextIncrementDate || null,
+        };
+        const response = await axios.post("/api/sales/create-virtual-office-revenue", payload);
+        const createdRevenue = response.data?.data || response.data?.revenue;
+
+        if (values.invoiceFile instanceof File && createdRevenue?._id) {
+          const form = new FormData();
+          form.append("revenueId", createdRevenue._id);
+          form.append("rentStatus", values.rentStatus);
+          form.append("invoiceUploadedAt", new Date().toISOString());
+          form.append("client-invoice", values.invoiceFile);
+          await axios.patch("/api/sales/virtual-office-revenue-invoice", form);
+        }
+
+        return { ...response.data, createdRevenue };
+      },
+      onSuccess: (data) => {
+        toast.success("Virtual office invoice added successfully");
+        if (data.createdRevenue?._id) {
+          setAddedRevenueIds((ids) => [...ids, data.createdRevenue._id]);
+        }
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+        setAddRow(false);
+        resetAdd();
+      },
+      onError: (error) =>
+        toast.error(error.response?.data?.message || "Unable to add invoice"),
+    });
+
+  const openAdd = () => {
+    resetAdd({ client: "", clientName: "", rentStatus: "Unpaid", invoiceFile: null });
+    setAddRow(true);
+  };
+
+  const handleAddClientChange = (event) => {
+    const client = activeVirtualOfficeClients.find(
+      (item) => item._id === event.target.value,
+    );
+    setAddValue("client", event.target.value);
+    setAddValue("clientName", client?.clientName || "");
+  };
+
+  const visibleTableData = useMemo(
+    () =>
+      tableData.filter(
+        (item) => item.isManualInvoice || addedRevenueIds.includes(item._id),
+      ),
+    [addedRevenueIds, tableData],
+  );
 
   const graphData = useMemo(
     () =>
@@ -678,7 +773,7 @@ const getUserDisplayName = (user) => {
               ? "Virtual Office Revenue Client Invoicing"
               : "Monthly Revenue with Client Details"
           }
-          data={tableData}
+          data={visibleTableData}
           totalKey="revenue"
           exportData
           dateColumn={"rentDate"}
@@ -705,15 +800,19 @@ const getUserDisplayName = (user) => {
           totalTitle="Total"
           summaryChipVariant="ticket"
           preserveCurrentMonthRange={showInvoiceProjections}
+          showCalendarWhenEmpty={showInvoiceProjections}
           getMissingRangeData={
             showInvoiceProjections
               ? (selectedDate, existingMonthRows) =>
                   getUnpaidInvoiceRowsForMonth(
-                    tableData,
+                    visibleTableData,
                     selectedDate,
                     existingMonthRows,
                   )
               : undefined
+          }
+          headerActions={
+            <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />
           }
           columns={
             showInvoiceProjections ? billingTableColumns : revenueTableColumns
@@ -721,6 +820,143 @@ const getUserDisplayName = (user) => {
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
+      )}
+      {addRow && (
+        <MuiModal
+          open
+          title="Add Virtual"
+          onClose={() => setAddRow(false)}
+        >
+          <form
+            onSubmit={handleAddSubmit(addVirtualInvoice)}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Controller
+              name="client"
+              control={addControl}
+              rules={{ required: "Select a client" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Client"
+                  size="small"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  onChange={handleAddClientChange}
+                >
+                  {activeVirtualOfficeClients.map((client) => (
+                    <MenuItem key={client._id} value={client._id}>
+                      {client.clientName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="clientName"
+              control={addControl}
+              render={({ field }) => (
+                <TextField {...field} label="Client Name" size="small" fullWidth />
+              )}
+            />
+
+            {[
+              ["clientInvoiceName", "Client Invoice Name", selectedAddClient?.clientName],
+              ["channel", "Channel", selectedAddClient?.bookingType || "Direct"],
+              ["noOfDesks", "No. of Desks", addTotalDesks],
+              ["deskRate", "Open Desk Rate", addDeskRate],
+              ["revenue", "Revenue", addRevenue],
+              ["totalTerm", "Total Term", selectedAddClient?.totalTerm || 0],
+              ["annualIncrement", "Annual Increment (%)", selectedAddClient?.annualIncrement || 0],
+            ].map(([name, label, value]) => (
+              <TextField
+                key={name}
+                value={value ?? ""}
+                label={label}
+                size="small"
+                fullWidth
+                disabled
+              />
+            ))}
+
+            <TextField
+              value={selectedAddClient?.rentDate ? dayjs(selectedAddClient.rentDate).format("DD-MM-YYYY") : ""}
+              label="Rent Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.securityDeposit ?? ""}
+              label="Security Deposit"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.billingFrequency || "Yearly"}
+              label="Billing Frequency"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.pastDueDate ? dayjs(selectedAddClient.pastDueDate).format("DD-MM-YYYY") : ""}
+              label="Past Due Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.nextIncrementDate ? dayjs(selectedAddClient.nextIncrementDate).format("DD-MM-YYYY") : ""}
+              label="Next Increment Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={dayjs().format("DD-MM-YYYY")}
+              label="Invoice Upload Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <Controller
+              name="rentStatus"
+              control={addControl}
+              render={({ field }) => (
+                <TextField {...field} select label="Paid/Rent Status" size="small" fullWidth>
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="invoiceFile"
+              control={addControl}
+              render={({ field }) => (
+                <div className="col-span-2">
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    allowedExtensions={["pdf", "doc", "docx"]}
+                  />
+                </div>
+              )}
+            />
+            <div className="col-span-2">
+              <PrimaryButton
+                type="submit"
+                title="Add Virtual"
+                disabled={isAddingVirtualInvoice}
+                isLoading={isAddingVirtualInvoice}
+                className="w-full"
+              />
+            </div>
+          </form>
+        </MuiModal>
       )}
       {viewRow && (
         <MuiModal

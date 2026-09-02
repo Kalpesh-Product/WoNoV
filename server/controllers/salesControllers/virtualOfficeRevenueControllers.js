@@ -96,6 +96,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       nextIncrementDate,
       company,
       service,
+      isManualInvoice: true,
     });
 
     await newRevenue.save();

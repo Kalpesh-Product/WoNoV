@@ -55,6 +55,10 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
     rentStatus: {
       type: String,
     },
+    isManualInvoice: {
+      type: Boolean,
+      default: false,
+    },
     pastDueDate: {
       type: Date,
     },

@@ -50,6 +50,7 @@ const WidgetTable = ({
   totalTitle,
   summaryChipVariant,
   preserveCurrentMonthRange = false,
+  showCalendarWhenEmpty = false,
   getMissingRangeData,
 }) => {
   const agGridRef = useRef(null);
@@ -65,10 +66,23 @@ const WidgetTable = ({
   };
 
   useEffect(() => {
-    if (!data.length || !dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+    if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
 
     const currentMonthStart = dayjs().startOf("month");
     const currentMonthEnd = dayjs().endOf("month");
+
+    if (!data.length) {
+      if (showCalendarWhenEmpty) {
+        setDateRange([
+          {
+            startDate: currentMonthStart.toDate(),
+            endDate: currentMonthEnd.toDate(),
+            key: "selection",
+          },
+        ]);
+      }
+      return;
+    }
 
     if (preserveCurrentMonthRange) {
       setDateRange([
@@ -125,7 +139,7 @@ const WidgetTable = ({
         key: "selection",
       },
     ]);
-  }, [data, dateColumn, isUserChangedRange, preserveCurrentMonthRange]);
+  }, [data, dateColumn, isUserChangedRange, preserveCurrentMonthRange, showCalendarWhenEmpty]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -190,7 +204,7 @@ const WidgetTable = ({
   };
 
   useEffect(() => {
-    if (!onMonthChange || !filteredData.length) return;
+    if (!onMonthChange) return;
 
     const total = filteredData.reduce((sum, item) => {
       const amt = parseFloat(

@@ -614,6 +614,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
   const [editingRevenue, setEditingRevenue] = useState(null);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [financeStatus, setFinanceStatus] = useState("Pending");
+  const [financePaidTaxable, setFinancePaidTaxable] = useState(0);
  // const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
 
   const {
@@ -692,16 +693,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
   const visibleRevenueData = showChart
     ? flattenedRevenueData
     : flattenedRevenueData.filter(isPaidRow);
-  const financePaidTaxable = useMemo(
-    () =>
-      flattenedRevenueData.reduce(
-        (sum, item) =>
-          isFinancePaidRow(item) ? sum + getNumericAmount(item.taxable) : sum,
-        0,
-      ),
-    [flattenedRevenueData],
-  );
-
   const updateInvoice = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
@@ -927,6 +918,23 @@ const DayPassInvoiceFields = ({ revenue }) => {
             dateColumn={"date"}
             formatDate
             exportData
+            preserveCurrentMonthRange={!showChart}
+            onMonthChange={
+              !showChart
+                ? (_total, filteredData) => {
+                    const monthFinancePaid = filteredData.reduce(
+                      (sum, item) =>
+                        isFinancePaidRow(item)
+                          ? sum + getNumericAmount(item.taxable)
+                          : sum,
+                      0,
+                    );
+                    setFinancePaidTaxable((current) =>
+                      current === monthFinancePaid ? current : monthFinancePaid,
+                    );
+                  }
+                : undefined
+            }
             totalKey="taxable"
             titleAmountOverride=""
             titleAmountGreen={({ filteredData }) =>
