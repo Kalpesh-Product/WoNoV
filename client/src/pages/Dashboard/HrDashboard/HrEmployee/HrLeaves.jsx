@@ -6,7 +6,14 @@ import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import { IoFilter } from "react-icons/io5";
-import { Box, Chip, Popover, Skeleton, TextField, Tooltip } from "@mui/material";
+import {
+  Box,
+  Chip,
+  Popover,
+  Skeleton,
+  TextField,
+  Tooltip,
+} from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import HrLeavesAdvancedFilter from "./HrLeavesAdvancedFilter";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -18,6 +25,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
 const MemoizedAgTable = React.memo(AgTable);
+const DAILY_WORK_HOURS = 9;
 const leaveTypeOptions = [
   { label: "Priviledged", value: "privileged" },
   { label: "Sick", value: "sick" },
@@ -65,6 +73,7 @@ const HrLeaves = () => {
   const axios = useAxiosPrivate();
   const [filterOpen, setFilterOpen] = useState(false);
   const [manageLeavesOpen, setManageLeavesOpen] = useState(false);
+  const [viewLeavesOpen, setViewLeavesOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [leaveCounts, setLeaveCounts] = useState({ privileged: "", sick: "" });
   const [calendarAnchor, setCalendarAnchor] = useState(null);
@@ -109,7 +118,7 @@ const HrLeaves = () => {
           end: new Date(startYear + 1, 2, 31),
         };
       }),
-    []
+    [],
   );
 
   const defaultFY = useMemo(() => {
@@ -119,7 +128,7 @@ const HrLeaves = () => {
 
     return (
       extendedFyOptions.find(
-        (fy) => fy.start.getFullYear() === currentFyStartYear
+        (fy) => fy.start.getFullYear() === currentFyStartYear,
       ) || extendedFyOptions[extendedFyOptions.length - 1]
     );
   }, [extendedFyOptions]);
@@ -127,9 +136,14 @@ const HrLeaves = () => {
   useEffect(() => {
     setSelectedFY(defaultFY);
     setCurrentMonth(
-      dayjs().isBetween(dayjs(defaultFY.start), dayjs(defaultFY.end), "month", "[]")
+      dayjs().isBetween(
+        dayjs(defaultFY.start),
+        dayjs(defaultFY.end),
+        "month",
+        "[]",
+      )
         ? new Date()
-        : defaultFY.start
+        : defaultFY.start,
     );
   }, [defaultFY]);
 
@@ -179,6 +193,11 @@ const HrLeaves = () => {
     setManageLeavesOpen(true);
   }, []);
 
+  const openViewLeaves = useCallback((employee) => {
+    setSelectedEmployee(employee);
+    setViewLeavesOpen(true);
+  }, []);
+
   const handleLeaveCountSubmit = (event) => {
     event.preventDefault();
     const privileged = Number(leaveCounts.privileged);
@@ -202,6 +221,91 @@ const HrLeaves = () => {
       ],
     });
   };
+
+  const remainingLeaveCounts = useMemo(() => {
+    const usedLeaves = { privileged: 0, sick: 0 };
+    const currentYear = dayjs().year();
+
+    (attendanceData?.allLeaves || []).forEach((leave) => {
+      const employeeId = String(leave?.takenBy?._id || leave?.takenBy || "");
+      const leaveDate = dayjs(leave?.fromDate);
+      const leaveType = normalizeLeaveType(leave?.leaveType);
+
+      if (
+        employeeId !== String(selectedEmployee?.userId || "") ||
+        String(leave?.status || "").toLowerCase() !== "approved" ||
+        !leaveDate.isValid() ||
+        leaveDate.year() !== currentYear ||
+        !Object.hasOwn(usedLeaves, leaveType)
+      ) {
+        return;
+      }
+
+      usedLeaves[leaveType] += (Number(leave?.hours) || 0) / DAILY_WORK_HOURS;
+    });
+
+    const privilegedAllotted = Number(leaveCounts.privileged || 0);
+    const sickAllotted = Number(leaveCounts.sick || 0);
+
+    return {
+      privileged: {
+        used: usedLeaves.privileged,
+        remaining: Math.max(privilegedAllotted - usedLeaves.privileged, 0),
+        overflow: Math.max(usedLeaves.privileged - privilegedAllotted, 0),
+      },
+      sick: {
+        used: usedLeaves.sick,
+        remaining: Math.max(sickAllotted - usedLeaves.sick, 0),
+        overflow: Math.max(usedLeaves.sick - sickAllotted, 0),
+      },
+    };
+  }, [attendanceData?.allLeaves, leaveCounts, selectedEmployee?.userId]);
+
+  const viewLeaveRows = useMemo(() => {
+    const rangeStart = dayjs(dateRange[0]?.startDate).startOf("day");
+    const rangeEnd = dayjs(dateRange[0]?.endDate).endOf("day");
+
+    return (attendanceData?.allLeaves || [])
+      .filter((leave) => {
+        const employeeId = String(leave?.takenBy?._id || leave?.takenBy || "");
+        const leaveStart = dayjs(leave?.fromDate);
+        const leaveEnd = dayjs(leave?.toDate || leave?.fromDate);
+        return (
+          employeeId === String(selectedEmployee?.userId || "") &&
+          leaveStart.isValid() &&
+          leaveEnd.isValid() &&
+          leaveStart.isSameOrBefore(rangeEnd, "day") &&
+          leaveEnd.isSameOrAfter(rangeStart, "day")
+        );
+      })
+      .sort((first, second) =>
+        dayjs(first.fromDate).diff(dayjs(second.fromDate)),
+      )
+      .map((leave, index) => ({
+        srNo: index + 1,
+        fromDate: dayjs(leave.fromDate).format("DD-MM-YYYY"),
+        toDate: dayjs(leave.toDate || leave.fromDate).format("DD-MM-YYYY"),
+        leaveType: leave.leaveType || "N/A",
+        leavePeriod: leave.leavePeriod || "N/A",
+        hours: leave.hours ?? "N/A",
+        description: leave.description || "N/A",
+        status: leave.status || "N/A",
+      }));
+  }, [attendanceData?.allLeaves, dateRange, selectedEmployee?.userId]);
+
+  const viewLeaveColumns = useMemo(
+    () => [
+      { field: "srNo", headerName: "Sr No", width: 80 },
+      { field: "fromDate", headerName: "From Date", width: 130 },
+      { field: "toDate", headerName: "To Date", width: 130 },
+      { field: "leaveType", headerName: "Leave Type", width: 150 },
+      { field: "leavePeriod", headerName: "Leave Period", width: 140 },
+      { field: "hours", headerName: "Hours", width: 90 },
+      { field: "description", headerName: "Description", minWidth: 220, flex: 1 },
+      { field: "status", headerName: "Status", width: 120 },
+    ],
+    [],
+  );
 
   const generateMonthOptions = (startDate, endDate) => {
     const months = [];
@@ -292,7 +396,7 @@ const HrLeaves = () => {
       (attendanceData?.activeEmployees || []).map((employee) => [
         employee?._id?.toString(),
         employee,
-      ])
+      ]),
     );
 
     (attendanceData?.activeEmployees || []).forEach((employee) => {
@@ -301,10 +405,7 @@ const HrLeaves = () => {
       const departmentIds = (employee.departments || []).map((department) =>
         (department?._id || department)?.toString(),
       );
-      if (
-        appliedFilters.employee &&
-        appliedFilters.employee !== userId
-      ) {
+      if (appliedFilters.employee && appliedFilters.employee !== userId) {
         return;
       }
       if (
@@ -324,7 +425,8 @@ const HrLeaves = () => {
       groupedUsers[userId] = {
         userId,
         empId: employee.empId || "",
-        empName: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+        empName:
+          `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
         startDate: employee.startDate,
         leavesCount: employee.employeeType?.leavesCount || [],
         matchedLeaves: matchingLeavesByUser[userId] || [],
@@ -338,7 +440,6 @@ const HrLeaves = () => {
       if (!userId || !activeUsersMap.has(userId)) return;
       const dateKey = dayjs(entry.inTime).format("YYYY-MM-DD");
       attendanceMap[`${userId}-${dateKey}`] = "✅";
-
     });
 
     // Leave map
@@ -369,7 +470,6 @@ const HrLeaves = () => {
           toDate: leave.toDate,
         };
       }
-
     });
 
     // Compile table rows
@@ -456,125 +556,136 @@ const HrLeaves = () => {
     hasActiveLeaveCriteria,
   ]);
 
-  const dayColumns = useMemo(() => displayDates.map((date, i) => {
-    const dayOfWeek = date.format("ddd");
-    const isSunday = dayOfWeek === "Sun";
+  const dayColumns = useMemo(
+    () =>
+      displayDates.map((date, i) => {
+        const dayOfWeek = date.format("ddd");
+        const isSunday = dayOfWeek === "Sun";
 
-    return {
-      field: `day${i + 1}`,
-      headerName: isSunday ? "SUN" : date.format("D"),
-      width: 80,
-      cellStyle: { textAlign: "center" },
-      headerTooltip: `${date.format("dddd, MMM D")}`,
-      cellRenderer: (params) => {
-        const value = params.value;
-        const leaveDetails = value?.kind === "leave" ? value : null;
-        const displayValue = leaveDetails?.code || value;
-        const isSelectedLeave =
-          hasActiveLeaveCriteria &&
-          leaveDetails?.id === params.data?.leaveRecordId?.toString();
+        return {
+          field: `day${i + 1}`,
+          headerName: isSunday ? "SUN" : date.format("D"),
+          width: 80,
+          cellStyle: { textAlign: "center" },
+          headerTooltip: `${date.format("dddd, MMM D")}`,
+          cellRenderer: (params) => {
+            const value = params.value;
+            const leaveDetails = value?.kind === "leave" ? value : null;
+            const displayValue = leaveDetails?.code || value;
+            const isSelectedLeave =
+              hasActiveLeaveCriteria &&
+              leaveDetails?.id === params.data?.leaveRecordId?.toString();
 
-        let bgColor = "";
-        let textColor = "";
-        let label = "";
-        let tooltip = "";
+            let bgColor = "";
+            let textColor = "";
+            let label = "";
+            let tooltip = "";
 
-        switch (displayValue) {
-          case "A":
-            bgColor = "#fee2e2"; // light red
-            textColor = "#991b1b"; // dark red
-            label = "A";
-            tooltip = "Absent";
-            break;
-          case "✅":
-            bgColor = "#d1fae5"; // light green
-            textColor = "#065f46"; // dark green
-            label = "P";
-            tooltip = "Present";
-            break;
-          case "PL":
-            bgColor = "#fee2e2"; // light red
-            textColor = "#991b1b"; // dark red
-            label = "PL";
-            tooltip = "Privileged Leave";
-            break;
-          case "CO":
-            bgColor = "#fee2e2"; // light red
-            textColor = "#991b1b"; // dark red
-            label = "CO";
-            tooltip = "Comp Off";
-            break;
-          case "SL":
-            bgColor = "#fee2e2";
-            textColor = "#991b1b";
-            label = "SL";
-            tooltip = "Sick Leave";
-            break;
-          case "H":
-            bgColor = "#dbeafe"; // light blue
-            textColor = "#1e3a8a"; // dark blue
-            label = "H";
-            tooltip = "Public Holiday";
-            break;
-          case "N/A":
-            bgColor = "#f3f4f6"; // gray
-            textColor = "#6b7280"; // muted
-            label = "N/A";
-            tooltip = "Not Applicable";
-            break;
-          default:
-            return null;
-        }
+            switch (displayValue) {
+              case "A":
+                bgColor = "#fee2e2"; // light red
+                textColor = "#991b1b"; // dark red
+                label = "A";
+                tooltip = "Absent";
+                break;
+              case "✅":
+                bgColor = "#d1fae5"; // light green
+                textColor = "#065f46"; // dark green
+                label = "P";
+                tooltip = "Present";
+                break;
+              case "PL":
+                bgColor = "#fee2e2"; // light red
+                textColor = "#991b1b"; // dark red
+                label = "PL";
+                tooltip = "Privileged Leave";
+                break;
+              case "CO":
+                bgColor = "#fee2e2"; // light red
+                textColor = "#991b1b"; // dark red
+                label = "CO";
+                tooltip = "Comp Off";
+                break;
+              case "SL":
+                bgColor = "#fee2e2";
+                textColor = "#991b1b";
+                label = "SL";
+                tooltip = "Sick Leave";
+                break;
+              case "H":
+                bgColor = "#dbeafe"; // light blue
+                textColor = "#1e3a8a"; // dark blue
+                label = "H";
+                tooltip = "Public Holiday";
+                break;
+              case "N/A":
+                bgColor = "#f3f4f6"; // gray
+                textColor = "#6b7280"; // muted
+                label = "N/A";
+                tooltip = "Not Applicable";
+                break;
+              default:
+                return null;
+            }
 
-        if (leaveDetails) {
-          tooltip = (
-            <div className="space-y-1 p-1 text-xs">
-              <div><strong>Type:</strong> {leaveDetails.leaveType || "N/A"}</div>
-              <div><strong>Status:</strong> {leaveDetails.status || "N/A"}</div>
-              <div>
-                <strong>Date:</strong>{" "}
-                {dayjs(leaveDetails.fromDate).format("DD MMM YYYY")} -{" "}
-                {dayjs(leaveDetails.toDate).format("DD MMM YYYY")}
+            if (leaveDetails) {
+              tooltip = (
+                <div className="space-y-1 p-1 text-xs">
+                  <div>
+                    <strong>Type:</strong> {leaveDetails.leaveType || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Status:</strong> {leaveDetails.status || "N/A"}
+                  </div>
+                  <div>
+                    <strong>Date:</strong>{" "}
+                    {dayjs(leaveDetails.fromDate).format("DD MMM YYYY")} -{" "}
+                    {dayjs(leaveDetails.toDate).format("DD MMM YYYY")}
+                  </div>
+                  <div>
+                    <strong>Hours:</strong> {leaveDetails.hours ?? "N/A"}
+                  </div>
+                  <div>
+                    <strong>Description:</strong>{" "}
+                    {leaveDetails.description || "N/A"}
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div className="py-2">
+                <Tooltip title={tooltip}>
+                  <Box
+                    sx={{
+                      bgcolor: bgColor,
+                      color: textColor,
+                      fontSize: "0.75rem",
+                      px: 0.8,
+                      borderRadius: "6px",
+                      textAlign: "center",
+                      fontWeight: 500,
+                      width: "100%",
+                      opacity:
+                        hasActiveLeaveCriteria && !isSelectedLeave ? 0.3 : 1,
+                      border: isSelectedLeave
+                        ? "2px solid #1E3D73"
+                        : "2px solid transparent",
+                      boxShadow: isSelectedLeave
+                        ? "0 0 0 2px rgba(30, 61, 115, 0.14)"
+                        : "none",
+                    }}
+                  >
+                    {label}
+                  </Box>
+                </Tooltip>
               </div>
-              <div><strong>Hours:</strong> {leaveDetails.hours ?? "N/A"}</div>
-              <div>
-                <strong>Description:</strong> {leaveDetails.description || "N/A"}
-              </div>
-            </div>
-          );
-        }
-
-        return (
-          <div className="py-2">
-            <Tooltip title={tooltip}>
-              <Box
-                sx={{
-                  bgcolor: bgColor,
-                  color: textColor,
-                  fontSize: "0.75rem",
-                  px: 0.8,
-                  borderRadius: "6px",
-                  textAlign: "center",
-                  fontWeight: 500,
-                  width: "100%",
-                  opacity:
-                    hasActiveLeaveCriteria && !isSelectedLeave ? 0.3 : 1,
-                  border: isSelectedLeave
-                    ? "2px solid #1E3D73"
-                    : "2px solid transparent",
-                  boxShadow: isSelectedLeave
-                    ? "0 0 0 2px rgba(30, 61, 115, 0.14)"
-                    : "none",
-                }}
-              >
-                {label}
-              </Box>
-            </Tooltip>
-          </div>
-        );
-      },
-    };
-  }), [displayDates, hasActiveLeaveCriteria]);
+            );
+          },
+        };
+      }),
+    [displayDates, hasActiveLeaveCriteria],
+  );
 
   const processLeaveExportCell = useCallback((params) => {
     const field = params?.column?.getColDef?.()?.field || "";
@@ -600,126 +711,141 @@ const HrLeaves = () => {
     return undefined;
   }, []);
 
-  const columns = useMemo(() => [
-    { field: "srNo", headerName: "SR No", width: 80, pinned: "left" },
-    { field: "empId", headerName: "Employee ID", width: 130, pinned: "left" },
-    {
-      field: "empName",
-      headerName: "Employee Name",
-      width: 175,
-      pinned: "left",
-    },
-    ...(hasActiveLeaveCriteria
-      ? [
-          {
-            field: "actionMatchedLeaves",
-            headerName: "Matched Leaves",
-            hide: true,
-            width: 300,
-            minWidth: 260,
-            pinned: "left",
-            lockPinned: true,
-            autoHeight: true,
-            sortable: false,
-            filter: false,
-            cellRenderer: (params) => (
-              <div className="flex flex-col gap-1 py-2">
-                {(params.value || []).map((leave, index) => {
-                  const fromDate = dayjs(leave.fromDate).format("DD MMM");
-                  const toDate = dayjs(leave.toDate).format("DD MMM");
-                  const dateLabel =
-                    fromDate === toDate ? fromDate : `${fromDate} - ${toDate}`;
-
-                  return (
-                    <Tooltip
-                      key={leave.id || `${dateLabel}-${index}`}
-                      title={
-                        <div className="space-y-1 p-1 text-xs">
-                          <div><strong>Type:</strong> {leave.leaveType}</div>
-                          <div><strong>Status:</strong> {leave.status}</div>
-                          <div><strong>Hours:</strong> {leave.hours ?? "N/A"}</div>
-                          <div>
-                            <strong>Description:</strong>{" "}
-                            {leave.description || "N/A"}
-                          </div>
-                        </div>
-                      }
-                    >
-                      <div className="rounded-md bg-[#e8eef8] px-2 py-1 text-xs font-pmedium text-primary">
-                        {dateLabel} · {leave.code} · {leave.status || "N/A"}
-                      </div>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            ),
-          },
-          {
-            field: "fromDate",
-            headerName: "From Date",
-            width: 140,
-            valueFormatter: (params) =>
-              params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
-          },
-          {
-            field: "toDate",
-            headerName: "To Date",
-            width: 140,
-            valueFormatter: (params) =>
-              params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
-          },
-          { field: "leaveType", headerName: "Leave Type", width: 150 },
-          { field: "leavePeriod", headerName: "Leave Period", width: 140 },
-          { field: "leaveHours", headerName: "Hours", width: 100 },
-          {
-            field: "leaveDescription",
-            headerName: "Description",
-            minWidth: 220,
-            flex: 1,
-            valueFormatter: (params) => params.value || "N/A",
-          },
-          { field: "leaveStatus", headerName: "Status", width: 130 },
-        ]
-      : []),
-    {
-      field: "totalDays",
-      headerName: "Working Days",
-      width: 115,
-      headerClass: "ag-center-header",
-      pinned: "left",
-      cellStyle: { textAlign: "center" },
-    },
-    {
-      field: "workedDays",
-      headerName: "Worked Days",
-      width: 115,
-      headerClass: "ag-center-header",
-      pinned: "left",
-      cellStyle: { textAlign: "center" },
-    },
-    ...dayColumns,
-    {
-      field: "actions",
-      headerName: "Action",
-      width: 100,
-      pinned: "right",
-      lockPinned: true,
-      sortable: false,
-      filter: false,
-      suppressCsvExport: true,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.userId}
-          menuItems={[
+  const columns = useMemo(
+    () => [
+      { field: "srNo", headerName: "SR No", width: 80, pinned: "left" },
+      { field: "empId", headerName: "Employee ID", width: 130, pinned: "left" },
+      {
+        field: "empName",
+        headerName: "Employee Name",
+        width: 175,
+        pinned: "left",
+      },
+      ...(hasActiveLeaveCriteria
+        ? [
             {
-              label: "Manage Leaves",
-              onClick: () => openManageLeaves(params.data),
+              field: "actionMatchedLeaves",
+              headerName: "Matched Leaves",
+              hide: true,
+              width: 300,
+              minWidth: 260,
+              pinned: "left",
+              lockPinned: true,
+              autoHeight: true,
+              sortable: false,
+              filter: false,
+              cellRenderer: (params) => (
+                <div className="flex flex-col gap-1 py-2">
+                  {(params.value || []).map((leave, index) => {
+                    const fromDate = dayjs(leave.fromDate).format("DD MMM");
+                    const toDate = dayjs(leave.toDate).format("DD MMM");
+                    const dateLabel =
+                      fromDate === toDate
+                        ? fromDate
+                        : `${fromDate} - ${toDate}`;
+
+                    return (
+                      <Tooltip
+                        key={leave.id || `${dateLabel}-${index}`}
+                        title={
+                          <div className="space-y-1 p-1 text-xs">
+                            <div>
+                              <strong>Type:</strong> {leave.leaveType}
+                            </div>
+                            <div>
+                              <strong>Status:</strong> {leave.status}
+                            </div>
+                            <div>
+                              <strong>Hours:</strong> {leave.hours ?? "N/A"}
+                            </div>
+                            <div>
+                              <strong>Description:</strong>{" "}
+                              {leave.description || "N/A"}
+                            </div>
+                          </div>
+                        }
+                      >
+                        <div className="rounded-md bg-[#e8eef8] px-2 py-1 text-xs font-pmedium text-primary">
+                          {dateLabel} · {leave.code} · {leave.status || "N/A"}
+                        </div>
+                      </Tooltip>
+                    );
+                  })}
+                </div>
+              ),
             },
-          ]}
-        />
-      ),
-    },
-  ], [dayColumns, hasActiveLeaveCriteria, openManageLeaves]);
+            {
+              field: "fromDate",
+              headerName: "From Date",
+              width: 140,
+              valueFormatter: (params) =>
+                params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
+            },
+            {
+              field: "toDate",
+              headerName: "To Date",
+              width: 140,
+              valueFormatter: (params) =>
+                params.value ? dayjs(params.value).format("DD-MM-YYYY") : "N/A",
+            },
+            { field: "leaveType", headerName: "Leave Type", width: 150 },
+            { field: "leavePeriod", headerName: "Leave Period", width: 140 },
+            { field: "leaveHours", headerName: "Hours", width: 100 },
+            {
+              field: "leaveDescription",
+              headerName: "Description",
+              minWidth: 220,
+              flex: 1,
+              valueFormatter: (params) => params.value || "N/A",
+            },
+            { field: "leaveStatus", headerName: "Status", width: 130 },
+          ]
+        : []),
+      {
+        field: "totalDays",
+        headerName: "Working Days",
+        width: 115,
+        headerClass: "ag-center-header",
+        pinned: "left",
+        cellStyle: { textAlign: "center" },
+      },
+      {
+        field: "workedDays",
+        headerName: "Worked Days",
+        width: 115,
+        headerClass: "ag-center-header",
+        pinned: "left",
+        cellStyle: { textAlign: "center" },
+      },
+      ...dayColumns,
+      {
+        field: "actions",
+        headerName: "Action",
+        width: 100,
+        pinned: "right",
+        lockPinned: true,
+        sortable: false,
+        filter: false,
+        suppressCsvExport: true,
+        cellRenderer: (params) => (
+          <ThreeDotMenu
+            rowId={params.data.userId}
+            menuItems={[
+              {
+                label: "View Leaves",
+                onClick: () => openViewLeaves(params.data),
+              },
+              {
+                label: "Manage Leaves",
+                onClick: () => openManageLeaves(params.data),
+              },
+            ]}
+          />
+        ),
+      },
+    ],
+    [dayColumns, hasActiveLeaveCriteria, openManageLeaves, openViewLeaves],
+  );
 
   const departmentOptions = useMemo(
     () =>
@@ -737,7 +863,8 @@ const HrLeaves = () => {
     () =>
       toOptions(
         (attendanceData?.activeEmployees || []).map((employee) => ({
-          label: `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
+          label:
+            `${employee.firstName || ""} ${employee.lastName || ""}`.trim(),
           value: employee._id?.toString(),
         })),
       ),
@@ -917,6 +1044,34 @@ const HrLeaves = () => {
         />
 
         <MuiModal
+          open={viewLeavesOpen}
+          onClose={() => {
+            setViewLeavesOpen(false);
+            setSelectedEmployee(null);
+          }}
+          title={`Leave Details: ${selectedEmployee?.empName || "Employee"}`}
+          widthClass="w-4/5"
+        >
+          <div className="flex flex-col gap-4">
+            <TextField
+              size="small"
+              label="Date Range"
+              value={rangeLabel}
+              disabled
+              fullWidth
+            />
+            <MemoizedAgTable
+              data={viewLeaveRows}
+              columns={viewLeaveColumns}
+              search
+              hideFilter
+              hideTitle
+              tableHeight={360}
+            />
+          </div>
+        </MuiModal>
+
+        <MuiModal
           open={manageLeavesOpen}
           onClose={() => {
             if (updateLeaveCountsMutation.isPending) return;
@@ -925,7 +1080,10 @@ const HrLeaves = () => {
           }}
           title="Manage Leaves"
         >
-          <form onSubmit={handleLeaveCountSubmit} className="flex flex-col gap-5">
+          <form
+            onSubmit={handleLeaveCountSubmit}
+            className="flex flex-col gap-5"
+          >
             <div>
               <p className="text-sm text-gray-500">Employee</p>
               <p className="font-pmedium text-primary">
@@ -933,36 +1091,85 @@ const HrLeaves = () => {
                 {selectedEmployee?.empId ? ` (${selectedEmployee.empId})` : ""}
               </p>
             </div>
-            <TextField
-              type="number"
-              size="small"
-              fullWidth
-              required
-              label="Privileged Leaves"
-              value={leaveCounts.privileged}
-              onChange={(event) =>
-                setLeaveCounts((current) => ({
-                  ...current,
-                  privileged: event.target.value,
-                }))
-              }
-              inputProps={{ min: 0, step: 0.5 }}
-            />
-            <TextField
-              type="number"
-              size="small"
-              fullWidth
-              required
-              label="Sick Leaves"
-              value={leaveCounts.sick}
-              onChange={(event) =>
-                setLeaveCounts((current) => ({
-                  ...current,
-                  sick: event.target.value,
-                }))
-              }
-              inputProps={{ min: 0, step: 0.5 }}
-            />
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <TextField
+                type="number"
+                size="small"
+                fullWidth
+                required
+                label="Privileged Leaves"
+                value={leaveCounts.privileged}
+                onChange={(event) =>
+                  setLeaveCounts((current) => ({
+                    ...current,
+                    privileged: event.target.value,
+                  }))
+                }
+                inputProps={{ min: 0, step: 0.5 }}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Used Privileged Leaves"
+                value={Number(remainingLeaveCounts.privileged.used.toFixed(2))}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Remaining Privileged Leaves"
+                value={Number(
+                  remainingLeaveCounts.privileged.remaining.toFixed(2),
+                )}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Overflow Privileged Leaves"
+                value={Number(
+                  remainingLeaveCounts.privileged.overflow.toFixed(2),
+                )}
+              />
+              <TextField
+                type="number"
+                size="small"
+                fullWidth
+                required
+                label="Sick Leaves"
+                value={leaveCounts.sick}
+                onChange={(event) =>
+                  setLeaveCounts((current) => ({
+                    ...current,
+                    sick: event.target.value,
+                  }))
+                }
+                inputProps={{ min: 0, step: 0.5 }}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Used Sick Leaves"
+                value={Number(remainingLeaveCounts.sick.used.toFixed(2))}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Remaining Sick Leaves"
+                value={Number(remainingLeaveCounts.sick.remaining.toFixed(2))}
+              />
+              <TextField
+                size="small"
+                fullWidth
+                disabled
+                label="Overflow Sick Leaves"
+                value={Number(remainingLeaveCounts.sick.overflow.toFixed(2))}
+              />
+            </div>
             <div className="flex justify-end">
               <PrimaryButton
                 title="Update Leaves"

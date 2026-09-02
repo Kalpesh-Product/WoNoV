@@ -260,7 +260,11 @@ const EditableAmountRow = ({
   </div>
 );
 
-const ViewPayroll = () => {
+const ViewPayroll = ({
+  routeState,
+  hideCompensationStructure = false,
+  compensationOnly = false,
+}) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const payslipRef = useRef();
   const [openModal, setOpenModal] = useState(false);
@@ -382,13 +386,14 @@ const ViewPayroll = () => {
     departmentName,
     employeeId,
     designation,
-  } = location.state;
+  } = routeState || location.state || {};
 
   console.log("status : ", status);
   const axios = useAxiosPrivate();
 
   const { data: userPayrollData = [], isLoading } = useQuery({
-    queryKey: ["userPayroll"],
+    queryKey: ["userPayroll", empId, month],
+    enabled: Boolean(empId && month),
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -606,7 +611,7 @@ const ViewPayroll = () => {
 
   const attendanceData = isLoading
     ? []
-    : userPayrollData.attendances.map((item) => {
+    : (userPayrollData?.attendances || []).map((item) => {
         return {
           ...item,
           id: item._id,
@@ -622,7 +627,7 @@ const ViewPayroll = () => {
       });
   const leavesData = isLoading
     ? []
-    : userPayrollData.leaves.map((item) => {
+    : (userPayrollData?.leaves || []).map((item) => {
         return {
           ...item,
           id: item._id,
@@ -967,7 +972,7 @@ const ViewPayroll = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <PageFrame>
+      {!compensationOnly && <PageFrame>
         <AgTable
           key={attendanceData.length}
           search={true}
@@ -975,9 +980,9 @@ const ViewPayroll = () => {
           data={attendanceData}
           columns={payrollColumns}
         />
-      </PageFrame>
+      </PageFrame>}
 
-      <PageFrame>
+      {!compensationOnly && <PageFrame>
         <AgTable
           key={leavesData.length}
           search={true}
@@ -985,12 +990,12 @@ const ViewPayroll = () => {
           data={leavesData}
           columns={leavesRecord}
         />
-      </PageFrame>
+      </PageFrame>}
 
-      <WidgetSection
+      {!hideCompensationStructure && <WidgetSection
         border
         layout={1}
-        title={"Payslip Generator"}
+        title={"Employee Compensation Structure"}
         headerRightContent={
           isEditingCompensation ? (
             <div className="flex items-center gap-2">
@@ -1536,7 +1541,7 @@ const ViewPayroll = () => {
             />
           </div>
         </div>
-      </WidgetSection>
+      </WidgetSection>}
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}

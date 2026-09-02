@@ -670,14 +670,6 @@ const EditDetails = () => {
         employeeData?.annualCtc ??
         employeeData?.salaryPackage?.amount ??
         "",
-      allowancesAmount:
-        employeeData?.salaryPackage?.allowances ??
-        employeeData?.allowancesAmount ??
-        0,
-      deductionsAmount:
-        employeeData?.salaryPackage?.deductions ??
-        employeeData?.deductionsAmount ??
-        0,
 
       //employeePF: employeeData?.payrollInformation?.employeePF || "",
       status:
@@ -875,8 +867,8 @@ const EditDetails = () => {
           currency: employeeData?.salaryPackage?.currency || "INR",
           payFrequency:
             employeeData?.salaryPackage?.payFrequency || "annual",
-          allowances: Number(formData?.allowancesAmount) || 0,
-          deductions: Number(formData?.deductionsAmount) || 0,
+          allowances: Number(employeeData?.salaryPackage?.allowances) || 0,
+          deductions: Number(employeeData?.salaryPackage?.deductions) || 0,
         },
         status: formData?.status,
         isActive: formData?.status === "Active",
@@ -1161,14 +1153,6 @@ const EditDetails = () => {
           ) /
           12 /
           26,
-        allowancesAmount:
-          employeeData?.salaryPackage?.allowances ??
-          employeeData?.allowancesAmount ??
-          0,
-        deductionsAmount:
-          employeeData?.salaryPackage?.deductions ??
-          employeeData?.deductionsAmount ??
-          0,
         // employeePF: employeeData?.payrollInformation?.employeePF || "",
         // includeInPayroll:
         //   employeeData?.payrollInformation?.includeInPayroll ?? "",
@@ -1894,58 +1878,12 @@ const EditDetails = () => {
                           : 0
                         ).toFixed(2)}
                       />
-                      <Controller
-                        name="allowancesAmount"
-                        control={control}
-                        rules={{
-                          min: {
-                            value: 0,
-                            message: "Allowances cannot be negative",
-                          },
-                        }}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            type="number"
-                            label="Monthly Fixed Allowances (INR)"
-                            fullWidth
-                            inputProps={{ min: 0, step: "0.01" }}
-                            helperText={errors?.allowancesAmount?.message}
-                            error={Boolean(errors?.allowancesAmount)}
-                          />
-                        )}
-                      />
-                      <Controller
-                        name="deductionsAmount"
-                        control={control}
-                        rules={{
-                          min: {
-                            value: 0,
-                            message: "Deductions cannot be negative",
-                          },
-                        }}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            type="number"
-                            label="Monthly Fixed Deductions (INR)"
-                            fullWidth
-                            inputProps={{ min: 0, step: "0.01" }}
-                            helperText={errors?.deductionsAmount?.message}
-                            error={Boolean(errors?.deductionsAmount)}
-                          />
-                        )}
-                      />
                     </>
                   ) : (
                     [
                       ["Annual CTC", transformEmployeeData.annualCtc],
                       ["Monthly Salary", transformEmployeeData.monthlySalary],
                       ["Daily Rate (26 Working Days)", transformEmployeeData.dailyRate],
-                      ["Monthly Fixed Allowances", transformEmployeeData.allowancesAmount],
-                      ["Monthly Fixed Deductions", transformEmployeeData.deductionsAmount],
                     ].map(([label, value]) => (
                       <div
                         key={label}

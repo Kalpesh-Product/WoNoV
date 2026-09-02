@@ -1264,11 +1264,20 @@ const MeetingFormLayout = () => {
                       Select Meeting Room
                     </MenuItem>
                     {roomsAtSelectedLocation.length ? (
-                      roomsAtSelectedLocation.map((room) => (
-                        <MenuItem key={room._id} value={room._id}>
-                          {room.name}
-                        </MenuItem>
-                      ))
+                      [...roomsAtSelectedLocation]
+                        .sort(
+                          (a, b) =>
+                            Number(a.seats || 0) - Number(b.seats || 0),
+                        )
+                        .map((room) => (
+                          <MenuItem key={room._id} value={room._id}>
+                            {String(room.seats || 0).padStart(2, "0")} Seater{" "}
+                            {room.location?.unitNo ||
+                              room.location?.unitName ||
+                              "N/A"}{" "}
+                            - {room.name}
+                          </MenuItem>
+                        ))
                     ) : (
                       <MenuItem disabled>No Meeting Rooms Available</MenuItem>
                     )}

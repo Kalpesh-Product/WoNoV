@@ -35,6 +35,11 @@ const tabs = [
     path: "employee-onboarding",
     permission: PERMISSIONS.HR_EMPLOYEE_ONBOARDING.value,
   },
+  {
+    label: "Compensation Structure",
+    path: "compensation-structure",
+    permission: PERMISSIONS.HR_PAYROLL.value,
+  },
 ];
 
 
@@ -62,6 +67,7 @@ const tabs = [
       basePath="/app/dashboard/HR-dashboard/employee"
       defaultTabPath="employee-list"
       tabs={tabs}
+      fitTabLabels
       hideTabsCondition={(pathname) => pathname.includes("employee-list/")}
     />
   );
