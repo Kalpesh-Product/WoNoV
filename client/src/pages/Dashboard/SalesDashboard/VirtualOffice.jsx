@@ -256,7 +256,9 @@ const getUserDisplayName = (user) => {
                 }
               : {}),
             clientName: item.client?.clientName,
-             normalizedStatus: getNormalizedPaymentStatus(
+            securityDeposit: item.client?.securityDeposit ?? item.securityDeposit,
+            billingFrequency: item.client?.billingFrequency || item.billingFrequency,
+            normalizedStatus: getNormalizedPaymentStatus(
               item.rentStatus ?? item.status,
             ),
             rentStatus: item.rentStatus || (item.status ? "Paid" : "Unpaid"),
@@ -279,6 +281,8 @@ const getUserDisplayName = (user) => {
       noOfDesks: row.noOfDesks ?? "",
       deskRate: formatBillingNumber(row.deskRate),
       totalTerm: row.totalTerm ?? "",
+      securityDeposit: row.securityDeposit ?? row.client?.securityDeposit ?? "",
+      billingFrequency: row.billingFrequency || row.client?.billingFrequency || "Yearly",
       rentDate: row.rentDate ? dayjs(row.rentDate) : null,
       pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
       annualIncrement: row.annualIncrement ?? "",
@@ -307,6 +311,8 @@ const getUserDisplayName = (user) => {
         "taxableAmount",
         "revenue",
         "totalTerm",
+        "securityDeposit",
+        "billingFrequency",
         "rentStatus",
         "annualIncrement",
         "service",
@@ -767,6 +773,14 @@ const getUserDisplayName = (user) => {
               <div className="text-subtitle font-pmedium mb-4">Rental Terms</div>
               <div className="grid grid-cols-1 gap-2 mt-2">
                 <DetalisFormatted
+                  title="Security Deposit"
+                  detail={viewRow.securityDeposit ?? viewRow.client?.securityDeposit ?? "-"}
+                />
+                <DetalisFormatted
+                  title="Billing Frequency"
+                  detail={viewRow.billingFrequency || viewRow.client?.billingFrequency || "-"}
+                />
+                <DetalisFormatted
                   title="Rent Date"
                   detail={
                     viewRow.rentDate
@@ -903,8 +917,61 @@ const getUserDisplayName = (user) => {
         />
       ))}
 
+      <Controller
+        name="rentDate"
+        control={control}
+        render={({ field }) => (
+          <DatePicker
+            {...field}
+            value={field.value ?? null}
+            label="Rent Date"
+            format="DD-MM-YYYY"
+            disabled
+            slotProps={{
+              textField: {
+                size: "small",
+                fullWidth: true,
+                disabled: true,
+              },
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="securityDeposit"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            type="number"
+            label="Security Deposit"
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+      />
+
+      <Controller
+        name="billingFrequency"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Billing Frequency"
+            size="small"
+            fullWidth
+            disabled
+          >
+            <MenuItem value="Monthly">Monthly</MenuItem>
+            <MenuItem value="Yearly">Yearly</MenuItem>
+          </TextField>
+        )}
+      />
+
       {[
-        ["rentDate", "Rent Date"],
         ["pastDueDate", "Past Due Date"],
         ["nextIncrementDate", "Next Increment Date"],
         ["invoiceUploadedAt", "Invoice Upload Date"],

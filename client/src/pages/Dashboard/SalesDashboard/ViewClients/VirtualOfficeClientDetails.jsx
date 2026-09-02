@@ -1,6 +1,6 @@
 import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -170,6 +170,7 @@ const calculateAgreementExpiry = (startDate, endDate, referenceStartDate) => {
 const VirtualOfficeClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const { auth } = useAuth();
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
@@ -597,6 +598,14 @@ const VirtualOfficeClientDetails = () => {
           ),
         );
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] }),
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientOptions"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["virtualOfficeClient", selectedClient._id],
+        }),
+      ]);
 
       // Sync form with updated data
       reset({
