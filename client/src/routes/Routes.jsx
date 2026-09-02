@@ -441,6 +441,7 @@ import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
 import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
 import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
+import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
 import DepartmentAssetCommon from "../components/Pages/DepartmentAssetCommon";
 import DepartmentSOP from "../pages/Dashboard/HrDashboard/Complaince/DepartmentSOP";
 import SopUpload from "../components/Pages/SopUpload";
@@ -2794,6 +2795,10 @@ export const routes = createBrowserRouter([
                             element: <AttendanceCompleted />,
                           },
                         ],
+                      },
+                      {
+                        path: "mix-bag/monthly-attendance",
+                        element: <MonthlyAttendanceSummary />,
                       },
                       {
                         path: "mix-bag/leaves",

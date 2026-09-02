@@ -1573,7 +1573,6 @@ const updateEmployeePayrollCompensation = async (req, res, next) => {
       return Number.isFinite(amount) && amount >= 0 ? amount : 0;
     };
     const basicPay = toAmount(req.body?.basicPay);
-    const grossPay = toAmount(req.body?.grossPay);
     const annualCtc =
       Number(employee.salaryPackage?.grossAnnual) ||
       Number(employee.salaryPackage?.amount) ||
@@ -1618,6 +1617,11 @@ const updateEmployeePayrollCompensation = async (req, res, next) => {
       label,
       amount,
     }));
+    const totalAllowances = allowances.reduce(
+      (total, row) => total + row.amount,
+      0,
+    );
+    const grossPay = basicPay + totalAllowances;
 
     const requestedDeductionLabels = new Set(
       (Array.isArray(req.body?.deductions) ? req.body.deductions : [])
@@ -1644,10 +1648,6 @@ const updateEmployeePayrollCompensation = async (req, res, next) => {
       });
     }
 
-    const totalAllowances = allowances.reduce(
-      (total, row) => total + row.amount,
-      0,
-    );
     const totalDeductions = deductions.reduce(
       (total, row) => total + row.amount,
       0,

@@ -13,6 +13,10 @@ const {
   getAttendanceRequests,
 } = require("../controllers/attendanceControllers");
 const upload = require("../config/multerConfig");
+const {
+  getMonthlyAttendanceSummaries,
+  updateMonthlyAttendanceSummary,
+} = require("../controllers/monthlyAttendanceSummaryController");
 
 const router = require("express").Router();
 router.post("/clock-in", clockIn);
@@ -31,6 +35,8 @@ router.patch(
 router.get("/get-attendance-requests", getAttendanceRequests);
 router.get("/get-all-attendance", getAllAttendance);
 router.get("/get-attendance/:id", getAttendance);
+router.get("/monthly-summaries", getMonthlyAttendanceSummaries);
+router.patch("/monthly-summaries/:id", updateMonthlyAttendanceSummary);
 const attendanceUpload = [
   upload.fields([
     { name: "attendance", maxCount: 1 },

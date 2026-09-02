@@ -41,27 +41,6 @@ import { useFieldArray } from "react-hook-form";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import { inrFormat } from "../../utils/currencyFormat";
 
-const isTechUserDataEmployee = (user) => {
-  const hasTechRole = (Array.isArray(user?.role) ? user.role : []).some(
-    (role) =>
-      ["tech employee", "tech admin"].includes(
-        String(role?.roleTitle || role || "")
-          .trim()
-          .toLowerCase(),
-      ),
-  );
-  const hasTechDepartment = (
-    Array.isArray(user?.departments) ? user.departments : []
-  ).some(
-    (department) =>
-      String(department?.name || department || "")
-        .trim()
-        .toLowerCase() === "tech",
-  );
-
-  return hasTechRole || hasTechDepartment;
-};
-
 const MeetingFormLayout = () => {
   const { auth } = useAuth();
   const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
@@ -451,17 +430,42 @@ const MeetingFormLayout = () => {
     return totalMonthlyCredit;
   };
 
+  const selectedCreditOwner =
+    company === BIZNEST_COMPANY_ID ? auth.user?.company : selectedClient;
+
   const remainingMeetingCredits = useMemo(() => {
     if (!company) return "-";
 
-    return getMonthlyRemainingCredit(selectedClient, selectedCreditMonth);
-  }, [company, selectedClient, selectedCreditMonth]);
+    return getMonthlyRemainingCredit(selectedCreditOwner, selectedCreditMonth);
+  }, [company, selectedCreditMonth, selectedCreditOwner]);
   //-------------------------------API-------------------------------//
-  const displayedRemainingCredits = isReceptionist
-    ? remainingMeetingCredits
-    : remainingMeetingCredits !== "-"
-      ? remainingMeetingCredits
-      : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
+  const usedMeetingCredits = useMemo(() => {
+    if (
+      meetingType !== "Internal" ||
+      !startDateTime ||
+      !endDateTime ||
+      !endDateTime.isAfter(startDateTime)
+    ) {
+      return 0;
+    }
+
+    const durationInMinutes = endDateTime.diff(startDateTime, "minute", true);
+    return Number(
+      ((durationInMinutes / 60) * Number(displayedPerHourCredit || 0)).toFixed(
+        2,
+      ),
+    );
+  }, [
+    displayedPerHourCredit,
+    endDateTime,
+    meetingType,
+    startDateTime,
+  ]);
+
+  const displayedRemainingCredits =
+    remainingMeetingCredits === "-"
+      ? "-"
+      : Number((Number(remainingMeetingCredits) - usedMeetingCredits).toFixed(2));
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -552,14 +556,11 @@ const MeetingFormLayout = () => {
 
   const internalParticipantOptions = useMemo(() => {
     if (company !== wonoClient?._id) {
-      return participantOptions.filter(
-        (user) => !isTechUserDataEmployee(user),
-      );
+      return participantOptions;
     }
 
     const seen = new Set();
     return [...participantOptions, ...biznestEmployees].filter((user) => {
-      if (isTechUserDataEmployee(user)) return false;
       const key = String(user?.email || user?._id || "")
         .trim()
         .toLowerCase();
@@ -1344,24 +1345,36 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 )}
-                {isReceptionist ? (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={displayedRemainingCredits}
-                    disabled
-                    label="Remaining Credit"
-                    InputProps={{
-                      sx: isRemainingCreditsNegative
-                        ? {
-                            "& .MuiInputBase-input.Mui-disabled": {
-                              WebkitTextFillColor: "#d32f2f",
-                            },
-                          }
-                        : undefined,
-                    }}
-                  />
-                ) : null}
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={remainingMeetingCredits}
+                  disabled
+                  label="Current Credit Balance"
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={usedMeetingCredits}
+                  disabled
+                  label="Used Credits (This Meeting)"
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={displayedRemainingCredits}
+                  disabled
+                  label="Remaining Credits After Booking"
+                  InputProps={{
+                    sx: isRemainingCreditsNegative
+                      ? {
+                          "& .MuiInputBase-input.Mui-disabled": {
+                            WebkitTextFillColor: "#d32f2f",
+                          },
+                        }
+                      : undefined,
+                  }}
+                />
 
                 {isReceptionist ? (
                   <div className="col-span-1">
@@ -1458,7 +1471,7 @@ const MeetingFormLayout = () => {
                   disabled
                   label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
                 />
-                <div className="col-span-2 sm:col-span-1 md:col-span-2">
+                <div className="col-span-1">
                   <div className="">
                     <Controller
                       name="internalParticipants"

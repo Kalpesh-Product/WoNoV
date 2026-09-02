@@ -6,6 +6,7 @@ const { getPagination } = require("../utils/pagination");
 
 const getCompanyAttandancesService = async ({
   company,
+  employeeId,
   dateFilter,
   page,
   limit,
@@ -17,7 +18,11 @@ const getCompanyAttandancesService = async ({
     skip,
   } = getPagination({ page, limit });
 
- const employeeQuery = { company, isActive: true };
+ const employeeQuery = {
+    company,
+    isActive: true,
+    ...(employeeId && { _id: employeeId }),
+  };
   let activeEmployeesQuery = UserData.find(employeeQuery)
     .select(
       "firstName lastName empId startDate isActive departments employeeType payrollInformation.payrollBatch",
@@ -64,7 +69,13 @@ const getCompanyAttandancesService = async ({
   //     : Promise.resolve(0),
   const [companyAttandances, holidays, allLeaves] = await Promise.all([
     attendanceFindQuery.lean().exec(),
-    Events.find({ company, type: "Holiday" }).lean().exec(),
+    Events.find({
+      company,
+      type: { $regex: /^holidays?$/i },
+      active: { $ne: false },
+    })
+      .lean()
+      .exec(),
     Leaves.find({ company, takenBy: { $in: activeEmployeeIds } })
       .populate({
         path: "takenBy",
