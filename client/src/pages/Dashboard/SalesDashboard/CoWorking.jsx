@@ -197,7 +197,7 @@ const getUnpaidInvoiceRowsForMonth = (
           const annualIncrement = Number(client.annualIncrement) || 0;
           const startDate = dayjs(client.startDate);
           const yearsElapsed = startDate.isValid()
-            ? Math.max(dayjs().diff(startDate, "year"), 0)
+            ? Math.max(targetMonth.diff(startDate, "year"), 0)
             : 0;
           const deskRate =
             baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);

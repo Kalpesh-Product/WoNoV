@@ -30,6 +30,7 @@ const getVirtualOfficeCurrentRate = (startDate, endDate, baseRate, annualIncreme
 
   return normalizedBaseRate * Math.pow(1 + increment / 100, yearsElapsed);
 };
+
 const normalizeCoworkingChannel = (bookingType) =>
   String(bookingType || "")
     .trim()
@@ -98,9 +99,16 @@ const fetchCoworkingRevenueService = async ({
         const startDate = dayjs(client.startDate);
         const endDate = dayjs(client.endDate);
         const annualIncrement = Number(client.annualIncrement) || 0;
-        const yearsElapsed = startDate.isValid()
-          ? Math.max(dayjs().diff(startDate, "year"), 0)
-          : 0;
+        // const yearsElapsed = startDate.isValid()
+        //   ? Math.max(dayjs().diff(startDate, "year"), 0)
+        //   : 0;
+         const billingDate = dayjs(item.rentDate || item.createdAt);
+        const yearsElapsed =
+          startDate.isValid() &&
+          billingDate.isValid() &&
+          !billingDate.isBefore(startDate, "day")
+            ? Math.max(billingDate.diff(startDate, "year"), 0)
+            : 0;
         const currentRate =
           baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
 
@@ -734,6 +742,15 @@ const fetchVirtualOfficeRevenueReportService = async ({
       baseRate,
       annualIncrement,
     );
+    // const billingDate = dayjs(item.rentDate || item.createdAt);
+    // const yearsElapsed =
+    //   startDate.isValid() &&
+    //   billingDate.isValid() &&
+    //   !billingDate.isBefore(startDate, "day")
+    //     ? Math.max(billingDate.diff(startDate, "year"), 0)
+    //     : 0;
+    // const currentRate =
+    //   baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
     const totalTerm =
       typeof client.totalTerm === "number" && client.totalTerm >= 0
         ? client.totalTerm
