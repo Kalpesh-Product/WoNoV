@@ -199,6 +199,18 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
         )
       : await VirtualOfficeRevenue.create({ ...payload, company: req.company });
     if (!revenue) return res.status(404).json({ message: "Revenue not found" });
+
+    if (payload.receivedAmount !== undefined && revenue.client) {
+      await VirtualOfficeClient.findOneAndUpdate(
+        { _id: revenue.client, company: req.company },
+        { $set: { receivedAmount: payload.receivedAmount } },
+        { runValidators: true },
+      );
+      await VirtualOfficeRevenue.updateMany(
+        { client: revenue.client, company: req.company, _id: { $ne: revenue._id } },
+        { $set: { receivedAmount: payload.receivedAmount } },
+      );
+    }
     if (
       uploadedInvoiceId &&
       previousInvoiceId &&

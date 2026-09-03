@@ -127,6 +127,20 @@ const VirtualOfficeClientRevenue = () => {
                             flex: 1,
                             cellRenderer: (params) => inrFormat(params?.value || 0),
                         },
+                        {
+                            field: "receivedAmount",
+                            headerName: "Received Amount",
+                            flex: 1,
+                            cellRenderer: (params) => inrFormat(params?.value || 0),
+                        },
+                        {
+                            field: "remainingAmount",
+                            headerName: "Remaining Amount",
+                            flex: 1,
+                            valueGetter: ({ data }) =>
+                                Number(data?.revenue || 0) - Number(data?.receivedAmount || 0),
+                            cellRenderer: (params) => inrFormat(params?.value || 0),
+                        },
                         { field: "totalTerm", headerName: "Total Term", flex: 1 },
                         {
                             field: "rentStatus",
@@ -188,6 +202,17 @@ const VirtualOfficeClientRevenue = () => {
                                 <DetalisFormatted
                                     title="Revenue"
                                     detail={`INR ${inrFormat(Number(viewRow.revenue || 0))}`}
+                                />
+                                <DetalisFormatted
+                                    title="Received Amount"
+                                    detail={`INR ${inrFormat(Number(viewRow.receivedAmount || 0))}`}
+                                />
+                                <DetalisFormatted
+                                    title="Remaining Amount"
+                                    detail={`INR ${inrFormat(
+                                        Number(viewRow.revenue || 0) -
+                                            Number(viewRow.receivedAmount || 0),
+                                    )}`}
                                 />
                                 <DetalisFormatted
                                     title="Annual Increment (%)"

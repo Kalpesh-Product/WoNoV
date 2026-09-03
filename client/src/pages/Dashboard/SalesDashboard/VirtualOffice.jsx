@@ -328,6 +328,9 @@ const getUserDisplayName = (user) => {
     onSuccess: () => {
       toast.success("Virtual office invoice updated successfully");
       queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeClient"] });
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientByName"] });
+      queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
       setEditRow(null);
     },
     onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
@@ -389,6 +392,9 @@ const getUserDisplayName = (user) => {
           setAddedRevenueIds((ids) => [...ids, data.createdRevenue._id]);
         }
         queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClient"] });
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientByName"] });
+        queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
         setAddRow(false);
         resetAdd();
       },
@@ -485,6 +491,18 @@ const getUserDisplayName = (user) => {
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
+      headerName: "Received Amount",
+      field: "receivedAmount",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Remaining Amount",
+      field: "remainingAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.revenue) - getNumericAmount(data?.receivedAmount),
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
       headerName: "Rent Status",
       field: "rentStatus",
      flex:2,
@@ -554,6 +572,18 @@ const getUserDisplayName = (user) => {
     {
       headerName: "Open Desk Rate",
       field: "deskRate",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Received Amount",
+      field: "receivedAmount",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Remaining Amount",
+      field: "remainingAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.revenue) - getNumericAmount(data?.receivedAmount),
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
@@ -943,6 +973,7 @@ const getUserDisplayName = (user) => {
               size="small"
               fullWidth
               disabled
+              className="col-span-2"
             />
             <TextField
               select
@@ -950,7 +981,7 @@ const getUserDisplayName = (user) => {
               label="Billing Frequency"
               size="small"
               fullWidth
-             // disabled
+              disabled
             >
               <MenuItem value="Monthly">Monthly</MenuItem>
               <MenuItem value="Yearly">Yearly</MenuItem>
@@ -1023,6 +1054,17 @@ const getUserDisplayName = (user) => {
                 <DetalisFormatted
                   title="Revenue"
                   detail={`INR ${inrFormat(getNumericAmount(viewRow.revenue))}`}
+                />
+                <DetalisFormatted
+                  title="Received Amount"
+                  detail={`INR ${inrFormat(getNumericAmount(viewRow.receivedAmount))}`}
+                />
+                <DetalisFormatted
+                  title="Remaining Amount"
+                  detail={`INR ${inrFormat(
+                    getNumericAmount(viewRow.revenue) -
+                      getNumericAmount(viewRow.receivedAmount),
+                  )}`}
                 />
                 <DetalisFormatted
                   title="Annual Increment (%)"
@@ -1282,7 +1324,6 @@ const getUserDisplayName = (user) => {
       {[
         ["pastDueDate", "Past Due Date"],
         ["nextIncrementDate", "Next Increment Date"],
-        ["invoiceUploadedAt", "Invoice Upload Date"],
       ].map(([name, label]) => (
         <Controller
           key={name}
@@ -1307,6 +1348,29 @@ const getUserDisplayName = (user) => {
         />
       ))}
 
+      <div className="col-span-2">
+        <Controller
+          name="invoiceUploadedAt"
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label="Invoice Upload Date"
+              format="DD-MM-YYYY"
+              disabled
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  disabled: true,
+                },
+              }}
+            />
+          )}
+        />
+      </div>
+
       <Controller
         name="billingFrequency"
         control={control}
@@ -1317,7 +1381,7 @@ const getUserDisplayName = (user) => {
             label="Billing Frequency"
             size="small"
             fullWidth
-           // disabled
+            disabled
           >
             <MenuItem value="Monthly">Monthly</MenuItem>
             <MenuItem value="Yearly">Yearly</MenuItem>

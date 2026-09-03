@@ -1,4 +1,5 @@
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
+const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const CustomError = require("../../utils/customErrorlogs");
@@ -796,6 +797,11 @@ const updateVirtualOfficeClient = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
+    await VirtualOfficeRevenue.updateMany(
+      { client: id, company: existing.company },
+      { $set: { receivedAmount } },
+    );
 
     return res.status(200).json({
       message: "Virtual Office client updated successfully",
