@@ -69,6 +69,14 @@ const jobApplicationsSchema = new mongoose.Schema({
   remarks: {
     type: String,
   },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
 });
 
 const JobApplicationSchema = mongoose.model(
