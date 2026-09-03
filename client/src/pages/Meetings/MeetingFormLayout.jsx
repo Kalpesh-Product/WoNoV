@@ -152,8 +152,6 @@ const MeetingFormLayout = () => {
   // }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
-  const selectedBuildingId = watch("building");
-  const selectedLocationId = watch("location");
   const selectedMeetingRoomId = watch("meetingRoom");
   const startDate = watch("startDate"); // Watch startDate
   const endDate = watch("endDate"); // Watch endDate
@@ -247,8 +245,7 @@ const MeetingFormLayout = () => {
   const shouldCheckAvailability =
     !!startDateTime && !!endDateTime && shouldFetchParticipants;
   //-------------------------------API-------------------------------//
-  const { data: meetingRooms = [], isLoading: isMeetingRoomsLoading } =
-    useQuery({
+  const { data: meetingRooms = [] } = useQuery({
       queryKey: ["meetingRooms"],
       queryFn: async () => {
         const response = await axios.get("/api/meetings/get-rooms");
@@ -261,67 +258,12 @@ const MeetingFormLayout = () => {
     [meetingRooms],
   );
 
-  const meetingBuildings = useMemo(() => {
-    const seen = new Set();
-
-    return activeMeetingRooms.reduce((buildings, room) => {
-      const building = room?.location?.building;
-      const id = String(building?._id || "");
-      if (!id || seen.has(id)) return buildings;
-
-      seen.add(id);
-      buildings.push({
-        id,
-        label: building?.buildingName || "Unnamed location",
-      });
-      return buildings;
-    }, []);
-  }, [activeMeetingRooms]);
-
-  const meetingLocations = useMemo(() => {
-    const seen = new Set();
-
-    return activeMeetingRooms.reduce((locations, room) => {
-      const location = room?.location;
-      const id = String(location?._id || "");
-      const buildingId = String(location?.building?._id || "");
-      if (!id || buildingId !== String(selectedBuildingId) || seen.has(id)) {
-        return locations;
-      }
-
-      seen.add(id);
-      locations.push({
-        id,
-        label: location?.unitName || location?.unitNo || "Unnamed location",
-      });
-      return locations;
-    }, []);
-  }, [activeMeetingRooms, selectedBuildingId]);
-
-  const roomsAtSelectedLocation = useMemo(
-    () =>
-      activeMeetingRooms.filter(
-        (room) =>
-          String(room?.location?._id || "") ===
-          String(selectedLocationId || ""),
-      ),
-    [activeMeetingRooms, selectedLocationId],
-  );
-
   const selectedMeetingRoom = useMemo(
     () =>
       activeMeetingRooms.find(
         (room) => String(room?._id) === String(selectedMeetingRoomId),
       ),
     [activeMeetingRooms, selectedMeetingRoomId],
-  );
-
-  const selectedMeetingLocation = useMemo(
-    () =>
-      meetingLocations.find(
-        (location) => String(location.id) === String(selectedLocationId),
-      ),
-    [meetingLocations, selectedLocationId],
   );
 
   useEffect(() => {
@@ -339,7 +281,6 @@ const MeetingFormLayout = () => {
 
   const displayedLocationName =
     selectedMeetingRoom?.location?.building?.buildingName ||
-    selectedMeetingLocation?.label ||
     locationName;
   const displayedMeetingRoomName =
     selectedMeetingRoom?.name ||
@@ -1166,125 +1107,6 @@ const MeetingFormLayout = () => {
                 )}
               />
             </LocalizationProvider>
-            <Controller
-              name="building"
-              control={control}
-              rules={{ required: "Building is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  fullWidth
-                  size="small"
-                  label="Building"
-                  disabled={isMeetingRoomsLoading}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  onChange={(event) => {
-                    field.onChange(event.target.value);
-                    setValue("location", "", {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                    setValue("meetingRoom", "", {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select Building
-                  </MenuItem>
-                  {meetingBuildings.length ? (
-                    meetingBuildings.map((building) => (
-                      <MenuItem key={building.id} value={building.id}>
-                        {building.label}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>No Buildings Available</MenuItem>
-                  )}
-                </TextField>
-              )}
-            />
-            <Controller
-              name="location"
-              control={control}
-              rules={{ required: "Location is required" }}
-              render={({ field, fieldState }) => (
-                <TextField
-                  {...field}
-                  select
-                  fullWidth
-                  size="small"
-                  label="Location"
-                  disabled={!selectedBuildingId || isMeetingRoomsLoading}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  onChange={(event) => {
-                    field.onChange(event.target.value);
-                    setValue("meetingRoom", "", {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    });
-                  }}
-                >
-                  <MenuItem value="" disabled>
-                    Select Location
-                  </MenuItem>
-                  {meetingLocations.length ? (
-                    meetingLocations.map((location) => (
-                      <MenuItem key={location.id} value={location.id}>
-                        {location.label}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem disabled>No Locations Available</MenuItem>
-                  )}
-                </TextField>
-              )}
-            />
-            <div className="col-span-2">
-              <Controller
-                name="meetingRoom"
-                control={control}
-                rules={{ required: "Meeting room is required" }}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    {...field}
-                    select
-                    fullWidth
-                    size="small"
-                    label="Meeting Room"
-                    disabled={!selectedLocationId || isMeetingRoomsLoading}
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
-                  >
-                    <MenuItem value="" disabled>
-                      Select Meeting Room
-                    </MenuItem>
-                    {roomsAtSelectedLocation.length ? (
-                      [...roomsAtSelectedLocation]
-                        .sort(
-                          (a, b) =>
-                            Number(a.seats || 0) - Number(b.seats || 0),
-                        )
-                        .map((room) => (
-                          <MenuItem key={room._id} value={room._id}>
-                            {String(room.seats || 0).padStart(2, "0")} Seater{" "}
-                            {room.location?.unitNo ||
-                              room.location?.unitName ||
-                              "N/A"}{" "}
-                            - {room.name}
-                          </MenuItem>
-                        ))
-                    ) : (
-                      <MenuItem disabled>No Meeting Rooms Available</MenuItem>
-                    )}
-                  </TextField>
-                )}
-              />
-            </div>
             {meetingType === "Internal" ? (
               <>
              {isReceptionist || isTechManager ? (
