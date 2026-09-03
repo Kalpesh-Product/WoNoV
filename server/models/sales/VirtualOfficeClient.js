@@ -69,6 +69,7 @@ const virtualOfficeSchema = new mongoose.Schema(
     openDesks: { type: Number, default: 0 },
     openDeskRate: { type: Number, default: 0 },
     openTotal: { type: Number, default: 0 },
+    receivedAmount: { type: Number, required: true, default: 0, min: 0 },
     perDeskMeetingCredits: { type: Number, default: 0 },
     totalMeetingCredits: { type: Number, default: 0 },
 

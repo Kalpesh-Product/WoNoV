@@ -69,6 +69,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       channel,
       taxableAmount,
       revenue,
+      receivedAmount,
       totalTerm,
       dueTerm,
       rentDate,
@@ -87,6 +88,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       channel: normalizeVirtualOfficeChannel(channel),
       taxableAmount,
       revenue,
+      receivedAmount: Number(receivedAmount || 0),
       totalTerm,
       dueTerm,
       rentDate,
@@ -137,7 +139,8 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
       : null;
     const previousInvoiceId = existingRevenue?.invoice?.id;
     const allowedFields = [
-      "client", "location", "channel", "taxableAmount", "revenue", "totalTerm",
+      "client", "location", "channel", "taxableAmount", "revenue", "receivedAmount", "totalTerm",
+     // "client", "location", "channel", "taxableAmount", "revenue", "totalTerm",
       "dueTerm", "rentDate", "rentStatus", "pastDueDate", "annualIncrement",
       "nextIncrementDate", "service", "invoiceUploadedAt",
     ];
@@ -148,6 +151,14 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
 
     if (payload.channel !== undefined) {
       payload.channel = normalizeVirtualOfficeChannel(payload.channel);
+    }
+     if (payload.receivedAmount !== undefined) {
+      payload.receivedAmount = Number(payload.receivedAmount);
+      if (!Number.isFinite(payload.receivedAmount) || payload.receivedAmount < 0) {
+        return res.status(400).json({
+          message: "receivedAmount must be a number >= 0",
+        });
+      }
     }
 
     if (payload.invoiceUploadedAt) payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);

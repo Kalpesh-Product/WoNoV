@@ -25,6 +25,11 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    receivedAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalTerm: {
       type: Number, // Assuming in months
       // required: true,

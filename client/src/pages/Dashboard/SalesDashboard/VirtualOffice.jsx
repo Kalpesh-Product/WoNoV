@@ -165,7 +165,7 @@ const getUserDisplayName = (user) => {
   const [editRow, setEditRow] = useState(null);
   const [addRow, setAddRow] = useState(false);
   const [addedRevenueIds, setAddedRevenueIds] = useState([]);
-  const { control, handleSubmit, reset } = useForm();
+ const { control, handleSubmit, reset, watch } = useForm();
   const {
     control: addControl,
     handleSubmit: handleAddSubmit,
@@ -270,6 +270,7 @@ const getUserDisplayName = (user) => {
       clientName: row.clientName || "",
       clientInvoiceName: row.clientInvoiceName || row.clientName || "",
       revenue: formatBillingNumber(row.revenue),
+      receivedAmount: formatBillingNumber(row.receivedAmount),
       channel: row.channel || "",
       noOfDesks: row.noOfDesks ?? "",
       deskRate: formatBillingNumber(row.deskRate),
@@ -303,6 +304,7 @@ const getUserDisplayName = (user) => {
         "deskRate",
         "taxableAmount",
         "revenue",
+        "receivedAmount",
         "totalTerm",
         "securityDeposit",
         "billingFrequency",
@@ -344,6 +346,13 @@ const getUserDisplayName = (user) => {
     : 0;
   const addRevenue = addTotalDesks * addDeskRate;
 
+  const addReceivedAmount = watchAdd("receivedAmount") || 0;
+  const addRemainingAmount = addRevenue - getNumericAmount(addReceivedAmount);
+  const editRevenue = watch("revenue") || 0;
+  const editReceivedAmount = watch("receivedAmount") || 0;
+  const editRemainingAmount =
+    getNumericAmount(editRevenue) - getNumericAmount(editReceivedAmount);
+
   const { mutate: addVirtualInvoice, isPending: isAddingVirtualInvoice } =
     useMutation({
       mutationFn: async (values) => {
@@ -353,6 +362,7 @@ const getUserDisplayName = (user) => {
           channel: selectedAddClient?.bookingType || "Direct",
           taxableAmount: addRevenue,
           revenue: addRevenue,
+          receivedAmount: Number(values.receivedAmount) || 0,
           totalTerm: selectedAddClient?.totalTerm || 0,
           rentDate: selectedAddClient?.rentDate || null,
           rentStatus: values.rentStatus,
@@ -387,7 +397,14 @@ const getUserDisplayName = (user) => {
     });
 
   const openAdd = () => {
-    resetAdd({ client: "", clientName: "", rentStatus: "Unpaid", invoiceFile: null });
+      resetAdd({
+      client: "",
+      clientName: "",
+      receivedAmount: 0,
+      rentStatus: "Unpaid",
+      invoiceFile: null,
+    });
+    //resetAdd({ client: "", clientName: "", rentStatus: "Unpaid", invoiceFile: null });
     setAddRow(true);
   };
 
@@ -833,7 +850,52 @@ const getUserDisplayName = (user) => {
               ["channel", "Channel", selectedAddClient?.bookingType || "Direct"],
               ["noOfDesks", "No. of Desks", addTotalDesks],
               ["deskRate", "Open Desk Rate", addDeskRate],
-              ["revenue", "Revenue", addRevenue],
+              // ["revenue", "Revenue", addRevenue],
+               ].map(([name, label, value]) => (
+              <TextField
+                key={name}
+                value={value ?? ""}
+                label={label}
+                size="small"
+                fullWidth
+                disabled
+              />
+            ))}
+
+            <div className="col-span-2 grid grid-cols-3 gap-4">
+              <TextField
+                value={addRevenue}
+                label="Revenue"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+              <Controller
+                name="receivedAmount"
+                control={addControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Received Amount"
+                    type="number"
+                    size="small"
+                    inputProps={{ min: 0 }}
+                    fullWidth
+                  />
+                )}
+              />
+              <TextField
+                value={addRemainingAmount}
+                label="Remaining Amount"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+            </div>
+
+            {[
               ["totalTerm", "Total Term", selectedAddClient?.totalTerm || 0],
               ["annualIncrement", "Annual Increment (%)", selectedAddClient?.annualIncrement || 0],
             ].map(([name, label, value]) => (
@@ -1102,7 +1164,65 @@ const getUserDisplayName = (user) => {
         ["channel", "Channel", "text"],
         ["noOfDesks", "No. of Desks", "number"],
         ["deskRate", "Open Desk Rate", "number"],
-        ["revenue", "Revenue", "number"],
+      //  ["revenue", "Revenue", "number"],
+        ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      ))}
+
+      <div className="col-span-2 grid grid-cols-3 gap-4">
+        <Controller
+          name="revenue"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label="Revenue"
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+        <Controller
+          name="receivedAmount"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label="Received Amount"
+              size="small"
+              inputProps={{ min: 0 }}
+              fullWidth
+            />
+          )}
+        />
+        <TextField
+          value={editRemainingAmount}
+          type="number"
+          label="Remaining Amount"
+          size="small"
+          fullWidth
+          disabled
+        />
+      </div>
+
+      {[
         ["totalTerm", "Total Term", "number"],
         ["annualIncrement", "Annual Increment (%)", "number"],
       ].map(([name, label, type]) => (
