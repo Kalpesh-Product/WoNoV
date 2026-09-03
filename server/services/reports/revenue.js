@@ -715,7 +715,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
       {
         path: "client",
         select:
-          "clientName bookingType cabinDesks openDesks totalDesks cabinDeskRate openDeskRate annualIncrement termStartDate termEnd totalTerm rentDate nextIncrementDate securityDeposit billingFrequency",
+          "clientName bookingType cabinDesks openDesks totalDesks cabinDeskRate openDeskRate annualIncrement termStartDate termEnd totalTerm rentDate nextIncrementDate securityDeposit billingFrequency clientStatus",
       },
       {
         path: "invoiceUploadedBy",
@@ -765,6 +765,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
         clientName: client.clientName,
         securityDeposit: client.securityDeposit,
         billingFrequency: client.billingFrequency,
+        clientStatus: client.clientStatus,
       },
       channel: client.bookingType ?? item.channel,
       noOfDesks,

@@ -37,12 +37,6 @@ const formatBillingNumber = (value) => {
     : truncatedValue.toFixed(2);
 };
 
-const getClientIdentity = (row) => {
-  const id = row?.client?._id || row?.client;
-  if (id) return `id:${String(id)}`;
-  return `name:${String(row?.clientName || "").trim().toLowerCase()}`;
-};
-
 const getVirtualOfficeCurrentRate = (row) => {
   const client = row?.client || {};
   const startDate = dayjs(
@@ -69,90 +63,70 @@ const getVirtualOfficeCurrentRate = (row) => {
   return baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
 };
 
-const getUnpaidInvoiceRowsForMonth = (
-  rows,
-  selectedDate,
-  existingMonthRows = [],
-) => {
-  const targetMonth = dayjs(selectedDate).startOf("month");
-  const currentMonth = dayjs().startOf("month");
+// Kept for reference. Automatic unpaid projections are currently disabled.
+// const getClientIdentity = (row) => {
+//   const id = row?.client?._id || row?.client;
+//   if (id) return `id:${String(id)}`;
+//   return `name:${String(row?.clientName || "").trim().toLowerCase()}`;
+// };
 
-  if (!targetMonth.isValid() || targetMonth.isBefore(currentMonth)) return [];
+// const getUnpaidInvoiceRowsForMonth = (
+//   rows,
+//   selectedDate,
+//   existingMonthRows = [],
+// ) => {
+//   const targetMonth = dayjs(selectedDate).startOf("month");
+//   const currentMonth = dayjs().startOf("month");
 
-  // const historicalPaidRows = rows.filter((row) => {
-  //   const rowMonth = dayjs(row.rentDate).startOf("month");
-  //   return (
-  //     rowMonth.isValid() &&
-  //     rowMonth.isBefore(currentMonth) &&
-  //     getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid"
-  //   );
-  // });
-  // if (!historicalPaidRows.length) return [];
+//   if (!targetMonth.isValid() || targetMonth.isBefore(currentMonth)) return [];
 
-  // const latestSourceMonth = historicalPaidRows.reduce((latest, row) => {
-  //   const rowMonth = dayjs(row.rentDate).startOf("month");
-  //   return rowMonth.isAfter(latest) ? rowMonth : latest;
-  // }, dayjs(historicalPaidRows[0].rentDate).startOf("month"));
+//   const historicalRows = rows.filter((row) => {
+//     const rowMonth = dayjs(row.rentDate).startOf("month");
+//     return (
+//       rowMonth.isValid() &&
+//       rowMonth.isBefore(currentMonth) &&
+//       getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid" &&
+//       row.client?.clientStatus !== false
+//     );
+//   });
+//   if (!historicalRows.length) return [];
 
-  // const existingClients = new Set(existingMonthRows.map(getClientIdentity));
-  // const projectedClients = new Set();
+//   const latestSourceMonth = historicalRows.reduce((latest, row) => {
+//     const rowMonth = dayjs(row.rentDate).startOf("month");
+//     return rowMonth.isAfter(latest) ? rowMonth : latest;
+//   }, dayjs(historicalRows[0].rentDate).startOf("month"));
 
-  // return historicalPaidRows
-  //   .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
-  //   .filter((row) => !existingClients.has(getClientIdentity(row)))
-  //   .filter((row) => {
-  //     const identity = getClientIdentity(row);
-  //     if (projectedClients.has(identity)) return false;
-  //     projectedClients.add(identity);
-  //     return true;
-  //   })
+//   const existingClientCounts = existingMonthRows.reduce((counts, row) => {
+//     const identity = getClientIdentity(row);
+//     counts.set(identity, (counts.get(identity) || 0) + 1);
+//     return counts;
+//   }, new Map());
 
-  const historicalRows = rows.filter((row) => {
-    const rowMonth = dayjs(row.rentDate).startOf("month");
-    return rowMonth.isValid() && rowMonth.isBefore(currentMonth);
-  });
-  if (!historicalRows.length) return [];
-
-  const latestSourceMonth = historicalRows.reduce((latest, row) => {
-    const rowMonth = dayjs(row.rentDate).startOf("month");
-    return rowMonth.isAfter(latest) ? rowMonth : latest;
-  }, dayjs(historicalRows[0].rentDate).startOf("month"));
-
-  // Keep occurrences rather than a Set because one client can legitimately have
-  // multiple revenue rows in a month. Existing rows consume only their matching
-  // occurrence; every other row from the latest historical month is projected.
-  const existingClientCounts = existingMonthRows.reduce((counts, row) => {
-    const identity = getClientIdentity(row);
-    counts.set(identity, (counts.get(identity) || 0) + 1);
-    return counts;
-  }, new Map());
-
-  return historicalRows
-    .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
-    .filter((row) => {
-      const identity = getClientIdentity(row);
-      const existingCount = existingClientCounts.get(identity) || 0;
-      if (existingCount > 0) {
-        existingClientCounts.set(identity, existingCount - 1);
-        return false;
-      }
-      return true;
-    })
-    .map((row, index) => ({
-      ...row,
-      id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
-      rentDate: targetMonth
-        .date(Math.min(dayjs(row.rentDate).date(), targetMonth.daysInMonth()))
-        .toISOString(),
-      rentStatus: "Unpaid",
-      normalizedStatus: "unpaid",
-      invoice: null,
-      invoiceLink: "",
-      invoiceUploadedAt: null,
-      isProjectedInvoice: true,
-    }));
-};
-
+//   return historicalRows
+//     .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
+//     .filter((row) => {
+//       const identity = getClientIdentity(row);
+//       const existingCount = existingClientCounts.get(identity) || 0;
+//       if (existingCount > 0) {
+//         existingClientCounts.set(identity, existingCount - 1);
+//         return false;
+//       }
+//       return true;
+//     })
+//     .map((row, index) => ({
+//       ...row,
+//       id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+//       rentDate: targetMonth
+//         .date(Math.min(dayjs(row.rentDate).date(), targetMonth.daysInMonth()))
+//         .toISOString(),
+//       rentStatus: "Unpaid",
+//       normalizedStatus: "unpaid",
+//       invoice: null,
+//       invoiceLink: "",
+//       invoiceUploadedAt: null,
+//       isProjectedInvoice: true,
+//     }));
+// };
 
 const getCurrentFinancialYearLabel = () => {
   const today = new Date();
@@ -427,10 +401,12 @@ const getUserDisplayName = (user) => {
 
   const visibleTableData = useMemo(
     () =>
-      tableData.filter(
-        (item) => item.isManualInvoice || addedRevenueIds.includes(item._id),
+      tableData.filter((item) =>
+        showInvoiceProjections
+          ? item.normalizedStatus === "paid" || addedRevenueIds.includes(item._id)
+          : item.normalizedStatus === "paid",
       ),
-    [addedRevenueIds, tableData],
+    [addedRevenueIds, showInvoiceProjections, tableData],
   );
 
   const graphData = useMemo(
@@ -801,16 +777,6 @@ const getUserDisplayName = (user) => {
           summaryChipVariant="ticket"
           preserveCurrentMonthRange={showInvoiceProjections}
           showCalendarWhenEmpty={showInvoiceProjections}
-          getMissingRangeData={
-            showInvoiceProjections
-              ? (selectedDate, existingMonthRows) =>
-                  getUnpaidInvoiceRowsForMonth(
-                    visibleTableData,
-                    selectedDate,
-                    existingMonthRows,
-                  )
-              : undefined
-          }
           headerActions={
             <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />
           }
@@ -896,13 +862,6 @@ const getUserDisplayName = (user) => {
               disabled
             />
             <TextField
-              value={selectedAddClient?.billingFrequency || "Yearly"}
-              label="Billing Frequency"
-              size="small"
-              fullWidth
-              disabled
-            />
-            <TextField
               value={selectedAddClient?.pastDueDate ? dayjs(selectedAddClient.pastDueDate).format("DD-MM-YYYY") : ""}
               label="Past Due Date"
               size="small"
@@ -923,6 +882,17 @@ const getUserDisplayName = (user) => {
               fullWidth
               disabled
             />
+            <TextField
+              select
+              value={selectedAddClient?.billingFrequency || "Yearly"}
+              label="Billing Frequency"
+              size="small"
+              fullWidth
+             // disabled
+            >
+              <MenuItem value="Monthly">Monthly</MenuItem>
+              <MenuItem value="Yearly">Yearly</MenuItem>
+            </TextField>
             <Controller
               name="rentStatus"
               control={addControl}
@@ -1189,24 +1159,6 @@ const getUserDisplayName = (user) => {
         )}
       />
 
-      <Controller
-        name="billingFrequency"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            select
-            label="Billing Frequency"
-            size="small"
-            fullWidth
-            disabled
-          >
-            <MenuItem value="Monthly">Monthly</MenuItem>
-            <MenuItem value="Yearly">Yearly</MenuItem>
-          </TextField>
-        )}
-      />
-
       {[
         ["pastDueDate", "Past Due Date"],
         ["nextIncrementDate", "Next Increment Date"],
@@ -1234,6 +1186,24 @@ const getUserDisplayName = (user) => {
           )}
         />
       ))}
+
+      <Controller
+        name="billingFrequency"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Billing Frequency"
+            size="small"
+            fullWidth
+           // disabled
+          >
+            <MenuItem value="Monthly">Monthly</MenuItem>
+            <MenuItem value="Yearly">Yearly</MenuItem>
+          </TextField>
+        )}
+      />
 
       <Controller
         name="rentStatus"
