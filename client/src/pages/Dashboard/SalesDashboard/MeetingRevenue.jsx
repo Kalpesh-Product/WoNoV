@@ -686,13 +686,10 @@ const DayPassInvoiceFields = ({ revenue }) => {
     item?.normalizedFinanceStatus === "verified";
   const isPaidRow = (item) => item?.normalizedStatus === "paid";
   const isFinancePaidRow = (item) =>
-    item?.normalizedFinanceStatus === "verified" && item?.hasUploadedInvoice;
-  const flattenedRevenueData = showChart
+    item?.normalizedFinanceStatus === "verified";
+  const visibleRevenueData = showChart
     ? allRevenueData.filter(isVerifiedFinanceRow)
     : allRevenueData;
-  const visibleRevenueData = showChart
-    ? flattenedRevenueData
-    : flattenedRevenueData.filter(isPaidRow);
   const updateInvoice = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
@@ -748,14 +745,14 @@ const DayPassInvoiceFields = ({ revenue }) => {
     () =>
       isMeetingsLoading
         ? []
-        : flattenedRevenueData
-            .filter(isPaidRow)
+        : allRevenueData
+            .filter(isVerifiedFinanceRow)
             .map((item) => ({
               date: item.date,
               taxable: getNumericAmount(item.taxable),
               vertical: "Meeting",
             })),
-    [flattenedRevenueData, isMeetingsLoading],
+    [allRevenueData, isMeetingsLoading],
   );
   const selectedFiscalYearRevenue = useMemo(
     () =>
@@ -950,10 +947,15 @@ const DayPassInvoiceFields = ({ revenue }) => {
             titleAmountRed={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (isPaidRow(item)) { 
-                    return sum;
+                  if (showChart) {
+                    return isPaidRow(item)
+                      ? sum
+                      : sum + getNumericAmount(item.taxable);
                   }
-                  return sum + getNumericAmount(item.taxable);
+
+                  return isFinancePaidRow(item)
+                    ? sum
+                    : sum + getNumericAmount(item.taxable);
                 }, 0),
               )}`
             }
@@ -961,7 +963,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
               `INR ${inrFormat(rangeTotal)}`
             }
             greenTitle={showChart ? "Paid" : "Admin Paid"}
-            redTitle={showChart ? "Unpaid" : "Admin UnPaid"}
+            redTitle={showChart ? "Unpaid" : "Finance Verification"}
             totalTitle="Total"
             summaryChipVariant="ticket"
             columns={[

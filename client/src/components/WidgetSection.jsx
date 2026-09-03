@@ -149,7 +149,7 @@ const WidgetSection = ({
                           </div>
                         </span>
                       )}
-                    {TitleAmountRed !== undefined && TitleAmountGreen !== null && (
+                    {TitleAmountRed !== undefined && TitleAmountRed !== null && (
                       <span
                         className={`${
                           titleFont
