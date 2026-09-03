@@ -285,6 +285,16 @@ const MeetingFormLayout = () => {
   const displayedMeetingRoomName =
     selectedMeetingRoom?.name ||
     (selectedMeetingRoomId === meetingRoomId ? meetingRoomName : "");
+  const displayedUnitName = selectedMeetingRoom?.location
+    ? [
+        selectedMeetingRoom.location.unitNo,
+        selectedMeetingRoom.location.unitName
+          ? `(${selectedMeetingRoom.location.unitName})`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ") || displayedLocationName
+    : displayedLocationName;
   const displayedPerHourCredit =
     selectedMeetingRoomId === meetingRoomId
       ? selectedMeetingRoom?.perHourCredit ?? perHourCredit
@@ -977,6 +987,14 @@ const MeetingFormLayout = () => {
         >
           <div className="w-full flex gap-8 justify-center items-center">
             <span className="text-content">Date : {humanDate(startDate)}</span>
+          </div>
+          <div className="grid grid-cols-2 gap-8 px-2">
+            <span className="text-content text-left">
+              Location : {displayedUnitName || "N/A"}
+            </span>
+            <span className="text-content text-right">
+              Selected Room : {displayedMeetingRoomName || "N/A"}
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-black">
             <div className="w-full flex gap-8 items-center justify-start">

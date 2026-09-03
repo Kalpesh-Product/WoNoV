@@ -1,25 +1,60 @@
 import React, { useState } from "react";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../../../utils/humanDateForamt";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { CircularProgress } from "@mui/material";
-import PageFrame from "../../../../components/Pages/PageFrame";
+import { CircularProgress, MenuItem, TextField } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
-import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import StatusChip from "../../../../components/StatusChip";
+import PrimaryButton from "../../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
+import { toast } from "sonner";
+
+const defaultApplicationValues = {
+  jobPosition: "",
+  name: "",
+  email: "",
+  dateOfBirth: "",
+  mobileNumber: "",
+  location: "",
+  experienceInYears: "",
+  linkedInProfileUrl: "",
+  currentMonthlySalary: "",
+  expectedMonthlySalary: "",
+  howSoonYouCanJoinInDays: "",
+  willRelocateToGoa: "",
+  willingToBootstrap: "",
+  skillSetsForJob: "",
+  whyShouldWeConsiderYou: "",
+  whoAreYouAsPerson: "",
+  message: "",
+  finalSubmissionDate: new Date().toISOString().slice(0, 10),
+  status: "Pending",
+  remarks: "",
+  resume: null,
+};
 
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [editingApplication, setEditingApplication] = useState(null);
+  const [applicationToArchive, setApplicationToArchive] = useState(null);
   const [viewApplicationDetails, setViewApplicationDetails] = useState({});
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ defaultValues: defaultApplicationValues });
   const {
     data: jobApplications,
     isPending: isJobApplicationPending,
-    error,
   } = useQuery({
     queryKey: ["jobApplications"],
     queryFn: async function () {
@@ -28,8 +63,95 @@ const JobApplicationList = () => {
     },
   });
 
+  const saveApplicationMutation = useMutation({
+    mutationFn: async (values) => {
+      const formData = new FormData();
+
+      Object.entries(values).forEach(([key, value]) => {
+        if (key === "resume") {
+          if (value) formData.append("resume", value);
+          return;
+        }
+        formData.append(key, value ?? "");
+      });
+
+      const response = editingApplication
+        ? await axios.patch(
+            `/api/company/update-job-application/${editingApplication._id}`,
+            formData,
+          )
+        : await axios.post("/api/company/add-job-application", formData);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+      toast.success(
+        `Job application ${editingApplication ? "updated" : "added"} successfully`,
+      );
+      reset(defaultApplicationValues);
+      setEditingApplication(null);
+      setOpenAddModal(false);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to save job application",
+      );
+    },
+  });
+
+  const archiveApplicationMutation = useMutation({
+    mutationFn: async (applicationId) => {
+      const response = await axios.patch(
+        `/api/company/archive-job-application/${applicationId}`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+      toast.success("Job application deleted successfully");
+      setApplicationToArchive(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to delete job application",
+      );
+    },
+  });
+
+  const closeAddModal = () => {
+    reset(defaultApplicationValues);
+    setEditingApplication(null);
+    setOpenAddModal(false);
+  };
+
+  const openCreateApplication = () => {
+    setEditingApplication(null);
+    reset(defaultApplicationValues);
+    setOpenAddModal(true);
+  };
+
+  const openEditApplication = (application) => {
+    setEditingApplication(application);
+    reset({
+      ...defaultApplicationValues,
+      ...application,
+      dateOfBirth: application.dateOfBirth
+        ? new Date(application.dateOfBirth).toISOString().slice(0, 10)
+        : "",
+      finalSubmissionDate: application.finalSubmissionDate
+        ? new Date(application.finalSubmissionDate).toISOString().slice(0, 10)
+        : "",
+      resume: null,
+    });
+    setOpenAddModal(true);
+  };
+
+  const archiveApplication = (application) => {
+    setApplicationToArchive(application);
+  };
+
   const leavesColumn = [
-    { field: "srNo", headerName: "SR No", width: 300 },
+    { field: "srNo", headerName: "SR No", width: 100 },
     {
       field: "name",
       headerName: "Name",
@@ -77,7 +199,32 @@ const JobApplicationList = () => {
       headerName: "Status",
       flex: 1,
       cellRenderer: (params) => <StatusChip status={params.value} />
-    }
+    },
+    {
+      field: "actions",
+      headerName: "Action",
+      width: 100,
+      pinned: "right",
+      lockPinned: true,
+      sortable: false,
+      filter: false,
+      suppressCsvExport: true,
+      cellRenderer: (params) => (
+        <ThreeDotMenu
+          rowId={params.data._id}
+          menuItems={[
+            {
+              label: "Edit",
+              onClick: () => openEditApplication(params.data),
+            },
+            {
+              label: "Delete",
+              onClick: () => archiveApplication(params.data),
+            },
+          ]}
+        />
+      ),
+    },
   ];
 
   const handleViewApplicationDetails = (job) => {
@@ -140,7 +287,342 @@ const JobApplicationList = () => {
                 }))
         }
         columns={leavesColumn}
+        buttonTitle="Add Job Application"
+        handleSubmit={openCreateApplication}
         exportData
+      />
+      <MuiModal
+        open={openAddModal}
+        onClose={closeAddModal}
+        title={editingApplication ? "Edit Job Application" : "Add Job Application"}
+        widthClass="w-4/5 lg:w-3/5"
+      >
+        <form
+          onSubmit={handleSubmit((values) =>
+            saveApplicationMutation.mutate(values),
+          )}
+          className="flex flex-col gap-4"
+        >
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Controller
+              name="jobPosition"
+              control={control}
+              rules={{ required: "Job position is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Job Position"
+                  size="small"
+                  error={!!errors.jobPosition}
+                  helperText={errors.jobPosition?.message}
+                />
+              )}
+            />
+            <Controller
+              name="name"
+              control={control}
+              rules={{
+                required: "Name is required",
+                validate: (value) =>
+                  value.trim().length > 1 || "Enter a valid name",
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Name"
+                  size="small"
+                  error={!!errors.name}
+                  helperText={errors.name?.message}
+                />
+              )}
+            />
+            <Controller
+              name="email"
+              control={control}
+              rules={{
+                required: "Email is required",
+                pattern: {
+                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                  message: "Enter a valid email",
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Email"
+                  type="email"
+                  size="small"
+                  error={!!errors.email}
+                  helperText={errors.email?.message}
+                />
+              )}
+            />
+            <Controller
+              name="mobileNumber"
+              control={control}
+              rules={{
+                required: "Mobile number is required",
+                pattern: {
+                  value: /^[0-9]{10}$/,
+                  message: "Enter a valid 10-digit mobile number",
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Mobile Number"
+                  size="small"
+                  inputProps={{ maxLength: 10 }}
+                  error={!!errors.mobileNumber}
+                  helperText={errors.mobileNumber?.message}
+                />
+              )}
+            />
+            <Controller
+              name="dateOfBirth"
+              control={control}
+              rules={{ required: "Date of birth is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Date of Birth"
+                  type="date"
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  inputProps={{ max: new Date().toISOString().slice(0, 10) }}
+                  error={!!errors.dateOfBirth}
+                  helperText={errors.dateOfBirth?.message}
+                />
+              )}
+            />
+            <Controller
+              name="location"
+              control={control}
+              rules={{ required: "Location is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Location"
+                  size="small"
+                  error={!!errors.location}
+                  helperText={errors.location?.message}
+                />
+              )}
+            />
+            <Controller
+              name="experienceInYears"
+              control={control}
+              rules={{ required: "Experience is required", min: 0 }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Experience (Years)"
+                  type="number"
+                  size="small"
+                  inputProps={{ min: 0, step: 0.5 }}
+                  error={!!errors.experienceInYears}
+                  helperText={errors.experienceInYears?.message}
+                />
+              )}
+            />
+            <Controller
+              name="linkedInProfileUrl"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="LinkedIn Profile URL"
+                  size="small"
+                />
+              )}
+            />
+            <Controller
+              name="currentMonthlySalary"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Current Monthly Salary"
+                  type="number"
+                  size="small"
+                  inputProps={{ min: 0 }}
+                />
+              )}
+            />
+            <Controller
+              name="expectedMonthlySalary"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Expected Monthly Salary"
+                  type="number"
+                  size="small"
+                  inputProps={{ min: 0 }}
+                />
+              )}
+            />
+            <Controller
+              name="howSoonYouCanJoinInDays"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Joining Time (Days)"
+                  type="number"
+                  size="small"
+                  inputProps={{ min: 0 }}
+                />
+              )}
+            />
+            <Controller
+              name="finalSubmissionDate"
+              control={control}
+              rules={{ required: "Submission date is required" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Submission Date"
+                  type="date"
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  error={!!errors.finalSubmissionDate}
+                  helperText={errors.finalSubmissionDate?.message}
+                />
+              )}
+            />
+            <Controller
+              name="willRelocateToGoa"
+              control={control}
+              rules={{ required: "Select an option" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Willing to Relocate to Goa"
+                  size="small"
+                  error={!!errors.willRelocateToGoa}
+                  helperText={errors.willRelocateToGoa?.message}
+                >
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="willingToBootstrap"
+              control={control}
+              rules={{ required: "Select an option" }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Willing to Bootstrap"
+                  size="small"
+                  error={!!errors.willingToBootstrap}
+                  helperText={errors.willingToBootstrap?.message}
+                >
+                  <MenuItem value="Yes">Yes</MenuItem>
+                  <MenuItem value="No">No</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} select label="Status" size="small">
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="Shortlisted">Shortlisted</MenuItem>
+                  <MenuItem value="Selected">Selected</MenuItem>
+                  <MenuItem value="Rejected">Rejected</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="remarks"
+              control={control}
+              render={({ field }) => (
+                <TextField {...field} label="Remarks" size="small" />
+              )}
+            />
+          </div>
+
+          {[
+            ["skillSetsForJob", "Skill Sets for Job"],
+            ["whyShouldWeConsiderYou", "Why Should We Consider You?"],
+            ["whoAreYouAsPerson", "Who Are You As a Person?"],
+            ["message", "Message"],
+          ].map(([name, label]) => (
+            <Controller
+              key={name}
+              name={name}
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label={label}
+                  multiline
+                  minRows={2}
+                  size="small"
+                />
+              )}
+            />
+          ))}
+
+          <Controller
+            name="resume"
+            control={control}
+            rules={{
+              validate: (value) =>
+                Boolean(value || editingApplication?.resumeLink) ||
+                "Resume is required",
+            }}
+            render={({ field: { onChange, value: _value, ...field } }) => (
+              <TextField
+                {...field}
+                label={
+                  editingApplication?.resumeLink
+                    ? "Replace Resume (Optional)"
+                    : "Resume *"
+                }
+                type="file"
+                size="small"
+                InputLabelProps={{ shrink: true }}
+                inputProps={{ accept: ".pdf,.doc,.docx" }}
+                onChange={(event) => onChange(event.target.files?.[0] || null)}
+                error={!!errors.resume}
+                helperText={errors.resume?.message}
+              />
+            )}
+          />
+
+          <div className="flex justify-end gap-3">
+            <PrimaryButton
+              title="Cancel"
+              type="button"
+              handleSubmit={closeAddModal}
+              className="bg-gray-500"
+            />
+            <PrimaryButton
+              title={editingApplication ? "Save Changes" : "Add Application"}
+              type="submit"
+              isLoading={saveApplicationMutation.isPending}
+            />
+          </div>
+        </form>
+      </MuiModal>
+      <ConfirmationModal
+        open={Boolean(applicationToArchive)}
+        onClose={() => setApplicationToArchive(null)}
+        onConfirm={() =>
+          archiveApplicationMutation.mutate(applicationToArchive?._id)
+        }
+        title="Confirm Delete"
+        message={`Are you sure you want to delete the job application from ${applicationToArchive?.name || "this applicant"}?`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isLoading={archiveApplicationMutation.isPending}
       />
       <MuiModal
         open={openModal}
