@@ -136,37 +136,88 @@ const getUnpaidInvoiceRowsForMonth = (
   rows,
   selectedDate,
   existingMonthRows = [],
+  clientList = [],
 ) => {
   const targetMonth = dayjs(selectedDate).startOf("month");
-  if (!targetMonth.isValid() || targetMonth.isBefore(dayjs().startOf("month"))) {
+  const currentMonth = dayjs().startOf("month");
+  const lastMonth = currentMonth.subtract(1, "month");
+  if (
+    !targetMonth.isValid() ||
+    targetMonth.isBefore(lastMonth) ||
+    targetMonth.isAfter(currentMonth)
+  ) {
     return [];
   }
 
   const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
   if (!validRows.length) return [];
-  const currentMonth = dayjs().startOf("month");
   const sourceRows = validRows.filter((row) => {
     const rowMonth = dayjs(row.rentDate).startOf("month");
     return (
-      rowMonth.isBefore(currentMonth) &&
+      !rowMonth.isAfter(currentMonth) &&
       getNormalizedRentStatus(row.rentStatus) === "paid"
     );
   });
-  if (!sourceRows.length) return [];
 
-  const latestSourceMonth = sourceRows.reduce((latest, row) => {
-    const rowMonth = dayjs(row.rentDate).startOf("month");
-    return rowMonth.isAfter(latest) ? rowMonth : latest;
-  }, dayjs(sourceRows[0].rentDate).startOf("month"));
+  const latestSourceMonth = sourceRows.length
+    ? sourceRows.reduce((latest, row) => {
+        const rowMonth = dayjs(row.rentDate).startOf("month");
+        return rowMonth.isAfter(latest) ? rowMonth : latest;
+      }, dayjs(sourceRows[0].rentDate).startOf("month"))
+    : null;
 
-  const templateRows = sourceRows.filter((row) =>
-    dayjs(row.rentDate).isSame(latestSourceMonth, "month"),
-  );
+  const templateRows = latestSourceMonth
+    ? sourceRows.filter((row) =>
+        dayjs(row.rentDate).isSame(latestSourceMonth, "month"),
+      )
+    : [];
 
   const existingClients = new Set(existingMonthRows.map(getClientIdentity));
   const projectedClients = new Set();
+  const templateByClient = new Map(
+    templateRows.map((row) => [getClientIdentity(row), row]),
+  );
+  const candidates = clientList.length
+    ? clientList
+        .filter(
+          (client) =>
+            client?.isActive !== false && client?.clientStatus !== false,
+        )
+        .map((client) => {
+          const clientId = client._id;
+          const template = templateByClient.get(`id:${String(clientId)}`) || {};
+          const noOfDesks =
+            Number(client.totalDesks) ||
+            Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+          const baseRate =
+            Number(client.ratePerCabinDesk) ||
+            Number(client.ratePerOpenDesk) ||
+            Number(template.deskRate) ||
+            0;
+          const annualIncrement = Number(client.annualIncrement) || 0;
+          const startDate = dayjs(client.startDate);
+          const yearsElapsed = startDate.isValid()
+            ? Math.max(dayjs().diff(startDate, "year"), 0)
+            : 0;
+          const deskRate =
+            baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
 
-  return templateRows
+          return {
+            ...template,
+            clients: clientId,
+            clientName: client.clientName || template.clientName,
+            channel: client.bookingType || template.channel,
+            noOfDesks: noOfDesks || template.noOfDesks || 0,
+            deskRate: deskRate || template.deskRate || 0,
+            revenue: (noOfDesks || template.noOfDesks || 0) * (deskRate || template.deskRate || 0),
+            annualIncrement: client.annualIncrement ?? template.annualIncrement,
+            nextIncrementDate: client.nextIncrement || template.nextIncrementDate,
+            rentDate: client.rentDate || template.rentDate,
+          };
+        })
+    : templateRows;
+
+  return candidates
     .filter((row) => !existingClients.has(getClientIdentity(row)))
     .filter((row) => {
       const identity = getClientIdentity(row);
@@ -177,7 +228,10 @@ const getUnpaidInvoiceRowsForMonth = (
     .map((row, index) => {
       const originalRentDate = dayjs(row.rentDate);
       const projectedRentDate = targetMonth.date(
-        Math.min(originalRentDate.date(), targetMonth.daysInMonth())
+        Math.min(
+          originalRentDate.isValid() ? originalRentDate.date() : 1,
+          targetMonth.daysInMonth(),
+        ),
       );
 
       return {
@@ -415,7 +469,29 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
     }));
 
   //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
-  const baseRevenueData = tableData.flatMap((month) => month.revenue);
+  const activeCoworkingClientIds = new Set(
+    coworkingClients
+      .filter(
+        (client) =>
+          client?.isActive !== false && client?.clientStatus !== false,
+      )
+      .map((client) => String(client._id)),
+  );
+  const baseRevenueData = tableData
+    .flatMap((month) => month.revenue)
+    .filter((row) => {
+      if (!activeCoworkingClientIds.size) return true;
+
+      const rowMonth = dayjs(row.rentDate).startOf("month");
+      const currentMonth = dayjs().startOf("month");
+
+      // Preserve historical records, but only show active clients for the
+      // current and upcoming billing months.
+      return (
+        rowMonth.isBefore(currentMonth) ||
+        activeCoworkingClientIds.has(String(row.clients))
+      );
+    });
   const flattenedRevenueData = baseRevenueData;
 
   return (
@@ -478,6 +554,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           totalTitle="Total"
           summaryChipVariant="ticket"
          preserveCurrentMonthRange={showInvoiceProjections}
+          showCalendarWhenEmpty={showInvoiceProjections}
           getMissingRangeData={
             showInvoiceProjections
               // ? (selectedDate) =>
@@ -487,6 +564,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                     baseRevenueData,
                     selectedDate,
                     existingMonthRows,
+                    coworkingClients,
                   )
               : undefined
           }
