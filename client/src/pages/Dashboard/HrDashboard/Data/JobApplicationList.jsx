@@ -267,6 +267,7 @@ const JobApplicationList = () => {
         search
         totalKey="count"
         totalText="TOTAL : "
+        titleAmountOverride={`TOTAL : ${jobApplications?.length ?? 0}`}
         searchColumn={"Job Position"}
         tableTitle={"Job Applications"}
         data={

@@ -26,8 +26,13 @@ const HrMixBag = () => {
       permission: PERMISSIONS.HR_ATTENDANCE_REQUESTS_MIX_BAG.value,
     },
     {
-      title: "Payroll",
+      title: "Run Payroll",
       route: "/app/dashboard/HR-dashboard/mix-bag/payroll",
+      permission: PERMISSIONS.HR_PAYROLL.value,
+    },
+    {
+      title: "Summary Payroll",
+      route: "/app/dashboard/HR-dashboard/mix-bag/payroll-summary",
       permission: PERMISSIONS.HR_PAYROLL.value,
     },
     {

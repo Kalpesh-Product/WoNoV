@@ -69,6 +69,8 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
+import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
+import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
@@ -2804,6 +2806,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/payroll",
                         element: <HrPayroll />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary",
+                        element: <PayrollSummary />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary/:draftId",
+                        element: <PayrollEntry />,
                       },
                       {
                         path: "mix-bag/payroll/:id",

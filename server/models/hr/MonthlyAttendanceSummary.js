@@ -23,6 +23,7 @@ const monthlyAttendanceSummarySchema = new mongoose.Schema(
     workingDays: { type: Number, default: 0, min: 0 },
     workingDaysAdjusted: { type: Boolean, default: false },
     attendanceDays: { type: Number, default: 0, min: 0 },
+    scheduledWorkingDays: { type: Number, default: 0, min: 0 },
     weeklyOffs: { type: Number, default: 0, min: 0 },
     holidays: { type: Number, default: 0, min: 0 },
     timeOff: { type: Number, default: 0, min: 0 },

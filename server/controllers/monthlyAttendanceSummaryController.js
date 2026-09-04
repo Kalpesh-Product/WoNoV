@@ -63,6 +63,19 @@ const deriveSummary = ({ employee, attendance, leaves, holidays, range }) => {
     }
   });
 
+  let scheduledWorkingDays = 0;
+  for (
+    let date = new Date(range.start);
+    date < range.end;
+    date.setDate(date.getDate() + 1)
+  ) {
+    const dateKey = date.toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+    const isSunday = date.getDay() === 0;
+    if (!isSunday && !holidayDates.has(dateKey)) scheduledWorkingDays += 1;
+  }
+
   const monthLeaves = leaves.filter(
     (leave) => new Date(leave.fromDate) < range.end && new Date(leave.toDate) >= range.start,
   );
@@ -99,6 +112,7 @@ const deriveSummary = ({ employee, attendance, leaves, holidays, range }) => {
     workingDays: roundDays(attendanceHours / DAILY_WORK_HOURS),
     weeklyOffs,
     holidays: holidayDates.size,
+    scheduledWorkingDays,
     timeOff,
     overtime: 0,
     lop,
@@ -117,9 +131,13 @@ const getMonthlyAttendanceSummaries = async (req, res, next) => {
       limit: req.query.limit || 25,
     });
     const searchRegex = buildSearchRegex(req.query.search);
+    const payrollBatch = String(req.query.batch || "").trim();
     const employeeQuery = {
       company,
       isActive: true,
+      ...(payrollBatch && {
+        "payrollInformation.payrollBatch": payrollBatch,
+      }),
       ...(searchRegex && {
         $or: [
           { firstName: searchRegex },
@@ -130,7 +148,7 @@ const getMonthlyAttendanceSummaries = async (req, res, next) => {
     };
     const [employees, total] = await Promise.all([
       UserData.find(employeeQuery)
-        .select("firstName lastName empId employeeType")
+        .select("firstName lastName empId employeeType salaryPackage")
         .sort({ firstName: 1, lastName: 1, _id: 1 })
         .skip(skip)
         .limit(limit)
@@ -226,7 +244,7 @@ const getMonthlyAttendanceSummaries = async (req, res, next) => {
       employee: { $in: employeeIds },
       month,
     })
-      .populate("employee", "firstName lastName empId")
+      .populate("employee", "firstName lastName empId salaryPackage")
       .lean();
     const order = new Map(employeeIds.map((id, index) => [String(id), index]));
     summaries.sort((a, b) => order.get(String(a.employee?._id)) - order.get(String(b.employee?._id)));
@@ -247,6 +265,38 @@ const updateMonthlyAttendanceSummary = async (req, res, next) => {
     if (!Number.isFinite(workingDays) || workingDays < 0) {
       return res.status(400).json({ message: "Working days must be a non-negative number" });
     }
+
+    const existingSummary = await MonthlyAttendanceSummary.findOne({
+      _id: req.params.id,
+      company,
+      status: "Draft",
+    }).lean();
+    if (!existingSummary) {
+      return res.status(404).json({ message: "Editable attendance summary not found" });
+    }
+
+    const [year, monthNumber] = String(existingSummary.month)
+      .split("-")
+      .map(Number);
+    const daysInMonth = new Date(year, monthNumber, 0).getDate();
+    const scheduledWorkingDays =
+      Number(existingSummary.scheduledWorkingDays) ||
+      Math.max(
+        daysInMonth -
+          (Number(existingSummary.weeklyOffs) || 0) -
+          (Number(existingSummary.holidays) || 0),
+        0,
+      );
+    const expectedWorkingDays = roundDays(
+      Math.max(scheduledWorkingDays - (Number(existingSummary.timeOff) || 0), 0),
+    );
+
+    if (Math.abs(roundDays(workingDays) - expectedWorkingDays) > 0.001) {
+      return res.status(400).json({
+        message: `Working days must be ${expectedWorkingDays} for the selected month`,
+      });
+    }
+
     const summary = await MonthlyAttendanceSummary.findOneAndUpdate(
       { _id: req.params.id, company, status: "Draft" },
       {

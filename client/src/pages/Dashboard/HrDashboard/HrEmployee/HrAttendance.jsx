@@ -300,7 +300,11 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
   ]);
 
   const workedDaysMatch =
-    Number(editableWorkedDays) === attendanceSummary.expectedWorkedDays;
+    Number.isFinite(Number(editableWorkedDays)) &&
+    Number(editableWorkedDays) >= 0 &&
+    Math.abs(
+      Number(editableWorkedDays) - attendanceSummary.expectedWorkedDays,
+    ) <= 0.001;
   const workedDaysDifference = Number(
     (
       attendanceSummary.expectedWorkedDays - Number(editableWorkedDays || 0)
@@ -849,13 +853,14 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
                       setAttendanceSaveAttempted(false);
                     }}
                     inputProps={{ min: 0, step: 0.01 }}
+                    error={attendanceSaveAttempted && !workedDaysMatch}
                     fullWidth
                   />
                   {attendanceSaveAttempted && !workedDaysMatch && (
                     <div className="mt-2 text-sm">
                       <p className="text-gray-500">
                         Expected {attendanceSummary.expectedWorkedDays} day(s):{" "}
-                        {attendanceSummary.totalWorkingDays} total working day(s)
+                        {attendanceSummary.totalWorkingDays} scheduled working day(s)
                         {" - "}
                         {attendanceSummary.timeOff} leave day(s).
                       </p>
