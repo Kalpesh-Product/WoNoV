@@ -27,6 +27,15 @@ const getNormalizedPaymentStatus = (status) => {
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const getReportingAmount = (row) => {
+  const rowDate = dayjs(row?.rentDate || row?.invoiceUploadedAt || row?.createdAt);
+  const currentMonth = dayjs().startOf("month");
+
+  return rowDate.isValid() && rowDate.isBefore(currentMonth, "month")
+    ? getNumericAmount(row?.revenue)
+    : getNumericAmount(row?.receivedAmount);
+};
+
 const formatBillingNumber = (value) => {
   const numberValue = Number(String(value ?? "").replace(/,/g, ""));
   if (!Number.isFinite(numberValue)) return "";
@@ -257,6 +266,7 @@ const getUserDisplayName = (user) => {
             rentStatus: item.rentStatus || (item.status ? "Paid" : "Unpaid"),
             invoiceLink: item.invoice?.link || "",
             invoiceUploadedAt: item.invoice?.date || item.invoiceUploadedAt,
+            reportingAmount: getReportingAmount(item),
             //normalizedStatus: getNormalizedPaymentStatus(item.status),
           })),
     [isLoadingVirtualOfficeRevenue, showInvoiceProjections, virtualOfficeRevenue],
@@ -588,6 +598,7 @@ const getUserDisplayName = (user) => {
               ...item,
               revenue: getNumericAmount(item.revenue),
               receivedAmount: getNumericAmount(item.receivedAmount),
+              reportingAmount: getReportingAmount(item),
               graphDate:
                 item.rentDate ||
                 item.invoiceUploadedAt ||
@@ -607,7 +618,7 @@ const getUserDisplayName = (user) => {
   const maxVirtualOfficeAmount = useMemo(
     () =>
       selectedFiscalYearRevenue.reduce(
-        (max, item) => Math.max(max, getNumericAmount(item.revenue)),
+        (max, item) => Math.max(max, getNumericAmount(item.reportingAmount)),
         0,
       ),
     [selectedFiscalYearRevenue],
@@ -946,7 +957,7 @@ const getUserDisplayName = (user) => {
           graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
           data={graphData}
           dateKey="graphDate"
-          valueKey="receivedAmount"
+          valueKey="reportingAmount"
           chartOptions={options}
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
@@ -965,7 +976,7 @@ const getUserDisplayName = (user) => {
               : "Monthly Revenue with Client Details"
           }
           data={visibleTableData}
-          totalKey="receivedAmount"
+          totalKey="reportingAmount"
           exportData
           dateColumn={"rentDate"}
           titleAmountOverride=""
@@ -973,7 +984,7 @@ const getUserDisplayName = (user) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "paid") return sum;
-                return sum + getNumericAmount(item.receivedAmount);
+                return sum + getNumericAmount(item.reportingAmount);
               }, 0),
             )}`
           }
@@ -993,7 +1004,9 @@ const getUserDisplayName = (user) => {
           preserveCurrentMonthRange={showInvoiceProjections}
           showCalendarWhenEmpty={showInvoiceProjections}
           headerActions={
-            <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />
+            showInvoiceProjections ? (
+              <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />
+            ) : null
           }
           columns={
             showInvoiceProjections ? billingTableColumns : revenueTableColumns
