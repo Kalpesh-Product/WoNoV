@@ -587,6 +587,12 @@ const getUserDisplayName = (user) => {
             .map((item) => ({
               ...item,
               revenue: getNumericAmount(item.revenue),
+              receivedAmount: getNumericAmount(item.receivedAmount),
+              graphDate:
+                item.rentDate ||
+                item.invoiceUploadedAt ||
+                item.invoice?.date ||
+                item.createdAt,
               vertical: "Virtual Office",
             })),
     [isLoadingVirtualOfficeRevenue, tableData],
@@ -594,7 +600,7 @@ const getUserDisplayName = (user) => {
 
   const selectedFiscalYearRevenue = useMemo(
     () =>
-      graphData.filter((item) => getFinancialYear(item.rentDate) === selectedFY),
+      graphData.filter((item) => getFinancialYear(item.graphDate) === selectedFY),
     [graphData, selectedFY],
   );
 
@@ -939,8 +945,8 @@ const getUserDisplayName = (user) => {
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
           data={graphData}
-          dateKey="rentDate"
-          valueKey="revenue"
+          dateKey="graphDate"
+          valueKey="receivedAmount"
           chartOptions={options}
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
@@ -959,7 +965,7 @@ const getUserDisplayName = (user) => {
               : "Monthly Revenue with Client Details"
           }
           data={visibleTableData}
-          totalKey="revenue"
+          totalKey="receivedAmount"
           exportData
           dateColumn={"rentDate"}
           titleAmountOverride=""
@@ -967,7 +973,7 @@ const getUserDisplayName = (user) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "paid") return sum;
-                return sum + getNumericAmount(item.revenue);
+                return sum + getNumericAmount(item.receivedAmount);
               }, 0),
             )}`
           }
@@ -1098,6 +1104,7 @@ const getUserDisplayName = (user) => {
                   value={field.value ?? null}
                   label="Rent Date"
                   format="DD-MM-YYYY"
+                  maxDate={dayjs()}
                   onChange={(dateValue) => field.onChange(dateValue)}
                   slotProps={{
                     textField: {
@@ -1118,6 +1125,7 @@ const getUserDisplayName = (user) => {
                     value={field.value ?? null}
                     label="Invoice Upload Date"
                     format="DD-MM-YYYY"
+                    maxDate={dayjs()}
                     onChange={(dateValue) => field.onChange(dateValue)}
                     slotProps={{
                       textField: {
@@ -1153,6 +1161,20 @@ const getUserDisplayName = (user) => {
                         ? `Available from ${addNextIncrementDate.format("DD-MM-YYYY")}`
                         : undefined
                     }
+                    FormHelperTextProps={{
+                      sx: {
+                        color: "#16a34a !important",
+                        whiteSpace: "nowrap",
+                        fontSize: "0.72rem",
+                        marginLeft: 0,
+                        "&.Mui-disabled": { color: "#16a34a !important" },
+                      },
+                    }}
+                    sx={{
+                      "& .MuiFormHelperText-root": {
+                        color: "#16a34a !important",
+                      },
+                    }}
                   />
                 )}
               />
@@ -1540,13 +1562,13 @@ const getUserDisplayName = (user) => {
       ))}
 
       <Controller
-        name="rentDate"
+        name="pastDueDate"
         control={control}
         render={({ field }) => (
           <DatePicker
             {...field}
             value={field.value ?? null}
-            label="Rent Date"
+            label="Past Due Date"
             format="DD-MM-YYYY"
             disabled
             slotProps={{
@@ -1576,8 +1598,8 @@ const getUserDisplayName = (user) => {
       />
 
       {[
-        ["pastDueDate", "Past Due Date"],
         ["nextIncrementDate", "Next Increment Date"],
+        ["rentDate", "Rent Date"],
       ].map(([name, label]) => (
         <Controller
           key={name}
@@ -1589,12 +1611,13 @@ const getUserDisplayName = (user) => {
               value={field.value ?? null}
               label={label}
               format="DD-MM-YYYY"
-              disabled
+              disabled={name !== "rentDate"}
+              maxDate={name === "rentDate" ? dayjs() : undefined}
               slotProps={{
                 textField: {
                   size: "small",
                   fullWidth: true,
-                  disabled: true,
+                  disabled: name !== "rentDate",
                 },
               }}
             />
@@ -1612,12 +1635,11 @@ const getUserDisplayName = (user) => {
               value={field.value ?? null}
               label="Invoice Upload Date"
               format="DD-MM-YYYY"
-              disabled
+              maxDate={dayjs()}
               slotProps={{
                 textField: {
                   size: "small",
                   fullWidth: true,
-                  disabled: true,
                 },
               }}
             />
