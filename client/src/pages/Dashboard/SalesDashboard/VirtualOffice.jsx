@@ -981,7 +981,7 @@ const getUserDisplayName = (user) => {
               label="Billing Frequency"
               size="small"
               fullWidth
-              disabled
+              //disabled
             >
               <MenuItem value="Monthly">Monthly</MenuItem>
               <MenuItem value="Yearly">Yearly</MenuItem>
@@ -1381,7 +1381,7 @@ const getUserDisplayName = (user) => {
             label="Billing Frequency"
             size="small"
             fullWidth
-            disabled
+           // disabled
           >
             <MenuItem value="Monthly">Monthly</MenuItem>
             <MenuItem value="Yearly">Yearly</MenuItem>

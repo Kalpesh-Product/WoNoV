@@ -103,6 +103,12 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
 
     await newRevenue.save();
 
+    await VirtualOfficeClient.findOneAndUpdate(
+      { _id: client, company },
+      { $set: { receivedAmount: Number(receivedAmount || 0) } },
+      { runValidators: true },
+    );
+
     res.status(201).json({
       message: "Virtual office revenue created",
       data: newRevenue,
