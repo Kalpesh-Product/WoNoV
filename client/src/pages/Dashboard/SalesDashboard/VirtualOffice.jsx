@@ -1479,6 +1479,113 @@ const getUserDisplayName = (user) => {
         />
       ))}
 
+      {[
+        ["totalTerm", "Total Term", "number"],
+        ["annualIncrement", "Annual Increment (%)", "number"],
+      ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      ))}
+
+      <Controller
+        name="nextIncrementDate"
+        control={control}
+        render={({ field }) => (
+          <DatePicker
+            {...field}
+            value={field.value ?? null}
+            label="Next Increment Date"
+            format="DD-MM-YYYY"
+            disabled
+            slotProps={{
+              textField: {
+                size: "small",
+                fullWidth: true,
+                disabled: true,
+              },
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="securityDeposit"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            type="number"
+            label="Security Deposit"
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+      />
+
+      {[
+        ["pastDueDate", "Past Due Date"],
+        ["rentDate", "Rent Date"],
+      ].map(([name, label]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label={label}
+              format="DD-MM-YYYY"
+              disabled={name !== "rentDate"}
+              maxDate={name === "rentDate" ? dayjs() : undefined}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  disabled: name !== "rentDate",
+                },
+              }}
+            />
+          )}
+        />
+      ))}
+
+      <div className="col-span-2">
+        <Controller
+          name="invoiceUploadedAt"
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label="Invoice Upload Date"
+              format="DD-MM-YYYY"
+              maxDate={dayjs()}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+          )}
+        />
+      </div>
+
       <div
         className={`col-span-2 grid grid-cols-1 gap-4 ${
           editPreviousTotalAmount > 0 ? "md:grid-cols-5" : "md:grid-cols-4"
@@ -1535,113 +1642,6 @@ const getUserDisplayName = (user) => {
               size="small"
               fullWidth
               disabled
-            />
-          )}
-        />
-      </div>
-
-      {[
-        ["totalTerm", "Total Term", "number"],
-        ["annualIncrement", "Annual Increment (%)", "number"],
-      ].map(([name, label, type]) => (
-        <Controller
-          key={name}
-          name={name}
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type={type}
-              label={label}
-              size="small"
-              fullWidth
-              disabled
-            />
-          )}
-        />
-      ))}
-
-      <Controller
-        name="pastDueDate"
-        control={control}
-        render={({ field }) => (
-          <DatePicker
-            {...field}
-            value={field.value ?? null}
-            label="Past Due Date"
-            format="DD-MM-YYYY"
-            disabled
-            slotProps={{
-              textField: {
-                size: "small",
-                fullWidth: true,
-                disabled: true,
-              },
-            }}
-          />
-        )}
-      />
-
-      <Controller
-        name="securityDeposit"
-        control={control}
-        render={({ field }) => (
-          <TextField
-            {...field}
-            type="number"
-            label="Security Deposit"
-            size="small"
-            fullWidth
-            disabled
-          />
-        )}
-      />
-
-      {[
-        ["nextIncrementDate", "Next Increment Date"],
-        ["rentDate", "Rent Date"],
-      ].map(([name, label]) => (
-        <Controller
-          key={name}
-          name={name}
-          control={control}
-          render={({ field }) => (
-            <DatePicker
-              {...field}
-              value={field.value ?? null}
-              label={label}
-              format="DD-MM-YYYY"
-              disabled={name !== "rentDate"}
-              maxDate={name === "rentDate" ? dayjs() : undefined}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
-                  disabled: name !== "rentDate",
-                },
-              }}
-            />
-          )}
-        />
-      ))}
-
-      <div className="col-span-2">
-        <Controller
-          name="invoiceUploadedAt"
-          control={control}
-          render={({ field }) => (
-            <DatePicker
-              {...field}
-              value={field.value ?? null}
-              label="Invoice Upload Date"
-              format="DD-MM-YYYY"
-              maxDate={dayjs()}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  fullWidth: true,
-                },
-              }}
             />
           )}
         />
