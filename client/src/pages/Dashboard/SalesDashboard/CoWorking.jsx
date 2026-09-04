@@ -867,12 +867,13 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
               value={field.value ?? null}
               label={label}
               format="DD-MM-YYYY"
-              disabled
+              disabled={!['rentDate', 'invoiceUploadedAt'].includes(name)}
+              maxDate={['rentDate', 'invoiceUploadedAt'].includes(name) ? dayjs() : undefined}
               slotProps={{
                 textField: {
                   size: "small",
                   fullWidth: true,
-                  disabled: true,
+                  disabled: !['rentDate', 'invoiceUploadedAt'].includes(name),
                 },
               }}
             />
