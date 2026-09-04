@@ -161,6 +161,11 @@ const createVirtualOfficeClient = async (req, res) => {
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
     const receivedAmount = Number(data.receivedAmount || 0);
+    const totalReceivedAmount = Number(
+      data.totalReceivedAmount !== undefined
+        ? data.totalReceivedAmount
+        : receivedAmount,
+    );
     const perDeskMeetingCredits = Number(data.perDeskMeetingCredits || 0);
     const annualIncrement = Number(data.annualIncrement || 0);
 
@@ -171,6 +176,7 @@ const createVirtualOfficeClient = async (req, res) => {
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
       ["receivedAmount", receivedAmount],
+      ["totalReceivedAmount", totalReceivedAmount],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
       ["annualIncrement", annualIncrement],
     ];
@@ -255,6 +261,7 @@ const createVirtualOfficeClient = async (req, res) => {
       openDeskRate,
       openTotal,
       receivedAmount,
+      totalReceivedAmount,
       annualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
@@ -720,6 +727,11 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.receivedAmount
         : existing.receivedAmount || 0,
     );
+    const totalReceivedAmount = Number(
+      typeof updates.totalReceivedAmount !== "undefined"
+        ? updates.totalReceivedAmount
+        : existing.totalReceivedAmount || 0,
+    );
     const perDeskMeetingCredits = Number(
       typeof updates.perDeskMeetingCredits !== "undefined"
         ? updates.perDeskMeetingCredits
@@ -732,6 +744,7 @@ const updateVirtualOfficeClient = async (req, res) => {
       ["cabinDeskRate", cabinDeskRate],
       ["openDesks", openDesks],
       ["receivedAmount", receivedAmount],
+      ["totalReceivedAmount", totalReceivedAmount],
       ["openDeskRate", openDeskRate],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
     ];
@@ -750,6 +763,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
     updates.receivedAmount = receivedAmount;
+    updates.totalReceivedAmount = totalReceivedAmount;
     updates.perDeskMeetingCredits = perDeskMeetingCredits;
 
     updates.cabinTotal = cabinDesks * cabinDeskRate;

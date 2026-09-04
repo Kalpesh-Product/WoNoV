@@ -349,12 +349,124 @@ const getUserDisplayName = (user) => {
     : 0;
   const addRevenue = addTotalDesks * addDeskRate;
 
-  const addReceivedAmount = watchAdd("receivedAmount") || 0;
-  const addRemainingAmount = addRevenue - getNumericAmount(addReceivedAmount);
+  const addPaymentState = useMemo(() => {
+    if (!selectedAddClientId) {
+      return { currentReceivedAmount: 0, previousTotalAmount: 0 };
+    }
+
+    const clientRows = tableData.filter(
+      (row) => String(row.client?._id || row.client) === String(selectedAddClientId),
+    );
+    const orderedRows = [...clientRows].sort(
+      (first, second) =>
+        new Date(first.createdAt || first.rentDate || 0) -
+        new Date(second.createdAt || second.rentDate || 0),
+    );
+    const latestRow = orderedRows.at(-1);
+    const latestRevenue = getNumericAmount(latestRow?.revenue);
+    const latestReceivedAmount = getNumericAmount(
+      latestRow?.totalReceivedAmount ?? latestRow?.receivedAmount,
+    );
+    const latestCycleCompleted =
+      latestRevenue > 0 && latestReceivedAmount >= latestRevenue;
+    const previousCompletedRow = [...orderedRows]
+      .slice(0, -1)
+      .reverse()
+      .find((row) => {
+        const revenue = getNumericAmount(row.revenue);
+        return (
+          revenue > 0 &&
+          getNumericAmount(row.totalReceivedAmount ?? row.receivedAmount) >= revenue
+        );
+      });
+
+    return {
+      currentReceivedAmount: latestCycleCompleted ? 0 : latestReceivedAmount,
+      previousTotalAmount: latestCycleCompleted
+        ? latestReceivedAmount
+        : getNumericAmount(
+            previousCompletedRow?.totalReceivedAmount ??
+              previousCompletedRow?.receivedAmount,
+          ),
+    };
+  }, [selectedAddClientId, tableData]);
+
+  const addReceivedAmount = watchAdd("receivedAmount");
+  const addReceivedAmountValue = getNumericAmount(addReceivedAmount);
+  const hasEnteredAddAmount =
+    addReceivedAmount !== "" &&
+    addReceivedAmount !== null &&
+    addReceivedAmount !== undefined;
+  const addHasIncompleteCycle =
+    addPaymentState.currentReceivedAmount > 0 &&
+    addPaymentState.currentReceivedAmount < addRevenue;
+  const addCycleReceivedAmount = addHasIncompleteCycle
+    ? addPaymentState.currentReceivedAmount +
+      (hasEnteredAddAmount ? addReceivedAmountValue : 0)
+    : addReceivedAmountValue;
+  const addHasCompletedCycle =
+    addPaymentState.previousTotalAmount > 0 &&
+    addPaymentState.currentReceivedAmount === 0 &&
+    addReceivedAmountValue === 0;
+  const addTotalReceivedAmount =
+    addHasCompletedCycle
+      ? 0
+      : addHasIncompleteCycle
+      ? Math.min(addRevenue, addCycleReceivedAmount)
+      : addReceivedAmountValue;
+  const addRemainingAmount = addHasCompletedCycle
+    ? 0
+    : Math.max(
+        0,
+        addRevenue -
+          Math.min(addRevenue, addCycleReceivedAmount),
+      );
   const editRevenue = watch("revenue") || 0;
   const editReceivedAmount = watch("receivedAmount") || 0;
+  const editTotalReceivedAmount = getNumericAmount(editReceivedAmount);
   const editRemainingAmount =
     getNumericAmount(editRevenue) - getNumericAmount(editReceivedAmount);
+  const editPreviousTotalAmount = useMemo(() => {
+    if (!editRow?.client) return 0;
+
+    return tableData
+      .filter(
+        (row) =>
+          String(row.client?._id || row.client) ===
+            String(editRow.client?._id || editRow.client) &&
+          getNumericAmount(row.revenue) > 0 &&
+          getNumericAmount(row.receivedAmount) >= getNumericAmount(row.revenue),
+      )
+      .reduce(
+        (total, row) => total + getNumericAmount(row.receivedAmount),
+        0,
+      );
+  }, [editRow, tableData]);
+  const viewPreviousTotalAmount = useMemo(() => {
+    if (!viewRow?.client) return 0;
+
+    const clientRows = tableData
+      .filter(
+        (row) =>
+          String(row.client?._id || row.client) ===
+            String(viewRow.client?._id || viewRow.client) &&
+          String(row._id) !== String(viewRow._id),
+      )
+      .sort(
+        (first, second) =>
+          new Date(first.createdAt || first.rentDate || 0) -
+          new Date(second.createdAt || second.rentDate || 0),
+      );
+
+    const previousCompletedRow = [...clientRows]
+      .reverse()
+      .find((row) => {
+        const revenue = getNumericAmount(row.revenue);
+        return revenue > 0 && getNumericAmount(row.receivedAmount) >= revenue;
+      });
+
+    return getNumericAmount(previousCompletedRow?.receivedAmount);
+  }, [viewRow, tableData]);
 
   const { mutate: addVirtualInvoice, isPending: isAddingVirtualInvoice } =
     useMutation({
@@ -365,7 +477,11 @@ const getUserDisplayName = (user) => {
           channel: selectedAddClient?.bookingType || "Direct",
           taxableAmount: addRevenue,
           revenue: addRevenue,
-          receivedAmount: Number(values.receivedAmount) || 0,
+          receivedAmount: addReceivedAmountValue,
+          totalReceivedAmount: addTotalReceivedAmount,
+          invoiceUploadedAt: values.invoiceUploadedAt
+            ? dayjs(values.invoiceUploadedAt).toISOString()
+            : new Date().toISOString(),
           totalTerm: selectedAddClient?.totalTerm || 0,
           rentDate: selectedAddClient?.rentDate || null,
           rentStatus: values.rentStatus,
@@ -379,7 +495,12 @@ const getUserDisplayName = (user) => {
           const form = new FormData();
           form.append("revenueId", createdRevenue._id);
           form.append("rentStatus", values.rentStatus);
-          form.append("invoiceUploadedAt", new Date().toISOString());
+          form.append(
+            "invoiceUploadedAt",
+            values.invoiceUploadedAt
+              ? dayjs(values.invoiceUploadedAt).toISOString()
+              : new Date().toISOString(),
+          );
           form.append("client-invoice", values.invoiceFile);
           await axios.patch("/api/sales/virtual-office-revenue-invoice", form);
         }
@@ -406,8 +527,9 @@ const getUserDisplayName = (user) => {
       resetAdd({
       client: "",
       clientName: "",
-      receivedAmount: 0,
+      receivedAmount: "",
       rentStatus: "Unpaid",
+      invoiceUploadedAt: dayjs(),
       invoiceFile: null,
     });
     //resetAdd({ client: "", clientName: "", rentStatus: "Unpaid", invoiceFile: null });
@@ -420,6 +542,7 @@ const getUserDisplayName = (user) => {
     );
     setAddValue("client", event.target.value);
     setAddValue("clientName", client?.clientName || "");
+    setAddValue("receivedAmount", "");
   };
 
   const visibleTableData = useMemo(
@@ -491,6 +614,13 @@ const getUserDisplayName = (user) => {
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
+      headerName: "Total Received Amount",
+      field: "totalReceivedAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
       headerName: "Received Amount",
       field: "receivedAmount",
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
@@ -499,7 +629,8 @@ const getUserDisplayName = (user) => {
       headerName: "Remaining Amount",
       field: "remainingAmount",
       valueGetter: ({ data }) =>
-        getNumericAmount(data?.revenue) - getNumericAmount(data?.receivedAmount),
+        getNumericAmount(data?.revenue) -
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
@@ -575,6 +706,13 @@ const getUserDisplayName = (user) => {
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
+      headerName: "Total Received Amount",
+      field: "totalReceivedAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
       headerName: "Received Amount",
       field: "receivedAmount",
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
@@ -583,7 +721,8 @@ const getUserDisplayName = (user) => {
       headerName: "Remaining Amount",
       field: "remainingAmount",
       valueGetter: ({ data }) =>
-        getNumericAmount(data?.revenue) - getNumericAmount(data?.receivedAmount),
+        getNumericAmount(data?.revenue) -
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
       cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
     },
     {
@@ -892,15 +1031,13 @@ const getUserDisplayName = (user) => {
               />
             ))}
 
-            <div className="col-span-2 grid grid-cols-3 gap-4">
-              <TextField
-                value={addRevenue}
-                label="Revenue"
-                type="number"
-                size="small"
-                fullWidth
-                disabled
-              />
+            <div
+              className={`col-span-2 grid grid-cols-1 gap-4 ${
+                addPaymentState.previousTotalAmount > 0
+                  ? "md:grid-cols-5"
+                  : "md:grid-cols-4"
+              }`}
+            >
               <Controller
                 name="receivedAmount"
                 control={addControl}
@@ -918,6 +1055,32 @@ const getUserDisplayName = (user) => {
               <TextField
                 value={addRemainingAmount}
                 label="Remaining Amount"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+              <TextField
+                value={addTotalReceivedAmount}
+                label="Total Received Amount"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+              {addPaymentState.previousTotalAmount > 0 && (
+                <TextField
+                  value={addPaymentState.previousTotalAmount}
+                  label="Previous Total Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  disabled
+                />
+              )}
+              <TextField
+                value={addRevenue}
+                label="Revenue"
                 type="number"
                 size="small"
                 fullWidth
@@ -967,14 +1130,27 @@ const getUserDisplayName = (user) => {
               fullWidth
               disabled
             />
-            <TextField
-              value={dayjs().format("DD-MM-YYYY")}
-              label="Invoice Upload Date"
-              size="small"
-              fullWidth
-              disabled
-              className="col-span-2"
-            />
+            <div className="col-span-2">
+              <Controller
+                name="invoiceUploadedAt"
+                control={addControl}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value ?? null}
+                    label="Invoice Upload Date"
+                    format="DD-MM-YYYY"
+                    onChange={(dateValue) => field.onChange(dateValue)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </div>
             <TextField
               select
               value={selectedAddClient?.billingFrequency || "Yearly"}
@@ -1060,10 +1236,26 @@ const getUserDisplayName = (user) => {
                   detail={`INR ${inrFormat(getNumericAmount(viewRow.receivedAmount))}`}
                 />
                 <DetalisFormatted
+                  title="Total Received Amount"
+                  detail={`INR ${inrFormat(
+                    getNumericAmount(
+                      viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                    ),
+                  )}`}
+                />
+                {viewPreviousTotalAmount > 0 && (
+                  <DetalisFormatted
+                    title="Previous Total Amount"
+                    detail={`INR ${inrFormat(viewPreviousTotalAmount)}`}
+                  />
+                )}
+                <DetalisFormatted
                   title="Remaining Amount"
                   detail={`INR ${inrFormat(
                     getNumericAmount(viewRow.revenue) -
-                      getNumericAmount(viewRow.receivedAmount),
+                      getNumericAmount(
+                        viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                      ),
                   )}`}
                 />
                 <DetalisFormatted
@@ -1225,21 +1417,11 @@ const getUserDisplayName = (user) => {
         />
       ))}
 
-      <div className="col-span-2 grid grid-cols-3 gap-4">
-        <Controller
-          name="revenue"
-          control={control}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              type="number"
-              label="Revenue"
-              size="small"
-              fullWidth
-              disabled
-            />
-          )}
-        />
+      <div
+        className={`col-span-2 grid grid-cols-1 gap-4 ${
+          editPreviousTotalAmount > 0 ? "md:grid-cols-5" : "md:grid-cols-4"
+        }`}
+      >
         <Controller
           name="receivedAmount"
           control={control}
@@ -1261,6 +1443,38 @@ const getUserDisplayName = (user) => {
           size="small"
           fullWidth
           disabled
+        />
+        <TextField
+          value={editTotalReceivedAmount}
+          type="number"
+          label="Total Received Amount"
+          size="small"
+          fullWidth
+          disabled
+        />
+        {editPreviousTotalAmount > 0 && (
+          <TextField
+            value={editPreviousTotalAmount}
+            type="number"
+            label="Previous Total Amount"
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+        <Controller
+          name="revenue"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label="Revenue"
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
         />
       </div>
 

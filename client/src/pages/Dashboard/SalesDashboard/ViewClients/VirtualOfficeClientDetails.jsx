@@ -203,6 +203,7 @@ const VirtualOfficeClientDetails = () => {
       bookingType: DEFAULT_BOOKING_TYPE,
       openDeskRate: 0,
       receivedAmount: 0,
+      totalReceivedAmount: 0,
       cabinDeskRate: 0,
       annualIncrement: 0,
       perDeskMeetingCredits: 0,
@@ -283,7 +284,10 @@ const VirtualOfficeClientDetails = () => {
   const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
   const watchedOpenDesks = useWatch({ control, name: "openDesks" });
   const watchedOpenDeskRate = useWatch({ control, name: "openDeskRate" });
-  const watchedReceivedAmount = useWatch({ control, name: "receivedAmount" });
+  const watchedTotalReceivedAmount = useWatch({
+    control,
+    name: "totalReceivedAmount",
+  });
   const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
   const watchedTotalDesks = useWatch({ control, name: "totalDesks" });
   const termStartDateValue = useWatch({ control, name: "termStartDate" });
@@ -350,9 +354,9 @@ const VirtualOfficeClientDetails = () => {
     () => Number(watchedTotalDesks || selectedClient?.totalDesks || computedTotalDesks || 0) * Number(computedCurrentRate || 0),
     [computedCurrentRate, computedTotalDesks, selectedClient?.totalDesks, watchedTotalDesks],
   );
-   const computedRemainingAmount = useMemo(
-    () => computedRevenue - Number(watchedReceivedAmount || 0),
-    [computedRevenue, watchedReceivedAmount],
+  const computedRemainingAmount = useMemo(
+    () => computedRevenue - Number(watchedTotalReceivedAmount || 0),
+    [computedRevenue, watchedTotalReceivedAmount],
   );
 
   const calculatedAgreementExpiry = useMemo(
@@ -440,6 +444,8 @@ const VirtualOfficeClientDetails = () => {
           Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
         receivedAmount: selectedClient.receivedAmount || 0,
+        totalReceivedAmount:
+          selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
@@ -517,6 +523,8 @@ const VirtualOfficeClientDetails = () => {
       cabinDeskRate: Number(data.cabinDeskRate) || 0,
       openDeskRate: Number(data.openDeskRate) || 0,
       receivedAmount: Number(data.receivedAmount) || 0,
+      totalReceivedAmount:
+        Number(data.totalReceivedAmount) || Number(data.receivedAmount) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
       termStartDate: data.termStartDate,
@@ -683,6 +691,8 @@ const VirtualOfficeClientDetails = () => {
           Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
         receivedAmount: selectedClient.receivedAmount || 0,
+        totalReceivedAmount:
+          selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
@@ -765,7 +775,8 @@ const VirtualOfficeClientDetails = () => {
                     "hoState",
                     "bookingType",
                     "revenue",
-                    "receivedAmount",
+                    // "receivedAmount",
+                    "totalReceivedAmount",
                     "remainingAmount",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
@@ -816,6 +827,20 @@ const VirtualOfficeClientDetails = () => {
                                 inputProps={{ min: 0 }}
                                 fullWidth
                               />
+                            ) : fieldKey === "totalReceivedAmount" ? (
+                              <TextField
+                                {...field}
+                                size="small"
+                                type="number"
+                                label="Total Received Amount"
+                                value={
+                                  selectedClient?.totalReceivedAmount ??
+                                  selectedClient?.receivedAmount ??
+                                  0
+                                }
+                                fullWidth
+                                disabled
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -846,8 +871,14 @@ const VirtualOfficeClientDetails = () => {
                                 ? selectedClient?.bookingType || DEFAULT_BOOKING_TYPE
                                 : fieldKey === "revenue"
                                   ? formatCurrency(computedRevenue)
-                                   : fieldKey === "receivedAmount"
-                                    ? formatCurrency(selectedClient?.receivedAmount || 0)
+                                    : fieldKey === "receivedAmount"
+                                      ? formatCurrency(selectedClient?.receivedAmount || 0)
+                                    : fieldKey === "totalReceivedAmount"
+                                      ? formatCurrency(
+                                          selectedClient?.totalReceivedAmount ??
+                                            selectedClient?.receivedAmount ??
+                                            0,
+                                        )
                                     : fieldKey === "remainingAmount"
                                       ? formatCurrency(computedRemainingAmount)
                                   : (fieldKey === "hoCity"

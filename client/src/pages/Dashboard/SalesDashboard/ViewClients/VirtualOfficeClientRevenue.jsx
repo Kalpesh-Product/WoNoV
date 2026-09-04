@@ -128,6 +128,14 @@ const VirtualOfficeClientRevenue = () => {
                             cellRenderer: (params) => inrFormat(params?.value || 0),
                         },
                         {
+                            field: "totalReceivedAmount",
+                            headerName: "Total Received Amount",
+                            flex: 1,
+                            valueGetter: ({ data }) =>
+                                Number(data?.totalReceivedAmount ?? data?.receivedAmount ?? 0),
+                            cellRenderer: (params) => inrFormat(params?.value || 0),
+                        },
+                        {
                             field: "receivedAmount",
                             headerName: "Received Amount",
                             flex: 1,
@@ -138,7 +146,12 @@ const VirtualOfficeClientRevenue = () => {
                             headerName: "Remaining Amount",
                             flex: 1,
                             valueGetter: ({ data }) =>
-                                Number(data?.revenue || 0) - Number(data?.receivedAmount || 0),
+                                Number(data?.revenue || 0) -
+                                Number(
+                                    data?.totalReceivedAmount ??
+                                        data?.receivedAmount ??
+                                        0,
+                                ),
                             cellRenderer: (params) => inrFormat(params?.value || 0),
                         },
                         { field: "totalTerm", headerName: "Total Term", flex: 1 },
@@ -208,10 +221,24 @@ const VirtualOfficeClientRevenue = () => {
                                     detail={`INR ${inrFormat(Number(viewRow.receivedAmount || 0))}`}
                                 />
                                 <DetalisFormatted
+                                    title="Total Received Amount"
+                                    detail={`INR ${inrFormat(
+                                        Number(
+                                            viewRow.totalReceivedAmount ??
+                                                viewRow.receivedAmount ??
+                                                0,
+                                        ),
+                                    )}`}
+                                />
+                                <DetalisFormatted
                                     title="Remaining Amount"
                                     detail={`INR ${inrFormat(
                                         Number(viewRow.revenue || 0) -
-                                            Number(viewRow.receivedAmount || 0),
+                                            Number(
+                                                viewRow.totalReceivedAmount ??
+                                                    viewRow.receivedAmount ??
+                                                    0,
+                                            ),
                                     )}`}
                                 />
                                 <DetalisFormatted
