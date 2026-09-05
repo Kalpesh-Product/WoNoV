@@ -613,8 +613,10 @@ const getUserDisplayName = (user) => {
     () =>
       tableData.filter((item) =>
         showInvoiceProjections
-          ? item.normalizedStatus === "paid" || addedRevenueIds.includes(item._id)
-          : item.normalizedStatus === "paid",
+          ? item.isHistoricalBilling === true ||
+            item.normalizedStatus === "paid" ||
+            addedRevenueIds.includes(item._id)
+          : item.isHistoricalBilling === true || item.normalizedStatus === "paid",
       ),
     [addedRevenueIds, showInvoiceProjections, tableData],
   );
@@ -624,7 +626,11 @@ const getUserDisplayName = (user) => {
       isLoadingVirtualOfficeRevenue
         ? []
         : tableData
-            .filter((item) => item.normalizedStatus === "paid")
+            .filter(
+              (item) =>
+                item.isHistoricalBilling === true ||
+                item.normalizedStatus === "paid",
+            )
             .map((item) => ({
               ...item,
               revenue: getNumericAmount(item.revenue),

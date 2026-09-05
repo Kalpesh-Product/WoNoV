@@ -37,7 +37,25 @@ const getRowValue = (row, aliases = []) => {
 const parseValidDate = (value) => {
   if (!value || String(value).trim() === "") return null;
 
-  const date = new Date(value);
+  const rawValue = String(value).trim();
+  const dateParts = rawValue.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  const date = dateParts
+    ? new Date(
+        Number(dateParts[3]),
+        Number(dateParts[2]) - 1,
+        Number(dateParts[1]),
+      )
+    : new Date(rawValue);
+
+  if (
+    dateParts &&
+    (date.getFullYear() !== Number(dateParts[3]) ||
+      date.getMonth() !== Number(dateParts[2]) - 1 ||
+      date.getDate() !== Number(dateParts[1]))
+  ) {
+    return null;
+  }
+
   return isNaN(date.getTime()) ? null : date;
 };
 
