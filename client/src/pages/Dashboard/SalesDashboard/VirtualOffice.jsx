@@ -27,13 +27,15 @@ const getNormalizedPaymentStatus = (status) => {
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
-const getReportingAmount = (row) => {
-  const rowDate = dayjs(row?.rentDate || row?.invoiceUploadedAt || row?.createdAt);
-  const currentMonth = dayjs().startOf("month");
+const isBeforeCurrentMonth = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs().startOf("month"), "month");
+};
 
-  return rowDate.isValid() && rowDate.isBefore(currentMonth, "month")
-    ? getNumericAmount(row?.revenue)
-    : getNumericAmount(row?.receivedAmount);
+const getReportingAmount = (row) => {
+  // The API supplies stored revenue for completed months and live revenue for
+  // the current and future months.
+  return getNumericAmount(row?.revenue);
 };
 
 const formatBillingNumber = (value) => {
@@ -245,7 +247,11 @@ const getUserDisplayName = (user) => {
         ? []
         : (Array.isArray(virtualOfficeRevenue) ? virtualOfficeRevenue : []).map((item) => ({
             ...item,
-            ...(showInvoiceProjections && item.client
+            ...(showInvoiceProjections &&
+            item.client &&
+            !isBeforeCurrentMonth(
+              item.rentDate || item.invoiceUploadedAt || item.createdAt,
+            )
               ? {
                   deskRate: getVirtualOfficeCurrentRate(item),
                   revenue:
@@ -750,12 +756,26 @@ const getUserDisplayName = (user) => {
       field: "totalReceivedAmount",
       valueGetter: ({ data }) =>
         getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
-      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+      cellRenderer: (params) =>
+        isBeforeCurrentMonth(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
     },
     {
       headerName: "Received Amount",
       field: "receivedAmount",
-      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+      cellRenderer: (params) =>
+        isBeforeCurrentMonth(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
     },
     {
       headerName: "Remaining Amount",
@@ -763,7 +783,14 @@ const getUserDisplayName = (user) => {
       valueGetter: ({ data }) =>
         getNumericAmount(data?.revenue) -
         getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
-      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+      cellRenderer: (params) =>
+        isBeforeCurrentMonth(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
     },
     {
       headerName: "Total Term",
@@ -873,6 +900,24 @@ const getUserDisplayName = (user) => {
       ),
     },
   ];
+
+  const getVisibleBillingColumns = ({ filteredData }) => {
+    const hasCurrentOrFutureRows = filteredData.some((item) =>
+      !isBeforeCurrentMonth(
+        item.rentDate || item.invoiceUploadedAt || item.createdAt,
+      ),
+    );
+
+    if (hasCurrentOrFutureRows) return billingTableColumns;
+
+    const hiddenFields = new Set([
+      "totalReceivedAmount",
+      "receivedAmount",
+      "remainingAmount",
+    ]);
+
+    return billingTableColumns.filter((column) => !hiddenFields.has(column.field));
+  };
 
   const useLakhsScale = maxVirtualOfficeAmount >= 100000;
 
@@ -1010,6 +1055,9 @@ const getUserDisplayName = (user) => {
           }
           columns={
             showInvoiceProjections ? billingTableColumns : revenueTableColumns
+          }
+          getVisibleColumns={
+            showInvoiceProjections ? getVisibleBillingColumns : undefined
           }
         />
       ) : (
@@ -1306,33 +1354,42 @@ const getUserDisplayName = (user) => {
                   title="Revenue"
                   detail={`INR ${inrFormat(getNumericAmount(viewRow.revenue))}`}
                 />
-                <DetalisFormatted
-                  title="Received Amount"
-                  detail={`INR ${inrFormat(getNumericAmount(viewRow.receivedAmount))}`}
-                />
-                <DetalisFormatted
-                  title="Total Received Amount"
-                  detail={`INR ${inrFormat(
-                    getNumericAmount(
-                      viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
-                    ),
-                  )}`}
-                />
-                {viewPreviousTotalAmount > 0 && (
-                  <DetalisFormatted
-                    title="Previous Total Amount"
-                    detail={`INR ${inrFormat(viewPreviousTotalAmount)}`}
-                  />
-                )}
-                <DetalisFormatted
-                  title="Remaining Amount"
-                  detail={`INR ${inrFormat(
-                    getNumericAmount(viewRow.revenue) -
-                      getNumericAmount(
-                        viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
-                      ),
-                  )}`}
-                />
+                {showInvoiceProjections &&
+                  !isBeforeCurrentMonth(
+                    viewRow.rentDate ||
+                      viewRow.invoiceUploadedAt ||
+                      viewRow.createdAt,
+                  ) && (
+                    <>
+                      <DetalisFormatted
+                        title="Received Amount"
+                        detail={`INR ${inrFormat(getNumericAmount(viewRow.receivedAmount))}`}
+                      />
+                      <DetalisFormatted
+                        title="Total Received Amount"
+                        detail={`INR ${inrFormat(
+                          getNumericAmount(
+                            viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                          ),
+                        )}`}
+                      />
+                      {viewPreviousTotalAmount > 0 && (
+                        <DetalisFormatted
+                          title="Previous Total Amount"
+                          detail={`INR ${inrFormat(viewPreviousTotalAmount)}`}
+                        />
+                      )}
+                      <DetalisFormatted
+                        title="Remaining Amount"
+                        detail={`INR ${inrFormat(
+                          getNumericAmount(viewRow.revenue) -
+                            getNumericAmount(
+                              viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                            ),
+                        )}`}
+                      />
+                    </>
+                  )}
                 <DetalisFormatted
                   title="Annual Increment (%)"
                   detail={

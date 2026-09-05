@@ -37,6 +37,19 @@ const normalizeCoworkingChannel = (bookingType) =>
     .toLowerCase() === "spv booking"
     ? "SPV Booking"
     : "Direct";
+
+const UPLOAD_LOGIC_START = dayjs("2026-09-01").startOf("month");
+
+const isHistoricalBulkUpload = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(UPLOAD_LOGIC_START, "month");
+};
+
+const isBeforeCurrentMonth = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs().startOf("month"), "month");
+};
+
 const fetchCoworkingRevenueService = async ({
   dateFilter,
   query,
@@ -54,7 +67,6 @@ const fetchCoworkingRevenueService = async ({
     if (dateFilter) {
       filter.rentDate = dateFilter.rentDate;
     }
-
    // const revenues = await CoworkingRevenue.find(filter).lean().exec();
     const revenues = await CoworkingRevenue.find(filter)
       .populate({
@@ -87,7 +99,12 @@ const fetchCoworkingRevenueService = async ({
     const monthlyMap = new Map();
 
     revenues.forEach((item) => {
-       let clientBillingValues = {};
+      let clientBillingValues = {};
+      const billingReferenceDate =
+        item.rentDate || item.invoiceUploadedAt || item.createdAt;
+      // Keep pre-September bulk uploads fixed; September onward follows sales changes.
+      const useStoredRevenue =
+        useClientDetails && isHistoricalBulkUpload(billingReferenceDate);
 
       if (useClientDetails && item.clients) {
         const client = item.clients;
@@ -111,22 +128,54 @@ const fetchCoworkingRevenueService = async ({
             : 0;
         const currentRate =
           baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+        const computedRevenue = noOfDesks * currentRate;
+        const computedTotalTerm =
+          startDate.isValid() &&
+          endDate.isValid() &&
+          endDate.isAfter(startDate)
+            ? endDate.diff(startDate, "month")
+            : Number(client.lockinPeriod) || 0;
+        const storedRevenue = Number(item.revenue);
+        const storedNoOfDesks = Number(item.noOfDesks);
+        const storedDeskRate = Number(item.deskRate);
+        const storedTotalTerm = Number(item.totalTerm);
 
         clientBillingValues = {
-          clientName: client.clientName,
-          channel: client.bookingType,
-          annualIncrement,
-          nextIncrementDate: client.nextIncrement,
-          revenue: noOfDesks * currentRate,
-          noOfDesks,
-          deskRate: currentRate,
+          clientName: useStoredRevenue
+            ? item.clientName || item.clientInvoiceName || client.clientName
+            : client.clientName,
+          channel: useStoredRevenue
+            ? item.channel || normalizeCoworkingChannel(client.bookingType)
+            : client.bookingType,
+          annualIncrement: useStoredRevenue
+            ? item.annualIncrement ?? annualIncrement
+            : annualIncrement,
+          nextIncrementDate: useStoredRevenue
+            ? item.nextIncrementDate || client.nextIncrement
+            : client.nextIncrement,
+          revenue:
+            useStoredRevenue && Number.isFinite(storedRevenue)
+              ? storedRevenue
+              : computedRevenue,
+          noOfDesks:
+            useStoredRevenue &&
+            Number.isFinite(storedNoOfDesks) &&
+            storedNoOfDesks > 0
+              ? storedNoOfDesks
+              : noOfDesks,
+          deskRate:
+            useStoredRevenue &&
+            Number.isFinite(storedDeskRate) &&
+            storedDeskRate > 0
+              ? storedDeskRate
+              : currentRate,
           totalTerm:
-            startDate.isValid() &&
-            endDate.isValid() &&
-            endDate.isAfter(startDate)
-              ? endDate.diff(startDate, "month")
-              : Number(client.lockinPeriod) || 0,
-          rentDate: client.rentDate,
+            useStoredRevenue &&
+            Number.isFinite(storedTotalTerm) &&
+            storedTotalTerm > 0
+              ? storedTotalTerm
+              : computedTotalTerm,
+          rentDate: item.rentDate || client.rentDate,
         };
       }
       const referenceDate = item.rentDate || item.createdAt;
@@ -709,6 +758,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
+  const currentMonthStart = dayjs().startOf("month");
 
   const revenues = await VirtualOfficeRevenue.find(filter)
      .populate([
@@ -724,7 +774,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
     ])
     .lean()
     .exec();
-    const billingRevenues = revenues.map((item) => {
+  const billingRevenues = revenues.map((item) => {
     if (!useClientDetails || !item.client) return item;
 
     const client = item.client;
@@ -742,6 +792,11 @@ const fetchVirtualOfficeRevenueReportService = async ({
       baseRate,
       annualIncrement,
     );
+    // Virtual Office billing uses bulk-upload values for completed months;
+    // current and future months continue to follow live client details.
+    const useStoredRevenue = isBeforeCurrentMonth(
+      item.rentDate || item.invoiceUploadedAt || item.createdAt,
+    );
     // const billingDate = dayjs(item.rentDate || item.createdAt);
     // const yearsElapsed =
     //   startDate.isValid() &&
@@ -757,6 +812,9 @@ const fetchVirtualOfficeRevenueReportService = async ({
         : startDate.isValid() && endDate.isValid() && endDate.isAfter(startDate)
           ? endDate.diff(startDate, "month")
           : item.totalTerm;
+    const storedRevenue = Number(item.revenue);
+    const storedNoOfDesks = Number(item.noOfDesks);
+    const storedDeskRate = Number(item.deskRate);
 
     return {
       ...item,
@@ -767,15 +825,34 @@ const fetchVirtualOfficeRevenueReportService = async ({
         billingFrequency: client.billingFrequency,
         clientStatus: client.clientStatus,
       },
-      channel: client.bookingType ?? item.channel,
-      noOfDesks,
-      deskRate: currentRate,
-      revenue: noOfDesks * currentRate,
-      totalTerm,
+      channel: useStoredRevenue
+        ? item.channel || client.bookingType
+        : client.bookingType ?? item.channel,
+      noOfDesks:
+        useStoredRevenue &&
+        Number.isFinite(storedNoOfDesks) &&
+        storedNoOfDesks > 0
+          ? storedNoOfDesks
+          : noOfDesks,
+      deskRate:
+        useStoredRevenue &&
+        Number.isFinite(storedDeskRate) &&
+        storedDeskRate > 0
+          ? storedDeskRate
+          : currentRate,
+      revenue:
+        useStoredRevenue && Number.isFinite(storedRevenue)
+          ? storedRevenue
+          : noOfDesks * currentRate,
+      totalTerm: useStoredRevenue ? item.totalTerm ?? totalTerm : totalTerm,
       rentDate: item.rentDate || client.rentDate,
-      annualIncrement: client.annualIncrement ?? item.annualIncrement,
+      annualIncrement: useStoredRevenue
+        ? item.annualIncrement ?? client.annualIncrement ?? null
+        : client.annualIncrement ?? item.annualIncrement,
       nextIncrementDate:
-        client.nextIncrementDate || item.nextIncrementDate,
+        useStoredRevenue
+          ? item.nextIncrementDate || client.nextIncrementDate
+          : client.nextIncrementDate || item.nextIncrementDate,
       invoiceUploadedBy: item.invoiceUploadedBy || null,
       invoiceUploadedByName:
         item.invoiceUploadedBy?.employeeName ||

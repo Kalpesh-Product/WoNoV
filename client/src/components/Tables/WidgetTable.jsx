@@ -52,6 +52,7 @@ const WidgetTable = ({
   preserveCurrentMonthRange = false,
   showCalendarWhenEmpty = false,
   getMissingRangeData,
+  getVisibleColumns,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -220,7 +221,11 @@ const WidgetTable = ({
   }, [filteredData, onMonthChange, dateRange]);
 
   const formattedColumns = useMemo(() => {
-    return columns.map((col) => {
+    const visibleColumns = getVisibleColumns
+      ? getVisibleColumns({ filteredData, dateRange })
+      : columns;
+
+    return visibleColumns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
         return {
           ...col,
@@ -235,11 +240,16 @@ const WidgetTable = ({
       }
       return col;
     });
-  }, [columns, formatDate, formatTime]);
+  }, [columns, dateRange, filteredData, formatDate, formatTime, getVisibleColumns]);
 
   const exportColumnKeys = useMemo(
-    () => columns.map((col) => col.field).filter(Boolean),
-    [columns]
+    () => {
+      const visibleColumns = getVisibleColumns
+        ? getVisibleColumns({ filteredData, dateRange })
+        : columns;
+      return visibleColumns.map((col) => col.field).filter(Boolean);
+    },
+    [columns, dateRange, filteredData, getVisibleColumns]
   );
 
   const finalTableData = filteredData.map((item, index) => ({
