@@ -14,6 +14,7 @@ const LeadsLayout = ({
   additionalData,
   children,
   title = "Unique Clients",
+  titleAmount,
 }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -122,6 +123,13 @@ const LeadsLayout = ({
       ),
     [transformedData]
   );
+  const resolvedTitleAmount =
+    typeof titleAmount === "function"
+      ? titleAmount({
+          count: selectedFinancialYearClientsCount,
+          financialYear: currentFinancialYear,
+        })
+      : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
 
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = [
@@ -201,7 +209,7 @@ const LeadsLayout = ({
         border
         padding
         title={title}
-        TitleAmount={`CLIENTS : ${selectedFinancialYearClientsCount}`}
+        TitleAmount={resolvedTitleAmount}
       >
         <div className="p-1"></div>
 

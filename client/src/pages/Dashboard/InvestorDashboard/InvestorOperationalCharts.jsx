@@ -335,7 +335,8 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
     };
   }, [clients, visitors]);
 
-  const isLoading = clientsPending || visitorsPending;
+  const isLoading =
+    (needsClients && clientsPending) || (needsVisitors && visitorsPending);
 
   const renderChart = (key) => {
     const chart = chartData[key];

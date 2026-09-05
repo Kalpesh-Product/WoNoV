@@ -12,7 +12,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import FinanceCard from "../../../components/FinanceCard";
-import DataCard from "../../../components/DataCard";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 import BarGraph from "../../../components/graphs/BarGraph";
@@ -176,12 +175,30 @@ const InvestorUniqueClientsGraph = () => {
     }));
   }, [coWorkingClients, consolidatedClients]);
 
+  const averageMonthlyUniqueClientTitle = ({ count, financialYear }) => {
+    const currentDate = dayjs();
+    const currentFinancialYear =
+      currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
+    const elapsedMonths =
+      financialYear === currentFinancialYear
+        ? currentDate.month() >= 3
+          ? currentDate.month() - 2
+          : 12
+        : financialYear < currentFinancialYear
+          ? 12
+          : 1;
+
+    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(count / elapsedMonths).toFixed(2)}`;
+  };
+
   return (
     <LeadsLayout
       data={clientsByMonth}
       hideAccordion
       title="BIZNEST Unique Clients"
+      titleAmount={averageMonthlyUniqueClientTitle}
     >
+      {/*
       <div className="border-b border-borderGray px-4 pb-4">
         <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
           BIZNEST Overall Clients
@@ -199,6 +216,7 @@ const InvestorUniqueClientsGraph = () => {
           ))}
         </WidgetSection>
       </div>
+      */}
     </LeadsLayout>
   );
 };
@@ -1027,10 +1045,14 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       ...expenseByYear.keys(),
       currentFiscalYear,
     ]);
-    const graphSeries = [...years].flatMap((group) => [
-      { name: "Income", group, data: incomeByYear.get(group) || Array(12).fill(0) },
-      { name: "Expense", group, data: expenseByYear.get(group) || Array(12).fill(0) },
-    ]);
+    const graphSeries = [...years].flatMap((group) => {
+      const incomeValues = incomeByYear.get(group) || Array(12).fill(0);
+      const expenseValues = expenseByYear.get(group) || Array(12).fill(0);
+      return [
+        { name: "Income", group, data: incomeValues },
+        { name: "Expense", group, data: expenseValues },
+      ];
+    });
     const income = incomeByYear.get(selectedFiscalYear) || [];
     const expense = expenseByYear.get(selectedFiscalYear) || [];
 
@@ -1058,7 +1080,9 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
   const selectedMonthDate = Number.isFinite(selectedYearStart)
     ? dayjs(`${selectedYearStart}-04-01`).add(previousMonthIndex, "month")
     : null;
-  const summaryMonthLabel = selectedMonthDate?.format("MMM-YY") || "-";
+  const summaryMonthLabel = selectedMonthDate
+    ? `${selectedMonthDate.format("MMMM")} - ${selectedFiscalYear}`
+    : "-";
   const summaryMonthIncome = selectedIncome[previousMonthIndex] || 0;
   const summaryMonthExpense = selectedExpense[previousMonthIndex] || 0;
   const perSqft = (value) => (totalSqft ? value / totalSqft : 0);
@@ -1136,31 +1160,55 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
             title={"BIZNEST PROFIT & LOSS - LAST MONTHS"}
           >
             <div className="mt-4 mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-              <FinanceCard
-                {...buildCardData("Income", {
+              {[
+                {
+                  title: "Income",
                   month: summaryMonthIncome,
                   total: totals.income,
-                })}
-                disableLinks
-              />
-              <FinanceCard
-                {...buildCardData("Expense", {
+                },
+                {
+                  title: "Expense",
                   month: summaryMonthExpense,
                   total: totals.expense,
-                })}
-                disableLinks
-              />
-              <FinanceCard
-                {...buildCardData(
-                  "Profit & Loss",
-                  {
-                    month: summaryMonthIncome - summaryMonthExpense,
-                    total: totals.income - totals.expense,
-                  },
-                  true,
-                )}
-                disableLinks
-              />
+                },
+                {
+                  title: "Profit & Loss",
+                  month: summaryMonthIncome - summaryMonthExpense,
+                  total: totals.income - totals.expense,
+                  highlightNegativePositive: true,
+                },
+              ].map((card) => {
+                const cardData = buildCardData(
+                  card.title,
+                  { month: card.month, total: card.total },
+                  card.highlightNegativePositive,
+                );
+                return (
+                  <div key={card.title} className="flex flex-col gap-4">
+                    <FinanceCard
+                      cardTitle={card.title}
+                      timePeriod={selectedFiscalYear}
+                      descriptionData={[]}
+                      minHeight="min-h-[90px]"
+                      disableLinks
+                    />
+                    <FinanceCard
+                      {...cardData}
+                      descriptionData={cardData.descriptionData.slice(0, 2)}
+                      minHeight="min-h-[140px]"
+                      hideHeader
+                      disableLinks
+                    />
+                    <FinanceCard
+                      {...cardData}
+                      descriptionData={cardData.descriptionData.slice(2)}
+                      minHeight="min-h-[140px]"
+                      hideHeader
+                      disableLinks
+                    />
+                  </div>
+                );
+              })}
             </div>
           </WidgetSection>
         </div>
@@ -1437,7 +1485,7 @@ const InvestorDashboard = () => {
   });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pt-5">
       {(showDashboardHome || showDetails) && canViewHistoricalPnlGraph && (
         <WidgetSection layout={1}>
           <WidgetSection
@@ -1498,12 +1546,13 @@ const InvestorDashboard = () => {
       {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
         <div className="-mt-6">
           <CheckAvailability
+            cardsFirst
             disableCardLinks
             hideCheckInventory
             graphHeight={450}
             cardsBorder
             cardsTitle="BIZNEST INVENTORY DETAILS"
-            graphTitle="BIZNEST TOTAL v/s OCCUPIED"
+            graphTitle="BIZNEST OCCUPIED v/s UNOCCUPIED"
           />
         </div>
       )}
