@@ -1,4 +1,5 @@
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
+const mongoose = require("mongoose");
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Service = require("../../models/sales/ClientService");
 const Company = require("../../models/hr/Company");
@@ -264,6 +265,9 @@ const updateRevenueInvoice = async (req, res, next) => {
   try {
     const { revenueId, isProjectedInvoice, ...updates } = req.body;
     const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const validRevenueId = mongoose.Types.ObjectId.isValid(revenueId)
+      ? revenueId
+      : null;
     const file = req.file;
     const companyId = req.company;
     const foundCompany = await Company.findById(companyId).lean().exec();
@@ -276,9 +280,9 @@ const updateRevenueInvoice = async (req, res, next) => {
       );
     }
 
-    const existingRevenue = revenueId
+    const existingRevenue = validRevenueId
       ? await CoworkingRevenue.findOne({
-          _id: revenueId,
+          _id: validRevenueId,
           company: companyId,
         })
           .lean()
@@ -366,9 +370,9 @@ const updateRevenueInvoice = async (req, res, next) => {
     }
 
     let revenue;
-    if (revenueId && !isProjected) {
+    if (validRevenueId && !isProjected) {
       revenue = await CoworkingRevenue.findOneAndUpdate(
-        { _id: revenueId, company: companyId },
+        { _id: validRevenueId, company: companyId },
         payload,
         { new: true, runValidators: true },
       );

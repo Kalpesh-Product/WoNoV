@@ -27,15 +27,18 @@ const getNormalizedPaymentStatus = (status) => {
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
-const isBeforeCurrentMonth = (value) => {
+const isBeforeUploadLogicStart = (value) => {
   const date = dayjs(value);
-  return date.isValid() && date.isBefore(dayjs().startOf("month"), "month");
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
 };
 
 const getReportingAmount = (row) => {
-  // The API supplies stored revenue for completed months and live revenue for
-  // the current and future months.
-  return getNumericAmount(row?.revenue);
+  // Historical bulk uploads use revenue; current and future billing use receipts.
+  return isBeforeUploadLogicStart(
+    row?.rentDate || row?.invoiceUploadedAt || row?.createdAt,
+  )
+    ? getNumericAmount(row?.revenue)
+    : getNumericAmount(row?.receivedAmount);
 };
 
 const formatBillingNumber = (value) => {
@@ -247,11 +250,21 @@ const getUserDisplayName = (user) => {
         ? []
         : (Array.isArray(virtualOfficeRevenue) ? virtualOfficeRevenue : []).map((item) => ({
             ...item,
+            clientName: (() => {
+              const clientId = String(item.client?._id || item.client || "");
+              const linkedClient = virtualOfficeClients.find(
+                (client) => String(client._id) === clientId,
+              );
+              return (
+                item.clientName ||
+                item.client?.clientName ||
+                linkedClient?.clientName ||
+                "-"
+              );
+            })(),
             ...(showInvoiceProjections &&
             item.client &&
-            !isBeforeCurrentMonth(
-              item.rentDate || item.invoiceUploadedAt || item.createdAt,
-            )
+            item.isHistoricalBilling !== true
               ? {
                   deskRate: getVirtualOfficeCurrentRate(item),
                   revenue:
@@ -263,9 +276,14 @@ const getUserDisplayName = (user) => {
                     ) || 0) * getVirtualOfficeCurrentRate(item),
                 }
               : {}),
-            clientName: item.client?.clientName,
-             securityDeposit: item.client?.securityDeposit ?? item.securityDeposit,
-            billingFrequency: item.client?.billingFrequency || item.billingFrequency,
+            securityDeposit:
+              item.isHistoricalBilling === true
+                ? item.securityDeposit
+                : item.client?.securityDeposit ?? item.securityDeposit,
+            billingFrequency:
+              item.isHistoricalBilling === true
+                ? item.billingFrequency
+                : item.client?.billingFrequency || item.billingFrequency,
             normalizedStatus: getNormalizedPaymentStatus(
               item.rentStatus ?? item.status,
             ),
@@ -275,7 +293,12 @@ const getUserDisplayName = (user) => {
             reportingAmount: getReportingAmount(item),
             //normalizedStatus: getNormalizedPaymentStatus(item.status),
           })),
-    [isLoadingVirtualOfficeRevenue, showInvoiceProjections, virtualOfficeRevenue],
+    [
+      isLoadingVirtualOfficeRevenue,
+      showInvoiceProjections,
+      virtualOfficeClients,
+      virtualOfficeRevenue,
+    ],
   );
 
    const openEdit = (row) => {
@@ -524,6 +547,7 @@ const getUserDisplayName = (user) => {
           rentStatus: values.rentStatus,
           annualIncrement: selectedAddClient?.annualIncrement || 0,
           nextIncrementDate: selectedAddClient?.nextIncrementDate || null,
+          billingFrequency: values.billingFrequency || "Yearly",
         };
         const response = await axios.post("/api/sales/create-virtual-office-revenue", payload);
         const createdRevenue = response.data?.data || response.data?.revenue;
@@ -580,6 +604,7 @@ const getUserDisplayName = (user) => {
     );
     setAddValue("client", event.target.value);
     setAddValue("clientName", client?.clientName || "");
+    setAddValue("billingFrequency", client?.billingFrequency || "Yearly");
     setAddValue("receivedAmount", "");
     setAddValue("rentDate", client?.rentDate ? dayjs(client.rentDate) : null);
   };
@@ -757,7 +782,7 @@ const getUserDisplayName = (user) => {
       valueGetter: ({ data }) =>
         getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
       cellRenderer: (params) =>
-        isBeforeCurrentMonth(
+        isBeforeUploadLogicStart(
           params.data?.rentDate ||
             params.data?.invoiceUploadedAt ||
             params.data?.createdAt,
@@ -769,7 +794,7 @@ const getUserDisplayName = (user) => {
       headerName: "Received Amount",
       field: "receivedAmount",
       cellRenderer: (params) =>
-        isBeforeCurrentMonth(
+        isBeforeUploadLogicStart(
           params.data?.rentDate ||
             params.data?.invoiceUploadedAt ||
             params.data?.createdAt,
@@ -784,7 +809,7 @@ const getUserDisplayName = (user) => {
         getNumericAmount(data?.revenue) -
         getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
       cellRenderer: (params) =>
-        isBeforeCurrentMonth(
+        isBeforeUploadLogicStart(
           params.data?.rentDate ||
             params.data?.invoiceUploadedAt ||
             params.data?.createdAt,
@@ -903,7 +928,7 @@ const getUserDisplayName = (user) => {
 
   const getVisibleBillingColumns = ({ filteredData }) => {
     const hasCurrentOrFutureRows = filteredData.some((item) =>
-      !isBeforeCurrentMonth(
+      !isBeforeUploadLogicStart(
         item.rentDate || item.invoiceUploadedAt || item.createdAt,
       ),
     );
@@ -914,9 +939,30 @@ const getUserDisplayName = (user) => {
       "totalReceivedAmount",
       "receivedAmount",
       "remainingAmount",
+      "deskRate",
     ]);
 
     return billingTableColumns.filter((column) => !hiddenFields.has(column.field));
+  };
+
+  const getVisibleRevenueColumns = ({ filteredData }) => {
+    const hasCurrentOrFutureRows = filteredData.some((item) =>
+      !isBeforeUploadLogicStart(
+        item.rentDate || item.invoiceUploadedAt || item.createdAt,
+      ),
+    );
+
+    if (hasCurrentOrFutureRows) return revenueTableColumns;
+
+    const hiddenFields = new Set([
+      "noOfDesks",
+      "totalReceivedAmount",
+      "receivedAmount",
+      "remainingAmount",
+      "deskRate",
+    ]);
+
+    return revenueTableColumns.filter((column) => !hiddenFields.has(column.field));
   };
 
   const useLakhsScale = maxVirtualOfficeAmount >= 100000;
@@ -1057,7 +1103,9 @@ const getUserDisplayName = (user) => {
             showInvoiceProjections ? billingTableColumns : revenueTableColumns
           }
           getVisibleColumns={
-            showInvoiceProjections ? getVisibleBillingColumns : undefined
+            showInvoiceProjections
+              ? getVisibleBillingColumns
+              : getVisibleRevenueColumns
           }
         />
       ) : (
@@ -1240,7 +1288,7 @@ const getUserDisplayName = (user) => {
                 )}
               />
               <TextField
-                value={addRemainingAmount}
+                value={formatBillingNumber(addRemainingAmount)}
                 label="Remaining Amount"
                 type="number"
                 size="small"
@@ -1248,7 +1296,7 @@ const getUserDisplayName = (user) => {
                 disabled
               />
               <TextField
-                value={addTotalReceivedAmount}
+                value={formatBillingNumber(addTotalReceivedAmount)}
                 label="Total Received Amount"
                 type="number"
                 size="small"
@@ -1257,7 +1305,7 @@ const getUserDisplayName = (user) => {
               />
               {addPaymentState.previousTotalAmount > 0 && (
                 <TextField
-                  value={addPaymentState.previousTotalAmount}
+                  value={formatBillingNumber(addPaymentState.previousTotalAmount)}
                   label="Previous Total Amount"
                   type="number"
                   size="small"
@@ -1266,7 +1314,7 @@ const getUserDisplayName = (user) => {
                 />
               )}
               <TextField
-                value={addRevenue}
+                value={formatBillingNumber(addRevenue)}
                 label="Revenue"
                 type="number"
                 size="small"
@@ -1274,17 +1322,23 @@ const getUserDisplayName = (user) => {
                 disabled
               />
             </div>
-            <TextField
-              select
-              value={selectedAddClient?.billingFrequency || "Yearly"}
-              label="Billing Frequency"
-              size="small"
-              fullWidth
-              //disabled
-            >
-              <MenuItem value="Monthly">Monthly</MenuItem>
-              <MenuItem value="Yearly">Yearly</MenuItem>
-            </TextField>
+            <Controller
+              name="billingFrequency"
+              control={addControl}
+              defaultValue="Yearly"
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Billing Frequency"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="Monthly">Monthly</MenuItem>
+                  <MenuItem value="Yearly">Yearly</MenuItem>
+                </TextField>
+              )}
+            />
             <Controller
               name="rentStatus"
               control={addControl}
@@ -1355,7 +1409,7 @@ const getUserDisplayName = (user) => {
                   detail={`INR ${inrFormat(getNumericAmount(viewRow.revenue))}`}
                 />
                 {showInvoiceProjections &&
-                  !isBeforeCurrentMonth(
+                  !isBeforeUploadLogicStart(
                     viewRow.rentDate ||
                       viewRow.invoiceUploadedAt ||
                       viewRow.createdAt,
@@ -1676,7 +1730,7 @@ const getUserDisplayName = (user) => {
           )}
         />
         <TextField
-          value={editRemainingAmount}
+          value={formatBillingNumber(editRemainingAmount)}
           type="number"
           label="Remaining Amount"
           size="small"
@@ -1684,7 +1738,7 @@ const getUserDisplayName = (user) => {
           disabled
         />
         <TextField
-          value={editTotalReceivedAmount}
+          value={formatBillingNumber(editTotalReceivedAmount)}
           type="number"
           label="Total Received Amount"
           size="small"
@@ -1692,9 +1746,9 @@ const getUserDisplayName = (user) => {
           disabled
         />
         {editPreviousTotalAmount > 0 && (
-          <TextField
-            value={editPreviousTotalAmount}
-            type="number"
+        <TextField
+          value={formatBillingNumber(editPreviousTotalAmount)}
+          type="number"
             label="Previous Total Amount"
             size="small"
             fullWidth

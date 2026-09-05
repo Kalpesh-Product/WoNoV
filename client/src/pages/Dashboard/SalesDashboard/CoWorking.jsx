@@ -143,8 +143,7 @@ const getUnpaidInvoiceRowsForMonth = (
   const lastMonth = currentMonth.subtract(1, "month");
   if (
     !targetMonth.isValid() ||
-    targetMonth.isBefore(lastMonth) ||
-    targetMonth.isAfter(currentMonth)
+    targetMonth.isBefore(lastMonth)
   ) {
     return [];
   }
@@ -238,6 +237,12 @@ const getUnpaidInvoiceRowsForMonth = (
         ...row,
         id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
         rentDate: projectedRentDate.toISOString(),
+        invoice: null,
+        invoiceLink: "",
+        invoiceName: "",
+        invoiceUploadedAt: null,
+        invoiceUploadedBy: null,
+        invoiceUploadedByName: "",
         rentStatus: "Unpaid",
         normalizedRentStatus: "unpaid",
         isProjectedInvoice: true,
@@ -300,7 +305,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
     mutationFn: async (values) => {
       const formData = new FormData();
-      formData.append("revenueId", editRow._id);
+      if (editRow?._id) formData.append("revenueId", editRow._id);
       formData.append("isProjectedInvoice", String(Boolean(editRow.isProjectedInvoice)));
 
       [

@@ -776,8 +776,8 @@ const VirtualOfficeClientDetails = () => {
                     "bookingType",
                     "revenue",
                     // "receivedAmount",
-                    "totalReceivedAmount",
-                    "remainingAmount",
+                    // "totalReceivedAmount",
+                    // "remainingAmount",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (

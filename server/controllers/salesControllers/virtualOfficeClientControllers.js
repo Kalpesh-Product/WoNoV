@@ -812,8 +812,26 @@ const updateVirtualOfficeClient = async (req, res) => {
       runValidators: true,
     });
 
+    const now = new Date();
+    const currentMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+    );
+
+    // Client changes affect current/future billing rows only.
     await VirtualOfficeRevenue.updateMany(
-      { client: id, company: existing.company },
+      {
+        client: id,
+        company: existing.company,
+        $or: [
+          { rentDate: { $gte: currentMonthStart } },
+          {
+            rentDate: { $in: [null, ""] },
+            invoiceUploadedAt: { $gte: currentMonthStart },
+          },
+        ],
+      },
       { $set: { receivedAmount } },
     );
 

@@ -775,7 +775,13 @@ const fetchVirtualOfficeRevenueReportService = async ({
     .lean()
     .exec();
   const billingRevenues = revenues.map((item) => {
-    if (!useClientDetails || !item.client) return item;
+    const isHistoricalBilling = isHistoricalBulkUpload(
+      item.rentDate || item.invoiceUploadedAt || item.createdAt,
+    );
+
+    if (!useClientDetails || !item.client) {
+      return { ...item, isHistoricalBilling };
+    }
 
     const client = item.client;
     const noOfDesks =
@@ -794,9 +800,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
     );
     // Virtual Office billing uses bulk-upload values for completed months;
     // current and future months continue to follow live client details.
-    const useStoredRevenue = isBeforeCurrentMonth(
-      item.rentDate || item.invoiceUploadedAt || item.createdAt,
-    );
+    const useStoredRevenue = isHistoricalBilling;
     // const billingDate = dayjs(item.rentDate || item.createdAt);
     // const yearsElapsed =
     //   startDate.isValid() &&
@@ -818,40 +822,46 @@ const fetchVirtualOfficeRevenueReportService = async ({
 
     return {
       ...item,
+      isHistoricalBilling,
       client: {
         _id: client._id,
-        clientName: client.clientName,
-        securityDeposit: client.securityDeposit,
-        billingFrequency: client.billingFrequency,
+        clientName: item.clientName || client.clientName,
+        ...(useStoredRevenue
+          ? {}
+          : {
+              clientName: client.clientName,
+              securityDeposit: client.securityDeposit,
+              billingFrequency: client.billingFrequency,
+            }),
         clientStatus: client.clientStatus,
       },
       channel: useStoredRevenue
-        ? item.channel || client.bookingType
+        ? item.channel || ""
         : client.bookingType ?? item.channel,
       noOfDesks:
-        useStoredRevenue &&
-        Number.isFinite(storedNoOfDesks) &&
-        storedNoOfDesks > 0
-          ? storedNoOfDesks
+        useStoredRevenue
+          ? Number.isFinite(storedNoOfDesks)
+            ? storedNoOfDesks
+            : 0
           : noOfDesks,
       deskRate:
-        useStoredRevenue &&
-        Number.isFinite(storedDeskRate) &&
-        storedDeskRate > 0
-          ? storedDeskRate
+        useStoredRevenue
+          ? Number.isFinite(storedDeskRate)
+            ? storedDeskRate
+            : 0
           : currentRate,
       revenue:
         useStoredRevenue && Number.isFinite(storedRevenue)
           ? storedRevenue
           : noOfDesks * currentRate,
-      totalTerm: useStoredRevenue ? item.totalTerm ?? totalTerm : totalTerm,
+      totalTerm: useStoredRevenue ? item.totalTerm ?? 0 : totalTerm,
       rentDate: item.rentDate || client.rentDate,
       annualIncrement: useStoredRevenue
-        ? item.annualIncrement ?? client.annualIncrement ?? null
+        ? item.annualIncrement ?? null
         : client.annualIncrement ?? item.annualIncrement,
       nextIncrementDate:
         useStoredRevenue
-          ? item.nextIncrementDate || client.nextIncrementDate
+          ? item.nextIncrementDate || null
           : client.nextIncrementDate || item.nextIncrementDate,
       invoiceUploadedBy: item.invoiceUploadedBy || null,
       invoiceUploadedByName:

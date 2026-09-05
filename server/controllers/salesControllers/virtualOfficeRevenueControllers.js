@@ -79,6 +79,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       pastDueDate,
       annualIncrement,
       nextIncrementDate,
+      billingFrequency,
       service,
     } = req.body;
 
@@ -111,7 +112,12 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
 
     await VirtualOfficeClient.findOneAndUpdate(
       { _id: client, company },
-      { $set: { receivedAmount: Number(receivedAmount || 0) } },
+      {
+        $set: {
+          receivedAmount: Number(receivedAmount || 0),
+          ...(billingFrequency ? { billingFrequency } : {}),
+        },
+      },
       { runValidators: true },
     );
 
