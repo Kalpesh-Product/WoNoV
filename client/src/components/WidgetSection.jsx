@@ -29,6 +29,7 @@ const WidgetSection = ({
   normalCase,
   summaryChipVariant,
   headerRightContent,
+  headerCenterContent,
   gridGap = "gap-4",
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
@@ -68,7 +69,7 @@ const WidgetSection = ({
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
-          className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
+          className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
           }`}>
           <div className="flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between">
@@ -101,6 +102,11 @@ const WidgetSection = ({
                   {titleData}
                 </span>
               </span>
+            )}
+            {headerCenterContent && (
+              <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+                {headerCenterContent}
+              </div>
             )}
             <div className="flex flex-col items-end gap-2">
               {headerRightContent ? (

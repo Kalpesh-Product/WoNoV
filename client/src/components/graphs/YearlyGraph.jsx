@@ -20,6 +20,7 @@ const YearlyGraph = ({
   totalTitle,
   summaryChipVariant,
   responsiveResize = false,
+  headerCenterContent,
   secondParam = false,
   chartHeight,
   currentYear,
@@ -140,6 +141,7 @@ const YearlyGraph = ({
          greenTitle={greenTitle}
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}
+        headerCenterContent={headerCenterContent}
       >
         <div className="flex flex-col gap-4">
           <BarGraph

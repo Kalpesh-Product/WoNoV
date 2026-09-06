@@ -31,6 +31,7 @@ const fiscalMonthIndex = (date) => {
 };
 
 const asArray = (value) => (Array.isArray(value) ? value : []);
+const INVESTOR_MONTHLY_PROJECTED_AMOUNT = 5_000_000;
 const visitorTypes = [
   "Half-Day Pass",
   "Full-Day Pass",
@@ -998,6 +999,14 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
     },
   });
 
+  const { data: managedUnitsData = [] } = useQuery({
+    queryKey: ["investor-managed-units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-simple-units");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
   const { data: budgetData = [] } = useQuery({
     queryKey: ["budgetData", "investor-income-expense"],
     queryFn: async () => {
@@ -1048,9 +1057,17 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
     const graphSeries = [...years].flatMap((group) => {
       const incomeValues = incomeByYear.get(group) || Array(12).fill(0);
       const expenseValues = expenseByYear.get(group) || Array(12).fill(0);
+       const projectedValues = incomeValues.map((incomeAmount, monthIndex) => {
+        const expenseAmount = expenseValues[monthIndex];
+
+        return incomeAmount === 0 && expenseAmount === 0
+          ? INVESTOR_MONTHLY_PROJECTED_AMOUNT
+          : 0;
+      });
       return [
         { name: "Income", group, data: incomeValues },
         { name: "Expense", group, data: expenseValues },
+         { name: "Projected", group, data: projectedValues },
       ];
     });
     const income = incomeByYear.get(selectedFiscalYear) || [];
@@ -1066,7 +1083,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       selectedExpense: expense,
     };
   }, [budgetData, currentFiscalYear, revenueExpenseData, selectedFiscalYear]);
-   const totalSqft = useMemo(
+  const totalSqft = useMemo(
     () =>
       revenueExpenseData
         .filter((item) => item?.units)
@@ -1074,6 +1091,23 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         .reduce((sum, item) => sum + (Number(item?.sqft) || 0), 0),
     [revenueExpenseData],
   );
+  const annualManagedSqft = useMemo(() => {
+    const managedBuildings = new Set(["sunteck kanaka", "dempo trade center"]);
+    const totalManagedSqft = managedUnitsData
+      .filter((unit) => {
+        const buildingName = String(
+          unit?.building?.buildingName || unit?.buildingName || "",
+        )
+          .trim()
+          .toLowerCase()
+          .replace(/centre/g, "center");
+
+        return managedBuildings.has(buildingName);
+      })
+      .reduce((sum, unit) => sum + (Number(unit?.sqft) || 0), 0);
+
+    return totalManagedSqft / 12;
+  }, [managedUnitsData]);
 
   const previousMonthIndex = fiscalMonthIndex(dayjs().subtract(1, "month"));
   const selectedYearStart = Number(selectedFiscalYear.match(/\d{4}/)?.[0]);
@@ -1086,6 +1120,9 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
   const summaryMonthIncome = selectedIncome[previousMonthIndex] || 0;
   const summaryMonthExpense = selectedExpense[previousMonthIndex] || 0;
   const perSqft = (value) => (totalSqft ? value / totalSqft : 0);
+  const projectedAmount = (series.find(
+    (item) => item.name === "Projected" && item.group === selectedFiscalYear,
+  )?.data || []).reduce((sum, value) => sum + value, 0);
 
   const buildCardData = (cardTitle, values, highlightNegativePositive = false) => ({
     cardTitle,
@@ -1103,8 +1140,8 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         route: "#",
       },
       {
-        title: "Overall",
-        value: `INR ${inrFormat(values.total)}`,
+        title: "Overall Manage Sq.Ft",
+        value: `${inrFormat(annualManagedSqft)} Sq.Ft`,
         route: "#",
       },
       {
@@ -1126,10 +1163,21 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-    colors: ["#54C4A7", "#EB5C45"],
+     colors: ["#54C4A7", "#EB5C45", "#C5C1C1"],
     plotOptions: { bar: { horizontal: false, columnWidth: "70%", borderRadius: 6 } },
     dataLabels: { enabled: false },
-    legend: { show: true, position: "top" },
+    legend: {
+      show: true,
+      position: "top",
+      onItemHover: { highlightDataSeries: false },
+    },
+    states: {
+      hover: { filter: { type: "none" } },
+      active: { filter: { type: "none" } },
+    },
+    xaxis: {
+      crosshairs: { show: false },
+    },
     yaxis: {
       min: 0,
       title: { text: "Amount In Lakhs (INR)" },
@@ -1146,6 +1194,11 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         chartId="bargraph-investor-income-expense"
         title={`BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}
         chartHeight={450}
+        headerCenterContent={
+          <div className="flex gap-2 justify-center items-center uppercase bg-[#e5e7eb] p-2 rounded-lg text-body text-slate-800 font-pmedium">
+            INR {inrFormat(projectedAmount)}
+          </div>
+        }
         TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
         TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
         currentYear={selectedFiscalYear}
