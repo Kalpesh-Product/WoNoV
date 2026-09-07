@@ -7,6 +7,10 @@ const {
   createPayrollDraft,
   fetchPayrollDrafts,
   fetchPayrollDraft,
+  fetchPayrollDraftExport,
+  updatePayrollDraftEmployee,
+  excludePayrollDraftEmployees,
+  submitPayrollDraft,
 } = require("../controllers/payrollControllers/payrollController");
 
 router.post("/generate-payroll", upload.array("payslips", 4), generatePayroll);
@@ -15,5 +19,9 @@ router.get("/get-user-payrolls/:userId", fetchUserPayroll);
 router.post("/drafts", createPayrollDraft);
 router.get("/drafts", fetchPayrollDrafts);
 router.get("/drafts/:draftId", fetchPayrollDraft);
+router.get("/drafts/:draftId/export", fetchPayrollDraftExport);
+router.patch("/drafts/:draftId/employees/:employeeId", updatePayrollDraftEmployee);
+router.patch("/drafts/:draftId/employees", excludePayrollDraftEmployees);
+router.post("/drafts/:draftId/submit", submitPayrollDraft);
 
 module.exports = router;
