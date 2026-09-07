@@ -396,9 +396,37 @@ const tableData = isLoading
         );
       });
 
-  const processedEmployees = selectedBatchData.filter(
-    (employee) => employee.status === "Completed"
-  ).length;
+  const selectedPayrollRecord = payrollDrafts.find((draft) => {
+    const draftPeriod = new Date(draft.payPeriod);
+    const draftPeriodKey = `${draftPeriod.getUTCFullYear()}-${String(
+      draftPeriod.getUTCMonth() + 1
+    ).padStart(2, "0")}`;
+
+    return (
+      draft.batchName === selectedBatch &&
+      draftPeriodKey === selectedPayPeriod
+    );
+  });
+  const processedEmployees =
+    selectedPayrollRecord?.status === "Processed"
+      ? Number(selectedPayrollRecord.employeeCount) || 0
+      : 0;
+  const isSelectedPayrollProcessed =
+    selectedPayrollRecord?.status === "Processed";
+  const payrollStartedAt =
+    currentPayrollProgress?.startedAt || selectedPayrollRecord?.createdAt;
+  const payrollStartedBy =
+    currentPayrollProgress?.startedBy ||
+    [
+      selectedPayrollRecord?.createdBy?.firstName,
+      selectedPayrollRecord?.createdBy?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  const remainingEmployees = Math.max(
+    selectedBatchData.length - processedEmployees,
+    0
+  );
   const selectedPeriodDate = new Date(`${selectedPayPeriod}-01T00:00:00`);
   const totalDays = new Date(
     selectedPeriodDate.getFullYear(),
@@ -607,7 +635,7 @@ const tableData = isLoading
         <PageFrame>
           <div className="flex flex-col gap-8 p-2">
             <div className="border-b pb-4">
-              <h2 className="text-subtitle font-semibold text-primary">
+              <h2 className="font-pmedium text-subtitle font-semibold text-primary">
                 Payroll - Batch & Period
               </h2>
             </div>
@@ -659,17 +687,13 @@ const tableData = isLoading
                   <span className="text-gray-500">Processed Employees</span>
                   <span className="text-right">{processedEmployees}</span>
                   <span className="text-gray-500">Remaining Employees</span>
-                  <span className="text-right">
-                    {selectedBatchData.length - processedEmployees}
-                  </span>
+                  <span className="text-right">{remainingEmployees}</span>
                   <span className="text-gray-500">Total Days</span>
                   <span className="text-right">{totalDays}</span>
                   <span className="text-gray-500">Payroll Started On</span>
                   <span className="text-right">
-                    {currentPayrollProgress?.startedAt
-                      ? new Date(
-                          currentPayrollProgress.startedAt
-                        ).toLocaleString("en-IN", {
+                    {payrollStartedAt
+                      ? new Date(payrollStartedAt).toLocaleString("en-IN", {
                           day: "2-digit",
                           month: "short",
                           year: "numeric",
@@ -680,7 +704,7 @@ const tableData = isLoading
                   </span>
                   <span className="text-gray-500">Payroll Started By</span>
                   <span className="text-right">
-                    {currentPayrollProgress?.startedBy || "-"}
+                    {payrollStartedBy || "-"}
                   </span>
                 </div>
               </section>
@@ -707,10 +731,17 @@ const tableData = isLoading
 
             <div className="flex justify-end">
               <PrimaryButton
-                title={currentPayrollProgress ? "Resume Payroll" : "Start Payroll"}
+                title={
+                  isSelectedPayrollProcessed
+                    ? "Payroll Processed"
+                    : currentPayrollProgress
+                      ? "Resume Payroll"
+                      : "Start Payroll"
+                }
                   disabled={
                     isLoading ||
                     isPayrollHistoryLoading ||
+                    isSelectedPayrollProcessed ||
                     !selectedBatch ||
                     !selectedPayPeriod
                   }
@@ -795,6 +826,7 @@ const tableData = isLoading
             }))}
             columns={compensationColumns}
             search
+            exportData
             tableTitle="Employee Compensation"
             tableHeight={450}
           />

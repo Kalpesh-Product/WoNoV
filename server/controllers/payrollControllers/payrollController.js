@@ -59,6 +59,55 @@ const getPayPeriodKey = (date) => {
     "0"
   )}`;
 };
+const undoableDraftFields = [
+  "payrollType",
+  "status",
+  "directDepositStatus",
+  "employeeCount",
+  "grossAmount",
+  "incomeTax",
+  "surcharge",
+  "cess",
+  "netAmount",
+  "lossOfPay",
+  "employeePf",
+  "employerPf",
+  "voluntaryProvidentFund",
+  "pfEmployeeCount",
+  "employeeEsi",
+  "employerEsi",
+  "esiEmployeeCount",
+  "employeeSummaries",
+  "runDate",
+  "submittedBy",
+  "submittedAt",
+];
+const createDraftUndoSnapshot = (draft) => {
+  const source = typeof draft.toObject === "function" ? draft.toObject() : draft;
+  return undoableDraftFields.reduce((snapshot, field) => {
+    snapshot[field] = source[field] ?? null;
+    return snapshot;
+  }, {});
+};
+const saveDraftUndoSnapshot = (draft) => {
+  draft.undoSnapshot = createDraftUndoSnapshot(draft);
+  draft.canUndo = true;
+};
+const saveEmployeeUndoSnapshot = (draft, summary) => {
+  const employeeId = String(summary.employee);
+  const snapshots = { ...(draft.employeeUndoSnapshots || {}) };
+  snapshots[employeeId] =
+    typeof summary.toObject === "function" ? summary.toObject() : summary;
+  draft.employeeUndoSnapshots = snapshots;
+  draft.markModified("employeeUndoSnapshots");
+  if (
+    !(draft.undoableEmployeeIds || []).some(
+      (undoEmployeeId) => String(undoEmployeeId) === employeeId
+    )
+  ) {
+    draft.undoableEmployeeIds.push(summary.employee);
+  }
+};
 const recalculateDraftTotals = async (draft) => {
   const rows = draft.employeeSummaries.filter((row) => !row.isExcluded);
   const employeeIds = rows.map((row) => row.employee).filter(Boolean);
@@ -148,8 +197,7 @@ const createPayrollDraft = async (req, res, next) => {
       batchName,
       payPeriod,
     })
-      .select("status")
-      .lean();
+      .select("+undoSnapshot");
     if (existingDraft?.status === "Processed") {
       return res.status(409).json({
         message: "Processed payroll cannot be recreated or edited",
@@ -311,6 +359,12 @@ const createPayrollDraft = async (req, res, next) => {
       }
     );
 
+    const undoState = existingDraft
+      ? {
+          undoSnapshot: createDraftUndoSnapshot(existingDraft),
+          canUndo: true,
+        }
+      : { undoSnapshot: null, canUndo: false };
     const draft = await PayrollDraft.findOneAndUpdate(
       { company, payPeriod, batchName },
       {
@@ -325,6 +379,9 @@ const createPayrollDraft = async (req, res, next) => {
           cess: 0,
           createdBy: user,
           runDate: null,
+          employeeUndoSnapshots: {},
+          undoableEmployeeIds: [],
+          ...undoState,
         },
       },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
@@ -340,6 +397,7 @@ const fetchPayrollDrafts = async (req, res, next) => {
   try {
     const drafts = await PayrollDraft.find({ company: req.company })
       .sort({ payPeriod: -1, createdAt: -1 })
+      .populate("createdBy", "firstName lastName")
       .lean();
     res.status(200).json(drafts);
   } catch (error) {
@@ -473,7 +531,8 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid payroll draft or employee ID" });
     }
 
-    const draft = await PayrollDraft.findOne({ _id: draftId, company: req.company });
+    const draft = await PayrollDraft.findOne({ _id: draftId, company: req.company })
+      .select("+employeeUndoSnapshots");
     if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
       return res.status(409).json({ message: "Only draft payroll can be edited" });
@@ -592,6 +651,8 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       .reduce((total, item) => total + numberValue(item.amount), 0);
     const gross = Math.max(0, actualGross - lossOfPay);
 
+    saveDraftUndoSnapshot(draft);
+    saveEmployeeUndoSnapshot(draft, summary);
     Object.assign(summary, {
       allowanceItems,
       deductionItems,
@@ -629,14 +690,16 @@ const excludePayrollDraftEmployees = async (req, res, next) => {
     const draft = await PayrollDraft.findOne({
       _id: req.params.draftId,
       company: req.company,
-    });
+    }).select("+employeeUndoSnapshots");
     if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
       return res.status(409).json({ message: "Only draft payroll can be edited" });
     }
+    saveDraftUndoSnapshot(draft);
     let excludedCount = 0;
     draft.employeeSummaries.forEach((summary) => {
       if (employeeIds.includes(String(summary.employee)) && !summary.isExcluded) {
+        saveEmployeeUndoSnapshot(draft, summary);
         summary.isExcluded = true;
         summary.updatedBy = req.user;
         summary.updatedAt = new Date();
@@ -650,6 +713,86 @@ const excludePayrollDraftEmployees = async (req, res, next) => {
     await draft.save();
     res.status(200).json({
       message: `${excludedCount} employee${excludedCount === 1 ? "" : "s"} deleted from payroll draft`,
+      data: draft,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const undoPayrollDraftChange = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+    const draft = await PayrollDraft.findOne({
+      _id: req.params.draftId,
+      company: req.company,
+    }).select("+undoSnapshot");
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Draft") {
+      return res.status(409).json({ message: "Processed payroll cannot be changed" });
+    }
+    if (!draft.canUndo || !draft.undoSnapshot) {
+      return res.status(409).json({ message: "There are no draft changes to undo" });
+    }
+
+    undoableDraftFields.forEach((field) => {
+      draft[field] = draft.undoSnapshot[field] ?? null;
+    });
+    draft.undoSnapshot = null;
+    draft.canUndo = false;
+    draft.employeeUndoSnapshots = {};
+    draft.undoableEmployeeIds = [];
+    await draft.save();
+    res.status(200).json({ message: "Last payroll draft change undone", data: draft });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const undoPayrollDraftEmployeeChange = async (req, res, next) => {
+  try {
+    const { draftId, employeeId } = req.params;
+    if (
+      !mongoose.Types.ObjectId.isValid(draftId) ||
+      !mongoose.Types.ObjectId.isValid(employeeId)
+    ) {
+      return res.status(400).json({ message: "Invalid payroll draft or employee ID" });
+    }
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+    }).select("+employeeUndoSnapshots");
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Draft") {
+      return res.status(409).json({ message: "Processed payroll cannot be changed" });
+    }
+    const snapshot = draft.employeeUndoSnapshots?.[employeeId];
+    if (!snapshot) {
+      return res.status(409).json({ message: "This employee has no saved change to undo" });
+    }
+    const summaryIndex = draft.employeeSummaries.findIndex(
+      (summary) => String(summary.employee) === employeeId
+    );
+    if (summaryIndex === -1) {
+      return res.status(404).json({ message: "Employee is not part of this payroll draft" });
+    }
+
+    draft.employeeSummaries.splice(summaryIndex, 1, snapshot);
+    const nextSnapshots = { ...(draft.employeeUndoSnapshots || {}) };
+    delete nextSnapshots[employeeId];
+    draft.employeeUndoSnapshots = nextSnapshots;
+    draft.markModified("employeeUndoSnapshots");
+    draft.undoableEmployeeIds = (draft.undoableEmployeeIds || []).filter(
+      (undoEmployeeId) => String(undoEmployeeId) !== employeeId
+    );
+    draft.undoSnapshot = null;
+    draft.canUndo = false;
+    await recalculateDraftTotals(draft);
+    await draft.save();
+    res.status(200).json({
+      message: "Employee payroll change undone",
       data: draft,
     });
   } catch (error) {
@@ -1135,5 +1278,7 @@ module.exports = {
   fetchPayrollDraftExport,
   updatePayrollDraftEmployee,
   excludePayrollDraftEmployees,
+  undoPayrollDraftChange,
+  undoPayrollDraftEmployeeChange,
   submitPayrollDraft,
 };

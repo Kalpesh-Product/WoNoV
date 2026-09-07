@@ -107,7 +107,6 @@ const PayrollSummary = () => {
         data={rows}
         columns={columns}
         search
-        exportData
         tableTitle="Payroll Summary"
         tableHeight={450}
       />
