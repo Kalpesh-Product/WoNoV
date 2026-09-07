@@ -14,6 +14,8 @@ const FinanceCard = ({
   hideHeader = false,
   hideHeaderDivider = false,
   hideDividerAfter = [],
+  hideLastDivider = false,
+  centerContent = false,
 }) => {
   const navigate = useNavigate();
   const hasSectionColors = Boolean(sectionColors);
@@ -39,6 +41,8 @@ const FinanceCard = ({
     //   <div className="flex flex-col gap-2">
      <div
       className={`flex flex-col h-full shadow-md rounded-xl ${minHeight} ${
+        centerContent ? "justify-center" : ""
+      } ${
         hasSectionColors ? "overflow-hidden" : "gap-4 p-4"
       }`}
     >
@@ -62,7 +66,11 @@ const FinanceCard = ({
                 </span>
               </div>
             ) : (
-              <div className="flex justify-between items-center">
+              <div
+                className={`flex justify-between items-center ${
+                  centerContent ? "translate-y-1" : ""
+                }`}
+              >
                 <span className="text-title font-pmedium text-center">
                   {cardTitle}
                 </span>
@@ -85,6 +93,7 @@ const FinanceCard = ({
             typeof item.value === "number"
               ? item.value
               : parseInt(item?.value.replace(/[^0-9-]/g, ""));
+          const isLastItem = index === descriptionData.length - 1;
 
           const dynamicColor =
             highlightNegativePositive && !isNaN(numericValue)
@@ -137,7 +146,9 @@ const FinanceCard = ({
                   {item.value}
                 </span>
               </div>
-                {!hasSectionColors && !hideDividerAfter.includes(item.title) && (
+                {!hasSectionColors &&
+                  !hideDividerAfter.includes(item.title) &&
+                  !(hideLastDivider && isLastItem) && (
                   <hr className="border-dotted border-b-default" />
                 )}
             </div>

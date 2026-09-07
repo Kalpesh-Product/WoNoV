@@ -198,7 +198,7 @@ const InvestorOperationalCharts = ({
   visibleCharts,
   routes,
   showDetails = false,
-  fillHeight = "",
+  flushLayout = false,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -384,7 +384,8 @@ const InvestorOperationalCharts = ({
         key={key}
         title={chart.title}
         border
-        height={fillHeight}
+        height={flushLayout ? "h-[433px]" : undefined}
+       // height={fillHeight}
       >
         <div
           className="cursor-pointer"
@@ -606,11 +607,15 @@ const InvestorOperationalCharts = ({
         </WidgetSection>
       )}
       {fullWidthCharts.length > 0 && (
-        <div className="-mt-2">
-          <WidgetSection layout={1}>
-            {fullWidthCharts.map(renderChart)}
-          </WidgetSection>
-        </div>
+        flushLayout ? (
+          fullWidthCharts.map(renderChart)
+        ) : (
+          <div className="-mt-2">
+            <WidgetSection layout={1}>
+              {fullWidthCharts.map(renderChart)}
+            </WidgetSection>
+          </div>
+        )
       )}
       {showClientDetails && (
         <div className="px-4">

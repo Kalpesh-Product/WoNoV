@@ -27,6 +27,7 @@ const YearlyGraph = ({
   currentYear,
   onYearChange,
   refreshOnDataChange = false,
+  navigationLabel = "",
   dateKey, // 👈 New prop
 }) => {
    const yearKey = dataPoint === "name" ? "name" : "group";
@@ -158,7 +159,12 @@ const YearlyGraph = ({
             height={chartHeight}
           />
 
-          <div className="flex justify-center items-center">
+          <div className="flex flex-col justify-center items-center gap-1">
+            {navigationLabel && (
+              <div className="text-black text-content font-semibold">
+                {navigationLabel}
+              </div>
+            )}
             {/* <div className="flex items-center pb-2 gap-4 mt-4"> */}
             <div className="flex items-center gap-4 mt-4">
               <SecondaryButton

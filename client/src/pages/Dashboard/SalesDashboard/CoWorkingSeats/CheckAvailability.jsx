@@ -36,6 +36,7 @@ const CheckAvailability = ({
   cardsTitle = "",
   graphTitle = "TOTAL v/s OCCUPIED",
   monthlyView = false,
+  hideInventoryLastDivider = false,
 }) => {
   const navigate = useNavigate();
   const address = useLocation();
@@ -806,6 +807,7 @@ const CheckAvailability = ({
           highlightNegativePositive
           disableColorChange
           disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.inventory}
         />
 
@@ -815,6 +817,7 @@ const CheckAvailability = ({
           highlightNegativePositive
           disableColorChange
           disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.occupancy}
         />
 
@@ -824,6 +827,7 @@ const CheckAvailability = ({
           highlightNegativePositive
           disableColorChange
           disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>

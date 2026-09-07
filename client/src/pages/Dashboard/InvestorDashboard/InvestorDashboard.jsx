@@ -321,7 +321,7 @@ const InvestorAppreciationCenter = () => {
 
   return (
     <div
-      className="cursor-pointer"
+      className="h-[425px] cursor-pointer"
       role="button"
       tabIndex={0}
       aria-label="View BIZNEST Appreciation Center"
@@ -343,7 +343,7 @@ const InvestorAppreciationCenter = () => {
           title="BIZNEST APPRECIATION CENTER"
           border
         >
-          <div className="flex h-80 items-center justify-center">
+           <div className="flex h-[350px] items-center justify-center">
             <CircularProgress />
           </div>
         </WidgetSection>
@@ -354,8 +354,9 @@ const InvestorAppreciationCenter = () => {
           data={graphData}
           options={options}
           onYearChange={setSelectedFiscalYear}
-          chartHeight={330}
-          sectionHeight="h-full"
+          navigationLabel="Month"
+            chartHeight={280}
+          sectionHeight="h-[425px]"
           refreshOnDataChange
         />
       )}
@@ -1479,10 +1480,6 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
     chart: {
       id: "investor-income-vs-expense",
       animations: { enabled: false },
-      events: {
-        dataPointSelection: () =>
-          navigate("/app/dashboard/investor-dashboard/monthly-profit-loss"),
-      },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
@@ -1535,7 +1532,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
             height="min-h-[340px]"
             title={"BIZNEST PROFIT & LOSS - LAST MONTHS"}
           >
-            <div className="mt-4 mb-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="mt-4 mb-4 grid grid-cols-1 gap-5 lg:grid-cols-3">
               {[
                 {
                   title: "Income",
@@ -1560,19 +1557,20 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
                   card.highlightNegativePositive,
                 );
                 return (
-                  <div key={card.title} className="flex flex-col gap-4">
+                  <div key={card.title} className="flex flex-col gap-3">
                     <FinanceCard
                       cardTitle={card.title}
                       timePeriod={selectedFiscalYear}
                       descriptionData={[]}
-                      minHeight="min-h-[90px]"
+                      minHeight="min-h-[50px]"
                       hideHeaderDivider
+                      centerContent
                       disableLinks
                     />
                     <FinanceCard
                       {...cardData}
                       descriptionData={cardData.descriptionData.slice(0, 2)}
-                      minHeight="min-h-[140px]"
+                      minHeight="min-h-[110px]"
                       hideHeader
                       hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
                       disableLinks
@@ -1580,7 +1578,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
                     <FinanceCard
                       {...cardData}
                       descriptionData={cardData.descriptionData.slice(2)}
-                      minHeight="min-h-[140px]"
+                      minHeight="min-h-[110px]"
                       hideHeader
                       hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
                       disableLinks
@@ -1936,6 +1934,7 @@ const InvestorDashboard = () => {
             hideCheckInventory
             graphHeight={450}
             cardsBorder
+            hideInventoryLastDivider
             cardsTitle="BIZNEST INVENTORY DETAILS"
             graphTitle="BIZNEST OCCUPIED v/s UNOCCUPIED - FY 2026-27"
             monthlyView
@@ -1958,16 +1957,16 @@ const InvestorDashboard = () => {
           </div>
         )}
       {showDashboardHome && visibleOperationalGraphs.includes("desks") && (
-        <div className="-mt-6 grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="h-full min-w-0 w-full">
+        <div className="-mt-2 grid w-full grid-cols-1 items-stretch gap-x-4 gap-y-4 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[425px]">
+          <div className="flex h-full min-w-0 w-full flex-col">
             <InvestorOperationalCharts
               visibleCharts={["desks"]}
               routes={operationalGraphRoutes}
-              fillHeight="h-full"
+               flushLayout  
             />
           </div>
           {canViewAppreciationCenter && (
-            <div className="h-full min-w-0 w-full">
+            <div className="flex h-full min-w-0 w-full flex-col">
               <InvestorAppreciationCenter />
             </div>
           )}
