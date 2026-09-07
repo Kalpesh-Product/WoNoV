@@ -106,6 +106,15 @@ const ticketsSchema = new mongoose.Schema(
       id: String,
       url: String,
     },
+    attachments: [
+      {
+        id: String,
+        url: String,
+        name: String,
+        mimeType: String,
+        size: Number,
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -133,6 +133,8 @@ const handleDocumentUpload = async (buffer, folder, originalFilename) => {
       ".xls": "application/vnd.ms-excel",
       ".xlsx":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      ".csv": "text/csv",
+      ".webp": "image/webp",
       ".png": "image/png",
       ".jpg": "image/jpeg",
       ".jpeg": "image/jpeg",

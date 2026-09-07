@@ -8,6 +8,7 @@ import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import TicketAttachments from "../../components/TicketAttachments";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
@@ -420,6 +421,7 @@ const TicketReports = () => {
                   description: item.description || "",
                   status: item.status || "",
                   image: item?.image?.url || "",
+                  attachments: item?.attachments || [],
                   assignees:
                     item.assignees?.map(
                       (assignee) =>
@@ -667,6 +669,7 @@ const TicketReports = () => {
                 />
               </div>
             )}
+            <TicketAttachments attachments={selectedMeeting?.attachments} />
           </div>
         ) : (
           <CircularProgress />

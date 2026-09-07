@@ -7,6 +7,7 @@ import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "./../../../utils/humanDateForamt";
@@ -167,6 +168,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
               .map((dept) => dept.raisedToDepartment.name)
               .join(", ") || "N/A",
           image: ticket.image?.url || null,
+          attachments: ticket.attachments || [],
           ...(() => {
             const { assignedToDisplay, assignmentDetails } =
               formatAssignments(ticket.assignedTo);
@@ -434,6 +436,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
                   />
                 </div>
               )}
+              <TicketAttachments attachments={selectedTicket?.attachments} />
             </div>
           )}
         </MuiModal>

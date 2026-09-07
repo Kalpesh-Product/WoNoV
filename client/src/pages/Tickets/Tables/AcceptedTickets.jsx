@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../main";
 import MuiModal from "../../../components/MuiModal";
+import TicketAttachments from "../../../components/TicketAttachments";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { useEffect, useState } from "react";
@@ -367,6 +368,7 @@ const AcceptedTickets = ({
       acceptedAt: ticket.acceptedAt ? humanTime(ticket.acceptedAt) : "-",
       priority: ticket.priority,
       image: ticket.image ? ticket.image.url : null,
+      attachments: ticket.attachments || [],
     })),
   ]);
 
@@ -426,6 +428,7 @@ const AcceptedTickets = ({
                 acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "-",
                 priority: ticket.priority,
                 image: ticket.image ? ticket.image.url : null,
+                attachments: ticket.attachments || [],
               })),
             ]}
             columns={recievedTicketsColumns}
@@ -619,6 +622,7 @@ const AcceptedTickets = ({
                 />
               </div>
             )}
+            <TicketAttachments attachments={selectedTicket?.attachments} />
             {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
           </div>
         )}

@@ -19,6 +19,7 @@ import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 import humanDate from "../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
@@ -202,6 +203,7 @@ const AssignedTickets = ({
           assignedAt: ticket.assignedAt || "N/A",
           status: ticket.status || "Pending",
           image: ticket.image?.url || null,
+          attachments: ticket.attachments || [],
         };
 
         return supportTicket;
@@ -789,6 +791,7 @@ const AssignedTickets = ({
                 />
               </div>
             )}
+            <TicketAttachments attachments={selectedTicket?.attachments} />
           </div>
         )}
       </MuiModal>

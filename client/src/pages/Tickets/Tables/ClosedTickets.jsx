@@ -10,6 +10,7 @@ import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
 import StatusChip from "../../../components/StatusChip";
 import formatDateTime from "../../../utils/formatDateTime";
+import TicketAttachments from "../../../components/TicketAttachments";
 
 const ClosedTickets = ({
   title,
@@ -127,6 +128,7 @@ const ClosedTickets = ({
             : "None",
           priority: ticket.priority,
           image: ticket.image ? ticket.image.url : null,
+          attachments: ticket.attachments || [],
           ...formatEscalation(ticket.escalatedTo),
         }));
   };
@@ -305,6 +307,7 @@ const ClosedTickets = ({
               />
             </div>
           )}
+          <TicketAttachments attachments={viewTicketDetails?.attachments} />
         </div>
       </MuiModal>
     </div>

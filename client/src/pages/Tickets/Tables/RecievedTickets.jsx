@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 import humanDate from "../../../utils/humanDateForamt";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
@@ -177,6 +178,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       raisedDate: ticket.createdAt,
       priority: ticket.priority || "Low",
       image: ticket.image?.url,
+      attachments: ticket.attachments || [],
     }));
   };
 
@@ -369,6 +371,7 @@ const RecievedTickets = ({ title, departmentId }) => {
                 </button>
               </div>
             )}
+            <TicketAttachments attachments={selectedTicket?.attachments} />
           </div>
         )}
       </MuiModal>
