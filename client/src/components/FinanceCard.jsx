@@ -12,6 +12,8 @@ const FinanceCard = ({
   sectionColors,
   minHeight = "",
   hideHeader = false,
+  hideHeaderDivider = false,
+  hideDividerAfter = [],
 }) => {
   const navigate = useNavigate();
   const hasSectionColors = Boolean(sectionColors);
@@ -68,7 +70,7 @@ const FinanceCard = ({
               </div>
             )}
           </div>
-          {!hasSectionColors && <hr className="h-[1px] w-full" />}
+          {!hasSectionColors && !hideHeaderDivider && <hr className="h-[1px] w-full" />}
         </>
       )}
 
@@ -135,7 +137,7 @@ const FinanceCard = ({
                   {item.value}
                 </span>
               </div>
-                {!hasSectionColors && (
+                {!hasSectionColors && !hideDividerAfter.includes(item.title) && (
                   <hr className="border-dotted border-b-default" />
                 )}
             </div>

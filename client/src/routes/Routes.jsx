@@ -695,6 +695,7 @@ export const routes = createBrowserRouter([
                     "client-member-gender-wise-data",
                     "india-wise-members",
                     "total-desks-company-wise",
+                    "appreciation-center",
                     "overall-visitor-category",
                     "overall-visitor-client-type",
                     "overall-visitor-gender-data",

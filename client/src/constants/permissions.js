@@ -3776,6 +3776,13 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     access: "page",
     route: "/app/dashboard/investor-dashboard/total-desks-company-wise",
   },
+  INVESTOR_APPRECIATION_CENTER: {
+    value: "investor_appreciation_center",
+    title: "INVESTOR BIZNEST APPRECIATION CENTER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/appreciation-center",
+  },
   INVESTOR_OVERALL_VISITOR_CATEGORY: {
     value: "investor_overall_visitor_category",
     title: "INVESTOR OVERALL VISITOR CATEGORY",

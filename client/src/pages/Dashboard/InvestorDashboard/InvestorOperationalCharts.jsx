@@ -55,6 +55,9 @@ const visitorGenderColors = ["#0056B3", "#FD507E"];
 const legendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`;
 
+const singleLineLegendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;max-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:10px;line-height:1.2;">${seriesName}</span>`;
+
 const calculateAgreementExpiry = (startDate, endDate) => {
   if (!startDate || !endDate) return "-";
 
@@ -71,18 +74,26 @@ const calculateAgreementExpiry = (startDate, endDate) => {
   return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
 };
 
-const pieOptions = (labels, suffix, colors = palette) => ({
+const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
   colors,
   legend: {
+    show: !singleLine,
     position: "bottom",
     horizontalAlign: "center",
+    ...(singleLine
+      ? {
+          width: 850,
+          fontSize: "10px",
+          markers: { width: 8, height: 8 },
+        }
+      : {}),
     itemMargin: {
-      horizontal: 4,
-      vertical: 2,
+      horizontal: singleLine ? 2 : 4,
+      vertical: singleLine ? 0 : 2,
     },
-    formatter: legendFormatter,
+    formatter: singleLine ? singleLineLegendFormatter : legendFormatter,
   },
   tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
 });
@@ -183,7 +194,12 @@ const topWithOther = (entries, limit = 6, includeOther = true) => {
   return other ? [...visible, { label: "Other", value: other }] : visible;
 };
 
-const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
+const InvestorOperationalCharts = ({
+  visibleCharts,
+  routes,
+  showDetails = false,
+  fillHeight = "",
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const needsClients = visibleCharts.some((key) =>
@@ -204,6 +220,7 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
     enabled: needsClients,
   });
   const showClientDetails =
+    showDetails &&
     visibleCharts.length === 1 &&
     ["client", "desks"].includes(visibleCharts[0]);
   const showGenderDetails =
@@ -342,9 +359,33 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
     const chart = chartData[key];
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
+    const chartColors = chart.colors || palette;
+    const hasScrollableLegend = ["desks", "sector", "client"].includes(key);
+    const customChartLegend = hasScrollableLegend && (
+      <div className="w-full overflow-x-auto touch-pan-x select-none">
+        <div className="flex min-w-max items-center justify-center gap-3 px-2">
+          {labels.map((label, index) => (
+            <div key={label} className="flex shrink-0 items-center gap-1 text-xs">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: chartColors[index] }}
+              />
+              <span className="max-w-28 truncate" title={label}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
 
     return (
-      <WidgetSection key={key} title={chart.title} border>
+      <WidgetSection
+        key={key}
+        title={chart.title}
+        border
+        height={fillHeight}
+      >
         <div
           className="cursor-pointer"
           role="button"
@@ -371,9 +412,15 @@ const InvestorOperationalCharts = ({ visibleCharts, routes }) => {
           ) : (
             <PieChartMui
               data={chart.data}
-              options={pieOptions(labels, chart.suffix, chart.colors || palette)}
+              options={pieOptions(
+                labels,
+                chart.suffix,
+                chartColors,
+              hasScrollableLegend,
+              )}
               width={500}
               height={350}
+              customLegend={customChartLegend}
               centerAlign
             />
           )}

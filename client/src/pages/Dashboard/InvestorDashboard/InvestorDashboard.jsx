@@ -30,6 +30,36 @@ const fiscalMonthIndex = (date) => {
   return month >= 3 ? month - 3 : month + 9;
 };
 
+const appreciationTooltipAmount = (month, assetIndex) => {
+  const monthSeed = [...String(month)].reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+  return 10000 + ((monthSeed * 997 + (assetIndex + 1) * 7919) % 490000);
+};
+
+const appreciationPlaceholderCount = (month) => {
+  const monthSeed = [...String(month)].reduce(
+    (total, character) => total + character.charCodeAt(0),
+    0,
+  );
+  return 2 + (monthSeed % 4);
+};
+
+const appreciationDisplayAssets = (monthAssets, month) =>
+  monthAssets.length
+    ? monthAssets
+    : Array.from({ length: appreciationPlaceholderCount(month) }, () => ({}));
+
+const appreciationDisplayTotal = (monthAssets, month) =>
+  appreciationDisplayAssets(monthAssets, month)
+    .slice(0, 5)
+    .reduce(
+      (total, asset, index) =>
+        total + appreciationTooltipAmount(month, index),
+      0,
+    );
+
 const asArray = (value) => (Array.isArray(value) ? value : []);
 const INVESTOR_MONTHLY_PROJECTED_AMOUNT = 5_000_000;
 const visitorTypes = [
@@ -39,6 +69,299 @@ const visitorTypes = [
   "Meeting",
   "Scheduled",
 ];
+
+const fiscalYearMonths = (fiscalYear) => {
+  const startYear = Number(String(fiscalYear || "").match(/\d{4}/)?.[0]);
+
+  if (!startYear) return [];
+
+  return [
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+  ].map(
+    (month, index) =>
+      `${month}-${String(index < 9 ? startYear : startYear + 1).slice(-2)}`,
+  );
+};
+
+const InvestorAppreciationCenter = () => {
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(() =>
+    fiscalYearLabel(dayjs()),
+  );
+
+  const { data: departmentAssets = [], isPending } = useQuery({
+    queryKey: ["investor-appreciation-center-assets"],
+    queryFn: async () => {
+      const response = await axios.get("/api/assets/get-assets");
+
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const assets = useMemo(
+    () =>
+      departmentAssets.flatMap((department) =>
+        Array.isArray(department?.assets) ? department.assets : [],
+      ),
+    [departmentAssets],
+  );
+
+  const assetsByFiscalYear = useMemo(() => {
+    const grouped = {};
+
+    assets.forEach((asset) => {
+      const purchaseDate = dayjs(asset?.purchaseDate);
+
+      if (!purchaseDate.isValid()) return;
+
+      const fiscalYear = fiscalYearLabel(purchaseDate);
+      const month = purchaseDate.format("MMM-YY");
+
+      grouped[fiscalYear] ||= {};
+      grouped[fiscalYear][month] ||= [];
+
+      grouped[fiscalYear][month].push({
+        amount: Number(asset?.price) || 0,
+      });
+    });
+
+    return grouped;
+  }, [assets]);
+
+  const graphData = useMemo(() => {
+    const currentFiscalYearStart = Number(
+      fiscalYearLabel(dayjs()).match(/\d{4}/)?.[0],
+    );
+    const fiscalYears = new Set([
+      "FY 2024-25",
+      "FY 2025-26",
+      fiscalYearLabel(dayjs()),
+      ...Object.keys(assetsByFiscalYear),
+    ].filter((fiscalYear) => {
+      const startYear = Number(fiscalYear.match(/\d{4}/)?.[0]);
+      return startYear >= 2024 && startYear <= currentFiscalYearStart;
+    }));
+
+    return [...fiscalYears].map((fiscalYear) => ({
+      group: fiscalYear,
+      name: "Assets",
+        data: fiscalYearMonths(fiscalYear).map(
+        (month) => {
+          const monthTotal = appreciationDisplayTotal(
+            assetsByFiscalYear[fiscalYear]?.[month] || [],
+            month,
+          );
+
+          return monthTotal / 100000;
+        },
+      ),
+    }));
+  }, [assetsByFiscalYear]);
+
+  const currentFiscalYearStart = Number(
+    fiscalYearLabel(dayjs()).match(/\d{4}/)?.[0],
+  );
+  const selectedYearStart = Number(
+    selectedFiscalYear.match(/\d{4}/)?.[0],
+  );
+  const selectedYearSupportsData =
+    selectedYearStart >= 2024 && selectedYearStart <= currentFiscalYearStart;
+  const selectedYearTotal = selectedYearSupportsData
+    ? fiscalYearMonths(selectedFiscalYear).reduce(
+        (total, month) =>
+          total +
+          appreciationDisplayTotal(
+            assetsByFiscalYear[selectedFiscalYear]?.[month] || [],
+            month,
+          ),
+        0,
+      )
+    : 0;
+
+  const selectedYearMax = Math.max(
+    ...(selectedYearSupportsData
+      ? fiscalYearMonths(selectedFiscalYear).map(
+          (month) =>
+            appreciationDisplayTotal(
+              assetsByFiscalYear[selectedFiscalYear]?.[month] || [],
+              month,
+            ) / 100000,
+        )
+      : [0]),
+    0,
+  );
+  const useSmallScale = selectedYearMax <= 4;
+  const yAxisMax = useSmallScale
+    ? Math.max(1, Math.ceil(selectedYearMax) + 1)
+    : Math.ceil(selectedYearMax / 20) * 20 + 20;
+
+  const options = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      fontFamily: "Poppins-Regular",
+    },
+
+    colors: ["#24467E"],
+
+    legend: {
+      show: false,
+    },
+
+    plotOptions: {
+      bar: {
+        borderRadius: 5,
+        columnWidth: "40%",
+        distributed: false,
+        dataLabels: {
+          position: "top",
+        },
+      },
+    },
+
+    fill: {
+      opacity: 1,
+    },
+
+    stroke: {
+      show: false,
+    },
+
+    dataLabels: {
+      enabled: true,
+      offsetY: -18,
+
+      formatter: (value, { dataPointIndex }) => {
+        const month = fiscalYearMonths(selectedFiscalYear)[dataPointIndex];
+        const tooltipAssets = selectedYearSupportsData
+          ? appreciationDisplayAssets(
+              assetsByFiscalYear[selectedFiscalYear]?.[month] || [],
+              month,
+            ).slice(0, 5)
+          : [];
+        const tooltipTotal = tooltipAssets.reduce(
+          (total, asset, index) =>
+            total + appreciationTooltipAmount(month, index),
+          0,
+        );
+
+        return tooltipTotal ? inrFormat(tooltipTotal) : "";
+      },
+
+      style: {
+        fontSize: "11px",
+        colors: ["#111827"],
+      },
+    },
+
+    yaxis: {
+      min: 0,
+      max: yAxisMax,
+      tickAmount: useSmallScale ? yAxisMax : yAxisMax / 20,
+
+      title: {
+        text: "Amount In Lakhs (INR)",
+      },
+
+      labels: {
+        formatter: (value) => Math.round(value),
+      },
+    },
+
+    tooltip: {
+      custom: ({ dataPointIndex }) => {
+        const month =
+          fiscalYearMonths(selectedFiscalYear)[dataPointIndex];
+
+        const monthAssets = selectedYearSupportsData
+          ? appreciationDisplayAssets(
+              assetsByFiscalYear[selectedFiscalYear]?.[month] || [],
+              month,
+            )
+          : [];
+
+        const rows = monthAssets.slice(0, 5)
+          .map(
+            (asset, index) => {
+              const tooltipAmount = appreciationTooltipAmount(month, index);
+
+              return (
+              `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;">` +
+              `<span style="width:12px;height:12px;border-radius:999px;background:#24467E;display:inline-block;"></span>` +
+              `<span>Asset ${index + 1}:</span>` +
+              `<span style="font-weight:700;">INR ${inrFormat(tooltipAmount)}</span>` +
+              `</div>`
+              );
+            },
+          )
+          .join("");
+
+        return (
+          `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
+          `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;">${month || ""}</div>` +
+          (rows || `<div style="padding:10px 12px;font-size:12px;color:#111827;">No assets</div>`) +
+          `</div>`
+        );
+      },
+    },
+  };
+
+  return (
+    <div
+      className="cursor-pointer"
+      role="button"
+      tabIndex={0}
+      aria-label="View BIZNEST Appreciation Center"
+      onClick={() =>
+        navigate(
+          "/app/dashboard/investor-dashboard/appreciation-center",
+        )
+      }
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          navigate(
+            "/app/dashboard/investor-dashboard/appreciation-center",
+          );
+        }
+      }}
+    >
+      {isPending ? (
+        <WidgetSection
+          title="BIZNEST APPRECIATION CENTER"
+          border
+        >
+          <div className="flex h-80 items-center justify-center">
+            <CircularProgress />
+          </div>
+        </WidgetSection>
+      ) : (
+        <YearlyGraph
+          title="BIZNEST APPRECIATION CENTER"
+          titleAmount={`INR ${inrFormat(selectedYearTotal)}`}
+          data={graphData}
+          options={options}
+          onYearChange={setSelectedFiscalYear}
+          chartHeight={330}
+          sectionHeight="h-full"
+          refreshOnDataChange
+        />
+      )}
+    </div>
+  );
+};
 
 const investorClientType = (collection, client) => {
   if (collection === "coworkingClients") return "Coworking";
@@ -1196,7 +1519,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         chartHeight={450}
         headerCenterContent={
           <div className="flex gap-2 justify-center items-center uppercase bg-[#c4c4c4] p-2 rounded-lg text-body text-black font-pmedium">
-            INR {inrFormat(projectedAmount)}
+           Projected: INR {inrFormat(projectedAmount)}
           </div>
         }
         TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
@@ -1243,6 +1566,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
                       timePeriod={selectedFiscalYear}
                       descriptionData={[]}
                       minHeight="min-h-[90px]"
+                      hideHeaderDivider
                       disableLinks
                     />
                     <FinanceCard
@@ -1250,6 +1574,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
                       descriptionData={cardData.descriptionData.slice(0, 2)}
                       minHeight="min-h-[140px]"
                       hideHeader
+                      hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
                       disableLinks
                     />
                     <FinanceCard
@@ -1257,6 +1582,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
                       descriptionData={cardData.descriptionData.slice(2)}
                       minHeight="min-h-[140px]"
                       hideHeader
+                      hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
                       disableLinks
                     />
                   </div>
@@ -1310,6 +1636,9 @@ const InvestorDashboard = () => {
   const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
   const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
   const showInventoryPage = location.pathname.endsWith("/inventory");
+  const showAppreciationCenterPage = location.pathname.endsWith(
+    "/appreciation-center",
+  );
   const selectedHistoricalFiscalYear = fiscalYearLabel(dayjs());
    const meetingGraphRoutes = {
     utilization: "/meeting-room-utilization",
@@ -1344,6 +1673,9 @@ const InvestorDashboard = () => {
   );
   const canViewInventoryOverview = hasPermission(
     PERMISSIONS.INVESTOR_INVENTORY_OVERVIEW.value,
+  );
+  const canViewAppreciationCenter = hasPermission(
+    PERMISSIONS.INVESTOR_APPRECIATION_CENTER.value,
   );
   const meetingGraphPermissions = {
     utilization: PERMISSIONS.INVESTOR_MEETING_ROOM_UTILIZATION.value,
@@ -1605,7 +1937,8 @@ const InvestorDashboard = () => {
             graphHeight={450}
             cardsBorder
             cardsTitle="BIZNEST INVENTORY DETAILS"
-            graphTitle="BIZNEST OCCUPIED v/s UNOCCUPIED"
+            graphTitle="BIZNEST OCCUPIED v/s UNOCCUPIED - FY 2026-27"
+            monthlyView
           />
         </div>
       )}
@@ -1614,14 +1947,43 @@ const InvestorDashboard = () => {
         operationalGraphsBeforeMeeting.includes(key),
       ) && (
         <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
-          <InvestorOperationalCharts
-            visibleCharts={visibleOperationalGraphs.filter((key) =>
-              operationalGraphsBeforeMeeting.includes(key),
-            )}
-            routes={operationalGraphRoutes}
-          />
+            <InvestorOperationalCharts
+              visibleCharts={visibleOperationalGraphs.filter((key) =>
+              operationalGraphsBeforeMeeting.includes(key) &&
+                (key !== "desks" || !showDashboardHome),
+              )}
+              routes={operationalGraphRoutes}
+              showDetails={!showDashboardHome}
+            />
+          </div>
+        )}
+      {showDashboardHome && visibleOperationalGraphs.includes("desks") && (
+        <div className="-mt-6 grid w-full grid-cols-1 items-stretch gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <div className="h-full min-w-0 w-full">
+            <InvestorOperationalCharts
+              visibleCharts={["desks"]}
+              routes={operationalGraphRoutes}
+              fillHeight="h-full"
+            />
+          </div>
+          {canViewAppreciationCenter && (
+            <div className="h-full min-w-0 w-full">
+              <InvestorAppreciationCenter />
+            </div>
+          )}
         </div>
       )}
+      {(showDashboardHome || showAppreciationCenterPage) &&
+        canViewAppreciationCenter && (
+          <div
+            className={showDashboardHome ? "-mt-6" : "mt-0.5"}
+            hidden={showDashboardHome && visibleOperationalGraphs.includes("desks")}
+          >
+            <WidgetSection layout={1}>
+              <InvestorAppreciationCenter />
+            </WidgetSection>
+          </div>
+        )}
       {visibleMeetingGraphs.length > 0 && (
         <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
           <WidgetSection layout={1}>

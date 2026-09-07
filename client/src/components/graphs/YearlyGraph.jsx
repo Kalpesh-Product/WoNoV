@@ -23,6 +23,7 @@ const YearlyGraph = ({
   headerCenterContent,
   secondParam = false,
   chartHeight,
+  sectionHeight = "",
   currentYear,
   onYearChange,
   refreshOnDataChange = false,
@@ -64,7 +65,6 @@ const YearlyGraph = ({
     }
     return currentFYStartYear;
   });
-
   const selectedYear = getFYLabel(selectedYearStart);
 
   useEffect(() => {
@@ -88,7 +88,10 @@ const YearlyGraph = ({
   if (dataPoint === "name") {
     filteredData = data.filter((item) => item.name === selectedYear);
   } else {
-    filteredData = data.filter((item) => item.group === selectedYear);
+    filteredData = data.filter(
+      (item) =>
+        String(item.group || "").includes(String(selectedYearStart)),
+    );
   }
 
   if (filteredData.length === 0 && dataPoint !== "name") {
@@ -119,11 +122,11 @@ const YearlyGraph = ({
   };
 
   const goToPrevYear = () => {
-     setSelectedYearStart((prev) => prev - 1);
+    setSelectedYearStart((prev) => prev - 1);
   };
 
   const goToNextYear = () => {
-     setSelectedYearStart((prev) => prev + 1);
+    setSelectedYearStart((prev) => prev + 1);
   };
 
   return (
@@ -142,6 +145,7 @@ const YearlyGraph = ({
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}
         headerCenterContent={headerCenterContent}
+        height={sectionHeight}
       >
         <div className="flex flex-col gap-4">
           <BarGraph
