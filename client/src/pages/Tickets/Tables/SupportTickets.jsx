@@ -723,16 +723,10 @@ const SupportTickets = ({
               detail={selectedTicket?.priority || ""}
             />
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            {selectedTicket?.image && (
-              <div className="lg:col-span-1">
-                <img
-                  src={selectedTicket.image}
-                  alt="Support Ticket Attachment"
-                  className="max-w-full max-h-96 rounded border"
-                />
-              </div>
-            )}
-            <TicketAttachments attachments={selectedTicket?.attachments} />
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
             <DetalisFormatted
               title="Accepted By"
               detail={selectedTicket?.acceptedBy || ""}
