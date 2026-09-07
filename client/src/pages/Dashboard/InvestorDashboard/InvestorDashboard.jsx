@@ -1163,7 +1163,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
-     colors: ["#54C4A7", "#EB5C45", "#C5C1C1"],
+     colors: ["#54C4A7", "#EB5C45", "#c4c4c4"],
     plotOptions: { bar: { horizontal: false, columnWidth: "70%", borderRadius: 6 } },
     dataLabels: { enabled: false },
     legend: {
@@ -1195,7 +1195,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         title={`BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}
         chartHeight={450}
         headerCenterContent={
-          <div className="flex gap-2 justify-center items-center uppercase bg-[#e5e7eb] p-2 rounded-lg text-body text-slate-800 font-pmedium">
+          <div className="flex gap-2 justify-center items-center uppercase bg-[#c4c4c4] p-2 rounded-lg text-body text-black font-pmedium">
             INR {inrFormat(projectedAmount)}
           </div>
         }
