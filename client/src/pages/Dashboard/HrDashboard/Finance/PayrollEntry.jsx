@@ -3,12 +3,13 @@ import dayjs from "dayjs";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { MenuItem, TextField } from "@mui/material";
-import { MdDeleteOutline, MdEdit } from "react-icons/md";
+import { MdDeleteOutline, MdEdit, MdUndo } from "react-icons/md";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import MuiModal from "../../../../components/MuiModal";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
 import { downloadCsv } from "../../../../utils/downloadCsv";
@@ -17,7 +18,7 @@ import { queryClient } from "../../../../main";
 
 const SummarySection = ({ title, rows }) => (
   <section>
-    <h2 className="border-b pb-3 text-subtitle font-semibold text-primary">
+    <h2 className="border-b pb-3 font-pmedium text-subtitle font-semibold text-primary">
       {title}
     </h2>
     <div className="mx-auto mt-4 grid max-w-sm grid-cols-[1fr_auto] gap-x-5 gap-y-3 text-content">
@@ -186,6 +187,8 @@ const PayrollEntry = () => {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [selectedEmployees, setSelectedEmployees] = useState([]);
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showUndoConfirmation, setShowUndoConfirmation] = useState(false);
+  const [employeeToUndo, setEmployeeToUndo] = useState(null);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [isPayrollSubmitted, setIsPayrollSubmitted] = useState(false);
   const [allowanceImportFile, setAllowanceImportFile] = useState("");
@@ -224,16 +227,24 @@ const PayrollEntry = () => {
         return response.data;
       },
     });
-  const { mutateAsync: recalculateDraft, isPending: isRecalculatingDraft } =
+  const { mutateAsync: undoDraftChange, isPending: isUndoingDraft } =
     useMutation({
       mutationFn: async () => {
-        const response = await axios.post("/api/payroll/drafts", {
-          batchName: draft.batchName,
-          payPeriod: dayjs(draft.payPeriod).format("YYYY-MM"),
-        });
+        const response = await axios.post(`/api/payroll/drafts/${draftId}/undo`);
         return response.data;
       },
     });
+  const {
+    mutateAsync: undoEmployeeChange,
+    isPending: isUndoingEmployee,
+  } = useMutation({
+    mutationFn: async (employeeId) => {
+      const response = await axios.post(
+        `/api/payroll/drafts/${draftId}/employees/${employeeId}/undo`
+      );
+      return response.data;
+    },
+  });
   const { mutateAsync: fetchPayrollExport, isPending: isExportingPayroll } =
     useMutation({
       mutationFn: async () => {
@@ -541,18 +552,42 @@ const PayrollEntry = () => {
     setAllowanceImportFile(file.name);
     event.target.value = "";
   };
-  const refreshEmployeeSummary = async () => {
+  const handleUndo = () => {
+    if (selectedEmployees.length > 0) {
+      setSelectedEmployees([]);
+      toast.success("Delete selection cleared");
+      return;
+    }
+    setShowUndoConfirmation(true);
+  };
+  const confirmDraftUndo = async () => {
     try {
-      const response = await recalculateDraft();
+      const response = await undoDraftChange();
       setEmployeeRows(buildEmployeeRows(response.data));
       setSelectedEmployees([]);
-      setShowDeleteConfirmation(false);
+      setShowUndoConfirmation(false);
       setAllowanceImportFile("");
       await refetchDraft();
       await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
-      toast.success("Payroll draft restored from current employee and attendance data");
+      toast.success(response.message || "Last payroll draft change undone");
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to refresh payroll draft");
+      toast.error(error.response?.data?.message || "Failed to undo payroll draft change");
+    }
+  };
+  const confirmEmployeeUndo = async () => {
+    if (!employeeToUndo?.employee) return;
+    try {
+      const response = await undoEmployeeChange(employeeToUndo.employee);
+      setEmployeeRows(buildEmployeeRows(response.data));
+      setSelectedEmployees((currentEmployees) =>
+        currentEmployees.filter((item) => item.id !== employeeToUndo.id)
+      );
+      setEmployeeToUndo(null);
+      await refetchDraft();
+      await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+      toast.success(response.message || "Employee payroll change undone");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to undo employee payroll change");
     }
   };
   const confirmPayrollSubmit = async () => {
@@ -603,7 +638,7 @@ const PayrollEntry = () => {
     {
       field: "action",
       headerName: "Action",
-      width: 100,
+      width: 140,
       pinned: "right",
       lockPinned: true,
       sortable: false,
@@ -613,8 +648,37 @@ const PayrollEntry = () => {
         const isMarkedForDelete = selectedEmployees.some(
           (item) => item.id === employee.id
         );
+        const canUndoEmployee = (draft.undoableEmployeeIds || []).some(
+          (employeeId) => String(employeeId) === String(employee.employee)
+        );
         return (
           <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title={
+                isProcessed
+                  ? "Processed payroll cannot be changed"
+                  : isMarkedForDelete || canUndoEmployee
+                    ? "Undo changes for this employee"
+                    : "No changes to undo"
+              }
+              aria-label={`Undo changes for ${employee.employeeName}`}
+              onClick={() => {
+                if (isMarkedForDelete) {
+                  toggleEmployeeForDelete(employee);
+                  return;
+                }
+                setEmployeeToUndo(employee);
+              }}
+              disabled={
+                isProcessed ||
+                (!isMarkedForDelete && !canUndoEmployee) ||
+                isUndoingEmployee
+              }
+              className="rounded p-2 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+            >
+              <MdUndo size={20} />
+            </button>
             <button
               type="button"
               title="Edit payroll entry"
@@ -672,7 +736,9 @@ const PayrollEntry = () => {
         </div>
 
         <div className="flex items-center gap-3 border-b pb-4 text-content">
-          <span>Settled On: {dayjs(draft.createdAt).format("DD MMM, YYYY")}</span>
+          <span>
+            Processed On: {dayjs(draft.submittedAt || draft.runDate || draft.createdAt).format("DD MMM, YYYY")}
+          </span>
           <span className="rounded bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-600">
             {draft.status}
           </span>
@@ -734,13 +800,33 @@ const PayrollEntry = () => {
             search
             searchBottomContent={
               <div className="flex flex-wrap items-center gap-3">
-                <PrimaryButton
-                  title="Refresh/Undo"
-                  handleSubmit={refreshEmployeeSummary}
-                  externalStyles="!bg-amber-500"
-                  disabled={isProcessed || isRecalculatingDraft}
-                  isLoading={isRecalculatingDraft}
-                />
+                <span
+                  title={
+                    isProcessed
+                      ? "Processed payroll cannot be changed"
+                      : selectedEmployees.length === 0 && !draft.canUndo
+                        ? "No changes to undo"
+                        : "Undo the latest payroll draft change"
+                  }
+                  className={
+                    isProcessed ||
+                    (selectedEmployees.length === 0 && !draft.canUndo)
+                      ? "cursor-not-allowed"
+                      : ""
+                  }
+                >
+                  <SecondaryButton
+                    title="Undo"
+                    handleSubmit={handleUndo}
+                    externalStyles="disabled:!cursor-not-allowed"
+                    disabled={
+                      isProcessed ||
+                      (selectedEmployees.length === 0 && !draft.canUndo) ||
+                      isUndoingDraft
+                    }
+                    isLoading={isUndoingDraft}
+                  />
+                </span>
                 <PrimaryButton
                   title="Payroll Detailed Export"
                   handleSubmit={exportPayrollDetails}
@@ -765,7 +851,7 @@ const PayrollEntry = () => {
                 )}
                 {selectedEmployees.length > 0 && (
                   <PrimaryButton
-                    title={`Delete All (${selectedEmployees.length})`}
+                    title={`Delete (${selectedEmployees.length})`}
                     handleSubmit={() => setShowDeleteConfirmation(true)}
                     externalStyles="!bg-red-600"
                   />
@@ -991,6 +1077,28 @@ const PayrollEntry = () => {
           </div>
         )}
       </MuiModal>
+
+      <ConfirmationModal
+        open={showUndoConfirmation}
+        onClose={() => setShowUndoConfirmation(false)}
+        onConfirm={confirmDraftUndo}
+        title="Undo Payroll Draft Change"
+        message="Undo the most recent saved change made to this payroll draft?"
+        confirmText="Undo"
+        cancelText="Cancel"
+        isLoading={isUndoingDraft}
+      />
+
+      <ConfirmationModal
+        open={Boolean(employeeToUndo)}
+        onClose={() => setEmployeeToUndo(null)}
+        onConfirm={confirmEmployeeUndo}
+        title="Undo Employee Payroll Change"
+        message={`Undo the latest saved payroll change for ${employeeToUndo?.employeeName || "this employee"}?`}
+        confirmText="Undo"
+        cancelText="Cancel"
+        isLoading={isUndoingEmployee}
+      />
 
       <ConfirmationModal
         open={showDeleteConfirmation}

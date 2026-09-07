@@ -72,6 +72,20 @@ const payrollDraftSchema = new mongoose.Schema(
     runDate: { type: Date, default: null },
     submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     submittedAt: { type: Date, default: null },
+    undoSnapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+      select: false,
+    },
+    canUndo: { type: Boolean, default: false },
+    employeeUndoSnapshots: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+      select: false,
+    },
+    undoableEmployeeIds: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+    ],
   },
   { timestamps: true }
 );
