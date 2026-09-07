@@ -30,6 +30,7 @@ const AgTableComponent = React.memo(
     buttonTitle,
     headerActions,
     searchRowActions,
+    searchBottomContent,
     tableHeight = 400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
@@ -437,6 +438,9 @@ const AgTableComponent = React.memo(
             )}
           </div>
         </div>
+        {searchBottomContent ? (
+          <div className="w-full pb-3">{searchBottomContent}</div>
+        ) : null}
         <div className="flex gap-2">
           {Object.keys(appliedFilters).map((field) =>
             appliedFilters[field] ? (

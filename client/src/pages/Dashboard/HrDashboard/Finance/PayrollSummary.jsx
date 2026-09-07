@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { inrFormat } from "../../../../utils/currencyFormat";
+import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
 
 const PayrollSummary = () => {
   const axios = useAxiosPrivate();
@@ -28,7 +28,14 @@ const PayrollSummary = () => {
           className="text-primary underline"
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/mix-bag/payroll-summary/${row._id}`
+              `/app/dashboard/HR-dashboard/mix-bag/payroll-summary/${row._id}`,
+              {
+                state: {
+                  breadcrumbLabel: `${row.batchName} - ${dayjs(
+                    row.payPeriodValue
+                  ).format("MMMM YYYY")}`,
+                },
+              }
             )
           }
         >
@@ -74,7 +81,11 @@ const PayrollSummary = () => {
       field: "netAmount",
       headerName: "Net Amount (INR)",
       minWidth: 160,
-      valueFormatter: ({ value }) => inrFormat(value),
+      valueFormatter: ({ value }) =>
+        Number(value || 0).toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
     },
   ];
 
@@ -83,6 +94,7 @@ const PayrollSummary = () => {
     const end = start.endOf("month");
     return {
       ...draft,
+      payPeriodValue: draft.payPeriod,
       payrollType: `${start.format("MMM YYYY")} (${draft.payrollType})`,
       runDate: draft.runDate ? dayjs(draft.runDate).format("DD-MM-YYYY") : "-",
       payPeriod: `${start.format("DD MMM, YYYY")} to ${end.format("DD MMM, YYYY")}`,

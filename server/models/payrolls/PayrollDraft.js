@@ -13,7 +13,7 @@ const payrollDraftSchema = new mongoose.Schema(
     batchName: { type: String, required: true },
     status: {
       type: String,
-      enum: ["Draft", "Completed"],
+      enum: ["Draft", "Processed"],
       default: "Draft",
     },
     directDepositStatus: { type: String, default: "-" },
@@ -42,7 +42,26 @@ const payrollDraftSchema = new mongoose.Schema(
         basic: { type: Number, min: 0, default: 0 },
         allowances: { type: Number, min: 0, default: 0 },
         deductions: { type: Number, min: 0, default: 0 },
+        allowanceItems: [
+          {
+            _id: false,
+            label: { type: String, required: true },
+            amount: { type: Number, min: 0, default: 0 },
+          },
+        ],
+        deductionItems: [
+          {
+            _id: false,
+            label: { type: String, required: true },
+            amount: { type: Number, min: 0, default: 0 },
+          },
+        ],
+        lossOfPayDays: { type: Number, min: 0, default: 0 },
         lossOfPay: { type: Number, min: 0, default: 0 },
+        payrollNotes: { type: String, trim: true, default: "" },
+        isExcluded: { type: Boolean, default: false },
+        updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+        updatedAt: { type: Date, default: null },
         incomeTax: { type: Number, min: 0, default: 0 },
         surcharge: { type: Number, min: 0, default: 0 },
         cess: { type: Number, min: 0, default: 0 },
@@ -51,6 +70,8 @@ const payrollDraftSchema = new mongoose.Schema(
     ],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     runDate: { type: Date, default: null },
+    submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+    submittedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

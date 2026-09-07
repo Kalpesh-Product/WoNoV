@@ -14,6 +14,123 @@ const Attendance = require("../../models/hr/Attendance");
 const AttendanceCorrection = require("../../models/hr/AttendanceCorrection");
 const MonthlyAttendanceSummary = require("../../models/hr/MonthlyAttendanceSummary");
 
+const allowanceOptions = [
+  "Special Allowance",
+  "Conveyance Allowance",
+  "Medical Allowance",
+  "Children Education Allowance",
+  "Dearness Allowance",
+  "Other Allowance",
+  "Arrears",
+  "House Rent Allowance",
+];
+const additionalDeductionOptions = [
+  "Adjustments",
+  "Voluntary Provident Fund",
+  "LWF",
+  "Employer LWF",
+  "Recovery",
+];
+const numberValue = (value) => Number(value) || 0;
+const roundCurrency = (value) =>
+  Math.round((numberValue(value) + Number.EPSILON) * 100) / 100;
+const isEnabled = (value) =>
+  value === true || ["true", "yes"].includes(String(value).toLowerCase());
+const getEmployeePf = (basic) =>
+  numberValue(basic) >= 15000 ? 1800 : numberValue(basic) * 0.12;
+const getAnnualCtc = (employee) =>
+  numberValue(employee?.salaryPackage?.grossAnnual) ||
+  numberValue(employee?.salaryPackage?.amount);
+const getEmployeeType = (employee) =>
+  String(
+    employee?.employeeType?.name ||
+      employee?.employeeType?.employeeType ||
+      employee?.employeeType ||
+      ""
+  ).toLowerCase();
+const isTdsWorker = (employee) => {
+  const type = getEmployeeType(employee);
+  return type.includes("intern") || type.includes("consultant");
+};
+const getPayPeriodKey = (date) => {
+  const value = new Date(date);
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(
+    2,
+    "0"
+  )}`;
+};
+const recalculateDraftTotals = async (draft) => {
+  const rows = draft.employeeSummaries.filter((row) => !row.isExcluded);
+  const employeeIds = rows.map((row) => row.employee).filter(Boolean);
+  const [employees, companyData] = await Promise.all([
+    User.find({ _id: { $in: employeeIds }, company: draft.company })
+      .select("payrollInformation salaryPackage employeeType")
+      .lean(),
+    Company.findById(draft.company).select("employerCosts").lean(),
+  ]);
+  const employeeById = new Map(
+    employees.map((employee) => [String(employee._id), employee])
+  );
+  const employerCosts = companyData?.employerCosts || {};
+  const totals = rows.reduce(
+    (result, row) => {
+      const employee = employeeById.get(String(row.employee));
+      const pfEnabled = isEnabled(employee?.payrollInformation?.includePF);
+      const annualCtc = getAnnualCtc(employee);
+      const esiEnabled =
+        isEnabled(employee?.payrollInformation?.includeEsi) &&
+        annualCtc > 0 &&
+        annualCtc / 12 < 21000;
+      const deductionAmount = (label) =>
+        (row.deductionItems || [])
+          .filter(
+            (item) =>
+              String(item.label || "").toLowerCase() === label.toLowerCase()
+          )
+          .reduce((sum, item) => sum + numberValue(item.amount), 0);
+
+      result.grossAmount += numberValue(row.gross);
+      result.incomeTax += numberValue(row.incomeTax);
+      result.surcharge += numberValue(row.surcharge);
+      result.cess += numberValue(row.cess);
+      result.netAmount += numberValue(row.netAmount);
+      result.lossOfPay += numberValue(row.lossOfPay);
+      result.employeePf += pfEnabled ? deductionAmount("Provident Fund") : 0;
+      result.voluntaryProvidentFund += deductionAmount(
+        "Voluntary Provident Fund"
+      );
+      result.employeeEsi += esiEnabled ? deductionAmount("ESI") : 0;
+      result.employerPf += pfEnabled
+        ? numberValue(employerCosts.employerPf)
+        : 0;
+      result.employerEsi += esiEnabled
+        ? numberValue(employerCosts.employerEsi)
+        : 0;
+      result.pfEmployeeCount += pfEnabled ? 1 : 0;
+      result.esiEmployeeCount += esiEnabled ? 1 : 0;
+      return result;
+    },
+    {
+      employeeCount: rows.length,
+      grossAmount: 0,
+      incomeTax: 0,
+      surcharge: 0,
+      cess: 0,
+      netAmount: 0,
+      lossOfPay: 0,
+      employeePf: 0,
+      employerPf: 0,
+      voluntaryProvidentFund: 0,
+      pfEmployeeCount: 0,
+      employeeEsi: 0,
+      employerEsi: 0,
+      esiEmployeeCount: 0,
+    }
+  );
+  Object.assign(draft, totals);
+  return draft;
+};
+
 const createPayrollDraft = async (req, res, next) => {
   try {
     const { company, user } = req;
@@ -26,13 +143,25 @@ const createPayrollDraft = async (req, res, next) => {
       });
     }
 
+    const existingDraft = await PayrollDraft.findOne({
+      company,
+      batchName,
+      payPeriod,
+    })
+      .select("status")
+      .lean();
+    if (existingDraft?.status === "Processed") {
+      return res.status(409).json({
+        message: "Processed payroll cannot be recreated or edited",
+      });
+    }
     const employees = await User.find({
       company,
       isActive: true,
       "payrollInformation.payrollBatch": batchName,
     })
       .select(
-        "firstName lastName empId payrollInformation payrollCompensation salaryPackage"
+        "firstName lastName empId employeeType payrollInformation payrollCompensation salaryPackage"
       )
       .lean();
 
@@ -68,7 +197,7 @@ const createPayrollDraft = async (req, res, next) => {
           : [];
         const incomeTax = deductions.reduce((total, deduction) => {
           const label = String(deduction.label || "").toLowerCase();
-          return label.includes("tax")
+          return label.includes("tax") || label === "tds"
             ? total + (Number(deduction.amount) || 0)
             : total;
         }, 0);
@@ -102,8 +231,9 @@ const createPayrollDraft = async (req, res, next) => {
         const attendance = attendanceByEmployee.get(String(employee._id));
         const scheduledDays = Number(attendance?.scheduledWorkingDays) || 0;
         const lopDays = Number(attendance?.lop) || 0;
-        const employeeLossOfPay =
-          scheduledDays > 0 ? (annualCtc / 12 / scheduledDays) * lopDays : 0;
+        const employeeLossOfPay = roundCurrency(
+          scheduledDays > 0 ? (annualCtc / 12 / scheduledDays) * lopDays : 0
+        );
         const gross = Number(compensation.grossPay) || 0;
         const basic = Number(compensation.basicPay) || 0;
         const allowances = Number(compensation.totalAllowances) || 0;
@@ -127,14 +257,25 @@ const createPayrollDraft = async (req, res, next) => {
           basic,
           allowances,
           deductions: totalDeductions,
+          allowanceItems: (compensation.allowances || []).map((item) => ({
+            label: item.label,
+            amount: numberValue(item.amount),
+          })),
+          deductionItems: deductions.map((item) => ({
+            label: item.label,
+            amount: numberValue(item.amount),
+          })),
+          lossOfPayDays: lopDays,
           lossOfPay: employeeLossOfPay,
+          payrollNotes: "",
+          isExcluded: false,
           incomeTax,
           surcharge: 0,
           cess: 0,
           netAmount,
         });
 
-        summary.grossAmount += gross;
+        summary.grossAmount += Math.max(0, gross - employeeLossOfPay);
         summary.incomeTax += incomeTax;
         summary.netAmount += netAmount;
         summary.employeePf += pfEnabled
@@ -221,6 +362,324 @@ const fetchPayrollDraft = async (req, res, next) => {
       return res.status(404).json({ message: "Payroll draft not found" });
     }
     res.status(200).json(draft);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchPayrollDraftExport = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+    const draft = await PayrollDraft.findOne({
+      _id: req.params.draftId,
+      company: req.company,
+    }).lean();
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+
+    const summaries = (draft.employeeSummaries || []).filter(
+      (summary) => !summary.isExcluded
+    );
+    const employees = await User.find({
+      _id: { $in: summaries.map((summary) => summary.employee) },
+      company: req.company,
+    })
+      .select(
+        "empId firstName middleName lastName email phone employeeType designation bankInformation panAadhaarDetails payrollInformation salaryPackage payrollCompensation"
+      )
+      .lean();
+    const employeeById = new Map(
+      employees.map((employee) => [String(employee._id), employee])
+    );
+    const formatItems = (items) =>
+      (items || [])
+        .map((item) => `${item.label}: ${numberValue(item.amount)}`)
+        .join("; ");
+    const exportRows = summaries.map((summary) => {
+      const employee = employeeById.get(String(summary.employee)) || {};
+      const bank = employee.bankInformation || {};
+      const kyc = employee.panAadhaarDetails || {};
+      const payroll = employee.payrollInformation || {};
+      const compensation = employee.payrollCompensation || {};
+      return {
+        employeeId: summary.employeeId || employee.empId || "",
+        employeeName:
+          summary.employeeName ||
+          [employee.firstName, employee.middleName, employee.lastName]
+            .filter(Boolean)
+            .join(" "),
+        email: employee.email || "",
+        phone: employee.phone || "",
+        designation: employee.designation || "",
+        employeeType: employee.employeeType?.name || "",
+        aadhaarNumber: kyc.aadhaarId || "",
+        panNumber: kyc.pan || "",
+        pfAccountNumber: kyc.pfAccountNumber || "",
+        pfUan: kyc.pfUAN || "",
+        esiAccountNumber: kyc.esiAccountNumber || "",
+        bankName: bank.bankName || "",
+        branchName: bank.branchName || "",
+        nameOnAccount: bank.nameOnAccount || "",
+        accountNumber: bank.accountNumber || "",
+        bankIfsc: bank.bankIFSC || "",
+        includeInPayroll: payroll.includeInPayroll ?? false,
+        payrollBatch: payroll.payrollBatch || draft.batchName,
+        professionTaxExemption: payroll.professionTaxExemption ?? false,
+        includePf: payroll.includePF ?? false,
+        pfContributionRate: payroll.pfContributionRate || "",
+        employeePfRate: payroll.employeePF || "",
+        employerPfRate: payroll.employerPf || "",
+        includeEsi: payroll.includeEsi ?? false,
+        esiContribution: payroll.esiContribution || "",
+        hraType: payroll.hraType || "",
+        hraPercentage: payroll.hraPercentage || "",
+        tdsCalculationBasedOn: payroll.tdsCalculationBasedOn || "",
+        taxPercentage: payroll.taxPercentage || "",
+        incomeTaxRegime: payroll.incomeTaxRegime || "",
+        paymentMethod: compensation.paymentMethod || "",
+        annualCtc: getAnnualCtc(employee),
+        payPeriod: getPayPeriodKey(draft.payPeriod),
+        payrollStatus: draft.status,
+        basicPay: numberValue(summary.basic),
+        actualGross: numberValue(summary.actualGross),
+        grossAfterLop: numberValue(summary.gross),
+        allowances: numberValue(summary.allowances),
+        allowanceDetails: formatItems(summary.allowanceItems),
+        deductions: numberValue(summary.deductions),
+        deductionDetails: formatItems(summary.deductionItems),
+        lossOfPayDays: numberValue(summary.lossOfPayDays),
+        lossOfPayAmount: numberValue(summary.lossOfPay),
+        incomeTax: numberValue(summary.incomeTax),
+        surcharge: numberValue(summary.surcharge),
+        cess: numberValue(summary.cess),
+        netAmount: numberValue(summary.netAmount),
+        payrollNotes: summary.payrollNotes || "",
+      };
+    });
+    res.status(200).json(exportRows);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updatePayrollDraftEmployee = async (req, res, next) => {
+  try {
+    const { draftId, employeeId } = req.params;
+    if (
+      !mongoose.Types.ObjectId.isValid(draftId) ||
+      !mongoose.Types.ObjectId.isValid(employeeId)
+    ) {
+      return res.status(400).json({ message: "Invalid payroll draft or employee ID" });
+    }
+
+    const draft = await PayrollDraft.findOne({ _id: draftId, company: req.company });
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Draft") {
+      return res.status(409).json({ message: "Only draft payroll can be edited" });
+    }
+
+    const summary = draft.employeeSummaries.find(
+      (row) => String(row.employee) === employeeId && !row.isExcluded
+    );
+    if (!summary) {
+      return res.status(404).json({ message: "Employee is not part of this payroll draft" });
+    }
+    const employee = await User.findOne({ _id: employeeId, company: req.company })
+      .select("employeeType payrollInformation salaryPackage")
+      .lean();
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
+
+    const rawAllowances = Array.isArray(req.body.allowanceItems)
+      ? req.body.allowanceItems
+      : summary.allowanceItems;
+    const rawDeductions = Array.isArray(req.body.deductionItems)
+      ? req.body.deductionItems
+      : summary.deductionItems;
+    const hraType = String(employee.payrollInformation?.hraType || "")
+      .trim()
+      .toLowerCase();
+    const canUseHra = Boolean(hraType) && hraType !== "custom";
+    const validAllowanceOptions = canUseHra
+      ? allowanceOptions
+      : allowanceOptions.filter((label) => label !== "House Rent Allowance");
+    const tdsWorker = isTdsWorker(employee);
+    const validDeductionOptions = [
+      ...(tdsWorker ? ["TDS"] : ["Provident Fund", "ESI"]),
+      ...additionalDeductionOptions,
+    ];
+    const validateItems = (items, options, section) => {
+      const normalized = items.map((item) => ({
+        label: String(item.label || "").trim(),
+        amount: numberValue(item.amount),
+      }));
+      if (
+        normalized.some(
+          (item) => !options.includes(item.label) || item.amount < 0
+        ) ||
+        new Set(normalized.map((item) => item.label)).size !== normalized.length
+      ) {
+        throw new Error(`Invalid or duplicate ${section} entries`);
+      }
+      return normalized;
+    };
+
+    let allowanceItems;
+    let deductionItems;
+    try {
+      allowanceItems = validateItems(rawAllowances, validAllowanceOptions, "allowance");
+      deductionItems = validateItems(rawDeductions, validDeductionOptions, "deduction");
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
+    if (canUseHra) {
+      const hraAmount = numberValue(summary.basic) * 0.5;
+      const hra = allowanceItems.find((item) => item.label === "House Rent Allowance");
+      if (hra) hra.amount = hraAmount;
+      else allowanceItems.push({ label: "House Rent Allowance", amount: hraAmount });
+    }
+    const allowanceTotal = allowanceItems.reduce(
+      (total, item) => total + numberValue(item.amount),
+      0
+    );
+    const actualGross = numberValue(summary.basic) + allowanceTotal;
+    const annualCtc = getAnnualCtc(employee);
+    const pfEnabled = isEnabled(employee.payrollInformation?.includePF);
+    const esiEnabled =
+      isEnabled(employee.payrollInformation?.includeEsi) &&
+      annualCtc > 0 &&
+      annualCtc / 12 < 21000;
+    deductionItems = deductionItems.map((item) => ({
+      ...item,
+      amount:
+        item.label === "Provident Fund"
+          ? pfEnabled
+            ? getEmployeePf(summary.basic)
+            : 0
+          : item.label === "ESI"
+            ? esiEnabled
+              ? actualGross * 0.0075
+              : 0
+            : item.label === "TDS"
+              ? numberValue(summary.basic) * 0.1
+              : item.amount,
+    }));
+
+    const lossOfPayDays = Math.max(0, numberValue(req.body.lossOfPayDays));
+    const attendance = await MonthlyAttendanceSummary.findOne({
+      company: req.company,
+      employee: employeeId,
+      month: getPayPeriodKey(draft.payPeriod),
+    })
+      .select("scheduledWorkingDays")
+      .lean();
+    const scheduledDays = numberValue(attendance?.scheduledWorkingDays);
+    const lossOfPay = roundCurrency(
+      scheduledDays > 0 && annualCtc > 0
+        ? (annualCtc / 12 / scheduledDays) * lossOfPayDays
+        : numberValue(req.body.lossOfPay ?? summary.lossOfPay)
+    );
+    const deductionTotal = deductionItems.reduce(
+      (total, item) => total + numberValue(item.amount),
+      0
+    );
+    const incomeTax = deductionItems
+      .filter((item) => {
+        const label = item.label.toLowerCase();
+        return label.includes("tax") || label === "tds";
+      })
+      .reduce((total, item) => total + numberValue(item.amount), 0);
+    const gross = Math.max(0, actualGross - lossOfPay);
+
+    Object.assign(summary, {
+      allowanceItems,
+      deductionItems,
+      allowances: allowanceTotal,
+      deductions: deductionTotal,
+      actualGross,
+      gross,
+      lossOfPayDays,
+      lossOfPay,
+      payrollNotes: String(req.body.payrollNotes || "").trim().slice(0, 2000),
+      incomeTax,
+      netAmount: Math.max(0, gross - deductionTotal),
+      updatedBy: req.user,
+      updatedAt: new Date(),
+    });
+    await recalculateDraftTotals(draft);
+    await draft.save();
+    res.status(200).json({ message: "Employee payroll updated", data: draft });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const excludePayrollDraftEmployees = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+    const employeeIds = Array.isArray(req.body.employeeIds)
+      ? [...new Set(req.body.employeeIds.map(String))]
+      : [];
+    if (!employeeIds.length || employeeIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+      return res.status(400).json({ message: "Select valid employees to delete" });
+    }
+    const draft = await PayrollDraft.findOne({
+      _id: req.params.draftId,
+      company: req.company,
+    });
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Draft") {
+      return res.status(409).json({ message: "Only draft payroll can be edited" });
+    }
+    let excludedCount = 0;
+    draft.employeeSummaries.forEach((summary) => {
+      if (employeeIds.includes(String(summary.employee)) && !summary.isExcluded) {
+        summary.isExcluded = true;
+        summary.updatedBy = req.user;
+        summary.updatedAt = new Date();
+        excludedCount += 1;
+      }
+    });
+    if (!excludedCount) {
+      return res.status(404).json({ message: "Selected employees were not found in the draft" });
+    }
+    await recalculateDraftTotals(draft);
+    await draft.save();
+    res.status(200).json({
+      message: `${excludedCount} employee${excludedCount === 1 ? "" : "s"} deleted from payroll draft`,
+      data: draft,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const submitPayrollDraft = async (req, res, next) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+    const draft = await PayrollDraft.findOne({
+      _id: req.params.draftId,
+      company: req.company,
+    });
+    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Draft") {
+      return res.status(409).json({ message: "Payroll has already been processed" });
+    }
+    if (!draft.employeeSummaries.some((summary) => !summary.isExcluded)) {
+      return res.status(400).json({ message: "Payroll must contain at least one employee" });
+    }
+    await recalculateDraftTotals(draft);
+    draft.status = "Processed";
+    draft.submittedBy = req.user;
+    draft.submittedAt = new Date();
+    draft.runDate = draft.submittedAt;
+    await draft.save();
+    res.status(200).json({ message: "Payroll processed successfully", data: draft });
   } catch (error) {
     next(error);
   }
@@ -673,4 +1132,8 @@ module.exports = {
   createPayrollDraft,
   fetchPayrollDrafts,
   fetchPayrollDraft,
+  fetchPayrollDraftExport,
+  updatePayrollDraftEmployee,
+  excludePayrollDraftEmployees,
+  submitPayrollDraft,
 };

@@ -60,7 +60,10 @@ const BreadCrumbComponent = () => {
     // .replace(/-/g, " ")
     // .replace(/\b\w/g, (char) => char.toUpperCase());
 
-    const displayText = formatLabel(segment);
+    const displayText =
+      isLast && location.state?.breadcrumbLabel
+        ? location.state.breadcrumbLabel
+        : formatLabel(segment);
 
     return isLast ? (
       <Typography key={index} color="text.primary">

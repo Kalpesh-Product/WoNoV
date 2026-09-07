@@ -1,15 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
+import { MenuItem, TextField } from "@mui/material";
+import { MdDeleteOutline, MdEdit } from "react-icons/md";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import MuiModal from "../../../../components/MuiModal";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { inrFormat } from "../../../../utils/currencyFormat";
+import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
+import { downloadCsv } from "../../../../utils/downloadCsv";
+import { toast } from "sonner";
+import { queryClient } from "../../../../main";
 
 const SummarySection = ({ title, rows }) => (
   <section>
@@ -28,6 +32,54 @@ const SummarySection = ({ title, rows }) => (
 );
 
 const numberValue = (value) => Number(value) || 0;
+const baseAllowanceOptions = [
+  "Special Allowance",
+  "Conveyance Allowance",
+  "Medical Allowance",
+  "Children Education Allowance",
+  "Dearness Allowance",
+  "Other Allowance",
+  "Arrears",
+];
+const additionalDeductionOptions = [
+  "Adjustments",
+  "Voluntary Provident Fund",
+  "LWF",
+  "Employer LWF",
+  "Recovery",
+];
+const isEnabled = (value) =>
+  value === true || ["true", "yes"].includes(String(value).toLowerCase());
+const getPf = (basic) => (numberValue(basic) >= 15000 ? 1800 : numberValue(basic) * 0.12);
+
+const EditablePayrollRow = ({ row, options, usedLabels, onChange, onRemove, readOnly }) => (
+  <div className="grid grid-cols-1 gap-3 border-b py-3 sm:grid-cols-[minmax(0,1fr)_minmax(160px,0.7fr)_auto]">
+    <TextField
+      select
+      size="small"
+      label="Type"
+      value={row.label}
+      onChange={(event) => onChange({ ...row, label: event.target.value })}
+    >
+      <MenuItem value="" disabled>Select Type</MenuItem>
+      {options
+        .filter((option) => option === row.label || !usedLabels.includes(option))
+        .map((option) => <MenuItem key={option} value={option}>{option}</MenuItem>)}
+    </TextField>
+    <TextField
+      size="small"
+      type="number"
+      label="Amount"
+      value={row.amount}
+      disabled={readOnly}
+      onChange={(event) => onChange({ ...row, amount: event.target.value })}
+      InputProps={{ startAdornment: <span className="mr-2 text-gray-500">INR</span> }}
+    />
+    <button type="button" onClick={onRemove} className="rounded border border-red-200 px-3 text-sm text-red-600">
+      Remove
+    </button>
+  </div>
+);
 const dummyEmployees = [
   {
     id: "dummy-payroll-employee-1",
@@ -46,6 +98,11 @@ const dummyEmployees = [
     cess: 0,
     netAmount: 20025,
     payrollNotes: "",
+    includePF: true,
+    includeEsi: false,
+    annualCtc: 294576,
+    hraType: "Custom",
+    employeeType: "Full Time",
     allowanceItems: [
       { label: "Conveyance Allowance", amount: 1545 },
       { label: "Medical Allowance", amount: 1207 },
@@ -73,6 +130,11 @@ const dummyEmployees = [
     cess: 0,
     netAmount: 20700,
     payrollNotes: "",
+    includePF: true,
+    includeEsi: false,
+    annualCtc: 270000,
+    hraType: "Custom",
+    employeeType: "Full Time",
     allowanceItems: [{ label: "Special Allowance", amount: 9000 }],
     deductionItems: [{ label: "Provident Fund", amount: 1800 }],
   },
@@ -93,40 +155,155 @@ const dummyEmployees = [
     cess: 0,
     netAmount: 12874.23,
     payrollNotes: "",
+    includePF: true,
+    includeEsi: true,
+    annualCtc: 170000,
+    hraType: "Standard",
+    employeeType: "Full Time",
     allowanceItems: [{ label: "Special Allowance", amount: 5666.67 }],
     deductionItems: [{ label: "Provident Fund", amount: 1020 }],
   },
 ];
+
+const buildEmployeeRows = (draft) => {
+  const savedRows = Array.isArray(draft?.employeeSummaries)
+    ? draft.employeeSummaries.filter((employee) => !employee.isExcluded)
+    : [];
+  const hasSavedSummaries = Array.isArray(draft?.employeeSummaries) &&
+    draft.employeeSummaries.length > 0;
+  const initialRows = hasSavedSummaries ? savedRows : dummyEmployees;
+  return initialRows.map((employee, index) => ({
+    ...employee,
+    id: employee.employee || employee.id || `${employee.employeeId}-${index}`,
+    srNo: index + 1,
+  }));
+};
 
 const PayrollEntry = () => {
   const axios = useAxiosPrivate();
   const { draftId } = useParams();
   const [employeeRows, setEmployeeRows] = useState([]);
   const [editingEmployee, setEditingEmployee] = useState(null);
-  const [employeeToDelete, setEmployeeToDelete] = useState(null);
-  const [deletedCount, setDeletedCount] = useState(0);
-  const { data: draft, isLoading } = useQuery({
+  const [selectedEmployees, setSelectedEmployees] = useState([]);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [isPayrollSubmitted, setIsPayrollSubmitted] = useState(false);
+  const [allowanceImportFile, setAllowanceImportFile] = useState("");
+  const allowanceImportRef = useRef(null);
+  const { data: draft, isLoading, refetch: refetchDraft } = useQuery({
     queryKey: ["payrollDraft", draftId],
     queryFn: async () => {
       const response = await axios.get(`/api/payroll/drafts/${draftId}`);
       return response.data;
     },
   });
+  const { mutateAsync: updateDraftEmployee, isPending: isSavingEmployee } =
+    useMutation({
+      mutationFn: async ({ employeeId, payload }) => {
+        const response = await axios.patch(
+          `/api/payroll/drafts/${draftId}/employees/${employeeId}`,
+          payload
+        );
+        return response.data;
+      },
+    });
+  const { mutateAsync: excludeDraftEmployees, isPending: isDeletingEmployees } =
+    useMutation({
+      mutationFn: async (employeeIds) => {
+        const response = await axios.patch(
+          `/api/payroll/drafts/${draftId}/employees`,
+          { employeeIds }
+        );
+        return response.data;
+      },
+    });
+  const { mutateAsync: submitDraft, isPending: isSubmittingPayroll } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await axios.post(`/api/payroll/drafts/${draftId}/submit`);
+        return response.data;
+      },
+    });
+  const { mutateAsync: recalculateDraft, isPending: isRecalculatingDraft } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await axios.post("/api/payroll/drafts", {
+          batchName: draft.batchName,
+          payPeriod: dayjs(draft.payPeriod).format("YYYY-MM"),
+        });
+        return response.data;
+      },
+    });
+  const { mutateAsync: fetchPayrollExport, isPending: isExportingPayroll } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await axios.get(
+          `/api/payroll/drafts/${draftId}/export`
+        );
+        return response.data;
+      },
+    });
+  const { data: fetchedEmployee = {} } = useQuery({
+    queryKey: ["payrollEntryEmployee", editingEmployee?.employeeId],
+    enabled: Boolean(
+      editingEmployee?.employeeId &&
+        !String(editingEmployee?.employee || "").startsWith("dummy-")
+    ),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/users/fetch-single-user/${editingEmployee.employeeId}`
+      );
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    if (!editingEmployee || !Object.keys(fetchedEmployee).length) return;
+    const employeePayroll = fetchedEmployee.payrollInformation || fetchedEmployee;
+    const employeeHraType = String(
+      employeePayroll.hraType || fetchedEmployee.hraType || ""
+    ).toLowerCase();
+    if (!employeeHraType || employeeHraType === "custom") return;
+    setEditingEmployee((employee) => {
+      if (
+        !employee ||
+        (employee.allowanceItems || []).some(
+          (row) => row.label === "House Rent Allowance"
+        )
+      ) {
+        return employee;
+      }
+      const hra = numberValue(employee.basic) * 0.5;
+      const allowanceItems = [
+        ...(employee.allowanceItems || []),
+        {
+          id: `allowance-hra-${employee.id}`,
+          label: "House Rent Allowance",
+          amount: hra,
+        },
+      ];
+      const allowances = allowanceItems.reduce(
+        (total, row) => total + numberValue(row.amount),
+        0
+      );
+      const actualGross = numberValue(employee.basic) + allowances;
+      const gross = Math.max(0, actualGross - numberValue(employee.lossOfPay));
+      return {
+        ...employee,
+        allowanceItems,
+        allowances,
+        actualGross,
+        gross,
+        netAmount: Math.max(0, gross - numberValue(employee.deductions)),
+      };
+    });
+  }, [editingEmployee, fetchedEmployee]);
 
   useEffect(() => {
     if (!draft) return;
-    const savedRows = Array.isArray(draft.employeeSummaries)
-      ? draft.employeeSummaries
-      : [];
-    const initialRows = savedRows.length ? savedRows : dummyEmployees;
-    setEmployeeRows(
-      initialRows.map((employee, index) => ({
-        ...employee,
-        id: employee.employee || employee.id || `${employee.employeeId}-${index}`,
-        srNo: index + 1,
-      }))
-    );
-    setDeletedCount(0);
+    setEmployeeRows(buildEmployeeRows(draft));
+    setSelectedEmployees([]);
+    setIsPayrollSubmitted(draft.status === "Processed");
   }, [draft]);
 
   if (isLoading) {
@@ -147,22 +324,267 @@ const PayrollEntry = () => {
   const createdBy = [draft.createdBy?.firstName, draft.createdBy?.lastName]
     .filter(Boolean)
     .join(" ") || "N/A";
-  const saveEmployeeEdit = () => {
-    setEmployeeRows((currentRows) =>
-      currentRows.map((row) =>
-        row.id === editingEmployee.id ? { ...editingEmployee } : row
-      )
+  const isProcessed = draft.status === "Processed";
+  const saveEmployeeEdit = async () => {
+    const allowanceItems = (editingEmployee.allowanceItems || []).map((row) => ({
+      ...row,
+      amount: normalizeRuleAmount(row.label, row.amount),
+    }));
+    const deductionItems = (editingEmployee.deductionItems || []).map((row) => ({
+      ...row,
+      amount: normalizeRuleAmount(row.label, row.amount),
+    }));
+    const savedEmployee = recalculateEmployee(
+      editingEmployee,
+      allowanceItems,
+      deductionItems
     );
-    setEditingEmployee(null);
+    const isDummy = String(editingEmployee.employee || "").startsWith("dummy-");
+    if (isDummy) {
+      setEmployeeRows((currentRows) =>
+        currentRows.map((row) =>
+          row.id === editingEmployee.id ? savedEmployee : row
+        )
+      );
+      setEditingEmployee(null);
+      return;
+    }
+    try {
+      const response = await updateDraftEmployee({
+        employeeId: editingEmployee.employee,
+        payload: {
+          allowanceItems,
+          deductionItems,
+          lossOfPayDays: savedEmployee.lossOfPayDays,
+          lossOfPay: savedEmployee.lossOfPay,
+          payrollNotes: savedEmployee.payrollNotes,
+        },
+      });
+      setEmployeeRows(buildEmployeeRows(response.data));
+      setEditingEmployee(null);
+      await refetchDraft();
+      await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+      toast.success(response.message || "Employee payroll updated");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update employee payroll");
+    }
   };
-  const confirmEmployeeDelete = () => {
-    setEmployeeRows((currentRows) =>
-      currentRows
-        .filter((row) => row.id !== employeeToDelete.id)
-        .map((row, index) => ({ ...row, srNo: index + 1 }))
+  const employeeRules = Object.keys(fetchedEmployee).length
+    ? fetchedEmployee
+    : editingEmployee || {};
+  const payrollInfo = employeeRules.payrollInformation || employeeRules;
+  const pfEnabled = isEnabled(payrollInfo.includePF);
+  const monthlyCtc =
+    numberValue(employeeRules.annualCtc || employeeRules.salaryPackage?.grossAnnual) / 12;
+  const esiEnabled = isEnabled(payrollInfo.includeEsi) && monthlyCtc > 0 && monthlyCtc < 21000;
+  const employeeType = String(
+    employeeRules.employeeType?.name || employeeRules.employeeType || ""
+  ).toLowerCase();
+  const isTdsWorker = employeeType.includes("intern") || employeeType.includes("consultant");
+  const hraType = String(payrollInfo.hraType || employeeRules.hraType || "").toLowerCase();
+  const canUseHra = Boolean(hraType) && hraType !== "custom";
+  const allowanceOptions = canUseHra
+    ? [...baseAllowanceOptions, "House Rent Allowance"]
+    : baseAllowanceOptions;
+  const deductionOptions = [
+    ...(isTdsWorker ? ["TDS"] : ["Provident Fund", "ESI"]),
+    ...additionalDeductionOptions,
+  ];
+
+  const recalculateEmployee = (employee, nextAllowances, nextDeductions) => {
+    const allowances = nextAllowances.reduce(
+      (total, row) => total + numberValue(row.amount), 0
     );
-    setDeletedCount((count) => count + 1);
-    setEmployeeToDelete(null);
+    const actualGross = numberValue(employee.basic) + allowances;
+    const deductions = nextDeductions.reduce(
+      (total, row) => total + numberValue(row.amount), 0
+    );
+    const gross = Math.max(0, actualGross - numberValue(employee.lossOfPay));
+    return {
+      ...employee,
+      allowanceItems: nextAllowances,
+      deductionItems: nextDeductions,
+      allowances,
+      deductions,
+      actualGross,
+      gross,
+      netAmount: Math.max(0, gross - deductions),
+    };
+  };
+
+  const normalizeRuleAmount = (label, currentAmount = 0) => {
+    if (label === "House Rent Allowance") return numberValue(editingEmployee?.basic) * 0.5;
+    if (label === "Provident Fund") return pfEnabled ? getPf(editingEmployee?.basic) : 0;
+    if (label === "ESI") return esiEnabled ? numberValue(editingEmployee?.actualGross) * 0.0075 : 0;
+    if (label === "TDS") return numberValue(editingEmployee?.basic) * 0.1;
+    return currentAmount;
+  };
+
+  const updatePayrollRows = (section, rowId, updatedRow) => {
+    setEditingEmployee((employee) => {
+      const allowanceRows = employee.allowanceItems || [];
+      const deductionRows = employee.deductionItems || [];
+      const normalizedRow = {
+        ...updatedRow,
+        amount: normalizeRuleAmount(updatedRow.label, updatedRow.amount),
+      };
+      const nextAllowances = section === "allowanceItems"
+        ? allowanceRows.map((row) => row.id === rowId ? normalizedRow : row)
+        : allowanceRows;
+      const nextDeductions = section === "deductionItems"
+        ? deductionRows.map((row) => row.id === rowId ? normalizedRow : row)
+        : deductionRows;
+      return recalculateEmployee(employee, nextAllowances, nextDeductions);
+    });
+  };
+
+  const addPayrollRow = (section, options) => {
+    setEditingEmployee((employee) => {
+      const currentRows = employee[section] || [];
+      const available = options.find(
+        (option) => !currentRows.some((row) => row.label === option)
+      );
+      if (!available) return employee;
+      const nextRows = [
+        ...currentRows,
+        { id: `${section}-${Date.now()}`, label: available, amount: normalizeRuleAmount(available, 0) },
+      ];
+      return recalculateEmployee(
+        employee,
+        section === "allowanceItems" ? nextRows : employee.allowanceItems || [],
+        section === "deductionItems" ? nextRows : employee.deductionItems || []
+      );
+    });
+  };
+
+  const removePayrollRow = (section, rowId) => {
+    setEditingEmployee((employee) => {
+      const nextRows = (employee[section] || []).filter((row) => row.id !== rowId);
+      return recalculateEmployee(
+        employee,
+        section === "allowanceItems" ? nextRows : employee.allowanceItems || [],
+        section === "deductionItems" ? nextRows : employee.deductionItems || []
+      );
+    });
+  };
+
+  const openEmployeeEdit = (employee) => {
+    let allowanceItems = (employee.allowanceItems?.length
+      ? employee.allowanceItems
+      : [{ label: "Special Allowance", amount: employee.allowances }]
+    ).map((row, index) => ({ ...row, id: row.id || `allowance-${index}` }));
+    const employeeHraType = String(
+      employee.payrollInformation?.hraType || employee.hraType || ""
+    ).toLowerCase();
+    if (
+      employeeHraType &&
+      employeeHraType !== "custom" &&
+      !allowanceItems.some((row) => row.label === "House Rent Allowance")
+    ) {
+      allowanceItems = [
+        ...allowanceItems,
+        {
+          id: `allowance-hra-${employee.id}`,
+          label: "House Rent Allowance",
+          amount: numberValue(employee.basic) * 0.5,
+        },
+      ];
+    }
+    const deductionItems = (employee.deductionItems?.length
+      ? employee.deductionItems
+      : [{ label: "Provident Fund", amount: employee.deductions }]
+    ).map((row, index) => ({ ...row, id: row.id || `deduction-${index}` }));
+    setEditingEmployee({
+      ...employee,
+      lossOfPay: numberValue(employee.lossOfPay).toFixed(2),
+      allowanceItems,
+      deductionItems,
+    });
+  };
+  const confirmEmployeeDelete = async () => {
+    const selectedIds = new Set(selectedEmployees.map((employee) => employee.id));
+    const persistedEmployees = selectedEmployees.filter(
+      (employee) => !String(employee.employee || "").startsWith("dummy-")
+    );
+    try {
+      if (persistedEmployees.length) {
+        const response = await excludeDraftEmployees(
+          persistedEmployees.map((employee) => employee.employee)
+        );
+        setEmployeeRows(buildEmployeeRows(response.data));
+        await refetchDraft();
+        await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+        toast.success(response.message);
+      } else {
+        setEmployeeRows((currentRows) =>
+          currentRows
+            .filter((row) => !selectedIds.has(row.id))
+            .map((row, index) => ({ ...row, srNo: index + 1 }))
+        );
+      }
+      setSelectedEmployees([]);
+      setShowDeleteConfirmation(false);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to delete employees");
+    }
+  };
+  const toggleEmployeeForDelete = (employee) => {
+    setSelectedEmployees((currentEmployees) =>
+      currentEmployees.some((item) => item.id === employee.id)
+        ? currentEmployees.filter((item) => item.id !== employee.id)
+        : [...currentEmployees, employee]
+    );
+  };
+  const selectImportFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setAllowanceImportFile(file.name);
+    event.target.value = "";
+  };
+  const refreshEmployeeSummary = async () => {
+    try {
+      const response = await recalculateDraft();
+      setEmployeeRows(buildEmployeeRows(response.data));
+      setSelectedEmployees([]);
+      setShowDeleteConfirmation(false);
+      setAllowanceImportFile("");
+      await refetchDraft();
+      await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+      toast.success("Payroll draft restored from current employee and attendance data");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to refresh payroll draft");
+    }
+  };
+  const confirmPayrollSubmit = async () => {
+    try {
+      const response = await submitDraft();
+      setIsPayrollSubmitted(true);
+      setShowSubmitConfirmation(false);
+      await refetchDraft();
+      await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+      toast.success(response.message || "Payroll processed successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to process payroll");
+    }
+  };
+  const exportPayrollDetails = async () => {
+    try {
+      const rows = await fetchPayrollExport();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        toast.error("No payroll employees are available to export");
+        return;
+      }
+      downloadCsv({
+        data: rows,
+        fileName: `payroll-detailed-${draft?.batchName || "batch"}-${dayjs(
+          draft?.payPeriod
+        ).format("YYYY-MM")}`,
+      });
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Failed to export payroll details"
+      );
+    }
   };
   const employeeColumns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
@@ -187,15 +609,37 @@ const PayrollEntry = () => {
       sortable: false,
       filter: false,
       suppressCsvExport: true,
-      cellRenderer: ({ data: employee }) => (
-        <ThreeDotMenu
-          rowId={employee.id}
-          menuItems={[
-            { label: "Edit", onClick: () => setEditingEmployee({ ...employee }) },
-            { label: "Delete", onClick: () => setEmployeeToDelete(employee) },
-          ]}
-        />
-      ),
+      cellRenderer: ({ data: employee }) => {
+        const isMarkedForDelete = selectedEmployees.some(
+          (item) => item.id === employee.id
+        );
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Edit payroll entry"
+              aria-label={`Edit ${employee.employeeName}`}
+              onClick={() => openEmployeeEdit(employee)}
+              disabled={isProcessed}
+              className="rounded p-2 text-primary hover:bg-blue-50"
+            >
+              <MdEdit size={20} />
+            </button>
+            <button
+              type="button"
+              title={isMarkedForDelete ? "Remove from deletion" : "Mark for deletion"}
+              aria-label={`${isMarkedForDelete ? "Unmark" : "Mark"} ${employee.employeeName} for deletion`}
+              onClick={() => toggleEmployeeForDelete(employee)}
+              disabled={isProcessed}
+              className={`rounded p-2 hover:bg-red-50 ${
+                isMarkedForDelete ? "bg-red-100 text-red-700" : "text-red-500"
+              }`}
+            >
+              <MdDeleteOutline size={20} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -284,16 +728,62 @@ const PayrollEntry = () => {
         </div>
 
         <div className="border-t pt-6">
-          {deletedCount > 0 && (
-            <p className="mb-3 text-content font-medium text-gray-600">
-              Deleted employees: {deletedCount}
-            </p>
-          )}
           <AgTable
             data={employeeRows}
             columns={employeeColumns}
             search
-            exportData
+            searchBottomContent={
+              <div className="flex flex-wrap items-center gap-3">
+                <PrimaryButton
+                  title="Refresh/Undo"
+                  handleSubmit={refreshEmployeeSummary}
+                  externalStyles="!bg-amber-500"
+                  disabled={isProcessed || isRecalculatingDraft}
+                  isLoading={isRecalculatingDraft}
+                />
+                <PrimaryButton
+                  title="Payroll Detailed Export"
+                  handleSubmit={exportPayrollDetails}
+                  disabled={isExportingPayroll}
+                  isLoading={isExportingPayroll}
+                />
+                <PrimaryButton
+                  title="Import Allowances/Deductions"
+                  handleSubmit={() => allowanceImportRef.current?.click()}
+                />
+                <input
+                  ref={allowanceImportRef}
+                  type="file"
+                  accept=".csv,.xls,.xlsx"
+                  className="hidden"
+                  onChange={selectImportFile}
+                />
+                {allowanceImportFile && (
+                  <span className="text-xs text-gray-500">
+                    Selected: {allowanceImportFile}
+                  </span>
+                )}
+                {selectedEmployees.length > 0 && (
+                  <PrimaryButton
+                    title={`Delete All (${selectedEmployees.length})`}
+                    handleSubmit={() => setShowDeleteConfirmation(true)}
+                    externalStyles="!bg-red-600"
+                  />
+                )}
+                <div className="ml-auto">
+                  <PrimaryButton
+                    title={isPayrollSubmitted ? "Processed" : "Submit Payroll"}
+                    handleSubmit={() => setShowSubmitConfirmation(true)}
+                    disabled={isPayrollSubmitted || isSubmittingPayroll}
+                  />
+                </div>
+              </div>
+            }
+            getRowStyle={({ data: employee }) =>
+              selectedEmployees.some((item) => item.id === employee.id)
+                ? { backgroundColor: "#fef2f2" }
+                : undefined
+            }
             tableTitle="Employee Summary"
             tableHeight={420}
           />
@@ -338,21 +828,28 @@ const PayrollEntry = () => {
                     {inrFormat(numberValue(editingEmployee.allowances))}
                   </span>
                 </div>
-                <div className="mt-4 flex flex-col gap-2 text-content">
-                  {(editingEmployee.allowanceItems?.length
-                    ? editingEmployee.allowanceItems
-                    : [
-                        {
-                          label: "Special Allowance",
-                          amount: editingEmployee.allowances,
-                        },
-                      ]
-                  ).map((item) => (
-                    <div key={item.label} className="flex justify-between gap-4">
-                      <span className="text-gray-600">{item.label}</span>
-                      <span>{inrFormat(numberValue(item.amount))}</span>
-                    </div>
+                <div className="mt-2">
+                  {(editingEmployee.allowanceItems || []).map((row) => (
+                    <EditablePayrollRow
+                      key={row.id}
+                      row={{
+                        ...row,
+                        amount: normalizeRuleAmount(row.label, row.amount),
+                      }}
+                      options={allowanceOptions}
+                      usedLabels={(editingEmployee.allowanceItems || []).map((item) => item.label)}
+                      onChange={(updatedRow) => updatePayrollRows("allowanceItems", row.id, updatedRow)}
+                      onRemove={() => removePayrollRow("allowanceItems", row.id)}
+                      readOnly={row.label === "House Rent Allowance"}
+                    />
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => addPayrollRow("allowanceItems", allowanceOptions)}
+                    className="mt-4 text-sm font-semibold text-primary hover:underline"
+                  >
+                    + Add New
+                  </button>
                 </div>
               </section>
 
@@ -363,21 +860,33 @@ const PayrollEntry = () => {
                     {inrFormat(numberValue(editingEmployee.deductions))}
                   </span>
                 </div>
-                <div className="mt-4 flex flex-col gap-2 text-content">
-                  {(editingEmployee.deductionItems?.length
-                    ? editingEmployee.deductionItems
-                    : [
-                        {
-                          label: "Provident Fund",
-                          amount: editingEmployee.deductions,
-                        },
-                      ]
-                  ).map((item) => (
-                    <div key={item.label} className="flex justify-between gap-4">
-                      <span className="text-gray-600">{item.label}</span>
-                      <span>{inrFormat(numberValue(item.amount))}</span>
-                    </div>
+                <div className="mt-2">
+                  {(editingEmployee.deductionItems || []).map((row) => (
+                    <EditablePayrollRow
+                      key={row.id}
+                      row={{
+                        ...row,
+                        amount: normalizeRuleAmount(row.label, row.amount),
+                      }}
+                      options={deductionOptions}
+                      usedLabels={(editingEmployee.deductionItems || []).map((item) => item.label)}
+                      onChange={(updatedRow) => updatePayrollRows("deductionItems", row.id, updatedRow)}
+                      onRemove={() => removePayrollRow("deductionItems", row.id)}
+                      readOnly={["Provident Fund", "ESI", "TDS"].includes(row.label)}
+                    />
                   ))}
+                  <button
+                    type="button"
+                    onClick={() => addPayrollRow("deductionItems", deductionOptions)}
+                    className="mt-4 text-sm font-semibold text-primary hover:underline"
+                  >
+                    + Add New
+                  </button>
+                  {!isTdsWorker && !esiEnabled && (
+                    <p className="mt-3 text-xs text-gray-500">
+                      ESI is not applicable for this employee, so its amount remains INR 0.
+                    </p>
+                  )}
                 </div>
               </section>
 
@@ -413,9 +922,19 @@ const PayrollEntry = () => {
                         onChange={(event) =>
                           setEditingEmployee((employee) => ({
                             ...employee,
-                            [field]: Number(event.target.value),
+                            [field]:
+                              field === "lossOfPay"
+                                ? event.target.value
+                                : Number(event.target.value),
                           }))
                         }
+                        onBlur={() => {
+                          if (field !== "lossOfPay") return;
+                          setEditingEmployee((employee) => ({
+                            ...employee,
+                            lossOfPay: numberValue(employee.lossOfPay).toFixed(2),
+                          }));
+                        }}
                         className="rounded border border-gray-300 px-3 py-2 outline-none focus:border-primary"
                       />
                     </label>
@@ -462,20 +981,37 @@ const PayrollEntry = () => {
                 handleSubmit={() => setEditingEmployee(null)}
                 externalStyles="!bg-gray-500"
               />
-              <PrimaryButton title="Save" handleSubmit={saveEmployeeEdit} />
+              <PrimaryButton
+                title="Save"
+                handleSubmit={saveEmployeeEdit}
+                disabled={isSavingEmployee}
+                isLoading={isSavingEmployee}
+              />
             </div>
           </div>
         )}
       </MuiModal>
 
       <ConfirmationModal
-        open={Boolean(employeeToDelete)}
-        onClose={() => setEmployeeToDelete(null)}
+        open={showDeleteConfirmation}
+        onClose={() => setShowDeleteConfirmation(false)}
         onConfirm={confirmEmployeeDelete}
-        title="Delete Employee Payroll Entry"
-        message={`Are you sure you want to delete ${employeeToDelete?.employeeName || "this employee"} from this payroll draft?`}
-        confirmText="Delete"
+        title="Delete Selected Payroll Entries"
+        message={`Are you sure you want to delete ${selectedEmployees.length} selected employee${selectedEmployees.length === 1 ? "" : "s"} from this payroll draft?`}
+        confirmText={`Delete (${selectedEmployees.length})`}
         cancelText="Cancel"
+        isLoading={isDeletingEmployees}
+      />
+
+      <ConfirmationModal
+        open={showSubmitConfirmation}
+        onClose={() => setShowSubmitConfirmation(false)}
+        onConfirm={confirmPayrollSubmit}
+        title="Submit Payroll"
+        message="Are you sure you want to submit this payroll?"
+        confirmText="Submit"
+        cancelText="Cancel"
+        isLoading={isSubmittingPayroll}
       />
     </PageFrame>
   );

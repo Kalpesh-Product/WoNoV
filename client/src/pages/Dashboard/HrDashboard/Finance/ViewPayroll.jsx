@@ -8,7 +8,10 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import humanTime from "../../../../utils/humanTime";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import humanDate from "../../../../utils/humanDateForamt";
-import { inrFormat } from "../../../../utils/currencyFormat";
+import {
+  inrFormatExact as inrFormat,
+  inrFormatExact,
+} from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { CircularProgress, MenuItem, TextField } from "@mui/material";
@@ -22,11 +25,7 @@ import StatusChip from "../../../../components/StatusChip";
 import dayjs from "dayjs";
 import html2pdf from "html2pdf.js";
 
-const formatPayrollAmount = (value) =>
-  `INR ${Number(value || 0).toLocaleString("en-IN", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  })}`;
+const formatPayrollAmount = (value) => `INR ${inrFormatExact(value)}`;
 
 const CompensationRow = ({ label, value, period }) => (
   <div className="flex items-start justify-between gap-6 py-2 text-sm">
@@ -264,6 +263,7 @@ const ViewPayroll = ({
   routeState,
   hideCompensationStructure = false,
   compensationOnly = false,
+  onCompensationSaved,
 }) => {
   const [selectedRequest, setSelectedRequest] = useState(null);
   const payslipRef = useRef();
@@ -886,9 +886,13 @@ const ViewPayroll = ({
       setCompensationDraft(nextDetails);
       setIsEditingCompensation(false);
       await refetchEmployee();
+      await queryClient.invalidateQueries({
+        queryKey: ["runPayrollCompensationEmployees"],
+      });
       toast.success(
         response?.message || "Payroll compensation updated successfully",
       );
+      if (onCompensationSaved) await onCompensationSaved();
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
