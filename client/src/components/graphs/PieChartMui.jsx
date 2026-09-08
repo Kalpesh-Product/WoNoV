@@ -13,7 +13,7 @@ const PieChartMui = ({
 }) => {
   const chartData = data.map((item) => parseFloat(item.value));
   const { containerRef, chartKey } = useResponsiveChart();
-  const chartAreaHeight = customLegend ? height - 40 : height;
+  const chartAreaHeight = customLegend ? Math.max(220, height - 76) : height;
 
   const updatedOptions = {
     ...options,
@@ -70,8 +70,8 @@ const PieChartMui = ({
           />
         )}
         {customLegend && (
-          <div>
-            <div className="w-full flex justify-between">{customLegend}</div>
+          <div className="mt-3 w-full">
+            <div className="w-full flex justify-center">{customLegend}</div>
           </div>
         )}
       </div>

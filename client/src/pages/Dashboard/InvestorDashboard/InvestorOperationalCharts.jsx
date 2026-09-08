@@ -364,10 +364,10 @@ const InvestorOperationalCharts = ({
     const chartColors = chart.colors || palette;
     const hasScrollableLegend = ["desks", "sector", "client"].includes(key);
     const customChartLegend = hasScrollableLegend && (
-      <div className="w-full overflow-x-auto touch-pan-x select-none">
-        <div className="flex min-w-max items-center justify-center gap-3 px-2">
+      <div className="w-full max-w-full px-2 pb-1 select-none">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           {labels.map((label, index) => (
-            <div key={label} className="flex shrink-0 items-center gap-1 text-xs">
+            <div key={label} className="flex min-w-0 items-center gap-1 text-xs">
               <span
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: chartColors[index] }}
