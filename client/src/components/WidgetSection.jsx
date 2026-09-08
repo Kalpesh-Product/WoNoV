@@ -29,6 +29,8 @@ const WidgetSection = ({
   normalCase,
   summaryChipVariant,
   headerRightContent,
+  headerCenterContent,
+  gridGap = "gap-4",
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -67,7 +69,7 @@ const WidgetSection = ({
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
-          className={`border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
+          className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
           }`}>
           <div className="flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between">
@@ -100,6 +102,11 @@ const WidgetSection = ({
                   {titleData}
                 </span>
               </span>
+            )}
+            {headerCenterContent && (
+              <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+                {headerCenterContent}
+              </div>
             )}
             <div className="flex flex-col items-end gap-2">
               {headerRightContent ? (
@@ -148,7 +155,7 @@ const WidgetSection = ({
                           </div>
                         </span>
                       )}
-                    {TitleAmountRed !== undefined && TitleAmountGreen !== null && (
+                    {TitleAmountRed !== undefined && TitleAmountRed !== null && (
                       <span
                         className={`${
                           titleFont
@@ -181,7 +188,7 @@ const WidgetSection = ({
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
-           className={`w-full grid gap-4 ${gridClasses[effectiveLayout]} h-full py-4`}>
+           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
           {visibleChildren.map((child, index) => (
             <div key={index}>{child}</div>
           ))}

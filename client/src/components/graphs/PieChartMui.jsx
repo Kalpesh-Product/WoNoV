@@ -13,6 +13,7 @@ const PieChartMui = ({
 }) => {
   const chartData = data.map((item) => parseFloat(item.value));
   const { containerRef, chartKey } = useResponsiveChart();
+  const chartAreaHeight = customLegend ? height - 40 : height;
 
   const updatedOptions = {
     ...options,
@@ -32,7 +33,9 @@ const PieChartMui = ({
         ref={containerRef}
         className={
           centerAlign
-            ? "flex items-center justify-center w-full h-full"
+            ? `flex items-center justify-center w-full h-full ${
+                customLegend ? "flex-col" : ""
+              }`
             : "flex items-center"
         }
         style={centerAlign ? undefined : { width, height }}
@@ -41,7 +44,10 @@ const PieChartMui = ({
           // <div style={{ width, height }}>
              <div
             className="w-full"
-            style={{ maxWidth: typeof width === "number" ? width : "100%", height }}
+            style={{
+              maxWidth: typeof width === "number" ? width : "100%",
+              height: chartAreaHeight,
+            }}
           >
             <ReactApexChart
               key={chartKey}

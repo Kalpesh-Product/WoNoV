@@ -13,9 +13,13 @@ import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
-const MonthlyProfitLoss = () => {
+const MonthlyProfitLoss = ({
+  routeBase = "/app/dashboard/finance-dashboard",
+  departmentBudgetRoute = "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const isInvestorDashboard = routeBase.includes("/investor-dashboard");
 
   //-----------------API-----------------//
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
@@ -353,38 +357,39 @@ const MonthlyProfitLoss = () => {
       field: "income",
       headerName: "Income (INR)",
       flex: 1,
-      cellRenderer: (params) => (
-        <span
-          role="button"
-          onClick={() =>
-            navigate(
-              "/app/dashboard/finance-dashboard/monthly-profit-loss/income-details"
-            )
-          }
-          className="text-primary underline cursor-pointer"
-        >
-          {params.value}
-        </span>
-      ),
+      ...(isInvestorDashboard
+        ? {}
+        : {
+            cellRenderer: (params) => (
+              <span
+                role="button"
+                onClick={() =>
+                  navigate(`${routeBase}/monthly-profit-loss/income-details`)
+                }
+                className="text-primary underline cursor-pointer"
+              >
+                {params.value}
+              </span>
+            ),
+          }),
     },
     {
       field: "expense",
       headerName: "Expense (INR)",
       flex: 1,
-      cellRenderer: (params) => (
-        <span
-          role="button"
-          onClick={() =>
-            navigate(
-             // "/app/dashboard/finance-dashboard/finance/dept-wise-budget"
-              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
-            )
-          }
-          className="text-primary underline cursor-pointer"
-        >
-          {params.value}
-        </span>
-      ),
+      ...(isInvestorDashboard
+        ? {}
+        : {
+            cellRenderer: (params) => (
+              <span
+                role="button"
+                onClick={() => navigate(departmentBudgetRoute)}
+                className="text-primary underline cursor-pointer"
+              >
+                {params.value}
+              </span>
+            ),
+          }),
     },
     { field: "pnl", headerName: "P&L (INR)", flex: 1 },
     // {
@@ -574,7 +579,11 @@ const MonthlyProfitLoss = () => {
           data={incomeExpenseData}
           options={incomeExpenseOptions}
           chartId={"bargraph-finance-income"}
-          title={"BIZNest FINANCE INCOME V/S EXPENSE"}
+          title={
+            isInvestorDashboard
+              ? `BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFY}`
+              : "BIZNest FINANCE INCOME V/S EXPENSE"
+          }
           TitleAmountGreen={`INR ${inrFormat(selectedFYIncome)}`}
           TitleAmountRed={`INR ${inrFormat(selectedFYExpense)}`}
           onYearChange={handleYearChange}
@@ -611,7 +620,7 @@ const MonthlyProfitLoss = () => {
               data={monthlyProfitLossData}
               columns={monthlyProfitLossColumns}
               search={true}
-              exportData
+              exportData={!isInvestorDashboard}
             />
           </WidgetSection>
         ) : (

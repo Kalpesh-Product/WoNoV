@@ -828,6 +828,39 @@ const submitPayrollDraft = async (req, res, next) => {
   }
 };
 
+const voidPayrollDraft = async (req, res, next) => {
+  try {
+    const { draftId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+    });
+
+    if (!draft) {
+      return res.status(404).json({ message: "Payroll draft not found" });
+    }
+
+    if (draft.status !== "Draft") {
+      return res.status(409).json({
+        message: "Only a draft payroll can be voided",
+      });
+    }
+
+    await draft.deleteOne();
+
+    return res.status(200).json({
+      message: "Payroll draft voided successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const generatePayroll = async (req, res, next) => {
   const logPath = "payrolls/PayrollLog";
   const logAction = "Bulk Payroll Generation";
@@ -1281,4 +1314,5 @@ module.exports = {
   undoPayrollDraftChange,
   undoPayrollDraftEmployeeChange,
   submitPayrollDraft,
+  voidPayrollDraft,
 };

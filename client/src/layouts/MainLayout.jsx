@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
 import { PERMISSIONS } from "../constants/permissions";
+import { CurrencyProvider } from "../context/CurrencyContext";
 
 const MainLayout = () => {
   const { auth } = useAuth();
@@ -86,7 +87,7 @@ const MainLayout = () => {
   const unreadCount = notifications.reduce((total, notification) => {
     const count = notification.users.filter(
       (user) =>
-        user.userActions?.hasRead !== true &&
+        user.userActions?.hasRead === false &&
         String(user.userActions?.whichUser?._id || user.userActions?.whichUser) ===
           String(auth?.user?._id)
     ).length;
@@ -114,6 +115,7 @@ const MainLayout = () => {
   }, []);
 
   return (
+    <CurrencyProvider>
     <div className="w-full flex flex-col justify-between h-screen overflow-y-auto">
       <header className="flex w-full shadow-md items-center px-4">
         {isMobile && (
@@ -185,6 +187,7 @@ const MainLayout = () => {
         </footer>
       )}
     </div>
+    </CurrencyProvider>
   );
 };
 

@@ -32,6 +32,7 @@ import { VscPersonAdd } from "react-icons/vsc";
 import { GrDocumentPerformance } from "react-icons/gr";
 import { FaClipboardUser } from "react-icons/fa6";
 import { IoPrintOutline } from "react-icons/io5";
+import { RiStockLine } from "react-icons/ri";
 import useAuth from "../hooks/useAuth";
 import { PERMISSIONS } from "../constants/permissions";
 
@@ -174,6 +175,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "/app/dashboard",
       permission: PERMISSIONS.SIDEBAR_DASHBOARD.value,
       submenus: [
+         {
+          id: 11,
+          title: "Investor Dashboard",
+          codeName: "Investor",
+          route: "/app/dashboard/investor-dashboard",
+          icon: <RiStockLine />,
+          permission: PERMISSIONS.SIDEBAR_INVESTOR_DASHBOARD.value,
+        },
         {
           id: 4,
           title: "Finance Dashboard",
@@ -269,7 +278,6 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       return {
         ...module,
         hasModulePermission,
-        hasSubmenus: filteredSubmenus.length > 0,
         submenus: filteredSubmenus,
       };
     })
@@ -316,7 +324,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                     onClick={() => {
                       if (module.hasModulePermission) {
                         navigate(module.route);
-                      } else if (module.hasSubmenus) {
+                      } else if (module.submenus?.length) {
                         toggleModule(index);
                       }
                     }}
@@ -334,42 +342,25 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                         <span className="pl-5 text-sm ">{module.title}</span>
                       )}
                     </div>
-                    {isSidebarOpen && (
-                      <button
-                        type="button"
-                        disabled={!module.hasSubmenus}
-                        aria-label={
-                          module.hasSubmenus
-                            ? `Toggle ${module.title} submenu`
-                            : `${module.title} has no accessible submenu`
-                        }
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleModule(index);
-                        }}
-                        className={`transition-transform duration-300 ease-in-out ${
-                          module.hasSubmenus
-                            ? "cursor-pointer"
-                            : "cursor-not-allowed opacity-30"
-                        } ${
-                          module.hasSubmenus && expandedModule === index
-                            ? "rotate-180"
-                            : "rotate-0"
-                        }`}
+                    {isSidebarOpen && module.submenus && (
+                      <span
+                        onClick={() => module.submenus && toggleModule(index)}
+                        className={`transition-transform duration-300 ease-in-out ${expandedModule === index ? "rotate-180" : "rotate-0"
+                          }`}
                       >
-                        {module.hasSubmenus && expandedModule === index ? (
+                        {expandedModule === index ? (
                           <FaChevronUp />
                         ) : (
                           <FaAngleDown />
                         )}
-                      </button>
+                      </span>
                     )}
                   </div>
                   <div
                     className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${expandedModule === index ? "max-h-[500px]" : "max-h-0"
                       }`}
                   >
-                    {module.hasSubmenus && (
+                    {module.submenus && (
                       <div>
                         {module.submenus.map((submenu, idx) => (
                           <div

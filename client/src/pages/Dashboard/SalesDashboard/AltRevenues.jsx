@@ -31,7 +31,8 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
-const AltRevenues = () => {
+//const AltRevenues = () => {
+  const AltRevenues = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
@@ -172,7 +173,8 @@ const AltRevenues = () => {
   );
   return (
     <div className="flex flex-col gap-4">
-      {isLoadingAlternateRevenue ? (
+      {/* {isLoadingAlternateRevenue ? ( */}
+       {showChart && (isLoadingAlternateRevenue ? (
         <div className="flex h-72 justify-center items-center">
           <CircularProgress />
         </div>
@@ -186,7 +188,8 @@ const AltRevenues = () => {
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
         />
-      )}
+      // )}
+       ))}
 
       {!isLoadingAlternateRevenue ? (
         <WidgetTable

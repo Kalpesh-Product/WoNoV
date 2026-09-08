@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
-import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { MenuItem, TextField } from "@mui/material";
 import { MdDeleteOutline, MdEdit, MdUndo } from "react-icons/md";
 import PageFrame from "../../../../components/Pages/PageFrame";
@@ -182,6 +182,7 @@ const buildEmployeeRows = (draft) => {
 
 const PayrollEntry = () => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { draftId } = useParams();
   const [employeeRows, setEmployeeRows] = useState([]);
   const [editingEmployee, setEditingEmployee] = useState(null);
@@ -190,9 +191,8 @@ const PayrollEntry = () => {
   const [showUndoConfirmation, setShowUndoConfirmation] = useState(false);
   const [employeeToUndo, setEmployeeToUndo] = useState(null);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
+  const [showVoidConfirmation, setShowVoidConfirmation] = useState(false);
   const [isPayrollSubmitted, setIsPayrollSubmitted] = useState(false);
-  const [allowanceImportFile, setAllowanceImportFile] = useState("");
-  const allowanceImportRef = useRef(null);
   const { data: draft, isLoading, refetch: refetchDraft } = useQuery({
     queryKey: ["payrollDraft", draftId],
     queryFn: async () => {
@@ -227,6 +227,12 @@ const PayrollEntry = () => {
         return response.data;
       },
     });
+  const { mutateAsync: voidDraft, isPending: isVoidingPayroll } = useMutation({
+    mutationFn: async () => {
+      const response = await axios.delete(`/api/payroll/drafts/${draftId}`);
+      return response.data;
+    },
+  });
   const { mutateAsync: undoDraftChange, isPending: isUndoingDraft } =
     useMutation({
       mutationFn: async () => {
@@ -336,6 +342,19 @@ const PayrollEntry = () => {
     .filter(Boolean)
     .join(" ") || "N/A";
   const isProcessed = draft.status === "Processed";
+  const confirmVoidPayroll = async () => {
+    try {
+      const response = await voidDraft();
+      await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+      setShowVoidConfirmation(false);
+      toast.success(response.message || "Payroll draft voided successfully");
+      navigate("/app/dashboard/HR-dashboard/mix-bag/payroll-summary", {
+        replace: true,
+      });
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to void payroll draft");
+    }
+  };
   const saveEmployeeEdit = async () => {
     const allowanceItems = (editingEmployee.allowanceItems || []).map((row) => ({
       ...row,
@@ -546,12 +565,6 @@ const PayrollEntry = () => {
         : [...currentEmployees, employee]
     );
   };
-  const selectImportFile = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    setAllowanceImportFile(file.name);
-    event.target.value = "";
-  };
   const handleUndo = () => {
     if (selectedEmployees.length > 0) {
       setSelectedEmployees([]);
@@ -566,7 +579,6 @@ const PayrollEntry = () => {
       setEmployeeRows(buildEmployeeRows(response.data));
       setSelectedEmployees([]);
       setShowUndoConfirmation(false);
-      setAllowanceImportFile("");
       await refetchDraft();
       await queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
       toast.success(response.message || "Last payroll draft change undone");
@@ -735,13 +747,28 @@ const PayrollEntry = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 border-b pb-4 text-content">
+        <div className="flex flex-wrap items-center gap-3 border-b pb-4 text-content">
           <span>
-            Processed On: {dayjs(draft.submittedAt || draft.runDate || draft.createdAt).format("DD MMM, YYYY")}
+            Pay Period: {dayjs(draft.payPeriod).startOf("month").format("DD MMM, YYYY")} - {dayjs(draft.payPeriod).endOf("month").format("DD MMM, YYYY")}
           </span>
           <span className="rounded bg-gray-200 px-2 py-1 text-xs font-semibold text-gray-600">
             {draft.status}
           </span>
+          <div className="ml-auto flex items-center gap-3">
+            {!isProcessed && (
+              <SecondaryButton
+                title="Void Payroll"
+                handleSubmit={() => setShowVoidConfirmation(true)}
+                disabled={isVoidingPayroll}
+              />
+            )}
+            <PrimaryButton
+              title={isPayrollSubmitted ? "Processed" : "Submit Payroll"}
+              handleSubmit={() => setShowSubmitConfirmation(true)}
+              disabled={isPayrollSubmitted || isSubmittingPayroll}
+              isLoading={isSubmittingPayroll}
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-3">
@@ -833,22 +860,6 @@ const PayrollEntry = () => {
                   disabled={isExportingPayroll}
                   isLoading={isExportingPayroll}
                 />
-                <PrimaryButton
-                  title="Import Allowances/Deductions"
-                  handleSubmit={() => allowanceImportRef.current?.click()}
-                />
-                <input
-                  ref={allowanceImportRef}
-                  type="file"
-                  accept=".csv,.xls,.xlsx"
-                  className="hidden"
-                  onChange={selectImportFile}
-                />
-                {allowanceImportFile && (
-                  <span className="text-xs text-gray-500">
-                    Selected: {allowanceImportFile}
-                  </span>
-                )}
                 {selectedEmployees.length > 0 && (
                   <PrimaryButton
                     title={`Delete (${selectedEmployees.length})`}
@@ -856,13 +867,6 @@ const PayrollEntry = () => {
                     externalStyles="!bg-red-600"
                   />
                 )}
-                <div className="ml-auto">
-                  <PrimaryButton
-                    title={isPayrollSubmitted ? "Processed" : "Submit Payroll"}
-                    handleSubmit={() => setShowSubmitConfirmation(true)}
-                    disabled={isPayrollSubmitted || isSubmittingPayroll}
-                  />
-                </div>
               </div>
             }
             getRowStyle={({ data: employee }) =>
@@ -1109,6 +1113,17 @@ const PayrollEntry = () => {
         confirmText={`Delete (${selectedEmployees.length})`}
         cancelText="Cancel"
         isLoading={isDeletingEmployees}
+      />
+
+      <ConfirmationModal
+        open={showVoidConfirmation}
+        onClose={() => setShowVoidConfirmation(false)}
+        onConfirm={confirmVoidPayroll}
+        title="Void Payroll"
+        message="Are you sure you want to void this payroll draft? This will permanently delete the draft and its saved changes."
+        confirmText="Void Payroll"
+        cancelText="Cancel"
+        isLoading={isVoidingPayroll}
       />
 
       <ConfirmationModal

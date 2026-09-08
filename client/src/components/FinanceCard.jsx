@@ -6,35 +6,94 @@ const FinanceCard = ({
   descriptionData,
   highlightNegativePositive,
   disableColorChange,
+  disableLinks = false,
   titleCenter,
   stateData,
+  sectionColors,
+  minHeight = "",
+  hideHeader = false,
+  hideHeaderDivider = false,
+  hideDividerAfter = [],
+  hideLastDivider = false,
+  centerContent = false,
 }) => {
   const navigate = useNavigate();
+  const hasSectionColors = Boolean(sectionColors);
 
   return (
-    <div className="flex flex-col gap-4 h-full p-4 shadow-md rounded-xl">
-      {titleCenter ? (
-        <div className="flex justify-between items-center">
-          <span className="text-title font-pmedium text-center w-full uppercase">
-            {cardTitle}
-          </span>
-        </div>
-      ) : (
-        <div className="flex justify-between items-center">
-          <span className="text-title font-pmedium text-center">
-            {cardTitle}
-          </span>
-          <span className="text-content">{timePeriod}</span>
-        </div>
-      )}
-      <hr className="h-[1px] w-full" />
+    // <div className="flex flex-col gap-4 h-full p-4 shadow-md rounded-xl">
+    //   {titleCenter ? (
+    //     <div className="flex justify-between items-center">
+    //       <span className="text-title font-pmedium text-center w-full uppercase">
+    //         {cardTitle}
+    //       </span>
+    //     </div>
+    //   ) : (
+    //     <div className="flex justify-between items-center">
+    //       <span className="text-title font-pmedium text-center">
+    //         {cardTitle}
+    //       </span>
+    //       <span className="text-content">{timePeriod}</span>
+    //     </div>
+    //   )}
+    //   <hr className="h-[1px] w-full" />
 
-      <div className="flex flex-col gap-2">
+    //   <div className="flex flex-col gap-2">
+     <div
+      className={`flex flex-col h-full shadow-md rounded-xl ${minHeight} ${
+        centerContent ? "justify-center" : ""
+      } ${
+        hasSectionColors ? "overflow-hidden" : "gap-4 p-4"
+      }`}
+    >
+      {!hideHeader && (
+        <>
+          <div
+            className={hasSectionColors ? "p-4" : ""}
+            style={
+              hasSectionColors
+                ? {
+                    backgroundColor: sectionColors.header,
+                    color: sectionColors.headerText || "inherit",
+                  }
+                : undefined
+            }
+          >
+            {titleCenter ? (
+              <div className="flex justify-between items-center">
+                <span className="text-title font-pmedium text-center w-full uppercase">
+                  {cardTitle}
+                </span>
+              </div>
+            ) : (
+              <div
+                className={`flex justify-between items-center ${
+                  centerContent ? "translate-y-1" : ""
+                }`}
+              >
+                <span className="text-title font-pmedium text-center">
+                  {cardTitle}
+                </span>
+                <span className="text-content">{timePeriod}</span>
+              </div>
+            )}
+          </div>
+          {!hasSectionColors && !hideHeaderDivider && <hr className="h-[1px] w-full" />}
+        </>
+      )}
+
+      <div
+        className={
+          hasSectionColors ? "flex flex-col grow" : "flex flex-col gap-2"
+        }
+      >
         {descriptionData.map((item, index) => {
+          const isLink = !disableLinks && item.route && item.route !== "#";
           const numericValue =
             typeof item.value === "number"
               ? item.value
               : parseInt(item?.value.replace(/[^0-9-]/g, ""));
+          const isLastItem = index === descriptionData.length - 1;
 
           const dynamicColor =
             highlightNegativePositive && !isNaN(numericValue)
@@ -44,14 +103,36 @@ const FinanceCard = ({
               : "";
 
           return (
-            <>
-              <div key={index} className="flex justify-between items-center ">
+            // <>
+            //   <div key={index} className="flex justify-between items-center ">
+
+             <div
+              key={index}
+              className={
+                hasSectionColors
+                  ? `${hideHeader ? "" : "grow"} flex flex-col px-4`
+                  : ""
+              }
+              style={
+                hasSectionColors
+                  ? { backgroundColor: sectionColors.rows?.[index] }
+                  : undefined
+              }
+            >
+              <div
+                className={`flex justify-between items-center ${
+                  hasSectionColors && !hideHeader ? "grow" : ""
+                }`}
+              >
                 <span
-                  onClick={() =>
-                    navigate(item.route || "", { state: item.stateData || {} })
+                  onClick={
+                    isLink
+                      ? () =>
+                          navigate(item.route, { state: item.stateData || {} })
+                      : undefined
                   }
                   className={`text-content   ${
-                    item.route !== "#"
+                    isLink
                       ? "hover:underline cursor-pointer text-primary"
                       : "text-black"
                   } `}>
@@ -59,13 +140,18 @@ const FinanceCard = ({
                 </span>
                 <span
                   className={`text-content p-2 rounded-md   ${
-                    disableColorChange ? null : dynamicColor
+                    disableColorChange ? "" : dynamicColor
+                    //disableColorChange ? null : dynamicColor
                   }`}>
                   {item.value}
                 </span>
               </div>
-              <hr className="border-dotted border-b-default" />
-            </>
+                {!hasSectionColors &&
+                  !hideDividerAfter.includes(item.title) &&
+                  !(hideLastDivider && isLastItem) && (
+                  <hr className="border-dotted border-b-default" />
+                )}
+            </div>
           );
         })}
       </div>
