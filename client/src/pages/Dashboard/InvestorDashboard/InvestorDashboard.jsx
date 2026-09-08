@@ -17,6 +17,7 @@ import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailabilit
 import BarGraph from "../../../components/graphs/BarGraph";
 import HeatMap from "../../../components/graphs/HeatMap";
 import InvestorOperationalCharts from "./InvestorOperationalCharts";
+import { useCurrency } from "../../../context/CurrencyContext";
 //import PieChartMui from "../../../components/graphs/PieChartMui";
 
 const fiscalYearLabel = (date) => {
@@ -95,6 +96,7 @@ const fiscalYearMonths = (fiscalYear) => {
 };
 
 const InvestorAppreciationCenter = () => {
+   const { currency, format } = useCurrency();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
@@ -258,7 +260,7 @@ const InvestorAppreciationCenter = () => {
           0,
         );
 
-        return tooltipTotal ? inrFormat(tooltipTotal) : "";
+        return tooltipTotal ? format(tooltipTotal) : "";
       },
 
       style: {
@@ -273,7 +275,7 @@ const InvestorAppreciationCenter = () => {
       tickAmount: useSmallScale ? yAxisMax : yAxisMax / 20,
 
       title: {
-        text: "Amount In Lakhs (INR)",
+        text: `Amount In Lakhs (${currency})`,
       },
 
       labels: {
@@ -302,7 +304,7 @@ const InvestorAppreciationCenter = () => {
               `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;">` +
               `<span style="width:12px;height:12px;border-radius:999px;background:#24467E;display:inline-block;"></span>` +
               `<span>Asset ${index + 1}:</span>` +
-              `<span style="font-weight:700;">INR ${inrFormat(tooltipAmount)}</span>` +
+             `<span style="font-weight:700;">${format(tooltipAmount)}</span>` +
               `</div>`
               );
             },
@@ -350,7 +352,7 @@ const InvestorAppreciationCenter = () => {
       ) : (
         <YearlyGraph
           title="BIZNEST APPRECIATION CENTER"
-          titleAmount={`INR ${inrFormat(selectedYearTotal)}`}
+         titleAmount={format(selectedYearTotal)}
           data={graphData}
           options={options}
           onYearChange={setSelectedFiscalYear}
@@ -1310,6 +1312,7 @@ const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
 
 
 const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
+  const { currency, format } = useCurrency();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const currentFiscalYear = fiscalYearLabel(dayjs());
@@ -1455,12 +1458,12 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
     descriptionData: [
       {
         title: summaryMonthLabel,
-        value: `INR ${inrFormat(values.month)}`,
+        value: format(values.month),
         route: "#",
       },
       {
         title: "Annual Average",
-        value: `INR ${inrFormat(values.total / 12)}`,
+        value: format(values.total / 12),
         route: "#",
       },
       {
@@ -1470,7 +1473,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       },
       {
         title: "Per Sq. Ft.",
-        value: `INR ${inrFormat(perSqft(values.total))}`,
+        value: format(perSqft(values.total)),
         route: "#",
       },
     ],
@@ -1500,10 +1503,10 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
     },
     yaxis: {
       min: 0,
-      title: { text: "Amount In Lakhs (INR)" },
+      title: { text: `Amount In Lakhs (${currency})` },
       labels: { formatter: (value) => `${Math.round(value / 100000)}` },
     },
-    tooltip: { y: { formatter: (value) => `INR ${inrFormat(value)}` } },
+    tooltip: { y: { formatter: (value) => format(value) } },
   };
 
   return (
@@ -1516,11 +1519,11 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         chartHeight={450}
         headerCenterContent={
           <div className="flex gap-2 justify-center items-center uppercase bg-[#c4c4c4] p-2 rounded-lg text-body text-black font-pmedium">
-           Projected: INR {inrFormat(projectedAmount)}
+          Projected: {format(projectedAmount)}
           </div>
         }
-        TitleAmountGreen={`INR ${inrFormat(totals.income)}`}
-        TitleAmountRed={`INR ${inrFormat(totals.expense)}`}
+        TitleAmountGreen={format(totals.income)}
+        TitleAmountRed={format(totals.expense)}
         currentYear={selectedFiscalYear}
         onYearChange={setSelectedFiscalYear}
         refreshOnDataChange
@@ -1626,6 +1629,7 @@ const yearCategories = {
 };
 
 const InvestorDashboard = () => {
+  const { currency, format } = useCurrency();
   const axios = useAxiosPrivate();
   const location = useLocation();
   const navigate = useNavigate();
@@ -1820,9 +1824,9 @@ const InvestorDashboard = () => {
       categories:
         ["FY 2021-22", "FY 2022-23", "FY 2023-24", ...historicalData.map((item) => item.fiscalYear)],
     },
-    yaxis: {
+     yaxis: {
       title: {
-        text: "Amount In Crores (INR)",
+        text: `Amount In Crores (${currency})`,
       },
       labels: {
         formatter: (val) => `${Math.round(val / 10000000)}`,
@@ -1833,7 +1837,7 @@ const InvestorDashboard = () => {
     },
     tooltip: {
       y: {
-        formatter: (val) => `INR ${val.toLocaleString()}`,
+        formatter: (val) => format(val),
       },
     },
   };
@@ -1861,9 +1865,9 @@ const InvestorDashboard = () => {
     return {
       srNo: index + 1,           // ← this is the clean fix
       name,
-      totalIncome: inrFormat(income),
-      totalExpense: inrFormat(expense),
-      totalProfitLoss: inrFormat(profitLoss),
+      totalIncome: format(income),
+      totalExpense: format(expense),
+      totalProfitLoss: format(profitLoss),
     };
   });
 
@@ -2014,11 +2018,11 @@ const InvestorDashboard = () => {
               columns={[
                 { field: "srNo", headerName: "Sr No", sort: "desc" },
                 { field: "name", headerName: "Financial Year", flex: 1 },
-                { field: "totalIncome", headerName: "Total Income (INR)" },
-                { field: "totalExpense", headerName: "Total Expense (INR)" },
+               { field: "totalIncome", headerName: `Total Income (${currency})` },
+                { field: "totalExpense", headerName: `Total Expense (${currency})` },
                 {
                   field: "totalProfitLoss",
-                  headerName: "Total Profit / Loss (INR)",
+                  headerName: `Total Profit / Loss (${currency})`,
                 },
               ]}
               hideFilter
