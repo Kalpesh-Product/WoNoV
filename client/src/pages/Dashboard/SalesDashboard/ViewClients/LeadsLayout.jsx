@@ -15,6 +15,7 @@ const LeadsLayout = ({
   children,
   title = "Unique Clients",
   titleAmount,
+  hideMonthAxisTitle = false,
 }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -167,7 +168,7 @@ const LeadsLayout = ({
     },
     xaxis: {
       categories: financialYearMonths,
-      title: { text: "Months" },
+      ...(hideMonthAxisTitle ? {} : { title: { text: "Months" } }),
     },
     yaxis: {
       title: { text: "Number of Clients" },

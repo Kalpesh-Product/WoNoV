@@ -243,30 +243,7 @@ const InvestorAppreciationCenter = () => {
     },
 
     dataLabels: {
-      enabled: true,
-      offsetY: -18,
-
-      formatter: (value, { dataPointIndex }) => {
-        const month = fiscalYearMonths(selectedFiscalYear)[dataPointIndex];
-        const tooltipAssets = selectedYearSupportsData
-          ? appreciationDisplayAssets(
-              assetsByFiscalYear[selectedFiscalYear]?.[month] || [],
-              month,
-            ).slice(0, 5)
-          : [];
-        const tooltipTotal = tooltipAssets.reduce(
-          (total, asset, index) =>
-            total + appreciationTooltipAmount(month, index),
-          0,
-        );
-
-        return tooltipTotal ? format(tooltipTotal) : "";
-      },
-
-      style: {
-        fontSize: "11px",
-        colors: ["#111827"],
-      },
+      enabled: false,
     },
 
     yaxis: {
@@ -295,25 +272,34 @@ const InvestorAppreciationCenter = () => {
             )
           : [];
 
-        const rows = monthAssets.slice(0, 5)
-          .map(
-            (asset, index) => {
-              const tooltipAmount = appreciationTooltipAmount(month, index);
+        const visibleMonthAssets = monthAssets.slice(0, 5);
+        const total = visibleMonthAssets.reduce(
+          (sum, asset, index) =>
+            sum + appreciationTooltipAmount(month, index),
+          0,
+        );
 
-              return (
+        const rows = visibleMonthAssets
+          .map((asset, index) => {
+            const tooltipAmount = appreciationTooltipAmount(month, index);
+
+            return (
               `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;">` +
               `<span style="width:12px;height:12px;border-radius:999px;background:#24467E;display:inline-block;"></span>` +
               `<span>Asset ${index + 1}:</span>` +
-             `<span style="font-weight:700;">${format(tooltipAmount)}</span>` +
+              `<span style="font-weight:700;">${format(tooltipAmount)}</span>` +
               `</div>`
-              );
-            },
-          )
+            );
+          })
           .join("");
+
+        const tooltipTitle = visibleMonthAssets.length
+          ? `${month || ""} &nbsp;&nbsp; Total: ${format(total)}`
+          : month || "";
 
         return (
           `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
-          `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;">${month || ""}</div>` +
+          `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${tooltipTitle}</div>` +
           (rows || `<div style="padding:10px 12px;font-size:12px;color:#111827;">No assets</div>`) +
           `</div>`
         );
@@ -352,30 +338,17 @@ const InvestorAppreciationCenter = () => {
       ) : (
         <YearlyGraph
           title="BIZNEST APPRECIATION CENTER"
-         titleAmount={format(selectedYearTotal)}
+          titleAmount={format(selectedYearTotal)}
           data={graphData}
           options={options}
           onYearChange={setSelectedFiscalYear}
-          navigationLabel="Month"
-            chartHeight={280}
+          chartHeight={280}
           sectionHeight="h-[425px]"
           refreshOnDataChange
         />
       )}
     </div>
   );
-};
-
-const investorClientType = (collection, client) => {
-  if (collection === "coworkingClients") return "Coworking";
-  if (collection === "virtualOfficeClients") return "Virtualoffice";
-
-  if (collection === "meetingClients") {
-    const purpose = String(client?.purposeOfVisit || "").toLowerCase();
-    return purpose.includes("pass") ? "Open Desk" : "External Meetings";
-  }
-
-  return null;
 };
 
 const InvestorUniqueClientsGraph = () => {
@@ -398,37 +371,100 @@ const InvestorUniqueClientsGraph = () => {
   });
 
   const clientsByMonth = useMemo(() => {
-    const groupedClients = new Map();
+    const grouped = {};
+    const toTitleCase = (value) =>
+      value
+        .toLowerCase()
+        .split("-")
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join("-");
+    const serviceMapping = {
+      coworking: "Coworking",
+      virtualOffice: "Virtualoffice",
+      externalMeeting: "External Meetings",
+      openDesk: "Open Desk",
+      workation: "Workations",
+      coliving: "Co-Living",
+    };
 
-    Object.entries(consolidatedClients).forEach(([collection, clients]) => {
-      asArray(clients).forEach((client) => {
-        const typeOfClient = investorClientType(collection, client);
-        if (!typeOfClient) return;
+    const unifiedClients = Object.entries(consolidatedClients).flatMap(
+      ([key, clients]) =>
+        asArray(clients).map((client) => ({
+          ...client,
+          clientType: key.replace(/Clients$/, ""),
+        })),
+    );
 
-        const rawDate =
-          client.startDate ||
-          client.termStartDate ||
-          client.rentDate ||
-          client.dateOfVisit ||
-          client.scheduledDate;
-        const date = dayjs(rawDate);
-        if (!date.isValid()) return;
+    unifiedClients.forEach((client) => {
+      let rawServiceName = client.clientType || "Unknown";
 
-        const month = date.format("YYYY-MM");
-        const monthClients = groupedClients.get(month) || [];
-        monthClients.push({
-          client:
-            client.clientName ||
-            [client.firstName, client.lastName].filter(Boolean).join(" ") ||
-            "Unknown",
-          typeOfClient,
-          date: date.format("YYYY-MM-DD"),
-        });
-        groupedClients.set(month, monthClients);
-      });
+      if (rawServiceName === "meeting") {
+        const purpose = String(client.purposeOfVisit || "").trim().toLowerCase();
+        if (purpose === "meeting room booking") {
+          rawServiceName = "externalMeeting";
+        } else if (purpose === "half-day pass" || purpose === "full-day pass") {
+          rawServiceName = "openDesk";
+        }
+      }
+
+      if (rawServiceName === "coworking" && client.service?.serviceName) {
+        const serviceName = client.service.serviceName.toLowerCase();
+        if (serviceName.includes("workation")) {
+          rawServiceName = "workation";
+        } else if (
+          serviceName.includes("living") ||
+          serviceName.includes("coliving")
+        ) {
+          rawServiceName = "coliving";
+        }
+      }
+
+      const typeOfClient =
+        serviceMapping[rawServiceName] || toTitleCase(rawServiceName);
+
+      let date = null;
+      if (rawServiceName === "coworking") {
+        date = client.startDate ? new Date(client.startDate) : null;
+      } else if (rawServiceName === "virtualOffice") {
+        date = client.termStartDate
+          ? new Date(client.termStartDate)
+          : client.rentDate
+            ? new Date(client.rentDate)
+            : null;
+      } else if (
+        rawServiceName === "externalMeeting" ||
+        rawServiceName === "openDesk"
+      ) {
+        date = client.dateOfVisit
+          ? new Date(client.dateOfVisit)
+          : client.scheduledDate
+            ? new Date(client.scheduledDate)
+            : null;
+      } else {
+        date =
+          client.startDate || client.dateOfVisit || client.termStartDate
+            ? new Date(
+                client.startDate || client.dateOfVisit || client.termStartDate,
+              )
+            : null;
+      }
+
+      if (!date || Number.isNaN(date.getTime())) return;
+
+      const transformedClient = {
+        client:
+          client.clientName ||
+          [client.firstName, client.lastName].filter(Boolean).join(" ") ||
+          "Unknown",
+        typeOfClient,
+        date: date.toISOString().split("T")[0],
+      };
+      const month = date.toLocaleString("default", { month: "long" });
+      grouped[month] ||= [];
+      grouped[month].push(transformedClient);
     });
 
-    return [...groupedClients.entries()].map(([month, clients]) => ({
+    return Object.entries(grouped).map(([month, clients]) => ({
       month,
       clients,
     }));
@@ -524,6 +560,7 @@ const InvestorUniqueClientsGraph = () => {
       hideAccordion
       title="BIZNEST Unique Clients"
       titleAmount={averageMonthlyUniqueClientTitle}
+      hideMonthAxisTitle
     >
       {/*
       <div className="border-b border-borderGray px-4 pb-4">
