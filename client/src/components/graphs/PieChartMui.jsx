@@ -28,7 +28,9 @@ const PieChartMui = ({
     },
   };
   return (
-    <div className="w-full flex flex-col" style={{ height }}>
+    <div
+      className="w-full flex flex-col"
+      style={{ height }}>
       <div
         ref={containerRef}
         className={

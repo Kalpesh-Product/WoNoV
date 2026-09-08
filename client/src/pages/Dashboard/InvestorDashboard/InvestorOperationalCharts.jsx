@@ -82,6 +82,8 @@ const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
     show: !singleLine,
     position: "bottom",
     horizontalAlign: "center",
+    width: "100%",
+    height: labels.length > 8 ? 72 : 48,
     ...(singleLine
       ? {
           width: 850,
@@ -91,7 +93,7 @@ const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
       : {}),
     itemMargin: {
       horizontal: singleLine ? 2 : 4,
-      vertical: singleLine ? 0 : 2,
+      vertical: singleLine ? 0 : 4,
     },
     formatter: singleLine ? singleLineLegendFormatter : legendFormatter,
   },
