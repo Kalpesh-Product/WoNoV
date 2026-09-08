@@ -40,7 +40,6 @@ import HrLayout from "../pages/Dashboard/HrDashboard/HrLayout";
 import ViewEmployees from "../pages/Dashboard/HrDashboard/Complaince/ViewEmployees";
 import OnBoarding from "../pages/Dashboard/HrDashboard/OnBoarding/OnBoarding";
 import EmployeeOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/EmployeeOnboard";
-import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import MemberOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/MemberOnboard";
 import VendorOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/VendorOnboard";
 import EmployeeDetail from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/EmployeeDetails";
@@ -69,8 +68,6 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
-import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
-import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
@@ -167,6 +164,7 @@ import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClie
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
+import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard/AdminDashboard";
 import MaintainanceLayout from "../pages/Dashboard/MaintainanceDashboard/MaintainanceLayout";
@@ -445,7 +443,6 @@ import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
 import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
 import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
-import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
 import DepartmentAssetCommon from "../components/Pages/DepartmentAssetCommon";
 import DepartmentSOP from "../pages/Dashboard/HrDashboard/Complaince/DepartmentSOP";
 import SopUpload from "../components/Pages/SopUpload";
@@ -666,6 +663,79 @@ export const routes = createBrowserRouter([
                         ],
                       },
                     ],
+                  },
+                  {
+                    path: "investor-dashboard",
+                    element: <InvestorDashboard />,
+                  },
+                  {
+                    path: "investor-dashboard/historical-P&L",
+                    element: <InvestorDashboard />,
+                   },
+                  {
+                    path: "investor-dashboard/income-expense",
+                    element: <InvestorDashboard />,
+                  },
+                   {
+                    path: "investor-dashboard/unique-clients",
+                    element: <InvestorDashboard />,
+                  },
+                  {
+                    path: "investor-dashboard/inventory",
+                    element: <InvestorDashboard />,
+                  },
+                     ...[
+                    "meeting-room-utilization",
+                    "external-guests-visited",
+                    "average-room-occupancy",
+                    "busy-time-during-week",
+                    "monthly-total-visitors",
+                    "sector-wise-occupancy",
+                    "client-wise-occupancy",
+                    "client-member-gender-wise-data",
+                    "india-wise-members",
+                    "total-desks-company-wise",
+                    "appreciation-center",
+                    "overall-visitor-category",
+                    "overall-visitor-client-type",
+                    "overall-visitor-gender-data",
+                    "meeting-duration-breakdown",
+                  ].map((path) => ({
+                    path: `investor-dashboard/${path}`,
+                    element: <InvestorDashboard />,
+                  })),
+                  {
+                    path: "investor-dashboard/monthly-profit-loss",
+                    element: (
+                      <MonthlyProfitLoss
+                        routeBase="/app/dashboard/investor-dashboard"
+                        departmentBudgetRoute="/app/dashboard/investor-dashboard/department-wise-budget"
+                      />
+                    ),
+                  },
+                  {
+                    path: "investor-dashboard/monthly-profit-loss/income-details",
+                    element: <IncomeDetails />,
+                  },
+                    {
+                    path: "investor-dashboard/annual-average-profit-loss",
+                    element: <AverageProfitLoss />,
+                  },
+                  {
+                    path: "investor-dashboard/overall-profit-loss",
+                    element: <OverallProfitLoss />,
+                  },
+                  {
+                    path: "investor-dashboard/sqft-wise-data",
+                    element: <SqWiseData />,
+                  },
+                  {
+                    path: "investor-dashboard/department-wise-budget",
+                    element: <DeptWiseBudget />,  
+                  },
+                   {
+                    path: "investor-dashboard/historical-P&L/details",
+                    element: <InvestorDashboard />,
                   },
                   {
                     path: "finance-dashboard",
@@ -952,7 +1022,13 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 path: "co-working-revenue-invoicing",
-                                element: <CoWorking showChart={false} />,
+                                // element: <CoWorking showChart={false} />,
+                                 element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -960,11 +1036,22 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
-                                element: <VirtualOffice showChart={false} />,
+                               // element: <VirtualOffice showChart={false} />,
+                                 element: (
+                                  <VirtualOffice
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "workation-revenue-invoicing",
-                                element: <Workations showChart={false} />,
+                                element: (
+                                  <Workations
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "alternate-revenue-invoicing",
@@ -2824,26 +2911,6 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
-                        path: "mix-bag/monthly-attendance",
-                        element: <MonthlyAttendanceSummary />,
-                      },
-                      {
-                        path: "mix-bag/payroll",
-                        element: <HrPayroll />,
-                      },
-                      {
-                        path: "mix-bag/payroll-summary",
-                        element: <PayrollSummary />,
-                      },
-                      {
-                        path: "mix-bag/payroll-summary/:draftId",
-                        element: <PayrollEntry />,
-                      },
-                      {
-                        path: "mix-bag/payroll/:id",
-                        element: <ViewPayroll hideCompensationStructure />,
-                      },
-                      {
                         path: "mix-bag/leaves",
                         element: <LeavesLayout />,
                         children: [
@@ -2985,10 +3052,6 @@ export const routes = createBrowserRouter([
                             path: "employee-onboarding",
 
                             element: <EmployeeOnboard />,
-                          },
-                          {
-                            path: "compensation-structure",
-                            element: <CompensationStructure />,
                           },
                           {
                             path: "past-employees",
