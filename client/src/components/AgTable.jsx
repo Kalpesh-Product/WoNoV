@@ -30,6 +30,7 @@ const AgTableComponent = React.memo(
     buttonTitle,
     headerActions,
     searchRowActions,
+    searchBottomContent,
     tableHeight = 400,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
@@ -53,6 +54,7 @@ const AgTableComponent = React.memo(
     searchValue = "",
     onSearchChange,
     headerBottomContent,
+    processExportCell,
   }) => {
     const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
@@ -61,6 +63,7 @@ const AgTableComponent = React.memo(
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
     const gridRef = useRef(null);
+    const previousServerPageRef = useRef(paginationPage);
 
     useEffect(() => {
       setFilteredData(data || []);
@@ -75,6 +78,19 @@ const AgTableComponent = React.memo(
         tableRef.current = gridRef.current;
       }
     }, [gridRef, tableRef]);
+
+    useEffect(() => {
+      const previousPage = previousServerPageRef.current;
+      previousServerPageRef.current = paginationPage;
+
+      if (!serverPagination || previousPage === paginationPage) return;
+
+      const frameId = requestAnimationFrame(() => {
+        gridRef.current?.api?.ensureIndexVisible(0, "top");
+      });
+
+      return () => cancelAnimationFrame(frameId);
+    }, [paginationPage, serverPagination]);
 
     const defaultColDef = {
       resizable: true,
@@ -205,6 +221,9 @@ const AgTableComponent = React.memo(
       const field = params?.column?.getColDef?.()?.field || "";
       const value = params?.value;
 
+      const pageFormattedValue = processExportCell?.(params);
+      if (pageFormattedValue !== undefined) return pageFormattedValue;
+
       if (value === null || value === undefined) return "";
 
       const normalizedField = field.toLowerCase();
@@ -219,7 +238,7 @@ const AgTableComponent = React.memo(
 
       // Prefix with an apostrophe so Excel keeps the literal date/time text.
       return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
-    }, []);
+    }, [processExportCell]);
 
     const renderExportButton = () =>
       exportData ? (
@@ -270,8 +289,25 @@ const AgTableComponent = React.memo(
       [columns],
     );
 
+    const stateSafeColumns = useMemo(
+      () =>
+        columns.map((column) => {
+          if (column.sort === undefined && column.sortIndex === undefined) {
+            return column;
+          }
+
+          const { sort, sortIndex, ...columnWithoutSortState } = column;
+          return {
+            ...columnWithoutSortState,
+            initialSort: column.initialSort ?? sort,
+            initialSortIndex: column.initialSortIndex ?? sortIndex,
+          };
+        }),
+      [columns],
+    );
+
     const modifiedColumns = useMemo(() => {
-      if (!enableCheckbox) return columns;
+      if (!enableCheckbox) return stateSafeColumns;
 
       return [
         {
@@ -280,9 +316,9 @@ const AgTableComponent = React.memo(
           checkboxSelection: true,
           width: 50,
         },
-        ...columns,
+        ...stateSafeColumns,
       ];
-    }, [columns, enableCheckbox, checkAll]);
+    }, [stateSafeColumns, enableCheckbox, checkAll]);
 
     const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
@@ -402,6 +438,9 @@ const AgTableComponent = React.memo(
             )}
           </div>
         </div>
+        {searchBottomContent ? (
+          <div className="w-full pb-3">{searchBottomContent}</div>
+        ) : null}
         <div className="flex gap-2">
           {Object.keys(appliedFilters).map((field) =>
             appliedFilters[field] ? (
@@ -491,6 +530,7 @@ const AgTableComponent = React.memo(
             cacheBlockSize={paginationPageSize} // ✅ Controls how many rows to fetch per block
             suppressRowVirtualization={false} // ✅ Ensures row virtualization is active
             suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
+            suppressScrollOnNewData
           />
         </div>
         {serverPagination && paginationTotal > 0 && (

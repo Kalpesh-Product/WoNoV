@@ -141,7 +141,11 @@ const createUser = async (req, res, next) => {
         )
         .required("gender is required"),
       dateOfBirth: yup.mixed().required("dateOfBirth is required"),
-      phone: yup.string().trim().required("phone is required"),
+      phone: yup
+        .string()
+        .trim()
+        .matches(/^[0-9]{10}$/, "phone must be a valid 10-digit number")
+        .required("phone is required"),
       email: yup.string().trim().email().required("email is required"),
       role: yup
         .mixed()
@@ -260,7 +264,9 @@ const createUser = async (req, res, next) => {
           includeEsi: yup.mixed().optional(),
           esiContribution: yup.string().trim().optional(),
           hraType: yup.string().trim().optional(),
+          hraPercentage: yup.string().trim().optional(),
           tdsCalculationBasedOn: yup.string().trim().optional(),
+          taxPercentage: yup.string().trim().optional(),
           incomeTaxRegime: yup.string().trim().optional(),
         })
         .optional(),
@@ -352,11 +358,15 @@ const createUser = async (req, res, next) => {
 
     // Check if employee ID or email already exists
     const existingUser = await User.findOne({
-      $or: [{ company: company, empId }, { email }],
+      $or: [
+        { company: company, empId },
+        { email },
+        { company: company, phone: phone.trim() },
+      ],
     }).exec();
     if (existingUser) {
       throw new CustomError(
-        "Employee ID or email already exists",
+        "Employee ID, email, or phone number already exists",
         logPath,
         logAction,
         logSourceKey,
@@ -556,20 +566,11 @@ const fetchSingleUser = async (req, res) => {
   try {
     const { empid } = req.params;
 
-    const user = await User.findOne({ empId: empid })
+    const user = await User.findOne({ empId: empid, company: req.company })
       .populate([
-        { path: "reportsTo" },
         { path: "departments", select: "name" },
         { path: "company", select: "name" },
         { path: "role", select: "roleTitle modulePermissions" },
-        {
-          path: "workLocation",
-          select: "_id unitName unitNo",
-          populate: {
-            path: "building",
-            select: "_id buildingName fullAddress",
-          },
-        },
       ])
       .lean();
 
@@ -591,14 +592,22 @@ const fetchSingleUser = async (req, res) => {
     // }, {});
 
     let reportsTo = null;
+    let reportsToRoleTitle = "";
+    const reportsToRoleId = user.reportsTo?._id || user.reportsTo;
 
-    if (user.reportsTo) {
-      reportsTo = await User.findOne({
-        role: { $in: [user.reportsTo] },
-        isActive: true,
-      })
-        .select("firstName lastName")
-        .lean();
+    if (mongoose.Types.ObjectId.isValid(reportsToRoleId)) {
+      const [reportingEmployee, reportingRole] = await Promise.all([
+        User.findOne({
+          company: req.company,
+          role: { $in: [reportsToRoleId] },
+          isActive: true,
+        })
+          .select("firstName lastName")
+          .lean(),
+        Role.findById(reportsToRoleId).select("roleTitle").lean(),
+      ]);
+      reportsTo = reportingEmployee;
+      reportsToRoleTitle = reportingRole?.roleTitle || "";
     }
 
     // const policies = await Agreements.find({ user: user._id }).lean();
@@ -641,7 +650,7 @@ const fetchSingleUser = async (req, res) => {
         "",
       role: user.role?.map((role) => role?.roleTitle).join(", ") || "",
       reportsTo: reportsTo
-        ? `${reportsTo.firstName} ${reportsTo.lastName} (${user.reportsTo?.roleTitle || ""})`
+        ? `${reportsTo.firstName} ${reportsTo.lastName}${reportsToRoleTitle ? ` (${reportsToRoleTitle})` : ""}`
         : "",
       jobTitle: user.designation || "",
       jobDescription: user.jobDescription || "",
@@ -698,14 +707,17 @@ const fetchSingleUser = async (req, res) => {
       includeEsi: user.payrollInformation?.includeEsi ? "Yes" : "No",
       esiContribution: user.payrollInformation?.esiContribution || "",
       hraType: user.payrollInformation?.hraType || "",
+      hraPercentage: user.payrollInformation?.hraPercentage || "",
       tdsCalculationBasedOn:
         user.payrollInformation?.tdsCalculationBasedOn || "",
+      taxPercentage: user.payrollInformation?.taxPercentage || "",
       incomeTaxRegime: user.payrollInformation?.incomeTaxRegime || "",
       salaryPackage: user.salaryPackage || {},
       annualCtc:
         user.salaryPackage?.grossAnnual ?? user.salaryPackage?.amount ?? 0,
       allowancesAmount: user.salaryPackage?.allowances ?? 0,
       deductionsAmount: user.salaryPackage?.deductions ?? 0,
+      payrollCompensation: user.payrollCompensation || {},
       passwordPreview,
     };
 
@@ -810,6 +822,27 @@ const updateProfile = async (req, res, next) => {
 
     if (!targetUser) {
       throw new CustomError("User not found", logPath, logAction, logSourceKey);
+    }
+
+    if (updateData?.phone !== undefined) {
+      const updatedPhone = String(updateData.phone || "").trim();
+      if (!/^[0-9]{10}$/.test(updatedPhone)) {
+        return res.status(400).json({
+          message: "Phone number must be a valid 10-digit number",
+        });
+      }
+
+      const phoneExists = await User.exists({
+        company,
+        phone: updatedPhone,
+        _id: { $ne: targetedUserId },
+      });
+      if (phoneExists) {
+        return res.status(409).json({
+          message: "Phone number is already registered to another employee",
+        });
+      }
+      updateData.phone = updatedPhone;
     }
 
     //Check if the updated employee ID already exists for another user in the same company
@@ -1458,6 +1491,215 @@ const updateEmployeePasswordByEmpId = async (req, res, next) => {
   }
 };
 
+const updateEmployeeBankDetails = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { company } = req;
+    const {
+      bankName,
+      bankIFSC = "",
+      branchName = "",
+      nameOnAccount = "",
+      accountNumber,
+    } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid employee ID" });
+    }
+
+    const normalizedBankName = String(bankName || "").trim();
+    const normalizedAccountNumber = String(accountNumber || "").trim();
+    const normalizedIfsc = String(bankIFSC || "").trim().toUpperCase();
+
+    if (!normalizedBankName || !normalizedAccountNumber) {
+      return res.status(400).json({
+        message: "Bank name and account number are required",
+      });
+    }
+
+    if (normalizedIfsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(normalizedIfsc)) {
+      return res.status(400).json({ message: "Invalid bank IFSC code" });
+    }
+
+    const bankInformation = {
+      bankName: normalizedBankName,
+      bankIFSC: normalizedIfsc,
+      branchName: String(branchName || "").trim(),
+      nameOnAccount: String(nameOnAccount || "").trim(),
+      accountNumber: normalizedAccountNumber,
+    };
+
+    const employee = await User.findOneAndUpdate(
+      { _id: userId, company },
+      { $set: { bankInformation } },
+      { new: true, runValidators: true },
+    )
+      .select("bankInformation")
+      .lean();
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json({
+      message: "Bank details updated successfully",
+      bankInformation: employee.bankInformation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateEmployeePayrollCompensation = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { company } = req;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: "Invalid employee ID" });
+    }
+
+    const employee = await User.findOne({ _id: userId, company })
+      .select(
+        "employeeType payrollInformation salaryPackage bankInformation payrollCompensation",
+      )
+      .lean();
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    const toAmount = (value) => {
+      const amount = Number(value);
+      return Number.isFinite(amount) && amount >= 0 ? amount : 0;
+    };
+    const basicPay = toAmount(req.body?.basicPay);
+    const annualCtc =
+      Number(employee.salaryPackage?.grossAnnual) ||
+      Number(employee.salaryPackage?.amount) ||
+      0;
+    const employeeTypeName = String(
+      employee.employeeType?.name || employee.employeeType || "",
+    )
+      .trim()
+      .toLowerCase();
+    const usesTds = ["intern", "consultant"].some((type) =>
+      employeeTypeName.includes(type),
+    );
+    const hraType = String(employee.payrollInformation?.hraType || "")
+      .trim()
+      .toLowerCase();
+    const hasCalculatedHra = Boolean(hraType) && hraType !== "custom";
+    const allowedAllowances = new Set([
+      "Special Allowance",
+      "House Rent Allowance",
+      "Conveyance Allowance",
+      "Medical Allowance",
+      "Children Education Allowance",
+      "Dearness Allowance",
+      "Other Allowance",
+      "Arrears",
+    ]);
+    const allowanceMap = new Map();
+    (Array.isArray(req.body?.allowances) ? req.body.allowances : []).forEach(
+      (row) => {
+        const label = String(row?.label || "").trim();
+        if (allowedAllowances.has(label)) {
+          allowanceMap.set(label, toAmount(row?.amount ?? row?.value));
+        }
+      },
+    );
+    if (hasCalculatedHra) {
+      allowanceMap.set("House Rent Allowance", basicPay * 0.5);
+    } else {
+      allowanceMap.delete("House Rent Allowance");
+    }
+    const allowances = [...allowanceMap.entries()].map(([label, amount]) => ({
+      label,
+      amount,
+    }));
+    const totalAllowances = allowances.reduce(
+      (total, row) => total + row.amount,
+      0,
+    );
+    const grossPay = basicPay + totalAllowances;
+
+    const requestedDeductionLabels = new Set(
+      (Array.isArray(req.body?.deductions) ? req.body.deductions : [])
+        .map((row) => String(row?.label || "").trim())
+        .filter(Boolean),
+    );
+    const deductions = [];
+    if (usesTds && requestedDeductionLabels.has("TDS")) {
+      deductions.push({ label: "TDS", amount: basicPay * 0.1 });
+    }
+    if (!usesTds && requestedDeductionLabels.has("Provident Fund")) {
+      const includePf = employee.payrollInformation?.includePF !== false;
+      deductions.push({
+        label: "Provident Fund",
+        amount: includePf ? (basicPay >= 15000 ? 1800 : basicPay * 0.12) : 0,
+      });
+    }
+    if (!usesTds && requestedDeductionLabels.has("ESI")) {
+      const includeEsi = employee.payrollInformation?.includeEsi !== false;
+      const isEsiEligible = annualCtc > 0 && annualCtc / 12 < 21000;
+      deductions.push({
+        label: "ESI",
+        amount: includeEsi && isEsiEligible ? grossPay * 0.0075 : 0,
+      });
+    }
+
+    const totalDeductions = deductions.reduce(
+      (total, row) => total + row.amount,
+      0,
+    );
+    const paymentMethod = ["Cash Only", "Bank Deposit"].includes(
+      req.body?.paymentMethod,
+    )
+      ? req.body.paymentMethod
+      : "";
+    if (
+      paymentMethod === "Bank Deposit" &&
+      (!employee.bankInformation?.bankName ||
+        !employee.bankInformation?.accountNumber)
+    ) {
+      return res.status(400).json({
+        message: "Add bank details before selecting Bank Deposit",
+      });
+    }
+
+    const payrollCompensation = {
+      grossPay,
+      basicPay,
+      variablePay: toAmount(req.body?.variablePay),
+      gratuity: toAmount(req.body?.gratuity),
+      appraisalDate: req.body?.appraisalDate || null,
+      effectivePayPeriod: String(req.body?.effectivePayPeriod || "").trim(),
+      paymentMethod,
+      allowances,
+      deductions,
+      totalAllowances,
+      totalDeductions,
+      netPay: Math.max(0, grossPay - totalDeductions),
+      updatedAt: new Date(),
+    };
+
+    const updatedEmployee = await User.findOneAndUpdate(
+      { _id: userId, company },
+      { $set: { payrollCompensation } },
+      { new: true, runValidators: true },
+    )
+      .select("payrollCompensation")
+      .lean();
+
+    return res.status(200).json({
+      message: "Payroll compensation updated successfully",
+      payrollCompensation: updatedEmployee.payrollCompensation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createUser,
   fetchUser,
@@ -1468,5 +1710,7 @@ module.exports = {
   checkPassword,
   updatePassword,
   updateEmployeePasswordByEmpId,
+  updateEmployeeBankDetails,
+  updateEmployeePayrollCompensation,
   getEmployeePoliciesByEmpId,
 };

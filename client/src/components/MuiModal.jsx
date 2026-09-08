@@ -11,6 +11,7 @@ const MuiModal = ({
   children,
   headerBackground,
   hideHeader = false,
+  widthClass = "w-2/5",
 }) => {
   const modalRef = useRef(null);
   return (
@@ -24,7 +25,7 @@ const MuiModal = ({
             initial={{ y: 30 }}
             animate={{ y: 0 }}
             exit={{ y: -30 }}
-            className="w-2/5 bg-white shadow-xl rounded-lg outline-none max-h-[90vh] flex flex-col"
+            className={`${widthClass} bg-white shadow-xl rounded-lg outline-none max-h-[90vh] flex flex-col`}
           >
             {/* Sticky Header */}
             {!hideHeader && (

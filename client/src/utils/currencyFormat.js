@@ -5,3 +5,8 @@ export const inrFormat = (money) => {
   
   return value;
 };
+
+export const inrFormatExact = (money) =>
+  Number(money || 0).toLocaleString("en-IN", {
+    maximumFractionDigits: 2,
+  });

@@ -2,9 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
-  Avatar,
   Box,
-  Button,
   Chip,
   CircularProgress,
   FormHelperText,
@@ -16,7 +14,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { TextField, MenuItem } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Controller, useForm } from "react-hook-form";
-import { LuImageUp, LuImageUpscale } from "react-icons/lu";
+import { LuImageUp } from "react-icons/lu";
 import { MdDelete, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { queryClient } from "../../main";
@@ -26,6 +24,7 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanDate from "../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import formatDateTime from "../../utils/formatDateTime";
+import TicketAttachments from "../../components/TicketAttachments";
 
 const RaiseTicket = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(null);
@@ -68,7 +67,7 @@ const RaiseTicket = () => {
       ticketTitle: "",
       newIssue: "",
       message: "",
-      issue: null,
+      attachments: [],
     },
     mode: "onSubmit",
   });
@@ -86,10 +85,7 @@ const RaiseTicket = () => {
         formData.append("newIssue", data.newIssue);
       }
 
-      // Append image if exists
-      if (data.image) {
-        formData.append("issue", data.image); // Key name should match backend expectations
-      }
+      data.attachments?.forEach((file) => formData.append("issues", file));
 
       const response = await axios.post("/api/tickets/raise-ticket", formData, {
         headers: {
@@ -102,12 +98,13 @@ const RaiseTicket = () => {
     onSuccess: function (data) {
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
-      imageRef.current.value = "";
+      if (imageRef.current) imageRef.current.value = "";
+      if (preview?.url) URL.revokeObjectURL(preview.url);
       setPreview(null);
       reset();
     },
     onError: function (data) {
-      toast.error(data.response.data.message || "Something went wrong");
+      toast.error(data.response?.data?.message || "Something went wrong");
     },
   });
 
@@ -449,43 +446,55 @@ const RaiseTicket = () => {
               )} */}
                 <div>
                   <Controller
-                    name="image"
+                    name="attachments"
                     control={control}
                     render={({ field: { onChange, value } }) => (
                       <Box className="flex flex-col gap-2">
-                        {/* File Input */}
                         <input
                           ref={imageRef}
                           type="file"
-                          accept="image/*"
+                          accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                          multiple
                           hidden
-                          id="image-upload"
+                          id="ticket-attachment-upload"
                           onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (file) {
-                              onChange(file);
+                            const selectedFiles = Array.from(e.target.files || []);
+                            const existingFiles = Array.isArray(value) ? value : [];
+                            const availableSlots = 5 - existingFiles.length;
+                            const validFiles = selectedFiles
+                              .slice(0, Math.max(availableSlots, 0))
+                              .filter((file) => {
+                                if (file.size > 5 * 1024 * 1024) {
+                                  toast.error(`${file.name} exceeds the 5 MB limit`);
+                                  return false;
+                                }
+                                return true;
+                              });
 
-                              setPreview(URL.createObjectURL(file)); // Set preview
-                              imageRef.current.value = null;
+                            if (selectedFiles.length > availableSlots) {
+                              toast.error("You can attach a maximum of 5 files");
                             }
+
+                            onChange([...existingFiles, ...validFiles]);
+                            e.target.value = "";
                           }}
                         />
 
-                        {/* Clickable TextField */}
                         <TextField
                           size="small"
                           variant="outlined"
                           fullWidth
-                          label="Upload Image"
-                          value={value ? value.name : ""}
-                          placeholder="Choose a file..."
+                          label="Upload Files"
+                          value={value?.length ? `${value.length} file(s) selected` : ""}
+                          placeholder="Choose up to 5 files"
                           InputProps={{
                             readOnly: true,
                             endAdornment: (
                               <IconButton
                                 color="primary"
                                 component="label"
-                                htmlFor="image-upload"
+                                htmlFor="ticket-attachment-upload"
+                                disabled={value?.length >= 5}
                               >
                                 <LuImageUp />
                               </IconButton>
@@ -493,47 +502,48 @@ const RaiseTicket = () => {
                           }}
                         />
 
-                        {/* Image Preview & Delete Icon */}
-                        {preview && (
-                          <>
-                            <span
-                              className="underline text-primary text-content cursor-pointer"
-                              onClick={() => setOpenModal(true)}
+                        <FormHelperText>
+                          Maximum 5 files, 5 MB each. Images, PDF, Word, Excel, and CSV.
+                        </FormHelperText>
+                        {value?.map((file, index) => (
+                          <div
+                            key={`${file.name}-${file.lastModified}`}
+                            className="flex items-center justify-between rounded border border-borderGray px-3 py-2"
+                          >
+                            <button
+                              type="button"
+                              className="truncate text-left text-primary underline"
+                              onClick={() => {
+                                if (!file.type.startsWith("image/")) return;
+                                if (preview?.url) URL.revokeObjectURL(preview.url);
+                                setPreview({ name: file.name, url: URL.createObjectURL(file) });
+                                setOpenModal(true);
+                              }}
+                              title={file.type.startsWith("image/") ? "Preview image" : file.name}
                             >
-                              Preview
-                            </span>
-                            <MuiModal
-                              open={openModal}
-                              onClose={() => setOpenModal(false)}
-                              title={"Preview File"}
+                              {file.name}
+                            </button>
+                            <IconButton
+                              color="error"
+                              size="small"
+                              onClick={() => onChange(value.filter((_, fileIndex) => fileIndex !== index))}
+                              aria-label={`Remove ${file.name}`}
                             >
-                              <div>
-                                <div className="flex flex-col">
-                                  <IconButton
-                                    color="error"
-                                    onClick={() => {
-                                      onChange(null);
-                                      setPreview(null);
-                                    }}
-                                  >
-                                    <MdDelete />
-                                  </IconButton>
-                                  <div className="p-2 border-default border-borderGray rounded-md">
-                                    <Avatar
-                                      src={preview}
-                                      alt="Preview"
-                                      sx={{
-                                        width: "100%",
-                                        height: "100%",
-                                        borderRadius: 2,
-                                      }}
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </MuiModal>
-                          </>
-                        )}
+                              <MdDelete />
+                            </IconButton>
+                          </div>
+                        ))}
+                        <MuiModal
+                          open={openModal && !!preview}
+                          onClose={() => setOpenModal(false)}
+                          title={preview?.name || "Preview File"}
+                        >
+                          <img
+                            src={preview?.url}
+                            alt={preview?.name || "Attachment preview"}
+                            className="max-h-[70vh] max-w-full rounded"
+                          />
+                        </MuiModal>
                       </Box>
                     )}
                   />
@@ -621,6 +631,7 @@ const RaiseTicket = () => {
                     };
                   })(),
                   image: ticket.image ? ticket.image.url : null,
+                  attachments: ticket.attachments || [],
                   raisedAt: ticket.createdAt,
                   ...formatEscalation(ticket.escalatedTo),
                 };
@@ -711,15 +722,10 @@ const RaiseTicket = () => {
                 : ""}
             />
           )}
-          {viewTicketDetails.image && (
-            <div className="lg:col-span-1">
-              <img
-                src={viewTicketDetails.image}
-                alt="Ticket Attachment"
-                className="max-w-full max-h-96 rounded border"
-              />
-            </div>
-          )}
+          <TicketAttachments
+            attachments={viewTicketDetails.attachments}
+            legacyImage={viewTicketDetails.image}
+          />
         </div>
       </MuiModal>
     </div>

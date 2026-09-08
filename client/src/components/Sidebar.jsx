@@ -269,6 +269,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       return {
         ...module,
         hasModulePermission,
+        hasSubmenus: filteredSubmenus.length > 0,
         submenus: filteredSubmenus,
       };
     })
@@ -315,7 +316,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                     onClick={() => {
                       if (module.hasModulePermission) {
                         navigate(module.route);
-                      } else if (module.submenus?.length) {
+                      } else if (module.hasSubmenus) {
                         toggleModule(index);
                       }
                     }}
@@ -333,25 +334,42 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                         <span className="pl-5 text-sm ">{module.title}</span>
                       )}
                     </div>
-                    {isSidebarOpen && module.submenus && (
-                      <span
-                        onClick={() => module.submenus && toggleModule(index)}
-                        className={`transition-transform duration-300 ease-in-out ${expandedModule === index ? "rotate-180" : "rotate-0"
-                          }`}
+                    {isSidebarOpen && (
+                      <button
+                        type="button"
+                        disabled={!module.hasSubmenus}
+                        aria-label={
+                          module.hasSubmenus
+                            ? `Toggle ${module.title} submenu`
+                            : `${module.title} has no accessible submenu`
+                        }
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleModule(index);
+                        }}
+                        className={`transition-transform duration-300 ease-in-out ${
+                          module.hasSubmenus
+                            ? "cursor-pointer"
+                            : "cursor-not-allowed opacity-30"
+                        } ${
+                          module.hasSubmenus && expandedModule === index
+                            ? "rotate-180"
+                            : "rotate-0"
+                        }`}
                       >
-                        {expandedModule === index ? (
+                        {module.hasSubmenus && expandedModule === index ? (
                           <FaChevronUp />
                         ) : (
                           <FaAngleDown />
                         )}
-                      </span>
+                      </button>
                     )}
                   </div>
                   <div
                     className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${expandedModule === index ? "max-h-[500px]" : "max-h-0"
                       }`}
                   >
-                    {module.submenus && (
+                    {module.hasSubmenus && (
                       <div>
                         {module.submenus.map((submenu, idx) => (
                           <div

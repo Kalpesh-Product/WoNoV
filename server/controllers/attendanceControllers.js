@@ -6,6 +6,130 @@ const CustomError = require("../utils/customErrorlogs");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
+const Company = require("../models/hr/Company");
+const DEFAULT_CHECK_IN_GRACE_MINUTES = 15;
+
+const normalizeShiftName = (shiftName) =>
+  String(shiftName || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "");
+
+const getSnapshotShiftWindow = (shiftSnapshot, referenceTime) => {
+  const snapshotStart = new Date(shiftSnapshot?.startTime);
+  const snapshotEnd = new Date(shiftSnapshot?.endTime);
+  const reference = new Date(referenceTime);
+  if (
+    Number.isNaN(snapshotStart.getTime()) ||
+    Number.isNaN(snapshotEnd.getTime()) ||
+    Number.isNaN(reference.getTime())
+  ) {
+    return null;
+  }
+
+  const startMinuteOfDay =
+    snapshotStart.getUTCHours() * 60 + snapshotStart.getUTCMinutes();
+  const endMinuteOfDay =
+    snapshotEnd.getUTCHours() * 60 + snapshotEnd.getUTCMinutes();
+  const referenceMinuteOfDay =
+    reference.getUTCHours() * 60 + reference.getUTCMinutes();
+  const isOvernight = endMinuteOfDay <= startMinuteOfDay;
+  const shiftStart = new Date(reference);
+  shiftStart.setUTCHours(
+    snapshotStart.getUTCHours(),
+    snapshotStart.getUTCMinutes(),
+    0,
+    0,
+  );
+  if (isOvernight && referenceMinuteOfDay <= endMinuteOfDay) {
+    shiftStart.setUTCDate(shiftStart.getUTCDate() - 1);
+  }
+
+  const shiftEnd = new Date(shiftStart);
+  shiftEnd.setUTCHours(
+    snapshotEnd.getUTCHours(),
+    snapshotEnd.getUTCMinutes(),
+    0,
+    0,
+  );
+  if (isOvernight) shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+
+  return { shiftStart, shiftEnd };
+};
+
+const getEmployeeShiftWindow = async (userId, companyId, referenceTime) => {
+  const [employee, companyData] = await Promise.all([
+    UserData.findById(userId).select("shift").lean(),
+    Company.findById(companyId).select("shifts").lean(),
+  ]);
+  const shiftName = String(employee?.shift || "").trim();
+  if (!employee) {
+    throw new CustomError("Logged-in employee record was not found");
+  }
+  if (!shiftName) {
+    throw new CustomError("No shift is assigned to this employee");
+  }
+
+  const normalizedShiftName = normalizeShiftName(shiftName);
+  const configuredShift = (companyData?.shifts || []).find(
+    (shift) =>
+      shift?.isActive !== false &&
+      shift?.isDeleted !== true &&
+      normalizeShiftName(shift?.name) === normalizedShiftName,
+  );
+  const configuredStart = configuredShift?.startTime
+    ? new Date(configuredShift.startTime)
+    : null;
+  const configuredEnd = configuredShift?.endTime
+    ? new Date(configuredShift.endTime)
+    : null;
+  if (!configuredShift) {
+    throw new CustomError(
+      `Active company shift configuration not found for ${shiftName}`,
+    );
+  }
+  if (
+    !configuredStart ||
+    !configuredEnd ||
+    Number.isNaN(configuredStart.getTime()) ||
+    Number.isNaN(configuredEnd.getTime())
+  ) {
+    throw new CustomError(
+      `Start and end times are not configured for ${configuredShift.name}`,
+    );
+  }
+
+  const startHours = configuredStart.getUTCHours();
+  const startMinutes = configuredStart.getUTCMinutes();
+  const endHours = configuredEnd.getUTCHours();
+  const endMinutes = configuredEnd.getUTCMinutes();
+  const startMinuteOfDay = startHours * 60 + startMinutes;
+  const endMinuteOfDay = endHours * 60 + endMinutes;
+  const isOvernight = endMinuteOfDay <= startMinuteOfDay;
+
+  const reference = new Date(referenceTime);
+  const shiftStart = new Date(reference);
+  shiftStart.setUTCHours(startHours, startMinutes, 0, 0);
+  if (
+    isOvernight &&
+    reference.getUTCHours() * 60 + reference.getUTCMinutes() <= endMinuteOfDay
+  ) {
+    shiftStart.setUTCDate(shiftStart.getUTCDate() - 1);
+  }
+
+  const shiftEnd = new Date(shiftStart);
+  shiftEnd.setUTCHours(endHours, endMinutes, 0, 0);
+  if (isOvernight) shiftEnd.setUTCDate(shiftEnd.getUTCDate() + 1);
+
+  return {
+    shiftId: configuredShift?._id || null,
+    shiftName: configuredShift?.name || shiftName || null,
+    shiftStart,
+    shiftEnd,
+    earliestCheckIn: new Date(shiftStart.getTime() - 60 * 60 * 1000),
+    latestCheckOut: new Date(shiftEnd.getTime() + 60 * 60 * 1000),
+  };
+};
 
 const clockIn = async (req, res, next) => {
   const { user, company } = req;
@@ -27,27 +151,41 @@ const clockIn = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid date format" });
     }
 
-    // Check if the user has already clocked in today
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
+    const shiftWindow = await getEmployeeShiftWindow(
+      user,
+      company,
+      clockInTime,
+    );
 
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const existingToday = await Attendance.findOne({
+    // Check attendance before validating the time window. Otherwise a second
+    // attempt after clock-out can incorrectly look like a shift-timing error.
+    const existingAttendance = await Attendance.findOne({
       user,
       inTime: {
-        $gte: startOfDay,
-        $lte: endOfDay,
+        $gte: shiftWindow.earliestCheckIn,
+        $lte: shiftWindow.shiftEnd,
       },
     })
+      .select("outTime")
       .lean()
       .exec();
 
-    if (existingToday) {
-      return res
-        .status(400)
-        .json({ message: "You have already clocked out for the day" });
+    if (existingAttendance) {
+      return res.status(400).json({
+        message: existingAttendance.outTime
+          ? "Attendance is already completed for this shift"
+          : "You have already clocked in for this shift",
+      });
+    }
+
+    if (
+      clockInTime < shiftWindow.earliestCheckIn ||
+      clockInTime > shiftWindow.shiftEnd
+    ) {
+      return res.status(400).json({
+        message:
+          "Check-in is allowed from 1 hour before the shift starts until the shift ends",
+      });
     }
 
     const newAttendance = new Attendance({
@@ -55,6 +193,13 @@ const clockIn = async (req, res, next) => {
       entryType,
       user,
       company,
+      shiftSnapshot: {
+        shiftId: shiftWindow.shiftId,
+        shiftName: shiftWindow.shiftName,
+        startTime: shiftWindow.shiftStart,
+        endTime: shiftWindow.shiftEnd,
+        checkInGraceMinutes: DEFAULT_CHECK_IN_GRACE_MINUTES,
+      },
     });
 
     const savedAttandance = await newAttendance.save();
@@ -117,6 +262,29 @@ const clockOut = async (req, res, next) => {
       return res.status(400).json({ message: "Already clocked out" });
     }
 
+    if (clockOutTime < attendance.inTime) {
+      return res
+        .status(400)
+        .json({ message: "Check-out cannot be before check-in" });
+    }
+
+    const snapshotWindow = getSnapshotShiftWindow(
+      attendance.shiftSnapshot,
+      attendance.inTime,
+    );
+    const shiftWindow = !snapshotWindow
+      ? await getEmployeeShiftWindow(user, company, attendance.inTime)
+      : {
+          latestCheckOut: new Date(
+            snapshotWindow.shiftEnd.getTime() + 60 * 60 * 1000,
+          ),
+        };
+    if (clockOutTime > shiftWindow.latestCheckOut) {
+      return res.status(400).json({
+        message: "Check-out is allowed up to 1 hour after the shift ends",
+      });
+    }
+
     // ✅ Auto-end the last break if it's open
     const lastBreak = attendance.breaks?.[attendance.breaks.length - 1];
     if (lastBreak && lastBreak.startBreak && !lastBreak.endBreak) {
@@ -154,6 +322,9 @@ const clockOut = async (req, res, next) => {
     return res.status(200).json({ message: "You clocked out" });
   } catch (error) {
     console.error("Clock-out error:", error);
+    if (error instanceof CustomError) {
+      return next(error);
+    }
     return res
       .status(500)
       .json({ message: "Internal Server Error", error: error.message });
@@ -549,26 +720,47 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    function mergeDateWithTime(dateOnly, timeString) {
+    const correctionShiftWindow =
+      getSnapshotShiftWindow(foundDate.shiftSnapshot, foundDate.inTime) ||
+      (await getEmployeeShiftWindow(
+        foundUser._id,
+        company,
+        foundDate.inTime,
+      ));
+    const shiftStartMinutes =
+      correctionShiftWindow.shiftStart.getHours() * 60 +
+      correctionShiftWindow.shiftStart.getMinutes();
+    const shiftEndMinutes =
+      correctionShiftWindow.shiftEnd.getHours() * 60 +
+      correctionShiftWindow.shiftEnd.getMinutes();
+    const isOvernightShift = shiftEndMinutes <= shiftStartMinutes;
+    const afterMidnightLimit = isOvernightShift
+      ? shiftEndMinutes +
+        Math.floor((shiftStartMinutes - shiftEndMinutes) / 2)
+      : 0;
+
+    function mergeShiftDateWithTime(timeString) {
       const time = new Date(timeString);
-      const merged = new Date(dateOnly);
+      if (Number.isNaN(time.getTime())) return new Date(NaN);
+
+      const merged = new Date(correctionShiftWindow.shiftStart);
       merged.setHours(
         time.getHours(),
         time.getMinutes(),
         time.getSeconds(),
         time.getMilliseconds()
       );
+      const timeMinutes = time.getHours() * 60 + time.getMinutes();
+      if (isOvernightShift && timeMinutes <= afterMidnightLimit) {
+        merged.setDate(merged.getDate() + 1);
+      }
       return merged;
     }
 
-    const clockIn = inTime ? mergeDateWithTime(targetedDate, inTime) : null;
-    const clockOut = outTime ? mergeDateWithTime(targetedDate, outTime) : null;
-    const breakStart = startBreak
-      ? mergeDateWithTime(targetedDate, startBreak)
-      : null;
-    const breakEnd = endBreak
-      ? mergeDateWithTime(targetedDate, endBreak)
-      : null;
+    const clockIn = inTime ? mergeShiftDateWithTime(inTime) : null;
+    const clockOut = outTime ? mergeShiftDateWithTime(outTime) : null;
+    const breakStart = startBreak ? mergeShiftDateWithTime(startBreak) : null;
+    const breakEnd = endBreak ? mergeShiftDateWithTime(endBreak) : null;
 
     // Validate provided fields
     if (inTime && isNaN(clockIn))
@@ -600,9 +792,45 @@ const correctAttendance = async (req, res, next) => {
         logSourceKey
       );
 
-    const correctedBreaks = [];
+    if ((startBreak && !endBreak) || (!startBreak && endBreak)) {
+      throw new CustomError(
+        "Both break start and break end are required",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
 
-    correctedBreaks.push({ startBreak: breakStart, endBreak: breakEnd });
+    const effectiveInTime = clockIn || foundDate.inTime;
+    const effectiveOutTime = clockOut || foundDate.outTime;
+    if (
+      effectiveInTime &&
+      effectiveOutTime &&
+      effectiveOutTime <= effectiveInTime
+    ) {
+      throw new CustomError(
+        "Corrected clock-out must be after clock-in",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+    if (
+      breakStart &&
+      (breakEnd <= breakStart ||
+        breakStart < effectiveInTime ||
+        (effectiveOutTime && breakEnd > effectiveOutTime))
+    ) {
+      throw new CustomError(
+        "Corrected break must fall between clock-in and clock-out",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const correctedBreaks =
+      breakStart && breakEnd ? [{ startBreak: breakStart, endBreak: breakEnd }] : [];
 
     const originalBreaks = foundDate.breaks || [];
 
@@ -704,7 +932,8 @@ const approveCorrectionRequest = async (req, res, next) => {
       user: userId,
       inTime,
       outTime,
-      breaks = [],
+      correctedBreaks = [],
+      originalBreaks = [],
       originalInTime,
       originalOutTime,
     } = correction;
@@ -715,8 +944,11 @@ const approveCorrectionRequest = async (req, res, next) => {
     const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
 
     // ✅ Calculate total breakDuration
+    const effectiveBreaks = correctedBreaks.length
+      ? correctedBreaks
+      : originalBreaks;
     let totalBreakDuration = 0;
-    breaks.forEach((b) => {
+    effectiveBreaks.forEach((b) => {
       if (b.startBreak && b.endBreak) {
         const diff = new Date(b.endBreak) - new Date(b.startBreak);
         totalBreakDuration += diff > 0 ? diff : 0;
@@ -739,9 +971,9 @@ const approveCorrectionRequest = async (req, res, next) => {
         $set: {
           inTime: inTime ? inTime : originalInTime,
           outTime: outTime ? outTime : originalOutTime,
-          breaks: breaks.length > 0 ? breaks : [],
+          breaks: effectiveBreaks,
           breakDuration: breakDurationInMinutes,
-          breakCount: breaks.length,
+          breakCount: effectiveBreaks.length,
           status: "Approved",
         },
       },
@@ -844,12 +1076,41 @@ const bulkInsertAttendance = async (req, res, next) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const companyId = req.company;
+    const companyId = req.company?._id || req.company;
+    if (!mongoose.Types.ObjectId.isValid(companyId)) {
+      return res.status(400).json({ message: "Invalid or missing company ID" });
+    }
     const employees = await UserData.find({ company: companyId })
-      .select("_id empId")
+      .select("_id empId reportsTo role shift")
+      .lean();
+    const companyData = await Company.findById(companyId)
+      .select("shifts")
       .lean();
 
-    const employeeMap = new Map(employees.map((emp) => [emp.empId, emp._id]));
+    const employeeMap = new Map(employees.map((emp) => [emp.empId, emp]));
+    const reportingManagerByRole = new Map();
+    employees.forEach((employee) => {
+      const employeeRoles = Array.isArray(employee.role)
+        ? employee.role
+        : employee.role
+          ? [employee.role]
+          : [];
+
+      employeeRoles.forEach((role) => {
+        const roleId = role?._id || role;
+        const key = roleId?.toString();
+        if (key && !reportingManagerByRole.has(key)) {
+          reportingManagerByRole.set(key, employee._id);
+        }
+      });
+    });
+    const shiftByName = new Map(
+      (companyData?.shifts || [])
+        .filter(
+          (shift) => shift?.isActive !== false && shift?.isDeleted !== true,
+        )
+        .map((shift) => [normalizeShiftName(shift.name), shift]),
+    );
 
     const newAttendanceRecords = [];
     let responseSent = false;
@@ -867,6 +1128,39 @@ const bulkInsertAttendance = async (req, res, next) => {
           const dateStr = row["Date"]?.trim();
           const inTimeStr = row["In Time"]?.trim();
           const outTimeStr = row["Out Time"]?.trim();
+          const splitBreakTimes = (value) =>
+            String(value || "")
+              .split(/[|;,]/)
+              .map((time) => time.trim())
+              .filter(Boolean);
+          const breakStartValues = splitBreakTimes(
+            row["Break Start"] || row["Start Break"],
+          );
+          const breakEndValues = splitBreakTimes(
+            row["Break End"] || row["End Break"],
+          );
+          const numberedBreaks = new Map();
+          Object.entries(row).forEach(([header, value]) => {
+            const match =
+              header.match(/^Break\s*(\d+)\s*(Start|End)$/i) ||
+              header.match(/^(Start|End)\s*Break\s*(\d+)$/i);
+            if (!match) return;
+
+            const isBreakFirst = /^Break/i.test(header);
+            const index = Number(isBreakFirst ? match[1] : match[2]);
+            const boundary = String(
+              isBreakFirst ? match[2] : match[1],
+            ).toLowerCase();
+            const current = numberedBreaks.get(index) || {};
+            current[boundary] = String(value || "").trim();
+            numberedBreaks.set(index, current);
+          });
+          [...numberedBreaks.entries()]
+            .sort(([first], [second]) => first - second)
+            .forEach(([, breakEntry]) => {
+              if (breakEntry.start) breakStartValues.push(breakEntry.start);
+              if (breakEntry.end) breakEndValues.push(breakEntry.end);
+            });
 
           if (!employeeMap.has(empId)) {
             responseSent = true;
@@ -876,8 +1170,52 @@ const bulkInsertAttendance = async (req, res, next) => {
               .json({ message: `Employee not found: ${empId}` });
           }
 
-          const inTime = new Date(`${dateStr} ${inTimeStr}`);
-          const outTime = new Date(`${dateStr} ${outTimeStr}`);
+          const employee = employeeMap.get(empId);
+          const employeeShift = shiftByName.get(
+            normalizeShiftName(employee?.shift),
+          );
+          const shiftStart = employeeShift?.startTime
+            ? new Date(employeeShift.startTime)
+            : null;
+          const shiftEnd = employeeShift?.endTime
+            ? new Date(employeeShift.endTime)
+            : null;
+          if (
+            !employeeShift ||
+            !shiftStart ||
+            !shiftEnd ||
+            Number.isNaN(shiftStart.getTime()) ||
+            Number.isNaN(shiftEnd.getTime())
+          ) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Active company shift configuration not found for employee ${empId}`,
+            });
+          }
+          const shiftStartMinutes =
+            shiftStart.getHours() * 60 + shiftStart.getMinutes();
+          const shiftEndMinutes =
+            shiftEnd.getHours() * 60 + shiftEnd.getMinutes();
+          const isOvernightShift =
+            shiftStartMinutes !== null &&
+            shiftEndMinutes !== null &&
+            shiftEndMinutes <= shiftStartMinutes;
+          const parseAttendanceTime = (timeValue) => {
+            const parsedTime = new Date(`${dateStr} ${timeValue}`);
+            if (
+              isOvernightShift &&
+              !isNaN(parsedTime.getTime()) &&
+              parsedTime.getHours() * 60 + parsedTime.getMinutes() <
+                shiftStartMinutes
+            ) {
+              parsedTime.setDate(parsedTime.getDate() + 1);
+            }
+            return parsedTime;
+          };
+
+          const inTime = parseAttendanceTime(inTimeStr);
+          const outTime = parseAttendanceTime(outTimeStr);
 
           if (isNaN(inTime.getTime()) || isNaN(outTime.getTime())) {
             responseSent = true;
@@ -887,13 +1225,130 @@ const bulkInsertAttendance = async (req, res, next) => {
             });
           }
 
+          const expectedShiftStart = new Date(dateStr);
+          expectedShiftStart.setHours(
+            Math.floor(shiftStartMinutes / 60),
+            shiftStartMinutes % 60,
+            0,
+            0,
+          );
+          const expectedShiftEnd = new Date(dateStr);
+          expectedShiftEnd.setHours(
+            Math.floor(shiftEndMinutes / 60),
+            shiftEndMinutes % 60,
+            0,
+            0,
+          );
+          if (isOvernightShift) {
+            expectedShiftEnd.setDate(expectedShiftEnd.getDate() + 1);
+          }
+          const earliestCheckIn = new Date(
+            expectedShiftStart.getTime() - 60 * 60 * 1000,
+          );
+          const latestCheckOut = new Date(
+            expectedShiftEnd.getTime() + 60 * 60 * 1000,
+          );
+
+          if (inTime < earliestCheckIn || inTime > expectedShiftEnd) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Check-in is outside the allowed shift window for employee ${empId} on ${dateStr}`,
+            });
+          }
+
+          if (outTime > latestCheckOut) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Check-out exceeds the 1-hour shift grace period for employee ${empId} on ${dateStr}`,
+            });
+          }
+
+          if (outTime <= inTime) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Out Time must be after In Time for employee ${empId} on ${dateStr}`,
+            });
+          }
+
+          if (breakStartValues.length !== breakEndValues.length) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Every break must have both a start and end time for employee ${empId} on ${dateStr}`,
+            });
+          }
+
+          let breaks = [];
+          let breakDuration = 0;
+          if (breakStartValues.length) {
+            breaks = breakStartValues
+              .map((startValue, index) => ({
+                startBreak: parseAttendanceTime(startValue),
+                endBreak: parseAttendanceTime(breakEndValues[index]),
+              }))
+              .sort((first, second) => first.startBreak - second.startBreak);
+
+            const invalidBreakIndex = breaks.findIndex(
+              (breakEntry, index) =>
+                isNaN(breakEntry.startBreak.getTime()) ||
+                isNaN(breakEntry.endBreak.getTime()) ||
+                breakEntry.endBreak <= breakEntry.startBreak ||
+                breakEntry.startBreak < inTime ||
+                breakEntry.endBreak > outTime ||
+                (index > 0 &&
+                  breakEntry.startBreak < breaks[index - 1].endBreak),
+            );
+            if (invalidBreakIndex !== -1) {
+              responseSent = true;
+              parser.destroy();
+              return res.status(400).json({
+                message: `Invalid or overlapping break ${invalidBreakIndex + 1} for employee ${empId} on ${dateStr}`,
+              });
+            }
+
+            const totalBreakMilliseconds = breaks.reduce(
+              (total, breakEntry) =>
+                total + (breakEntry.endBreak - breakEntry.startBreak),
+              0,
+            );
+            breakDuration = Math.round(
+              totalBreakMilliseconds / (1000 * 60),
+            );
+          }
+
+          const reportingManagerId = employee?.reportsTo
+            ? reportingManagerByRole.get(employee.reportsTo.toString())
+            : null;
+
+          if (!reportingManagerId) {
+            responseSent = true;
+            parser.destroy();
+            return res.status(400).json({
+              message: `Reporting manager not found for employee ${empId}`,
+            });
+          }
+
           newAttendanceRecords.push({
             company: new mongoose.Types.ObjectId(companyId),
-            user: employeeMap.get(empId),
+            user: employee._id,
             date: new Date(dateStr),
             inTime,
             outTime,
+            shiftSnapshot: {
+              shiftId: employeeShift._id,
+              shiftName: employeeShift.name,
+              startTime: expectedShiftStart,
+              endTime: expectedShiftEnd,
+              checkInGraceMinutes: DEFAULT_CHECK_IN_GRACE_MINUTES,
+            },
+            breaks,
+            breakDuration,
             entryType: row["Entry Type"] || "web",
+            approvedBy: reportingManagerId,
+            status: "Approved",
           });
         } catch (parseError) {
           responseSent = true;
@@ -921,7 +1376,7 @@ const bulkInsertAttendance = async (req, res, next) => {
         } catch (error) {
           res.status(500).json({
             message: "Error inserting attendance records",
-            error,
+            error: error.message,
           });
         }
       })
@@ -935,7 +1390,10 @@ const bulkInsertAttendance = async (req, res, next) => {
       });
   } catch (error) {
     if (!res.headersSent) {
-      res.status(500).json({ message: "Unexpected server error", error });
+      res.status(500).json({
+        message: "Unexpected server error",
+        error: error.message,
+      });
     } else {
       next(error);
     }

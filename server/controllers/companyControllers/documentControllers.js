@@ -10,9 +10,43 @@ const path = require("path");
 const Department = require("../../models/Departments");
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const CSV_MIME_TYPES = new Set([
+  "text/csv",
+  "application/csv",
+  "application/vnd.ms-excel",
+  "text/plain",
+  "application/octet-stream",
+]);
+
+const isCsvTemplateFile = (file) => {
+  if (
+    !file?.buffer ||
+    path.extname(file.originalname).toLowerCase() !== ".csv"
+  ) {
+    return false;
+  }
+
+  const mimetype = String(file.mimetype || "").toLowerCase();
+  if (!CSV_MIME_TYPES.has(mimetype)) {
+    return false;
+  }
+
+  // XLSX/other binary files renamed to .csv contain null bytes or invalid UTF-8
+  // replacement characters. A usable template must also have a CSV header row.
+  const content = file.buffer.toString("utf8").replace(/^\uFEFF/, "");
+  const firstNonEmptyLine = content
+    .split(/\r?\n/)
+    .find((line) => line.trim().length > 0);
+
+  return (
+    !file.buffer.includes(0) &&
+    !content.includes("\uFFFD") &&
+    Boolean(firstNonEmptyLine?.includes(","))
+  );
+};
 
 const uploadCompanyDocument = async (req, res, next) => {
-  const { documentName, type } = req.body;
+  const { documentName, type, policyType = "None" } = req.body;
   const file = req.file;
   const user = req.user;
 
@@ -26,6 +60,13 @@ const uploadCompanyDocument = async (req, res, next) => {
         message:
           "Invalid document type. Allowed values: template, sop, policy, agreement",
       });
+    }
+
+    if (
+      type === "policy" &&
+      !["Leave", "Holiday", "None"].includes(policyType)
+    ) {
+      return res.status(400).json({ message: "Invalid policy type" });
     }
 
     const allowedExtensions = [".pdf", ".doc", ".docx", ".xls", ".xlsx"];
@@ -87,6 +128,7 @@ const uploadCompanyDocument = async (req, res, next) => {
           name: documentName,
           documentLink: response.secure_url,
           documentId: response.public_id,
+          ...(type === "policy" && { policyType }),
         },
       },
     });
@@ -1295,13 +1337,19 @@ const handleDepartmentTemplateUpload = async (req, res, next) => {
     }
 
     // ---------- CSV validation ----------
-    const allowedMimeTypes = ["text/csv", "application/vnd.ms-excel"];
-
     const fileExt = path.extname(file.originalname).toLowerCase();
 
-    if (fileExt !== ".csv" || !allowedMimeTypes.includes(file.mimetype)) {
+    console.info("Department template upload file metadata", {
+      originalname: file.originalname,
+      extension: fileExt,
+      mimetype: file.mimetype,
+      size: file.size,
+      departmentId,
+    });
+
+    if (!isCsvTemplateFile(file)) {
       return res.status(400).json({
-        message: "Only CSV files are allowed",
+        message: "Only valid CSV files are allowed",
       });
     }
 
@@ -1469,6 +1517,18 @@ const updateDepartmentTemplate = async (req, res, next) => {
 
     if (!file) {
       return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      return res.status(400).json({
+        message: "File size exceeds 5MB limit",
+      });
+    }
+
+    if (!isCsvTemplateFile(file)) {
+      return res.status(400).json({
+        message: "Only valid CSV files are allowed",
+      });
     }
 
     // Fetch company

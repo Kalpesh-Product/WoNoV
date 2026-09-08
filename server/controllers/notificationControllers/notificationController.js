@@ -101,8 +101,12 @@ const markAllNotificationsAsRead = async (req, res, next) => {
   try {
     const result = await Notification.updateMany(
       {
-        "users.userActions.whichUser": userId,
-        "users.userActions.hasRead": false,
+        users: {
+          $elemMatch: {
+            "userActions.whichUser": new mongoose.Types.ObjectId(userId),
+            "userActions.hasRead": { $ne: true },
+          },
+        },
       },
       {
         $set: {
@@ -113,7 +117,7 @@ const markAllNotificationsAsRead = async (req, res, next) => {
         arrayFilters: [
           {
             "userEntry.userActions.whichUser": new mongoose.Types.ObjectId(userId),
-            "userEntry.userActions.hasRead": false,
+            "userEntry.userActions.hasRead": { $ne: true },
           },
         ],
       },

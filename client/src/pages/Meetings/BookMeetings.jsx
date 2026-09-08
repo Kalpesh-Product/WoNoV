@@ -253,7 +253,12 @@ const BookMeetings = () => {
 
   const myMeetingsColumn = [
     { field: "id", headerName: "Sr No" },
-    {field: "subject", headerName: "Title", flex: 1},
+    {
+      field: "subject",
+      headerName: "Title",
+      flex: 2,
+      minWidth: 300,
+    },
     //{ field: "agenda", headerName: "Agenda", flex: 1 },
     { field: "date", headerName: "Date" },
     { field: "roomName", headerName: "Room Name" },
@@ -272,6 +277,9 @@ const BookMeetings = () => {
     {
       field: "actions",
       headerName: "Actions",
+      pinned: "right",
+      width: 120,
+      lockPinned: true,
       cellRenderer: (params) => {
         const rawReview = params.data?.reviews;
 

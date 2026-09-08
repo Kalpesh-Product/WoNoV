@@ -19,7 +19,15 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
-import { CircularProgress, Skeleton, TextField } from "@mui/material";
+import {
+  CircularProgress,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Skeleton,
+  TextField,
+} from "@mui/material";
 import humanTime from "../../../../../utils/humanTime";
 //import { useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -32,6 +40,15 @@ import YearWiseTable from "../../../../../components/Tables/YearWiseTable";
 import PageFrame from "../../../../../components/Pages/PageFrame";
 import useAuth from "../../../../../hooks/useAuth";
 import { PERMISSIONS } from "../../../../../constants/permissions";
+
+const DEFAULT_CHECK_IN_GRACE_MINUTES = 15;
+
+const getCheckInGraceMinutes = (shiftSnapshot) => {
+  const configuredGrace = Number(shiftSnapshot?.checkInGraceMinutes);
+  return Number.isFinite(configuredGrace) && configuredGrace >= 0
+    ? configuredGrace
+    : DEFAULT_CHECK_IN_GRACE_MINUTES;
+};
 
 const Attendance = () => {
   const axios = useAxiosPrivate();
@@ -66,11 +83,21 @@ const Attendance = () => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const currentMonthName = currentDate.toLocaleString("default", {
+  const currentFinancialYearStart = currentMonth >= 3 ? currentYear : currentYear - 1;
+  const [selectedFinancialYear, setSelectedFinancialYear] = useState(
+    currentFinancialYearStart,
+  );
+  const [selectedMonth, setSelectedMonth] = useState(currentMonth);
+  const selectedCalendarYear =
+    selectedMonth >= 3 ? selectedFinancialYear : selectedFinancialYear + 1;
+  const selectedMonthName = new Date(
+    selectedCalendarYear,
+    selectedMonth,
+  ).toLocaleString("default", {
     month: "long",
   });
-  const currentMonthYearLabel = `${currentMonthName} ${currentYear}`;
-  const currentMonthCardLabel = `${currentMonthName}-${currentYear}`;
+  const selectedMonthYearLabel = `${selectedMonthName} ${selectedCalendarYear}`;
+  const selectedMonthCardLabel = `${selectedMonthName}-${selectedCalendarYear}`;
 
 
   const fetchAttendance = async () => {
@@ -93,6 +120,148 @@ const Attendance = () => {
   const attendance = useMemo(
     () => (Array.isArray(attendanceResponse) ? attendanceResponse : []),
     [attendanceResponse],
+  );
+  const financialYearOptions = useMemo(() => {
+    const years = new Set([
+      currentFinancialYearStart - 2,
+      currentFinancialYearStart - 1,
+      currentFinancialYearStart,
+      currentFinancialYearStart + 1,
+    ]);
+
+    attendance.forEach((entry) => {
+      if (!entry?.inTime) return;
+      const attendanceDate = new Date(entry.inTime);
+      if (Number.isNaN(attendanceDate.getTime())) return;
+      years.add(
+        attendanceDate.getMonth() >= 3
+          ? attendanceDate.getFullYear()
+          : attendanceDate.getFullYear() - 1,
+      );
+    });
+
+    return [...years].sort((a, b) => b - a);
+  }, [attendance, currentFinancialYearStart]);
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, monthIndex) => ({
+        value: monthIndex,
+        label: new Date(2000, monthIndex).toLocaleString("default", {
+          month: "long",
+        }),
+      })),
+    [],
+  );
+  const { data: employeeData } = useQuery({
+    queryKey: ["attendance-employee", employmentID],
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/users/fetch-single-user/${employmentID}`,
+      );
+      return response.data;
+    },
+    enabled: Boolean(employmentID),
+  });
+  const { data: configuredShifts = [] } = useQuery({
+    queryKey: ["shifts"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-data/?field=shifts",
+      );
+      return response.data?.shifts || [];
+    },
+  });
+  const selectedShift = useMemo(() => {
+    const shifts = configuredShifts;
+    const employeeShiftName = String(employeeData?.shift || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "");
+    return shifts.find(
+      (shift) =>
+        shift?.isActive !== false &&
+        shift?.isDeleted !== true &&
+        String(shift?.name || "")
+          .trim()
+          .toLowerCase()
+          .replace(/[\s-]+/g, "") === employeeShiftName,
+    );
+  }, [configuredShifts, employeeData?.shift]);
+  const getExpectedShiftTimes = useCallback(
+    (attendanceDate, shiftSnapshot) => {
+      const snapshotStart = new Date(shiftSnapshot?.startTime);
+      const snapshotEnd = new Date(shiftSnapshot?.endTime);
+      if (
+        !Number.isNaN(snapshotStart.getTime()) &&
+        !Number.isNaN(snapshotEnd.getTime())
+      ) {
+        const expectedIn = new Date(attendanceDate);
+        const expectedOut = new Date(attendanceDate);
+        const startMinutes =
+          snapshotStart.getHours() * 60 + snapshotStart.getMinutes();
+        const endMinutes =
+          snapshotEnd.getHours() * 60 + snapshotEnd.getMinutes();
+        const attendanceMinutes =
+          expectedIn.getHours() * 60 + expectedIn.getMinutes();
+        const isOvernight = endMinutes <= startMinutes;
+
+        expectedIn.setHours(
+          snapshotStart.getHours(),
+          snapshotStart.getMinutes(),
+          0,
+          0,
+        );
+        if (isOvernight && attendanceMinutes <= endMinutes) {
+          expectedIn.setDate(expectedIn.getDate() - 1);
+        }
+        expectedOut.setTime(expectedIn.getTime());
+        expectedOut.setHours(
+          snapshotEnd.getHours(),
+          snapshotEnd.getMinutes(),
+          0,
+          0,
+        );
+        if (isOvernight) expectedOut.setDate(expectedOut.getDate() + 1);
+
+        return { expectedIn, expectedOut };
+      }
+
+      const expectedIn = new Date(attendanceDate);
+      const expectedOut = new Date(attendanceDate);
+      if (!selectedShift) return null;
+
+      const configuredStart = selectedShift?.startTime
+        ? new Date(selectedShift.startTime)
+        : null;
+      const configuredEnd = selectedShift?.endTime
+        ? new Date(selectedShift.endTime)
+        : null;
+      if (
+        !configuredStart ||
+        !configuredEnd ||
+        Number.isNaN(configuredStart.getTime()) ||
+        Number.isNaN(configuredEnd.getTime())
+      ) {
+        return null;
+      }
+
+      const startHours = configuredStart.getHours();
+      const startMinutes = configuredStart.getMinutes();
+      const endHours = configuredEnd.getHours();
+      const endMinutes = configuredEnd.getMinutes();
+
+      expectedIn.setHours(startHours, startMinutes, 0, 0);
+      expectedOut.setHours(endHours, endMinutes, 0, 0);
+
+      const startsAt = startHours * 60 + startMinutes;
+      const endsAt = endHours * 60 + endMinutes;
+      if (endsAt <= startsAt) {
+        expectedOut.setDate(expectedOut.getDate() + 1);
+      }
+
+      return { expectedIn, expectedOut };
+    },
+    [selectedShift],
   );
 
   const { mutate: correctionPost, isPending: correctionPending } = useMutation({
@@ -136,8 +305,8 @@ const Attendance = () => {
       .filter((entry) => {
         const inDate = new Date(entry.inTime);
         return (
-          inDate.getMonth() === currentMonth &&
-          inDate.getFullYear() === currentYear
+          inDate.getMonth() === selectedMonth &&
+          inDate.getFullYear() === selectedCalendarYear
         );
       })
       .sort((a, b) => new Date(a.inTime) - new Date(b.inTime))
@@ -153,13 +322,21 @@ const Attendance = () => {
         const outLocal = new Date(outDate);
 
         // Expected office hours
-        const expectedIn = new Date(inLocal);
-        expectedIn.setHours(9, 30, 0, 0);
+        const expectedShiftTimes = getExpectedShiftTimes(
+          inLocal,
+          entry.shiftSnapshot,
+        );
+        if (!expectedShiftTimes) return null;
+        const { expectedIn, expectedOut } = expectedShiftTimes;
 
-        const expectedOut = new Date(inLocal);
-        expectedOut.setHours(18, 30, 0, 0);
-
-        const lateCheckIn = Math.max(0, (inLocal - expectedIn) / (1000 * 60)); // in minutes
+        const checkInGraceEnd = new Date(
+          expectedIn.getTime() +
+            getCheckInGraceMinutes(entry.shiftSnapshot) * 60 * 1000,
+        );
+        const lateCheckIn = Math.max(
+          0,
+          (inLocal - checkInGraceEnd) / (1000 * 60),
+        );
         const earlyCheckOut = Math.max(
           0,
           (expectedOut - outLocal) / (1000 * 60)
@@ -196,10 +373,11 @@ const Attendance = () => {
             },
           ],
         };
-      });
+      })
+      .filter(Boolean);
 
     return formatted;
- }, [currentMonth, currentYear]);
+ }, [getExpectedShiftTimes, selectedCalendarYear, selectedMonth]);
 
   const sourceAttendanceForGraph = useMemo(() => {
     if (Array.isArray(filteredAttendanceForGraph)) {
@@ -228,16 +406,24 @@ const Attendance = () => {
 
         const inDate = new Date(entry.inTime);
         if (
-          inDate.getMonth() !== currentMonth ||
-          inDate.getFullYear() !== currentYear
+          inDate.getMonth() !== selectedMonth ||
+          inDate.getFullYear() !== selectedCalendarYear
         ) {
           return summary;
         }
 
-        const expectedIn = new Date(inDate);
-        expectedIn.setHours(9, 30, 0, 0);
+        const expectedShiftTimes = getExpectedShiftTimes(
+          inDate,
+          entry.shiftSnapshot,
+        );
+        if (!expectedShiftTimes) return summary;
+        const { expectedIn, expectedOut } = expectedShiftTimes;
 
-        if (inDate <= expectedIn) {
+        const checkInGraceEnd = new Date(
+          expectedIn.getTime() +
+            getCheckInGraceMinutes(entry.shiftSnapshot) * 60 * 1000,
+        );
+        if (inDate <= checkInGraceEnd) {
           summary.accurateCheckIns += 1;
         } else {
           summary.lateCheckIns += 1;
@@ -245,8 +431,6 @@ const Attendance = () => {
 
         if (entry?.outTime) {
           const outDate = new Date(entry.outTime);
-          const expectedOut = new Date(inDate);
-          expectedOut.setHours(18, 30, 0, 0);
           if (outDate > expectedOut) {
             summary.lateCheckOuts += 1;
           }
@@ -260,7 +444,12 @@ const Attendance = () => {
         lateCheckOuts: 0,
       }
     );
-  }, [attendance, currentMonth, currentYear]);
+  }, [
+    attendance,
+    getExpectedShiftTimes,
+    selectedCalendarYear,
+    selectedMonth,
+  ]);
 
   const attendanceSeries = [
     {
@@ -422,7 +611,31 @@ const Attendance = () => {
   const onSubmit = (data) => {
     correctionPost(data);
   };
-const attendanceTableData = useMemo(() => {
+
+  const formatBreakDuration = (durationInMinutes) => {
+    if (
+      durationInMinutes === null ||
+      durationInMinutes === undefined ||
+      Number.isNaN(Number(durationInMinutes))
+    ) {
+      return "N/A";
+    }
+
+    const totalSeconds = Math.max(
+      0,
+      Math.round(Number(durationInMinutes) * 60),
+    );
+    if (totalSeconds < 60) return `${totalSeconds} sec`;
+
+    const totalMinutes = Math.round(totalSeconds / 60);
+    if (totalMinutes < 60) return `${totalMinutes} min`;
+
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return minutes ? `${hours} hr ${minutes} min` : `${hours} hr`;
+  };
+
+  const attendanceTableData = useMemo(() => {
     if (isLoading || attendance.length === 0) {
       return [
         {
@@ -447,7 +660,7 @@ const attendanceTableData = useMemo(() => {
         record?.inTime && record?.outTime
           ? formatDuration(record.inTime, record.outTime)
           : "N/A",
-      breakHours: record?.breakDuration ?? "N/A",
+      breakHours: formatBreakDuration(record?.breakDuration),
       totalHours:
         record?.inTime && record?.outTime
           ? formatDuration(record.inTime, record.outTime)
@@ -494,10 +707,46 @@ const attendanceTableData = useMemo(() => {
         <WidgetSection
           layout={1}
           // titleLabel={"April 2025"}
-          titleLabel={currentMonthYearLabel}
+          titleLabel={selectedMonthYearLabel}
           title={"Attendance"}
           border
         >
+          <div className="flex flex-wrap gap-5 px-4 pb-4">
+            <FormControl sx={{ minWidth: 200 }}>
+              <InputLabel id="attendance-financial-year-label">
+                Financial Year
+              </InputLabel>
+              <Select
+                labelId="attendance-financial-year-label"
+                value={selectedFinancialYear}
+                label="Financial Year"
+                onChange={(event) =>
+                  setSelectedFinancialYear(Number(event.target.value))
+                }
+              >
+                {financialYearOptions.map((year) => (
+                  <MenuItem key={year} value={year}>
+                    {`FY ${year}-${String(year + 1).slice(-2)}`}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl sx={{ minWidth: 188 }}>
+              <InputLabel id="attendance-month-label">Month</InputLabel>
+              <Select
+                labelId="attendance-month-label"
+                value={selectedMonth}
+                label="Month"
+                onChange={(event) => setSelectedMonth(Number(event.target.value))}
+              >
+                {monthOptions.map((month) => (
+                  <MenuItem key={month.value} value={month.value}>
+                    {month.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </div>
           {!isLoading ? (
             <BarGraph
               data={attendanceSeries}
@@ -513,17 +762,17 @@ const attendanceTableData = useMemo(() => {
              <DataCard
               data={attendanceCardSummary.accurateCheckIns}
               title={"Accurate Check-ins"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             <DataCard
               data={attendanceCardSummary.lateCheckIns}
               title={"Late Check-ins"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             <DataCard
               data={attendanceCardSummary.lateCheckOuts}
               title={"Late Check-outs"}
-              description={`Current Month : ${currentMonthCardLabel}`}
+              description={`Selected Month : ${selectedMonthCardLabel}`}
             />
             {/* <DataCard
               data={"27"}

@@ -40,6 +40,7 @@ import HrLayout from "../pages/Dashboard/HrDashboard/HrLayout";
 import ViewEmployees from "../pages/Dashboard/HrDashboard/Complaince/ViewEmployees";
 import OnBoarding from "../pages/Dashboard/HrDashboard/OnBoarding/OnBoarding";
 import EmployeeOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/EmployeeOnboard";
+import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import MemberOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/MemberOnboard";
 import VendorOnboard from "../pages/Dashboard/HrDashboard/OnBoarding/VendorOnboard";
 import EmployeeDetail from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/EmployeeDetails";
@@ -68,6 +69,8 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
+import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
+import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
@@ -442,6 +445,7 @@ import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
 import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
 import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
 import AttendanceCompleted from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceCompleted";
+import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
 import DepartmentAssetCommon from "../components/Pages/DepartmentAssetCommon";
 import DepartmentSOP from "../pages/Dashboard/HrDashboard/Complaince/DepartmentSOP";
 import SopUpload from "../components/Pages/SopUpload";
@@ -2820,6 +2824,26 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
+                        path: "mix-bag/monthly-attendance",
+                        element: <MonthlyAttendanceSummary />,
+                      },
+                      {
+                        path: "mix-bag/payroll",
+                        element: <HrPayroll />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary",
+                        element: <PayrollSummary />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary/:draftId",
+                        element: <PayrollEntry />,
+                      },
+                      {
+                        path: "mix-bag/payroll/:id",
+                        element: <ViewPayroll hideCompensationStructure />,
+                      },
+                      {
                         path: "mix-bag/leaves",
                         element: <LeavesLayout />,
                         children: [
@@ -2961,6 +2985,10 @@ export const routes = createBrowserRouter([
                             path: "employee-onboarding",
 
                             element: <EmployeeOnboard />,
+                          },
+                          {
+                            path: "compensation-structure",
+                            element: <CompensationStructure />,
                           },
                           {
                             path: "past-employees",

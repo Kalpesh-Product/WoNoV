@@ -18,7 +18,7 @@ const {
   updateOtherTicket,
   ticketsReports,
 } = require("../controllers/ticketsControllers/ticketsControllers");
-const upload = require("../config/multerConfig");
+const { ticketUpload } = require("../config/ticketUploadConfig");
 
 const {
   supportTicket,
@@ -42,7 +42,14 @@ router.get("/get-depts-tickets", getAllDeptTickets);
 router.get("/my-tickets", filterMyTickets);
 router.get("/today", filterTodayTickets);
 router.get("/:id", getSingleUserTickets);
-router.post("/raise-ticket", upload.single("issue"), raiseTicket);
+router.post(
+  "/raise-ticket",
+  ticketUpload.fields([
+    { name: "issues", maxCount: 5 },
+    { name: "issue", maxCount: 1 },
+  ]),
+  raiseTicket,
+);
 router.patch("/update-ticket/", updateOtherTicket);
 router.patch("/accept-ticket/:ticketId", acceptTicket);
 router.patch("/reject-ticket/:id", rejectTicket);

@@ -462,6 +462,7 @@ const getCompanyAttandances = async (req, res, next) => {
     );
     const payload = await getCompanyAttandancesService({
       company,
+      employeeId: req.query?.employeeId,
       page: req.query?.page,
       limit: req.query?.limit,
       ...(hasDateFilter && {
@@ -485,8 +486,16 @@ const updateCompanySubItem = async (req, res) => {
   const logAction = "Update Company Data";
   const logSourceKey = "companyData";
   try {
-    const { type, itemId, name, isActive, startTime, endTime, isDeleted } =
-      req.body;
+    const {
+      type,
+      itemId,
+      name,
+      policyType,
+      isActive,
+      startTime,
+      endTime,
+      isDeleted,
+    } = req.body;
     if (!type || !itemId)
       return res.status(400).json({ message: "type, and itemId are required" });
 
@@ -518,6 +527,12 @@ const updateCompanySubItem = async (req, res) => {
     item = foundCompany[key].id(itemId);
     if (item) {
       if (name !== undefined) item.name = name;
+      if (policyType !== undefined && type === "policies") {
+        if (!["Leave", "Holiday", "None"].includes(policyType)) {
+          return res.status(400).json({ message: "Invalid policy type" });
+        }
+        item.policyType = policyType;
+      }
       if (isActive !== undefined) item.isActive = isActive;
 
       if (isDeleted !== undefined) item.isDeleted = isDeleted;

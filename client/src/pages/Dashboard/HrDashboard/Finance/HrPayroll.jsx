@@ -1,10 +1,11 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, CircularProgress, selectClasses } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+import { Chip, CircularProgress, MenuItem } from "@mui/material";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
 import { useMutation, useQuery } from "@tanstack/react-query";
 // import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 // import humanTime from "../../utils/humanTime";
@@ -18,7 +19,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import { inrFormat } from "../../../../utils/currencyFormat";
+import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import WidgetSection from "../../../../components/WidgetSection";
 import { toast } from "sonner";
@@ -26,12 +27,89 @@ import PayslipTemplate from "../../../../components/HrTemplate/PayslipTemplate";
 import html2pdf from "html2pdf.js";
 import ReactDOMServer from "react-dom/server";
 import { queryClient } from "../../../../main";
+import MonthlyAttendanceSummary from "../Mixbag/MonthlyAttendanceSummary";
+import { MdEdit } from "react-icons/md";
+import useAuth from "../../../../hooks/useAuth";
+
+const isEnabled = (value) =>
+  value === true || ["true", "yes"].includes(String(value).toLowerCase());
+const RUN_PAYROLL_PROGRESS_KEY = "run-payroll-progress";
+const readPayrollProgress = () => {
+  try {
+    return JSON.parse(localStorage.getItem(RUN_PAYROLL_PROGRESS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+};
 
 const HrPayroll = () => {
+  const { auth } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isMixBagPayroll = location.pathname.includes("/mix-bag/payroll");
+  const payrollQuery = new URLSearchParams(location.search);
+  const queryBatchName = payrollQuery.get("batchName");
+  const queryPayPeriod = payrollQuery.get("payPeriod");
+  const isReturningToPayroll = payrollQuery.get("resume") === "true";
 
   const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const payrollReturnState = location.state?.runPayroll;
+  const [selectedBatch, setSelectedBatch] = useState(
+    queryBatchName || payrollReturnState?.batchName || "Full Time Batch"
+  );
+  const [selectedPayPeriod, setSelectedPayPeriod] = useState(() => {
+    if (queryPayPeriod) return queryPayPeriod;
+    if (payrollReturnState?.payPeriod) return payrollReturnState.payPeriod;
+    const currentDate = new Date();
+    return `${currentDate.getFullYear()}-${String(
+      currentDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+  });
+  const [payrollStarted, setPayrollStarted] = useState(
+    isReturningToPayroll || Boolean(payrollReturnState)
+  );
+  const [activePayrollStep, setActivePayrollStep] = useState(0);
+  const [completedPayrollSteps, setCompletedPayrollSteps] = useState([]);
+  const [payrollProgress, setPayrollProgress] = useState(readPayrollProgress);
+  const payrollProgressKey = `${selectedBatch}::${selectedPayPeriod}`;
+  const currentPayrollProgress = payrollProgress[payrollProgressKey];
+  const updatePayrollProgress = (key, progress) => {
+    setPayrollProgress((currentProgress) => {
+      const nextProgress = { ...currentProgress };
+      if (progress) {
+        nextProgress[key] = { ...nextProgress[key], ...progress };
+      }
+      else delete nextProgress[key];
+      localStorage.setItem(
+        RUN_PAYROLL_PROGRESS_KEY,
+        JSON.stringify(nextProgress)
+      );
+      return nextProgress;
+    });
+  };
+
+  const { mutate: savePayrollDraft, isPending: isSavingPayrollDraft } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await axios.post("/api/payroll/drafts", {
+          batchName: selectedBatch,
+          payPeriod: selectedPayPeriod,
+        });
+        return response.data;
+      },
+      onSuccess: (response) => {
+        updatePayrollProgress(payrollProgressKey, null);
+        queryClient.invalidateQueries({ queryKey: ["payrollDrafts"] });
+        toast.success(response.message || "Payroll draft saved");
+        navigate("/app/dashboard/HR-dashboard/mix-bag/payroll-summary");
+      },
+      onError: (error) => {
+        toast.error(
+          error.response?.data?.message || "Failed to save payroll draft"
+        );
+      },
+    });
 
   const { data: payrollData, isLoading } = useQuery({
     queryKey: ["payrollData"],
@@ -45,6 +123,35 @@ const HrPayroll = () => {
           error.response?.data?.message || "Failed to fetch employees"
         );
       }
+    },
+  });
+
+  const { data: payrollDrafts = [], isLoading: isPayrollHistoryLoading } =
+    useQuery({
+      queryKey: ["payrollDrafts"],
+      enabled: isMixBagPayroll,
+      queryFn: async () => {
+        const response = await axios.get("/api/payroll/drafts");
+        return response.data;
+      },
+    });
+
+  const { data: compensationEmployees = [] } = useQuery({
+    queryKey: ["runPayrollCompensationEmployees"],
+    enabled: isMixBagPayroll,
+    queryFn: async () => {
+      const response = await axios.get("/api/users/fetch-users");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+  const { data: employerCosts = {} } = useQuery({
+    queryKey: ["companyEmployerCosts"],
+    enabled: isMixBagPayroll,
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/company/get-company-data?field=employerCosts"
+      );
+      return response.data?.employerCosts || {};
     },
   });
 
@@ -63,7 +170,9 @@ const HrPayroll = () => {
           }}
           onClick={() =>
             navigate(
-              `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
+              isMixBagPayroll
+                ? `/app/dashboard/HR-dashboard/mix-bag/payroll/${params.value}`
+                : `/app/dashboard/HR-dashboard/finance/payroll/${params.value}`,
               {
                 state: {
                   empId: params.data.id,
@@ -161,12 +270,269 @@ const tableData = isLoading
         departmentName: item.departments?.map((item) => item.name).join(", ") || "N/A",
         monthDate: item.month,
         designation: item.role?.map((item) => item.roleTitle).join(", ") || "N/A",
+        payrollBatch: item.payrollBatch || "",
+        grossPay: item.payrollCompensation?.grossPay || 0,
+        basicPay: item.payrollCompensation?.basicPay || 0,
+        variablePay: item.payrollCompensation?.variablePay || 0,
+        gratuity: item.payrollCompensation?.gratuity || 0,
+        allowances: item.payrollCompensation?.totalAllowances || 0,
+        annualCtc: item.annualCtc || 0,
       }))
       .sort((a, b) =>
         a.employeeName?.localeCompare(b.employeeName, undefined, {
           sensitivity: "base",
         })
       );
+
+  const batchPayrollPeriods = payrollDrafts
+    .filter(
+      (draft) =>
+        draft.batchName === selectedBatch &&
+        ["Processed", "Completed"].includes(draft.status) &&
+        draft.payPeriod
+    )
+    .map((draft) => new Date(draft.payPeriod))
+    .filter((date) => !Number.isNaN(date.getTime()));
+  const latestPayrollPeriod = batchPayrollPeriods.length
+    ? new Date(Math.max(...batchPayrollPeriods.map((date) => date.getTime())))
+    : null;
+  const nextPayrollPeriod = latestPayrollPeriod
+    ? new Date(
+        latestPayrollPeriod.getUTCFullYear(),
+        latestPayrollPeriod.getUTCMonth() + 1,
+        1
+      )
+    : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const nextPayrollPeriodValue = `${nextPayrollPeriod.getFullYear()}-${String(
+    nextPayrollPeriod.getMonth() + 1
+  ).padStart(2, "0")}`;
+  const testPayPeriods = ["2026-06", "2026-07", "2026-08"];
+  const payPeriodOptions = [nextPayrollPeriodValue, ...testPayPeriods]
+    .filter((value, index, values) => values.indexOf(value) === index)
+    .map((value) => {
+      const period = new Date(`${value}-01T00:00:00`);
+      return {
+        value,
+        label: period.toLocaleDateString("en-IN", {
+          month: "long",
+          year: "numeric",
+        }),
+      };
+    });
+
+  useEffect(() => {
+    if (
+      !isMixBagPayroll ||
+      isPayrollHistoryLoading ||
+      payrollReturnState ||
+      isReturningToPayroll
+    ) return;
+    setSelectedPayPeriod(nextPayrollPeriodValue);
+  }, [
+    isMixBagPayroll,
+    isPayrollHistoryLoading,
+    nextPayrollPeriodValue,
+    payrollReturnState,
+    isReturningToPayroll,
+  ]);
+
+  const selectedBatchData = isMixBagPayroll
+    ? compensationEmployees
+        .filter(
+          (employee) =>
+            employee.isActive !== false &&
+            employee.payrollInformation?.payrollBatch === selectedBatch
+        )
+        .map((employee) => {
+          const compensation = employee.payrollCompensation || {};
+          const payrollInformation = employee.payrollInformation || {};
+          const allowances = Array.isArray(compensation.allowances)
+            ? compensation.allowances.reduce(
+                (total, allowance) => total + (Number(allowance.amount) || 0),
+                0
+              )
+            : Number(compensation.totalAllowances) || 0;
+          const grossPay = Number(compensation.grossPay) || 0;
+          const storedAnnualCtc =
+            Number(employee.salaryPackage?.grossAnnual) ||
+            Number(employee.salaryPackage?.amount) ||
+            0;
+          const pfEmployerCost = isEnabled(payrollInformation.includePF)
+            ? Number(employerCosts.employerPf) || 0
+            : 0;
+          const esiEmployerCost =
+            isEnabled(payrollInformation.includeEsi) &&
+            storedAnnualCtc > 0 &&
+            storedAnnualCtc / 12 < 21000
+              ? Number(employerCosts.employerEsi) || 0
+              : 0;
+          return {
+            ...employee,
+            id: employee._id,
+            employeeId: employee._id,
+            empId: employee.empId || "N/A",
+            employeeName: `${employee.firstName || ""} ${
+              employee.lastName || ""
+            }`.trim(),
+            payrollBatch: payrollInformation.payrollBatch || "",
+            grossPay,
+            basicPay: Number(compensation.basicPay) || 0,
+            variablePay: Number(compensation.variablePay) || 0,
+            gratuity: Number(compensation.gratuity) || 0,
+            allowances,
+            annualCtc: (grossPay + pfEmployerCost + esiEmployerCost) * 12,
+          };
+        })
+        .sort((a, b) => a.employeeName.localeCompare(b.employeeName))
+    : tableData.filter((employee) => {
+        const payrollMonth = new Date(employee.monthDate);
+        const monthKey = `${payrollMonth.getFullYear()}-${String(
+          payrollMonth.getMonth() + 1
+        ).padStart(2, "0")}`;
+
+        return (
+          employee.payrollBatch === selectedBatch &&
+          monthKey === selectedPayPeriod
+        );
+      });
+
+  const selectedPayrollRecord = payrollDrafts.find((draft) => {
+    const draftPeriod = new Date(draft.payPeriod);
+    const draftPeriodKey = `${draftPeriod.getUTCFullYear()}-${String(
+      draftPeriod.getUTCMonth() + 1
+    ).padStart(2, "0")}`;
+
+    return (
+      draft.batchName === selectedBatch &&
+      draftPeriodKey === selectedPayPeriod
+    );
+  });
+  const processedEmployees =
+    selectedPayrollRecord?.status === "Processed"
+      ? Number(selectedPayrollRecord.employeeCount) || 0
+      : 0;
+  const isSelectedPayrollProcessed =
+    selectedPayrollRecord?.status === "Processed";
+  const payrollStartedAt =
+    currentPayrollProgress?.startedAt || selectedPayrollRecord?.createdAt;
+  const payrollStartedBy =
+    currentPayrollProgress?.startedBy ||
+    [
+      selectedPayrollRecord?.createdBy?.firstName,
+      selectedPayrollRecord?.createdBy?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  const remainingEmployees = Math.max(
+    selectedBatchData.length - processedEmployees,
+    0
+  );
+  const selectedPeriodDate = new Date(`${selectedPayPeriod}-01T00:00:00`);
+  const totalDays = new Date(
+    selectedPeriodDate.getFullYear(),
+    selectedPeriodDate.getMonth() + 1,
+    0
+  ).getDate();
+
+  const processSteps = [
+    ["Compensation", "Review employees' compensation information"],
+    ["Time & Attendance", "Review attendance, missing days and overtime"],
+    ["IT Declarations", "Review employees' IT declaration information"],
+    ["Leave Encashment", "Review and manage leaves for the pay period"],
+    ["Review", "Review employees' payroll information"],
+  ];
+
+  const payrollSteps = [
+    {
+      title: "Compensation",
+      description: "Review employee compensation information",
+    },
+    {
+      title: "Time & Attendance",
+      description: "Review attendance, missing days and overtime",
+    },
+    {
+      title: "IT Declarations",
+      description: "Review employee IT declarations",
+    },
+    {
+      title: "Leave Encashment",
+      description: "Review and manage employee leave encashment",
+    },
+    {
+      title: "Review",
+      description: "Review employee information",
+    },
+  ];
+
+  const compensationColumns = [
+    { field: "srNo", headerName: "Sr No", width: 90 },
+    { field: "empId", headerName: "Employee ID", width: 140 },
+    { field: "employeeName", headerName: "Employee Name", flex: 1 },
+    {
+      field: "grossPay",
+      headerName: "Gross Pay (Monthly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "basicPay",
+      headerName: "Basic Pay (Monthly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "allowances",
+      headerName: "Allowances (Monthly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "variablePay",
+      headerName: "Variable Pay (Yearly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "gratuity",
+      headerName: "Gratuity (Yearly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "annualCtc",
+      headerName: "CTC (Yearly)",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+    {
+      field: "action",
+      headerName: "Action",
+      pinned: "right",
+      width: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="Edit compensation"
+          aria-label={`Edit compensation for ${params.data.employeeName}`}
+          className="flex h-full items-center text-primary"
+          onClick={() =>
+            navigate(
+              "/app/dashboard/HR-dashboard/employee/compensation-structure",
+              {
+                state: {
+                  employeeId: params.data.id,
+                  month: selectedPayPeriod,
+                  runPayroll: {
+                    batchName: selectedBatch,
+                    payPeriod: selectedPayPeriod,
+                  },
+                },
+              }
+            )
+          }
+        >
+          <MdEdit size={20} />
+        </button>
+      ),
+    },
+  ];
 
 
   console.log("des : ", tableData)
@@ -265,7 +631,217 @@ const tableData = isLoading
 
   return (
     <div className="flex flex-col gap-8">
+      {isMixBagPayroll && !payrollStarted ? (
+        <PageFrame>
+          <div className="flex flex-col gap-8 p-2">
+            <div className="border-b pb-4">
+              <h2 className="font-pmedium text-subtitle font-semibold text-primary">
+                Payroll - Batch & Period
+              </h2>
+            </div>
+
+            <div className="mx-auto grid w-full max-w-3xl grid-cols-1 gap-4 md:grid-cols-2">
+              <TextField
+                select
+                required
+                label="Select Batch"
+                value={selectedBatch}
+                onChange={(event) => setSelectedBatch(event.target.value)}
+                fullWidth
+              >
+                {["Full Time Batch", "Intern Batch", "Consultant Batch"].map(
+                  (batch) => (
+                    <MenuItem key={batch} value={batch}>
+                      {batch}
+                    </MenuItem>
+                  )
+                )}
+              </TextField>
+              <TextField
+                select
+                required
+                label="Pay Period"
+                value={selectedPayPeriod}
+                onChange={(event) => setSelectedPayPeriod(event.target.value)}
+                disabled={isPayrollHistoryLoading}
+                fullWidth
+              >
+                {payPeriodOptions.map((period) => (
+                  <MenuItem key={period.value} value={period.value}>
+                    {period.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+              <section>
+                <h3 className="border-b pb-3 text-subtitle font-semibold text-primary">
+                  Payroll Information
+                </h3>
+                <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-3 text-content">
+                  <span className="text-gray-500">Payroll Type</span>
+                  <span className="text-right">Monthly</span>
+                  <span className="text-gray-500">Employees in Batch</span>
+                  <span className="text-right">{selectedBatchData.length}</span>
+                  <span className="text-gray-500">Processed Employees</span>
+                  <span className="text-right">{processedEmployees}</span>
+                  <span className="text-gray-500">Remaining Employees</span>
+                  <span className="text-right">{remainingEmployees}</span>
+                  <span className="text-gray-500">Total Days</span>
+                  <span className="text-right">{totalDays}</span>
+                  <span className="text-gray-500">Payroll Started On</span>
+                  <span className="text-right">
+                    {payrollStartedAt
+                      ? new Date(payrollStartedAt).toLocaleString("en-IN", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "-"}
+                  </span>
+                  <span className="text-gray-500">Payroll Started By</span>
+                  <span className="text-right">
+                    {payrollStartedBy || "-"}
+                  </span>
+                </div>
+              </section>
+
+              <section>
+                <h3 className="border-b pb-3 text-subtitle font-semibold text-primary">
+                  Process Flow
+                </h3>
+                <div className="mt-4 flex flex-col gap-3">
+                  {processSteps.map(([title, description], index) => (
+                    <div key={title} className="flex items-center gap-4">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-green-500 font-semibold text-green-600">
+                        {index + 1}
+                      </span>
+                      <div className="w-full rounded-md border border-r-4 border-r-green-500 p-3 shadow-sm">
+                        <p className="font-medium text-gray-700">{title}</p>
+                        <p className="text-small text-gray-500">{description}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+
+            <div className="flex justify-end">
+              <PrimaryButton
+                title={
+                  isSelectedPayrollProcessed
+                    ? "Payroll Processed"
+                    : currentPayrollProgress
+                      ? "Resume Payroll"
+                      : "Start Payroll"
+                }
+                  disabled={
+                    isLoading ||
+                    isPayrollHistoryLoading ||
+                    isSelectedPayrollProcessed ||
+                    !selectedBatch ||
+                    !selectedPayPeriod
+                  }
+                handleSubmit={() => {
+                  const savedStep = Number(currentPayrollProgress?.activeStep) || 0;
+                  setActivePayrollStep(savedStep);
+                  setCompletedPayrollSteps(
+                    Array.from({ length: savedStep }, (_, index) => index)
+                  );
+                  if (!currentPayrollProgress) {
+                    updatePayrollProgress(payrollProgressKey, {
+                      activeStep: 0,
+                      startedAt: new Date().toISOString(),
+                      startedBy:
+                        [auth?.user?.firstName, auth?.user?.lastName]
+                          .filter(Boolean)
+                          .join(" ") || "Unknown",
+                    });
+                  }
+                  setPayrollStarted(true);
+                }}
+              />
+            </div>
+          </div>
+        </PageFrame>
+      ) : (
       <PageFrame>
+        {isMixBagPayroll && (
+          <div className="mb-6 flex flex-col gap-5">
+            <div className="flex items-center">
+              <p className="text-content font-semibold text-primary">
+                {selectedBatch} - {payPeriodOptions.find((period) => period.value === selectedPayPeriod)?.label}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 overflow-hidden rounded-md border md:grid-cols-5">
+              {payrollSteps.map((step, index) => {
+                const isActive = activePayrollStep === index;
+                const isCompleted = completedPayrollSteps.includes(index);
+
+                return (
+                  <button
+                    type="button"
+                    key={step.title}
+                    disabled
+                    aria-current={isActive ? "step" : undefined}
+                    className={`flex min-h-20 items-center gap-3 border-b-2 p-3 text-left transition-colors md:border-r ${
+                      isActive
+                        ? "border-b-primary bg-blue-50"
+                        : isCompleted
+                          ? "border-b-green-500 bg-green-50"
+                          : "border-b-gray-200 bg-white"
+                    }`}
+                  >
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full font-semibold text-white ${
+                        isCompleted ? "bg-green-500" : "bg-primary"
+                      }`}
+                    >
+                      {isCompleted ? "✓" : index + 1}
+                    </span>
+                    <span>
+                      <span className="block font-semibold text-primary">
+                        {step.title}
+                      </span>
+                      <span className="block text-xs text-gray-500">
+                        {step.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {isMixBagPayroll && activePayrollStep === 0 ? (
+          <AgTable
+            data={selectedBatchData.map((employee, index) => ({
+              ...employee,
+              srNo: index + 1,
+            }))}
+            columns={compensationColumns}
+            search
+            exportData
+            tableTitle="Employee Compensation"
+            tableHeight={450}
+          />
+        ) : isMixBagPayroll && activePayrollStep === 1 ? (
+          <MonthlyAttendanceSummary
+            embedded
+            payrollView
+            fixedMonth={selectedPayPeriod}
+            payrollBatch={selectedBatch}
+          />
+        ) : isMixBagPayroll ? (
+          <div className="flex min-h-64 items-center justify-center rounded-md border bg-gray-50 text-content text-gray-500">
+            {payrollSteps[activePayrollStep].title} details will be added in this step.
+          </div>
+        ) : (
         <YearWiseTable
           search={true}
           dateColumn={"monthDate"}
@@ -281,11 +857,58 @@ const tableData = isLoading
           tableTitle={"Employee payroll"}
           handleBatchAction={handleBatchAction}
           batchButton={"Generate"}
-          data={tableData}
+          data={isMixBagPayroll ? selectedBatchData : tableData}
           columns={payrollColumn}
           exportData={true}
         />
+        )}
+
+        {isMixBagPayroll && (
+          <div className="mt-6 flex justify-end gap-3">
+            {activePayrollStep > 0 && (
+              <SecondaryButton
+                title="Back"
+                disabled={isSavingPayrollDraft}
+                handleSubmit={() => {
+                  const previousStep = Math.max(activePayrollStep - 1, 0);
+                  setActivePayrollStep(previousStep);
+                  updatePayrollProgress(payrollProgressKey, {
+                    activeStep: previousStep,
+                  });
+                }}
+              />
+            )}
+            <PrimaryButton
+              title={
+                activePayrollStep === payrollSteps.length - 1
+                  ? "Submit"
+                  : "Next"
+              }
+              disabled={isSavingPayrollDraft}
+              handleSubmit={() => {
+                if (activePayrollStep === payrollSteps.length - 1) {
+                  savePayrollDraft();
+                  return;
+                }
+                setCompletedPayrollSteps((completedSteps) =>
+                  completedSteps.includes(activePayrollStep)
+                    ? completedSteps
+                    : [...completedSteps, activePayrollStep]
+                );
+                const nextStep = Math.min(
+                  activePayrollStep + 1,
+                  payrollSteps.length - 1
+                );
+                setActivePayrollStep(nextStep);
+                updatePayrollProgress(payrollProgressKey, {
+                  activeStep: nextStep,
+                });
+              }}
+            />
+          </div>
+        )}
       </PageFrame>
+      )}
       <MuiModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

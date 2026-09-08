@@ -83,6 +83,8 @@ const {
   bulkInsertJobApplications,
   createJobApplication,
   getJobApplications,
+  updateJobApplication,
+  archiveJobApplication,
 } = require("../controllers/companyControllers/jobApplicationsController");
 
 // Company basic info routes
@@ -147,8 +149,18 @@ router.post(
 );
 
 // Job Applications
-router.post("/add-job-application", createJobApplication);
+router.post(
+  "/add-job-application",
+  upload.single("resume"),
+  createJobApplication,
+);
 router.get("/get-job-applications", getJobApplications);
+router.patch(
+  "/update-job-application/:id",
+  upload.single("resume"),
+  updateJobApplication,
+);
+router.patch("/archive-job-application/:id", archiveJobApplication);
 router.post(
   "/bulk-insert-job-applications",
   upload.single("job-applications"),

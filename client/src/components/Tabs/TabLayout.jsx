@@ -12,10 +12,12 @@ const TabLayout = ({
   hideTabsCondition = () => false,
   hideTabsOnPaths = [], // NEW PROP
   contentClassName = "py-4",
+  fitTabLabels = false,
 }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile(768);
+  const normalizedBasePath = basePath.replace(/\/+$/, "");
   const { auth } = useAuth(); // 🆕 get user
   const userPermissions = auth?.user?.permissions?.permissions || []; // 🆕
 
@@ -48,19 +50,29 @@ const TabLayout = ({
   // Redirect to first allowed default tab if on basePath
   useEffect(() => {
     if (
-      location.pathname === basePath &&
+      location.pathname === normalizedBasePath &&
       defaultTabPath &&
       filteredTabs.length > 0
     ) {
-      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true });
+      navigate(`${normalizedBasePath}/${filteredTabs[0].path}`, {
+        replace: true,
+      });
     }
-  }, [location, navigate, basePath, defaultTabPath, filteredTabs]);
+  }, [
+    location,
+    navigate,
+    normalizedBasePath,
+    defaultTabPath,
+    filteredTabs,
+  ]);
 
    useEffect(() => {
     if (!isAuthorized && filteredTabs.length > 0) {
-      navigate(`${basePath}/${filteredTabs[0].path}`, { replace: true });
+      navigate(`${normalizedBasePath}/${filteredTabs[0].path}`, {
+        replace: true,
+      });
     }
-  }, [isAuthorized, filteredTabs, navigate, basePath]);
+  }, [isAuthorized, filteredTabs, navigate, normalizedBasePath]);
 
   // const activeTab = filteredTabs.findIndex((tab) =>
   //   location.pathname.includes(tab.path)
@@ -102,7 +114,8 @@ const TabLayout = ({
               fontWeight: "medium",
               padding: "12px 16px",
               borderRight: "0.1px solid #d1d5db",
-              minWidth: isMobile ? "fit-content" : "auto",
+              minWidth: isMobile || fitTabLabels ? "max-content" : "auto",
+              whiteSpace: fitTabLabels ? "nowrap" : "normal",
             },
             "& .Mui-selected": {
               backgroundColor: "#1E3D73",
@@ -114,7 +127,7 @@ const TabLayout = ({
             <NavLink
               key={index}
               className="border-r-[1px] border-borderGray"
-              to={`${basePath}/${tab.path}`}
+              to={`${normalizedBasePath}/${tab.path}`}
               state={location.state}
               end
               style={({ isActive }) => ({
@@ -124,7 +137,12 @@ const TabLayout = ({
                 padding: "12px 16px",
                 display: "block",
                 backgroundColor: isActive ? "#1E3D73" : "white",
-                minWidth: isMobile ? "70%" : `${tabPercent}%`,
+                minWidth: isMobile
+                  ? "70%"
+                  : fitTabLabels
+                    ? "max-content"
+                    : `${tabPercent}%`,
+                flex: !isMobile && fitTabLabels ? "1 1 auto" : undefined,
               })}
             >
               {tab.label}

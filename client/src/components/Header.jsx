@@ -37,6 +37,16 @@ import { queryClient } from "../main";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
 
+const notificationRoutes = {
+  meeting: "/app/meetings/calendar",
+  meetings: "/app/meetings/calendar",
+  ticket: "/app/tickets/manage-tickets",
+  tickets: "/app/tickets/manage-tickets",
+  task: "/app/tasks/department-tasks",
+  tasks: "/app/tasks/department-tasks",
+  performance: "/app/performance",
+};
+
 const Header = ({
   notifications = [],
   unseenCount = 0,
@@ -70,7 +80,7 @@ const Header = ({
     },
   });
 
-  const { mutate: markAllRead } = useMutation({
+  const { mutate: markAllRead, isPending: isMarkingAllRead } = useMutation({
     mutationKey: ["markAllRead"],
     mutationFn: async () => {
       const response = await axios.patch(`/api/notifications/mark-all-read`);
@@ -172,7 +182,6 @@ const Header = ({
               <button
                 onClick={(e) => {
                   setNotificationAnchorEl(e.currentTarget);
-                  markAllRead();
                 }}
 
 
@@ -312,15 +321,25 @@ const Header = ({
                 overlap="circular"
               ></Badge>
             </div>
-            <IconButton
-              size="small"
-              onClick={onRefreshNotifications}
-              disabled={isRefreshingNotifications}
-            >
-              <HiOutlineRefresh
-                className={`${isRefreshingNotifications ? "animate-spin" : ""}`}
-              />
-            </IconButton>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => markAllRead()}
+                disabled={unseenCount === 0 || isMarkingAllRead}
+                className="text-xs font-pmedium text-primary hover:underline disabled:cursor-not-allowed disabled:text-gray-400 disabled:no-underline"
+              >
+                {isMarkingAllRead ? "Marking..." : "Mark all as read"}
+              </button>
+              <IconButton
+                size="small"
+                onClick={onRefreshNotifications}
+                disabled={isRefreshingNotifications}
+              >
+                <HiOutlineRefresh
+                  className={`${isRefreshingNotifications ? "animate-spin" : ""}`}
+                />
+              </IconButton>
+            </div>
           </div>
           <Divider className="my-2" />
           {isRefreshingNotifications ? (
@@ -339,12 +358,8 @@ const Header = ({
                         const initiator = `${n.initiatorData?.firstName} ${n.initiatorData?.lastName}`;
                         const currentUser = auth?.user?._id;
                         const module = n.module || "";
-                        const navigations = {
-                          Meetings: "/app/meetings/calendar",
-                          Tickets: "/app/tickets/manage-tickets",
-                          Tasks: "/app/tasks/department-tasks",
-                          Performance: "/app/performance",
-                        };
+                        const notificationRoute =
+                          notificationRoutes[module.trim().toLowerCase()];
 
                         const userEntry = n.users?.find(
                           (item) =>
@@ -369,12 +384,19 @@ const Header = ({
                               <div
                                 role="button"
                                 onClick={() => {
-                                  if (navigations[module]) {
-                                    navigate(navigations[module]);
+                                  if (!hasRead) {
+                                    updateRead(n._id);
+                                  }
+                                  if (notificationRoute) {
+                                    navigate(notificationRoute);
                                     setNotificationAnchorEl(null);
                                   }
                                 }}
-                                className="min-w-0 flex-1 cursor-pointer"
+                                className={`min-w-0 flex-1 ${
+                                  notificationRoute
+                                    ? "cursor-pointer"
+                                    : "cursor-default"
+                                }`}
                               >
                                 <div className="flex items-start justify-between gap-3">
                                   <span className="font-pmedium text-slate-900">
@@ -393,6 +415,7 @@ const Header = ({
                                 {!hasRead && (
                                   <button
                                     onClick={() => updateRead(n._id)}
+                                    disabled={isUpdatePending}
                                     className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-green-300 text-green-700"
                                     title="Mark as Read"
                                   >

@@ -11,7 +11,6 @@ const leaveSchema = new mongoose.Schema(
     addedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
-      required: true,
     },
     takenBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -57,7 +56,7 @@ const leaveSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 const Leave = mongoose.model("Leave", leaveSchema);

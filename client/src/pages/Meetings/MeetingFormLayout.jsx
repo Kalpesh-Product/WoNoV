@@ -14,6 +14,7 @@ import { IoMdClose } from "react-icons/io";
 import { useForm, Controller } from "react-hook-form";
 import {
   Autocomplete,
+  Checkbox,
   Chip,
   CircularProgress,
   FormControl,
@@ -50,7 +51,7 @@ const MeetingFormLayout = () => {
   const locationState = useLocation();
   const meetingRoomId = locationState.state?.meetingRoomId || "";
   const repeatMeetingClient = locationState.state?.repeatMeetingClient;
-  const { perHourCredit, perHourPrice } = locationState.state;
+  const { perHourCredit = 0, perHourPrice = 0 } = locationState.state || {};
   const [events, setEvents] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => dayjs());
   const axios = useAxiosPrivate();
@@ -119,6 +120,9 @@ const MeetingFormLayout = () => {
   } = useForm({
     defaultValues: {
       meetingType: "Internal",
+      building: "",
+      location: "",
+      meetingRoom: meetingRoomId,
       startDate: null, // Ensure null
       endDate: null, // Ensure null
       startTime: null, // Watch startTime dynamically
@@ -148,6 +152,7 @@ const MeetingFormLayout = () => {
   // }, [isReceptionist, setValue]);
 
   const meetingType = watch("meetingType");
+  const selectedMeetingRoomId = watch("meetingRoom");
   const startDate = watch("startDate"); // Watch startDate
   const endDate = watch("endDate"); // Watch endDate
   const startTime = watch("startTime");
@@ -175,6 +180,19 @@ const MeetingFormLayout = () => {
 
     return nextSlotTime.format("HH:mm:ss");
   }, [currentTime]);
+  const calendarEvents = useMemo(
+    () => [
+      ...events,
+      {
+        id: "elapsed-time-today",
+        start: currentTime.startOf("day").toISOString(),
+        end: currentTime.toISOString(),
+        display: "background",
+        backgroundColor: "#fff3bf",
+      },
+    ],
+    [currentTime, events],
+  );
   useEffect(() => {
     if (meetingType !== "External") return;
 
@@ -227,6 +245,65 @@ const MeetingFormLayout = () => {
   const shouldCheckAvailability =
     !!startDateTime && !!endDateTime && shouldFetchParticipants;
   //-------------------------------API-------------------------------//
+  const { data: meetingRooms = [] } = useQuery({
+      queryKey: ["meetingRooms"],
+      queryFn: async () => {
+        const response = await axios.get("/api/meetings/get-rooms");
+        return response.data || [];
+      },
+    });
+
+  const activeMeetingRooms = useMemo(
+    () => meetingRooms.filter((room) => room?.isActive),
+    [meetingRooms],
+  );
+
+  const selectedMeetingRoom = useMemo(
+    () =>
+      activeMeetingRooms.find(
+        (room) => String(room?._id) === String(selectedMeetingRoomId),
+      ),
+    [activeMeetingRooms, selectedMeetingRoomId],
+  );
+
+  useEffect(() => {
+    if (!meetingRoomId || !activeMeetingRooms.length) return;
+
+    const initialRoom = activeMeetingRooms.find(
+      (room) => String(room?._id) === String(meetingRoomId),
+    );
+    if (!initialRoom) return;
+
+    setValue("meetingRoom", initialRoom._id);
+    setValue("building", initialRoom?.location?.building?._id || "");
+    setValue("location", initialRoom?.location?._id || "");
+  }, [activeMeetingRooms, meetingRoomId, setValue]);
+
+  const displayedLocationName =
+    selectedMeetingRoom?.location?.building?.buildingName ||
+    locationName;
+  const displayedMeetingRoomName =
+    selectedMeetingRoom?.name ||
+    (selectedMeetingRoomId === meetingRoomId ? meetingRoomName : "");
+  const displayedUnitName = selectedMeetingRoom?.location
+    ? [
+        selectedMeetingRoom.location.unitNo,
+        selectedMeetingRoom.location.unitName
+          ? `(${selectedMeetingRoom.location.unitName})`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" ") || displayedLocationName
+    : displayedLocationName;
+  const displayedPerHourCredit =
+    selectedMeetingRoomId === meetingRoomId
+      ? selectedMeetingRoom?.perHourCredit ?? perHourCredit
+      : selectedMeetingRoom?.perHourCredit ?? 0;
+  const displayedPerHourPrice =
+    selectedMeetingRoomId === meetingRoomId
+      ? selectedMeetingRoom?.perHourPrice ?? perHourPrice
+      : selectedMeetingRoom?.perHourPrice ?? 0;
+
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
@@ -304,17 +381,42 @@ const MeetingFormLayout = () => {
     return totalMonthlyCredit;
   };
 
+  const selectedCreditOwner =
+    company === BIZNEST_COMPANY_ID ? auth.user?.company : selectedClient;
+
   const remainingMeetingCredits = useMemo(() => {
     if (!company) return "-";
 
-    return getMonthlyRemainingCredit(selectedClient, selectedCreditMonth);
-  }, [company, selectedClient, selectedCreditMonth]);
+    return getMonthlyRemainingCredit(selectedCreditOwner, selectedCreditMonth);
+  }, [company, selectedCreditMonth, selectedCreditOwner]);
   //-------------------------------API-------------------------------//
-  const displayedRemainingCredits = isReceptionist
-    ? remainingMeetingCredits
-    : remainingMeetingCredits !== "-"
-      ? remainingMeetingCredits
-      : getMonthlyRemainingCredit(auth.user?.company, selectedCreditMonth);
+  const usedMeetingCredits = useMemo(() => {
+    if (
+      meetingType !== "Internal" ||
+      !startDateTime ||
+      !endDateTime ||
+      !endDateTime.isAfter(startDateTime)
+    ) {
+      return 0;
+    }
+
+    const durationInMinutes = endDateTime.diff(startDateTime, "minute", true);
+    return Number(
+      ((durationInMinutes / 60) * Number(displayedPerHourCredit || 0)).toFixed(
+        2,
+      ),
+    );
+  }, [
+    displayedPerHourCredit,
+    endDateTime,
+    meetingType,
+    startDateTime,
+  ]);
+
+  const displayedRemainingCredits =
+    remainingMeetingCredits === "-"
+      ? "-"
+      : Number((Number(remainingMeetingCredits) - usedMeetingCredits).toFixed(2));
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -404,7 +506,9 @@ const MeetingFormLayout = () => {
   });
 
   const internalParticipantOptions = useMemo(() => {
-    if (company !== wonoClient?._id) return participantOptions;
+    if (company !== wonoClient?._id) {
+      return participantOptions;
+    }
 
     const seen = new Set();
     return [...participantOptions, ...biznestEmployees].filter((user) => {
@@ -565,16 +669,17 @@ const MeetingFormLayout = () => {
 
   const { data: checkAvailability = [], isPending: isCheckingAvailability } =
     useQuery({
-      queryKey: ["checkAvailability", meetingRoomId],
+      queryKey: ["checkAvailability", selectedMeetingRoomId],
       queryFn: async () => {
         const response = await axios.get(
-          `/api/meetings/get-room-meetings/${meetingRoomId}`,
+          `/api/meetings/get-room-meetings/${selectedMeetingRoomId}`,
         );
         return response.data;
       },
       onError: (error) => {
         toast.error("Error checking meeting room availability");
       },
+      enabled: !!selectedMeetingRoomId,
     });
   //-------------------------------API-------------------------------//
 
@@ -694,7 +799,7 @@ const MeetingFormLayout = () => {
       );
 
       await axios.post("/api/meetings/create-meeting", {
-        bookedRoom: meetingRoomId,
+        bookedRoom: data.meetingRoom,
         meetingType: data.meetingType,
         startDate: startDate,
         endDate: endDate,
@@ -817,7 +922,8 @@ const MeetingFormLayout = () => {
     <div className="p-4">
       <div className="w-full text-center">
         <span className="text-title text-primary font-pregular mb-4">
-          Schedule Meeting in {locationName}-{meetingRoomName}
+          Schedule Meeting in {displayedLocationName}
+          {displayedMeetingRoomName ? `-${displayedMeetingRoomName}` : ""}
         </span>
       </div>
       <div className="w-full h-full overflow-y-auto">
@@ -839,6 +945,9 @@ const MeetingFormLayout = () => {
             // plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             plugins={[timeGridPlugin, interactionPlugin]}
             initialView="timeGridDay"
+            validRange={{
+              start: currentTime.startOf("day").format("YYYY-MM-DD"),
+            }}
             contentHeight={555}
             dayMaxEvents={2}
             eventDisplay="auto"
@@ -854,27 +963,15 @@ const MeetingFormLayout = () => {
             }}
             select={handleDateClick}
             selectAllow={({ start }) => {
-              const now = new Date();
-              return start.getTime() > now.getTime();
-            }}
-            datesSet={() => {
-              setTimeout(() => {
-                const now = new Date();
-                const today = now.toISOString().slice(0, 10);
-                const allSlots = document.querySelectorAll(`.fc-timegrid-slot`);
+              const selectedSlot = dayjs(start);
+              const today = currentTime.startOf("day");
 
-                allSlots.forEach((slot) => {
-                  const timeAttr = slot.getAttribute("data-time");
-                  if (!timeAttr) return;
+              if (selectedSlot.isBefore(today, "day")) return false;
+              if (selectedSlot.isAfter(today, "day")) return true;
 
-                  const slotTime = new Date(`${today}T${timeAttr}`);
-                  if (slotTime < now) {
-                    slot.classList.add("fc-slot-past");
-                  }
-                });
-              }, 0);
+              return selectedSlot.isAfter(currentTime);
             }}
-            events={events}
+            events={calendarEvents}
           />
         )}
       </div>
@@ -891,33 +988,32 @@ const MeetingFormLayout = () => {
           <div className="w-full flex gap-8 justify-center items-center">
             <span className="text-content">Date : {humanDate(startDate)}</span>
           </div>
+          <div className="grid grid-cols-2 gap-8 px-2">
+            <span className="text-content text-left">
+              Location : {displayedUnitName || "N/A"}
+            </span>
+            <span className="text-content text-right">
+              Selected Room : {displayedMeetingRoomName || "N/A"}
+            </span>
+          </div>
           <div className="grid grid-cols-2 gap-8 px-2 pb-4 mb-4 border-b-default border-black">
-            <div className="w-fit flex gap-8 items-center">
-              <span className="text-content">Location : {locationName}</span>
-            </div>
-            <div className="w-full flex gap-8 items-center justify-end">
-              <span className="text-content">
-                Selected Room : {meetingRoomName}
-              </span>
-            </div>
-
             <div className="w-full flex gap-8 items-center justify-start">
               <div className="flex flex-col">
                 <span className="text-content">
-                  Per Hour Credit : {perHourCredit}
+                  Per Hour Credit : {displayedPerHourCredit}
                 </span>
                 <span className="text-content">
-                  Per Half Hour Credit : {perHourCredit / 2}
+                  Per Half Hour Credit : {displayedPerHourCredit / 2}
                 </span>
               </div>
             </div>
             <div className="w-full flex gap-8 items-center justify-end">
               <div className="flex flex-col">
                 <span className="text-content">
-                  Per Hour Price : {`INR ${inrFormat(perHourPrice)}`}
+                  Per Hour Price : {`INR ${inrFormat(displayedPerHourPrice)}`}
                 </span>
                 <span className="text-content">
-                  Per Half Hour Price : {`INR  ${inrFormat(perHourPrice / 2)}`}
+                  Per Half Hour Price : {`INR  ${inrFormat(displayedPerHourPrice / 2)}`}
                 </span>
               </div>
             </div>
@@ -1098,24 +1194,36 @@ const MeetingFormLayout = () => {
                     />
                   </div>
                 )}
-                {isReceptionist ? (
-                  <TextField
-                    fullWidth
-                    size="small"
-                    value={displayedRemainingCredits}
-                    disabled
-                    label="Remaining Credit"
-                    InputProps={{
-                      sx: isRemainingCreditsNegative
-                        ? {
-                            "& .MuiInputBase-input.Mui-disabled": {
-                              WebkitTextFillColor: "#d32f2f",
-                            },
-                          }
-                        : undefined,
-                    }}
-                  />
-                ) : null}
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={remainingMeetingCredits}
+                  disabled
+                  label="Current Credit Balance"
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={usedMeetingCredits}
+                  disabled
+                  label="Used Credits (This Meeting)"
+                />
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={displayedRemainingCredits}
+                  disabled
+                  label="Remaining Credits After Booking"
+                  InputProps={{
+                    sx: isRemainingCreditsNegative
+                      ? {
+                          "& .MuiInputBase-input.Mui-disabled": {
+                            WebkitTextFillColor: "#d32f2f",
+                          },
+                        }
+                      : undefined,
+                  }}
+                />
 
                 {isReceptionist ? (
                   <div className="col-span-1">
@@ -1212,7 +1320,7 @@ const MeetingFormLayout = () => {
                   disabled
                   label={`${isReceptionist ? "Receptionist" : "Booked By"}`}
                 />
-                <div className="col-span-2 sm:col-span-1 md:col-span-2">
+                <div className="col-span-1">
                   <div className="">
                     <Controller
                       name="internalParticipants"
@@ -1220,9 +1328,13 @@ const MeetingFormLayout = () => {
                       render={({ field }) => (
                         <Autocomplete
                           multiple
+                          disableCloseOnSelect
                           options={internalParticipantOptions}
                           loading={isAvailableEmployees}
                           getOptionLabel={getInternalParticipantLabel}
+                          isOptionEqualToValue={(option, value) =>
+                            option?._id === value?._id
+                          }
                           onFocus={() => {
                             setShouldFetchParticipants(true);
                             if (shouldCheckAvailability) {
@@ -1235,6 +1347,16 @@ const MeetingFormLayout = () => {
                           onChange={(_, newValue) =>
                             field.onChange(newValue.map((user) => user._id))
                           }
+                          renderOption={(props, user, { selected }) => (
+                            <li {...props} key={user._id}>
+                              <Checkbox
+                                checked={selected}
+                                size="small"
+                                sx={{ marginRight: 1 }}
+                              />
+                              {getInternalParticipantLabel(user)}
+                            </li>
+                          )}
                           renderTags={(selected, getTagProps) =>
                             selected.map((user, index) => (
                               <Chip
