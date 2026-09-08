@@ -38,7 +38,7 @@ const requestLeave = async (req, res, next) => {
         "All fields are required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -51,7 +51,7 @@ const requestLeave = async (req, res, next) => {
         "Invalid date format",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -72,15 +72,15 @@ const requestLeave = async (req, res, next) => {
       Number(hours) < Number(workingHours)
         ? "Partial"
         : Number(hours) === Number(workingHours)
-        ? "Single"
-        : "Multiple";
+          ? "Single"
+          : "Multiple";
 
     if (leavePeriod !== period) {
       throw new CustomError(
         "Leave period and number of hours doesn't match",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -112,7 +112,7 @@ const requestLeave = async (req, res, next) => {
       const multipleLeaveHours = leaves
         .filter(
           (leave) =>
-            leave.leavePeriod === "Multiple" && leave.leaveType === leaveType
+            leave.leavePeriod === "Multiple" && leave.leaveType === leaveType,
         )
         .reduce((acc, leave) => acc + leave.hours, 0);
 
@@ -138,13 +138,13 @@ const requestLeave = async (req, res, next) => {
           "Can't request more leaves",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
     }
 
     const noOfDays = Math.abs(
-      (currDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+      (currDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
 
     let updatedLeaveType = "";
@@ -172,7 +172,7 @@ const requestLeave = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -244,12 +244,12 @@ const fetchUserLeaves = async (req, res, next) => {
     const allocatedPrivilegedLeaves = user.employeeType.leavesCount.reduce(
       (acc, leave) =>
         leave.leaveType === "Privileged" ? acc + leave.count : acc,
-      0
+      0,
     );
 
     const allocatedSickLeaves = user.employeeType.leavesCount.reduce(
       (acc, leave) => (leave.leaveType === "Sick" ? acc + leave.count : acc),
-      0
+      0,
     );
 
     const privilegedLeaveHours = leaves
@@ -267,7 +267,7 @@ const fetchUserLeaves = async (req, res, next) => {
     const workingHours = 9;
 
     const takenPrivilegedLeaves = Number(
-      (privilegedLeaveHours / workingHours).toFixed(2)
+      (privilegedLeaveHours / workingHours).toFixed(2),
     );
 
     const takenSickLeaves = Number((sickLeaveHours / workingHours).toFixed(2));
@@ -319,7 +319,9 @@ const fetchUserLeaveSummary = async (req, res, next) => {
       sick: { allotted: 0, used: 0 },
     };
     const getLeaveCategory = (leaveType) => {
-      const normalizedType = String(leaveType || "").trim().toLowerCase();
+      const normalizedType = String(leaveType || "")
+        .trim()
+        .toLowerCase();
       if (normalizedType.includes("sick")) return "sick";
       if (
         normalizedType.includes("privileged") ||
@@ -355,7 +357,8 @@ const fetchUserLeaveSummary = async (req, res, next) => {
       );
     });
 
-    const allotted = leaveSummary.privileged.allotted + leaveSummary.sick.allotted;
+    const allotted =
+      leaveSummary.privileged.allotted + leaveSummary.sick.allotted;
     const used = leaveSummary.privileged.used + leaveSummary.sick.used;
     const roundedAllotted = Number(allotted.toFixed(2));
     const roundedUsed = Number(used.toFixed(2));
@@ -385,7 +388,7 @@ const approveLeave = async (req, res, next) => {
         "Invalid Leave Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -395,7 +398,7 @@ const approveLeave = async (req, res, next) => {
         $set: { status: "Approved", approvedBy: user },
         $unset: { rejectedBy: "" },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedLeave) {
@@ -403,7 +406,7 @@ const approveLeave = async (req, res, next) => {
         "Failed to approve the leave request",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -429,7 +432,7 @@ const approveLeave = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -449,7 +452,7 @@ const rejectLeave = async (req, res, next) => {
         "Invalid Leave Id provided",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -459,7 +462,7 @@ const rejectLeave = async (req, res, next) => {
         $set: { status: "Rejected", rejectedBy: user },
         $unset: { approvedBy: "" },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedLeave) {
@@ -467,7 +470,7 @@ const rejectLeave = async (req, res, next) => {
         "Failed to reject leave request",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -493,7 +496,7 @@ const rejectLeave = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -519,28 +522,28 @@ const bulkInsertLeaves = async (req, res, next) => {
 
     const leaves = [];
     const stream = Readable.from(file.buffer.toString("utf-8")).pipe(
-      csvParser()
+      csvParser(),
     );
 
     stream.on("data", (row) => {
-      const takenById = usersMap.get(row["takenBy(emp ID)"]);
-      const approvedById = row["approvedBy (Emp ID)"]
-        ? usersMap.get(row["approvedBy (Emp ID)"])
+      const takenById = usersMap.get(row["Taken By (Emp ID)"]);
+      const approvedById = row["Approved By (Emp ID)"]
+        ? usersMap.get(row["Approved By (Emp ID)"])
         : null;
-      const rejectedById = row["rejectedBy (Emp ID)"]
-        ? usersMap.get(row["rejectedBy (Emp ID)"])
+      const rejectedById = row["Rejected By (Emp ID)"]
+        ? usersMap.get(row["Rejected By (Emp ID)"])
         : null;
 
       if (takenById) {
         leaves.push({
           company: company,
           takenBy: takenById,
-          fromDate: new Date(row["fromDate"]),
-          toDate: new Date(row["toDate"]),
-          leaveType: row["leaveType"],
-          leavePeriod: row["leavePeriod"],
-          hours: Number(row["hours"]),
-          description: row["description"],
+          fromDate: new Date(row["From Date"]),
+          toDate: new Date(row["To Date"]),
+          leaveType: row["Leave Type"],
+          leavePeriod: row["Leave Period"],
+          hours: Number(row["Hours"]),
+          description: row["Description"],
           status: row["status"] || "Pending",
           approvedBy: approvedById,
           rejectedBy: rejectedById,
