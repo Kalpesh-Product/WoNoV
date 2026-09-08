@@ -8,7 +8,15 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
-const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
+const LeadsLayout = ({
+  hideAccordion,
+  data,
+  additionalData,
+  children,
+  title = "Unique Clients",
+  titleAmount,
+  hideMonthAxisTitle = false,
+}) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
     [data]
@@ -116,6 +124,13 @@ const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
       ),
     [transformedData]
   );
+  const resolvedTitleAmount =
+    typeof titleAmount === "function"
+      ? titleAmount({
+          count: selectedFinancialYearClientsCount,
+          financialYear: currentFinancialYear,
+        })
+      : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
 
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = [
@@ -153,7 +168,7 @@ const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
     },
     xaxis: {
       categories: financialYearMonths,
-      title: { text: "Months" },
+      ...(hideMonthAxisTitle ? {} : { title: { text: "Months" } }),
     },
     yaxis: {
       title: { text: "Number of Clients" },
@@ -194,8 +209,8 @@ const LeadsLayout = ({ hideAccordion, data, additionalData, children }) => {
         layout={1}
         border
         padding
-        title={"Unique Clients"}
-        TitleAmount={`CLIENTS : ${selectedFinancialYearClientsCount}`}
+        title={title}
+        TitleAmount={resolvedTitleAmount}
       >
         <div className="p-1"></div>
 

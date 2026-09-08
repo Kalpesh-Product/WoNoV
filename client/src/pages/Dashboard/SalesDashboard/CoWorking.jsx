@@ -14,7 +14,8 @@ const getNormalizedRentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
-const CoWorking = () => {
+// const CoWorking = () => {
+  const CoWorking = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
     queryKey: ["coWorkingData"],
@@ -123,7 +124,8 @@ const CoWorking = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      {!isCoWorkingLoading ? (
+      {/* {!isCoWorkingLoading ? ( */}
+       {showChart && (!isCoWorkingLoading ? (
         // <YearlyGraph
         //   title={"ANNUAL MONTHLY CO WORKING REVENUES"}
         //   titleAmount={`INR ${inrFormat(totalActual)}`}
@@ -141,7 +143,8 @@ const CoWorking = () => {
         <div className="h-72 flex justify-center items-center">
           <CircularProgress />
         </div>
-      )}
+      // )}
+      ))}
 
       {!isCoWorkingLoading ? (
         <WidgetTable
@@ -174,7 +177,7 @@ const CoWorking = () => {
           totalTitle="Total"
           summaryChipVariant="ticket"
           columns={[
-            { headerName: "Sr No", field: "id", width: 100 },
+            { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
             {

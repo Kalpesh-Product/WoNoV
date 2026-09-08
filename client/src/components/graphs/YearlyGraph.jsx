@@ -14,16 +14,20 @@ const YearlyGraph = ({
   TitleAmountGreen,
   TitleAmountRed,
   TitleAmountTotal,
+  headerRightContent,
    greenTitle,
   redTitle,
   totalTitle,
   summaryChipVariant,
   responsiveResize = false,
+  headerCenterContent,
   secondParam = false,
   chartHeight,
+  sectionHeight = "",
   currentYear,
   onYearChange,
   refreshOnDataChange = false,
+  navigationLabel = "",
   dateKey, // 👈 New prop
 }) => {
    const yearKey = dataPoint === "name" ? "name" : "group";
@@ -62,7 +66,6 @@ const YearlyGraph = ({
     }
     return currentFYStartYear;
   });
-
   const selectedYear = getFYLabel(selectedYearStart);
 
   useEffect(() => {
@@ -86,7 +89,10 @@ const YearlyGraph = ({
   if (dataPoint === "name") {
     filteredData = data.filter((item) => item.name === selectedYear);
   } else {
-    filteredData = data.filter((item) => item.group === selectedYear);
+    filteredData = data.filter(
+      (item) =>
+        String(item.group || "").includes(String(selectedYearStart)),
+    );
   }
 
   if (filteredData.length === 0 && dataPoint !== "name") {
@@ -117,11 +123,11 @@ const YearlyGraph = ({
   };
 
   const goToPrevYear = () => {
-     setSelectedYearStart((prev) => prev - 1);
+    setSelectedYearStart((prev) => prev - 1);
   };
 
   const goToNextYear = () => {
-     setSelectedYearStart((prev) => prev + 1);
+    setSelectedYearStart((prev) => prev + 1);
   };
 
   return (
@@ -135,9 +141,12 @@ const YearlyGraph = ({
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
         totalTitle={totalTitle}
+        headerRightContent={headerRightContent}
          greenTitle={greenTitle}
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}
+        headerCenterContent={headerCenterContent}
+        height={sectionHeight}
       >
         <div className="flex flex-col gap-4">
           <BarGraph
@@ -150,7 +159,12 @@ const YearlyGraph = ({
             height={chartHeight}
           />
 
-          <div className="flex justify-center items-center">
+          <div className="flex flex-col justify-center items-center gap-1">
+            {navigationLabel && (
+              <div className="text-black text-content font-semibold">
+                {navigationLabel}
+              </div>
+            )}
             {/* <div className="flex items-center pb-2 gap-4 mt-4"> */}
             <div className="flex items-center gap-4 mt-4">
               <SecondaryButton

@@ -8,8 +8,36 @@ import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import FinanceCard from "../../../../components/FinanceCard";
+import dayjs from "dayjs";
 
-const CheckAvailability = () => {
+const MONTHLY_GRAPH_START = dayjs("2026-04-01");
+const MONTHLY_GRAPH_BUILDINGS = [
+  "sunteck kanaka",
+  "dempo trade centre",
+  "dempo trade center",
+];
+
+const normalizeText = (value) => String(value || "").trim().toLowerCase();
+
+const isMonthlyGraphBuilding = (buildingName) => {
+  const normalized = normalizeText(buildingName);
+
+  return MONTHLY_GRAPH_BUILDINGS.some((building) =>
+    normalized.includes(building),
+  );
+};
+
+const CheckAvailability = ({
+  cardsFirst = false,
+  disableCardLinks = false,
+  hideCheckInventory = false,
+  graphHeight = 400,
+  cardsBorder = false,
+  cardsTitle = "",
+  graphTitle = "TOTAL v/s OCCUPIED",
+  monthlyView = false,
+  hideInventoryLastDivider = false,
+}) => {
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
@@ -103,6 +131,99 @@ const CheckAvailability = () => {
       };
     });
   }, [activeUnits, occupiedByUnit]);
+
+  const { data: monthlyClients = [] } = useQuery({
+    queryKey: ["co-working-monthly-occupancy", monthlyView],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: monthlyView,
+  });
+
+  const monthlyChartData = useMemo(() => {
+    if (!monthlyView) return [];
+
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const monthStart = MONTHLY_GRAPH_START.add(index, "month");
+
+      return {
+        label: monthStart.format("MMM-YY"),
+        start: monthStart.startOf("month"),
+        end: monthStart.endOf("month"),
+      };
+    });
+
+    const totalInventory = activeUnits.reduce((sum, unit) => {
+      const buildingName = unit?.building?.buildingName;
+      if (!isMonthlyGraphBuilding(buildingName)) return sum;
+
+      return (
+        sum +
+        (Number(unit?.openDesks) || 0) +
+        (Number(unit?.cabinDesks) || 0)
+      );
+    }, 0);
+
+    return months.map((month) => {
+      if (month.start.isAfter(dayjs(), "month")) {
+        return {
+          name: month.label,
+          occupied: 0,
+          remaining: 0,
+          total: totalInventory,
+        };
+      }
+
+      const occupied = monthlyClients.reduce((sum, client) => {
+        const buildingName = client?.unit?.building?.buildingName;
+        if (!isMonthlyGraphBuilding(buildingName)) return sum;
+
+        const startDate = dayjs(client?.startDate);
+        if (!startDate.isValid()) return sum;
+
+        const endDate = client?.endDate ? dayjs(client.endDate) : null;
+        const effectiveEndDate =
+          endDate?.isValid() ? endDate : dayjs();
+        const overlapsMonth =
+          startDate.isBefore(month.end.add(1, "day")) &&
+          effectiveEndDate.isAfter(month.start.subtract(1, "day"));
+
+        if (!overlapsMonth) return sum;
+
+        return (
+          sum +
+          (Number(client?.openDesks) || 0) +
+          (Number(client?.cabinDesks) || 0)
+        );
+      }, 0);
+
+      const occupiedSeats = Math.min(occupied, totalInventory);
+      const remainingSeats = Math.max(totalInventory - occupiedSeats, 0);
+
+      return {
+        name: month.label,
+        occupied: occupiedSeats,
+        remaining: remainingSeats,
+        total: totalInventory,
+      };
+    });
+  }, [activeUnits, monthlyClients, monthlyView]);
+
+  const inventoryGraphData = monthlyView ? monthlyChartData : chartData;
+
+  const totalInventoryCount = useMemo(() => {
+    if (monthlyView) {
+      return Number(monthlyChartData[0]?.total || 0);
+    }
+
+    return chartData.reduce(
+      (sum, item) =>
+        sum + (Number(item?.occupied) || 0) + (Number(item?.remaining) || 0),
+      0,
+    );
+  }, [chartData, monthlyChartData, monthlyView]);
   // //-------------  Remove Duplicates----------------------//
   // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
   // const unitMap = new Map();
@@ -154,23 +275,21 @@ const CheckAvailability = () => {
   //   }
   // );
 
-  const barGraphSeries = [
+  const barGraphSeries = useMemo(
+    () => [
     {
       name: "Occupied",
-      data: chartData.map((item) => item.occupied),
+      data: inventoryGraphData.map((item) => item.occupied),
     },
     {
       name: "Remaining",
-      data: chartData.map((item) => item.remaining),
+      data: inventoryGraphData.map((item) => item.remaining),
     },
-  ];
-
-  const totalInventoryCount = chartData.reduce(
-    (sum, item) => sum + (Number(item?.occupied) || 0) + (Number(item?.remaining) || 0),
-    0,
+    ],
+    [inventoryGraphData],
   );
 
-  const barGraphOptions = {
+  const _barGraphOptionsLegacy = {
     chart: {
       type: "bar",
       fontFamily: "Poppins-Regular",
@@ -263,6 +382,113 @@ const CheckAvailability = () => {
       },
     },
   };
+
+  const barGraphOptions = useMemo(
+    () => ({
+      chart: {
+        type: "bar",
+        fontFamily: "Poppins-Regular",
+        stacked: true,
+        stackType: "100%",
+        toolbar: {
+          show: false,
+        },
+        events: monthlyView
+          ? {}
+          : {
+              dataPointSelection: (event, chartContext, config) => {
+                const buildingName =
+                  inventoryGraphData[config.dataPointIndex]?.name;
+                const encodedName = encodeURIComponent(buildingName);
+                navigate(
+                  `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodedName}`,
+                  { state: buildingName },
+                );
+              },
+            },
+      },
+      xaxis: {
+        categories: inventoryGraphData.map((item) => item.name),
+        title: {
+          text: monthlyView ? "Month" : "Building Name",
+        },
+      },
+      yaxis: {
+        title: {
+          text: "Percentage",
+        },
+        labels: {
+          formatter: (val) => `${Math.round(val)}%`,
+        },
+        max: 100,
+      },
+      legend: {
+        position: "top",
+      },
+      plotOptions: {
+        bar: {
+          horizontal: false,
+          columnWidth: monthlyView ? "45%" : "10%",
+          borderRadius: 2,
+        },
+      },
+      dataLabels: {
+        enabled: true,
+        formatter: (val) => `${Math.round(val)}%`,
+      },
+      colors: ["#36BA98", "#E83F25"],
+      tooltip: {
+        custom: function ({ dataPointIndex, w }) {
+          const label = w.globals.labels[dataPointIndex];
+          const [month, year] = String(label).split("-");
+          const tooltipLabel = monthlyView
+            ? dayjs(`${month} 1, 20${year}`).format("MMMM - YY")
+            : label;
+          const selectedItem = inventoryGraphData[dataPointIndex] || {};
+          const occupied = Number(selectedItem.occupied) || 0;
+          const remaining = Number(selectedItem.remaining) || 0;
+          const total = Number(selectedItem.total) || occupied + remaining;
+
+          return `
+            <div style="padding:8px; width : 220px">
+              <div style="display:flex; justify-content:flex-start; gap:8px; font-weight:600">
+                <span>${monthlyView ? "BIZNEST" : label}</span>
+                ${monthlyView ? `<span>${tooltipLabel}</span>` : ""}
+              </div>
+              <hr />
+              <div style="display:flex; justify-content:space-between; margin-top : 5px; font-size : 12px">
+                <div style="width : 100%">
+                  Total
+                </div>
+                <div style="width : 100%">
+                ${total} desks
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between;font-size : 12px">
+                <div style="width : 100%">
+                  Occupied
+                </div>
+                <div style="width : 100%">
+                ${occupied} desks
+                </div>
+              </div>
+
+              <div style="display:flex; justify-content:space-between; font-size : 12px">
+                <div style="width : 100%">
+                  Remaining
+                </div>
+                <div style="width : 100%">
+                ${remaining} desks
+                </div>
+              </div>
+            </div>
+          `;
+        },
+      },
+    }),
+    [inventoryGraphData, monthlyView, navigate],
+  );
 
   //-------------  Remove Duplicates----------------------//
 
@@ -363,27 +589,21 @@ const CheckAvailability = () => {
 
   const onSubmit = (data) => {
     const { location, floor } = data;
-    address.pathname?.includes("mix-bag")
-      ? navigate(
-        `/app/dashboard/sales-dashboard/mix-bag/inventory/${location}/${floor}`,
-        {
-          state: {
-            unitId: selectedUnitId[0],
-            unitNo: floor,
-            building: location,
-          },
-        }
-      )
-      : navigate(
-        `/app/dashboard/sales-dashboard/inventory/${location}/${floor}`,
-        {
-          state: {
-            unitId: selectedUnitId[0],
-            unitNo: floor,
-            building: location,
-          },
-        }
-      );
+
+    if (!location || !floor) return;
+
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURIComponent(
+        location,
+      )}/${encodeURIComponent(floor)}`,
+      {
+        state: {
+          unitId: selectedUnitId[0],
+          unitNo: floor,
+          building: location,
+        },
+      },
+    );
   };
 
   const inventoryStats = {
@@ -503,34 +723,91 @@ const CheckAvailability = () => {
     ],
   };
 
-  return (
-    <div className="flex flex-col gap-4 p-4">
+  // return (
+  //   <div className="flex flex-col gap-4 p-4">
+  //     <WidgetSection
+  //       layout={1}
+  //       border
+  //       normalCase={true} 
+  //       title={"TOTAL v/s OCCUPIED"}
+  //       //titleLabel={`Total Inventory : ${totalInventoryCount}`}
+  //        TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+  //     >
+  //       {chartData.length > 0 ? (
+  //         <NormalBarGraph
+  //           data={barGraphSeries}
+  //           options={barGraphOptions}
+  //           height={400}
+  //         />
+  //       ) : (
+  //         <div className="text-center text-gray-500 text-sm py-10">
+  //           No data available to display chart.
+  //         </div>
+  //       )}
+  //     </WidgetSection>
+  //     <WidgetSection layout={3} padding>
+  //       <FinanceCard
+  //         cardTitle="Inventory"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.inventory}
+  //       />
+
+  //       <FinanceCard
+  //         cardTitle="Occupancy"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.occupancy}
+  //       />
+
+  //       <FinanceCard
+  //         cardTitle="Free Inventory"
+  //         titleCenter
+  //         highlightNegativePositive
+  //         disableColorChange
+  //         descriptionData={inventoryCards.freeInventory}
+  //       />
+  //     </WidgetSection>
+
+  const inventoryGraph = (
+    <WidgetSection
+      layout={1}
+      border
+      normalCase
+      title={graphTitle}
+      TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+    >
+      {inventoryGraphData.length > 0 ? (
+        <NormalBarGraph
+          data={barGraphSeries}
+          options={barGraphOptions}
+          height={graphHeight}
+        />
+      ) : (
+        <div className="text-center text-gray-500 text-sm py-10">
+          No data available to display chart.
+        </div>
+      )}
+    </WidgetSection>
+  );
+
+  const inventorySummaryCards = (
+    <div className={cardsBorder ? "mt-2" : ""}>
       <WidgetSection
-        layout={1}
-        border
-        normalCase={true} 
-        title={"TOTAL v/s OCCUPIED"}
-        //titleLabel={`Total Inventory : ${totalInventoryCount}`}
-         TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+        layout={3}
+        padding={!cardsBorder}
+        border={cardsBorder}
+        title={cardsTitle}
       >
-        {chartData.length > 0 ? (
-          <NormalBarGraph
-            data={barGraphSeries}
-            options={barGraphOptions}
-            height={400}
-          />
-        ) : (
-          <div className="text-center text-gray-500 text-sm py-10">
-            No data available to display chart.
-          </div>
-        )}
-      </WidgetSection>
-      <WidgetSection layout={3} padding>
         <FinanceCard
           cardTitle="Inventory"
           titleCenter
           highlightNegativePositive
           disableColorChange
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.inventory}
         />
 
@@ -539,6 +816,8 @@ const CheckAvailability = () => {
           titleCenter
           highlightNegativePositive
           disableColorChange
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.occupancy}
         />
 
@@ -547,11 +826,22 @@ const CheckAvailability = () => {
           titleCenter
           highlightNegativePositive
           disableColorChange
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>
+    </div>
+  );
 
-      <div className="border-default border-borderGray p-4 rounded-md text-center">
+  return (
+    <div className="flex flex-col gap-4 p-4">
+      {cardsFirst ? inventorySummaryCards : inventoryGraph}
+      {cardsFirst ? inventoryGraph : inventorySummaryCards}
+
+
+      {!hideCheckInventory && (
+        <div className="border-default border-borderGray p-4 rounded-md text-center">
         <h2 className="font-pregular text-title text-primary mt-20 mb-10 uppercase">
           Check Inventory
         </h2>
@@ -632,7 +922,8 @@ const CheckAvailability = () => {
             externalStyles="w-48 mb-20"
           />
         </form>
-      </div>
+        </div>
+      )}
     </div>
   );
 };

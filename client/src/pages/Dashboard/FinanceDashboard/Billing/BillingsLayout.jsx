@@ -52,9 +52,7 @@ const BillingsLayout = () => {
       ? card.permission
       : [card.permission];
 
-    return requiredPermissions.some((permission) =>
-      userPermissions.includes(permission)
-    );
+    return requiredPermissions.some((permission) => userPermissions.includes(permission));
   });
 
   if (location.pathname !== BILLING_BASE_PATH) {

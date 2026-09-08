@@ -1225,11 +1225,51 @@ export const PERMISSIONS = {
   },
 
   FINANCE_BILLING_CLIENT_INVOICE: {
-    value: "billing_client_invoicing",
+    value: "billing_client_invoicing_card",
     title: "BILLING CLIENT INVOICING",
     type: "read",
     access: "page",
     route: "/app/dashboard/finance-dashboard/billing/client-invoicing",
+  },
+  FINANCE_BILLING_COWORKING_REVENUE_INVOICING: {
+    value: "co_working_revenue_invoicing_tab",
+    title: "CO-WORKING REVENUE INVOICING",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/co-working-revenue-invoicing",
+  },
+  FINANCE_BILLING_MEETING_REVENUE_INVOICING: {
+    value: "meeting_revenue_invoicing_tab",
+    title: "MEETING REVENUE INVOICING",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+  },
+  FINANCE_BILLING_VIRTUAL_OFFICE_REVENUE_INVOICING: {
+    value: "virtual_office_revenue_invoicing_tab",
+    title: "VIRTUAL OFFICE REVENUE INVOICING",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/virtual-office-revenue-invoicing",
+  },
+  FINANCE_BILLING_WORKATION_REVENUE_INVOICING: {
+    value: "workation_revenue_invoicing_tab",
+    title: "WORKATION REVENUE INVOICING",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/workation-revenue-invoicing",
+  },
+  FINANCE_BILLING_ALTERNATE_REVENUE_INVOICING: {
+    value: "alternate_revenue_invoicing_tab",
+    title: "ALTERNATE REVENUE INVOICING",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/finance-dashboard/billing/client-invoicing/alternate-revenue-invoicing",
   },
   FINANCE_BILLING_VOUCHER_REQUEST: {
     value: "billing_voucher_request_card",
@@ -1838,7 +1878,7 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     value: "hr_completed_leaves_tab",
     title: "Completed Leaves",
     type: "read",
-    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed-approvals",
+    route: "/app/dashboard/HR-dashboard/mix-bag/leaves/completed",
   },
   HR_PENDING_APPROVALS_ATTENDANCE: {
     value: "hr_pending_approvals_attendance_tab",
@@ -3562,7 +3602,6 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
   },
 
   // Sidebar
-  // Sidebar
   SIDEBAR_DASHBOARD: {
     value: "sidebar_dashboard",
     title: "DASHBOARD",
@@ -3610,6 +3649,203 @@ MAINTENANCE_OVERALL_ST_INVENTORY_TAB: {
     title: "IT DASHBOARD",
     type: "read",
     access: "page",
+  },
+  //Invenstor
+ SIDEBAR_INVESTOR_DASHBOARD: {
+    value: "sidebar_investor_dashboard",
+    title: "INVESTOR DASHBOARD",
+    type: "read",
+    access: "page",
+  },
+// INVESTOR_HISTORICAL_PNL: {
+//     value: "investor_historical_pnl_tab",
+//     title: "INVESTOR HISTORICAL P&L",
+//     type: "read",
+//     access: "page",
+//     route: "/app/dashboard/investor-dashboard/historical-P&L",
+//   },
+   INVESTOR_HISTORICAL_PNL_GRAPH: {
+    value: "investor_historical_pnl_graph",
+    title: "INVESTOR HISTORICAL P&L GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/historical-P&L",
+  },
+   INVESTOR_INCOME_EXPENSE_GRAPH: {
+    value: "investor_income_expense_graph",
+    title: "INVESTOR INCOME V/S EXPENSE GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/income-expense",
+  },
+  INVESTOR_MONTHLY_PROFIT_LOSS: {
+    value: "investor_monthly_profit_loss",
+    title: "INVESTOR MONTHLY PROFIT LOSS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-profit-loss",
+  },
+  INVESTOR_FINANCE_SUMMARY_CARDS: {
+    value: "investor_finance_summary_cards",
+    title: "INVESTOR FINANCE SUMMARY CARDS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/income-expense",
+  },
+   INVESTOR_UNIQUE_CLIENTS_GRAPH: {
+    value: "investor_unique_clients_graph",
+    title: "INVESTOR UNIQUE CLIENTS GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/unique-clients",
+  },
+  INVESTOR_INVENTORY_OVERVIEW: {
+    value: "investor_inventory_overview",
+    title: "INVESTOR INVENTORY OVERVIEW",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/inventory",
+  },
+   INVESTOR_MEETING_ROOM_UTILIZATION: {
+    value: "investor_meeting_room_utilization",
+    title: "INVESTOR AVERAGE MEETING ROOM UTILIZATION",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/meeting-room-utilization",
+  },
+  INVESTOR_EXTERNAL_GUESTS_VISITED: {
+    value: "investor_external_guests_visited",
+    title: "INVESTOR EXTERNAL GUESTS VISITED",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/external-guests-visited",
+  },
+  INVESTOR_AVERAGE_ROOM_OCCUPANCY: {
+    value: "investor_average_room_occupancy",
+    title: "INVESTOR AVERAGE ROOM OCCUPANCY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/average-room-occupancy",
+  },
+  INVESTOR_BUSY_TIME_WEEK: {
+    value: "investor_busy_time_week",
+    title: "INVESTOR BUSY TIME DURING THE WEEK",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/busy-time-during-week",
+  },
+  INVESTOR_MONTHLY_TOTAL_VISITORS: {
+    value: "investor_monthly_total_visitors",
+    title: "INVESTOR MONTHLY TOTAL VISITORS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-total-visitors",
+  },
+   INVESTOR_SECTOR_WISE_OCCUPANCY: {
+    value: "investor_sector_wise_occupancy",
+    title: "INVESTOR SECTOR-WISE OCCUPANCY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/sector-wise-occupancy",
+  },
+  INVESTOR_CLIENT_WISE_OCCUPANCY: {
+    value: "investor_client_wise_occupancy",
+    title: "INVESTOR CLIENT-WISE OCCUPANCY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/client-wise-occupancy",
+  },
+  INVESTOR_CLIENT_MEMBER_GENDER_WISE_DATA: {
+    value: "investor_client_member_gender_wise_data",
+    title: "INVESTOR CLIENT MEMBER GENDER WISE DATA",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/client-member-gender-wise-data",
+  },
+  INVESTOR_INDIA_WISE_MEMBERS: {
+    value: "investor_india_wise_members",
+    title: "INVESTOR INDIA-WISE MEMBERS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/india-wise-members",
+  },
+  INVESTOR_TOTAL_DESKS_COMPANY_WISE: {
+    value: "investor_total_desks_company_wise",
+    title: "INVESTOR TOTAL DESKS COMPANY WISE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/total-desks-company-wise",
+  },
+  INVESTOR_APPRECIATION_CENTER: {
+    value: "investor_appreciation_center",
+    title: "INVESTOR BIZNEST APPRECIATION CENTER",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/appreciation-center",
+  },
+  INVESTOR_OVERALL_VISITOR_CATEGORY: {
+    value: "investor_overall_visitor_category",
+    title: "INVESTOR OVERALL VISITOR CATEGORY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/overall-visitor-category",
+  },
+  INVESTOR_OVERALL_VISITOR_CLIENT_TYPE: {
+    value: "investor_overall_visitor_client_type",
+    title: "INVESTOR OVERALL VISITOR INTERNAL & EXTERNAL CLIENTS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/overall-visitor-client-type",
+  },
+  INVESTOR_OVERALL_VISITOR_GENDER_DATA: {
+    value: "investor_overall_visitor_gender_data",
+    title: "INVESTOR OVERALL VISITOR GENDER DATA",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/overall-visitor-gender-data",
+  },
+  INVESTOR_MEETING_DURATION_BREAKDOWN: {
+    value: "investor_meeting_duration_breakdown",
+    title: "INVESTOR MEETING DURATION BREAKDOWN",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/meeting-duration-breakdown",
+  },
+  
+  INVESTOR_ANNUAL_AVERAGE_PROFIT_LOSS: {
+    value: "investor_annual_average_profit_loss",
+    title: "INVESTOR ANNUAL AVERAGE PROFIT LOSS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/annual-average-profit-loss",
+  },
+  INVESTOR_OVERALL_PROFIT_LOSS: {
+    value: "investor_overall_profit_loss",
+    title: "INVESTOR OVERALL PROFIT LOSS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/overall-profit-loss",
+  },
+  INVESTOR_SQFT_WISE_DATA: {
+    value: "investor_sqft_wise_data",
+    title: "INVESTOR SQFT WISE DATA",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/sqft-wise-data",
+  },
+  INVESTOR_PROFIT_LOSS_INCOME_DETAILS: {
+    value: "investor_profit_loss_income_details",
+    title: "INVESTOR PROFIT LOSS INCOME DETAILS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/monthly-profit-loss/income-details",
+  },
+  INVESTOR_DEPARTMENT_WISE_BUDGET: {
+    value: "investor_department_wise_budget",
+    title: "INVESTOR DEPARTMENT WISE BUDGET",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/investor-dashboard/department-wise-budget",
   },
   // Cafe Finance
   SIDEBAR_CAFE_DASHBOARD: {

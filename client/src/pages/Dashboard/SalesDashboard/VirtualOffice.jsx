@@ -33,7 +33,8 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
-const VirtualOffice = () => {
+// const VirtualOffice = () => {
+  const VirtualOffice = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
@@ -174,7 +175,8 @@ const VirtualOffice = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      {!isLoadingVirtualOfficeRevenue ? (
+      {/* {!isLoadingVirtualOfficeRevenue ? ( */}
+      {showChart && (!isLoadingVirtualOfficeRevenue ? (
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
           data={graphData}
@@ -186,7 +188,8 @@ const VirtualOffice = () => {
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
-      )}
+      // )}
+      ))}
 
       {!isLoadingVirtualOfficeRevenue ? (
         <WidgetTable
