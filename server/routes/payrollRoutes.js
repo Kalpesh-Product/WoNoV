@@ -13,6 +13,7 @@ const {
   undoPayrollDraftChange,
   undoPayrollDraftEmployeeChange,
   submitPayrollDraft,
+  voidPayrollDraft,
 } = require("../controllers/payrollControllers/payrollController");
 
 router.post("/generate-payroll", upload.array("payslips", 4), generatePayroll);
@@ -30,5 +31,6 @@ router.post(
 router.patch("/drafts/:draftId/employees", excludePayrollDraftEmployees);
 router.post("/drafts/:draftId/undo", undoPayrollDraftChange);
 router.post("/drafts/:draftId/submit", submitPayrollDraft);
+router.delete("/drafts/:draftId", voidPayrollDraft);
 
 module.exports = router;

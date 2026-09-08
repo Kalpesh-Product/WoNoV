@@ -264,7 +264,7 @@ const BookMeetings = () => {
     { field: "roomName", headerName: "Room Name" },
     { field: "buildingName", headerName: "Building Name" },
     {
-      field: "location",
+      field: "locationDisplay",
       headerName: "Location",
     },
     {
@@ -490,7 +490,7 @@ const BookMeetings = () => {
                   status: meeting.meetingStatus,
                   review: meeting.reviews?.review,
                   reply: meeting.reviews?.reply?.text,
-                  location: meeting.location
+                  locationDisplay: meeting.location
                     ? `${meeting.location?.unitName} - ${meeting.location.unitNo}`
                     : "-",
                 }))}
@@ -710,6 +710,7 @@ const BookMeetings = () => {
         >
           {selectedMeeting ? (
             <div className="w-full grid grid-cols-1 gap-4">
+              <div className="font-bold">Basic Info</div>
               <DetalisFormatted
                 title="Title"
                 detail={selectedMeeting?.subject || "N/A"}
@@ -723,38 +724,88 @@ const BookMeetings = () => {
                 detail={selectedMeeting?.date || "N/A"}
               />
               <DetalisFormatted
-                title="Status"
-                detail={selectedMeeting?.status || "N/A"}
+                title="Time"
+                detail={
+                  selectedMeeting?.startTime && selectedMeeting?.endTime
+                    ? `${dayjs(selectedMeeting.startTime).format("hh:mm A")} - ${dayjs(
+                        selectedMeeting.endTime,
+                      ).format("hh:mm A")}`
+                    : "N/A"
+                }
               />
+              <DetalisFormatted
+                title="Duration"
+                detail={selectedMeeting?.duration || "N/A"}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedMeeting?.meetingStatus || "N/A"}
+              />
+              <DetalisFormatted
+                title="Type"
+                detail={selectedMeeting?.meetingType || "N/A"}
+              />
+              <DetalisFormatted
+                title="Company"
+                detail={selectedMeeting?.client || "N/A"}
+              />
+              <br />
+              <div className="font-bold">People Involved</div>
+              <DetalisFormatted
+                title="Participants"
+                detail={
+                  selectedMeeting?.participants?.length
+                    ? selectedMeeting.participants
+                        .map((participant) =>
+                          participant?.firstName
+                            ? [participant.firstName, participant.lastName]
+                                .filter(Boolean)
+                                .join(" ")
+                            : participant?.employeeName ||
+                              participant?.name ||
+                              participant?.email ||
+                              "N/A",
+                        )
+                        .join(", ")
+                    : "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Booked By"
+                detail={selectedMeeting?.bookedBy || "N/A"}
+              />
+              <DetalisFormatted
+                title="Receptionist"
+                detail={selectedMeeting?.receptionist || "N/A"}
+              />
+              <br />
+              <div className="font-bold">Venue Details</div>
               <DetalisFormatted
                 title="Room"
                 detail={selectedMeeting?.roomName || "N/A"}
               />
               <DetalisFormatted
-                title="Building"
-                detail={selectedMeeting?.buildingName || "N/A"}
-              />
-              <DetalisFormatted
                 title="Location"
-                detail={selectedMeeting?.location || "N/A"}
-              />
-              <DetalisFormatted
-                title="Start Time"
                 detail={
-                  selectedMeeting?.startTime
-                    ? dayjs(selectedMeeting.startTime).format("hh:mm A")
+                  selectedMeeting?.location
+                    ? `${selectedMeeting.location?.unitNo || "N/A"} (${selectedMeeting.location?.unitName || "N/A"})`
                     : "N/A"
                 }
               />
-
               <DetalisFormatted
-                title="End Time"
+                title="Building"
                 detail={
-                  selectedMeeting?.endTime
-                    ? dayjs(selectedMeeting.endTime).format("hh:mm A")
-                    : "N/A"
+                  selectedMeeting?.location?.building?.buildingName ||
+                  selectedMeeting?.buildingName ||
+                  "N/A"
                 }
               />
+              <DetalisFormatted
+                title="Housekeeping Status"
+                detail={selectedMeeting?.housekeepingStatus || "N/A"}
+              />
+              <br />
+              <div className="font-bold">Feedback</div>
               <DetalisFormatted
                 title="Review"
                 detail={

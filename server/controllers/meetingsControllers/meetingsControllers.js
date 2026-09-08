@@ -1247,7 +1247,7 @@ const getMyMeetings = async (req, res, next) => {
             .join(" ")
         : "";
 
-      const isReceptionist = meeting.receptionist.departments.some(
+      const isReceptionist = (meeting.receptionist?.departments || []).some(
         (dept) => dept.name === "Administration",
       );
 
@@ -1316,7 +1316,10 @@ const getMyMeetings = async (req, res, next) => {
         paymentStatus: meeting.paymentStatus ? meeting.paymentStatus : null,
         paymentProof: meeting.paymentProof ? meeting.paymentProof.link : null,
         meetingType: meeting.meetingType,
-        housekeepingStatus: meeting.houeskeepingStatus,
+        housekeepingStatus:
+          meeting.bookedRoom?.housekeepingStatus ||
+          meeting.housekeepingStatus ||
+          "N/A",
         date: meeting.startDate,
         endDate: meeting.endDate,
         startTime: meeting.startTime,
