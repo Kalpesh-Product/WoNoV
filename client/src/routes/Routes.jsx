@@ -69,6 +69,10 @@ import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEv
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
 import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
+import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
+import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
+import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
+import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
 import CompanySettings from "../pages/Dashboard/HrDashboard/Complaince/CompanySection/CompanySettings";
@@ -2718,6 +2722,22 @@ export const routes = createBrowserRouter([
                         element: <HrMixBag />,
                       },
                       {
+                        path: "mix-bag/monthly-attendance",
+                        element: <MonthlyAttendanceSummary />,
+                      },
+                      {
+                        path: "mix-bag/payroll",
+                        element: <HrPayroll />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary",
+                        element: <PayrollSummary />,
+                      },
+                      {
+                        path: "mix-bag/payroll-summary/:draftId",
+                        element: <PayrollEntry />,
+                      },
+                      {
                         path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
@@ -3064,6 +3084,10 @@ export const routes = createBrowserRouter([
                           {
                             path: "leaves",
                             element: <HrLeaves />,
+                          },
+                          {
+                            path: "compensation-structure",
+                            element: <CompensationStructure />,
                           },
 
                           {
