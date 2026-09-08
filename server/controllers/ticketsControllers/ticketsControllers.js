@@ -3,7 +3,10 @@ const User = require("../../models/hr/UserData");
 const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
-const { handleFileUpload } = require("../../config/s3Config");
+const {
+  handleFileUpload,
+  handleDocumentUpload,
+} = require("../../config/s3Config");
 const { fetchTicketReportService } = require("../../services/reports/ticket");
 const buildDateFilter = require("../../utils/dateFilter");
 // const sharp = require("sharp");
@@ -28,7 +31,10 @@ const raiseTicket = async (req, res, next) => {
   const logAction = "Raise Ticket";
   const logSourceKey = "ticket";
   const { departmentId, title, description } = req.body;
-  const image = req.file;
+  const files = [
+    ...(req.files?.issues || []),
+    ...(req.files?.issue || []),
+  ];
   const { user, ip, company } = req;
 
   try {
@@ -85,33 +91,38 @@ const raiseTicket = async (req, res, next) => {
       _id: department.department,
     }).select("name");
 
-    // *Handle optional file upload*
-    let imageDetails = null;
-    if (image) {
+    // Upload optional attachments. Keep the first image in the legacy `image`
+    // field so older ticket tables continue to display it.
+    let attachmentDetails = [];
+    if (files.length) {
       try {
-        // const buffer = await sharp(image.buffer)
-        //   .resize(1200, 800, { fit: "cover" })
-        //   .webp({ quality: 80 })
-        //   .toBuffer();
-        // const base64Image = `data:image/webp;base64,${buffer.toString(
-        //   "base64",
-        // )}`;
-        const base64Image = `data:${image.mimetype};base64,${image.buffer.toString(
-          "base64",
-        )}`;
-        const uploadedImage = await handleFileUpload(
-          base64Image,
-          `${foundCompany.companyName}/tickets/${foundDepartment.name}`,
-          { preserveOriginal: true },
-        );
+        const folder = `${foundCompany.companyName}/tickets/${foundDepartment.name}`;
+        attachmentDetails = await Promise.all(
+          files.map(async (file) => {
+            const isImage = file.mimetype.startsWith("image/");
+            const uploadedFile = isImage
+              ? await handleFileUpload(
+                  `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
+                  folder,
+                )
+              : await handleDocumentUpload(
+                  file.buffer,
+                  folder,
+                  file.originalname,
+                );
 
-        imageDetails = {
-          id: uploadedImage.public_id,
-          url: uploadedImage.secure_url,
-        };
+            return {
+              id: uploadedFile.public_id,
+              url: uploadedFile.secure_url,
+              name: file.originalname,
+              mimeType: file.mimetype,
+              size: file.size,
+            };
+          }),
+        );
       } catch (uploadError) {
         throw new CustomError(
-          "Error uploading image",
+          "Error uploading ticket attachment",
           logPath,
           logAction,
           logSourceKey,
@@ -171,18 +182,23 @@ const raiseTicket = async (req, res, next) => {
     //   ticketTitle = foundIssue ? foundIssue.title : newIssue;
     // }
 
+    const firstImage = attachmentDetails.find((file) =>
+      file.mimeType.startsWith("image/"),
+    );
+
     const newTicket = new Ticket({
       ticket: ticketTitle,
       description,
       raisedToDepartment: departmentId,
       raisedBy: user,
       company: company,
-      image: imageDetails
+      image: firstImage
         ? {
-            id: imageDetails.id,
-            url: imageDetails.url,
+            id: firstImage.id,
+            url: firstImage.url,
           }
-        : null, // Store image only if uploaded
+        : null,
+      attachments: attachmentDetails,
     });
 
     const savedTicket = await newTicket.save();
@@ -1482,7 +1498,7 @@ const filterMyTickets = async (req, res, next) => {
   try {
     const myTickets = await Ticket.find({ raisedBy: user })
       .select(
-         "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image createdAt closedBy closedAt closingRemark closingCategories",
+         "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image attachments createdAt closedBy closedAt closingRemark closingCategories",
       )
       .populate([
         {

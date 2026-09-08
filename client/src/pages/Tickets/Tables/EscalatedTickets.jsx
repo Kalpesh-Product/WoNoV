@@ -7,6 +7,7 @@ import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import humanDate from "./../../../utils/humanDateForamt";
@@ -167,6 +168,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
               .map((dept) => dept.raisedToDepartment.name)
               .join(", ") || "N/A",
           image: ticket.image?.url || null,
+          attachments: ticket.attachments || [],
           ...(() => {
             const { assignedToDisplay, assignmentDetails } =
               formatAssignments(ticket.assignedTo);
@@ -425,15 +427,10 @@ const { mutate, isPending: isClosingTicket } = useMutation({
                 title="Reason for Escalated"
                 detail={selectedTicket?.reasonForEscalated || ""}
               />
-              {selectedTicket?.image && (
-                <div className="lg:col-span-1">
-                  <img
-                    src={selectedTicket.image}
-                    alt="Escalated Ticket Attachment"
-                    className="max-w-full max-h-96 rounded border"
-                  />
-                </div>
-              )}
+              <TicketAttachments
+                attachments={selectedTicket?.attachments}
+                legacyImage={selectedTicket?.image}
+              />
             </div>
           )}
         </MuiModal>

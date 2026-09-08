@@ -20,6 +20,7 @@ import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
 import { IoMdClose } from "react-icons/io";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 
 import humanDate from "./../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
@@ -207,6 +208,7 @@ const SupportTickets = ({
             raisedToDepartment:
               ticket.ticket?.raisedToDepartment?.name || "N/A",
             image: ticket.ticket?.image?.url || null,
+            attachments: ticket.ticket?.attachments || [],
           };
 
           return supportTicket;
@@ -721,15 +723,10 @@ const SupportTickets = ({
               detail={selectedTicket?.priority || ""}
             />
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            {selectedTicket?.image && (
-              <div className="lg:col-span-1">
-                <img
-                  src={selectedTicket.image}
-                  alt="Support Ticket Attachment"
-                  className="max-w-full max-h-96 rounded border"
-                />
-              </div>
-            )}
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
             <DetalisFormatted
               title="Accepted By"
               detail={selectedTicket?.acceptedBy || ""}

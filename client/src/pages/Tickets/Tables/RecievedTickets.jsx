@@ -12,6 +12,7 @@ import { Controller, useForm } from "react-hook-form";
 import useAuth from "../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import TicketAttachments from "../../../components/TicketAttachments";
 import humanDate from "../../../utils/humanDateForamt";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import StatusChip from "../../../components/StatusChip";
@@ -26,7 +27,6 @@ const RecievedTickets = ({ title, departmentId }) => {
   const [rejectionReason, setRejectionReason] = useState("");
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [openView, setOpenView] = useState();
-  const [openFullImagePreview, setOpenFullImagePreview] = useState(false);
   const topManagementDepartment = "67b2cf85b9b6ed5cedeb9a2e";
   const { isTop } = useTopDepartment();
 
@@ -42,7 +42,6 @@ const RecievedTickets = ({ title, departmentId }) => {
 
   const handleCloseTicketView = () => {
     setOpenView(false);
-    setOpenFullImagePreview(false);
   };
 
   const { data: tickets = [], isLoading } = useQuery({
@@ -177,6 +176,7 @@ const RecievedTickets = ({ title, departmentId }) => {
       raisedDate: ticket.createdAt,
       priority: ticket.priority || "Low",
       image: ticket.image?.url,
+      attachments: ticket.attachments || [],
     }));
   };
 
@@ -353,48 +353,10 @@ const RecievedTickets = ({ title, departmentId }) => {
             />
             <DetalisFormatted title="Status" detail={selectedTicket.status} />
 
-            {selectedTicket.image && (
-              <div className="lg:col-span-1">
-                <img
-                  src={selectedTicket.image}
-                  alt="Ticket Attachment"
-                  className="max-w-full max-h-96 rounded border"
-                />
-                <button
-                  type="button"
-                  className="mt-3 text-sm text-primary underline"
-                  onClick={() => setOpenFullImagePreview(true)}
-                >
-                  Show Full Image
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </MuiModal>
-
-      <MuiModal
-        open={openFullImagePreview && !!selectedTicket?.image}
-        onClose={() => setOpenFullImagePreview(false)}
-        title={"Full Image Preview"}
-      >
-        {selectedTicket?.image && (
-          <div className="flex flex-col gap-4">
-            <div className="max-h-[75vh] overflow-auto border rounded p-2">
-              <img
-                src={selectedTicket.image}
-                alt="Full Ticket Attachment"
-                className="w-full h-auto rounded"
-              />
-            </div>
-            <a
-              href={selectedTicket.image}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm text-primary underline"
-            >
-              Open in New Tab
-            </a>
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
           </div>
         )}
       </MuiModal>
