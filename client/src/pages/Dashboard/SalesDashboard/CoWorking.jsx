@@ -97,17 +97,12 @@ const getInvoiceClient = (row, clientList) => {
 
 const getInvoiceBillingFrequency = (row, clientList) => {
   const client = getInvoiceClient(row, clientList);
-  return client?.billingFrequency || row.billingFrequency || (client ? "Yearly" : "-");
+  return client ? client.billingFrequency || "" : row.billingFrequency || "";
 };
 
 const getInvoiceClientType = (row, clientList) => {
   const client = getInvoiceClient(row, clientList);
-  const clientType = client?.clientType || row.clientType;
-  if (clientType) return clientType;
-
-  const billingFrequency = client?.billingFrequency || row.billingFrequency;
-  if (billingFrequency === "Monthly") return "Flexy Desk Client";
-  return client || billingFrequency === "Yearly" ? "Annual Client" : "-";
+  return client ? client.clientType || "" : row.clientType || "";
 };
 
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
@@ -226,9 +221,8 @@ const getUnpaidInvoiceRowsForMonth = (
             ...template,
             clients: clientId,
             clientName: client.clientName || template.clientName,
-            billingFrequency: client.billingFrequency || "Yearly",
-            clientType: client.clientType ||
-              (client.billingFrequency === "Monthly" ? "Flexy Desk Client" : "Annual Client"),
+            billingFrequency: client.billingFrequency || "",
+            clientType: client.clientType || "",
             channel: client.bookingType || template.channel,
             noOfDesks: noOfDesks || template.noOfDesks || 0,
             deskRate: deskRate || template.deskRate || 0,

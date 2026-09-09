@@ -212,6 +212,14 @@ const ClientRevenue = () => {
                 title="Annual Increment"
                 detail={`${clientDetails?.annualIncrement || 0}%`}
               />
+              <DetalisFormatted
+                title="Billing Frequency"
+                detail={<span>{selectedClient?.billingFrequency || ""}</span>}
+              />
+              <DetalisFormatted
+                title="Client Type"
+                detail={<span>{selectedClient?.clientType || ""}</span>}
+              />
             </div>
           </div>
           <hr className="my-2" />

@@ -177,8 +177,8 @@ const ClientDetails = () => {
       openDesks: 0,
       totalDesks: 0,
       bookingType: "Direct",
-      billingFrequency: "Yearly",
-      clientType: "Annual Client",
+      billingFrequency: "",
+      clientType: "",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -351,6 +351,21 @@ const ClientDetails = () => {
       typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
 
     if (!selectedUnitId) {
+      const buildingId = selectedUnit?.building?._id || selectedUnit?.building;
+      const unitNo = selectedUnit?.unitNo ?? selectedClient?.unitNo;
+      const unitName = selectedUnit?.unitName || selectedClient?.unitName;
+      const matches = buildingId
+        ? units.filter((item) => {
+            const itemBuildingId = item.building?._id || item.building;
+            if (String(itemBuildingId) !== String(buildingId)) return false;
+            if (unitNo !== undefined && unitNo !== null && unitNo !== "") {
+              return String(item.unitNo) === String(unitNo);
+            }
+            return Boolean(unitName) && item.unitName === unitName;
+          })
+        : [];
+
+      if (matches.length === 1) return matches[0];
       return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
     }
 
@@ -358,7 +373,7 @@ const ClientDetails = () => {
       units.find((item) => item._id === selectedUnitId) ||
       (typeof selectedUnit === "object" ? selectedUnit : null)
     );
-  }, [selectedClient?.unit, units]);
+  }, [selectedClient?.unit, selectedClient?.unitNo, selectedClient?.unitName, units]);
 
   useEffect(() => {
     if (selectedClient) {
@@ -394,12 +409,8 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
-         billingFrequency: selectedClient.billingFrequency || "Yearly",
-        clientType:
-          selectedClient.clientType ||
-          (selectedClient.billingFrequency === "Monthly"
-            ? "Flexy Desk Client"
-            : "Annual Client"),
+        billingFrequency: selectedClient.billingFrequency || "",
+        clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
         lockinPeriod:
           selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
@@ -422,19 +433,18 @@ const ClientDetails = () => {
       return [];
     }
 
-    return units.filter((item) => item.building?._id === selectedBuilding);
-  }, [selectedBuilding, units]);
-
-  useEffect(() => {
-    if (!isEditing) {
-      return;
+    const unitOptions = [...units];
+    if (
+      selectedUnitDetails?._id &&
+      !unitOptions.some((item) => item._id === selectedUnitDetails._id)
+    ) {
+      unitOptions.push(selectedUnitDetails);
     }
 
-    const currentUnit = control._formValues.unit;
-    if (currentUnit && !filteredUnits.some((item) => item._id === currentUnit)) {
-      setValue("unit", "");
-    }
-  }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
+    return unitOptions.filter(
+      (item) => (item.building?._id || item.building) === selectedBuilding,
+    );
+  }, [selectedBuilding, selectedUnitDetails, units]);
 
   // const bookingTypeOptions = React.useMemo(() => {
   //   const options = new Set();
@@ -562,12 +572,8 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
-         billingFrequency: selectedClient.billingFrequency || "Yearly",
-        clientType:
-          selectedClient.clientType ||
-          (selectedClient.billingFrequency === "Monthly"
-            ? "Flexy Desk Client"
-            : "Annual Client"),
+        billingFrequency: selectedClient.billingFrequency || "",
+        clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
         lockinPeriod:
           selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
@@ -727,7 +733,19 @@ const ClientDetails = () => {
                         name="building"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} select size="small" label="Building" fullWidth>
+                          <TextField
+                            {...field}
+                            onChange={(event) => {
+                              if (event.target.value !== field.value) {
+                                setValue("unit", "");
+                              }
+                              field.onChange(event);
+                            }}
+                            select
+                            size="small"
+                            label="Building"
+                            fullWidth
+                          >
                             <MenuItem value="">Select a Building</MenuItem>
                             {availableBuildings.map((item) => (
                               <MenuItem key={item._id} value={item._id}>
@@ -743,14 +761,14 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField {...field} select size="small" label="Unit" fullWidth>
                             <MenuItem value="">Select a Unit</MenuItem>
-                            {isUnitsLoading ? (
-                              <MenuItem disabled>Loading units...</MenuItem>
-                            ) : filteredUnits.length > 0 ? (
+                            {filteredUnits.length > 0 ? (
                               filteredUnits.map((item) => (
                                 <MenuItem key={item._id} value={item._id}>
                                   {item.unitNo}
                                 </MenuItem>
                               ))
+                            ) : isUnitsLoading ? (
+                              <MenuItem disabled>Loading units...</MenuItem>
                             ) : (
                               <MenuItem disabled>
                                 {selectedBuilding ? "No units available" : "Select a building first"}

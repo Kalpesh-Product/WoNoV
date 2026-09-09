@@ -366,6 +366,7 @@ const fetchCoworkingClientReportService = async ({
         building,
       }),
       unit: {
+        ...(!isReport && { _id: unit?._id }),
         building: {
           ...buildingRest,
           ...(!isReport && { fullAddress }),
