@@ -56,7 +56,28 @@ const createCoworkingClient = async (req, res, next) => {
       hOPocPhone,
       bookingType,
       clientInvoiceName,
+      billingFrequency,
+      clientType,
     } = req.body;
+
+    if (!["Yearly", "Monthly"].includes(billingFrequency)) {
+      throw new CustomError(
+        "Billing frequency must be Yearly or Monthly",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (!["Annual Client", "Flexy Desk Client"].includes(clientType)) {
+      throw new CustomError(
+        "Client type must be Annual Client or Flexy Desk Client",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
 
     const clientExists = await CoworkingClient.findOne({ clientName });
     if (clientExists) {
@@ -125,7 +146,7 @@ const createCoworkingClient = async (req, res, next) => {
       !building ||
       !ratePerOpenDesk ||
       !ratePerCabinDesk ||
-      !annualIncrement ||
+      (billingFrequency === "Yearly" && !annualIncrement) ||
       !startDate ||
       !endDate ||
       !lockinPeriod ||
@@ -206,6 +227,8 @@ const createCoworkingClient = async (req, res, next) => {
       ratePerOpenDesk: normalizedRatePerOpenDesk,
       ratePerCabinDesk: normalizedRatePerCabinDesk,
       annualIncrement: normalizedAnnualIncrement,
+      billingFrequency,
+      clientType,
       perDeskMeetingCredits,
       totalMeetingCredits,
       meetingCreditBalance: Number(totalMeetingCredits) || 0,
@@ -422,7 +445,26 @@ const updateCoworkingClient = async (req, res, next) => {
       clientInvoiceName,
       bookingType,
       isActive,
+      billingFrequency,
+      clientType,
     } = req.body;
+    if (
+      billingFrequency !== undefined &&
+      !["Yearly", "Monthly"].includes(billingFrequency)
+    ) {
+      return res.status(400).json({
+        message: "Billing frequency must be Yearly or Monthly",
+      });
+    }
+
+    if (
+      clientType !== undefined &&
+      !["Annual Client", "Flexy Desk Client"].includes(clientType)
+    ) {
+      return res.status(400).json({
+        message: "Client type must be Annual Client or Flexy Desk Client",
+      });
+    }
 
     // ✅ Duplicate name check (excluding self)
     if (clientName) {
@@ -608,6 +650,8 @@ const updateCoworkingClient = async (req, res, next) => {
       "clientInvoiceName",
       "bookingType",
       "isActive",
+      "billingFrequency",
+      "clientType",
     ];
 
     const updateData = {};

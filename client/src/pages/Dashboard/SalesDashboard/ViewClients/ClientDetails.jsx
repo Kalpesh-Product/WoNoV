@@ -177,6 +177,8 @@ const ClientDetails = () => {
       openDesks: 0,
       totalDesks: 0,
       bookingType: "Direct",
+      billingFrequency: "Yearly",
+      clientType: "Annual Client",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -274,6 +276,20 @@ const ClientDetails = () => {
   const watchedCabinRate = useWatch({ control, name: "ratePerCabinDesk" });
   const watchedOpenRate = useWatch({ control, name: "ratePerOpenDesk" });
   const watchedLockinPeriod = useWatch({ control, name: "lockinPeriod" });
+  const watchedBillingFrequency = useWatch({
+    control,
+    name: "billingFrequency",
+  });
+  const isMonthlyBilling = watchedBillingFrequency === "Monthly";
+
+  useEffect(() => {
+    if (isEditing) {
+      setValue(
+        "clientType",
+        isMonthlyBilling ? "Flexy Desk Client" : "Annual Client",
+      );
+    }
+  }, [isEditing, isMonthlyBilling, setValue]);
   const computedNoOfDesks = useMemo(
     () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
     [watchedCabinDesks, watchedOpenDesks],
@@ -374,6 +390,12 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
+         billingFrequency: selectedClient.billingFrequency || "Yearly",
+        clientType:
+          selectedClient.clientType ||
+          (selectedClient.billingFrequency === "Monthly"
+            ? "Flexy Desk Client"
+            : "Annual Client"),
         endDate: selectedClient.endDate,
         lockinPeriod:
           selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
@@ -444,6 +466,8 @@ const ClientDetails = () => {
       hoState: data.hoState,
       isActive: data.isActive === true || data.isActive === "true",
       bookingType: data.bookingType,
+      billingFrequency: data.billingFrequency,
+      clientType: data.clientType,
       building: data.building,
       unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
@@ -534,6 +558,12 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
+         billingFrequency: selectedClient.billingFrequency || "Yearly",
+        clientType:
+          selectedClient.clientType ||
+          (selectedClient.billingFrequency === "Monthly"
+            ? "Flexy Desk Client"
+            : "Annual Client"),
         endDate: selectedClient.endDate,
         lockinPeriod:
           selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
@@ -602,6 +632,36 @@ const ClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                   <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                      name="billingFrequency"
+                      control={control}
+                      render={({ field }) =>
+                        isEditing ? (
+                          <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
+                            <MenuItem value="Yearly">Yearly</MenuItem>
+                            <MenuItem value="Monthly">Monthly</MenuItem>
+                          </TextField>
+                        ) : (
+                          <DetalisFormatted title="Billing Frequency" detail={field.value || "Yearly"} />
+                        )
+                      }
+                    />
+                    <Controller
+                      name="clientType"
+                      control={control}
+                      render={({ field }) =>
+                        isEditing ? (
+                          <TextField {...field} select size="small" label="Client Type" fullWidth>
+                            <MenuItem value="Annual Client">Annual Client</MenuItem>
+                            <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
+                          </TextField>
+                        ) : (
+                          <DetalisFormatted title="Client Type" detail={field.value || "Annual Client"} />
+                        )
+                      }
+                    />
+                  </div>
                   {[
                     "clientName",
                     "sector",
@@ -843,6 +903,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Annual Increment"
+                            disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}
@@ -877,6 +938,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Per Desk Meeting Credits"
+                             disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}
@@ -911,6 +973,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Total Meeting Credits"
+                            disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}

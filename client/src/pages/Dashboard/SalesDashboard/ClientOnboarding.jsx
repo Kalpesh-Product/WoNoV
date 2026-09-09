@@ -54,6 +54,8 @@ const ClientOnboarding = () => {
       invoiceCompanyName: "",
       tenure: "",
       securityDeposit: 0,
+      billingFrequency: "Yearly",
+      clientType: "Annual Client",
     },
   });
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -69,6 +71,8 @@ const ClientOnboarding = () => {
   const openDesks = useWatch({ control, name: "openDesks" });
   const openDesksRate = useWatch({ control, name: "ratePerOpenDesk" });
   const selectedBuilding = useWatch({ control, name: "building" });
+  const billingFrequency = useWatch({ control, name: "billingFrequency" });
+  const isMonthlyBilling = billingFrequency === "Monthly";
   const totalOpenDeskCost =
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
@@ -85,6 +89,14 @@ const ClientOnboarding = () => {
 
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
+
+   useEffect(() => {
+    setValue(
+      "clientType",
+      isMonthlyBilling ? "Flexy Desk Client" : "Annual Client",
+      { shouldValidate: true },
+    );
+  }, [isMonthlyBilling, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -462,7 +474,29 @@ const ClientOnboarding = () => {
                     />
                   </div>
 
-                  <TextField size="small" label="only dummy" fullWidth />
+                 <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                      name="billingFrequency"
+                      control={control}
+                      rules={{ required: "Billing Frequency is required" }}
+                      render={({ field }) => (
+                        <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
+                          <MenuItem value="Yearly">Yearly</MenuItem>
+                          <MenuItem value="Monthly">Monthly</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="clientType"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField {...field} select size="small" label="Client Type" fullWidth>
+                          <MenuItem value="Annual Client">Annual Client</MenuItem>
+                          <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  </div>
 
                   <div className="flex gap-2">
                     <div className="w-1/2">
@@ -552,13 +586,19 @@ const ClientOnboarding = () => {
                   <Controller
                     name="annualIncrement"
                     control={control}
-                    rules={{ required: "Annual Increment is required" }}
+                    //rules={{ required: "Annual Increment is required" }}
+                     rules={{
+                      required: isMonthlyBilling
+                        ? false
+                        : "Annual Increment is required",
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Annual Increment"
                         type="number"
+                        disabled={isMonthlyBilling}
                         error={!!errors.annualIncrement}
                         helperText={errors.annualIncrement?.message}
                         fullWidth
@@ -570,13 +610,17 @@ const ClientOnboarding = () => {
                       name="perDeskMeetingCredits"
                       control={control}
                       rules={{
-                        required: "Per Desk Meeting Credits is required",
+                         required: isMonthlyBilling
+                          ? false
+                          : "Per Desk Meeting Credits is required",
+                       // required: "Per Desk Meeting Credits is required",
                       }}
                       render={({ field }) => (
                         <TextField
                           {...field}
                           size="small"
                           type="number"
+                          disabled={isMonthlyBilling}
                           error={!!errors.perDeskMeetingCredits}
                           helperText={errors.perDeskMeetingCredits?.message}
                           label="Per Desk Meeting Credits"
@@ -593,6 +637,7 @@ const ClientOnboarding = () => {
                           size="small"
                           type="number"
                           disabled
+                         //disabled={isMonthlyBilling}
                           label="Total Meeting Credits"
                           fullWidth
                         />
