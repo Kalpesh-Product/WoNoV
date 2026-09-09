@@ -89,6 +89,27 @@ const resolveClientIdFromRow = (row, clientList = []) => {
   return matchedClient?._id ? String(matchedClient._id) : "";
 };
 
+const getInvoiceClient = (row, clientList) => {
+  const clientId = resolveClientIdFromRow(row, clientList);
+  return clientList.find((item) => String(item._id) === clientId) ||
+    (typeof row.clients === "object" ? row.clients : null);
+};
+
+const getInvoiceBillingFrequency = (row, clientList) => {
+  const client = getInvoiceClient(row, clientList);
+  return client?.billingFrequency || row.billingFrequency || (client ? "Yearly" : "-");
+};
+
+const getInvoiceClientType = (row, clientList) => {
+  const client = getInvoiceClient(row, clientList);
+  const clientType = client?.clientType || row.clientType;
+  if (clientType) return clientType;
+
+  const billingFrequency = client?.billingFrequency || row.billingFrequency;
+  if (billingFrequency === "Monthly") return "Flexy Desk Client";
+  return client || billingFrequency === "Yearly" ? "Annual Client" : "-";
+};
+
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
   <div className="flex items-center justify-start gap-0.5 w-full pl-2">
     <IconButton
@@ -205,6 +226,9 @@ const getUnpaidInvoiceRowsForMonth = (
             ...template,
             clients: clientId,
             clientName: client.clientName || template.clientName,
+            billingFrequency: client.billingFrequency || "Yearly",
+            clientType: client.clientType ||
+              (client.billingFrequency === "Monthly" ? "Flexy Desk Client" : "Annual Client"),
             channel: client.bookingType || template.channel,
             noOfDesks: noOfDesks || template.noOfDesks || 0,
             deskRate: deskRate || template.deskRate || 0,
@@ -450,6 +474,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         clients: client.clients,
         service: client.service,
         clientName: client.clientName,
+        billingFrequency: getInvoiceBillingFrequency(client, coworkingClients),
+        clientType: getInvoiceClientType(client, coworkingClients),
         clientInvoiceName: client.clientInvoiceName || "",
         invoice: client.invoice || null,
         invoiceName: client.invoice?.name || "",
@@ -577,6 +603,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
+            { headerName: "Client Type", field: "clientType", minWidth: 170 },
             {
               headerName: "Revenue (INR)",
               field: "revenue",
@@ -736,6 +763,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                 <DetalisFormatted title="Desk Rate" detail={`INR ${inrFormat(normalizeAmount(viewRow.deskRate))}`} />
                 <DetalisFormatted title="Revenue" detail={`INR ${inrFormat(normalizeAmount(viewRow.revenue))}`} />
                 <DetalisFormatted title="Annual Increment (%)" detail={`${viewRow.annualIncrement ?? 0}%`} />
+                <DetalisFormatted title="Billing Frequency" detail={viewRow.billingFrequency || "-"} />
+                <DetalisFormatted title="Client Type" detail={viewRow.clientType || "-"} />
               </div>
             </div>
 
@@ -831,6 +860,8 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         ["clientName", "Client Name", "text"],
         ["clientInvoiceName", "Client Invoice Name", "text"],
         ["channel", "Channel", "text"],
+        ["billingFrequency", "Billing Frequency", "text"],
+        ["clientType", "Client Type", "text"],
         ["noOfDesks", "No. of Desks", "number"],
         // ["occupation", "Occupation", "text"],
         // ["dueTerm", "Due Term", "number"],
@@ -847,11 +878,25 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           <TextField
             {...field}
             type={type}
+            select={name === "billingFrequency" || name === "clientType"}
             label={label}
             size="small"
             fullWidth
             disabled
-          />
+          >
+            {name === "billingFrequency" || name === "clientType" ? (
+              [
+                ...(field.value === "-" ? ["-"] : []),
+                ...(name === "billingFrequency"
+                  ? ["Yearly", "Monthly"]
+                  : ["Annual Client", "Flexy Desk Client"]),
+              ].map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))
+            ) : null}
+          </TextField>
         )}
       />
       ))}

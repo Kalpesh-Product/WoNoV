@@ -286,10 +286,14 @@ const ClientDetails = () => {
     if (isEditing) {
       setValue(
         "clientType",
-        isMonthlyBilling ? "Flexy Desk Client" : "Annual Client",
+        watchedBillingFrequency === "Monthly"
+          ? "Flexy Desk Client"
+          : watchedBillingFrequency === "Yearly"
+            ? "Annual Client"
+            : "",
       );
     }
-  }, [isEditing, isMonthlyBilling, setValue]);
+  }, [isEditing, watchedBillingFrequency, setValue]);
   const computedNoOfDesks = useMemo(
     () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
     [watchedCabinDesks, watchedOpenDesks],
@@ -632,36 +636,6 @@ const ClientDetails = () => {
                 </div>
 
                 <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
-                   <div className="grid grid-cols-2 gap-4">
-                    <Controller
-                      name="billingFrequency"
-                      control={control}
-                      render={({ field }) =>
-                        isEditing ? (
-                          <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
-                            <MenuItem value="Yearly">Yearly</MenuItem>
-                            <MenuItem value="Monthly">Monthly</MenuItem>
-                          </TextField>
-                        ) : (
-                          <DetalisFormatted title="Billing Frequency" detail={field.value || "Yearly"} />
-                        )
-                      }
-                    />
-                    <Controller
-                      name="clientType"
-                      control={control}
-                      render={({ field }) =>
-                        isEditing ? (
-                          <TextField {...field} select size="small" label="Client Type" fullWidth>
-                            <MenuItem value="Annual Client">Annual Client</MenuItem>
-                            <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
-                          </TextField>
-                        ) : (
-                          <DetalisFormatted title="Client Type" detail={field.value || "Annual Client"} />
-                        )
-                      }
-                    />
-                  </div>
                   {[
                     "clientName",
                     "sector",
@@ -786,6 +760,8 @@ const ClientDetails = () => {
                         )}
                       />
                       {[
+                        "billingFrequency",
+                        "clientType",
                         "cabinDesks",
                         "ratePerCabinDesk",
                         "openDesks",
@@ -798,8 +774,34 @@ const ClientDetails = () => {
                           key={fieldKey}
                           name={fieldKey}
                           control={control}
-                          render={({ field }) =>
-                            fieldKey === "isActive" ? (
+                          rules={fieldKey === "billingFrequency"
+                            ? { required: "Billing Frequency is required" }
+                            : undefined}
+                          render={({ field, fieldState }) =>
+                            fieldKey === "billingFrequency" || fieldKey === "clientType" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label={fieldKey === "billingFrequency" ? "Billing Frequency" : "Client Type"}
+                                disabled={fieldKey === "clientType"}
+                                error={!!fieldState.error}
+                                helperText={fieldState.error?.message}
+                                fullWidth
+                              >
+                                {fieldKey === "billingFrequency" && (
+                                  <MenuItem value="">Select Frequency</MenuItem>
+                                )}
+                                {(fieldKey === "billingFrequency"
+                                  ? ["Yearly", "Monthly"]
+                                  : ["Annual Client", "Flexy Desk Client"]
+                                ).map((option) => (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            ) : fieldKey === "isActive" ? (
                               <TextField {...field} select size="small" label="Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
@@ -840,6 +842,8 @@ const ClientDetails = () => {
                     [
                       "buildingName",
                       "unitNo",
+                      "billingFrequency",
+                      "clientType",
                       "cabinDesks",
                       "ratePerCabinDesk",
                       "openDesks",

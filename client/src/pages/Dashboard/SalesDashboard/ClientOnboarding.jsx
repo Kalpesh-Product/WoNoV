@@ -54,8 +54,8 @@ const ClientOnboarding = () => {
       invoiceCompanyName: "",
       tenure: "",
       securityDeposit: 0,
-      billingFrequency: "Yearly",
-      clientType: "Annual Client",
+      billingFrequency: "",
+      clientType: "",
     },
   });
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -90,13 +90,17 @@ const ClientOnboarding = () => {
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
 
-   useEffect(() => {
+  useEffect(() => {
     setValue(
       "clientType",
-      isMonthlyBilling ? "Flexy Desk Client" : "Annual Client",
+      billingFrequency === "Monthly"
+        ? "Flexy Desk Client"
+        : billingFrequency === "Yearly"
+          ? "Annual Client"
+          : "",
       { shouldValidate: true },
     );
-  }, [isMonthlyBilling, setValue]);
+  }, [billingFrequency, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -480,7 +484,16 @@ const ClientOnboarding = () => {
                       control={control}
                       rules={{ required: "Billing Frequency is required" }}
                       render={({ field }) => (
-                        <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
+                        <TextField
+                          {...field}
+                          select
+                          size="small"
+                          label="Billing Frequency"
+                          error={!!errors.billingFrequency}
+                          helperText={errors.billingFrequency?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="">Select Frequency</MenuItem>
                           <MenuItem value="Yearly">Yearly</MenuItem>
                           <MenuItem value="Monthly">Monthly</MenuItem>
                         </TextField>
@@ -490,7 +503,7 @@ const ClientOnboarding = () => {
                       name="clientType"
                       control={control}
                       render={({ field }) => (
-                        <TextField {...field} select size="small" label="Client Type" fullWidth>
+                        <TextField {...field} select size="small" label="Client Type" disabled fullWidth>
                           <MenuItem value="Annual Client">Annual Client</MenuItem>
                           <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
                         </TextField>
