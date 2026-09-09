@@ -462,6 +462,8 @@ const ClientOnboarding = () => {
                     />
                   </div>
 
+                  <TextField size="small" label="only dummy" fullWidth />
+
                   <div className="flex gap-2">
                     <div className="w-1/2">
                       <Controller
@@ -563,7 +565,7 @@ const ClientOnboarding = () => {
                       />
                     )}
                   />
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <Controller
                       name="perDeskMeetingCredits"
                       control={control}
@@ -582,21 +584,21 @@ const ClientOnboarding = () => {
                         />
                       )}
                     />
+                    <Controller
+                      name="totalMeetingCredits"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          disabled
+                          label="Total Meeting Credits"
+                          fullWidth
+                        />
+                      )}
+                    />
                   </div>
-                  <Controller
-                    name="totalMeetingCredits"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        disabled
-                        label="Total Meeting Credits"
-                        fullWidth
-                      />
-                    )}
-                  />
                 </div>
               </div>
 
