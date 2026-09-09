@@ -1554,6 +1554,7 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         chartId="bargraph-investor-income-expense"
         title={`BIZNest FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}
         chartHeight={450}
+        headerCenterContentInline
         headerCenterContent={
           <div className="flex gap-2 justify-center items-center uppercase bg-[#c4c4c4] p-2 rounded-lg text-body text-black font-pmedium">
           Projected: {format(projectedAmount)}

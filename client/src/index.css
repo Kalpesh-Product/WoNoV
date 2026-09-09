@@ -295,3 +295,20 @@
   text-overflow: ellipsis;
   pointer-events: none;
 }
+
+/* Keep dense Investor pie-chart legends inside their card. */
+.apex-legend-wrap .apexcharts-legend {
+  width: 100% !important;
+  max-height: 72px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: center !important;
+  align-content: flex-start !important;
+  row-gap: 4px !important;
+}
+
+.apex-legend-wrap .apexcharts-legend-series {
+  margin: 2px 4px !important;
+}

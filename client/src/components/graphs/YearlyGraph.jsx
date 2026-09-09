@@ -21,6 +21,7 @@ const YearlyGraph = ({
   summaryChipVariant,
   responsiveResize = false,
   headerCenterContent,
+  headerCenterContentInline = false,
   secondParam = false,
   chartHeight,
   sectionHeight = "",
@@ -146,6 +147,7 @@ const YearlyGraph = ({
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}
         headerCenterContent={headerCenterContent}
+        headerCenterContentInline={headerCenterContentInline}
         height={sectionHeight}
       >
         <div className="flex flex-col gap-4">
