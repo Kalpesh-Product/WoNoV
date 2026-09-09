@@ -30,6 +30,7 @@ const WidgetSection = ({
   summaryChipVariant,
   headerRightContent,
   headerCenterContent,
+  headerCenterContentInline = false,
   gridGap = "gap-4",
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
@@ -72,7 +73,10 @@ const WidgetSection = ({
           className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
           }`}>
-          <div className="flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between">
+          <div
+            className={`flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between ${
+              headerCenterContentInline ? "lg:flex-wrap" : ""
+            }`}>
             <div className="flex flex-col lg:flex-row justify-start lg:justify-start items-center gap-2">
               <span
                 className={`${
@@ -104,7 +108,12 @@ const WidgetSection = ({
               </span>
             )}
             {headerCenterContent && (
-              <div className="lg:absolute lg:left-1/2 lg:-translate-x-1/2">
+              <div
+                className={
+                  headerCenterContentInline
+                    ? "flex-shrink-0"
+                    : "lg:absolute lg:left-1/2 lg:-translate-x-1/2"
+                }>
                 {headerCenterContent}
               </div>
             )}

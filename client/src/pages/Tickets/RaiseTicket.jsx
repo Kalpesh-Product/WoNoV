@@ -181,9 +181,21 @@ const RaiseTicket = () => {
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No", width: 80 },
-    { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
-    { field: "raisedTo", headerName: "To Department", width: 150 },
+    { field: "srNo", headerName: "Sr No", width: 80, minWidth: 70, flex: 0.6 },
+    {
+      field: "ticketTitle",
+      headerName: "Ticket Title",
+      width: 250,
+      minWidth: 180,
+      flex: 2,
+    },
+    {
+      field: "raisedTo",
+      headerName: "To Department",
+      width: 150,
+      minWidth: 130,
+      flex: 1.2,
+    },
     // { field: "raisedBy", headerName: "Raised By", width: 150 },
     // {
     //   field: "raisedAt",
@@ -193,7 +205,13 @@ const RaiseTicket = () => {
     // },
 
     // { field: "description", headerName: "Description", width: 300 },
-    { field: "acceptedBy", headerName: "Accepted By", width: 300 },
+    {
+      field: "acceptedBy",
+      headerName: "Accepted By",
+      width: 300,
+      minWidth: 200,
+      flex: 2,
+    },
     // {
     //   field: "acceptedAt",
     //   headerName: "Accepted At",
@@ -234,6 +252,8 @@ const RaiseTicket = () => {
       field: "status",
       headerName: "Status",
       width: 140,
+      minWidth: 120,
+      flex: 1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
@@ -264,6 +284,7 @@ const RaiseTicket = () => {
       headerName: "Actions",
       pinned: "right",
       width: 100,
+      minWidth: 100,
       cellRenderer: (params) => (
         <div className="p-2 mb-2 flex gap-2">
           <span

@@ -780,11 +780,13 @@ const CheckAvailability = ({
       TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
     >
       {inventoryGraphData.length > 0 ? (
-        <NormalBarGraph
-          data={barGraphSeries}
-          options={barGraphOptions}
-          height={graphHeight}
-        />
+        <div className="w-full min-w-0 overflow-hidden">
+          <NormalBarGraph
+            data={barGraphSeries}
+            options={barGraphOptions}
+            height={graphHeight}
+          />
+        </div>
       ) : (
         <div className="text-center text-gray-500 text-sm py-10">
           No data available to display chart.
