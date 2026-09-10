@@ -83,7 +83,8 @@ const TicketDashboard = () => {
     },
   });
 
-  const { data: departments = [], departmentsIsLoading } = useQuery({
+  //const { data: departments = [], departmentsIsLoading } = useQuery({
+   const { data: departments = [], isLoading: departmentsIsLoading } = useQuery({
     queryKey: ["departments-data"],
     queryFn: async () => {
       try {
@@ -97,6 +98,7 @@ const TicketDashboard = () => {
     },
   });
   const safeTicketsData = Array.isArray(ticketsData) ? ticketsData : [];
+  const safeDepartments = Array.isArray(departments) ? departments : [];
   const totalTickets = safeTicketsData.length || 0;
 
   const todayDate = dayjs().startOf("day");
@@ -190,11 +192,16 @@ const TicketDashboard = () => {
 
   if (roles.includes("Master Admin") || roles.includes("Super Admin")) {
     masterDepartments = !departmentsIsLoading
-      ? departments.map((dept) => dept.name)
+  //     ? departments.map((dept) => dept.name)
+  //     : [];
+  // } else {
+  //   masterDepartments = !departmentsIsLoading
+  //     ? departments
+     ? safeDepartments.map((dept) => dept.name)
       : [];
   } else {
     masterDepartments = !departmentsIsLoading
-      ? departments
+      ? safeDepartments
         .filter((dept) => depts.includes(dept.name))
         .map((dept) => dept.name)
       : [];
@@ -231,7 +238,8 @@ const TicketDashboard = () => {
   });
 
   currentMonthTickets.forEach((item) => {
-    const dept = item.raisedToDepartment.name;
+     const dept = item.raisedToDepartment?.name;
+   // const dept = item.raisedToDepartment.name;
     if (dept) {
       departmentCountMap[dept] = (departmentCountMap[dept] || 0) + 1;
     }
@@ -274,7 +282,8 @@ const TicketDashboard = () => {
 
   const filterDepartmentTickts = (department) => {
     const tickets = currentMonthTickets.filter(
-      (ticket) => ticket.raisedToDepartment.name === department
+       (ticket) => ticket.raisedToDepartment?.name === department
+    //  (ticket) => ticket.raisedToDepartment.name === department
     );
     return tickets;
   };
@@ -539,7 +548,7 @@ const TicketDashboard = () => {
           padding={item.padding}
           titleLabel={item.titleLabel}
         >
-          <DonutChart
+          {/* <DonutChart
             centerLabel={item.centerLabel}
             labels={item.labels}
             colors={item.colors}
@@ -547,7 +556,23 @@ const TicketDashboard = () => {
             tooltipValue={item.tooltipValue}
             onSliceClick={item.onSliceClick}
           // isMonetary={item.isMonetary}
-          />
+          /> */}
+
+           {!isLoading && !departmentsIsLoading ? (
+            <DonutChart
+              centerLabel={item.centerLabel}
+              labels={item.labels}
+              colors={item.colors}
+              series={item.series}
+              tooltipValue={item.tooltipValue}
+              onSliceClick={item.onSliceClick}
+              // isMonetary={item.isMonetary}
+            />
+          ) : (
+            <div className="h-80 flex items-center justify-center">
+              <CircularProgress />
+            </div>
+          )}
         </WidgetSection>
       )),
     },
@@ -572,8 +597,10 @@ const TicketDashboard = () => {
     <div>
       <div>
         {ticketWidgets.map((widget, index) => (
-          <div>
-            <WidgetSection key={index} layout={widget.layout}>
+          // <div>
+          //   <WidgetSection key={index} layout={widget.layout}>
+            <div key={index}>
+            <WidgetSection layout={widget.layout}>
               {widget?.widgets}
             </WidgetSection>
           </div>

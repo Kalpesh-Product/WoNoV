@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
-import AgTable from "../../../components/AgTable";
+import { useMemo, useState } from "react";
+import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import dayjs from "dayjs";
 import { Chip, CircularProgress } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -21,9 +22,17 @@ const ClosedTickets = ({
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
+  const initialDateRange = useMemo(
+    () => ({
+      startDate: dayjs().startOf("month").toDate(),
+      endDate: dayjs().endOf("month").toDate(),
+      key: "selection",
+    }),
+    [],
+  );
 
   const { data, isLoading } = useQuery({
-    queryKey: ["closed-tickets"],
+    queryKey: ["closed-tickets", departmentId],
     queryFn: async () => {
       const response = await axios.get(
         `/api/tickets/ticket-filter/close/${departmentId}`,
@@ -79,9 +88,8 @@ const ClosedTickets = ({
   const transformTicketsData = (tickets) => {
     return !tickets.length
       ? []
-      : tickets.map((ticket, index) => ({
+      : tickets.map((ticket) => ({
           ...ticket,
-          srNo: index + 1,
           id: ticket._id,
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
 
@@ -136,7 +144,7 @@ const ClosedTickets = ({
   const rows = isLoading ? [] : transformTicketsData(data);
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    { field: "srNo", headerName: "Sr No", sort: "asc" },
     { field: "ticketTitle", headerName: "Ticket Title", width: 250 },
     { field: "fromDepartment", headerName: "From Department" },
     { field: "raisedBy", headerName: "Raised By" },
@@ -171,23 +179,20 @@ const ClosedTickets = ({
 
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
-      <div className="pb-4">
-          <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
-          {title}
-        </span>
-        {/* <span className="text-subtitle">{title}</span> */}
-      </div>
       <div className="w-full">
         {isLoading ? (
           <div className="w-full h-full flex justify-center items-center">
             <CircularProgress color="black" />
           </div>
         ) : (
-          <AgTable
-            key={rows.length}
+          <YearWiseTable
+            tableTitle={title}
             data={rows}
             columns={recievedTicketsColumns}
-            noRowsOverlayMessage="No tickets to display."
+            dateColumn="closedAtRaw"
+            initialDateRange={initialDateRange}
+            tableHeight={400}
+            showEmptyTable
             search
           />
         )}

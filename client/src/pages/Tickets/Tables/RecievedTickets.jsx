@@ -215,14 +215,16 @@ const RecievedTickets = ({ title, departmentId }) => {
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No" },
-    { field: "ticketTitle", headerName: "Ticket Title" },
-    { field: "fromDepartment", headerName: "From Department" },
-    { field: "raisedBy", headerName: "Raised By" },
+    { field: "srNo", headerName: "Sr No", width: 200, minWidth: 190, maxWidth: 220 },
+    { field: "ticketTitle", headerName: "Ticket Title", flex: 1, minWidth: 220, wrapText: true },
+    { field: "fromDepartment", headerName: "From Department", flex: 1.2, minWidth: 210, wrapText: true },
+    { field: "raisedBy", headerName: "Raised By", flex: 1, minWidth: 180, wrapText: true },
 
     {
       field: "status",
       headerName: "Status",
+      width: 150,
+      minWidth: 140,
       cellRenderer: (params) => {
         return (
           <>
@@ -235,6 +237,9 @@ const RecievedTickets = ({ title, departmentId }) => {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      // width: 120,
+      // minWidth: 120,
+      // maxWidth: 140,
       cellRenderer: (params) => (
         <div className="flex items-center gap-2">
           <div

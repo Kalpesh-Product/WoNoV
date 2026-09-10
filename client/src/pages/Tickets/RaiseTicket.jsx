@@ -619,7 +619,9 @@ const RaiseTicket = () => {
             </div>
           ) : (
             <YearWiseTable
-              key={tickets?.length}
+              dateColumn="raisedAt"
+              preserveCurrentMonthRange
+              showEmptyTable
               search
               dropdownColumns={["status", "priority"]}
               data={tickets?.map((ticket, index) => {

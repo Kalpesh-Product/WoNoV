@@ -39,6 +39,7 @@ const YearWiseTable = ({
   isRowSelectable,
   hideTitle = true,
   search = true,
+  showEmptyTable = false,
   onMonthChange,
   onDateFilterChange,
   totalKey = "actualAmount",
@@ -548,7 +549,7 @@ const YearWiseTable = ({
       {/* Table */}
 
       <>
-        {finalTableData.length > 0 || (serverPagination && serverSearch) ? (
+        {showEmptyTable || finalTableData.length > 0 || (serverPagination && serverSearch) ? (
           <AgTable
             key={key}
             enableCheckbox={checkbox}

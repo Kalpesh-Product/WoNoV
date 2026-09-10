@@ -28,11 +28,32 @@ import html2pdf from "html2pdf.js";
 import ReactDOMServer from "react-dom/server";
 import { queryClient } from "../../../../main";
 import MonthlyAttendanceSummary from "../Mixbag/MonthlyAttendanceSummary";
-import { MdEdit } from "react-icons/md";
 import useAuth from "../../../../hooks/useAuth";
+import { MdCheckCircle, MdWarningAmber } from "react-icons/md";
 
 const isEnabled = (value) =>
   value === true || ["true", "yes"].includes(String(value).toLowerCase());
+const hasValue = (value) => String(value ?? "").trim().length > 0;
+
+const ReviewStatusIcon = ({ ready, message }) => (
+  <div className="flex h-full w-full items-center justify-center">
+    {ready ? (
+      <MdCheckCircle
+        className="text-green-600"
+        size={18}
+        title="Details complete"
+        aria-label="Details complete"
+      />
+    ) : (
+      <MdWarningAmber
+        className="text-amber-500"
+        size={20}
+        title={message}
+        aria-label={message}
+      />
+    )}
+  </div>
+);
 const RUN_PAYROLL_PROGRESS_KEY = "run-payroll-progress";
 const readPayrollProgress = () => {
   try {
@@ -366,6 +387,32 @@ const tableData = isLoading
             storedAnnualCtc / 12 < 21000
               ? Number(employerCosts.employerEsi) || 0
               : 0;
+          const bankInformation = employee.bankInformation || {};
+          const homeAddress = employee.homeAddress || {};
+          const panAadhaarDetails = employee.panAadhaarDetails || {};
+          const paymentMethod = compensation.paymentMethod || "";
+          const bankDetailsComplete =
+            paymentMethod === "Cash Only" ||
+            (paymentMethod === "Bank Deposit" &&
+              [
+                bankInformation.bankName,
+                bankInformation.nameOnAccount,
+                bankInformation.accountNumber,
+                bankInformation.bankIFSC,
+              ].every(hasValue));
+          const addressComplete = [
+            homeAddress.addressLine1,
+            homeAddress.city,
+            homeAddress.state,
+            homeAddress.country,
+            homeAddress.pinCode,
+          ].every(hasValue);
+          const pfDetailsComplete =
+            !isEnabled(payrollInformation.includePF) ||
+            [
+              panAadhaarDetails.pfAccountNumber,
+              panAadhaarDetails.pfUAN,
+            ].every(hasValue);
           return {
             ...employee,
             id: employee._id,
@@ -375,12 +422,21 @@ const tableData = isLoading
               employee.lastName || ""
             }`.trim(),
             payrollBatch: payrollInformation.payrollBatch || "",
+            effectivePeriod: compensation.effectivePayPeriod || "-",
             grossPay,
             basicPay: Number(compensation.basicPay) || 0,
             variablePay: Number(compensation.variablePay) || 0,
             gratuity: Number(compensation.gratuity) || 0,
             allowances,
             annualCtc: (grossPay + pfEmployerCost + esiEmployerCost) * 12,
+            compensationComplete:
+              grossPay > 0 &&
+              Number(compensation.basicPay) > 0 &&
+              storedAnnualCtc > 0,
+            bankDetailsComplete,
+            addressComplete,
+            panDetailsComplete: hasValue(panAadhaarDetails.pan),
+            pfDetailsComplete,
           };
         })
         .sort((a, b) => a.employeeName.localeCompare(b.employeeName))
@@ -466,70 +522,186 @@ const tableData = isLoading
   ];
 
   const compensationColumns = [
-    { field: "srNo", headerName: "Sr No", width: 90 },
-    { field: "empId", headerName: "Employee ID", width: 140 },
     { field: "employeeName", headerName: "Employee Name", flex: 1 },
+    { field: "empId", headerName: "Employee ID", width: 140 },
+    {
+      field: "effectivePeriod",
+      headerName: "Effective Period",
+      width: 170,
+    },
+    {
+      field: "annualCtc",
+      headerName: "CTC",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
     {
       field: "grossPay",
-      headerName: "Gross Pay (Monthly)",
+      headerName: "Gross",
       valueFormatter: (params) => inrFormat(params.value),
     },
     {
       field: "basicPay",
-      headerName: "Basic Pay (Monthly)",
+      headerName: "Basic",
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+  ];
+
+  const itDeclarationColumns = [
+    {
+      field: "employeeName",
+      headerName: "Employee Name",
+      flex: 1,
+      minWidth: 220,
+      cellClass: "text-primary",
+    },
+    {
+      field: "verifiedItDeclarations",
+      headerName: "Verified IT Declarations (INR)",
+      flex: 1,
+      minWidth: 220,
       valueFormatter: (params) => inrFormat(params.value),
     },
     {
-      field: "allowances",
-      headerName: "Allowances (Monthly)",
+      field: "unverifiedItDeclarations",
+      headerName: "Unverified IT Declarations (INR)",
+      flex: 1,
+      minWidth: 240,
       valueFormatter: (params) => inrFormat(params.value),
     },
     {
-      field: "variablePay",
-      headerName: "Variable Pay (Yearly)",
+      field: "totalItDeclarations",
+      headerName: "Total IT Declarations (INR)",
+      flex: 1,
+      minWidth: 210,
       valueFormatter: (params) => inrFormat(params.value),
     },
+  ];
+
+  const leaveEncashmentColumns = [
     {
-      field: "gratuity",
-      headerName: "Gratuity (Yearly)",
-      valueFormatter: (params) => inrFormat(params.value),
+      field: "employeeName",
+      headerName: "Employee Name",
+      flex: 1,
+      minWidth: 220,
     },
     {
-      field: "annualCtc",
-      headerName: "CTC (Yearly)",
-      valueFormatter: (params) => inrFormat(params.value),
+      field: "leaveType",
+      headerName: "Leave Type",
+      flex: 0.8,
+      minWidth: 170,
     },
     {
-      field: "action",
-      headerName: "Action",
-      pinned: "right",
-      width: 100,
-      sortable: false,
-      filter: false,
+      field: "availableLeaves",
+      headerName: "Available Leaves (Days)",
+      flex: 0.9,
+      minWidth: 200,
+    },
+    {
+      field: "maxLeavesToEncash",
+      headerName: "Max Leaves to Be Encashed",
+      flex: 1,
+      minWidth: 230,
+    },
+    {
+      field: "encashAmount",
+      headerName: "Encash Amount (INR)",
+      flex: 0.8,
+      minWidth: 180,
+      valueFormatter: (params) => inrFormat(params.value),
+    },
+  ];
+
+  const reviewColumns = [
+    {
+      field: "employeeName",
+      headerName: "Employee Name",
+      flex: 1,
+      minWidth: 220,
+      cellClass: "text-primary",
+    },
+    {
+      field: "compensationComplete",
+      headerName: "Compensation Details",
+      flex: 0.8,
+      minWidth: 190,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
       cellRenderer: (params) => (
-        <button
-          type="button"
-          title="Edit compensation"
-          aria-label={`Edit compensation for ${params.data.employeeName}`}
-          className="flex h-full items-center text-primary"
-          onClick={() =>
-            navigate(
-              "/app/dashboard/HR-dashboard/employee/compensation-structure",
-              {
-                state: {
-                  employeeId: params.data.id,
-                  month: selectedPayPeriod,
-                  runPayroll: {
-                    batchName: selectedBatch,
-                    payPeriod: selectedPayPeriod,
-                  },
-                },
-              }
-            )
-          }
-        >
-          <MdEdit size={20} />
-        </button>
+        <ReviewStatusIcon
+          ready={params.value}
+          message="Gross pay, basic pay, or stored CTC is missing"
+        />
+      ),
+    },
+    {
+      field: "bankDetailsComplete",
+      headerName: "Bank Details",
+      flex: 0.7,
+      minWidth: 150,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      cellRenderer: (params) => (
+        <ReviewStatusIcon
+          ready={params.value}
+          message="Payment method or required bank details are missing"
+        />
+      ),
+    },
+    {
+      field: "addressComplete",
+      headerName: "Address",
+      flex: 0.65,
+      minWidth: 140,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      cellRenderer: (params) => (
+        <ReviewStatusIcon
+          ready={params.value}
+          message="Required address details are missing"
+        />
+      ),
+    },
+    {
+      field: "panDetailsComplete",
+      headerName: "PAN Details",
+      flex: 0.65,
+      minWidth: 140,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      cellRenderer: (params) => (
+        <ReviewStatusIcon
+          ready={params.value}
+          message="PAN number is missing"
+        />
+      ),
+    },
+    {
+      field: "pfDetailsComplete",
+      headerName: "PF Details",
+      flex: 0.65,
+      minWidth: 140,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      },
+      cellRenderer: (params) => (
+        <ReviewStatusIcon
+          ready={params.value}
+          message="PF account number or UAN is missing"
+        />
       ),
     },
   ];
@@ -820,10 +992,7 @@ const tableData = isLoading
 
         {isMixBagPayroll && activePayrollStep === 0 ? (
           <AgTable
-            data={selectedBatchData.map((employee, index) => ({
-              ...employee,
-              srNo: index + 1,
-            }))}
+            data={selectedBatchData}
             columns={compensationColumns}
             search
             exportData
@@ -836,6 +1005,35 @@ const tableData = isLoading
             payrollView
             fixedMonth={selectedPayPeriod}
             payrollBatch={selectedBatch}
+          />
+        ) : isMixBagPayroll && activePayrollStep === 2 ? (
+          <AgTable
+            data={selectedBatchData.map((employee) => ({
+              ...employee,
+              verifiedItDeclarations: 0,
+              unverifiedItDeclarations: 0,
+              totalItDeclarations: 0,
+            }))}
+            columns={itDeclarationColumns}
+            search
+            tableTitle="IT Declarations"
+            tableHeight={450}
+          />
+        ) : isMixBagPayroll && activePayrollStep === 3 ? (
+          <AgTable
+            data={[]}
+            columns={leaveEncashmentColumns}
+            search
+            tableTitle="Leave Encashment"
+            tableHeight={450}
+          />
+        ) : isMixBagPayroll && activePayrollStep === 4 ? (
+          <AgTable
+            data={selectedBatchData}
+            columns={reviewColumns}
+            search
+            tableTitle="Employee Review"
+            tableHeight={450}
           />
         ) : isMixBagPayroll ? (
           <div className="flex min-h-64 items-center justify-center rounded-md border bg-gray-50 text-content text-gray-500">
@@ -882,7 +1080,7 @@ const tableData = isLoading
               title={
                 activePayrollStep === payrollSteps.length - 1
                   ? "Submit"
-                  : "Next"
+                  : "Continue"
               }
               disabled={isSavingPayrollDraft}
               handleSubmit={() => {

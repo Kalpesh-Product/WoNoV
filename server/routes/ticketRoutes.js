@@ -28,6 +28,9 @@ const {
   getTicketIssues,
   rejectTicketIssue,
   getNewTicketIssues,
+  addDepartmentTicketIssue,
+  updateDepartmentTicketIssue,
+  deleteDepartmentTicketIssue,
 } = require("../controllers/ticketsControllers/ticketIssueController");
 
 const router = require("express").Router();
@@ -35,6 +38,15 @@ const router = require("express").Router();
 router.patch("/add-ticket-issue", addTicketIssue);
 router.get("/ticket-issues/:department", getTicketIssues);
 router.get("/new-ticket-issues/:department", getNewTicketIssues);
+router.post("/department-ticket-issues/:departmentId", addDepartmentTicketIssue);
+router.patch(
+  "/department-ticket-issues/:departmentId/:issueId",
+  updateDepartmentTicketIssue,
+);
+router.delete(
+  "/department-ticket-issues/:departmentId/:issueId",
+  deleteDepartmentTicketIssue,
+);
 router.delete("/reject-ticket-issue/:id", rejectTicketIssue);
 router.get("/get-tickets/:departmentId", getTickets);
 router.get("/get-all-tickets", getAllTickets);
