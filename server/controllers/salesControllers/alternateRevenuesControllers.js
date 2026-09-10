@@ -11,11 +11,10 @@ const {
   handleFileDelete,
 } = require("../../config/s3Config");
 
-const GST_RATE = 0.18;
-
-const calculateRevenueAmounts = (taxableAmount) => {
+const calculateRevenueAmounts = (taxableAmount, gstRate = 18) => {
   const taxable = parseAmount(taxableAmount);
-  const gst = Number((taxable * GST_RATE).toFixed(2));
+  const rate = Number(gstRate) === 5 ? 5 : 18;
+  const gst = Number(((taxable * rate) / 100).toFixed(2));
   const invoiceAmount = Number((taxable + gst).toFixed(2));
 
   return { taxableAmount: taxable, gst, invoiceAmount };
@@ -146,7 +145,10 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
     }
 
     if (payload.taxableAmount !== undefined) {
-      const calculatedAmounts = calculateRevenueAmounts(payload.taxableAmount);
+      const calculatedAmounts = calculateRevenueAmounts(
+        payload.taxableAmount,
+        updates.gstRate,
+      );
       payload.taxableAmount = calculatedAmounts.taxableAmount;
       payload.gst = calculatedAmounts.gst;
       payload.invoiceAmount = calculatedAmounts.invoiceAmount;

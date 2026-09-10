@@ -24,9 +24,7 @@ const getNormalizedStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
-const GST_RATE = 0.18;
-
-const getWorkationTaxCalculations = (taxableAmount) => {
+const getWorkationTaxCalculations = (taxableAmount, gstRate = 18) => {
   const hasValue = String(taxableAmount ?? "").trim() !== "";
   if (!hasValue) {
     return {
@@ -36,7 +34,7 @@ const getWorkationTaxCalculations = (taxableAmount) => {
   }
 
   const taxable = getNumericAmount(taxableAmount);
-  const gst = Number((taxable * GST_RATE).toFixed(2));
+  const gst = Number(((taxable * gstRate) / 100).toFixed(2));
   const totalAmount = Number((taxable + gst).toFixed(2));
 
   return { gst, totalAmount };
@@ -77,6 +75,7 @@ const getEmptyWorkationFormValues = () => ({
   clientInvoiceName: "",
   particulars: "",
   taxableAmount: "",
+  gstRate: 18,
   gst: "",
   totalAmount: "",
   date: dayjs(),
@@ -121,6 +120,8 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
 
   const selectedClientValue = watch("selectedClient");
   const taxableAmountValue = watch("taxableAmount");
+  const gstRateValue = watch("gstRate");
+  const gstValue = watch("gst");
 
   const { data: workationRevenue = [], isLoading: isWorkationLoading } =
     useQuery({
@@ -152,10 +153,13 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   );
 
   useEffect(() => {
-    const { gst, totalAmount } = getWorkationTaxCalculations(taxableAmountValue);
+    const { gst, totalAmount } = getWorkationTaxCalculations(
+      taxableAmountValue,
+      gstRateValue,
+    );
     setValue("gst", gst, { shouldDirty: false });
     setValue("totalAmount", totalAmount, { shouldDirty: false });
-  }, [setValue, taxableAmountValue]);
+  }, [setValue, taxableAmountValue, gstRateValue]);
 
   const tableData = useMemo(
     () =>
@@ -300,7 +304,16 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   const openEdit = (row) => {
     setModalMode("edit");
     setEditRow(row);
-    const calculatedAmounts = getWorkationTaxCalculations(row.taxableAmount);
+    const gstRate =
+      getNumericAmount(row.taxableAmount) > 0 &&
+      getNumericAmount(row.gst) ===
+        getWorkationTaxCalculations(row.taxableAmount, 5).gst
+        ? 5
+        : 18;
+    const calculatedAmounts = getWorkationTaxCalculations(
+      row.taxableAmount,
+      gstRate,
+    );
     reset({
       selectedClient: row.client?._id
         ? String(row.client._id)
@@ -314,6 +327,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
         row.taxableAmount !== undefined && row.taxableAmount !== null
           ? row.taxableAmount
           : "",
+      gstRate,
       gst: calculatedAmounts.gst,
       totalAmount: calculatedAmounts.totalAmount,
       date: row.date ? dayjs(row.date) : dayjs(),
@@ -777,18 +791,23 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
               />
 
               <Controller
-                name="gst"
+                name="gstRate"
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    type="number"
-                    label="GST (18%)"
+                    select
+                    label="GST (%)"
                     size="small"
                     fullWidth
-                    disabled
-                    InputProps={{ readOnly: true }}
-                  />
+                    helperText={
+                      gstValue !== "" ? `GST: INR ${inrFormat(gstValue)}` : ""
+                    }
+                    FormHelperTextProps={{ sx: { color: "#16a34a" } }}
+                  >
+                    <MenuItem value={18}>18%</MenuItem>
+                    <MenuItem value={5}>5%</MenuItem>
+                  </TextField>
                 )}
               />
 

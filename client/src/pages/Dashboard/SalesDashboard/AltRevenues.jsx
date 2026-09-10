@@ -18,8 +18,6 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { queryClient } from "../../../main";
 
-const GST_RATE = 0.18;
-
 const getNormalizedStatus = (status) =>
   String(status || "").trim().toLowerCase();
 
@@ -55,13 +53,13 @@ const getUserDisplayName = (user) => {
   );
 };
 
-const getAlternateTaxCalculations = (taxableAmount) => {
+const getAlternateTaxCalculations = (taxableAmount, gstRate = 18) => {
   const taxable = getNumericAmount(taxableAmount);
   if (String(taxableAmount ?? "").trim() === "") {
     return { gst: "", invoiceAmount: "" };
   }
 
-  const gst = Number((taxable * GST_RATE).toFixed(2));
+  const gst = Number(((taxable * gstRate) / 100).toFixed(2));
   const invoiceAmount = Number((taxable + gst).toFixed(2));
 
   return { gst, invoiceAmount };
@@ -73,6 +71,7 @@ const getEmptyAlternateFormValues = () => ({
   clientInvoiceName: "",
   particulars: "",
   taxableAmount: "",
+  gstRate: 18,
   gst: "",
   invoiceAmount: "",
   invoiceCreationDate: dayjs(),
@@ -118,6 +117,8 @@ const AltRevenues = ({ showChart = true }) => {
 
   const selectedClientValue = watch("selectedClient");
   const taxableAmountValue = watch("taxableAmount");
+  const gstRateValue = watch("gstRate");
+  const gstValue = watch("gst");
 
   const { data: alternateRevenue = [], isLoading: isLoadingAlternateRevenue } =
     useQuery({
@@ -129,11 +130,13 @@ const AltRevenues = ({ showChart = true }) => {
     });
 
   useEffect(() => {
-    const { gst, invoiceAmount } =
-      getAlternateTaxCalculations(taxableAmountValue);
+    const { gst, invoiceAmount } = getAlternateTaxCalculations(
+      taxableAmountValue,
+      gstRateValue,
+    );
     setValue("gst", gst, { shouldDirty: false });
     setValue("invoiceAmount", invoiceAmount, { shouldDirty: false });
-  }, [setValue, taxableAmountValue]);
+  }, [setValue, taxableAmountValue, gstRateValue]);
 
   const alternateRevenueRows = useMemo(
     () =>
@@ -318,7 +321,16 @@ const AltRevenues = ({ showChart = true }) => {
     setModalMode("edit");
     setEditRow(row);
 
-    const calculatedAmounts = getAlternateTaxCalculations(row.taxableAmount);
+    const gstRate =
+      getNumericAmount(row.taxableAmount) > 0 &&
+      getNumericAmount(row.gst) ===
+        getAlternateTaxCalculations(row.taxableAmount, 5).gst
+        ? 5
+        : 18;
+    const calculatedAmounts = getAlternateTaxCalculations(
+      row.taxableAmount,
+      gstRate,
+    );
 
     reset({
       selectedClient: row.name || "",
@@ -329,6 +341,7 @@ const AltRevenues = ({ showChart = true }) => {
         row.taxableAmount !== undefined && row.taxableAmount !== null
           ? row.taxableAmount
           : "",
+      gstRate,
       gst: calculatedAmounts.gst,
       invoiceAmount: calculatedAmounts.invoiceAmount,
       invoiceCreationDate: row.invoiceCreationDate
@@ -364,6 +377,7 @@ const AltRevenues = ({ showChart = true }) => {
           ["clientInvoiceName", values.clientInvoiceName],
           ["particulars", values.particulars],
           ["taxableAmount", values.taxableAmount],
+          ["gstRate", values.gstRate],
           ["gst", values.gst],
           ["invoiceAmount", values.invoiceAmount],
           ["status", values.status],
@@ -787,18 +801,23 @@ const AltRevenues = ({ showChart = true }) => {
               />
 
               <Controller
-                name="gst"
+                name="gstRate"
                 control={control}
                 render={({ field }) => (
                   <TextField
                     {...field}
-                    type="number"
-                    label="GST (18%)"
+                    select
+                    label="GST (%)"
                     size="small"
                     fullWidth
-                    disabled
-                    InputProps={{ readOnly: true }}
-                  />
+                    helperText={
+                      gstValue !== "" ? `GST: INR ${inrFormat(gstValue)}` : ""
+                    }
+                    FormHelperTextProps={{ sx: { color: "#16a34a" } }}
+                  >
+                    <MenuItem value={18}>18%</MenuItem>
+                    <MenuItem value={5}>5%</MenuItem>
+                  </TextField>
                 )}
               />
 
