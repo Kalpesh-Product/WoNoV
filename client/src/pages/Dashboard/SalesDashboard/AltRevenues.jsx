@@ -641,6 +641,14 @@ const AltRevenues = ({ showChart = true }) => {
               detail={`INR ${inrFormat(viewRow.taxableAmount || 0)}`}
             />
             <DetalisFormatted
+              title="GST %"
+              detail={
+                viewRow.taxableAmount
+                  ? `${Number(((viewRow.gst / viewRow.taxableAmount) * 100).toFixed(2))}%`
+                  : "-"
+              }
+            />
+            <DetalisFormatted
               title="GST Amount"
               detail={`INR ${inrFormat(viewRow.gst || 0)}`}
             />
