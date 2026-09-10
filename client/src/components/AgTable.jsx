@@ -32,6 +32,7 @@ const AgTableComponent = React.memo(
     searchRowActions,
     searchBottomContent,
     tableHeight = 400,
+    fillAvailableHeight = false,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
     checkAll,
@@ -323,7 +324,9 @@ const AgTableComponent = React.memo(
     const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
     return (
-      <div className="border-b-[1px] border-borderGray">
+      <div className={`border-b-[1px] border-borderGray ${
+        fillAvailableHeight ? "flex flex-col flex-1 min-h-0" : ""
+      }`}>
         <div className=" flex gap-4 items-center">
           <div
             className={`flex items-center ${
@@ -505,8 +508,10 @@ const AgTableComponent = React.memo(
 
         <div
           ref={tableRef}
-          className="ag-theme-quartz border-none w-full font-pregular"
-          style={{ height: 440 }}
+          className={`ag-theme-quartz border-none w-full font-pregular ${
+            fillAvailableHeight ? "flex-1 min-h-0" : ""
+          }`}
+          style={fillAvailableHeight ? undefined : { height: 440 }}
         >
           <AgGridReact
             ref={gridRef}

@@ -191,6 +191,18 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/tickets/settings",
   },
+  TICKETS_NEW_DEPARTMENT_TICKET_SETTINGS: {
+    value: "new_department_ticket_settings",
+    title: "NEW DEPARTMENT TICKET SETTINGS",
+    type: "read",
+    route: "/app/tickets/ticket-settings#departments",
+  },
+  TICKETS_OTHERS_SETTINGS: {
+    value: "others_ticket_settings",
+    title: "OTHERS SETTINGS",
+    type: "read",
+    route: "/app/tickets/ticket-settings/others-settings",
+  },
   TICKETS_REPORTS: {
     value: "ticket_reports",
     title: "TICKET REPORTS",

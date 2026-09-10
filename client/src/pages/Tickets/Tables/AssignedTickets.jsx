@@ -211,14 +211,17 @@ const AssignedTickets = ({
   };
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "Sr No" },
-    { field: "ticketTitle", headerName: "Ticket Title" },
+    { field: "srno", headerName: "Sr No", width: 200, minWidth: 190, maxWidth: 220 },
+    { field: "ticketTitle", headerName: "Ticket Title", flex: 1, minWidth: 220, wrapText: true },
     {
       field: "selectedDepartment",
       headerName: "From Department",
+      flex: 1.2,
+      minWidth: 210,
+      wrapText: true,
     },
-    { field: "raisedBy", headerName: "Raised By" },
-    { field: "recentAssignee", headerName: "Asignees" },
+    { field: "raisedBy", headerName: "Raised By", flex: 1, minWidth: 180, wrapText: true },
+    { field: "recentAssignee", headerName: "Assignees", flex: 1, minWidth: 180, wrapText: true },
     // { field: "assignees", headerName: "Assigned To", width: 300 },
     // {
     //   field: "tickets",
@@ -281,6 +284,8 @@ const AssignedTickets = ({
     {
       field: "status",
       headerName: "Status",
+      width: 150,
+      minWidth: 140,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -311,6 +316,9 @@ const AssignedTickets = ({
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      // width: 120,
+      // minWidth: 120,
+      // maxWidth: 140,
       cellRenderer: (params) => {
         // const commonItems = [
         //   {

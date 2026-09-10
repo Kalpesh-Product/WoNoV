@@ -266,18 +266,23 @@ const AcceptedTickets = ({
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No", width: 100 },
+    { field: "srNo", headerName: "Sr No", width: 200, minWidth: 190, maxWidth: 220 },
 
-    { field: "ticketTitle", headerName: "Ticket Title" },
+    { field: "ticketTitle", headerName: "Ticket Title", flex: 1, minWidth: 220, wrapText: true },
     {
       field: "raisedToDepartment",
       headerName: "From Department",
+      flex: 1.2,
+      minWidth: 210,
+      wrapText: true,
     },
-    { field: "raisedUser", headerName: "Raised By" },
-    { field: "acceptedBy", headerName: "Accepted By" },
+    { field: "raisedUser", headerName: "Raised By", flex: 1, minWidth: 180, wrapText: true },
+    { field: "acceptedBy", headerName: "Accepted By", flex: 1, minWidth: 180, wrapText: true },
     {
       field: "status",
       headerName: "Status",
+      width: 150,
+      minWidth: 140,
       cellRenderer: (params) => {
         return <StatusChip status={params.value} />;
       },
@@ -286,6 +291,9 @@ const AcceptedTickets = ({
       field: "actions",
       headerName: "Actions",
       pinned: "right",
+      // width: 120,
+      // minWidth: 120,
+      // maxWidth: 140,
       cellRenderer: (params) => {
         // const commonItems = [
         //   { label: "View", onClick: () => handleViewTicket(params.data) },
