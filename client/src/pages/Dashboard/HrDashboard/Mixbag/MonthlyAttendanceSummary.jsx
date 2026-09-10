@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Skeleton, TextField } from "@mui/material";
 import dayjs from "dayjs";
@@ -7,6 +7,7 @@ import AgTable from "../../../../components/AgTable";
 import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
+import SecondaryButton from "../../../../components/SecondaryButton";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import {
@@ -30,8 +31,10 @@ const MonthlyAttendanceSummary = ({
     total: 0,
   });
   const [selectedSummary, setSelectedSummary] = useState(null);
+  const [selectedRows, setSelectedRows] = useState([]);
   const [workingDays, setWorkingDays] = useState(0);
   const [saveAttempted, setSaveAttempted] = useState(false);
+  const tableRef = useRef(null);
 
   useEffect(() => {
     if (!fixedMonth) return;
@@ -91,6 +94,33 @@ const MonthlyAttendanceSummary = ({
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Unable to update attendance summary",
+      );
+    },
+  });
+
+  const updateSummaryStatus = useMutation({
+    mutationFn: async (status) => {
+      const response = await axios.patch(
+        "/api/attendance/monthly-summaries/status",
+        {
+          ids: selectedRows.map((row) => row._id),
+          status,
+        },
+      );
+      return response.data;
+    },
+    onSuccess: (response) => {
+      toast.success(response.message);
+      setSelectedRows([]);
+      tableRef.current?.api?.deselectAll();
+      queryClient.invalidateQueries({
+        queryKey: ["monthly-attendance-summaries"],
+      });
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message ||
+          "Unable to update attendance approval",
       );
     },
   });
@@ -191,19 +221,45 @@ const MonthlyAttendanceSummary = ({
   ];
 
   const payrollColumns = [
-    { field: "srNo", headerName: "Sr No", width: 90 },
-    {
-      field: "empId",
-      headerName: "Employee ID",
-      flex: 0.75,
-      minWidth: 140,
-    },
     {
       field: "employeeName",
       headerName: "Employee Name",
       flex: 1,
       minWidth: 220,
       maxWidth: 350,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          className="text-primary hover:underline"
+          onClick={() => openManageAttendance(params.data)}
+        >
+          {params.value}
+        </button>
+      ),
+    },
+    {
+      field: "lateEarlyCount",
+      headerName: "Late & Early Count",
+      flex: 1,
+      minWidth: 190,
+      valueGetter: (params) =>
+        `Late IN: ${params.data.lateInCount || 0}\nDeducted Hrs: 0\nEarly OUT: ${params.data.earlyOutCount || 0}\nDeducted Hrs: 0`,
+      cellRenderer: (params) => (
+        <div className="whitespace-pre-line py-2 leading-6">{params.value}</div>
+      ),
+    },
+    {
+      field: "daysDeducted",
+      headerName: "Days Deducted",
+      minWidth: 145,
+      valueGetter: () => 0,
+    },
+    {
+      field: "status",
+      headerName: "Action",
+      minWidth: 125,
+      valueFormatter: (params) =>
+        params.value === "Finalized" ? "Approved" : "Pending",
     },
     {
       field: "lop",
@@ -223,24 +279,20 @@ const MonthlyAttendanceSummary = ({
         }),
     },
     {
-      field: "actions",
-      headerName: "Action",
-      width: 100,
-      pinned: "right",
-      sortable: false,
-      filter: false,
-      suppressCsvExport: true,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: "Manage Attendance",
-              onClick: () => openManageAttendance(params.data),
-            },
-          ]}
-        />
-      ),
+      field: "overtime",
+      headerName: "Overtime Days",
+      minWidth: 150,
+    },
+    {
+      field: "overtimeAmount",
+      headerName: "Overtime Amount (INR)",
+      minWidth: 195,
+      valueGetter: () => 0,
+      valueFormatter: (params) =>
+        Number(params.value || 0).toLocaleString("en-IN", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }),
     },
   ];
 
@@ -283,8 +335,28 @@ const MonthlyAttendanceSummary = ({
           <Skeleton width="100%" height={420} />
         ) : (
           <AgTable
+            tableRef={tableRef}
             data={rows}
             columns={payrollView ? payrollColumns : columns}
+            enableCheckbox={payrollView}
+            checkAll={payrollView}
+            onSelectionChange={payrollView ? setSelectedRows : undefined}
+            headerActions={
+              payrollView ? (
+                <div className="flex items-center gap-3">
+                  <PrimaryButton
+                    title="Approve"
+                    disabled={!selectedRows.length || updateSummaryStatus.isPending}
+                    handleSubmit={() => updateSummaryStatus.mutate("Finalized")}
+                  />
+                  <SecondaryButton
+                    title="Undo"
+                    disabled={!selectedRows.length || updateSummaryStatus.isPending}
+                    handleSubmit={() => updateSummaryStatus.mutate("Draft")}
+                  />
+                </div>
+              ) : null
+            }
             search
             serverSearch
             searchValue={search}

@@ -28,6 +28,11 @@ const monthlyAttendanceSummarySchema = new mongoose.Schema(
     holidays: { type: Number, default: 0, min: 0 },
     timeOff: { type: Number, default: 0, min: 0 },
     overtime: { type: Number, default: 0, min: 0 },
+    overtimeAmount: { type: Number, default: 0, min: 0 },
+    lateInCount: { type: Number, default: 0, min: 0 },
+    earlyOutCount: { type: Number, default: 0, min: 0 },
+    deductedHours: { type: Number, default: 0, min: 0 },
+    daysDeducted: { type: Number, default: 0, min: 0 },
     lop: { type: Number, default: 0, min: 0 },
     status: {
       type: String,

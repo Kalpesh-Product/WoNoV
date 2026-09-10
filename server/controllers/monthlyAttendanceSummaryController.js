@@ -107,6 +107,33 @@ const deriveSummary = ({ employee, attendance, leaves, holidays, range }) => {
     }, 0),
   );
 
+  const { lateInCount, earlyOutCount } = attendance.reduce(
+    (counts, entry) => {
+      const inTime = new Date(entry.inTime);
+      const outTime = new Date(entry.outTime);
+      const shiftStart = new Date(entry.shiftSnapshot?.startTime);
+      const shiftEnd = new Date(entry.shiftSnapshot?.endTime);
+      const graceMinutes = Number(entry.shiftSnapshot?.checkInGraceMinutes) || 0;
+
+      if (
+        !Number.isNaN(inTime.getTime()) &&
+        !Number.isNaN(shiftStart.getTime()) &&
+        inTime.getTime() > shiftStart.getTime() + graceMinutes * 60000
+      ) {
+        counts.lateInCount += 1;
+      }
+      if (
+        !Number.isNaN(outTime.getTime()) &&
+        !Number.isNaN(shiftEnd.getTime()) &&
+        outTime.getTime() < shiftEnd.getTime()
+      ) {
+        counts.earlyOutCount += 1;
+      }
+      return counts;
+    },
+    { lateInCount: 0, earlyOutCount: 0 },
+  );
+
   return {
     attendanceDays: roundDays(attendanceHours / DAILY_WORK_HOURS),
     workingDays: roundDays(attendanceHours / DAILY_WORK_HOURS),
@@ -115,8 +142,51 @@ const deriveSummary = ({ employee, attendance, leaves, holidays, range }) => {
     scheduledWorkingDays,
     timeOff,
     overtime: 0,
+    overtimeAmount: 0,
+    lateInCount,
+    earlyOutCount,
+    deductedHours: 0,
+    daysDeducted: 0,
     lop,
   };
+};
+
+const updateMonthlyAttendanceSummaryStatus = async (req, res, next) => {
+  try {
+    const company = req.company || req.userData?.company;
+    const ids = Array.isArray(req.body.ids)
+      ? req.body.ids.filter((id) => String(id || "").trim())
+      : [];
+    const status = String(req.body.status || "").trim();
+
+    if (!ids.length) {
+      return res.status(400).json({ message: "Select at least one employee" });
+    }
+    if (!["Draft", "Finalized"].includes(status)) {
+      return res.status(400).json({ message: "Invalid attendance summary status" });
+    }
+
+    const result = await MonthlyAttendanceSummary.updateMany(
+      { _id: { $in: ids }, company },
+      {
+        $set: {
+          status,
+          updatedBy: req.userData?.userId,
+          finalizedAt: status === "Finalized" ? new Date() : null,
+        },
+      },
+    );
+
+    return res.status(200).json({
+      message:
+        status === "Finalized"
+          ? "Selected attendance summaries approved"
+          : "Selected attendance approvals undone",
+      updatedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    return next(error);
+  }
 };
 
 const getMonthlyAttendanceSummaries = async (req, res, next) => {
@@ -318,4 +388,5 @@ const updateMonthlyAttendanceSummary = async (req, res, next) => {
 module.exports = {
   getMonthlyAttendanceSummaries,
   updateMonthlyAttendanceSummary,
+  updateMonthlyAttendanceSummaryStatus,
 };
