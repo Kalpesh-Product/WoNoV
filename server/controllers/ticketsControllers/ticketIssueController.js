@@ -224,6 +224,78 @@ const getTicketIssues = async (req, res, next) => {
   }
 };
 
+
+const findCompanyDepartment = async (companyId, departmentId) => {
+  if (!mongoose.Types.ObjectId.isValid(departmentId)) return {};
+  const companyDoc = await Company.findById(companyId);
+  const department = companyDoc?.selectedDepartments?.find(
+    (item) => item.department.toString() === departmentId,
+  );
+  return { companyDoc, department };
+};
+
+const addDepartmentTicketIssue = async (req, res, next) => {
+  try {
+    const title = req.body.title?.trim();
+    if (!title) return res.status(400).json({ message: "Ticket Issue is required" });
+    const { companyDoc, department } = await findCompanyDepartment(
+      req.company,
+      req.params.departmentId,
+    );
+    if (!department) return res.status(404).json({ message: "Department not found" });
+    if (department.ticketIssues.some((issue) => issue.title.toLowerCase() === title.toLowerCase())) {
+      return res.status(409).json({ message: "Ticket Issue already exists" });
+    }
+    department.ticketIssues.push({ title, priority: "High" });
+    await companyDoc.save();
+    return res.status(201).json({ message: "Ticket Issue added successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateDepartmentTicketIssue = async (req, res, next) => {
+  try {
+    const title = req.body.title?.trim();
+    if (!title) return res.status(400).json({ message: "Ticket Issue is required" });
+    const { companyDoc, department } = await findCompanyDepartment(
+      req.company,
+      req.params.departmentId,
+    );
+    if (!department) return res.status(404).json({ message: "Department not found" });
+    const issue = department.ticketIssues.id(req.params.issueId);
+    if (!issue) return res.status(404).json({ message: "Ticket Issue not found" });
+    const duplicate = department.ticketIssues.some(
+      (item) => item._id.toString() !== issue._id.toString() && item.title.toLowerCase() === title.toLowerCase(),
+    );
+    if (duplicate) return res.status(409).json({ message: "Ticket Issue already exists" });
+    issue.title = title;
+    await companyDoc.save();
+    return res.status(200).json({ message: "Ticket Issue updated successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteDepartmentTicketIssue = async (req, res, next) => {
+  try {
+    const { companyDoc, department } = await findCompanyDepartment(
+      req.company,
+      req.params.departmentId,
+    );
+    if (!department) return res.status(404).json({ message: "Department not found" });
+    const issue = department.ticketIssues.id(req.params.issueId);
+    if (!issue) return res.status(404).json({ message: "Ticket Issue not found" });
+    issue.deleteOne();
+    await companyDoc.save();
+    return res.status(200).json({ message: "Ticket Issue deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
 const getNewTicketIssues = async (req, res, next) => {
   try {
     const { department } = req.params;
@@ -320,4 +392,7 @@ module.exports = {
   getTicketIssues,
   getNewTicketIssues,
   rejectTicketIssue,
+  addDepartmentTicketIssue,
+  updateDepartmentTicketIssue,
+  deleteDepartmentTicketIssue,
 };

@@ -28,6 +28,8 @@ import TeamMembers from "../pages/Tickets/TeamMembers";
 import TicketReports from "../pages/Tickets/TicketReports";
 import RaiseTicket from "../pages/Tickets/RaiseTicket";
 import TicketSettingsnew from "../pages/Tickets/TicketSettingsnew";
+import TicketSettingsHome from "../pages/Tickets/TicketSettingsHome";
+import DepartmentTicketSettings from "../pages/Tickets/DepartmentTicketSettings";
 
 // Test page
 import TestPage from "../pages/Test/TestPage";
@@ -3602,7 +3604,28 @@ export const routes = createBrowserRouter([
                   },
                   {
                     path: "ticket-settings",
-                    element: <TicketSettingsnew />,
+                     children: [
+                      { index: true, element: <TicketSettingsHome /> },
+                      {
+                        path: "department-wise",
+                        element: (
+                          <Navigate to="/app/tickets/ticket-settings#departments" replace />
+                        ),
+                      },
+                      {
+                        path: "department-wise/:departmentId",
+                        element: <DepartmentTicketSettings />,
+                      },
+                      {
+                        path: ":departmentName",
+                        element: <DepartmentTicketSettings />,
+                      },
+                      { path: "others-settings", element: <TicketSettingsnew /> },
+                      {
+                        path: "others",
+                        element: <Navigate to="/app/tickets/ticket-settings/others-settings" replace />,
+                      },
+                    ],
                   },
                   {
                     path: "team-members",
