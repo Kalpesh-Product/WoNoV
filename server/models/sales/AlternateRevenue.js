@@ -43,6 +43,10 @@ const alternateRevenueSchema = new mongoose.Schema(
       id: String,
       date: Date,
     },
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     status: {
       type: String,
       default: "Unpaid",

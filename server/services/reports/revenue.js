@@ -299,6 +299,10 @@ const fetchAlternateRevenueReportService = async ({
 
   const records = await AlternateRevenue.find(filter)
     .sort({ createdAt: -1 })
+    .populate({
+      path: "invoiceUploadedBy",
+      select: "firstName middleName lastName employeeName name",
+    })
     .lean()
     .exec();
 
@@ -349,6 +353,7 @@ const fetchAlternateRevenueReportService = async ({
       invoiceAmount: item.invoiceAmount,
       invoiceCreationDate: item.invoiceCreationDate,
       invoicePaidDate: invoiceDate,
+      invoiceUploadedBy: item.invoiceUploadedBy || null,
       gst: item.gst,
       status: item.status || "Unpaid",
       invoiceName: item.invoice?.name || null,
@@ -899,6 +904,10 @@ const fetchWorkationRevenueReportService = async ({
 
   const revenues = await WorkationRevenue.find(filter)
     .populate("client")
+    .populate({
+      path: "invoiceUploadedBy",
+      select: "firstName middleName lastName employeeName name",
+    })
     .lean()
     .exec();
 

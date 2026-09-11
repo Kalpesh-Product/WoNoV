@@ -251,6 +251,7 @@ const updateWorkationRevenueInvoice = async (req, res, next) => {
         date: invoiceDate,
       };
       payload.invoiceUploadedAt = invoiceDate;
+      payload.invoiceUploadedBy = req.user;
     }
 
     let revenue;

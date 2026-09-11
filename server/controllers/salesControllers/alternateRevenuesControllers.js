@@ -226,6 +226,7 @@ const saveAlternateRevenueRecord = async (req, res, next) => {
         date: invoiceDate,
       };
       payload.invoicePaidDate = invoiceDate;
+      payload.invoiceUploadedBy = req.user;
     } else if (payload.invoicePaidDate && existingRevenue?.invoice) {
       payload.invoice = {
         ...existingRevenue.invoice,

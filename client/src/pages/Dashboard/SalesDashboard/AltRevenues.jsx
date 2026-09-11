@@ -462,6 +462,24 @@ const AltRevenues = ({ showChart = true }) => {
       pinned: "right",
       cellRenderer: (params) => <StatusChip status={params.value || "Unpaid"} />,
     },
+    {
+      headerName: "Actions",
+      field: "actions",
+      pinned: "right",
+      minWidth: 100,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          aria-label="View alternate revenue details"
+          onClick={() => setViewRow(params.data)}
+          className="rounded p-2 text-gray-500 hover:bg-slate-100 hover:text-primary"
+        >
+          <MdOutlineRemoveRedEye size={18} />
+        </button>
+      ),
+    },
   ];
 
   const billingColumns = [
