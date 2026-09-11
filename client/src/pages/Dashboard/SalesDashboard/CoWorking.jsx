@@ -510,11 +510,13 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
       const rowMonth = dayjs(row.rentDate).startOf("month");
       const currentMonth = dayjs().startOf("month");
 
-      // Preserve historical records, but only show active clients for the
-      // current and upcoming billing months.
+      // Preserve historical records. For current and future billing months,
+      // inactive clients are shown only when their current-month invoice is paid.
       return (
         rowMonth.isBefore(currentMonth) ||
-        activeCoworkingClientIds.has(String(row.clients))
+        activeCoworkingClientIds.has(String(row.clients)) ||
+        (rowMonth.isSame(currentMonth, "month") &&
+          row.normalizedRentStatus === "paid")
       );
     });
   const flattenedRevenueData = baseRevenueData;
