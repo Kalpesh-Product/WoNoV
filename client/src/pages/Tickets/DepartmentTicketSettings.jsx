@@ -181,7 +181,7 @@ const DepartmentTicketSettings = () => {
                   <span>Total Issues :</span>
                   <span>{totalIssues}</span>
                 </div>
-                <PrimaryButton title="Add" handleSubmit={() => openForm("add")} />
+                <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
               </>
             ) : undefined}
             exportData={Boolean(selectedDepartment)}
@@ -193,7 +193,7 @@ const DepartmentTicketSettings = () => {
       <MuiModal
         open={modal?.mode === "add" || modal?.mode === "edit"}
         onClose={() => setModal(null)}
-        title={`${modal?.mode === "edit" ? "Edit" : "Add"} Ticket Issue`}
+        title={modal?.mode === "edit" ? "Edit Ticket Issues" : "Add Ticket Issues"}
       >
         <form
           className="flex flex-col gap-4"
@@ -222,7 +222,7 @@ const DepartmentTicketSettings = () => {
 
       <ConfirmationModal
         open={modal?.mode === "delete"}
-        title="Delete Issues"
+        title="Delete Ticket Issues"
         onClose={() => setModal(null)}
         isLoading={mutation.isPending}
         onConfirm={() => mutation.mutate({ method: "delete", issueId: modal.issue.id })}
