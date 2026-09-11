@@ -10,19 +10,29 @@ const TicketAttachments = ({ attachments = [], legacyImage = "" }) => {
   if (files.length === 0) return null;
 
   return (
-    <div className="flex flex-col gap-2 lg:col-span-1">
-      <span className="font-medium">Attachments</span>
-      {files.map((attachment, index) => (
-        <a
-          key={attachment?.id || attachment?.url || index}
-          href={attachment?.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-fit break-all text-primary underline"
-        >
-          {attachment?.name || `Attachment ${index + 1}`}
-        </a>
-      ))}
+    <div>
+      <div className="text-content flex w-full items-start">
+        <span className="w-[50%]">Attachments</span>
+        <span>:</span>
+        <span className="text-content flex w-full flex-wrap items-start gap-y-1 pl-4">
+          {files.map((attachment, index) => (
+            <span
+              key={attachment?.id || attachment?.url || index}
+              className="inline"
+            >
+              <a
+                href={attachment?.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="break-words text-primary underline"
+              >
+                {attachment?.name || `Attachment ${index + 1}`}
+              </a>
+              {index < files.length - 1 ? ", " : ""}
+            </span>
+          ))}
+        </span>
+      </div>
     </div>
   );
 };
