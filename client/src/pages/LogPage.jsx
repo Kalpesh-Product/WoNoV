@@ -165,6 +165,15 @@ const LogPage = () => {
       },
     },
     {
+      headerName: "Details",
+      field: "logDetailsExport",
+      hide: true,
+      lockVisible: true,
+      filter: false,
+      getQuickFilterText: () => "",
+      valueGetter: (params) => formatLogDetailsForExport(params.data?.payload),
+    },
+    {
       headerName: "Actions",
       field: "actions",
       flex: 1,
@@ -234,7 +243,7 @@ const LogPage = () => {
     return false;
   };
 
-  const formatNestedDisplayValue = (value, parentKey = "") => {
+  const formatNestedDisplayValue = (value, parentKey = "", asText = false) => {
     if (value === null || value === undefined || value === "") return "-";
 
     if (Array.isArray(value)) {
@@ -248,6 +257,12 @@ const LogPage = () => {
       });
 
       if (!visibleItems.length) return "-";
+
+      if (asText) {
+        return visibleItems
+          .map((item) => `- ${formatNestedDisplayValue(item, parentKey, true)}`)
+          .join("\n");
+      }
 
       return (
         <ul className="list-disc list-inside">
@@ -268,6 +283,19 @@ const LogPage = () => {
       );
 
       if (!entries.length) return "-";
+
+      if (asText) {
+        return entries
+          .map(([childKey, childValue]) => {
+            const imageUrl = childKey.toLowerCase().includes("image")
+              ? typeof childValue === "string"
+                ? childValue
+                : childValue?.url
+              : null;
+            return `${formatKey(childKey)}: ${imageUrl || formatNestedDisplayValue(childValue, childKey, true)}`;
+          })
+          .join("\n");
+      }
 
       return (
         <div className="grid grid-cols-1 gap-1 text-sm max-w-md overflow-x-auto">
@@ -314,13 +342,13 @@ const LogPage = () => {
     return String(value);
   };
 
-  const formatValue = (key, value) => {
+  const formatValue = (key, value, asText = false) => {
     if (shouldSkipField(key, value)) return null;
     if (isMongoId(value)) return null;
 
     // Arrays
     if (Array.isArray(value)) {
-      return formatNestedDisplayValue(value, key);
+      return formatNestedDisplayValue(value, key, asText);
     }
 
     // Objects
@@ -338,7 +366,7 @@ const LogPage = () => {
 
       if (readableLabel && hasOnlyReadableLabel) return readableLabel;
 
-      return formatNestedDisplayValue(value, key);
+      return formatNestedDisplayValue(value, key, asText);
     }
 
     // Top-level key formatting
@@ -346,6 +374,20 @@ const LogPage = () => {
     if (key.toLowerCase().includes("time")) return humanTime(value);
 
     return value ?? "-";
+  };
+
+  const formatLogDetailsForExport = (payload) => {
+    return (
+      Object.entries(payload || {})
+        .map(([key, value]) => {
+          const formattedValue = formatValue(key, value, true);
+          return formattedValue === null
+            ? null
+            : `${formatKey(key)}: ${formattedValue}`;
+        })
+        .filter((value) => value !== null)
+        .join("\n") || "-"
+    );
   };
 
   return (
