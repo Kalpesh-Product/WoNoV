@@ -181,7 +181,7 @@ const DepartmentTicketSettings = () => {
                   <span>Total Issues :</span>
                   <span>{totalIssues}</span>
                 </div>
-                <PrimaryButton title="Add" handleSubmit={() => openForm("add")} />
+                <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
               </>
             ) : undefined}
             exportData={Boolean(selectedDepartment)}
