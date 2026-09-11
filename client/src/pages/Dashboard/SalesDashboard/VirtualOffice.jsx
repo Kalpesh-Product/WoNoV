@@ -615,6 +615,7 @@ const getUserDisplayName = (user) => {
         showInvoiceProjections
           ? item.isHistoricalBilling === true ||
             item.normalizedStatus === "paid" ||
+            item.normalizedStatus === "unpaid" ||
             addedRevenueIds.includes(item._id)
           : item.isHistoricalBilling === true || item.normalizedStatus === "paid",
       ),
@@ -962,9 +963,6 @@ const getUserDisplayName = (user) => {
 
     const hiddenFields = new Set([
       "noOfDesks",
-      "totalReceivedAmount",
-      "receivedAmount",
-      "remainingAmount",
       "deskRate",
     ]);
 
@@ -1089,7 +1087,7 @@ const getUserDisplayName = (user) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "unpaid") return sum;
-                return sum + getNumericAmount(item.revenue);
+                return sum + getNumericAmount(item.reportingAmount);
               }, 0),
             )}`
           }
@@ -1124,7 +1122,15 @@ const getUserDisplayName = (user) => {
           onClose={() => setAddRow(false)}
         >
           <form
-            onSubmit={handleAddSubmit(addVirtualInvoice)}
+            onSubmit={handleAddSubmit((values) => {
+              if (isAddReceivedAmountLocked && addNextIncrementDate.isValid()) {
+                toast.error(
+                  "Client has already paid and will be available from the next increment date",
+                );
+                return;
+              }
+              addVirtualInvoice(values);
+            })}
             className="grid grid-cols-2 gap-4"
           >
             <Controller
@@ -1414,8 +1420,7 @@ const getUserDisplayName = (user) => {
                   title="Revenue"
                   detail={`INR ${inrFormat(getNumericAmount(viewRow.revenue))}`}
                 />
-                {showInvoiceProjections &&
-                  !isBeforeUploadLogicStart(
+                {!isBeforeUploadLogicStart(
                     viewRow.rentDate ||
                       viewRow.invoiceUploadedAt ||
                       viewRow.createdAt,
@@ -1433,7 +1438,7 @@ const getUserDisplayName = (user) => {
                           ),
                         )}`}
                       />
-                      {viewPreviousTotalAmount > 0 && (
+                      {showInvoiceProjections && viewPreviousTotalAmount > 0 && (
                         <DetalisFormatted
                           title="Previous Total Amount"
                           detail={`INR ${inrFormat(viewPreviousTotalAmount)}`}
