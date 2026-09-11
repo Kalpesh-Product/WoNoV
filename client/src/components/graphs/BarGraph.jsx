@@ -124,7 +124,10 @@ const BarGraph = ({
       )}
 
       {isChartLoading ? (
-        <div className="flex justify-center items-center h-[350px]">
+        <div
+          className="flex justify-center items-center"
+          style={{ height: height || 370 }}
+        >
           <CircularProgress size={32} />
         </div>
       ) : (

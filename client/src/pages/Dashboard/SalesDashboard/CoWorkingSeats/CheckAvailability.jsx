@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -41,6 +41,7 @@ const CheckAvailability = ({
   const navigate = useNavigate();
   const address = useLocation();
   const axios = useAxiosPrivate();
+  const [currentMonth, setCurrentMonth] = useState(() => dayjs());
 
   const {
     data: workLocations = [],
@@ -132,7 +133,7 @@ const CheckAvailability = ({
     });
   }, [activeUnits, occupiedByUnit]);
 
-  const { data: monthlyClients = [] } = useQuery({
+  const { data: monthlyClients = [], refetch: refetchMonthlyClients } = useQuery({
     queryKey: ["co-working-monthly-occupancy", monthlyView],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
@@ -141,6 +142,19 @@ const CheckAvailability = ({
     },
     enabled: monthlyView,
   });
+
+  useEffect(() => {
+    if (!monthlyView) return undefined;
+
+    const now = dayjs();
+    const nextMonth = now.add(1, "month").startOf("month");
+    const timer = window.setTimeout(() => {
+      setCurrentMonth(dayjs());
+      void refetchMonthlyClients();
+    }, nextMonth.diff(now) + 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [currentMonth, monthlyView, refetchMonthlyClients]);
 
   const monthlyChartData = useMemo(() => {
     if (!monthlyView) return [];
@@ -167,12 +181,16 @@ const CheckAvailability = ({
     }, 0);
 
     return months.map((month) => {
-      if (month.start.isAfter(dayjs(), "month")) {
+      const isUpcoming = month.start.isAfter(currentMonth, "month");
+
+      if (isUpcoming) {
         return {
           name: month.label,
           occupied: 0,
           remaining: 0,
+          upcoming: totalInventory,
           total: totalInventory,
+          isUpcoming: true,
         };
       }
 
@@ -206,10 +224,12 @@ const CheckAvailability = ({
         name: month.label,
         occupied: occupiedSeats,
         remaining: remainingSeats,
+        upcoming: 0,
         total: totalInventory,
+        isUpcoming: false,
       };
     });
-  }, [activeUnits, monthlyClients, monthlyView]);
+  }, [activeUnits, currentMonth, monthlyClients, monthlyView]);
 
   const inventoryGraphData = monthlyView ? monthlyChartData : chartData;
 
@@ -285,8 +305,16 @@ const CheckAvailability = ({
       name: "Remaining",
       data: inventoryGraphData.map((item) => item.remaining),
     },
+    ...(monthlyView
+      ? [
+          {
+            name: "Upcoming",
+            data: inventoryGraphData.map((item) => item.upcoming || 0),
+          },
+        ]
+      : []),
     ],
-    [inventoryGraphData],
+    [inventoryGraphData, monthlyView],
   );
 
   const _barGraphOptionsLegacy = {
@@ -405,7 +433,11 @@ const CheckAvailability = ({
                   { state: buildingName },
                 );
               },
-            },
+          },
+      },
+      states: {
+        hover: { filter: { type: "none" } },
+        active: { filter: { type: "none" } },
       },
       xaxis: {
         categories: inventoryGraphData.map((item) => item.name),
@@ -434,9 +466,15 @@ const CheckAvailability = ({
       },
       dataLabels: {
         enabled: true,
-        formatter: (val) => `${Math.round(val)}%`,
+        formatter: (val, { dataPointIndex }) => {
+          if (monthlyView && inventoryGraphData[dataPointIndex]?.isUpcoming) {
+            return "";
+          }
+
+          return `${Math.round(val)}%`;
+        },
       },
-      colors: ["#36BA98", "#E83F25"],
+      colors: ["#36BA98", "#E83F25", "#C4C4C4"],
       tooltip: {
         custom: function ({ dataPointIndex, w }) {
           const label = w.globals.labels[dataPointIndex];
@@ -452,7 +490,11 @@ const CheckAvailability = ({
           return `
             <div style="padding:8px; width : 220px">
               <div style="display:flex; justify-content:flex-start; gap:8px; font-weight:600">
-                <span>${monthlyView ? "BIZNEST" : label}</span>
+                <span>${
+                  monthlyView
+                    ? `<span style="color:#292929;">BI</span><span style="color:#e33434;">Z</span><span style="color:#292929;">&nbsp;Nest</span>`
+                    : label
+                }</span>
                 ${monthlyView ? `<span>${tooltipLabel}</span>` : ""}
               </div>
               <hr />
@@ -466,21 +508,12 @@ const CheckAvailability = ({
               </div>
 
               <div style="display:flex; justify-content:space-between;font-size : 12px">
-                <div style="width : 100%">
-                  Occupied
-                </div>
-                <div style="width : 100%">
-                ${occupied} desks
-                </div>
+                <div style="width : 100%">Occupied</div>
+                <div style="width : 100%">${occupied} desks</div>
               </div>
-
               <div style="display:flex; justify-content:space-between; font-size : 12px">
-                <div style="width : 100%">
-                  Remaining
-                </div>
-                <div style="width : 100%">
-                ${remaining} desks
-                </div>
+                <div style="width : 100%">Remaining</div>
+                <div style="width : 100%">${remaining} desks</div>
               </div>
             </div>
           `;

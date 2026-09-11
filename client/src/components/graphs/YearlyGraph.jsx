@@ -30,6 +30,7 @@ const YearlyGraph = ({
   refreshOnDataChange = false,
   navigationLabel = "",
   dateKey, // 👈 New prop
+  minFiscalYear,
 }) => {
    const yearKey = dataPoint === "name" ? "name" : "group";
   const currentDate = new Date();
@@ -123,11 +124,14 @@ const YearlyGraph = ({
     },
   };
 
-  const goToPrevYear = () => {
+  const goToPrevYear = (event) => {
+    event?.stopPropagation();
+    if (minFiscalYear && selectedYearStart <= minFiscalYear) return;
     setSelectedYearStart((prev) => prev - 1);
   };
 
-  const goToNextYear = () => {
+  const goToNextYear = (event) => {
+    event?.stopPropagation();
     setSelectedYearStart((prev) => prev + 1);
   };
 
@@ -172,6 +176,9 @@ const YearlyGraph = ({
               <SecondaryButton
                 title={<MdNavigateBefore />}
                 handleSubmit={goToPrevYear}
+                disabled={Boolean(
+                  minFiscalYear && selectedYearStart <= minFiscalYear,
+                )}
                 // externalStyles="min-w-24 px-6 py-2 bg-[#B8BDC6] text-primary font-semibold rounded-lg"
                // disabled={selectedYearIndex === 0}
               />
