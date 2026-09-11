@@ -58,7 +58,8 @@ export const CurrencyProvider = ({ children }) => {
       new Intl.NumberFormat(undefined, {
         style: "currency",
         currency,
-        maximumFractionDigits: currency === "JPY" ? 0 : 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
         ...options,
       }).format(convert(amount));
 
@@ -66,7 +67,8 @@ export const CurrencyProvider = ({ children }) => {
       new Intl.NumberFormat(undefined, {
         style: "currency",
         currency,
-        maximumFractionDigits: currency === "JPY" ? 0 : 2,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
         ...options,
       }).format(Number(amount) || 0);
 
