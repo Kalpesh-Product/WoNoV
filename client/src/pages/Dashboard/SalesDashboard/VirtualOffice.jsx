@@ -355,6 +355,7 @@ const getUserDisplayName = (user) => {
           form.append(field, values[field]);
         }
       });
+      form.append("totalReceivedAmount", String(editTotalReceivedAmount));
       ["dueTerm", "rentDate", "pastDueDate", "nextIncrementDate"].forEach(
         (field) => {
           if (values[field]) form.append(field, dayjs(values[field]).toISOString());
@@ -478,9 +479,19 @@ const getUserDisplayName = (user) => {
       );
   const editRevenue = watch("revenue") || 0;
   const editReceivedAmount = watch("receivedAmount") || 0;
-  const editTotalReceivedAmount = getNumericAmount(editReceivedAmount);
-  const editRemainingAmount =
-    getNumericAmount(editRevenue) - getNumericAmount(editReceivedAmount);
+  const editPreviousReceivedAmount = Math.max(
+    0,
+    getNumericAmount(editRow?.totalReceivedAmount) -
+      getNumericAmount(editRow?.receivedAmount),
+  );
+  const editTotalReceivedAmount = Math.min(
+    getNumericAmount(editRevenue),
+    editPreviousReceivedAmount + getNumericAmount(editReceivedAmount),
+  );
+  const editRemainingAmount = Math.max(
+    0,
+    getNumericAmount(editRevenue) - editTotalReceivedAmount,
+  );
   const editPreviousTotalAmount = useMemo(() => {
     if (!editRow?.client) return 0;
 
