@@ -375,6 +375,7 @@ const fetchMeetingReportService = async ({
   type,
   completed,
   includeTotal = false,
+  includeReviews = false,
   page,
   limit,
   search,
@@ -602,7 +603,9 @@ const fetchMeetingReportService = async ({
       meetings = await meetingsQuery.lean().exec();
     }
 
-    const meetingIds = meetings.map((meeting) => meeting._id);
+     const meetingIds = includeReviews
+      ? meetings.map((meeting) => meeting._id)
+      : [];
     const reviews = meetingIds.length
       ? await Review.find({ meeting: { $in: meetingIds } })
           .select("-createdAt -updatedAt -__v -company")
@@ -694,7 +697,7 @@ const fetchMeetingReportService = async ({
         subject: meeting.subject,
         housekeepingChecklist: [...(meeting.housekeepingChecklist ?? [])],
         participants: totalParticipants,
-        reviews: getMeetingReview(meeting),
+         ...(includeReviews && { reviews: getMeetingReview(meeting) }),
         discountAmount: meeting.discountAmount,
         paymentVerification: meeting.paymentVerification,
         company: meeting.company,
