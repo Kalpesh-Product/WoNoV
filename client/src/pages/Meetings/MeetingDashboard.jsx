@@ -184,8 +184,6 @@ const MeetingDashboard = () => {
     return 0; // Default to 0 if no valid duration format is found
   };
 
-  // Total duration in hours
-  const totalDurationInHours = calculateTotalDurationInHours(meetingsData);
   // Fetch internal meetings
   const meetingsInternal = useMemo(
     () => meetingsData.filter((item) => item.meetingType === "Internal"),
@@ -1147,11 +1145,14 @@ const MeetingDashboard = () => {
       !widget.permission || userPermissions.includes(widget.permission),
   );
 
+  const currentMonthDurationInHours =
+    calculateTotalDurationInHours(meetingsInCurrentMonth);
+
   const dataCardConfigs = [
     {
       key: "hoursBooked",
       title: "Total",
-      data: totalDurationInHours.toFixed(0),
+      data: currentMonthDurationInHours.toFixed(0),
       description: "Hours Booked",
       route: "reports",
       permission: PERMISSIONS.MEETINGS_HOURS_BOOKED.value,
@@ -1159,7 +1160,7 @@ const MeetingDashboard = () => {
     {
       key: "uniqueBookings",
       title: "Total",
-      data: meetingsData.length || 0,
+      data: meetingsInCurrentMonth.length || 0,
       description: "Unique Bookings",
       route: "reports",
       permission: PERMISSIONS.MEETINGS_UNIQUE_BOOKINGS.value,
@@ -1168,7 +1169,7 @@ const MeetingDashboard = () => {
       key: "bizNestBookings",
       title: "Total",
       data:
-        meetingsData.filter(
+        meetingsInCurrentMonth.filter(
           (item) =>
             item.meetingType === "Internal" && item.client === "BIZNest",
         ).length || 0,
@@ -1180,7 +1181,7 @@ const MeetingDashboard = () => {
     {
       key: "guestBookings",
       title: "Total",
-      data: meetingsData.filter((item) => item.meetingType === "External")
+      data: meetingsInCurrentMonth.filter((item) => item.meetingType === "External")
         .length,
       description: "Guest Bookings",
       route: "reports",
@@ -1191,14 +1192,14 @@ const MeetingDashboard = () => {
       key: "averageHoursBooked",
       title: "Average",
       data:
-        meetingsData.length > 0
+        meetingsInCurrentMonth.length > 0
           ? (
-              meetingsData.reduce((sum, item) => {
+              meetingsInCurrentMonth.reduce((sum, item) => {
                 const duration = parseInt(item.duration?.replace("m", ""));
                 return isNaN(duration) ? sum : sum + duration;
               }, 0) /
               60 /
-              meetingsData.length
+              meetingsInCurrentMonth.length
             ).toFixed(2)
           : 0,
       description: "Hours Booked",
