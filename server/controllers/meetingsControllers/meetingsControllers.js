@@ -851,6 +851,7 @@ async function getMeetings(req, res, next) {
     const type = req.query?.type || req.type || "";
     const completed = req.query?.completed;
     const includeTotal = req.query?.includeTotal === "true";
+    const includeReviews = req.query?.includeReviews === "true";
 
     const requestFilters = req.query?.dateFilter ||
       req.query?.filters || {
@@ -875,6 +876,7 @@ async function getMeetings(req, res, next) {
       type,
       completed,
       includeTotal,
+      includeReviews,
       page: req.query?.page,
       limit: req.query?.limit,
       search: req.query?.search,
