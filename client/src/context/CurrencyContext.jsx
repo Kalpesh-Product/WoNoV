@@ -1,10 +1,13 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const STORAGE_KEY = "investor-dashboard-currency";
 const RATES_STORAGE_KEY = "investor-dashboard-exchange-rates";
 const CurrencyContext = createContext(null);
 
 export const CurrencyProvider = ({ children }) => {
+   const { pathname } = useLocation();
+  const isInvestorDashboard = pathname.includes("/investor-dashboard");
   const [currency, setCurrency] = useState(
     () => localStorage.getItem(STORAGE_KEY) || "INR",
   );
@@ -24,6 +27,12 @@ export const CurrencyProvider = ({ children }) => {
   }, [currency]);
 
   useEffect(() => {
+      if (!isInvestorDashboard) {
+      setIsRatesLoading(false);
+      return undefined;
+    }
+
+    setIsRatesLoading(true);
     const controller = new AbortController();
     fetch("https://open.er-api.com/v6/latest/INR", {
       signal: controller.signal,
@@ -49,7 +58,7 @@ export const CurrencyProvider = ({ children }) => {
       .finally(() => setIsRatesLoading(false));
 
     return () => controller.abort();
-  }, []);
+  }, [isInvestorDashboard]);
 
   const value = useMemo(() => {
     const rate = rates[currency] || 1;
