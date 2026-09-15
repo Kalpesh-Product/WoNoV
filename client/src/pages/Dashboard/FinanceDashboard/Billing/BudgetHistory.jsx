@@ -79,10 +79,12 @@ const BudgetHistory = () => {
       const normalizedStatus = String(item?.status || "").toLowerCase();
       const isApprovedOrRejected =
         normalizedStatus === "approved" || normalizedStatus === "rejected";
-          const isExtraBudget = item?.isExtraBudget === true;
+      const isExtraBudget = item?.isExtraBudget === true;
+      const isBulkBudget = item?.isExtraBudget === false;
 
-           return (
-        hasBudgetShape && !hasVoucherData && isApprovedOrRejected && isExtraBudget
+      return (
+        hasBudgetShape && !hasVoucherData && isApprovedOrRejected &&
+        (isExtraBudget || isBulkBudget)
       );
     })
     .map((item, index) => ({

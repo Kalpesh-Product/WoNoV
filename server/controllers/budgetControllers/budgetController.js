@@ -375,8 +375,16 @@ const updateBudget = async (req, res, next) => {
     const updateFields = req.body;
     const { departments, roles } = req;
 
-    const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
-
+    // const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
+ const allowedFields = [
+      "gstIn",
+      "expanseName",
+      "expanseType",
+      "paymentType",
+      "unit",
+      "dueDate",
+      "actualAmount",
+    ];
     // Filter only allowed fields from incoming data
     const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
       if (allowedFields.includes(key)) {
@@ -387,7 +395,9 @@ const updateBudget = async (req, res, next) => {
 
     if (Object.keys(filteredFields).length === 0) {
       return res.status(400).json({
-        message: "Allowed fields include only: gstIn, expanseType,actualAmount",
+       message:
+          "Allowed fields include only: gstIn, expanseName, expanseType, paymentType, unit, dueDate, actualAmount",
+        // message: "Allowed fields include only: gstIn, expanseType,actualAmount",
       });
     }
 
@@ -524,6 +534,29 @@ const fetchBudget = async (req, res, next) => {
   try {
     const { departmentId, view } = req.query;
     const { company } = req;
+
+
+    const currentMonthStart = new Date();
+    currentMonthStart.setUTCHours(0, 0, 0, 0);
+    currentMonthStart.setUTCDate(1);
+
+    // Older bulk uploads were saved as Approved automatically. Move only those
+    // unreviewed current/future records into the Finance approval workflow.
+    await Budget.updateMany(
+      {
+        company,
+        ...(departmentId ? { department: departmentId } : {}),
+        isExtraBudget: false,
+        status: "Approved",
+        "finance.approvedAt": null,
+        $or: [
+          { dueDate: { $gte: currentMonthStart } },
+          { dueDate: null, month: { $gte: currentMonthStart } },
+        ],
+      },
+      { $set: { status: "Pending", isPaid: "Unpaid" } },
+    );
+
 
     const result = await fetchBudgetVoucherService({
       company: company,
@@ -770,6 +803,7 @@ const approveFinanceBudget = async (req, res, next) => {
 
     if (budget.expanseType !== "Reimbursement") {
       budget.status = "Approved";
+        budget.finance.approvedAt = new Date();
       await budget.save({ validateModifiedOnly: true });
       return res.status(200).json({ message: "Approved" });
     }
@@ -978,6 +1012,16 @@ const uploadInvoice = async (req, res, next) => {
       );
     }
 
+ if (!file) {
+      throw new CustomError(
+        "Invoice file was not provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new CustomError(
         "Invalid file type. Allowed types: PDF, DOC, DOCX",
@@ -1009,8 +1053,24 @@ const uploadInvoice = async (req, res, next) => {
       );
     }
 
-    if (foundBudget.invoice && foundBudget.invoice.id) {
-      await handleFileDelete(foundBudget.invoice.id);
+    // if (foundBudget.invoice && foundBudget.invoice.id) {
+    //   await handleFileDelete(foundBudget.invoice.id);
+     if (foundBudget.status !== "Approved") {
+      throw new CustomError(
+        "Invoice can only be uploaded after finance approval",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    if (foundBudget.invoiceAttached) {
+      throw new CustomError(
+        "Invoice has already been uploaded",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
 
     let processedBuffer = file.buffer;
@@ -1166,6 +1226,13 @@ const bulkInsertBudgets = async (req, res, next) => {
           return;
         }
 
+         const budgetMonth = dueDate || month;
+        const currentMonth = new Date();
+        currentMonth.setUTCHours(0, 0, 0, 0);
+        currentMonth.setUTCDate(1);
+        const requiresApproval =
+          budgetMonth && budgetMonth.getTime() >= currentMonth.getTime();
+
         budgets.push({
           company,
           department,
@@ -1174,13 +1241,15 @@ const bulkInsertBudgets = async (req, res, next) => {
           actualAmount: actualAmt,
           unit: row["Unit"] ? (unitsMap.get(row["Unit"].trim()) ?? null) : null,
           // status: row["Status"] || "Pending",
-          status: "Approved",
+        //  status: "Approved",
+          status: requiresApproval ? "Pending" : "Approved",
           month,
           dueDate: dueDate || null,
           expanseType: row["Expanse Type"],
           category: row["Expanse Category"],
           // isPaid: row["Status"] === "Approved" ? "Paid" : "Unpaid",
-          isPaid: "Paid",
+          //isPaid: "Paid",
+           isPaid: requiresApproval ? "Unpaid" : "Paid",
           isExtraBudget: false,
         });
       })

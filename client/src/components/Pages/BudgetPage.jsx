@@ -232,7 +232,13 @@ const BudgetPage = () => {
               flex: 1,
             },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: "Approval Status", flex: 1 },
+            { field: "status", headerName: " Finance Approval Status", flex: 1, pinned: "right", },
+            {
+              field: "invoiceStatus",
+              headerName: "Invoice Status",
+              flex: 1,
+              pinned: "right",
+            },
           ],
         },
       };
@@ -247,16 +253,20 @@ const BudgetPage = () => {
       department: item.department,
       expanseType: item.expanseType,
       paymentType: item.paymentType || "",
+      buildingId: item?.unit?.building?._id || "",
       building: item?.unit?.building?.buildingName || item.building || "",
+      unitId: item?.unit?._id || "",
       unit: item?.unit?.unitNo || "",
       projectedAmountRaw: item?.projectedAmount || 0,
       projectedAmount: item?.projectedAmount?.toFixed(2),
       actualAmount: Number(item?.actualAmount || 0).toFixed(2),
-      actualAmountRaw: item?.actualAmount || "",
+      actualAmountRaw: item?.actualAmount ?? "",
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       dueDateRaw: item?.dueDate,
       status: item.status,
       invoiceAttached: item.invoiceAttached,
+      invoiceStatus: item.invoiceAttached ? "Uploaded" : "Not Uploaded",
+      invoiceLink: item?.invoice?.link || "",
     });
 
     return acc;
@@ -846,7 +856,9 @@ legend: {
                     ? []
                     : [
                         ...new Map(
-                          hrFinance.map((item) => [item.expanseType, item]),
+                          hrFinance
+                            .filter((item) => item.expanseType?.trim())
+                            .map((item) => [item.expanseType, item]),
                         ).values(),
                       ].map((item) => (
                         <MenuItem key={item._id} value={item.expanseType}>

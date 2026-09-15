@@ -21,10 +21,10 @@ import AgTable from "../AgTable";
 //import { parseAmount } from "../../utils/parseAmount";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import UploadFileInput from "../UploadFileInput";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../main";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
@@ -82,10 +82,33 @@ const AllocatedBudget = ({
       projectedAmount: "",
       dueDate: "",
       actualAmount: "",
+      invoiceImage: null,
     },
   });
 
   const department = usePageDepartment();
+  const { data: units = [] } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return response.data;
+    },
+  });
+  const selectedEditBuilding = useWatch({
+    control: editControl,
+    name: "building",
+  });
+  const editBuildings = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          units
+            .filter((unit) => unit?.building?._id)
+            .map((unit) => [unit.building._id, unit.building.buildingName]),
+        ),
+      ),
+    [units],
+  );
   const normalizeBudgetAmount = (value) => {
     if (typeof value === "number") return value;
     if (typeof value === "string") {
@@ -121,11 +144,12 @@ const AllocatedBudget = ({
         );
         return response.data;
       },
-      onSuccess: (data) => {
-        toast.success(data.message || "BUDGET UPDATED");
+      onSuccess: () => {
         reset();
         setUploadModalOpen(false);
+        setEditModalOpen(false);
         queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
       },
       onError: (error) => {
         toast.error("Failed to upload invoice.");
@@ -142,12 +166,16 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         );
         return response.data;
       },
-      onSuccess: (data) => {
+      onSuccess: (data, { invoiceImage, row }) => {
         toast.success(data.message || "Budget updated successfully");
-        setEditModalOpen(false);
+        if (invoiceImage) {
+          onUpload({ invoiceImage }, row);
+        } else {
+          setEditModalOpen(false);
+          resetEdit();
+        }
         setActionAnchorEl(null);
         setActionRow(null);
-        resetEdit();
         queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
         queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
       },
@@ -171,11 +199,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       expanseName: row.expanseName || "",
       expanseType: row.expanseType || "",
       paymentType: row.paymentType || "",
-      building: row.building || "",
-      unit: row.unit || "",
+         building: row.buildingId || "",
+      unit: row.unitId || "",
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
       dueDate: row.dueDateRaw || row.dueDate || "",
       actualAmount: row.actualAmountRaw ?? "",
+      invoiceImage: null,
     });
     setSelectedRow(row);
     setEditModalOpen(true);
@@ -185,7 +214,16 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     if (!selectedRow?.id) return;
     updateBudgetMutation({
       budgetId: selectedRow.id,
-      payload: { actualAmount: data.actualAmount },
+      invoiceImage: data.invoiceImage,
+      row: selectedRow,
+      payload: {
+        expanseName: data.expanseName,
+        expanseType: data.expanseType,
+        paymentType: data.paymentType,
+        unit: data.unit,
+        dueDate: data.dueDate,
+        actualAmount: data.actualAmount,
+      },
     });
   };
 
@@ -199,6 +237,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     });
     return ["All", ...Array.from(types)];
   }, [financialData]);
+
+  const expenseTypes = useMemo(
+    () => [...new Set(
+      (financialData || []).flatMap((item) =>
+        (item.tableData?.rows || []).map((row) => row.expanseType),
+      ).filter((type) => type?.trim()),
+    )],
+    [financialData],
+  );
 
   const [dateRange, setDateRange] = useState([]);
 
@@ -280,6 +327,27 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     const sample = financialData?.[0]?.tableData?.columns || [];
     // const base = [...sample];
     const base = sample.map((column) => {
+       if (column.field === "invoiceStatus") {
+        return {
+          ...column,
+          cellRenderer: (params) => {
+            if (params.data?.invoiceAttached && params.data?.invoiceLink) {
+              return (
+                <a
+                  href={params.data.invoiceLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-primary underline"
+                >
+                  Uploaded
+                </a>
+              );
+            }
+
+            return <span className="text-content">Not Uploaded</span>;
+          },
+        };
+      }
       if (column.field !== "status") return column;
 
       return {
@@ -319,6 +387,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             return (
               <div className="p-2 flex items-center">
                 <IconButton
+                 disabled={
+    params.data.invoiceAttached === true ||
+    params.data.invoiceAttached === "true"
+  }
   onClick={(event) => handleOpenActionMenu(event, params.data)}
 >
   <HiOutlineDotsHorizontal />
@@ -577,8 +649,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       fontWeight: 500,
       color: "#1E3D73",
       py: 1.1,
-      borderBottom:
-        actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
+      // borderBottom:
+      //   actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
     }}
     onClick={() => {
       if (actionRow) {
@@ -613,7 +685,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   )} */}
 
 {/* For  Only Upload Invoice Button */}
-  {actionRow?.status === "Approved" && (
+  {/* {actionRow?.status === "Approved" && (
     <MenuItem
       sx={{
         justifyContent: "flex-start", // 👉 left side
@@ -629,7 +701,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     >
       Upload Invoice
     </MenuItem>
-  )}
+  )} */}
 </Menu>
       <MuiModal
         open={editModalOpen}
@@ -641,7 +713,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             name="expanseName"
             control={editControl}
             render={({ field }) => (
-              <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
+                <TextField {...field} label="Expense Name" fullWidth size="small" />
+              // <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
             )}
           />
 
@@ -650,10 +723,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
-                  <MenuItem value={field.value || ""}>
-                    {field.value || "Select Expense Type"}
-                  </MenuItem>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Expense Type</MenuItem>
+                  {expenseTypes.map((type) => (
+                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
@@ -664,10 +738,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Payment Type"}
-                  </MenuItem>
+                  </MenuItem> */}
+                   <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Payment Type</MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  <MenuItem value="Recurring">Recurring</MenuItem>
                 </Select>
               </FormControl>
             )}
@@ -678,10 +756,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Building"}
-                  </MenuItem>
+                  </MenuItem> */}
+                   <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Building</MenuItem>
+                  {editBuildings.map(([id, name]) => (
+                    <MenuItem key={id} value={id}>{name}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
@@ -692,10 +775,17 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Unit"}
-                  </MenuItem>
+                  </MenuItem> */}
+                  <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Unit</MenuItem>
+                  {units
+                    .filter((unit) => unit?.building?._id === selectedEditBuilding)
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>{unit.unitNo}</MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -724,7 +814,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   label="Due Date"
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
-                  disabled
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -758,12 +850,28 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             )}
           />
 
+          {String(selectedRow?.status || "").toLowerCase() === "approved" &&
+          !selectedRow?.invoiceAttached && (
+              <Controller
+                name="invoiceImage"
+                control={editControl}
+                render={({ field }) => (
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    allowedExtensions={["pdf"]}
+                    previewType="pdf"
+                  />
+                )}
+              />
+          )}
           <div className="flex justify-center">
             <PrimaryButton
               title="Submit"
               type="submit"
-              isLoading={isUpdatePending}
-              disabled={isUpdatePending}
+              externalStyles="w-full"
+              isLoading={isUpdatePending || isUploadPending}
+              disabled={isUpdatePending || isUploadPending}
             />
           </div>
         </form>

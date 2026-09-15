@@ -69,7 +69,12 @@ const PendingApprovalsBudget = () => {
     onSuccess: (data) => {
       toast.success(data.message || "REQUEST REJECTED");
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
       reset();
+      navigate(
+        "/app/dashboard/finance-dashboard/billing/budget-request/budget-history"
+      );
     },
     onError: (error) => {
       toast.error(error.message || "FAILED TO REJECT REQUEST");
@@ -86,9 +91,12 @@ const PendingApprovalsBudget = () => {
     },
     onSuccess: (data) => {
       toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
       reset();
       navigate(
-        "/app/dashboard/finance-dashboard/billing/budget-request/voucher-history-budget"
+        "/app/dashboard/finance-dashboard/billing/budget-request/budget-history"
       );
     },
     onError: (error) => {
