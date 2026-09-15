@@ -291,6 +291,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
     queryKey: financeView
       ? [
+          "meetings",
           "finance-external-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
@@ -299,6 +300,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           debouncedMeetingSearch,
         ]
       : [
+          "meetings",
           "external-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
@@ -486,7 +488,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         toast.success(data.message);
       },
       onError: (error) => {
-        toast.error(error.message);
+        toast.error(error.response?.data?.message || error.message);
       },
     },
   );

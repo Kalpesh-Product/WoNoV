@@ -78,8 +78,12 @@ const recalculateAndUpdatePayment = ({
   meeting.paymentBaseAmount = resolvedBaseAmount;
   meeting.paymentGstAmount = resolvedGstAmount;
   meeting.paymentAmount = resolvedPaymentAmount;
-  meeting.paymentMode = paymentMode;
-  meeting.paymentStatus = paymentStatus === "Paid";
+  if (paymentMode !== undefined) {
+    meeting.paymentMode = paymentMode;
+  }
+  if (paymentStatus !== undefined) {
+    meeting.paymentStatus = paymentStatus === "Paid";
+  }
   meeting.discountAmount = Number(discountAmount ?? 0);
 
   return {
@@ -2410,10 +2414,15 @@ const updateMeetingPaymentStatus = async (req, res, next) => {
   const { status, meetingId } = req.body;
   const { user } = req;
 
+  const validStatuses = Meeting.schema.path("paymentVerification").enumValues;
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ message: "Invalid payment verification status" });
+  }
+
   const updatedMeeting = await Meeting.findByIdAndUpdate(
     meetingId,
     { paymentVerification: status },
-    { new: true },
+    { new: true, runValidators: true },
   ).populate("bookedBy", "firstName lastName");
 
   if (!updatedMeeting) {

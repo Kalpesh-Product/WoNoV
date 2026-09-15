@@ -175,6 +175,12 @@ const meetingSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+meetingSchema.pre("validate", function () {
+  if (this.paymentVerification === "Completed") {
+    this.paymentVerification = "Verified";
+  }
+});
+
 meetingSchema.index({ company: 1, startDate: -1 });
 meetingSchema.index({ company: 1, meetingType: 1, startDate: -1 });
 meetingSchema.index({ company: 1, bookedBy: 1, startDate: -1 });

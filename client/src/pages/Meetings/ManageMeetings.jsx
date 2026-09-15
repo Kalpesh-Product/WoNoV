@@ -336,6 +336,7 @@ const ManageMeetings = ({ financeView = false }) => {
   const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
     queryKey: financeView
       ? [
+          "meetings",
           "finance-internal-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
@@ -344,6 +345,7 @@ const ManageMeetings = ({ financeView = false }) => {
           debouncedMeetingSearch,
         ]
       : [
+          "meetings",
           "internal-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
