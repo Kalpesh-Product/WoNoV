@@ -25,7 +25,14 @@ const BudgetHistory = () => {
   });
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", flex: 0.8 },
+    {
+      field: "srNo",
+      headerName: "Sr No",
+      flex: 0.8,
+      sortable: false,
+      valueGetter: (params) =>
+        params.node?.rowIndex == null ? "" : params.node.rowIndex + 1,
+    },
     { field: "expanseName", headerName: "Expense Name", flex: 1.5 },
     { field: "expanseType", headerName: "Expense Type", flex: 1.2 },
      { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
@@ -87,9 +94,8 @@ const BudgetHistory = () => {
         (isExtraBudget || isBulkBudget)
       );
     })
-    .map((item, index) => ({
+    .map((item) => ({
       ...item,
-      srNo: index + 1,
       projectedAmount: inrFormat(item?.projectedAmount || 0),
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",

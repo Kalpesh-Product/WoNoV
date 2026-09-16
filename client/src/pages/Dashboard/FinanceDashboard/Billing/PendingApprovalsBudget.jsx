@@ -109,7 +109,14 @@ const PendingApprovalsBudget = () => {
   }, [selectedBudget]);
 
   const kraColumn = [
-    { field: "srno", headerName: "Sr No", width: 100 },
+    {
+      field: "srno",
+      headerName: "Sr No",
+      width: 100,
+      sortable: false,
+      valueGetter: (params) =>
+        params.node?.rowIndex == null ? "" : params.node.rowIndex + 1,
+    },
     { field: "department", headerName: "Department", width: 150 },
     { field: "expanseName", headerName: "Expense Name ", width: 200 },
     { field: "expanseType", headerName: "Expense Type " },
@@ -184,11 +191,10 @@ const PendingApprovalsBudget = () => {
           dateColumn={"dueDate"}
           search={true}
           tableTitle={"Pending Approvals Budget"}
-          data={pendingApprovals.map((item, index) => {
+          data={pendingApprovals.map((item) => {
             return {
               ...item,
               srNo: item.srNo,
-              srno: index + 1,
               department: item.department?.name,
             };
           })}
