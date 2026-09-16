@@ -26,7 +26,14 @@ const DepartmentBudgetHistory = () => {
   });
 
   const columns = [
-    { field: "srNo", headerName: "Sr No", flex: 0.5 },
+    {
+      field: "srNo",
+      headerName: "Sr No",
+      flex: 0.5,
+      sortable: false,
+      valueGetter: (params) =>
+        params.node?.rowIndex == null ? "" : params.node.rowIndex + 1,
+    },
     { field: "expanseName", headerName: "Expense Name", flex: 1 },
     { field: "expanseType", headerName: "Expense Type", flex: 1 },
     { field: "paymentType", headerName: "Payment Type", flex: 1 },
@@ -88,9 +95,8 @@ const DepartmentBudgetHistory = () => {
       //   hasBudgetShape && !hasVoucherData && isApprovedOrRejected && isExtraBudget
       // );
     })
-    .map((item, index) => ({
+    .map((item) => ({
       ...item,
-      srNo: index + 1,
       projectedAmount: inrFormat(item?.projectedAmount || 0),
       actualAmount: inrFormat(item?.actualAmount || 0),
       dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",

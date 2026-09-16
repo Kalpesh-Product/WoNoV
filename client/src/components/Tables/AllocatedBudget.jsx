@@ -11,6 +11,7 @@ import {
   MenuItem,
   TextField,
   FormControl,
+   FormHelperText,
   Select,
 } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
@@ -21,19 +22,96 @@ import AgTable from "../AgTable";
 //import { parseAmount } from "../../utils/parseAmount";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
-import { Controller, useForm } from "react-hook-form";
+import DetalisFormatted from "../DetalisFormatted";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
-import UploadFileInput from "../UploadFileInput";
-import { useMutation } from "@tanstack/react-query";
+//import UploadFileInput from "../UploadFileInput";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../main";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
-import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
+//import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
+import { MdCalendarToday, MdDelete, MdNavigateNext, MdOutlineRemoveRedEye } from "react-icons/md";
+import { LuImageUp } from "react-icons/lu";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+
+const InvoiceFilesInput = ({ value = [], onChange, id }) => {
+  const files = Array.isArray(value) ? value : [];
+  const fileUrls = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
+
+  useEffect(() => () => {
+    fileUrls.forEach((url) => URL.revokeObjectURL(url));
+  }, [fileUrls]);
+
+  const selectFiles = (event) => {
+    const selected = Array.from(event.target.files || []);
+    const availableSlots = 5 - files.length;
+    const withinLimit = selected.slice(0, Math.max(availableSlots, 0));
+    const validFiles = withinLimit.filter((file) => {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} exceeds the 5 MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    if (selected.length > availableSlots) {
+      toast.error("You can attach a maximum of 5 files");
+    }
+    onChange([...files, ...validFiles]);
+    event.target.value = "";
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <input
+        type="file"
+        id={id}
+        accept=".jpg,.jpeg,.png,.webp,.gif,.bmp,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+        multiple
+        hidden
+        onChange={selectFiles}
+      />
+      <TextField
+        size="small"
+        fullWidth
+        label="Upload Files"
+        value={files.length ? `${files.length} file(s) selected` : ""}
+        placeholder="Choose up to 5 files"
+        InputProps={{
+          readOnly: true,
+          endAdornment: (
+            <IconButton component="label" htmlFor={id} color="primary" disabled={files.length >= 5}>
+              <LuImageUp />
+            </IconButton>
+          ),
+        }}
+      />
+      <FormHelperText>Maximum 5 files, 5 MB each. Images, PDF, Word, Excel, and CSV.</FormHelperText>
+      <div className="flex flex-wrap gap-2">
+        {files.map((file, index) => (
+          <Chip
+            key={`${file.name}-${file.lastModified}-${index}`}
+            label={file.name.length > 28
+              ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+              : file.name}
+            title={file.name}
+            size="small"
+            variant="outlined"
+            color="primary"
+            onClick={() => window.open(fileUrls[index], "_blank", "noopener,noreferrer")}
+            onDelete={() => onChange(files.filter((_, i) => i !== index))}
+            sx={{ maxWidth: "100%" }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const AllocatedBudget = ({
   financialData,
@@ -54,7 +132,28 @@ const AllocatedBudget = ({
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [viewBudget, setViewBudget] = useState(null);
   const [selectedRow, setSelectedRow] = useState([]);
+  const isSelectedBudgetApproved =
+    String(selectedRow?.status || "").trim().toLowerCase() === "approved";
+  const [invoiceFiles, setInvoiceFiles] = useState([]);
+  const viewInvoiceFiles = useMemo(() => {
+    if (!viewBudget) return [];
+    const files = viewBudget.invoices?.length
+      ? viewBudget.invoices
+      : viewBudget.invoiceLinks?.length
+        ? viewBudget.invoiceLinks.map((link) => ({
+            link,
+            name: link === viewBudget.invoice?.link ? viewBudget.invoice.name : "",
+          }))
+        : viewBudget.invoice?.link || viewBudget.invoiceLink
+          ? [{ ...viewBudget.invoice, link: viewBudget.invoice?.link || viewBudget.invoiceLink }]
+          : [];
+    return files.filter((file) => file.link).map((file, index) => ({
+      ...file,
+      name: file.name || `Invoice ${index + 1}`,
+    }));
+  }, [viewBudget]);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const [actionRow, setActionRow] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -64,7 +163,7 @@ const AllocatedBudget = ({
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
-      invoiceImage: null,
+      invoiceImage: [],
     },
   });
 
@@ -82,10 +181,33 @@ const AllocatedBudget = ({
       projectedAmount: "",
       dueDate: "",
       actualAmount: "",
+       invoiceImage: [],
     },
   });
 
   const department = usePageDepartment();
+  const { data: units = [] } = useQuery({
+    queryKey: ["units"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return response.data;
+    },
+  });
+  const selectedEditBuilding = useWatch({
+    control: editControl,
+    name: "building",
+  });
+  const editBuildings = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          units
+            .filter((unit) => unit?.building?._id)
+            .map((unit) => [unit.building._id, unit.building.buildingName]),
+        ),
+      ),
+    [units],
+  );
   const normalizeBudgetAmount = (value) => {
     if (typeof value === "number") return value;
     if (typeof value === "string") {
@@ -94,18 +216,32 @@ const AllocatedBudget = ({
     }
     return 0;
   };
+  // const onUpload = (data, row) => {
+  //   const file = data.invoiceImage;
+  //   if (!file || !row?.id) {
+  //     toast.error("Missing file or selected row.");
+  //     return;
+  //   }
+  //   const formData = new FormData();
+  //   formData.append("invoice", file);
+  //   formData.append("rowId", row.id);
+  //   formData.append("departmentName", department?.name || "");
+  //   uploadInvoiceMutation(formData);
+  // };
+
   const onUpload = (data, row) => {
-    const file = data.invoiceImage;
-    if (!file || !row?.id) {
+    const files = Array.isArray(data.invoiceImage) ? data.invoiceImage : [];
+    if (!files.length || !row?.id) {
       toast.error("Missing file or selected row.");
       return;
     }
     const formData = new FormData();
-    formData.append("invoice", file);
+    files.forEach((file) => formData.append("invoice", file));
     formData.append("rowId", row.id);
     formData.append("departmentName", department?.name || "");
     uploadInvoiceMutation(formData);
   };
+
 
   const { mutate: uploadInvoiceMutation, isPending: isUploadPending } =
     useMutation({
@@ -121,11 +257,12 @@ const AllocatedBudget = ({
         );
         return response.data;
       },
-      onSuccess: (data) => {
-        toast.success(data.message || "BUDGET UPDATED");
+      onSuccess: () => {
         reset();
         setUploadModalOpen(false);
+        setEditModalOpen(false);
         queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
       },
       onError: (error) => {
         toast.error("Failed to upload invoice.");
@@ -142,12 +279,16 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         );
         return response.data;
       },
-      onSuccess: (data) => {
+      onSuccess: (data, { invoiceImage, row }) => {
         toast.success(data.message || "Budget updated successfully");
-        setEditModalOpen(false);
+         if (invoiceImage?.length) {
+          onUpload({ invoiceImage }, row);
+        } else {
+          setEditModalOpen(false);
+          resetEdit();
+        }
         setActionAnchorEl(null);
         setActionRow(null);
-        resetEdit();
         queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
         queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
       },
@@ -171,11 +312,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       expanseName: row.expanseName || "",
       expanseType: row.expanseType || "",
       paymentType: row.paymentType || "",
-      building: row.building || "",
-      unit: row.unit || "",
+         building: row.buildingId || "",
+      unit: row.unitId || "",
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
       dueDate: row.dueDateRaw || row.dueDate || "",
       actualAmount: row.actualAmountRaw ?? "",
+       invoiceImage: [],
     });
     setSelectedRow(row);
     setEditModalOpen(true);
@@ -185,7 +327,16 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     if (!selectedRow?.id) return;
     updateBudgetMutation({
       budgetId: selectedRow.id,
-      payload: { actualAmount: data.actualAmount },
+      invoiceImage: data.invoiceImage,
+      row: selectedRow,
+      payload: {
+        expanseName: data.expanseName,
+        expanseType: data.expanseType,
+        paymentType: data.paymentType,
+        unit: data.unit,
+        dueDate: data.dueDate,
+        ...(isSelectedBudgetApproved ? { actualAmount: data.actualAmount } : {}),
+      },
     });
   };
 
@@ -199,6 +350,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     });
     return ["All", ...Array.from(types)];
   }, [financialData]);
+
+  const expenseTypes = useMemo(
+    () => [...new Set(
+      (financialData || []).flatMap((item) =>
+        (item.tableData?.rows || []).map((row) => row.expanseType),
+      ).filter((type) => type?.trim()),
+    )],
+    [financialData],
+  );
 
   const [dateRange, setDateRange] = useState([]);
 
@@ -280,6 +440,53 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     const sample = financialData?.[0]?.tableData?.columns || [];
     // const base = [...sample];
     const base = sample.map((column) => {
+       if (column.field === "invoiceStatus") {
+        return {
+          ...column,
+          cellRenderer: (params) => {
+            // if (params.data?.invoiceAttached && params.data?.invoiceLink) {
+            //   return (
+            //     <a
+            //       href={params.data.invoiceLink}
+            //       target="_blank"
+            //       rel="noreferrer"
+            //       className="font-medium text-primary underline"
+            //     >
+            //       Uploaded
+            //     </a>
+            //   );
+              const links = params.data?.invoiceLinks?.length
+              ? params.data.invoiceLinks
+              : params.data?.invoiceLink
+                ? [params.data.invoiceLink]
+                : [];
+            if (params.data?.invoiceAttached && links.length) {
+              return (
+                <span className="inline-flex items-center gap-2">
+                  <a href={links[0]} target="_blank" rel="noreferrer" className="font-medium text-primary underline">
+                    Uploaded
+                  </a>
+                  {links.length > 1 && (
+                    <button
+                      type="button"
+                      className="font-medium text-primary underline"
+                      aria-label={`View all ${links.length} invoice files`}
+                      onClick={() => setInvoiceFiles(links.map((link, index) => ({
+                        link,
+                        name: params.data.invoices?.find((file) => file.link === link)?.name || `Invoice ${index + 1}`,
+                      })))}
+                    >
+                      +{links.length - 1} more
+                    </button>
+                  )}
+                </span>
+              );
+            }
+
+            return <span className="text-content">Not Uploaded</span>;
+          },
+        };
+      }
       if (column.field !== "status") return column;
 
       return {
@@ -317,8 +524,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         cellRenderer: (params) => {
            if (enableActionMenu) {
             return (
-              <div className="p-2 flex items-center">
+              <div className="p-2 flex gap-2 items-center">
+                <button
+                  type="button"
+                  className="text-subtitle cursor-pointer"
+                  aria-label="View budget details"
+                  title="View budget details"
+                  onClick={() => setViewBudget(params.data)}
+                >
+                  <MdOutlineRemoveRedEye />
+                </button>
                 <IconButton
+                 disabled={
+    params.data.invoiceAttached === true ||
+    params.data.invoiceAttached === "true"
+  }
   onClick={(event) => handleOpenActionMenu(event, params.data)}
 >
   <HiOutlineDotsHorizontal />
@@ -413,7 +633,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         title={
           annaualExpense
             ? "Annual Expenses"
-            : newTitle || "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
+            : newTitle === "BIZ Nest EXPENSE DETAILS" && dateRange[0]?.startDate
+              ? `${newTitle} - ${dayjs(dateRange[0].startDate).format("MMMM - YYYY").toUpperCase()}`
+              : newTitle || "BIZ Nest DEPARTMENT WISE EXPENSE DETAILS"
         }
         // TitleAmount={`INR ${inrFormat(totalActualAmount)}`}
         TitleAmountGreen={`INR ${inrFormat(totalActualAmount)}`}
@@ -520,6 +742,117 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         </div>
       </WidgetSection>
 
+      {viewBudget && (
+        <MuiModal
+          open={Boolean(viewBudget)}
+          onClose={() => setViewBudget(null)}
+          title="Request Budget Details"
+          widthClass="w-[95%] sm:w-4/5 lg:w-3/5 max-w-3xl"
+        >
+          <div className="space-y-3 break-words">
+            <DetalisFormatted
+              title="Expense Name"
+              detail={viewBudget.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={viewBudget.expanseType || "-"}
+            />
+            <DetalisFormatted
+              title="Payment Type"
+              detail={viewBudget.paymentType || "-"}
+            />
+            <DetalisFormatted
+              title="Projected Amount"
+              detail={`INR ${inrFormat(normalizeBudgetAmount(viewBudget.projectedAmountRaw ?? viewBudget.projectedAmount))}`}
+            />
+            <DetalisFormatted
+              title="Actual Amount"
+              detail={`INR ${inrFormat(normalizeBudgetAmount(viewBudget.actualAmountRaw ?? viewBudget.actualAmount))}`}
+            />
+            <DetalisFormatted
+              title="Unit"
+              detail={viewBudget.unitName || "-"}
+            />
+            <DetalisFormatted
+              title="Unit No"
+              detail={viewBudget.unit || "-"}
+            />
+            <DetalisFormatted
+              title="Building"
+              detail={viewBudget.building || "-"}
+            />
+            <DetalisFormatted
+              title="Due Date"
+              detail={
+                viewBudget.dueDateRaw && dayjs(viewBudget.dueDateRaw).isValid()
+                  ? new Date(viewBudget.dueDateRaw).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : viewBudget.dueDate || "-"
+              }
+            />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={`${viewInvoiceFiles.length} ${viewInvoiceFiles.length === 1 ? "file" : "files"} uploaded`}
+            />
+            <DetalisFormatted
+              title="Invoice Date"
+              detail={
+                viewBudget.invoiceDate && dayjs(viewBudget.invoiceDate).isValid()
+                  ? new Date(viewBudget.invoiceDate).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })
+                  : "-"
+              }
+            />
+            <DetalisFormatted
+              title="Approval Status"
+              detail={viewBudget.status || "-"}
+            />
+            <DetalisFormatted
+              title="Invoice Status"
+              detail={
+                viewBudget.invoiceAttached === true ||
+                viewBudget.invoiceAttached === "true" ||
+                viewInvoiceFiles.length > 0
+                  ? "Uploaded"
+                  : "Not Uploaded"
+              }
+            />
+            <DetalisFormatted
+              title="Invoice File"
+              detail={viewInvoiceFiles.length ? (
+                <span className="flex flex-wrap gap-2 max-w-full">
+                  {viewInvoiceFiles.map((file, index) => (
+                    <Chip
+                      key={file.id || `${file.link}-${index}`}
+                      component="a"
+                      href={file.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      clickable
+                      label={file.name.length > 28
+                        ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+                        : file.name}
+                      title={file.name}
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      sx={{ maxWidth: "100%" }}
+                    />
+                  ))}
+                </span>
+              ) : "-"}
+            />
+          </div>
+        </MuiModal>
+      )}
+
       <MuiModal
         open={uploadModalOpen}
         onClose={() => setUploadModalOpen(false)}
@@ -532,14 +865,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
           <Controller
             name="invoiceImage"
             control={control}
-            render={({ field }) => (
-              <UploadFileInput
-                value={field.value}
-                onChange={field.onChange}
-                allowedExtensions={["pdf"]}
-                previewType="pdf"
-              />
-            )}
+            // render={({ field }) => (
+            //   <UploadFileInput
+            //     value={field.value}
+            //     onChange={field.onChange}
+            //     allowedExtensions={["pdf"]}
+            //     previewType="pdf"
+            //   />
+            // )}
+              render={({ field }) => <InvoiceFilesInput {...field} id="budget-invoice-upload" />}
           />
           <div className="text-right">
             <PrimaryButton
@@ -577,8 +911,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       fontWeight: 500,
       color: "#1E3D73",
       py: 1.1,
-      borderBottom:
-        actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
+      // borderBottom:
+      //   actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
     }}
     onClick={() => {
       if (actionRow) {
@@ -613,7 +947,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   )} */}
 
 {/* For  Only Upload Invoice Button */}
-  {actionRow?.status === "Approved" && (
+  {/* {actionRow?.status === "Approved" && (
     <MenuItem
       sx={{
         justifyContent: "flex-start", // 👉 left side
@@ -629,7 +963,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     >
       Upload Invoice
     </MenuItem>
-  )}
+  )} */}
 </Menu>
       <MuiModal
         open={editModalOpen}
@@ -641,7 +975,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             name="expanseName"
             control={editControl}
             render={({ field }) => (
-              <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
+                <TextField {...field} label="Expense Name" fullWidth size="small" />
+              // <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
             )}
           />
 
@@ -650,10 +985,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
-                  <MenuItem value={field.value || ""}>
-                    {field.value || "Select Expense Type"}
-                  </MenuItem>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Expense Type</MenuItem>
+                  {expenseTypes.map((type) => (
+                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
@@ -664,10 +1000,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Payment Type"}
-                  </MenuItem>
+                  </MenuItem> */}
+                   <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Payment Type</MenuItem>
+                  <MenuItem value="One Time">One Time</MenuItem>
+                  {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
                 </Select>
               </FormControl>
             )}
@@ -678,10 +1018,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Building"}
-                  </MenuItem>
+                  </MenuItem> */}
+                   <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Building</MenuItem>
+                  {editBuildings.map(([id, name]) => (
+                    <MenuItem key={id} value={id}>{name}</MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}
@@ -692,10 +1037,17 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             control={editControl}
             render={({ field }) => (
               <FormControl fullWidth>
-                <Select {...field} size="small" displayEmpty disabled>
+                {/* <Select {...field} size="small" displayEmpty disabled>
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Unit"}
-                  </MenuItem>
+                  </MenuItem> */}
+                  <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>Select Unit</MenuItem>
+                  {units
+                    .filter((unit) => unit?.building?._id === selectedEditBuilding)
+                    .map((unit) => (
+                      <MenuItem key={unit._id} value={unit._id}>{unit.unitNo}</MenuItem>
+                    ))}
                 </Select>
               </FormControl>
             )}
@@ -724,7 +1076,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   label="Due Date"
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
-                  disabled
+                  onChange={(date) =>
+                    field.onChange(date ? date.toISOString() : null)
+                  }
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -736,37 +1090,83 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             )}
           />
 
-          <Controller
-            name="actualAmount"
-            control={editControl}
-            rules={{
-              required: "Actual amount is required",
-              pattern: {
-                value: /^[0-9]+(\.[0-9]{1,2})?$/,
-                message: "Enter a valid amount",
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <TextField
-                {...field}
-                label="Actual Amount"
-                fullWidth
-                size="small"
-                error={!!fieldState.error}
-                helperText={fieldState.error?.message}
-              />
-            )}
-          />
+          {isSelectedBudgetApproved && (
+            <Controller
+              name="actualAmount"
+              control={editControl}
+              shouldUnregister
+              rules={{
+                required: "Actual amount is required",
+                pattern: {
+                  value: /^[0-9]+(\.[0-9]{1,2})?$/,
+                  message: "Enter a valid amount",
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  label="Actual Amount"
+                  fullWidth
+                  size="small"
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                />
+              )}
+            />
+          )}
 
+          {isSelectedBudgetApproved &&
+          !selectedRow?.invoiceAttached && (
+              <Controller
+                name="invoiceImage"
+                control={editControl}
+                // render={({ field }) => (
+                //   <UploadFileInput
+                //     value={field.value}
+                //     onChange={field.onChange}
+                //     allowedExtensions={["pdf"]}
+                //     previewType="pdf"
+                //   />
+                // )}
+                     render={({ field }) => <InvoiceFilesInput {...field} id="edit-budget-invoice-upload" />}
+              />
+          )}
           <div className="flex justify-center">
             <PrimaryButton
               title="Submit"
               type="submit"
-              isLoading={isUpdatePending}
-              disabled={isUpdatePending}
+              externalStyles="w-full"
+              isLoading={isUpdatePending || isUploadPending}
+              disabled={isUpdatePending || isUploadPending}
             />
           </div>
         </form>
+      </MuiModal>
+      <MuiModal
+        open={invoiceFiles.length > 0}
+        onClose={() => setInvoiceFiles([])}
+        title="Invoice Files"
+      >
+        <div className="flex flex-wrap gap-2">
+          {invoiceFiles.map((file, index) => (
+            <Chip
+              key={`${file.link}-${index}`}
+              component="a"
+              href={file.link}
+              target="_blank"
+              rel="noreferrer"
+              clickable
+              label={file.name.length > 28
+                ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+                : file.name}
+              title={file.name}
+              size="small"
+              variant="outlined"
+              color="primary"
+              sx={{ maxWidth: "100%" }}
+            />
+          ))}
+        </div>
       </MuiModal>
     </>
   );
