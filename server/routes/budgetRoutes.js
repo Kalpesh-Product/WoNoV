@@ -31,7 +31,8 @@ router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch("/update-budget/:budgetId", updateBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",
-  upload.single("invoice"),
+  // upload.single("invoice"),
+ upload.array("invoice", 5),
   uploadInvoice
 );
 router.get("/company-budget", fetchBudget);

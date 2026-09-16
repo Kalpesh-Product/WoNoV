@@ -426,6 +426,16 @@ const updateBudget = async (req, res, next) => {
         .json({ message: "You don't have permission to update this budget" });
     }
 
+    const missingFields = Object.entries({ paymentType: "Payment Type", unit: "Unit" })
+      .filter(([key]) => key in filteredFields && !String(filteredFields[key] ?? "").trim())
+      .map(([, label]) => label);
+
+    if (missingFields.length) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+      });
+    }
+
     const originalData = foundBudget.toObject();
 
     if (filteredFields.actualAmount !== undefined) {
@@ -987,44 +997,47 @@ const rejectBudget = async (req, res, next) => {
   }
 };
 
+
 const uploadInvoice = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
   const logAction = "Upload Invoice";
   const logSourceKey = "budget";
   const { departmentName } = req.body;
-  const file = req.file;
+  const files = req.files || [];
   const { user, ip, company } = req;
   const { budgetId } = req.params;
 
   try {
     const allowedMimeTypes = [
       "application/pdf",
-      "application/msword", // .doc
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "image/gif",
+      "image/bmp",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "text/csv",
+      "application/csv",
     ];
 
     if (!mongoose.Types.ObjectId.isValid(budgetId)) {
-      throw new CustomError(
-        "Invalid budget Id provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      throw new CustomError("Invalid budget Id provided", logPath, logAction, logSourceKey);
+    }
+    if (!files.length) {
+      throw new CustomError("Invoice file was not provided", logPath, logAction, logSourceKey);
     }
 
- if (!file) {
+    const invalidFile = files.find((file) =>
+      !allowedMimeTypes.includes(file.mimetype) &&
+      !(file.originalname.toLowerCase().endsWith(".csv") &&
+        ["text/plain", "application/octet-stream", ""].includes(file.mimetype))
+    );
+    if (invalidFile) {
       throw new CustomError(
-        "Invoice file was not provided",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-      throw new CustomError(
-        "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        `${invalidFile.originalname}: invalid file type. Allowed types: Images, PDF, Word, Excel, and CSV`,
         logPath,
         logAction,
         logSourceKey,
@@ -1032,30 +1045,15 @@ const uploadInvoice = async (req, res, next) => {
     }
 
     const foundCompany = await Company.findById({ _id: company });
-
     if (!foundCompany) {
-      throw new CustomError(
-        "Company not found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      throw new CustomError("Company not found", logPath, logAction, logSourceKey);
     }
 
     const foundBudget = await Budget.findById({ _id: budgetId });
-
     if (!foundBudget) {
-      throw new CustomError(
-        "No such budget found",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      throw new CustomError("No such budget found", logPath, logAction, logSourceKey);
     }
-
-    // if (foundBudget.invoice && foundBudget.invoice.id) {
-    //   await handleFileDelete(foundBudget.invoice.id);
-     if (foundBudget.status !== "Approved") {
+    if (foundBudget.status !== "Approved") {
       throw new CustomError(
         "Invoice can only be uploaded after finance approval",
         logPath,
@@ -1063,100 +1061,243 @@ const uploadInvoice = async (req, res, next) => {
         logSourceKey,
       );
     }
-
     if (foundBudget.invoiceAttached) {
-      throw new CustomError(
-        "Invoice has already been uploaded",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      throw new CustomError("Invoice has already been uploaded", logPath, logAction, logSourceKey);
     }
 
-    let processedBuffer = file.buffer;
-    const originalFilename = file.originalname;
-
-    // Process PDF: set document title
-    if (file.mimetype === "application/pdf") {
-      const pdfDoc = await PDFDocument.load(file.buffer);
-      pdfDoc.setTitle(
-        file.originalname ? file.originalname.split(".")[0] : "Untitled",
-      );
-      processedBuffer = await pdfDoc.save();
-    }
-
-    const response = await handleDocumentUpload(
-      processedBuffer,
-      `${foundCompany.companyName}/departments/${departmentName}/budget/invoice`,
-      originalFilename,
+    const uploadedInvoices = await Promise.all(
+      files.map(async (file) => {
+        let processedBuffer = file.buffer;
+        if (file.mimetype === "application/pdf") {
+          const pdfDoc = await PDFDocument.load(file.buffer);
+          pdfDoc.setTitle(file.originalname.split(".")[0] || "Untitled");
+          processedBuffer = await pdfDoc.save();
+        }
+        const response = await handleDocumentUpload(
+          processedBuffer,
+          `${foundCompany.companyName}/departments/${departmentName}/budget/invoice`,
+          file.originalname,
+        );
+        if (!response.public_id) throw new Error(`Failed to upload ${file.originalname}`);
+        return {
+          name: file.originalname,
+          link: response.secure_url,
+          id: response.public_id,
+          date: new Date(),
+        };
+      }),
     );
 
-    if (!response.public_id) {
-      throw new CustomError(
-        "Failed to upload document",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
-    }
-
-    const updatedBudget = await Budget.findOneAndUpdate(
-      {
-        _id: budgetId,
-      },
+    const updatedBudget = await Budget.findByIdAndUpdate(
+      budgetId,
       {
         $set: {
-          invoice: {
-            name: originalFilename,
-            link: response.secure_url,
-            id: response.public_id,
-            date: new Date(),
-          },
+          invoice: uploadedInvoices[0],
+          invoices: uploadedInvoices,
+          invoiceAttached: true,
         },
-        invoiceAttached: true,
       },
       { new: true },
     ).exec();
-
     if (!updatedBudget) {
-      throw new CustomError(
-        "Failed to update company document field",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      throw new CustomError("Failed to update budget invoices", logPath, logAction, logSourceKey);
     }
 
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `Invoice uploaded successfully for ${departmentName} department`,
+      remarks: `${uploadedInvoices.length} invoice(s) uploaded successfully for ${departmentName} department`,
       status: "Success",
-      user: user,
-      ip: ip,
-      company: company,
+      user,
+      ip,
+      company,
       sourceKey: logSourceKey,
       sourceId: updatedBudget._id,
-      changes: {
-        invoiceName: originalFilename,
-        invoiceLink: response.secure_url,
-        invoiceId: response.public_id,
-      },
+      changes: { invoices: uploadedInvoices },
     });
 
     return res.status(200).json({
-      message: `Invoice uploaded successfully for ${departmentName} department`,
+      message: `${uploadedInvoices.length} invoice(s) uploaded successfully`,
     });
   } catch (error) {
-    if (error instanceof CustomError) {
-      next(error);
-    } else {
-      next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
-      );
-    }
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
   }
 };
+
+// const uploadInvoice = async (req, res, next) => {
+//   const logPath = "budget/BudgetLog";
+//   const logAction = "Upload Invoice";
+//   const logSourceKey = "budget";
+//   const { departmentName } = req.body;
+//   const file = req.file;
+//   const { user, ip, company } = req;
+//   const { budgetId } = req.params;
+
+//   try {
+//     const allowedMimeTypes = [
+//       "application/pdf",
+//       "application/msword", // .doc
+//       "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+//     ];
+
+//     if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+//       throw new CustomError(
+//         "Invalid budget Id provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//  if (!file) {
+//       throw new CustomError(
+//         "Invoice file was not provided",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+
+//     if (!allowedMimeTypes.includes(file.mimetype)) {
+//       throw new CustomError(
+//         "Invalid file type. Allowed types: PDF, DOC, DOCX",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const foundCompany = await Company.findById({ _id: company });
+
+//     if (!foundCompany) {
+//       throw new CustomError(
+//         "Company not found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const foundBudget = await Budget.findById({ _id: budgetId });
+
+//     if (!foundBudget) {
+//       throw new CustomError(
+//         "No such budget found",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     // if (foundBudget.invoice && foundBudget.invoice.id) {
+//     //   await handleFileDelete(foundBudget.invoice.id);
+//      if (foundBudget.status !== "Approved") {
+//       throw new CustomError(
+//         "Invoice can only be uploaded after finance approval",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     if (foundBudget.invoiceAttached) {
+//       throw new CustomError(
+//         "Invoice has already been uploaded",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     let processedBuffer = file.buffer;
+//     const originalFilename = file.originalname;
+
+//     // Process PDF: set document title
+//     if (file.mimetype === "application/pdf") {
+//       const pdfDoc = await PDFDocument.load(file.buffer);
+//       pdfDoc.setTitle(
+//         file.originalname ? file.originalname.split(".")[0] : "Untitled",
+//       );
+//       processedBuffer = await pdfDoc.save();
+//     }
+
+//     const response = await handleDocumentUpload(
+//       processedBuffer,
+//       `${foundCompany.companyName}/departments/${departmentName}/budget/invoice`,
+//       originalFilename,
+//     );
+
+//     if (!response.public_id) {
+//       throw new CustomError(
+//         "Failed to upload document",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     const updatedBudget = await Budget.findOneAndUpdate(
+//       {
+//         _id: budgetId,
+//       },
+//       {
+//         $set: {
+//           invoice: {
+//             name: originalFilename,
+//             link: response.secure_url,
+//             id: response.public_id,
+//             date: new Date(),
+//           },
+//         },
+//         invoiceAttached: true,
+//       },
+//       { new: true },
+//     ).exec();
+
+//     if (!updatedBudget) {
+//       throw new CustomError(
+//         "Failed to update company document field",
+//         logPath,
+//         logAction,
+//         logSourceKey,
+//       );
+//     }
+
+//     await createLog({
+//       path: logPath,
+//       action: logAction,
+//       remarks: `Invoice uploaded successfully for ${departmentName} department`,
+//       status: "Success",
+//       user: user,
+//       ip: ip,
+//       company: company,
+//       sourceKey: logSourceKey,
+//       sourceId: updatedBudget._id,
+//       changes: {
+//         invoiceName: originalFilename,
+//         invoiceLink: response.secure_url,
+//         invoiceId: response.public_id,
+//       },
+//     });
+
+//     return res.status(200).json({
+//       message: `Invoice uploaded successfully for ${departmentName} department`,
+//     });
+//   } catch (error) {
+//     if (error instanceof CustomError) {
+//       next(error);
+//     } else {
+//       next(
+//         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+//       );
+//     }
+//   }
+// };
 
 const bulkInsertBudgets = async (req, res, next) => {
   try {
