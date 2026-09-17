@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { FaChevronLeft, FaChevronRight, FaEye } from "react-icons/fa";
 import { Chip, IconButton, MenuItem, Modal, TextField } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AnimatePresence, motion } from "motion/react";
 import { IoMdClose } from "react-icons/io";
@@ -209,7 +210,6 @@ const MaintainanceDtcEnergyReadingDaily = () => {
     setFilterDate((prev) => dayjs(prev).add(1, "day").format("YYYY-MM-DD"));
   };
 
-  const selectedDateLabel = dayjs(filterDate).format("DD MMM YYYY");
   const tableTitle = "Dempo Trade Centre Building - Energy Reading";
 
  const tableData = useMemo(
@@ -517,19 +517,56 @@ const MaintainanceDtcEnergyReadingDaily = () => {
                   <button
                     type="button"
                     onClick={handlePreviousDate}
-                    className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
+                    className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-[#1e3d73] text-white transition hover:bg-[#16305d]"
                   >
                     <FaChevronLeft size={14} />
                   </button>
 
-                  <div className="flex h-10 min-w-[140px] items-center justify-center rounded-lg border border-primary bg-white px-5 text-sm font-medium text-slate-600">
-                    {selectedDateLabel}
-                  </div>
+                  <DatePicker
+                    format="ddd, MMMM D, YYYY"
+                    value={dayjs(filterDate)}
+                    onChange={(value) => {
+                      if (value?.isValid?.()) {
+                        setFilterDate(value.format("YYYY-MM-DD"));
+                      }
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          width: 245,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "6px",
+                            height: 38,
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73",
+                          },
+                          "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
+                            {
+                              borderColor: "#1e3d73",
+                            },
+                          "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                            {
+                              borderColor: "#1e3d73",
+                            },
+                          "& .MuiInputBase-input": {
+                            color: "#111827",
+                            fontSize: "0.875rem",
+                            fontWeight: 500,
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: "#1e3d73",
+                          },
+                        },
+                      },
+                    }}
+                  />
 
                   <button
                     type="button"
                     onClick={handleNextDate}
-                    className="flex h-10 w-12 items-center justify-center rounded-xl bg-primary text-white transition hover:opacity-90"
+                    className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-[#1e3d73] text-white transition hover:bg-[#16305d]"
                   >
                     <FaChevronRight size={14} />
                   </button>

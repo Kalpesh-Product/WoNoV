@@ -35,6 +35,11 @@ const HrMixBag = () => {
       route: "/app/dashboard/HR-dashboard/mix-bag/payroll-summary",
       permission: PERMISSIONS.HR_PAYROLL.value,
     },
+     {
+      title: "Logs Timeline",
+      route: "/app/dashboard/HR-dashboard/mix-bag/logs-timeline",
+      permission: PERMISSIONS.HR_ATTENDANCE_LOGS_TIMELINE.value,
+    },
     {
       title: "Leave Requests",
       route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
@@ -53,6 +58,7 @@ const HrMixBag = () => {
       permission: PERMISSIONS.HR_DEPARTMENT_TASK_MIX_BAG.value,
     },
 
+   
   ];
 
   const handleSearch = (event) => {

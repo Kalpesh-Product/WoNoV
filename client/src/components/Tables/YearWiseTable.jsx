@@ -6,7 +6,8 @@ import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
 import { IconButton, Popover } from "@mui/material";
-import { MdCalendarToday } from "react-icons/md";
+import { DatePicker } from "@mui/x-date-pickers";
+import { MdCalendarToday, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -46,6 +47,8 @@ const YearWiseTable = ({
   showDateNavigator = false,
   hideDateControls = false,
   selectedDateLabel = "",
+  selectedDate,
+  onSelectedDateChange,
   onPreviousDay,
   onNextDay,
   customExportTitle,
@@ -70,6 +73,17 @@ const YearWiseTable = ({
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const today = useMemo(() => dayjs(), []);
+  const navigatorButtonSx = {
+    alignItems: "center",
+    backgroundColor: "#1e3d73",
+    border: "1px solid #1e3d73",
+    borderRadius: "6px",
+    color: "#fff",
+    display: "flex",
+    height: 38,
+    justifyContent: "center",
+    width: 38,
+  };
 
   // const [dateRange, setDateRange] = useState([]);
   const [dateRange, setDateRange] = useState(() =>
@@ -519,25 +533,70 @@ const YearWiseTable = ({
         <div className="flex justify-center items-center gap-3">
           {/* Previous Button */}
           <button
+            type="button"
             onClick={onPreviousDay}
-            className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+            style={navigatorButtonSx}
+            className="hover:opacity-90 transition-all"
           >
-            ‹
+            <MdChevronLeft size={22} />
           </button>
 
-          {/* Date Box */}
-          <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
-            <span className="text-gray-600 text-sm font-pregular">
-              {selectedDateLabel}
-            </span>
-          </div>
+          {selectedDate && onSelectedDateChange ? (
+            <DatePicker
+              format="ddd, MMMM D, YYYY"
+              value={dayjs(selectedDate)}
+              onChange={(value) => {
+                if (value?.isValid?.()) {
+                  onSelectedDateChange(value.startOf("day"));
+                }
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: {
+                    width: 245,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      height: 38,
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1e3d73",
+                    },
+                    "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1e3d73",
+                      },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1e3d73",
+                      },
+                    "& .MuiInputBase-input": {
+                      color: "#111827",
+                      fontSize: "0.875rem",
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: "#1e3d73",
+                    },
+                  },
+                },
+              }}
+            />
+          ) : (
+            <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
+              <span className="text-gray-600 text-sm font-pregular">
+                {selectedDateLabel}
+              </span>
+            </div>
+          )}
 
           {/* Next Button */}
           <button
+            type="button"
             onClick={onNextDay}
-            className="w-12 h-10 flex items-center justify-center rounded-xl bg-primary text-white text-2xl font-semibold hover:opacity-90 transition-all"
+            style={navigatorButtonSx}
+            className="hover:opacity-90 transition-all"
           >
-            ›
+            <MdChevronRight size={22} />
           </button>
         </div>
       )}

@@ -7,7 +7,19 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const AttendanceCorrection = require("../models/hr/AttendanceCorrection");
 const Company = require("../models/hr/Company");
+const { handleImageBufferUpload } = require("../config/cloudinaryConfig");
 const DEFAULT_CHECK_IN_GRACE_MINUTES = 15;
+const uploadAttendanceImage = async (file, company, user, eventType) => {
+  if (!file?.buffer) throw new CustomError("A camera photo is required");
+  if (!file.mimetype?.startsWith("image/")) {
+    throw new CustomError("Only camera images are allowed");
+  }
+  const result = await handleImageBufferUpload(
+    file.buffer,
+    `attendance/${company}/${user}/${eventType}`,
+  );
+  return { url: result.secure_url, publicId: result.public_id };
+};
 
 const normalizeShiftName = (shiftName) =>
   String(shiftName || "")
@@ -187,9 +199,11 @@ const clockIn = async (req, res, next) => {
           "Check-in is allowed from 1 hour before the shift starts until the shift ends",
       });
     }
+    const inImage = await uploadAttendanceImage(req.file, company, user, "clock-in");
 
     const newAttendance = new Attendance({
       inTime: clockInTime,
+      inImage,
       entryType,
       user,
       company,
@@ -301,6 +315,7 @@ const clockOut = async (req, res, next) => {
 
     // ✅ Finalize clock-out
     attendance.outTime = clockOutTime;
+    attendance.outImage = await uploadAttendanceImage(req.file, company, user, "clock-out");
     const updatedAttendance = await attendance.save();
 
     if (updatedAttendance) {
@@ -403,6 +418,7 @@ const startBreak = async (req, res, next) => {
     attendance.breaks.push({
       startBreak: startBreakTime,
       endBreak: null,
+      startImage: await uploadAttendanceImage(req.file, company, user, "break-in"),
     });
 
     const savedAttendance = await attendance.save();
@@ -502,6 +518,7 @@ const endBreak = async (req, res, next) => {
     const startBreakTime = new Date(lastBreak.startBreak);
 
     lastBreak.endBreak = endBreakTime;
+    lastBreak.endImage = await uploadAttendanceImage(req.file, company, user, "break-out");
 
     // Recalculate total breakDuration
     attendance.breakDuration = attendance.breaks.reduce((total, brk) => {
@@ -582,6 +599,25 @@ const getAllAttendance = async (req, res, next) => {
     next(error);
   }
 };
+
+const getAttendanceLogs = async (req, res, next) => {
+  const { company } = req;
+  try {
+    const attendances = await Attendance.find({ company })
+      .select(
+        "user inTime outTime inImage outImage breaks breakDuration entryType approvedBy",
+      )
+      .populate("user", "firstName middleName lastName empId isActive")
+      .populate("approvedBy", "firstName middleName lastName empId")
+      .sort({ inTime: -1 })
+      .lean()
+      .exec();
+    return res.status(200).json(attendances);
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 const getAttendance = async (req, res, next) => {
   const { id } = req.params;
@@ -1406,6 +1442,7 @@ module.exports = {
   startBreak,
   endBreak,
   getAllAttendance,
+  getAttendanceLogs,
   getAttendance,
   getAttendanceRequests,
   correctAttendance,
