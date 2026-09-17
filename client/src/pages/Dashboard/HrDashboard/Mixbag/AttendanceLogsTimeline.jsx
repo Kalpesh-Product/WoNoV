@@ -64,6 +64,18 @@ const formatEntryType = (entryType) => {
     .join("/");
 };
 
+const sortTimelineEvents = (events, selectedEmployeeId) =>
+  [...events].sort((a, b) => {
+    const timeDifference = a.time - b.time;
+    if (timeDifference) return timeDifference;
+
+    if (selectedEmployeeId !== "all") {
+      return a.sequence - b.sequence;
+    }
+
+    return a.rowOrder - b.rowOrder;
+  });
+
 const dateButtonSx = {
   border: "1px solid",
   borderColor: "#1e3d73",
@@ -181,6 +193,7 @@ const AttendanceLogsTimeline = () => {
   const events = useMemo(
     () => {
       const dedupedEvents = new Map();
+      let rowOrder = 0;
 
       data
         .filter(({ user }) => employeeId === "all" || user?._id === employeeId)
@@ -195,6 +208,8 @@ const AttendanceLogsTimeline = () => {
                 image: image?.url,
                 sequence,
                 userId: attendance.user?._id,
+                employeeName: getFullName(attendance.user),
+                rowOrder: rowOrder++,
               });
             }
           };
@@ -216,9 +231,7 @@ const AttendanceLogsTimeline = () => {
             });
         });
 
-      return [...dedupedEvents.values()].sort(
-        (a, b) => a.time - b.time || a.sequence - b.sequence,
-      );
+      return sortTimelineEvents([...dedupedEvents.values()], employeeId);
     },
     [data, employeeId, selectedDate],
   );
@@ -282,6 +295,12 @@ const AttendanceLogsTimeline = () => {
         ),
       },
       {
+        field: "employeeName",
+        headerName: "Employee",
+        flex: 1.2,
+        minWidth: 180,
+      },
+      {
         field: "date",
         headerName: "Date",
         flex: 1,
@@ -324,7 +343,7 @@ const AttendanceLogsTimeline = () => {
           search
           exportData
           tableTitle="LOGS TIMELINE"
-          dropdownColumns={["typeLabel", "date", "timeLabel"]}
+          dropdownColumns={["typeLabel", "employeeName", "date", "timeLabel"]}
           tableHeight={440}
           headerBottomContent={
             <div className="flex w-full justify-center pb-6 pt-2">
