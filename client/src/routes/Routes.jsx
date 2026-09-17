@@ -445,6 +445,7 @@ import ComplianceData from "../pages/Dashboard/FinanceDashboard/MixBag/Complianc
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
 import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
 import AttendanceLayout from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLayout";
+import AttendanceLogsTimeline from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceLogsTimeline";
 import LeavesLayout from "../pages/Dashboard/HrDashboard/Mixbag/LeavesLayout";
 import PendingLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/PendingLeaveRequests";
 import CompletedLeaveRequests from "../pages/Dashboard/HrDashboard/Mixbag/CompletedLeaveRequests";
@@ -2722,6 +2723,15 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <HrMixBag />,
+                      },
+                       {
+                        path: "mix-bag/logs-timeline",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_ATTENDANCE_LOGS_TIMELINE]}
+                            element={<AttendanceLogsTimeline />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/monthly-attendance",

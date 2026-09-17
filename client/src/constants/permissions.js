@@ -1879,6 +1879,13 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
       "/app/dashboard/HR-dashboard/mix-bag/department-tasks/department-task",
   },
 
+   HR_ATTENDANCE_LOGS_TIMELINE: {
+    value: "hr_attendance_logs_timeline_card",
+    title: "Logs Timeline",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/logs-timeline",
+  },
+
   //inside dashboard of mix bag
   HR_PENDING_APPROVALS_LEAVES: {
     value: "hr_pending_approvals_leaves_tab",
