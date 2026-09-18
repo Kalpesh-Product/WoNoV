@@ -8,6 +8,57 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
+const PROJECTED_UNIQUE_CLIENTS_BY_MONTH = {
+  "Oct-26": {
+    "Projected Co-Working": 7,
+    "Projected Virtual Office": 4,
+    "Projected External Meetings": 5,
+    "Projected Open Desk": 2,
+  },
+  "Nov-26": {
+    "Projected Co-Working": 8,
+    "Projected Virtual Office": 3,
+    "Projected External Meetings": 6,
+    "Projected Open Desk": 2,
+  },
+  "Dec-26": {
+    "Projected Co-Working": 6,
+    "Projected Virtual Office": 5,
+    "Projected External Meetings": 5,
+    "Projected Open Desk": 3,
+  },
+  "Jan-27": {
+    "Projected Co-Working": 9,
+    "Projected Virtual Office": 4,
+    "Projected External Meetings": 4,
+    "Projected Open Desk": 3,
+  },
+  "Feb-27": {
+    "Projected Co-Working": 8,
+    "Projected Virtual Office": 5,
+    "Projected External Meetings": 6,
+    "Projected Open Desk": 2,
+  },
+  "Mar-27": {
+    "Projected Co-Working": 10,
+    "Projected Virtual Office": 4,
+    "Projected External Meetings": 5,
+    "Projected Open Desk": 3,
+  },
+};
+const PROJECTED_UNIQUE_CLIENT_SERIES = [
+  "Projected Co-Working",
+  "Projected Virtual Office",
+  "Projected External Meetings",
+  "Projected Open Desk",
+];
+const PROJECTED_UNIQUE_CLIENT_COLORS = [
+  "#616161",
+  "#787878",
+  "#b4b4b4",
+  "#f0f0f0",
+];
+
 const LeadsLayout = ({
   hideAccordion,
   data,
@@ -16,6 +67,9 @@ const LeadsLayout = ({
   title = "Unique Clients",
   titleAmount,
   hideMonthAxisTitle = false,
+  noOuterPadding = false,
+  investorBlueStyle = false,
+  hideFinancialYearControls = false,
 }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -168,17 +222,67 @@ const LeadsLayout = ({
     },
     xaxis: {
       categories: financialYearMonths,
-      ...(hideMonthAxisTitle ? {} : { title: { text: "Months" } }),
+      ...(hideMonthAxisTitle
+        ? {}
+        : {
+            title: {
+              text: "Months",
+              ...(investorBlueStyle
+                ? {
+                    style: {
+                      color: "#1234c9",
+                    },
+                  }
+                : {}),
+            },
+          }),
+      ...(investorBlueStyle
+        ? {
+            labels: {
+              style: {
+                colors: "#1234c9",
+              },
+            },
+          }
+        : {}),
     },
     yaxis: {
-      title: { text: "Number of Clients" },
+      title: {
+        text: "Number of Clients",
+        ...(investorBlueStyle
+          ? {
+              style: {
+                color: "#1234c9",
+              },
+            }
+          : {}),
+      },
+      ...(investorBlueStyle
+        ? {
+            labels: {
+              style: {
+                colors: "#1234c9",
+              },
+            },
+          }
+        : {}),
       min: 0,
       forceNiceScale: true,
     },
     plotOptions: {
       bar: { columnWidth: "40%", borderRadius: 4 },
     },
-    legend: { position: "top", horizontalAlign: "center" },
+    legend: {
+      position: "top",
+      horizontalAlign: "center",
+      ...(investorBlueStyle
+        ? {
+            labels: {
+              colors: "#1234c9",
+            },
+          }
+        : {}),
+    },
     tooltip: {
       shared: true,
       intersect: false,
@@ -204,13 +308,20 @@ const LeadsLayout = ({
   ];
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
       <WidgetSection
         layout={1}
         border
         padding
         title={title}
-        TitleAmount={resolvedTitleAmount}
+        TitleAmount={investorBlueStyle ? "" : resolvedTitleAmount}
+        headerRightContent={
+          investorBlueStyle ? (
+            <span className="text-widgetTitle font-pmedium uppercase text-[#1234c9]">
+              {resolvedTitleAmount}
+            </span>
+          ) : null
+        }
       >
         <div className="p-1"></div>
 
@@ -220,23 +331,25 @@ const LeadsLayout = ({
           options={barChartOptions}
           height={400}
         />
-        <div className="flex justify-center items-center pt-4 pb-2">
-          <div className="flex items-center gap-[2px] mt-4">
-            <SecondaryButton
-              title={<MdNavigateBefore />}
-              handleSubmit={handlePrevYear}
-              externalStyles="min-w-20 px-6 py-2 bg-[#d1d5db] text-black font-semibold rounded-lg"
-            />
-            <div className="min-w-[96px] px-0 text-center text-primary text-content font-semibold">
-              {financialYearLabel}
+        {!hideFinancialYearControls && (
+          <div className="flex justify-center items-center pt-4 pb-2">
+            <div className="flex items-center gap-[2px] mt-4">
+              <SecondaryButton
+                title={<MdNavigateBefore />}
+                handleSubmit={handlePrevYear}
+                externalStyles="min-w-20 px-6 py-2 bg-[#d1d5db] text-black font-semibold rounded-lg"
+              />
+              <div className="min-w-[96px] px-0 text-center text-primary text-content font-semibold">
+                {financialYearLabel}
+              </div>
+              <SecondaryButton
+                title={<MdNavigateNext />}
+                handleSubmit={handleNextYear}
+                externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
+              />
             </div>
-            <SecondaryButton
-              title={<MdNavigateNext />}
-              handleSubmit={handleNextYear}
-              externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
-            />
           </div>
-        </div>
+        )}
 
         {children ? (
           <div className="mt-6 border-t border-borderGray pt-4">{children}</div>

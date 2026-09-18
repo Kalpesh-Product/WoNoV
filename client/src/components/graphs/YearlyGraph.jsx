@@ -22,6 +22,7 @@ const YearlyGraph = ({
   responsiveResize = false,
   headerCenterContent,
   headerCenterContentInline = false,
+  chartTopContent,
   secondParam = false,
   chartHeight,
   sectionHeight = "",
@@ -29,6 +30,7 @@ const YearlyGraph = ({
   onYearChange,
   refreshOnDataChange = false,
   navigationLabel = "",
+  hideYearNavigation = false,
   dateKey, // 👈 New prop
   minFiscalYear,
 }) => {
@@ -155,6 +157,7 @@ const YearlyGraph = ({
         height={sectionHeight}
       >
         <div className="flex flex-col gap-4">
+          {chartTopContent}
           <BarGraph
             key={refreshOnDataChange ? `${selectedYear}-${seriesKey}` : selectedYear}
             data={filteredData}
@@ -165,6 +168,7 @@ const YearlyGraph = ({
             height={chartHeight}
           />
 
+          {!hideYearNavigation && (
           <div className="flex flex-col justify-center items-center gap-1">
             {navigationLabel && (
               <div className="text-black text-content font-semibold">
@@ -196,6 +200,7 @@ const YearlyGraph = ({
               />
             </div>
           </div>
+          )}
         </div>
       </WidgetSection>
     </div>

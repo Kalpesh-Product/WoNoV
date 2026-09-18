@@ -26,7 +26,7 @@ const sectorPalette = [
   "#4A68A1",
   "#608DB8",
   "#76A2CF",
-  "#8CB8E6",
+  "#6FA2D6",
 ];
 
 const genderPalette = ["#1E3D73", "#54C4A7"];
@@ -58,6 +58,9 @@ const legendFormatter = (seriesName) =>
 const singleLineLegendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:10px;line-height:1.2;">${seriesName}</span>`;
 
+const blueLegendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1234c9;">${seriesName}</span>`;
+
 const calculateAgreementExpiry = (startDate, endDate) => {
   if (!startDate || !endDate) return "-";
 
@@ -74,7 +77,13 @@ const calculateAgreementExpiry = (startDate, endDate) => {
   return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
 };
 
-const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
+const pieOptions = (
+  labels,
+  suffix,
+  colors = palette,
+  singleLine = false,
+  blueLegend = false,
+) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
   colors,
@@ -95,7 +104,18 @@ const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
       horizontal: singleLine ? 2 : 4,
       vertical: singleLine ? 0 : 4,
     },
-    formatter: singleLine ? singleLineLegendFormatter : legendFormatter,
+    ...(blueLegend
+      ? {
+          labels: {
+            colors: "#1234c9",
+          },
+        }
+      : {}),
+    formatter: blueLegend
+      ? blueLegendFormatter
+      : singleLine
+        ? singleLineLegendFormatter
+        : legendFormatter,
   },
   tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
 });
@@ -201,6 +221,7 @@ const InvestorOperationalCharts = ({
   routes,
   showDetails = false,
   flushLayout = false,
+  investorInventoryStyle = false,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -324,7 +345,7 @@ const InvestorOperationalCharts = ({
         colors: genderPalette,
       },
       india: {
-        title: "India-wise Members",
+        title: "India-wise Occupancy",
         data: states,
         suffix: "Companies",
         colors: locationChartColors,
@@ -363,11 +384,17 @@ const InvestorOperationalCharts = ({
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
     const hasScrollableLegend = ["desks", "sector", "client"].includes(key);
+    const useBlueText = investorInventoryStyle && ["sector", "india"].includes(key);
     const customChartLegend = hasScrollableLegend && (
       <div className="w-full max-w-full px-2 pb-1 select-none">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           {labels.map((label, index) => (
-            <div key={label} className="flex min-w-0 items-center gap-1 text-xs">
+            <div
+              key={label}
+              className={`flex min-w-0 items-center gap-1 text-xs ${
+                useBlueText ? "text-[#1234c9]" : ""
+              }`}
+            >
               <span
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: chartColors[index] }}
@@ -384,7 +411,13 @@ const InvestorOperationalCharts = ({
     return (
       <WidgetSection
         key={key}
-        title={chart.title}
+        title={
+          useBlueText ? (
+            <span className="text-[#1234c9]">{chart.title}</span>
+          ) : (
+            chart.title
+          )
+        }
         border
         height={flushLayout ? "h-[433px]" : undefined}
        // height={fillHeight}
@@ -419,7 +452,8 @@ const InvestorOperationalCharts = ({
                 labels,
                 chart.suffix,
                 chartColors,
-              hasScrollableLegend,
+                hasScrollableLegend,
+                useBlueText,
               )}
               width={500}
               height={350}
@@ -604,7 +638,11 @@ const InvestorOperationalCharts = ({
   return (
     <>
       {regularCharts.length > 0 && (
-        <WidgetSection layout={2} gridGap="gap-x-4 gap-y-6">
+        <WidgetSection
+          layout={2}
+          gridGap={investorInventoryStyle ? "gap-x-4 gap-y-4" : "gap-x-4 gap-y-6"}
+          padding={investorInventoryStyle}
+        >
           {regularCharts.map(renderChart)}
         </WidgetSection>
       )}

@@ -707,6 +707,8 @@ export const routes = createBrowserRouter([
                     "overall-visitor-client-type",
                     "overall-visitor-gender-data",
                     "meeting-duration-breakdown",
+                    "biznest-3-years-snapshot",
+                    "annual-monthly-mix-income",
                   ].map((path) => ({
                     path: `investor-dashboard/${path}`,
                     element: <InvestorDashboard />,
