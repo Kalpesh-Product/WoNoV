@@ -352,11 +352,8 @@ const CheckAvailability = ({
 
   const barGraphSeries = useMemo(
     () => [
-  const barGraphSeries = useMemo(
-    () => [
     {
       name: "Occupied",
-      data: inventoryGraphData.map((item) => item.occupied),
       data: inventoryGraphData.map((item) => item.occupied),
     },
     {
@@ -375,7 +372,7 @@ const CheckAvailability = ({
     [inventoryGraphData, investorGraphStyle, monthlyView],
   );
 
-  const _barGraphOptionsLegacy = {
+  
   const _barGraphOptionsLegacy = {
     chart: {
       type: "bar",
@@ -1019,8 +1016,6 @@ const CheckAvailability = ({
           disableColorChange
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
-          disableLinks={disableCardLinks}
-          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.inventory}
         />
 
@@ -1029,8 +1024,6 @@ const CheckAvailability = ({
           titleCenter
           highlightNegativePositive
           disableColorChange
-          disableLinks={disableCardLinks}
-          hideLastDivider={hideInventoryLastDivider}
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.occupancy}
@@ -1043,8 +1036,6 @@ const CheckAvailability = ({
           disableColorChange
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
-          disableLinks={disableCardLinks}
-          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.freeInventory}
         />
       </WidgetSection>
@@ -1052,6 +1043,7 @@ const CheckAvailability = ({
   );
 
   return (
+    
     <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
       {cardsFirst
         ? !hideSummaryCards && inventorySummaryCards
@@ -1144,8 +1136,6 @@ const CheckAvailability = ({
             externalStyles="w-48 mb-20"
           />
         </form>
-        </div>
-      )}
         </div>
       )}
     </div>

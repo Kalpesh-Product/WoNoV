@@ -1675,34 +1675,13 @@ const InvestorDashboard = () => {
       }),
     [inventoryUnits],
   );
-  const investorOccupancyQueryKey = useMemo(
-    () => [
-      "co-working-occupancy-by-unit",
-      investorInventoryUnits.map((unit) => unit._id).sort().join("|"),
-    ],
-    [investorInventoryUnits],
-  );
-  const { data: investorOccupancyData = [] } = useQuery({
-    queryKey: investorOccupancyQueryKey,
+  const { data: investorOccupancyClients = [] } = useQuery({
+    queryKey: ["co-working-monthly-occupancy", true],
     queryFn: async () => {
-      const results = await Promise.allSettled(
-        investorInventoryUnits.map(async (unit) => {
-          const response = await axios.get("/api/sales/co-working-members", {
-            params: { unitId: unit._id, active: true },
-          });
-
-          return {
-            unitId: unit._id,
-            occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
-          };
-        }),
-      );
-
-      return results
-        .filter((result) => result.status === "fulfilled")
-        .map((result) => result.value);
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
     },
-    enabled: showDashboardHome && investorInventoryUnits.length > 0,
+    enabled: showDashboardHome,
   });
   const totalInventory = useMemo(
     () =>
@@ -1716,12 +1695,55 @@ const InvestorDashboard = () => {
     [investorInventoryUnits],
   );
   const occupiedInventory = useMemo(
-    () =>
-      investorOccupancyData.reduce(
-        (total, item) => total + (Number(item?.occupiedDesks) || 0),
-        0,
-      ),
-    [investorOccupancyData],
+    () => {
+      if (!totalInventory) return 0;
+
+      const currentMonth = dayjs().startOf("month");
+      const fiscalYearStart = dayjs()
+        .year(currentMonth.month() >= 3 ? currentMonth.year() : currentMonth.year() - 1)
+        .month(3)
+        .startOf("month");
+      const completedMonths = Array.from(
+        { length: currentMonth.diff(fiscalYearStart, "month") + 1 },
+        (_, index) => fiscalYearStart.add(index, "month"),
+      );
+      const monthlyOccupancy = completedMonths.map((monthStart) => {
+        const monthEnd = monthStart.endOf("month");
+        const occupied = investorOccupancyClients.reduce((total, client) => {
+          const buildingName = String(
+            client?.unit?.building?.buildingName || "",
+          ).toLowerCase();
+          const isInvestorBuilding =
+            buildingName.includes("sunteck kanaka") ||
+            buildingName.includes("dempo trade centre") ||
+            buildingName.includes("dempo trade center");
+          if (!isInvestorBuilding) return total;
+
+          const startDate = dayjs(client?.startDate);
+          if (!startDate.isValid()) return total;
+          const endDate = client?.endDate ? dayjs(client.endDate) : currentMonth;
+          const effectiveEndDate = endDate.isValid() ? endDate : currentMonth;
+          const overlapsMonth =
+            startDate.isBefore(monthEnd.add(1, "day")) &&
+            effectiveEndDate.isAfter(monthStart.subtract(1, "day"));
+          if (!overlapsMonth) return total;
+
+          return (
+            total +
+            (Number(client?.openDesks) || 0) +
+            (Number(client?.cabinDesks) || 0)
+          );
+        }, 0);
+
+        return Math.min(occupied, totalInventory);
+      });
+
+      return Math.round(
+        monthlyOccupancy.reduce((sum, value) => sum + value, 0) /
+          monthlyOccupancy.length,
+      );
+    },
+    [investorOccupancyClients, totalInventory],
   );
   const inventoryOccupancyPercent = totalInventory
     ? Math.round((occupiedInventory / totalInventory) * 100)

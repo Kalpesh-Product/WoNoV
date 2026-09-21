@@ -185,13 +185,7 @@ const LeadsLayout = ({
       ),
     [transformedData]
   );
-  const resolvedTitleAmount =
-    typeof titleAmount === "function"
-      ? titleAmount({
-          count: selectedFinancialYearClientsCount,
-          financialYear: currentFinancialYear,
-        })
-      : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
+
   const resolvedTitleAmount =
     typeof titleAmount === "function"
       ? titleAmount({

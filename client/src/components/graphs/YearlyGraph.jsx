@@ -15,7 +15,7 @@ const YearlyGraph = ({
   TitleAmountRed,
   TitleAmountTotal,
   headerRightContent,
-  headerRightContent,
+  
    greenTitle,
   redTitle,
   totalTitle,
@@ -27,7 +27,7 @@ const YearlyGraph = ({
   secondParam = false,
   chartHeight,
   sectionHeight = "",
-  sectionHeight = "",
+  
   currentYear,
   onYearChange,
   refreshOnDataChange = false,
@@ -156,7 +156,7 @@ const YearlyGraph = ({
         TitleAmountRed={TitleAmountRed}
         totalTitle={totalTitle}
         headerRightContent={headerRightContent}
-        headerRightContent={headerRightContent}
+      
          greenTitle={greenTitle}
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}

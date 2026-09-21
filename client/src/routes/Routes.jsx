@@ -170,7 +170,7 @@ import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClie
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
-import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
+
 import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard/AdminDashboard";
@@ -986,13 +986,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
-                                // element: <CoWorking showChart={false} />,
-                                 element: (
-                                  <CoWorking
-                                    showChart={false}
-                                    showInvoiceProjections
-                                  />
-                                ),
+                    
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -1007,13 +1001,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
-                               // element: <VirtualOffice showChart={false} />,
-                                 element: (
-                                  <VirtualOffice
-                                    showChart={false}
-                                    showInvoiceProjections
-                                  />
-                                ),
+                         
                               },
                               {
                                 path: "workation-revenue-invoicing",
@@ -1023,12 +1011,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
-                                element: (
-                                  <Workations
-                                    showChart={false}
-                                    showInvoiceProjections
-                                  />
-                                ),
+                          
                               },
                               {
                                 path: "alternate-revenue-invoicing",
