@@ -1,11 +1,23 @@
 import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { Skeleton } from "@mui/material";
+import { IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useMutation } from "@tanstack/react-query";
+import dayjs from "dayjs";
+import { toast } from "sonner";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { queryClient } from "../../../main";
 
 const getNormalizedPaymentStatus = (status) => {
   if (typeof status === "string") return status.trim().toLowerCase();
@@ -14,6 +26,121 @@ const getNormalizedPaymentStatus = (status) => {
 
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
+
+const isBeforeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getReportingAmount = (row) => {
+  // Historical bulk uploads use revenue; current and future billing use receipts.
+  return isBeforeUploadLogicStart(
+    row?.rentDate || row?.invoiceUploadedAt || row?.createdAt,
+  )
+    ? getNumericAmount(row?.revenue)
+    : getNumericAmount(row?.receivedAmount);
+};
+
+const formatBillingNumber = (value) => {
+  const numberValue = Number(String(value ?? "").replace(/,/g, ""));
+  if (!Number.isFinite(numberValue)) return "";
+
+  const truncatedValue = Math.trunc(numberValue * 100) / 100;
+  return Number.isInteger(truncatedValue)
+    ? String(Math.trunc(truncatedValue))
+    : truncatedValue.toFixed(2);
+};
+
+const getVirtualOfficeCurrentRate = (row) => {
+  const client = row?.client || {};
+  const startDate = dayjs(
+    client.termStartDate || client.startDate || row?.rentDate || row?.createdAt,
+  );
+  const endDate = dayjs(client.termEnd || client.endDate || row?.pastDueDate);
+  const annualIncrement = Number(
+    client.annualIncrement ?? row?.annualIncrement ?? 0,
+  ) || 0;
+  const baseRate = Number(
+    client.openDeskRate ?? row?.deskRate ?? client.cabinDeskRate ?? 0,
+  ) || 0;
+
+  if (
+    !startDate.isValid() ||
+    !endDate.isValid() ||
+    !endDate.isAfter(startDate, "day")
+  ) {
+    return baseRate;
+  }
+
+  const yearsElapsed = Math.max(endDate.diff(startDate, "year"), 0);
+
+  return baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+};
+
+// Kept for reference. Automatic unpaid projections are currently disabled.
+// const getClientIdentity = (row) => {
+//   const id = row?.client?._id || row?.client;
+//   if (id) return `id:${String(id)}`;
+//   return `name:${String(row?.clientName || "").trim().toLowerCase()}`;
+// };
+
+// const getUnpaidInvoiceRowsForMonth = (
+//   rows,
+//   selectedDate,
+//   existingMonthRows = [],
+// ) => {
+//   const targetMonth = dayjs(selectedDate).startOf("month");
+//   const currentMonth = dayjs().startOf("month");
+
+//   if (!targetMonth.isValid() || targetMonth.isBefore(currentMonth)) return [];
+
+//   const historicalRows = rows.filter((row) => {
+//     const rowMonth = dayjs(row.rentDate).startOf("month");
+//     return (
+//       rowMonth.isValid() &&
+//       rowMonth.isBefore(currentMonth) &&
+//       getNormalizedPaymentStatus(row.rentStatus ?? row.status) === "paid" &&
+//       row.client?.clientStatus !== false
+//     );
+//   });
+//   if (!historicalRows.length) return [];
+
+//   const latestSourceMonth = historicalRows.reduce((latest, row) => {
+//     const rowMonth = dayjs(row.rentDate).startOf("month");
+//     return rowMonth.isAfter(latest) ? rowMonth : latest;
+//   }, dayjs(historicalRows[0].rentDate).startOf("month"));
+
+//   const existingClientCounts = existingMonthRows.reduce((counts, row) => {
+//     const identity = getClientIdentity(row);
+//     counts.set(identity, (counts.get(identity) || 0) + 1);
+//     return counts;
+//   }, new Map());
+
+//   return historicalRows
+//     .filter((row) => dayjs(row.rentDate).isSame(latestSourceMonth, "month"))
+//     .filter((row) => {
+//       const identity = getClientIdentity(row);
+//       const existingCount = existingClientCounts.get(identity) || 0;
+//       if (existingCount > 0) {
+//         existingClientCounts.set(identity, existingCount - 1);
+//         return false;
+//       }
+//       return true;
+//     })
+//     .map((row, index) => ({
+//       ...row,
+//       id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+//       rentDate: targetMonth
+//         .date(Math.min(dayjs(row.rentDate).date(), targetMonth.daysInMonth()))
+//         .toISOString(),
+//       rentStatus: "Unpaid",
+//       normalizedStatus: "unpaid",
+//       invoice: null,
+//       invoiceLink: "",
+//       invoiceUploadedAt: null,
+//       isProjectedInvoice: true,
+//     }));
+// };
 
 const getCurrentFinancialYearLabel = () => {
   const today = new Date();
@@ -33,22 +160,57 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    ""
+  ).trim();
+};
+
 // const VirtualOffice = () => {
-  const VirtualOffice = ({ showChart = true }) => {
+  //const VirtualOffice = ({ showChart = true }) => {
+  const VirtualOffice = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const [addRow, setAddRow] = useState(false);
+  const [addedRevenueIds, setAddedRevenueIds] = useState([]);
+ const { control, handleSubmit, reset, watch } = useForm();
+  const {
+    control: addControl,
+    handleSubmit: handleAddSubmit,
+    reset: resetAdd,
+    setValue: setAddValue,
+    watch: watchAdd,
+  } = useForm();
   const [selectedFY, setSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
   );
 
   const {
-    data: virtualOfficeRevenue,
-    isLoading: isLoadingVirtualOfficeRevenue = [],
+    data: virtualOfficeRevenue = [],
+    isLoading: isLoadingVirtualOfficeRevenue = false,
   } = useQuery({
-    queryKey: ["virtualOfficeRevenue"],
+    queryKey: ["virtualOfficeRevenue", { useClientDetails: true }],
+   // queryKey: ["virtualOfficeRevenue"],
+    // queryKey: [
+    //   "virtualOfficeRevenue",
+    //   { useClientDetails: showInvoiceProjections },
+    // ],
     queryFn: async () => {
       try {
         const response = await axios.get(
           `/api/sales/get-virtual-office-revenue`,
+          { params: { useClientDetails: true } },
+          //  {
+          //   params: showInvoiceProjections
+          //     ? { useClientDetails: true }
+          //     : undefined,
+          // },    
         );
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
@@ -57,16 +219,418 @@ const getFinancialYear = (dateValue) => {
     },
   });
 
+  const { data: virtualOfficeClients = [] } = useQuery({
+    queryKey: ["virtualOfficeClientOptions"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get("/api/sales/consolidated-clients");
+        return Array.isArray(response.data?.virtualOfficeClients)
+          ? response.data.virtualOfficeClients
+          : [];
+      } catch (error) {
+        console.error(error);
+        return [];
+      }
+    },
+  });
+
+  const activeVirtualOfficeClients = useMemo(
+    () =>
+      virtualOfficeClients.filter((client) =>
+        typeof client?.isActive === "boolean"
+          ? client.isActive
+          : Boolean(client?.clientStatus),
+      ),
+    [virtualOfficeClients],
+  );
+
   const tableData = useMemo(
     () =>
       isLoadingVirtualOfficeRevenue
         ? []
-        : virtualOfficeRevenue.map((item) => ({
+        : (Array.isArray(virtualOfficeRevenue) ? virtualOfficeRevenue : []).map((item) => ({
             ...item,
-            clientName: item.client?.clientName,
-            normalizedStatus: getNormalizedPaymentStatus(item.status),
+            clientName: (() => {
+              const clientId = String(item.client?._id || item.client || "");
+              const linkedClient = virtualOfficeClients.find(
+                (client) => String(client._id) === clientId,
+              );
+              return (
+                item.clientName ||
+                item.client?.clientName ||
+                linkedClient?.clientName ||
+                "-"
+              );
+            })(),
+            ...(showInvoiceProjections &&
+            item.client &&
+            item.isHistoricalBilling !== true
+              ? {
+                  deskRate: getVirtualOfficeCurrentRate(item),
+                  revenue:
+                    (Number(
+                      item.client?.totalDesks ||
+                        item.noOfDesks ||
+                        Number(item.client?.cabinDesks || 0) +
+                          Number(item.client?.openDesks || 0),
+                    ) || 0) * getVirtualOfficeCurrentRate(item),
+                }
+              : {}),
+            securityDeposit:
+              item.isHistoricalBilling === true
+                ? item.securityDeposit
+                : item.client?.securityDeposit ?? item.securityDeposit,
+            billingFrequency:
+              item.isHistoricalBilling === true
+                ? item.billingFrequency
+                : item.client?.billingFrequency || item.billingFrequency,
+            normalizedStatus: getNormalizedPaymentStatus(
+              item.rentStatus ?? item.status,
+            ),
+            rentStatus: item.rentStatus || (item.status ? "Paid" : "Unpaid"),
+            invoiceLink: item.invoice?.link || "",
+            invoiceUploadedAt: item.invoice?.date || item.invoiceUploadedAt,
+            reportingAmount: getReportingAmount(item),
+            //normalizedStatus: getNormalizedPaymentStatus(item.status),
           })),
-    [isLoadingVirtualOfficeRevenue, virtualOfficeRevenue],
+    [
+      isLoadingVirtualOfficeRevenue,
+      showInvoiceProjections,
+      virtualOfficeClients,
+      virtualOfficeRevenue,
+    ],
+  );
+
+   const openEdit = (row) => {
+    setEditRow(row);
+    reset({
+      ...row,
+      client: row.client?._id || row.client,
+      clientName: row.clientName || "",
+      clientInvoiceName: row.clientInvoiceName || row.clientName || "",
+      revenue: formatBillingNumber(row.revenue),
+      receivedAmount: formatBillingNumber(row.receivedAmount),
+      channel: row.channel || "",
+      noOfDesks: row.noOfDesks ?? "",
+      deskRate: formatBillingNumber(row.deskRate),
+      totalTerm: row.totalTerm ?? "",
+      securityDeposit: row.securityDeposit ?? row.client?.securityDeposit ?? "",
+      billingFrequency: row.billingFrequency || row.client?.billingFrequency || "Yearly",
+      rentDate: row.rentDate ? dayjs(row.rentDate) : null,
+      pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
+      annualIncrement: row.annualIncrement ?? "",
+      nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
+      rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
+      invoiceUploadedAt: row.invoice?.date ? dayjs(row.invoice.date) : dayjs(),
+      invoiceFile: row.invoice?.link ? { name: row.invoice.name, url: row.invoice.link } : null,
+    });
+  };
+  const { mutate: saveInvoice, isPending } = useMutation({
+    mutationFn: async (values) => {
+      const form = new FormData();
+      form.append("revenueId", editRow._id || "");
+      form.append(
+        "isProjectedInvoice",
+        String(Boolean(editRow.isProjectedInvoice)),
+      );
+      [
+        "client",
+        "clientName",
+        "clientInvoiceName",
+        "location",
+        "channel",
+        "noOfDesks",
+        "deskRate",
+        "taxableAmount",
+        "revenue",
+        "receivedAmount",
+        "totalTerm",
+        "securityDeposit",
+        "billingFrequency",
+        "rentStatus",
+        "annualIncrement",
+        "service",
+      ].forEach((field) => {
+        if (values[field] !== undefined && values[field] !== null) {
+          form.append(field, values[field]);
+        }
+      });
+      form.append("totalReceivedAmount", String(editTotalReceivedAmount));
+      ["dueTerm", "rentDate", "pastDueDate", "nextIncrementDate"].forEach(
+        (field) => {
+          if (values[field]) form.append(field, dayjs(values[field]).toISOString());
+        },
+      );
+      form.append("invoiceUploadedAt", values.invoiceUploadedAt.toISOString());
+      if (values.invoiceFile instanceof File) form.append("client-invoice", values.invoiceFile);
+      return axios.patch("/api/sales/virtual-office-revenue-invoice", form);
+    },
+    onSuccess: () => {
+      toast.success("Virtual office invoice updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeClient"] });
+      queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientByName"] });
+      queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
+      setEditRow(null);
+    },
+    onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
+  });
+
+  const selectedAddClientId = watchAdd("client");
+  const selectedAddClient = activeVirtualOfficeClients.find(
+    (client) => client._id === selectedAddClientId,
+  );
+  const addTotalDesks =
+    Number(selectedAddClient?.totalDesks) ||
+    Number(selectedAddClient?.cabinDesks || 0) +
+      Number(selectedAddClient?.openDesks || 0);
+  const addDeskRate = selectedAddClient
+    ? getVirtualOfficeCurrentRate({ client: selectedAddClient })
+    : 0;
+  const addRevenue = addTotalDesks * addDeskRate;
+
+  const addPaymentState = useMemo(() => {
+    if (!selectedAddClientId) {
+      return {
+        currentReceivedAmount: 0,
+        previousTotalAmount: 0,
+        latestCycleCompleted: false,
+        nextIncrementDate: null,
+      };
+    }
+
+    const clientRows = tableData.filter(
+      (row) => String(row.client?._id || row.client) === String(selectedAddClientId),
+    );
+    const orderedRows = [...clientRows].sort(
+      (first, second) =>
+        new Date(first.createdAt || first.rentDate || 0) -
+        new Date(second.createdAt || second.rentDate || 0),
+    );
+    const latestRow = orderedRows.at(-1);
+    const latestRevenue = getNumericAmount(latestRow?.revenue);
+    const latestReceivedAmount = getNumericAmount(
+      latestRow?.totalReceivedAmount ?? latestRow?.receivedAmount,
+    );
+    const latestCycleCompleted =
+      latestRevenue > 0 && latestReceivedAmount >= latestRevenue;
+    const previousCompletedRow = [...orderedRows]
+      .slice(0, -1)
+      .reverse()
+      .find((row) => {
+        const revenue = getNumericAmount(row.revenue);
+        return (
+          revenue > 0 &&
+          getNumericAmount(row.totalReceivedAmount ?? row.receivedAmount) >= revenue
+        );
+      });
+
+    return {
+      currentReceivedAmount: latestCycleCompleted ? 0 : latestReceivedAmount,
+      previousTotalAmount: latestCycleCompleted
+        ? latestReceivedAmount
+        : getNumericAmount(
+            previousCompletedRow?.totalReceivedAmount ??
+              previousCompletedRow?.receivedAmount,
+          ),
+           latestCycleCompleted,
+      nextIncrementDate:
+        selectedAddClient?.nextIncrementDate || latestRow?.nextIncrementDate || null,
+    };
+ }, [selectedAddClient, selectedAddClientId, tableData]);
+
+  const addNextIncrementDate = dayjs(addPaymentState.nextIncrementDate);
+  const isAddReceivedAmountLocked =
+    showInvoiceProjections &&
+    addPaymentState.latestCycleCompleted &&
+    (!addNextIncrementDate.isValid() ||
+      dayjs().startOf("day").isBefore(addNextIncrementDate.startOf("day")));
+
+
+  const addReceivedAmount = watchAdd("receivedAmount");
+  const addReceivedAmountValue = getNumericAmount(addReceivedAmount);
+  const hasEnteredAddAmount =
+    addReceivedAmount !== "" &&
+    addReceivedAmount !== null &&
+    addReceivedAmount !== undefined;
+  const addHasIncompleteCycle =
+    addPaymentState.currentReceivedAmount > 0 &&
+    addPaymentState.currentReceivedAmount < addRevenue;
+  const addCycleReceivedAmount = addHasIncompleteCycle
+    ? addPaymentState.currentReceivedAmount +
+      (hasEnteredAddAmount ? addReceivedAmountValue : 0)
+    : addReceivedAmountValue;
+  const addHasCompletedCycle =
+    addPaymentState.previousTotalAmount > 0 &&
+    addPaymentState.currentReceivedAmount === 0 &&
+    addReceivedAmountValue === 0;
+  const addTotalReceivedAmount =
+    addHasCompletedCycle
+      ? 0
+      : addHasIncompleteCycle
+      ? Math.min(addRevenue, addCycleReceivedAmount)
+      : addReceivedAmountValue;
+  const addRemainingAmount = addHasCompletedCycle
+    ? 0
+    : Math.max(
+        0,
+        addRevenue -
+          Math.min(addRevenue, addCycleReceivedAmount),
+      );
+  const editRevenue = watch("revenue") || 0;
+  const editReceivedAmount = watch("receivedAmount") || 0;
+  const editPreviousReceivedAmount = Math.max(
+    0,
+    getNumericAmount(editRow?.totalReceivedAmount) -
+      getNumericAmount(editRow?.receivedAmount),
+  );
+  const editTotalReceivedAmount = Math.min(
+    getNumericAmount(editRevenue),
+    editPreviousReceivedAmount + getNumericAmount(editReceivedAmount),
+  );
+  const editRemainingAmount = Math.max(
+    0,
+    getNumericAmount(editRevenue) - editTotalReceivedAmount,
+  );
+  const editPreviousTotalAmount = useMemo(() => {
+    if (!editRow?.client) return 0;
+
+    return tableData
+      .filter(
+        (row) =>
+          String(row.client?._id || row.client) ===
+            String(editRow.client?._id || editRow.client) &&
+          getNumericAmount(row.revenue) > 0 &&
+          getNumericAmount(row.receivedAmount) >= getNumericAmount(row.revenue),
+      )
+      .reduce(
+        (total, row) => total + getNumericAmount(row.receivedAmount),
+        0,
+      );
+  }, [editRow, tableData]);
+  const viewPreviousTotalAmount = useMemo(() => {
+    if (!viewRow?.client) return 0;
+
+    const clientRows = tableData
+      .filter(
+        (row) =>
+          String(row.client?._id || row.client) ===
+            String(viewRow.client?._id || viewRow.client) &&
+          String(row._id) !== String(viewRow._id),
+      )
+      .sort(
+        (first, second) =>
+          new Date(first.createdAt || first.rentDate || 0) -
+          new Date(second.createdAt || second.rentDate || 0),
+      );
+
+    const previousCompletedRow = [...clientRows]
+      .reverse()
+      .find((row) => {
+        const revenue = getNumericAmount(row.revenue);
+        return revenue > 0 && getNumericAmount(row.receivedAmount) >= revenue;
+      });
+
+    return getNumericAmount(previousCompletedRow?.receivedAmount);
+  }, [viewRow, tableData]);
+
+  const { mutate: addVirtualInvoice, isPending: isAddingVirtualInvoice } =
+    useMutation({
+      mutationFn: async (values) => {
+        const payload = {
+          client: values.client,
+          location: selectedAddClient?.buildingAddress || selectedAddClient?.city || "",
+          channel: selectedAddClient?.bookingType || "Direct",
+          taxableAmount: addRevenue,
+          revenue: addRevenue,
+          receivedAmount: addReceivedAmountValue,
+          totalReceivedAmount: addTotalReceivedAmount,
+          invoiceUploadedAt: values.invoiceUploadedAt
+            ? dayjs(values.invoiceUploadedAt).toISOString()
+            : new Date().toISOString(),
+          totalTerm: selectedAddClient?.totalTerm || 0,
+          rentDate:
+            values.rentStatus === "Paid" && values.invoiceUploadedAt
+              ? dayjs(values.invoiceUploadedAt).toISOString()
+              : values.rentDate
+                ? dayjs(values.rentDate).toISOString()
+                : selectedAddClient?.rentDate || null,
+          rentStatus: values.rentStatus,
+          annualIncrement: selectedAddClient?.annualIncrement || 0,
+          nextIncrementDate: selectedAddClient?.nextIncrementDate || null,
+          billingFrequency: values.billingFrequency || "Yearly",
+        };
+        const response = await axios.post("/api/sales/create-virtual-office-revenue", payload);
+        const createdRevenue = response.data?.data || response.data?.revenue;
+
+        if (values.invoiceFile instanceof File && createdRevenue?._id) {
+          const form = new FormData();
+          form.append("revenueId", createdRevenue._id);
+          form.append("rentStatus", values.rentStatus);
+          form.append(
+            "invoiceUploadedAt",
+            values.invoiceUploadedAt
+              ? dayjs(values.invoiceUploadedAt).toISOString()
+              : new Date().toISOString(),
+          );
+          form.append("client-invoice", values.invoiceFile);
+          await axios.patch("/api/sales/virtual-office-revenue-invoice", form);
+        }
+
+        return { ...response.data, createdRevenue };
+      },
+      onSuccess: (data) => {
+        toast.success("Virtual office invoice added successfully");
+        if (data.createdRevenue?._id) {
+          setAddedRevenueIds((ids) => [...ids, data.createdRevenue._id]);
+        }
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] });
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClient"] });
+        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientByName"] });
+        queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
+        setAddRow(false);
+        resetAdd();
+      },
+      onError: (error) =>
+        toast.error(error.response?.data?.message || "Unable to add invoice"),
+    });
+
+  const openAdd = () => {
+      resetAdd({
+      client: "",
+      clientName: "",
+      receivedAmount: "",
+      rentStatus: "Unpaid",
+      rentDate: null,
+      invoiceUploadedAt: dayjs(),
+      invoiceFile: null,
+    });
+    //resetAdd({ client: "", clientName: "", rentStatus: "Unpaid", invoiceFile: null });
+    setAddRow(true);
+  };
+
+  const handleAddClientChange = (event) => {
+    const client = activeVirtualOfficeClients.find(
+      (item) => item._id === event.target.value,
+    );
+    setAddValue("client", event.target.value);
+    setAddValue("clientName", client?.clientName || "");
+    setAddValue("billingFrequency", client?.billingFrequency || "Yearly");
+    setAddValue("receivedAmount", "");
+    setAddValue("rentDate", client?.rentDate ? dayjs(client.rentDate) : null);
+  };
+
+  const visibleTableData = useMemo(
+    () =>
+      tableData.filter((item) =>
+        showInvoiceProjections
+          ? item.isHistoricalBilling === true ||
+            item.normalizedStatus === "paid" ||
+            item.normalizedStatus === "unpaid" ||
+            addedRevenueIds.includes(item._id)
+          : item.isHistoricalBilling === true || item.normalizedStatus === "paid",
+      ),
+    [addedRevenueIds, showInvoiceProjections, tableData],
   );
 
   const graphData = useMemo(
@@ -74,10 +638,21 @@ const getFinancialYear = (dateValue) => {
       isLoadingVirtualOfficeRevenue
         ? []
         : tableData
-            .filter((item) => item.normalizedStatus === "paid")
+            .filter(
+              (item) =>
+                item.isHistoricalBilling === true ||
+                item.normalizedStatus === "paid",
+            )
             .map((item) => ({
               ...item,
               revenue: getNumericAmount(item.revenue),
+              receivedAmount: getNumericAmount(item.receivedAmount),
+              reportingAmount: getReportingAmount(item),
+              graphDate:
+                item.rentDate ||
+                item.invoiceUploadedAt ||
+                item.invoice?.date ||
+                item.createdAt,
               vertical: "Virtual Office",
             })),
     [isLoadingVirtualOfficeRevenue, tableData],
@@ -85,18 +660,325 @@ const getFinancialYear = (dateValue) => {
 
   const selectedFiscalYearRevenue = useMemo(
     () =>
-      graphData.filter((item) => getFinancialYear(item.rentDate) === selectedFY),
+      graphData.filter((item) => getFinancialYear(item.graphDate) === selectedFY),
     [graphData, selectedFY],
   );
 
   const maxVirtualOfficeAmount = useMemo(
     () =>
       selectedFiscalYearRevenue.reduce(
-        (max, item) => Math.max(max, getNumericAmount(item.revenue)),
+        (max, item) => Math.max(max, getNumericAmount(item.reportingAmount)),
         0,
       ),
     [selectedFiscalYearRevenue],
   );
+
+  const revenueTableColumns = [
+    {
+      headerName: "Sr No",
+      field: "srNo",
+      width: 300,
+      minWidth: 80,
+    },
+    {
+      headerName: "Client Name",
+      field: "clientName",
+      flex: 1.9,
+      minWidth: 320,
+    },
+    {
+      headerName: "Revenue (INR)",
+      field: "revenue",
+      flex: 2.5,
+      minWidth: 170,
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "No. of Desks",
+      field: "noOfDesks",
+    },
+    {
+      headerName: "Open Desk Rate",
+      field: "deskRate",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Total Received Amount",
+      field: "totalReceivedAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Received Amount",
+      field: "receivedAmount",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Remaining Amount",
+      field: "remainingAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.revenue) -
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Rent Status",
+      field: "rentStatus",
+     flex:2,
+     pinned: "right",
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "flex-start",
+        paddingLeft: "12px",
+        paddingRight: "12px",
+      },
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      headerName: "Action",
+      field: "actions",
+      pinned: "right",
+      width: 100,
+      minWidth: 90,
+      sortable: false,
+      filter: false,
+      cellStyle: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        paddingLeft: "8px",
+        paddingRight: "8px",
+      },
+      cellRenderer: ({ data }) => (
+        <IconButton
+          size="small"
+          onClick={() => setViewRow(data)}
+          aria-label="View invoice"
+        >
+          <MdOutlineRemoveRedEye size={18} />
+        </IconButton>
+      ),
+    },
+  ];
+
+  const billingTableColumns = [
+    {
+      headerName: "Sr No",
+      field: "srNo",
+      width: 80,
+      minWidth: 80,
+    },
+    {
+      headerName: "Client Name",
+      field: "clientName",
+      width: 350,
+      minWidth: 220,
+    },
+    {
+      headerName: "Channel",
+      field: "channel",
+    },
+    {
+      headerName: "Revenue (INR)",
+      field: "revenue",
+      cellRenderer: (params) => inrFormat(params.value || 0),
+    },
+    {
+      headerName: "No. of Desks",
+      field: "noOfDesks",
+    },
+    {
+      headerName: "Open Desk Rate",
+      field: "deskRate",
+      cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Total Received Amount",
+      field: "totalReceivedAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) =>
+        isBeforeUploadLogicStart(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Received Amount",
+      field: "receivedAmount",
+      cellRenderer: (params) =>
+        isBeforeUploadLogicStart(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Remaining Amount",
+      field: "remainingAmount",
+      valueGetter: ({ data }) =>
+        getNumericAmount(data?.revenue) -
+        getNumericAmount(data?.totalReceivedAmount ?? data?.receivedAmount),
+      cellRenderer: (params) =>
+        isBeforeUploadLogicStart(
+          params.data?.rentDate ||
+            params.data?.invoiceUploadedAt ||
+            params.data?.createdAt,
+        )
+          ? "-"
+          : `INR ${inrFormat(params.value || 0)}`,
+    },
+    {
+      headerName: "Total Term",
+      field: "totalTerm",
+    },
+    {
+      headerName: "Rent Date",
+      field: "rentDate",
+    },
+    {
+      headerName: "Past Due Date",
+      field: "pastDueDate",
+    },
+    {
+      headerName: "Annual Increment (%)",
+      field: "annualIncrement",
+    },
+    {
+      headerName: "Next Increment Date",
+      field: "nextIncrementDate",
+    },
+    {
+      headerName: "Invoice Link",
+      field: "invoiceLink",
+      pinned: "right",
+      flex:1,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      cellRenderer: ({ value }) =>
+        value ? (
+          <a
+            href={value}
+            target="_blank"
+            rel="noreferrer"
+            className="text-primary underline"
+          >
+            View PDF
+          </a>
+        ) : (
+          "-"
+        ),
+    },
+    {
+      headerName: "Invoice Upload Date",
+      field: "invoiceUploadedAt",
+      pinned: "right",
+      flex:1,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      valueFormatter: ({ value }) =>
+        value ? dayjs(value).format("DD-MM-YYYY") : "-",
+    },
+    {
+      headerName: "Rent Status",
+      field: "rentStatus",
+      pinned: "right",
+      flex:1,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
+    {
+      headerName: "Action",
+      field: "actions",
+      pinned: "right",
+      flex:1,
+      headerClass: "vo-right-pinned-header",
+      cellClass: "vo-right-pinned-cell",
+      cellStyle: {
+        paddingLeft: "16px",
+        paddingRight: "16px",
+      },
+      sortable: false,
+      filter: false,
+      cellRenderer: ({ data }) => (
+        <div className="flex items-center">
+          <IconButton
+            size="small"
+            onClick={() => setViewRow(data)}
+            aria-label="View invoice"
+          >
+            <MdOutlineRemoveRedEye size={18} />
+          </IconButton>
+
+          <ThreeDotMenu
+            rowId={data._id}
+            menuItems={[
+              {
+                label: "Edit",
+                onClick: () => openEdit(data),
+              },
+            ]}
+          />
+        </div>
+      ),
+    },
+  ];
+
+  const getVisibleBillingColumns = ({ filteredData }) => {
+    const hasCurrentOrFutureRows = filteredData.some((item) =>
+      !isBeforeUploadLogicStart(
+        item.rentDate || item.invoiceUploadedAt || item.createdAt,
+      ),
+    );
+
+    if (hasCurrentOrFutureRows) return billingTableColumns;
+
+    const hiddenFields = new Set([
+      "totalReceivedAmount",
+      "receivedAmount",
+      "remainingAmount",
+      "deskRate",
+    ]);
+
+    return billingTableColumns.filter((column) => !hiddenFields.has(column.field));
+  };
+
+  const getVisibleRevenueColumns = ({ filteredData }) => {
+    const hasCurrentOrFutureRows = filteredData.some((item) =>
+      !isBeforeUploadLogicStart(
+        item.rentDate || item.invoiceUploadedAt || item.createdAt,
+      ),
+    );
+
+    if (hasCurrentOrFutureRows) return revenueTableColumns;
+
+    const hiddenFields = new Set([
+      "noOfDesks",
+      "deskRate",
+    ]);
+
+    return revenueTableColumns.filter((column) => !hiddenFields.has(column.field));
+  };
 
   const useLakhsScale = maxVirtualOfficeAmount >= 100000;
 
@@ -180,11 +1062,12 @@ const getFinancialYear = (dateValue) => {
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
           data={graphData}
-          dateKey="rentDate"
-          valueKey="revenue"
+          dateKey="graphDate"
+          valueKey="reportingAmount"
           chartOptions={options}
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
+          disableHoverCrosshair
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
@@ -193,9 +1076,13 @@ const getFinancialYear = (dateValue) => {
 
       {!isLoadingVirtualOfficeRevenue ? (
         <WidgetTable
-          tableTitle={"Monthly Revenue with Client Details"}
-          data={tableData}
-          totalKey="revenue"
+          tableTitle={
+            showInvoiceProjections
+              ? "Virtual Office Revenue Client Invoicing"
+              : "Monthly Revenue with Client Details"
+          }
+          data={visibleTableData}
+          totalKey="reportingAmount"
           exportData
           dateColumn={"rentDate"}
           titleAmountOverride=""
@@ -203,7 +1090,7 @@ const getFinancialYear = (dateValue) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "paid") return sum;
-                return sum + getNumericAmount(item.revenue);
+                return sum + getNumericAmount(item.reportingAmount);
               }, 0),
             )}`
           }
@@ -211,7 +1098,7 @@ const getFinancialYear = (dateValue) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "unpaid") return sum;
-                return sum + getNumericAmount(item.revenue);
+                return sum + getNumericAmount(item.reportingAmount);
               }, 0),
             )}`
           }
@@ -220,28 +1107,762 @@ const getFinancialYear = (dateValue) => {
           redTitle="Unpaid"
           totalTitle="Total"
           summaryChipVariant="ticket"
-          columns={[
-            { headerName: "Sr No", field: "srNo", flex: 1 },
-            { headerName: "Client Name", field: "clientName", flex: 1 },
-            {
-              headerName: "Revenue (INR)",
-              field: "revenue",
-              flex: 1,
-              cellRenderer: (params) => inrFormat(params.value || 0),
-            },
-            {
-              headerName: "Status",
-              field: "status",
-              flex: 1,
-              cellRenderer: (params) => (
-                <StatusChip status={params.value ? "Paid" : "Unpaid"} />
-              ),
-            },
-          ]}
+          preserveCurrentMonthRange={showInvoiceProjections}
+          showCalendarWhenEmpty={showInvoiceProjections}
+          headerActions={
+            showInvoiceProjections ? (
+              <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />
+            ) : null
+          }
+          columns={
+            showInvoiceProjections ? billingTableColumns : revenueTableColumns
+          }
+          getVisibleColumns={
+            showInvoiceProjections
+              ? getVisibleBillingColumns
+              : getVisibleRevenueColumns
+          }
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
       )}
+      {addRow && (
+        <MuiModal
+          open
+          title="Add Virtual"
+          onClose={() => setAddRow(false)}
+        >
+          <form
+            onSubmit={handleAddSubmit((values) => {
+              if (isAddReceivedAmountLocked && addNextIncrementDate.isValid()) {
+                toast.error(
+                  "Client has already paid and will be available from the next increment date",
+                );
+                return;
+              }
+              addVirtualInvoice(values);
+            })}
+            className="grid grid-cols-2 gap-4"
+          >
+            <Controller
+              name="client"
+              control={addControl}
+              rules={{ required: "Select a client" }}
+              render={({ field, fieldState }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Select Client"
+                  size="small"
+                  fullWidth
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  onChange={handleAddClientChange}
+                >
+                  {activeVirtualOfficeClients.map((client) => (
+                    <MenuItem key={client._id} value={client._id}>
+                      {client.clientName}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <Controller
+              name="clientName"
+              control={addControl}
+              render={({ field }) => (
+                <TextField {...field} label="Client Name" size="small" fullWidth />
+              )}
+            />
+
+            {[
+              ["clientInvoiceName", "Client Invoice Name", selectedAddClient?.clientName],
+              ["channel", "Channel", selectedAddClient?.bookingType || "Direct"],
+              ["noOfDesks", "No. of Desks", addTotalDesks],
+              ["deskRate", "Open Desk Rate", addDeskRate],
+              // ["revenue", "Revenue", addRevenue],
+               ].map(([name, label, value]) => (
+              <TextField
+                key={name}
+                value={value ?? ""}
+                label={label}
+                size="small"
+                fullWidth
+                disabled
+              />
+            ))}
+
+            {[
+              ["totalTerm", "Total Term", selectedAddClient?.totalTerm || 0],
+              ["annualIncrement", "Annual Increment (%)", selectedAddClient?.annualIncrement || 0],
+            ].map(([name, label, value]) => (
+              <TextField
+                key={name}
+                value={value ?? ""}
+                label={label}
+                size="small"
+                fullWidth
+                disabled
+              />
+            ))}
+
+            <TextField
+              value={selectedAddClient?.nextIncrementDate ? dayjs(selectedAddClient.nextIncrementDate).format("DD-MM-YYYY") : ""}
+              label="Next Increment Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.securityDeposit ?? ""}
+              label="Security Deposit"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <TextField
+              value={selectedAddClient?.pastDueDate ? dayjs(selectedAddClient.pastDueDate).format("DD-MM-YYYY") : ""}
+              label="Past Due Date"
+              size="small"
+              fullWidth
+              disabled
+            />
+            <Controller
+              name="rentDate"
+              control={addControl}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  value={field.value ?? null}
+                  label="Rent Date"
+                  format="DD-MM-YYYY"
+                  maxDate={dayjs()}
+                  onChange={(dateValue) => field.onChange(dateValue)}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                    },
+                  }}
+                />
+              )}
+            />
+            <div className="col-span-2">
+              <Controller
+                name="invoiceUploadedAt"
+                control={addControl}
+                render={({ field }) => (
+                  <DatePicker
+                    {...field}
+                    value={field.value ?? null}
+                    label="Invoice Upload Date"
+                    format="DD-MM-YYYY"
+                    maxDate={dayjs()}
+                    onChange={(dateValue) => field.onChange(dateValue)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </div>
+            <div
+              className={`col-span-2 grid grid-cols-1 gap-4 ${
+                addPaymentState.previousTotalAmount > 0
+                  ? "md:grid-cols-5"
+                  : "md:grid-cols-4"
+              }`}
+            >
+              <Controller
+                name="receivedAmount"
+                control={addControl}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    label="Received Amount"
+                    type="number"
+                    size="small"
+                    inputProps={{ min: 0 }}
+                    fullWidth
+                     disabled={isAddReceivedAmountLocked}
+                    helperText={
+                      isAddReceivedAmountLocked && addNextIncrementDate.isValid()
+                        ? `Available from ${addNextIncrementDate.format("DD-MM-YYYY")}`
+                        : undefined
+                    }
+                    FormHelperTextProps={{
+                      sx: {
+                        color: "#16a34a !important",
+                        whiteSpace: "nowrap",
+                        fontSize: "0.72rem",
+                        marginLeft: 0,
+                        "&.Mui-disabled": { color: "#16a34a !important" },
+                      },
+                    }}
+                    sx={{
+                      "& .MuiFormHelperText-root": {
+                        color: "#16a34a !important",
+                      },
+                    }}
+                  />
+                )}
+              />
+              <TextField
+                value={formatBillingNumber(addRemainingAmount)}
+                label="Remaining Amount"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+              <TextField
+                value={formatBillingNumber(addTotalReceivedAmount)}
+                label="Total Received Amount"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+              {addPaymentState.previousTotalAmount > 0 && (
+                <TextField
+                  value={formatBillingNumber(addPaymentState.previousTotalAmount)}
+                  label="Previous Total Amount"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  disabled
+                />
+              )}
+              <TextField
+                value={formatBillingNumber(addRevenue)}
+                label="Revenue"
+                type="number"
+                size="small"
+                fullWidth
+                disabled
+              />
+            </div>
+            <Controller
+              name="billingFrequency"
+              control={addControl}
+              defaultValue="Yearly"
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  select
+                  label="Billing Frequency"
+                  size="small"
+                  fullWidth
+                >
+                  <MenuItem value="Monthly">Monthly</MenuItem>
+                  <MenuItem value="Yearly">Yearly</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="rentStatus"
+              control={addControl}
+              render={({ field }) => (
+                <TextField {...field} select label="Paid/Rent Status" size="small" fullWidth>
+                  <MenuItem value="Paid">Paid</MenuItem>
+                  <MenuItem value="Unpaid">Unpaid</MenuItem>
+                </TextField>
+              )}
+            />
+            <Controller
+              name="invoiceFile"
+              control={addControl}
+              render={({ field }) => (
+                <div className="col-span-2">
+                  <UploadFileInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    allowedExtensions={["pdf", "doc", "docx"]}
+                  />
+                </div>
+              )}
+            />
+            <div className="col-span-2">
+              <PrimaryButton
+                type="submit"
+                title="Add Virtual"
+                disabled={isAddingVirtualInvoice}
+                isLoading={isAddingVirtualInvoice}
+                className="w-full"
+              />
+            </div>
+          </form>
+        </MuiModal>
+      )}
+      {viewRow && (
+        <MuiModal
+          open
+          onClose={() => setViewRow(null)}
+          title="View Invoice Details"
+        >
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Client Info</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
+                <DetalisFormatted
+                  title="Client Invoice Name"
+                  detail={viewRow.clientInvoiceName || viewRow.clientName || "-"}
+                />
+                <DetalisFormatted title="Channel" detail={viewRow.channel || "-"} />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Financials</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="No. of Desks"
+                  detail={viewRow.noOfDesks ?? "-"}
+                />
+                <DetalisFormatted
+                  title="Open Desk Rate(Current)"
+                  detail={`INR ${inrFormat(getNumericAmount(viewRow.deskRate))}`}
+                />
+                <DetalisFormatted
+                  title="Revenue"
+                  detail={`INR ${inrFormat(getNumericAmount(viewRow.revenue))}`}
+                />
+                {!isBeforeUploadLogicStart(
+                    viewRow.rentDate ||
+                      viewRow.invoiceUploadedAt ||
+                      viewRow.createdAt,
+                  ) && (
+                    <>
+                      <DetalisFormatted
+                        title="Received Amount"
+                        detail={`INR ${inrFormat(getNumericAmount(viewRow.receivedAmount))}`}
+                      />
+                      <DetalisFormatted
+                        title="Total Received Amount"
+                        detail={`INR ${inrFormat(
+                          getNumericAmount(
+                            viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                          ),
+                        )}`}
+                      />
+                      {showInvoiceProjections && viewPreviousTotalAmount > 0 && (
+                        <DetalisFormatted
+                          title="Previous Total Amount"
+                          detail={`INR ${inrFormat(viewPreviousTotalAmount)}`}
+                        />
+                      )}
+                      <DetalisFormatted
+                        title="Remaining Amount"
+                        detail={`INR ${inrFormat(
+                          getNumericAmount(viewRow.revenue) -
+                            getNumericAmount(
+                              viewRow.totalReceivedAmount ?? viewRow.receivedAmount,
+                            ),
+                        )}`}
+                      />
+                    </>
+                  )}
+                <DetalisFormatted
+                  title="Annual Increment (%)"
+                  detail={
+                    viewRow.annualIncrement !== undefined &&
+                    viewRow.annualIncrement !== null &&
+                    viewRow.annualIncrement !== ""
+                      ? `${viewRow.annualIncrement}%`
+                      : "-"
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Rental Terms</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Security Deposit"
+                  detail={viewRow.securityDeposit ?? viewRow.client?.securityDeposit ?? "-"}
+                />
+                <DetalisFormatted
+                  title="Billing Frequency"
+                  detail={viewRow.billingFrequency || viewRow.client?.billingFrequency || "-"}
+                />
+                <DetalisFormatted
+                  title="Rent Date"
+                  detail={
+                    viewRow.rentDate
+                      ? dayjs(viewRow.rentDate).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Paid/Rent Status"
+                  detail={viewRow.rentStatus || "-"}
+                />
+                <DetalisFormatted
+                  title="Total Term"
+                  detail={viewRow.totalTerm ?? "-"}
+                />
+                <DetalisFormatted
+                  title="Next Increment Date"
+                  detail={
+                    viewRow.nextIncrementDate
+                      ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Past Due Date"
+                  detail={
+                    viewRow.pastDueDate
+                      ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">
+                Finance Invoice Details
+              </div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={
+                    viewRow.invoiceLink ? (
+                      <a
+                        href={viewRow.invoiceLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded Date"
+                  detail={
+                    viewRow.invoiceUploadedAt
+                      ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded by"
+                  detail={
+                    viewRow.invoiceUploadedByName ||
+                    getUserDisplayName(viewRow.invoiceUploadedBy) ||
+                    "-"
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        </MuiModal>
+)}
+
+{editRow && (
+  <MuiModal
+    open
+    title="Edit Invoice"
+    onClose={() => setEditRow(null)}
+  >
+    <form
+      onSubmit={handleSubmit(saveInvoice)}
+      className="grid grid-cols-2 gap-4"
+    >
+      <Controller
+        name="client"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Select Client"
+            size="small"
+            fullWidth
+            disabled
+          >
+            {virtualOfficeClients.map((client) => (
+              <MenuItem key={client._id} value={client._id}>
+                {client.clientName}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+      />
+
+      {[
+        ["clientName", "Client Name", "text"],
+        ["clientInvoiceName", "Client Invoice Name", "text"],
+        ["channel", "Channel", "text"],
+        ["noOfDesks", "No. of Desks", "number"],
+        ["deskRate", "Open Desk Rate", "number"],
+      //  ["revenue", "Revenue", "number"],
+        ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      ))}
+
+      {[
+        ["totalTerm", "Total Term", "number"],
+        ["annualIncrement", "Annual Increment (%)", "number"],
+      ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type={type}
+              label={label}
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      ))}
+
+      <Controller
+        name="nextIncrementDate"
+        control={control}
+        render={({ field }) => (
+          <DatePicker
+            {...field}
+            value={field.value ?? null}
+            label="Next Increment Date"
+            format="DD-MM-YYYY"
+            disabled
+            slotProps={{
+              textField: {
+                size: "small",
+                fullWidth: true,
+                disabled: true,
+              },
+            }}
+          />
+        )}
+      />
+
+      <Controller
+        name="securityDeposit"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            type="number"
+            label="Security Deposit"
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+      />
+
+      {[
+        ["pastDueDate", "Past Due Date"],
+        ["rentDate", "Rent Date"],
+      ].map(([name, label]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label={label}
+              format="DD-MM-YYYY"
+              disabled={name !== "rentDate"}
+              maxDate={name === "rentDate" ? dayjs() : undefined}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  disabled: name !== "rentDate",
+                },
+              }}
+            />
+          )}
+        />
+      ))}
+
+      <div className="col-span-2">
+        <Controller
+          name="invoiceUploadedAt"
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label="Invoice Upload Date"
+              format="DD-MM-YYYY"
+              maxDate={dayjs()}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                },
+              }}
+            />
+          )}
+        />
+      </div>
+
+      <div
+        className={`col-span-2 grid grid-cols-1 gap-4 ${
+          editPreviousTotalAmount > 0 ? "md:grid-cols-5" : "md:grid-cols-4"
+        }`}
+      >
+        <Controller
+          name="receivedAmount"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label="Received Amount"
+              size="small"
+              inputProps={{ min: 0 }}
+              fullWidth
+            />
+          )}
+        />
+        <TextField
+          value={formatBillingNumber(editRemainingAmount)}
+          type="number"
+          label="Remaining Amount"
+          size="small"
+          fullWidth
+          disabled
+        />
+        <TextField
+          value={formatBillingNumber(editTotalReceivedAmount)}
+          type="number"
+          label="Total Received Amount"
+          size="small"
+          fullWidth
+          disabled
+        />
+        {editPreviousTotalAmount > 0 && (
+        <TextField
+          value={formatBillingNumber(editPreviousTotalAmount)}
+          type="number"
+            label="Previous Total Amount"
+            size="small"
+            fullWidth
+            disabled
+          />
+        )}
+        <Controller
+          name="revenue"
+          control={control}
+          render={({ field }) => (
+            <TextField
+              {...field}
+              type="number"
+              label="Revenue"
+              size="small"
+              fullWidth
+              disabled
+            />
+          )}
+        />
+      </div>
+
+      <Controller
+        name="billingFrequency"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Billing Frequency"
+            size="small"
+            fullWidth
+           // disabled
+          >
+            <MenuItem value="Monthly">Monthly</MenuItem>
+            <MenuItem value="Yearly">Yearly</MenuItem>
+          </TextField>
+        )}
+      />
+
+      <Controller
+        name="rentStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Paid/Rent Status"
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="Paid">
+              Paid
+            </MenuItem>
+
+            <MenuItem value="Unpaid">
+              Unpaid
+            </MenuItem>
+          </TextField>
+        )}
+      />
+
+      <Controller
+        name="invoiceFile"
+        control={control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <UploadFileInput
+              value={field.value}
+              onChange={field.onChange}
+              allowedExtensions={[
+                "pdf",
+                "doc",
+                "docx",
+              ]}
+            />
+          </div>
+        )}
+      />
+
+      <div className="col-span-2">
+        <PrimaryButton
+          type="submit"
+          title="Update Invoice"
+          disabled={isPending}
+          isLoading={isPending}
+          className="w-full"
+        />
+      </div>
+    </form>
+  </MuiModal>
+)}
     </div>
   );
 };

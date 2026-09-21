@@ -1,11 +1,204 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
+import { useQuery } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import humanDate from "../../../utils/humanDateForamt";
 import PrimaryButton from "../../../components/PrimaryButton";
+import { useDispatch } from "react-redux";
+import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
+import { setSelectedClient } from "../../../redux/slices/clientSlice";
+import { useParams } from "react-router-dom";
+
+const calculateCurrentRate = (
+  cabinRate,
+  openRate,
+  annualIncrement,
+  startDate,
+  referenceDate = dayjs(),
+) => {
+  const base = [cabinRate, openRate]
+    .map((rate) => Number(rate))
+    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!base) {
+    return 0;
+  }
+
+  const start = dayjs(startDate);
+  if (!start.isValid()) {
+    return base;
+  }
+
+  const yearsElapsed = Math.max(referenceDate.diff(start, "year"), 0);
+  const rate = base * Math.pow(1 + increment / 100, yearsElapsed);
+
+  return rate;
+};
+
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getCalendarDateInUtc = (value) => {
+  const date = new Date(value);
+  const dateParts =
+    typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (dateParts) {
+    return Date.UTC(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    );
+  }
+
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  const startDay = getCalendarDateInUtc(startDate);
+  const endDay = getCalendarDateInUtc(endDate);
+
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDay) ||
+    Number.isNaN(endDay) ||
+    endDay < startDay
+  ) {
+    return "-";
+  }
+
+  const today = getCalendarDateInUtc(new Date());
+  const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
+const formatExactNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+
+  return String(value);
+};
+
+const useCurrentMonthStartDate = () => {
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
+    () => dayjs().startOf("month").toISOString(),
+  );
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleNextUpdate = () => {
+      const now = dayjs();
+      const nextMonthStart = now.add(1, "month").startOf("month");
+      const delay = Math.max(nextMonthStart.diff(now), 0);
+
+      timeoutId = window.setTimeout(() => {
+        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        scheduleNextUpdate();
+      }, delay);
+    };
+
+    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    scheduleNextUpdate();
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return currentMonthStartDate;
+};
 
 const AdminClientDetails = () => {
+  const dispatch = useDispatch();
+  const axios = useAxiosPrivate();
+  const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
+  const normalizedClientName = useMemo(
+    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    [clientName],
+  );
+  const computedRentDate = useCurrentMonthStartDate();
+  const computedLockinPeriod = useMemo(() => {
+    return Number(selectedClient?.lockinPeriod ?? selectedClient?.lockInPeriodMonths ?? 0);
+  }, [selectedClient?.lockInPeriodMonths, selectedClient?.lockinPeriod]);
+  const computedTotalTerm = useMemo(() => {
+    const startDate = selectedClient?.startDate;
+    const endDate = selectedClient?.endDate;
+
+    if (!startDate || !endDate) {
+      return 0;
+    }
+
+    const start = dayjs(startDate);
+    const end = dayjs(endDate);
+
+    if (!start.isValid() || !end.isValid() || !end.isAfter(start)) {
+      return 0;
+    }
+
+    return end.diff(start, "month");
+  }, [selectedClient?.endDate, selectedClient?.startDate]);
+  const computedAgreementExpiry = useMemo(
+    () => calculateAgreementExpiry(selectedClient?.startDate, selectedClient?.endDate),
+    [selectedClient?.endDate, selectedClient?.startDate],
+  );
+  const computedCurrentRate = useMemo(
+    () =>
+      calculateCurrentRate(
+        selectedClient?.ratePerCabinDesk,
+        selectedClient?.ratePerOpenDesk,
+        selectedClient?.annualIncrement,
+        selectedClient?.startDate,
+      ),
+    [
+      selectedClient?.annualIncrement,
+      selectedClient?.ratePerCabinDesk,
+      selectedClient?.ratePerOpenDesk,
+      selectedClient?.startDate,
+    ],
+  );
+  const computedRevenue = useMemo(
+    () => {
+      const noOfDesks =
+        Number(selectedClient?.cabinDesks || 0) +
+        Number(selectedClient?.openDesks || 0);
+
+      return noOfDesks * computedCurrentRate;
+    },
+    [computedCurrentRate, selectedClient?.cabinDesks, selectedClient?.openDesks],
+  );
+
+  const { isLoading: isClientLoading } = useQuery({
+    queryKey: ["adminCoWorkingClientByName", normalizedClientName],
+    enabled:
+      Boolean(normalizedClientName) &&
+      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      const clients = Array.isArray(response?.data) ? response.data : [];
+      const matchedClient = clients.find(
+        (client) =>
+          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+      );
+
+      if (matchedClient?._id) {
+        dispatch(setSelectedClient(matchedClient));
+      }
+
+      return matchedClient;
+    },
+  });
 
   const { control, reset } = useForm({
     defaultValues: {
@@ -71,8 +264,9 @@ const AdminClientDetails = () => {
         bookingType: selectedClient.bookingType,
         startDate: selectedClient.startDate,
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
+        lockinPeriod:
+          selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPocName || "",
         localPocEmail: selectedClient.localPocEmail || "",
@@ -85,7 +279,15 @@ const AdminClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [selectedClient, reset]);
+  }, [computedLockinPeriod, computedRentDate, selectedClient, reset]);
+
+  if (isClientLoading && !selectedClient) {
+    return (
+      <div className="border-2 border-gray-200 p-4 rounded-md flex items-center justify-center min-h-[240px]">
+        <div className="p-4 font-semibold">Loading client details...</div>
+      </div>
+    );
+  }
 
   const displayField = (label, value, isDate = false) => (
     <div className="py-2 flex justify-between items-start gap-2">
@@ -131,6 +333,7 @@ const AdminClientDetails = () => {
               {displayField("HO City", _defaultValues.hoCity)}
               {displayField("HO State", _defaultValues.hoState)}
               {displayField("Booking Type", _defaultValues.bookingType)}
+              {displayField("Revenue", formatExactNumber(computedRevenue))}
             </div>
           </div>
 
@@ -153,6 +356,12 @@ const AdminClientDetails = () => {
                 "Rate Per Open Desk",
                 _defaultValues.ratePerOpenDesk
               )}
+              {displayField(
+                "No of Desk",
+                Number(_defaultValues.cabinDesks || 0) +
+                  Number(_defaultValues.openDesks || 0)
+              )}
+              {displayField("Current Rate", formatExactNumber(computedCurrentRate))}
             </div>
           </div>
 
@@ -179,8 +388,10 @@ const AdminClientDetails = () => {
               )}
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
-              {displayField("Lock-in Period", _defaultValues.lockinPeriod)}
-              {displayField("Rent Date", _defaultValues.rentDate, true)}
+              {displayField("Lock-in Period", computedLockinPeriod)}
+              {displayField("Total Term", computedTotalTerm)}
+              {displayField("Agreement Expiry", computedAgreementExpiry)}
+              {displayField("Rent Date", computedRentDate, true)}
               {displayField(
                 "Next Increment",
                 _defaultValues.nextIncrement,

@@ -106,6 +106,7 @@ const CoWorkingClients = () => {
       ),
     },
     { field: "desks", headerName: "Desks", flex:0.5},
+    { field: "clientType", headerName: "Client Type", flex: 0.5, minWidth: 170 },
     {
       field: "occupancy",
       headerName: "Occupancy (%)",
@@ -167,6 +168,7 @@ const CoWorkingClients = () => {
     // openDesks: item.openDesks,
     // totalDesks: item.totalDesks,
     desks: Number(item.openDesks || 0) + Number(item.cabinDesks),
+    clientType: item.clientType || "",
     occupancy: (
       ((Number(item.openDesks || 0) + Number(item.cabinDesks)) / 589) *
       100

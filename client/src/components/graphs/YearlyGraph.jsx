@@ -15,6 +15,7 @@ const YearlyGraph = ({
   TitleAmountRed,
   TitleAmountTotal,
   headerRightContent,
+  
    greenTitle,
   redTitle,
   totalTitle,
@@ -22,13 +23,17 @@ const YearlyGraph = ({
   responsiveResize = false,
   headerCenterContent,
   headerCenterContentInline = false,
+  chartTopContent,
   secondParam = false,
   chartHeight,
   sectionHeight = "",
+  
   currentYear,
   onYearChange,
   refreshOnDataChange = false,
   navigationLabel = "",
+  hideYearNavigation = false,
+  categories,
   dateKey, // 👈 New prop
   minFiscalYear,
 }) => {
@@ -95,6 +100,10 @@ const YearlyGraph = ({
       (item) =>
         String(item.group || "").includes(String(selectedYearStart)),
     );
+    filteredData = data.filter(
+      (item) =>
+        String(item.group || "").includes(String(selectedYearStart)),
+    );
   }
 
   if (filteredData.length === 0 && dataPoint !== "name") {
@@ -120,7 +129,7 @@ const YearlyGraph = ({
     },
     xaxis: {
       ...options.xaxis,
-       categories: buildYearCategories(selectedYear),
+       categories: categories || buildYearCategories(selectedYear),
     },
   };
 
@@ -147,6 +156,7 @@ const YearlyGraph = ({
         TitleAmountRed={TitleAmountRed}
         totalTitle={totalTitle}
         headerRightContent={headerRightContent}
+      
          greenTitle={greenTitle}
         redTitle={redTitle}
         summaryChipVariant={summaryChipVariant}
@@ -155,6 +165,7 @@ const YearlyGraph = ({
         height={sectionHeight}
       >
         <div className="flex flex-col gap-4">
+          {chartTopContent}
           <BarGraph
             key={refreshOnDataChange ? `${selectedYear}-${seriesKey}` : selectedYear}
             data={filteredData}
@@ -165,6 +176,7 @@ const YearlyGraph = ({
             height={chartHeight}
           />
 
+          {!hideYearNavigation && (
           <div className="flex flex-col justify-center items-center gap-1">
             {navigationLabel && (
               <div className="text-black text-content font-semibold">
@@ -196,6 +208,7 @@ const YearlyGraph = ({
               />
             </div>
           </div>
+          )}
         </div>
       </WidgetSection>
     </div>

@@ -1,4 +1,5 @@
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
+const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const CustomError = require("../../utils/customErrorlogs");
@@ -159,6 +160,12 @@ const createVirtualOfficeClient = async (req, res) => {
     const cabinDeskRate = Number(data.cabinDeskRate || 0);
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
+    const receivedAmount = Number(data.receivedAmount || 0);
+    const totalReceivedAmount = Number(
+      data.totalReceivedAmount !== undefined
+        ? data.totalReceivedAmount
+        : receivedAmount,
+    );
     const perDeskMeetingCredits = Number(data.perDeskMeetingCredits || 0);
     const annualIncrement = Number(data.annualIncrement || 0);
 
@@ -168,6 +175,8 @@ const createVirtualOfficeClient = async (req, res) => {
       ["securityDeposit", securityDeposit],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
+      ["receivedAmount", receivedAmount],
+      ["totalReceivedAmount", totalReceivedAmount],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
       ["annualIncrement", annualIncrement],
     ];
@@ -251,6 +260,8 @@ const createVirtualOfficeClient = async (req, res) => {
       openDesks,
       openDeskRate,
       openTotal,
+      receivedAmount,
+      totalReceivedAmount,
       annualIncrement,
       perDeskMeetingCredits,
       totalMeetingCredits,
@@ -711,6 +722,16 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.openDeskRate
         : existing.openDeskRate || 0,
     );
+    const receivedAmount = Number(
+      typeof updates.receivedAmount !== "undefined"
+        ? updates.receivedAmount
+        : existing.receivedAmount || 0,
+    );
+    const totalReceivedAmount = Number(
+      typeof updates.totalReceivedAmount !== "undefined"
+        ? updates.totalReceivedAmount
+        : existing.totalReceivedAmount || 0,
+    );
     const perDeskMeetingCredits = Number(
       typeof updates.perDeskMeetingCredits !== "undefined"
         ? updates.perDeskMeetingCredits
@@ -722,6 +743,8 @@ const updateVirtualOfficeClient = async (req, res) => {
       ["securityDeposit", securityDeposit],
       ["cabinDeskRate", cabinDeskRate],
       ["openDesks", openDesks],
+      ["receivedAmount", receivedAmount],
+      ["totalReceivedAmount", totalReceivedAmount],
       ["openDeskRate", openDeskRate],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
     ];
@@ -739,6 +762,8 @@ const updateVirtualOfficeClient = async (req, res) => {
     updates.cabinDeskRate = cabinDeskRate;
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
+    updates.receivedAmount = receivedAmount;
+    updates.totalReceivedAmount = totalReceivedAmount;
     updates.perDeskMeetingCredits = perDeskMeetingCredits;
 
     updates.cabinTotal = cabinDesks * cabinDeskRate;
@@ -786,6 +811,29 @@ const updateVirtualOfficeClient = async (req, res) => {
       new: true,
       runValidators: true,
     });
+
+    const now = new Date();
+    const currentMonthStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      1,
+    );
+
+    // Client changes affect current/future billing rows only.
+    await VirtualOfficeRevenue.updateMany(
+      {
+        client: id,
+        company: existing.company,
+        $or: [
+          { rentDate: { $gte: currentMonthStart } },
+          {
+            rentDate: { $in: [null, ""] },
+            invoiceUploadedAt: { $gte: currentMonthStart },
+          },
+        ],
+      },
+      { $set: { receivedAmount } },
+    );
 
     return res.status(200).json({
       message: "Virtual Office client updated successfully",

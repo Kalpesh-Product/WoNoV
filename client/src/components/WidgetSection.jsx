@@ -70,6 +70,7 @@ const WidgetSection = ({
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
+         
           className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
             normalCase ? "" : "uppercase"
           }`}>
@@ -164,6 +165,7 @@ const WidgetSection = ({
                           </div>
                         </span>
                       )}
+                   
                     {TitleAmountRed !== undefined && TitleAmountRed !== null && (
                       <span
                         className={`${
@@ -197,6 +199,7 @@ const WidgetSection = ({
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
+         
            className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
           {visibleChildren.map((child, index) => (
             <div key={index}>{child}</div>

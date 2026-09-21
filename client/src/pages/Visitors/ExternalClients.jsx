@@ -28,6 +28,8 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
+import { useNavigate } from "react-router-dom";
+
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";
 
@@ -47,6 +49,7 @@ const ExternalClients = ({
   financeView = false,
 }) => {
   const axios = useAxiosPrivate();
+   const navigate = useNavigate();
   const { auth } = useAuth();
   const allowedVisitScheduleEditorIds = [
     "67b83885daad0f7bab2f18a9",
@@ -382,9 +385,28 @@ const ExternalClients = ({
       );
       return response.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["clients"] });
-      toast.success(data?.message || "Payment status updated");
+    // onSuccess: (data) => {
+    //   queryClient.invalidateQueries({ queryKey: ["clients"] });
+    //   toast.success(data?.message || "Payment status updated");
+     onSuccess: async (data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: [financeView ? "finance-day-pass" : "clients"],
+      });
+      const verificationCompleted = variables.status === "Completed";
+      toast.success(
+        verificationCompleted
+          ? "Verification Completed. Please Upload the Invoice in Billing"
+          : data?.message || "Payment status updated",
+      );
+
+      if (verificationCompleted) {
+        await queryClient.invalidateQueries({
+          queryKey: ["meetings-revenue"],
+        });
+        navigate(
+          "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+        );
+      }
     },
     onError: (error) => {
       toast.error(
@@ -517,15 +539,23 @@ const ExternalClients = ({
     ).toLowerCase();
 
     if (!isPaid) return "Wait for Payment";
-    if (verificationStatus === "under review") return "Verify Payment";
-    if (verificationStatus === "verified") return "Completed";
-    return "Review Payment";
+    if (verificationStatus === "pending") return "Pending";
+    if (verificationStatus === "under review") return "Review Payment";
+    if (verificationStatus === "verified") return "Verify Payment";
+    if (verificationStatus === "completed") return "Completed";
+    return "Pending";
+    // if (verificationStatus === "under review") return "Verify Payment";
+    // if (verificationStatus === "verified") return "Completed";
+    // return "Review Payment";
   };
   const getFinanceStatusChipStyle = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
 
     if (normalizedStatus === "completed") {
       return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "pending") {
+      return { backgroundColor: "#FFF7ED", color: "#F97316" };
     }
     if (normalizedStatus === "verify payment") {
       return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
@@ -687,11 +717,23 @@ const ExternalClients = ({
               isPaid &&
                 verificationStatus === "verified" && {
                   label: "Completed",
+                     onClick: () =>
+                    handleVerifyPayment(params.data, "Completed"),
                 },
               isPaid &&
-                !["pending", "under review", "verified"].includes(
-                  verificationStatus,
-                ) && {
+                verificationStatus === "completed" && {
+                  label: "Completed",
+                },
+              isPaid &&
+                // !["pending", "under review", "verified"].includes(
+                //   verificationStatus,
+                // ) && {
+                 ![
+                  "pending",
+                  "under review",
+                  "verified",
+                  "completed",
+                ].includes(verificationStatus) && {
                   label: "Review Payment",
                   onClick: () =>
                     handleVerifyPayment(params.data, "Under Review"),

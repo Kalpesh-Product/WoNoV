@@ -1,4 +1,4 @@
-import { CircularProgress, Chip } from "@mui/material";
+import { CircularProgress } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -26,10 +26,11 @@ const sectorPalette = [
   "#4A68A1",
   "#608DB8",
   "#76A2CF",
-  "#8CB8E6",
+  "#6FA2D6",
 ];
 
 const genderPalette = ["#1E3D73", "#54C4A7"];
+const agePalette = ["#174EA6", "#2D7FF9", "#F7B801", "#20BFA9", "#7C4DCC"];
 
 const locationChartColors = [
   "#1E3D73",
@@ -58,23 +59,16 @@ const legendFormatter = (seriesName) =>
 const singleLineLegendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:96px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:10px;line-height:1.2;">${seriesName}</span>`;
 
-const calculateAgreementExpiry = (startDate, endDate) => {
-  if (!startDate || !endDate) return "-";
+const blueLegendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1234c9;">${seriesName}</span>`;
 
-  const start = dayjs(startDate);
-  const end = dayjs(endDate);
-  if (!start.isValid() || !end.isValid() || end.isBefore(start)) return "-";
-
-  const totalDays = end.diff(start, "day");
-  const remainingDays = Math.min(
-    totalDays,
-    Math.max(0, end.diff(dayjs(), "day")),
-  );
-
-  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
-};
-
-const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
+const pieOptions = (
+  labels,
+  suffix,
+  colors = palette,
+  singleLine = false,
+  blueLegend = false,
+) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
   colors,
@@ -95,7 +89,18 @@ const pieOptions = (labels, suffix, colors = palette, singleLine = false) => ({
       horizontal: singleLine ? 2 : 4,
       vertical: singleLine ? 0 : 4,
     },
-    formatter: singleLine ? singleLineLegendFormatter : legendFormatter,
+    ...(blueLegend
+      ? {
+          labels: {
+            colors: "#1234c9",
+          },
+        }
+      : {}),
+    formatter: blueLegend
+      ? blueLegendFormatter
+      : singleLine
+        ? singleLineLegendFormatter
+        : legendFormatter,
   },
   tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
 });
@@ -201,11 +206,13 @@ const InvestorOperationalCharts = ({
   routes,
   showDetails = false,
   flushLayout = false,
+  investorInventoryStyle = false,
+  noOuterPadding = false,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const needsClients = visibleCharts.some((key) =>
-    ["sector", "client", "gender", "india", "desks"].includes(key),
+    ["sector", "age", "gender", "india"].includes(key),
   );
   const needsVisitors = visibleCharts.some((key) =>
     ["visitorCategory", "visitorClientType", "visitorGender"].includes(key),
@@ -221,31 +228,26 @@ const InvestorOperationalCharts = ({
     },
     enabled: needsClients,
   });
-  const showClientDetails =
+  const showGenderDetails =
+    showDetails && visibleCharts.length === 1 && visibleCharts[0] === "gender";
+  const showAgeDetails =
+    showDetails && visibleCharts.length === 1 && visibleCharts[0] === "age";
+  const showIndiaDetails =
+    showDetails && visibleCharts.length === 1 && visibleCharts[0] === "india";
+  const showSectorDetails =
+    showDetails && visibleCharts.length === 1 && visibleCharts[0] === "sector";
+  const showVisitorCategoryDetails =
     showDetails &&
     visibleCharts.length === 1 &&
-    ["client", "desks"].includes(visibleCharts[0]);
-  const showGenderDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "gender";
-  const showIndiaDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "india";
-  const showSectorDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "sector";
-  const showVisitorCategoryDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "visitorCategory";
+    visibleCharts[0] === "visitorCategory";
   const showVisitorClientTypeDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "visitorClientType";
+    showDetails &&
+    visibleCharts.length === 1 &&
+    visibleCharts[0] === "visitorClientType";
   const showVisitorGenderDetails =
-    visibleCharts.length === 1 && visibleCharts[0] === "visitorGender";
-  const { data: allCoworkingClients = [] } = useQuery({
-    queryKey: ["investor-client-wise-occupancy-details"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return Array.isArray(response.data) ? response.data : [];
-    },
-    enabled: showClientDetails,
-  });
-
+    showDetails &&
+    visibleCharts.length === 1 &&
+    visibleCharts[0] === "visitorGender";
   const { data: visitors = [], isPending: visitorsPending } = useQuery({
     queryKey: ["investor-operational-visitors"],
     queryFn: async () => {
@@ -256,15 +258,6 @@ const InvestorOperationalCharts = ({
   });
 
   const chartData = useMemo(() => {
-    const deskEntries = topWithOther(
-      clients
-        .map((client) => ({
-          label: client.clientName || "Unknown",
-          value: Number(client.totalDesks) || 0,
-        }))
-        .filter((item) => item.value > 0),
-    );
-
     const countBy = (items, getLabel, { skipUnknown = false } = {}) =>
       Object.entries(
         items.reduce((counts, item) => {
@@ -295,6 +288,24 @@ const InvestorOperationalCharts = ({
       if (gender.startsWith("f")) return "Female";
       return "Other";
     });
+    const ageGroups = [
+      { label: "21-25 Age Group", min: 21, max: 25 },
+      { label: "26-30 Age Group", min: 26, max: 30 },
+      { label: "30-35 Age Group", min: 31, max: 35 },
+      { label: "35-40 Age Group", min: 36, max: 40 },
+      { label: "40+ Age Group", min: 41, max: Infinity },
+    ].map((group) => ({ ...group, value: 0 }));
+
+    members.forEach((member) => {
+      const dob = dayjs(member.dob || member.dateOfBirth);
+      if (!dob.isValid()) return;
+
+      const age = dayjs().diff(dob, "year");
+      const group = ageGroups.find(
+        ({ min, max }) => age >= min && age <= max,
+      );
+      if (group) group.value += 1;
+    });
     const visitorCategories = topWithOther(
       countBy(visitors, (visitor) => visitor.visitorType),
     );
@@ -316,20 +327,24 @@ const InvestorOperationalCharts = ({
         suffix: "Clients",
         colors: sectorPalette,
       },
-      client: { title: "Client-wise Occupancy", data: deskEntries, suffix: "Desks" },
+      age: {
+        title: "Age-Wise Occupancy",
+        data: ageGroups.map(({ label, value }) => ({ label, value })),
+        suffix: "Members",
+        colors: agePalette,
+      },
       gender: {
-        title: "Client Member Gender Wise Data",
+        title: "Gender-Wise Occupancy",
         data: memberGender,
         suffix: "Members",
         colors: genderPalette,
       },
       india: {
-        title: "India-wise Members",
+        title: "India-wise Occupancy",
         data: states,
         suffix: "Companies",
         colors: locationChartColors,
       },
-      desks: { title: "Total Desks Company Wise", data: deskEntries, suffix: "Desks" },
       visitorCategory: {
         title: "Overall visitor category",
         donut: true,
@@ -362,17 +377,28 @@ const InvestorOperationalCharts = ({
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
-    const hasScrollableLegend = ["desks", "sector", "client"].includes(key);
+    const hasScrollableLegend = ["sector", "age"].includes(key);
+    const useBlueText =
+      ["age", "gender", "sector", "india"].includes(key) ||
+      (investorInventoryStyle && ["sector", "india"].includes(key));
     const customChartLegend = hasScrollableLegend && (
       <div className="w-full max-w-full px-2 pb-1 select-none">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
           {labels.map((label, index) => (
-            <div key={label} className="flex min-w-0 items-center gap-1 text-xs">
+            <div
+              key={label}
+              className={`flex min-w-0 items-center gap-1 text-xs ${
+                useBlueText ? "text-[#1234c9]" : ""
+              }`}
+            >
               <span
                 className="h-2.5 w-2.5 rounded-full"
                 style={{ backgroundColor: chartColors[index] }}
               />
-              <span className="max-w-28 truncate" title={label}>
+              <span
+                className={key === "age" ? "whitespace-nowrap" : "max-w-28 truncate"}
+                title={label}
+              >
                 {label}
               </span>
             </div>
@@ -384,7 +410,13 @@ const InvestorOperationalCharts = ({
     return (
       <WidgetSection
         key={key}
-        title={chart.title}
+        title={
+          useBlueText ? (
+            <span className="text-[#1234c9]">{chart.title}</span>
+          ) : (
+            chart.title
+          )
+        }
         border
         height={flushLayout ? "h-[433px]" : undefined}
        // height={fillHeight}
@@ -419,7 +451,8 @@ const InvestorOperationalCharts = ({
                 labels,
                 chart.suffix,
                 chartColors,
-              hasScrollableLegend,
+                hasScrollableLegend,
+                useBlueText,
               )}
               width={500}
               height={350}
@@ -432,79 +465,13 @@ const InvestorOperationalCharts = ({
     );
   };
 
-  const fullWidthChartKeys = ["desks", "visitorGender"];
+  const fullWidthChartKeys = ["visitorGender"];
   const regularCharts = visibleCharts.filter(
     (key) => !fullWidthChartKeys.includes(key),
   );
   const fullWidthCharts = visibleCharts.filter((key) =>
     fullWidthChartKeys.includes(key),
   );
-  const clientDetailsData = useMemo(
-    () =>
-      [...allCoworkingClients]
-        .filter((client) => {
-          const desks =
-            Number(client.openDesks || 0) + Number(client.cabinDesks || 0);
-          return desks > 0;
-        })
-        .sort(
-          (a, b) =>
-            Number(b.openDesks || 0) + Number(b.cabinDesks || 0) -
-            (Number(a.openDesks || 0) + Number(a.cabinDesks || 0)),
-        )
-        .map((client, index) => {
-          const desks =
-            Number(client.openDesks || 0) + Number(client.cabinDesks || 0);
-
-          return {
-            id: index + 1,
-            clientName: client.clientName || "Unknown",
-            desks,
-            occupancy: ((desks / 589) * 100).toFixed(1),
-            agreementExpiry: calculateAgreementExpiry(
-              client.startDate,
-              client.endDate,
-            ),
-            status: Boolean(client.isActive),
-          };
-        }),
-    [allCoworkingClients],
-  );
-
-  const clientDetailsColumns = [
-    { field: "id", headerName: "Sr No", width: 150 },
-    { field: "clientName", headerName: "Client Name", flex: 1 },
-    { field: "desks", headerName: "Desks", flex: 0.5 },
-    {
-      field: "occupancy",
-      headerName: "Occupancy (%)",
-      flex: 0.5,
-      cellRenderer: (params) => `${params.value}%`,
-    },
-  //  { field: "agreementExpiry", headerName: "Agreement Expiry", flex: 0.5 },
-    // {
-    //   field: "status",
-    //   headerName: "Status",
-    //   sort: "desc",
-    //   flex: 1,
-    //   cellRenderer: (params) => (
-    //     <Chip
-    //       label={params.value ? "Active" : "Inactive"}
-    //       style={
-    //         params.value
-    //           ? { backgroundColor: "#90EE90", color: "#006400" }
-    //           : { backgroundColor: "#FFECC5", color: "#CC8400" }
-    //       }
-    //     />
-    //     />
-    //   ),
-    // },
-  ];
-  const desksDetailsColumns = [
-    { field: "id", headerName: "Sr No", width: 150 },
-    { field: "clientName", headerName: "Client Name", flex: 1 },
-    { field: "desks", headerName: "Desks", flex: 0.5 },
-  ];
   const genderDetailsData = (chartData.gender?.data || [])
     .filter((item) => ["Male", "Female"].includes(item.label))
     .map((item, index) => ({
@@ -516,6 +483,24 @@ const InvestorOperationalCharts = ({
     { field: "id", headerName: "Sr No", width: 150 },
     { field: "gender", headerName: "Gender", flex: 1 },
     { field: "count", headerName: "Count", flex: 1 },
+  ];
+  const ageGroupTotal = (chartData.age?.data || []).reduce(
+    (total, item) => total + Number(item.value || 0),
+    0,
+  );
+  const ageDetailsData = (chartData.age?.data || []).map((item, index) => ({
+    id: index + 1,
+    ageGroup: item.label,
+    members: Number(item.value || 0),
+    occupancy: ageGroupTotal
+      ? `${((Number(item.value || 0) / ageGroupTotal) * 100).toFixed(1)}%`
+      : "0.0%",
+  }));
+  const ageDetailsColumns = [
+    { field: "id", headerName: "Sr No", width: 150 },
+    { field: "ageGroup", headerName: "Age Group", flex: 1 },
+    { field: "members", headerName: "Members", flex: 1 },
+    { field: "occupancy", headerName: "Occupancy", flex: 1 },
   ];
   const indiaDetailsData = useMemo(() => {
     const stateCounts = clients.reduce((counts, client) => {
@@ -604,7 +589,11 @@ const InvestorOperationalCharts = ({
   return (
     <>
       {regularCharts.length > 0 && (
-        <WidgetSection layout={2} gridGap="gap-x-4 gap-y-6">
+        <WidgetSection
+          layout={2}
+          gridGap={investorInventoryStyle ? "gap-x-4 gap-y-4" : "gap-x-4 gap-y-6"}
+          padding={investorInventoryStyle || noOuterPadding}
+        >
           {regularCharts.map(renderChart)}
         </WidgetSection>
       )}
@@ -619,43 +608,81 @@ const InvestorOperationalCharts = ({
           </div>
         )
       )}
-      {showClientDetails && (
+      {showGenderDetails && (
         <div className="px-4">
-          <WidgetSection title="CO-WORKING CLIENT DETAILS" border>
-            <AgTable
-              data={clientDetailsData}
-              columns={
-                visibleCharts[0] === "desks"
-                  ? desksDetailsColumns
-                  : clientDetailsColumns
-              }
-              search
-            />
+          <WidgetSection
+            title={
+              <span className="text-[#1234c9]">
+                GENDER-WISE OCCUPANCY DETAILS
+              </span>
+            }
+            border
+          >
+            <div className="[&_.ag-header-cell-text]:text-[#1234c9] [&_.ag-cell]:text-[#1234c9] [&_.MuiInputLabel-root]:text-[#1234c9] [&_.MuiInputBase-input]:text-[#1234c9] [&_svg]:text-[#1234c9]">
+              <AgTable
+                data={genderDetailsData}
+                columns={genderDetailsColumns}
+                search
+              />
+            </div>
           </WidgetSection>
         </div>
       )}
-      {showGenderDetails && (
+      {showAgeDetails && (
         <div className="px-4">
-          <WidgetSection title="CLIENT MEMBER GENDER WISE DETAILS" border>
-            <AgTable
-              data={genderDetailsData}
-              columns={genderDetailsColumns}
-              search
-            />
+          <WidgetSection
+            title={
+              <span className="text-[#1234c9]">AGE-WISE OCCUPANCY DETAILS</span>
+            }
+            border
+          >
+            <div className="[&_.ag-header-cell-text]:text-[#1234c9] [&_.ag-cell]:text-[#1234c9] [&_.MuiInputLabel-root]:text-[#1234c9] [&_.MuiInputBase-input]:text-[#1234c9] [&_svg]:text-[#1234c9]">
+              <AgTable
+                data={ageDetailsData}
+                columns={ageDetailsColumns}
+                search
+              />
+            </div>
           </WidgetSection>
         </div>
       )}
       {showIndiaDetails && (
         <div className="px-4">
-          <WidgetSection title="INDIA-WISE MEMBERS DETAILS" border>
-            <AgTable data={indiaDetailsData} columns={indiaDetailsColumns} search />
+          <WidgetSection
+            title={
+              <span className="text-[#1234c9]">
+                INDIA-WISE OCCUPANCY DETAILS
+              </span>
+            }
+            border
+          >
+            <div className="[&_.ag-header-cell-text]:text-[#1234c9] [&_.ag-cell]:text-[#1234c9] [&_.MuiInputLabel-root]:text-[#1234c9] [&_.MuiInputBase-input]:text-[#1234c9] [&_svg]:text-[#1234c9]">
+              <AgTable
+                data={indiaDetailsData}
+                columns={indiaDetailsColumns}
+                search
+              />
+            </div>
           </WidgetSection>
         </div>
       )}
       {showSectorDetails && (
         <div className="px-4">
-          <WidgetSection title="SECTOR-WISE OCCUPANCY DETAILS" border>
-            <AgTable data={sectorDetailsData} columns={sectorDetailsColumns} search />
+          <WidgetSection
+            title={
+              <span className="text-[#1234c9]">
+                SECTOR-WISE OCCUPANCY DETAILS
+              </span>
+            }
+            border
+          >
+            <div className="[&_.ag-header-cell-text]:text-[#1234c9] [&_.ag-cell]:text-[#1234c9] [&_.MuiInputLabel-root]:text-[#1234c9] [&_.MuiInputBase-input]:text-[#1234c9] [&_svg]:text-[#1234c9]">
+              <AgTable
+                data={sectorDetailsData}
+                columns={sectorDetailsColumns}
+                search
+              />
+            </div>
           </WidgetSection>
         </div>
       )}

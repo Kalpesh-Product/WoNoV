@@ -1,15 +1,54 @@
 //const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const WorkationClients = require("../../models/sales/WorkationClients");
+const Company = require("../../models/hr/Company");
+const mongoose = require("mongoose");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const { PDFDocument } = require("pdf-lib");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/s3Config");
 const {
   fetchWorkationRevenueReportService,
 } = require("../../services/reports/revenue");
+
+const escapeRegExp = (value = "") =>
+  value.toString().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const findOrCreateWorkationClient = async ({
+  clientId,
+  clientName,
+}) => {
+  if (clientId && mongoose.Types.ObjectId.isValid(clientId)) {
+    const existingById = await WorkationClients.findById(clientId).lean();
+    if (existingById) {
+      return existingById;
+    }
+  }
+
+  const normalizedName = clientName?.toString().trim();
+  if (!normalizedName) {
+    return null;
+  }
+
+  const existingByName = await WorkationClients.findOne({
+    clientName: { $regex: new RegExp(`^${escapeRegExp(normalizedName)}$`, "i") },
+  }).lean();
+
+  if (existingByName) {
+    return existingByName;
+  }
+
+  return WorkationClients.create({ clientName: normalizedName });
+};
+
 const createWorkationRevenue = async (req, res, next) => {
   try {
     const {
       nameOfClient,
+      clientInvoiceName,
       particulars,
       taxableAmount,
       gst,
@@ -18,15 +57,20 @@ const createWorkationRevenue = async (req, res, next) => {
     } = req.body;
 
     const company = req.company;
+    const client = await findOrCreateWorkationClient({
+      clientId,
+      clientName: nameOfClient,
+    });
 
     const newRevenue = new WorkationRevenue({
       company,
       nameOfClient,
+      clientInvoiceName,
       particulars,
       taxableAmount,
       gst,
       totalAmount,
-      client: clientId,
+      client: client?._id || clientId || null,
     });
 
     await newRevenue.save();
@@ -46,6 +90,205 @@ const getWorkationRevenues = async (req, res, next) => {
 
     return res.status(200).json(payload);
   } catch (error) {
+    next(error);
+  }
+};
+
+const getWorkationClients = async (req, res, next) => {
+  try {
+    const [existingClients, revenueNames] = await Promise.all([
+      WorkationClients.find().sort({ clientName: 1 }).lean().exec(),
+      WorkationRevenue.find({}, { nameOfClient: 1 }).lean().exec(),
+    ]);
+
+    const mergedClients = [];
+    const seenNames = new Set();
+
+    existingClients.forEach((client) => {
+      const normalizedName = client.clientName?.toString().trim().toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) {
+        return;
+      }
+
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        _id: client._id,
+        clientName: client.clientName,
+      });
+    });
+
+    revenueNames.forEach((row) => {
+      const clientName = row.nameOfClient?.toString().trim();
+      const normalizedName = clientName?.toLowerCase();
+      if (!normalizedName || seenNames.has(normalizedName)) {
+        return;
+      }
+
+      seenNames.add(normalizedName);
+      mergedClients.push({
+        _id: null,
+        clientName,
+      });
+    });
+
+    return res.status(200).json(mergedClients);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateWorkationRevenueInvoice = async (req, res, next) => {
+  let uploadedInvoiceId = null;
+
+  try {
+    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+
+    const company = await Company.findById(req.company).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const hasValidRevenueId =
+      revenueId && mongoose.Types.ObjectId.isValid(revenueId);
+
+    const existingRevenue = hasValidRevenueId
+      ? await WorkationRevenue.findOne({
+          _id: revenueId,
+          company: req.company,
+        }).lean()
+      : null;
+
+    const previousInvoiceId = existingRevenue?.invoice?.id || null;
+
+    const allowedFields = [
+      "nameOfClient",
+      "clientInvoiceName",
+      "particulars",
+      "taxableAmount",
+      "gst",
+      "totalAmount",
+      "date",
+      "status",
+      "invoiceUploadedAt",
+      "clientId",
+      "client",
+    ];
+
+    const payload = allowedFields.reduce((result, field) => {
+      if (updates[field] !== undefined) {
+        result[field] = updates[field];
+      }
+      return result;
+    }, {});
+
+    const client = await findOrCreateWorkationClient({
+      clientId: updates.clientId || payload.client,
+      clientName: payload.nameOfClient || existingRevenue?.nameOfClient,
+    });
+
+    if (payload.date) payload.date = new Date(payload.date);
+    if (payload.invoiceUploadedAt) {
+      payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    }
+
+    if (client?._id) {
+      payload.client = client._id;
+    } else if (payload.clientId && mongoose.Types.ObjectId.isValid(payload.clientId)) {
+      payload.client = payload.clientId;
+    }
+    delete payload.clientId;
+
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          message: "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        });
+      }
+
+      let processedBuffer = req.file.buffer;
+      if (req.file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(req.file.buffer);
+        pdfDoc.setTitle(
+          req.file.originalname
+            ? req.file.originalname.split(".")[0]
+            : "Invoice",
+        );
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const ownerName =
+        payload.nameOfClient ||
+        existingRevenue?.nameOfClient ||
+        existingRevenue?.client?.clientName ||
+        "client";
+
+      const uploadResult = await handleDocumentUpload(
+        processedBuffer,
+        `${company.companyName}/workation-revenues/${ownerName}`,
+        req.file.originalname,
+      );
+
+      if (!uploadResult?.public_id) {
+        return res
+          .status(500)
+          .json({ message: "Failed to upload document" });
+      }
+
+      uploadedInvoiceId = uploadResult.public_id;
+      const invoiceDate = payload.invoiceUploadedAt || new Date();
+
+      payload.invoice = {
+        name: req.file.originalname,
+        link: uploadResult.secure_url,
+        id: uploadResult.public_id,
+        date: invoiceDate,
+      };
+      payload.invoiceUploadedAt = invoiceDate;
+      payload.invoiceUploadedBy = req.user;
+    }
+
+    let revenue;
+
+    if (hasValidRevenueId && !isProjected) {
+      revenue = await WorkationRevenue.findOneAndUpdate(
+        { _id: revenueId, company: req.company },
+        payload,
+        { new: true, runValidators: true },
+      );
+    } else {
+      revenue = await WorkationRevenue.create({
+        ...payload,
+        company: req.company,
+      });
+    }
+
+    if (!revenue) {
+      return res.status(404).json({ message: "Revenue not found" });
+    }
+
+    if (
+      uploadedInvoiceId &&
+      previousInvoiceId &&
+      previousInvoiceId !== uploadedInvoiceId
+    ) {
+      await handleFileDelete(previousInvoiceId).catch(() => null);
+    }
+
+    return res.status(hasValidRevenueId && !isProjected ? 200 : 201).json({
+      message: "Workation invoice updated successfully",
+      revenue,
+    });
+  } catch (error) {
+    if (uploadedInvoiceId) {
+      await handleFileDelete(uploadedInvoiceId).catch(() => null);
+    }
     next(error);
   }
 };
@@ -130,6 +373,11 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
           "Client Name",
           "Client",
         ]);
+        const clientInvoiceName = getCsvValue(row, [
+          "Client Invoice Name",
+          "Invoice Name",
+          "clientInvoiceName",
+        ]);
         const particulars = getCsvValue(row, ["Particulars", "PARTCULARS"]);
         const paidDate = parseCsvDate(
           getCsvValue(row, ["Paid Date", "PAYMENT DATE", "Date"]),
@@ -159,6 +407,7 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
 
         rows.push({
           nameOfClient,
+          clientInvoiceName,
           normalizedName: normalizeClientName(nameOfClient),
           status: getCsvValue(row, ["Status"]),
           particulars,
@@ -236,6 +485,8 @@ const bulkInsertWorkationRevenue = async (req, res, next) => {
 
 module.exports = {
   getWorkationRevenues,
+  getWorkationClients,
   createWorkationRevenue,
   bulkInsertWorkationRevenue,
+  updateWorkationRevenueInvoice,
 };

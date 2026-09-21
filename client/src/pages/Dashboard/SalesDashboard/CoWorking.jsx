@@ -1,12 +1,28 @@
 import {
   CircularProgress,
+  IconButton,
+  MenuItem,
+  TextField,
 } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
+import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
+import MuiModal from "../../../components/MuiModal";
+import DetalisFormatted from "../../../components/DetalisFormatted";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import { queryClient } from "../../../main";
 
 const getNormalizedRentStatus = (status) =>
   String(status || "").trim().toLowerCase();
@@ -14,20 +30,363 @@ const getNormalizedRentStatus = (status) =>
 const getNumericAmount = (value) =>
   parseFloat(String(value || "0").replace(/,/g, "")) || 0;
 
+const normalizeAmount = (value) => {
+  if (value === null || value === undefined || value === "") return 0;
+  const parsed = Number(String(value).replace(/,/g, ""));
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const normalizeForMatch = (value) =>
+  String(value || "")
+    .normalize("NFKD")
+    .replace(/[^a-zA-Z0-9]+/g, "")
+    .toLowerCase();
+
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    ""
+  ).trim();
+};
+
+const resolveClientIdFromRow = (row, clientList = []) => {
+  const directClient = row?.clients || row?.client;
+  if (directClient) {
+    if (typeof directClient === "object") {
+      return String(directClient._id || directClient.id || directClient);
+    }
+    return String(directClient);
+  }
+
+  const rowNames = [row?.clientName, row?.clientInvoiceName]
+    .filter(Boolean)
+    .map(normalizeForMatch)
+    .filter(Boolean);
+
+  if (!rowNames.length) return "";
+
+  const matchedClient = clientList.find((client) => {
+    const clientNames = [client?.clientName, client?.clientInvoiceName, client?.brandName]
+      .filter(Boolean)
+      .map(normalizeForMatch)
+      .filter(Boolean);
+
+    return rowNames.some((rowName) =>
+      clientNames.some(
+        (clientName) =>
+          clientName === rowName ||
+          clientName.includes(rowName) ||
+          rowName.includes(clientName),
+      ),
+    );
+  });
+
+  return matchedClient?._id ? String(matchedClient._id) : "";
+};
+
+const getInvoiceClient = (row, clientList) => {
+  const clientId = resolveClientIdFromRow(row, clientList);
+  return clientList.find((item) => String(item._id) === clientId) ||
+    (typeof row.clients === "object" ? row.clients : null);
+};
+
+const getInvoiceBillingFrequency = (row, clientList) => {
+  const client = getInvoiceClient(row, clientList);
+  return client ? client.billingFrequency || "" : row.billingFrequency || "";
+};
+
+const getInvoiceClientType = (row, clientList) => {
+  const client = getInvoiceClient(row, clientList);
+  return client ? client.clientType || "" : row.clientType || "";
+};
+
+const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
+  <div className="flex items-center justify-start gap-0.5 w-full pl-2">
+    <IconButton
+      size="small"
+      aria-label="View invoice details"
+      onClick={() => onView(row)}
+      sx={{
+        padding: "6px",
+        color: "#6B7280",
+        "&:hover": {
+          backgroundColor: "rgba(30, 61, 115, 0.08)",
+          color: "#1E3D73",
+        },
+      }}
+    >
+      <MdOutlineRemoveRedEye size={18} />
+    </IconButton>
+
+    <ThreeDotMenu
+      rowId={row?._id || row?.id}
+      disabled={dayjs(row?.rentDate)
+        .startOf("month")
+        .isAfter(dayjs().startOf("month"))}
+      menuItems={[
+        {
+          label: "Edit",
+          onClick: () => onEdit(row),
+        },
+      ]}
+    />
+  </div>
+);
+
+// const getUnpaidInvoiceRowsForMonth = (rows, selectedDate) => {
+  const getClientIdentity = (row) => {
+  const clientId = row?.clients?._id || row?.clients;
+  if (clientId) return `id:${String(clientId)}`;
+
+  return `name:${String(row?.clientName || row?.clientInvoiceName || "")
+    .trim()
+    .toLowerCase()}`;
+};
+
+const getUnpaidInvoiceRowsForMonth = (
+  rows,
+  selectedDate,
+  existingMonthRows = [],
+  clientList = [],
+) => {
+  const targetMonth = dayjs(selectedDate).startOf("month");
+  const currentMonth = dayjs().startOf("month");
+  const lastMonth = currentMonth.subtract(1, "month");
+  if (
+    !targetMonth.isValid() ||
+    targetMonth.isBefore(lastMonth)
+  ) {
+    return [];
+  }
+
+  const validRows = rows.filter((row) => dayjs(row.rentDate).isValid());
+  if (!validRows.length) return [];
+  const sourceRows = validRows.filter((row) => {
+    const rowMonth = dayjs(row.rentDate).startOf("month");
+    return (
+      !rowMonth.isAfter(currentMonth) &&
+      getNormalizedRentStatus(row.rentStatus) === "paid"
+    );
+  });
+
+  const latestSourceMonth = sourceRows.length
+    ? sourceRows.reduce((latest, row) => {
+        const rowMonth = dayjs(row.rentDate).startOf("month");
+        return rowMonth.isAfter(latest) ? rowMonth : latest;
+      }, dayjs(sourceRows[0].rentDate).startOf("month"))
+    : null;
+
+  const templateRows = latestSourceMonth
+    ? sourceRows.filter((row) =>
+        dayjs(row.rentDate).isSame(latestSourceMonth, "month"),
+      )
+    : [];
+
+  const existingClients = new Set(existingMonthRows.map(getClientIdentity));
+  const projectedClients = new Set();
+  const templateByClient = new Map(
+    templateRows.map((row) => [getClientIdentity(row), row]),
+  );
+  const candidates = clientList.length
+    ? clientList
+        .filter(
+          (client) =>
+            client?.isActive !== false && client?.clientStatus !== false,
+        )
+        .map((client) => {
+          const clientId = client._id;
+          const template = templateByClient.get(`id:${String(clientId)}`) || {};
+          const noOfDesks =
+            Number(client.totalDesks) ||
+            Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+          const baseRate =
+            Number(client.ratePerCabinDesk) ||
+            Number(client.ratePerOpenDesk) ||
+            Number(template.deskRate) ||
+            0;
+          const annualIncrement = Number(client.annualIncrement) || 0;
+          const startDate = dayjs(client.startDate);
+          const yearsElapsed = startDate.isValid()
+            ? Math.max(targetMonth.diff(startDate, "year"), 0)
+            : 0;
+          const deskRate =
+            baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+
+          return {
+            ...template,
+            clients: clientId,
+            clientName: client.clientName || template.clientName,
+            billingFrequency: client.billingFrequency || "",
+            clientType: client.clientType || "",
+            channel: client.bookingType || template.channel,
+            noOfDesks: noOfDesks || template.noOfDesks || 0,
+            deskRate: deskRate || template.deskRate || 0,
+            revenue: (noOfDesks || template.noOfDesks || 0) * (deskRate || template.deskRate || 0),
+            annualIncrement: client.annualIncrement ?? template.annualIncrement,
+            nextIncrementDate: client.nextIncrement || template.nextIncrementDate,
+            rentDate: client.rentDate || template.rentDate,
+          };
+        })
+    : templateRows;
+
+  return candidates
+    .filter((row) => !existingClients.has(getClientIdentity(row)))
+    .filter((row) => {
+      const identity = getClientIdentity(row);
+      if (projectedClients.has(identity)) return false;
+      projectedClients.add(identity);
+      return true;
+    })
+    .map((row, index) => {
+      const originalRentDate = dayjs(row.rentDate);
+      const projectedRentDate = targetMonth.date(
+        Math.min(
+          originalRentDate.isValid() ? originalRentDate.date() : 1,
+          targetMonth.daysInMonth(),
+        ),
+      );
+
+      return {
+        ...row,
+        id: `projected-${targetMonth.format("YYYY-MM")}-${index}`,
+        rentDate: projectedRentDate.toISOString(),
+        invoice: null,
+        invoiceLink: "",
+        invoiceName: "",
+        invoiceUploadedAt: null,
+        invoiceUploadedBy: null,
+        invoiceUploadedByName: "",
+        rentStatus: "Unpaid",
+        normalizedRentStatus: "unpaid",
+        isProjectedInvoice: true,
+      };
+    });
+};
 // const CoWorking = () => {
-  const CoWorking = ({ showChart = true }) => {
+  // const CoWorking = ({ showChart = true }) => {
+const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const axios = useAxiosPrivate();
+  const [viewRow, setViewRow] = useState(null);
+  const [editRow, setEditRow] = useState(null);
+  const { control, handleSubmit, reset, setValue, getValues } = useForm();
+
+  const { data: coworkingClients = [] } = useQuery({
+    queryKey: ["coworkingInvoiceClients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+
+  const openEdit = (row) => {
+    setEditRow(row);
+    reset({
+      ...row,
+      clients: resolveClientIdFromRow(row, coworkingClients),
+      invoiceFile: row.invoice?.link
+        ? {
+            name: row.invoice?.name || "",
+            url: row.invoice.link,
+          }
+        : null,
+        clientInvoiceName: row.clientInvoiceName || row.clientName || row.invoice?.name || "",
+     // clientInvoiceName: row.clientName || row.clientInvoiceName || row.invoice?.name || "",
+      invoiceUploadedAt: dayjs(),
+      rentDate: dayjs(row.rentDate),
+      pastDueDate: row.pastDueDate ? dayjs(row.pastDueDate) : null,
+      nextIncrementDate: row.nextIncrementDate ? dayjs(row.nextIncrementDate) : null,
+      rentStatus: row.isProjectedInvoice ? "Unpaid" : row.rentStatus,
+    });
+  };
+
+  useEffect(() => {
+    if (!showInvoiceProjections || !editRow) return;
+
+    const resolvedClientId = resolveClientIdFromRow(editRow, coworkingClients);
+    if (!resolvedClientId) return;
+
+    const currentClientValue = getValues("clients");
+    if (String(currentClientValue || "") !== String(resolvedClientId)) {
+      setValue("clients", resolvedClientId, {
+        shouldDirty: false,
+        shouldTouch: false,
+        shouldValidate: false,
+      });
+    }
+  }, [showInvoiceProjections, coworkingClients, editRow, getValues, setValue]);
+
+  const { mutate: saveInvoice, isPending: isSavingInvoice } = useMutation({
+    mutationFn: async (values) => {
+      const formData = new FormData();
+      if (editRow?._id) formData.append("revenueId", editRow._id);
+      formData.append("isProjectedInvoice", String(Boolean(editRow.isProjectedInvoice)));
+
+      [
+        ["clients", values.clients],
+        ["service", values.service],
+        ["clientName", values.clientName],
+        ["clientInvoiceName", values.clientInvoiceName],
+        ["channel", values.channel],
+        ["noOfDesks", values.noOfDesks],
+        ["deskRate", values.deskRate],
+        ["occupation", values.occupation],
+        ["revenue", values.revenue],
+        ["totalTerm", values.totalTerm],
+        ["dueTerm", values.dueTerm],
+        ["rentDate", values.rentDate?.toISOString()],
+        ["invoiceUploadedAt", values.invoiceUploadedAt?.toISOString()],
+        ["rentStatus", values.rentStatus],
+        ["pastDueDate", values.pastDueDate?.toISOString()],
+        ["annualIncrement", values.annualIncrement],
+        ["nextIncrementDate", values.nextIncrementDate?.toISOString()],
+      ].forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          formData.append(key, value);
+        }
+      });
+
+      if (values.invoiceFile instanceof File) {
+        formData.append("client-invoice", values.invoiceFile);
+      }
+
+      await axios.patch("/api/sales/coworking-revenue-invoice", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+    },
+    onSuccess: () => {
+      toast.success("Invoice updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["coWorkingData"] });
+      setEditRow(null);
+    },
+    onError: (error) => toast.error(error.response?.data?.message || "Unable to update invoice"),
+  });
   const { data: coWorkingData = [], isLoading: isCoWorkingLoading } = useQuery({
-    queryKey: ["coWorkingData"],
+    // queryKey: ["coWorkingData"],
+    // queryFn: async () => {
+    //   try {
+    //     const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
+    //queryKey: ["coWorkingData", { useClientDetails: showInvoiceProjections }],
+     queryKey: ["coWorkingData"],
     queryFn: async () => {
       try {
-        const response = await axios.get(`/api/sales/fetch-coworking-revenues`);
+        const response = await axios.get(`/api/sales/fetch-coworking-revenues`, {
+         // params: showInvoiceProjections ? { useClientDetails: true } : undefined,
+          params: { useClientDetails: true },
+        });
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
         throw new Error(error.response.data.message);
       }
     },
   });
+
   const graphData = isCoWorkingLoading
     ? []
     : coWorkingData.flatMap((item) =>
@@ -105,12 +464,26 @@ const getNumericAmount = (value) =>
     : coWorkingData.map((monthData) => ({
       revenue: monthData?.clients?.map((client) => ({
         id: serialNumber++,
+       _id: client._id,
+        clients: client.clients,
+        service: client.service,
         clientName: client.clientName,
+        billingFrequency: getInvoiceBillingFrequency(client, coworkingClients),
+        clientType: getInvoiceClientType(client, coworkingClients),
+        clientInvoiceName: client.clientInvoiceName || "",
+        invoice: client.invoice || null,
+        invoiceName: client.invoice?.name || "",
+        invoiceLink: client.invoice?.link || "",
+        invoiceUploadedAt: client.invoice?.date || null,
+        invoiceUploadedBy: client.invoiceUploadedBy || null,
+        invoiceUploadedByName: getUserDisplayName(client.invoiceUploadedBy),
         channel: client.channel,
+        occupation: client.occupation,
         noOfDesks: client.noOfDesks,
-        deskRate: inrFormat(client.deskRate),
-        revenue: client.revenue,
+        deskRate: normalizeAmount(client.deskRate),
+        revenue: normalizeAmount(client.revenue),
         totalTerm: client.totalTerm || 0,
+        dueTerm: client.dueTerm || 0,
         rentDate: client.rentDate,
         rentStatus: client.rentStatus,
         normalizedRentStatus: getNormalizedRentStatus(client.rentStatus),
@@ -120,7 +493,33 @@ const getNumericAmount = (value) =>
       })),
     }));
 
-  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  const activeCoworkingClientIds = new Set(
+    coworkingClients
+      .filter(
+        (client) =>
+          client?.isActive !== false && client?.clientStatus !== false,
+      )
+      .map((client) => String(client._id)),
+  );
+  const baseRevenueData = tableData
+    .flatMap((month) => month.revenue)
+    .filter((row) => {
+      if (!activeCoworkingClientIds.size) return true;
+
+      const rowMonth = dayjs(row.rentDate).startOf("month");
+      const currentMonth = dayjs().startOf("month");
+
+      // Preserve historical records. For current and future billing months,
+      // inactive clients are shown only when their current-month invoice is paid.
+      return (
+        rowMonth.isBefore(currentMonth) ||
+        activeCoworkingClientIds.has(String(row.clients)) ||
+        (rowMonth.isSame(currentMonth, "month") &&
+          row.normalizedRentStatus === "paid")
+      );
+    });
+  const flattenedRevenueData = baseRevenueData;
 
   return (
     <div className="flex flex-col gap-4">
@@ -138,6 +537,7 @@ const getNumericAmount = (value) =>
           dateKey="rentDate"
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY CO WORKING REVENUES"
+          disableHoverCrosshair
         />
       ) : (
         <div className="h-72 flex justify-center items-center">
@@ -152,7 +552,11 @@ const getNumericAmount = (value) =>
           dateColumn={"rentDate"}
           exportData
           formatDate
-          tableTitle={"MONTHLY REVENUE WITH CLIENT DETAILS"}
+          tableTitle={
+            showInvoiceProjections
+              ? "Co-Working Revenue Client Invoicing"
+              : "MONTHLY REVENUE WITH CLIENT DETAILS"
+          }
           totalKey="revenue"
           titleAmountOverride=""
           titleAmountGreen={({ filteredData }) =>
@@ -176,17 +580,37 @@ const getNumericAmount = (value) =>
           redTitle="Unpaid"
           totalTitle="Total"
           summaryChipVariant="ticket"
+         preserveCurrentMonthRange={showInvoiceProjections}
+          showCalendarWhenEmpty={showInvoiceProjections}
+          getMissingRangeData={
+            showInvoiceProjections
+              // ? (selectedDate) =>
+              //     getUnpaidInvoiceRowsForMonth(baseRevenueData, selectedDate)
+               ? (selectedDate, existingMonthRows) =>
+                  getUnpaidInvoiceRowsForMonth(
+                    baseRevenueData,
+                    selectedDate,
+                    existingMonthRows,
+                    coworkingClients,
+                  )
+              : undefined
+          }
           columns={[
             { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
+            { headerName: "Client Type", field: "clientType", minWidth: 170 },
             {
               headerName: "Revenue (INR)",
               field: "revenue",
               cellRenderer: (params) => inrFormat(params.value),
             },
             { headerName: "No. of Desks", field: "noOfDesks" },
-            { headerName: "Desk Rate", field: "deskRate" },
+            {
+              headerName: "Desk Rate",
+              field: "deskRate",
+              cellRenderer: (params) => `INR ${inrFormat(params.value || 0)}`,
+            },
             { headerName: "Total Term", field: "totalTerm" },
             { headerName: "Rent Date", field: "rentDate" },
 
@@ -199,12 +623,107 @@ const getNumericAmount = (value) =>
               headerName: "Next Increment Date",
               field: "nextIncrementDate",
             },
+            ...(showInvoiceProjections
+              ? [
+                  {
+                    headerName: "Invoice Link",
+                    field: "invoiceLink",
+                    flex: 1,
+                    pinned: "right",
+                    cellRenderer: (params) =>
+                      params.value ? (
+                        <a
+                          href={params.value}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary underline"
+                        >
+                          View PDF
+                        </a>
+                      ) : (
+                        "-"
+                      ),
+                  },
+                  {
+                    headerName: "Invoice Upload Date",
+                    field: "invoiceUploadedAt",
+                    flex: 1,
+                    pinned: "right",
+                    valueFormatter: (params) =>
+                      params.value ? dayjs(params.value).format("DD-MM-YYYY") : "-",
+                  },
+                ]
+              : []),
             {
               headerName: "Rent Status",
               field: "rentStatus",
+              flex: 1,
               pinned: "right",
               cellRenderer: (params) => <StatusChip status={params.value} />,
             },
+            ...(showInvoiceProjections
+              ? [
+                  {
+                    headerName: "Action",
+                    field: "actions",
+                    pinned: "right",
+                    flex: 1,
+                    minWidth: 130,
+                    maxWidth: 130,
+                    sortable: false,
+                    filter: false,
+                    cellStyle: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                    },
+                    cellRenderer: (params) => (
+                      <CoworkingInvoiceActions
+                        row={params.data}
+                        onView={setViewRow}
+                        onEdit={openEdit}
+                      />
+                    ),
+                  },
+                ]
+              : [
+                  {
+                    headerName: "Action",
+                    field: "actions",
+                    pinned: "right",
+                    flex: 1,
+                    minWidth: 110,
+                    maxWidth: 110,
+                    sortable: false,
+                    filter: false,
+                    cellStyle: {
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "flex-start",
+                      paddingLeft: "8px",
+                      paddingRight: "8px",
+                    },
+                    cellRenderer: (params) => (
+                      <IconButton
+                        size="small"
+                        aria-label="View invoice details"
+                        onClick={() => setViewRow(params.data)}
+                        sx={{
+                          padding: "6px",
+                          color: "#6B7280",
+                          "&:hover": {
+                            backgroundColor: "rgba(30, 61, 115, 0.08)",
+                            color: "#1E3D73",
+                          },
+                        }}
+                      >
+                        <MdOutlineRemoveRedEye size={18} />
+                      </IconButton>
+                    ),
+                  },
+                ]),
           ]}
         />
       ) : (
@@ -212,6 +731,245 @@ const getNumericAmount = (value) =>
           <CircularProgress />
         </div>
       )}
+
+      {viewRow && (
+        <MuiModal
+          open
+          onClose={() => setViewRow(null)}
+          // title={viewRow.clientName || "View Invoice Details"}
+            title="View Invoice Details"
+        >
+          <div className="grid grid-cols-1 gap-6">
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Client Info</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted title="Client Name" detail={viewRow.clientName || "-"} />
+                <DetalisFormatted
+                  title="Client Invoice Name"
+                  detail={viewRow.clientInvoiceName || viewRow.clientName || "-"}
+                />
+                <DetalisFormatted title="Channel" detail={viewRow.channel || "-"} />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Financials</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted title="No. of Desks" detail={viewRow.noOfDesks ?? "-"} />
+                <DetalisFormatted title="Desk Rate" detail={`INR ${inrFormat(normalizeAmount(viewRow.deskRate))}`} />
+                <DetalisFormatted title="Revenue" detail={`INR ${inrFormat(normalizeAmount(viewRow.revenue))}`} />
+                <DetalisFormatted title="Annual Increment (%)" detail={`${viewRow.annualIncrement ?? 0}%`} />
+                <DetalisFormatted title="Billing Frequency" detail={viewRow.billingFrequency || "-"} />
+                <DetalisFormatted title="Client Type" detail={viewRow.clientType || "-"} />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Rental Terms</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Rent Date"
+                  detail={viewRow.rentDate ? dayjs(viewRow.rentDate).format("DD-MM-YYYY") : "-"}
+                />
+                <DetalisFormatted title="Paid/Rent Status" detail={viewRow.rentStatus || "-"} />
+                <DetalisFormatted title="Total Term" detail={viewRow.totalTerm ?? "-"} />
+                <DetalisFormatted
+                  title="Next Increment Date"
+                  detail={viewRow.nextIncrementDate ? dayjs(viewRow.nextIncrementDate).format("DD-MM-YYYY") : "-"}
+                />
+                <DetalisFormatted
+                  title="Past Due Date"
+                  detail={viewRow.pastDueDate ? dayjs(viewRow.pastDueDate).format("DD-MM-YYYY") : "-"}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-subtitle font-pmedium mb-4">Finance Invoice Details</div>
+              <div className="grid grid-cols-1 gap-2 mt-2">
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={
+                    viewRow.invoiceLink ? (
+                      <a
+                        href={viewRow.invoiceLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded Date"
+                  detail={
+                    viewRow.invoiceUploadedAt
+                      ? dayjs(viewRow.invoiceUploadedAt).format("DD-MM-YYYY")
+                      : "-"
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded by"
+                  detail={viewRow.invoiceUploadedByName || "-"}
+                />
+              </div>
+            </div>
+          </div>
+        </MuiModal>
+      )}
+{editRow && (
+  <MuiModal
+    open
+    onClose={() => setEditRow(null)}
+    title="Edit Invoice"
+  >
+    <form
+      onSubmit={handleSubmit((values) => saveInvoice(values))}
+      className="grid grid-cols-2 gap-4"
+    >
+      <Controller
+        name="clients"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Select Client"
+            size="small"
+            fullWidth
+            disabled
+          >
+            {coworkingClients.map((client) => (
+              <MenuItem key={client._id} value={client._id}>
+                {client.clientName}
+              </MenuItem>
+            ))}
+          </TextField>
+        )}
+      />
+
+      {[
+        ["clientName", "Client Name", "text"],
+        ["clientInvoiceName", "Client Invoice Name", "text"],
+        ["channel", "Channel", "text"],
+        ["billingFrequency", "Billing Frequency", "text"],
+        ["clientType", "Client Type", "text"],
+        ["noOfDesks", "No. of Desks", "number"],
+        // ["occupation", "Occupation", "text"],
+        // ["dueTerm", "Due Term", "number"],
+        ["deskRate", "Desk Rate", "number"],
+        ["revenue", "Revenue", "number"],
+        ["totalTerm", "Total Term", "number"],
+        ["annualIncrement", "Annual Increment (%)", "number"],
+      ].map(([name, label, type]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+          <TextField
+            {...field}
+            type={type}
+            select={name === "billingFrequency" || name === "clientType"}
+            label={label}
+            size="small"
+            fullWidth
+            disabled
+          >
+            {name === "billingFrequency" || name === "clientType" ? (
+              [
+                ...(field.value === "-" ? ["-"] : []),
+                ...(name === "billingFrequency"
+                  ? ["Yearly", "Monthly"]
+                  : ["Annual Client", "Flexy Desk Client"]),
+              ].map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
+                </MenuItem>
+              ))
+            ) : null}
+          </TextField>
+        )}
+      />
+      ))}
+
+      {[
+        ["rentDate", "Rent Date"],
+        ["pastDueDate", "Past Due Date"],
+        ["nextIncrementDate", "Next Increment Date"],
+        ["invoiceUploadedAt", "Invoice Upload Date"],
+      ].map(([name, label]) => (
+        <Controller
+          key={name}
+          name={name}
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              {...field}
+              value={field.value ?? null}
+              label={label}
+              format="DD-MM-YYYY"
+              disabled={!['rentDate', 'invoiceUploadedAt'].includes(name)}
+              maxDate={['rentDate', 'invoiceUploadedAt'].includes(name) ? dayjs() : undefined}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  disabled: !['rentDate', 'invoiceUploadedAt'].includes(name),
+                },
+              }}
+            />
+          )}
+        />
+      ))}
+
+      <Controller
+        name="rentStatus"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            select
+            label="Paid/Rent Status"
+            size="small"
+            fullWidth
+          >
+            <MenuItem value="Paid">Paid</MenuItem>
+            <MenuItem value="Unpaid">Unpaid</MenuItem>
+          </TextField>
+        )}
+      />
+
+      <Controller
+        name="invoiceFile"
+        control={control}
+        render={({ field }) => (
+          <div className="col-span-2">
+            <UploadFileInput
+              value={field.value}
+              onChange={field.onChange}
+              allowedExtensions={["pdf", "doc", "docx"]}
+            />
+          </div>
+        )}
+      />
+
+      <div className="col-span-2">
+        <PrimaryButton
+          type="submit"
+          title="Update Invoice"
+          disabled={isSavingInvoice}
+          isLoading={isSavingInvoice}
+          className="w-full"
+        />
+      </div>
+    </form>
+  </MuiModal>
+)}
     </div>
   );
 };

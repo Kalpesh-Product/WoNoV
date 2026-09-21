@@ -35,6 +35,7 @@ const PieChartMui = ({
         ref={containerRef}
         className={
           centerAlign
+      
             ? `flex items-center justify-center w-full h-full ${
                 customLegend ? "flex-col" : ""
               }`
@@ -50,6 +51,7 @@ const PieChartMui = ({
               maxWidth: typeof width === "number" ? width : "100%",
               height: chartAreaHeight,
             }}
+     
           >
             <ReactApexChart
               key={chartKey}

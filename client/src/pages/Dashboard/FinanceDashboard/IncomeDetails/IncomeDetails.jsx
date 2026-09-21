@@ -33,6 +33,11 @@ const getNumericAmount = (value) => {
   return 0;
 };
 
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified" &&
+  Boolean(item?.invoiceUploadedAt || item?.invoiceLink || item?.invoice?.link);
+
+
 const getRevenueSummaryForDateRange = (data, dateRange) => {
   const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
 
@@ -101,7 +106,8 @@ const IncomeDetails = () => {
         vertical: "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
+        // normalizedStatus: getNormalizedPaymentStatus(item.status),
+         normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
       });
     });
 
@@ -120,7 +126,7 @@ const IncomeDetails = () => {
         revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus
+          item.rentStatus ?? item.status
         ),
       });
     });

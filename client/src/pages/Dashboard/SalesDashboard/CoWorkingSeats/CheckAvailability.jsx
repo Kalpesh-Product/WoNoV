@@ -16,6 +16,14 @@ const MONTHLY_GRAPH_BUILDINGS = [
   "dempo trade centre",
   "dempo trade center",
 ];
+const PROJECTED_MONTH_OVERRIDES = {
+  "Oct-26": { occupied: 713 },
+  "Nov-26": { occupied: 727 },
+  "Dec-26": { occupied: 719 },
+  "Jan-27": { occupied: 738 },
+  "Feb-27": { total: 800, occupied: 746 },
+  "Mar-27": { total: 900, occupied: 812 },
+};
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
@@ -37,6 +45,10 @@ const CheckAvailability = ({
   graphTitle = "TOTAL v/s OCCUPIED",
   monthlyView = false,
   hideInventoryLastDivider = false,
+  noOuterPadding = false,
+  investorGraphStyle = false,
+  middleContent = null,
+  hideSummaryCards = false,
 }) => {
   const navigate = useNavigate();
   const address = useLocation();
@@ -184,12 +196,38 @@ const CheckAvailability = ({
       const isUpcoming = month.start.isAfter(currentMonth, "month");
 
       if (isUpcoming) {
+        if (!investorGraphStyle) {
+          return {
+            name: month.label,
+            occupied: 0,
+            remaining: 0,
+            upcoming: totalInventory,
+            total: totalInventory,
+            isUpcoming: true,
+          };
+        }
+
+        const projectedOverride = PROJECTED_MONTH_OVERRIDES[month.label] || {};
+        const projectedTotalInventory =
+          Number(projectedOverride.total) || totalInventory;
+        const projectedOccupiedSeats = Math.max(
+          Math.min(
+            Number(projectedOverride.occupied) || projectedTotalInventory,
+            projectedTotalInventory,
+          ),
+          0,
+        );
+        const cappedProjectedRemainingSeats = Math.max(
+          projectedTotalInventory - projectedOccupiedSeats,
+          0,
+        );
+
         return {
           name: month.label,
-          occupied: 0,
-          remaining: 0,
-          upcoming: totalInventory,
-          total: totalInventory,
+          occupied: projectedOccupiedSeats,
+          remaining: cappedProjectedRemainingSeats,
+          upcoming: 0,
+          total: projectedTotalInventory,
           isUpcoming: true,
         };
       }
@@ -229,7 +267,7 @@ const CheckAvailability = ({
         isUpcoming: false,
       };
     });
-  }, [activeUnits, currentMonth, monthlyClients, monthlyView]);
+  }, [activeUnits, currentMonth, investorGraphStyle, monthlyClients, monthlyView]);
 
   const inventoryGraphData = monthlyView ? monthlyChartData : chartData;
 
@@ -244,6 +282,23 @@ const CheckAvailability = ({
       0,
     );
   }, [chartData, monthlyChartData, monthlyView]);
+  const averageOccupancyPercent = useMemo(() => {
+    const completedMonths = inventoryGraphData.filter(
+      (item) => !item?.isUpcoming && Number(item?.total) > 0,
+    );
+
+    if (completedMonths.length === 0) return 0;
+
+    const average =
+      completedMonths.reduce((sum, item) => {
+        const total = Number(item.total) || 0;
+        const occupied = Number(item.occupied) || 0;
+
+        return sum + (total ? (occupied / total) * 100 : 0);
+      }, 0) / completedMonths.length;
+
+    return Math.round(average);
+  }, [inventoryGraphData]);
   // //-------------  Remove Duplicates----------------------//
   // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
   // const unitMap = new Map();
@@ -302,10 +357,10 @@ const CheckAvailability = ({
       data: inventoryGraphData.map((item) => item.occupied),
     },
     {
-      name: "Remaining",
+      name: investorGraphStyle ? "Un - Occupied" : "Remaining",
       data: inventoryGraphData.map((item) => item.remaining),
     },
-    ...(monthlyView
+    ...(monthlyView && !investorGraphStyle
       ? [
           {
             name: "Upcoming",
@@ -314,9 +369,10 @@ const CheckAvailability = ({
         ]
       : []),
     ],
-    [inventoryGraphData, monthlyView],
+    [inventoryGraphData, investorGraphStyle, monthlyView],
   );
 
+  
   const _barGraphOptionsLegacy = {
     chart: {
       type: "bar",
@@ -399,7 +455,7 @@ const CheckAvailability = ({
 
             <div style="display:flex; justify-content:space-between; font-size : 12px">
               <div style="width : 100%">
-                Remaining
+                ${investorGraphStyle ? "Un - Occupied" : "Remaining"}
               </div>
               <div style="width : 100%">
               ${remaining} desks
@@ -442,39 +498,130 @@ const CheckAvailability = ({
       xaxis: {
         categories: inventoryGraphData.map((item) => item.name),
         title: {
-          text: monthlyView ? "Month" : "Building Name",
+          text: investorGraphStyle && monthlyView
+            ? ""
+            : monthlyView
+              ? "Month"
+              : "Building Name",
+          ...(investorGraphStyle
+            ? {
+              style: {
+                color: "#1234c9",
+              },
+            }
+            : {}),
         },
+        ...(investorGraphStyle
+          ? {
+            labels: {
+              style: {
+                colors: "#1234c9",
+              },
+            },
+          }
+          : {}),
       },
       yaxis: {
         title: {
-          text: "Percentage",
+          text: investorGraphStyle && monthlyView ? "Inventory" : "Percentage",
+          ...(investorGraphStyle
+            ? {
+              style: {
+                color: "#1234c9",
+              },
+            }
+            : {}),
         },
         labels: {
+          ...(investorGraphStyle
+            ? {
+              style: {
+                colors: "#1234c9",
+              },
+            }
+            : {}),
           formatter: (val) => `${Math.round(val)}%`,
         },
         max: 100,
       },
       legend: {
         position: "top",
+        ...(investorGraphStyle
+          ? {
+            labels: {
+              colors: "#1234c9",
+            },
+          }
+          : {}),
       },
       plotOptions: {
         bar: {
           horizontal: false,
           columnWidth: monthlyView ? "45%" : "10%",
           borderRadius: 2,
+          ...(investorGraphStyle
+            ? {
+              dataLabels: {
+                total: {
+                  enabled: true,
+                  formatter: (_value, opts) => {
+                    const item = inventoryGraphData[opts.dataPointIndex] || {};
+                    return Number(item.total) || "";
+                  },
+                  style: {
+                    color: "#1234c9",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                  },
+                },
+              },
+            }
+            : {}),
         },
       },
       dataLabels: {
         enabled: true,
-        formatter: (val, { dataPointIndex }) => {
-          if (monthlyView && inventoryGraphData[dataPointIndex]?.isUpcoming) {
+        formatter: (val, { dataPointIndex, seriesIndex }) => {
+          const item = inventoryGraphData[dataPointIndex] || {};
+
+          if (investorGraphStyle && monthlyView) {
+            const values = [
+              Number(item.occupied) || 0,
+              Number(item.remaining) || 0,
+            ];
+            const deskCount = values[seriesIndex] || 0;
+
+            return deskCount ? `${deskCount}` : "";
+          }
+
+          if (monthlyView && item.isUpcoming) {
             return "";
           }
 
           return `${Math.round(val)}%`;
         },
+        ...(investorGraphStyle
+          ? {
+            style: {
+              colors: ["#ffffff"],
+              fontSize: "12px",
+              fontWeight: 700,
+            },
+          }
+          : {}),
       },
-      colors: ["#36BA98", "#E83F25", "#C4C4C4"],
+      colors: investorGraphStyle
+        ? [
+          ({ dataPointIndex }) =>
+            inventoryGraphData[dataPointIndex]?.isUpcoming
+              ? "#b4b4b4"
+              : "#3cb37180",
+          ({ dataPointIndex }) =>
+            inventoryGraphData[dataPointIndex]?.isUpcoming
+              ? "#616161"
+              : "#ff000080",
+        ]
+        : ["#36BA98", "#E83F25", "#C4C4C4"],
       tooltip: {
         custom: function ({ dataPointIndex, w }) {
           const label = w.globals.labels[dataPointIndex];
@@ -512,7 +659,7 @@ const CheckAvailability = ({
                 <div style="width : 100%">${occupied} desks</div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size : 12px">
-                <div style="width : 100%">Remaining</div>
+                <div style="width : 100%">${investorGraphStyle ? "Un - Occupied" : "Remaining"}</div>
                 <div style="width : 100%">${remaining} desks</div>
               </div>
             </div>
@@ -520,7 +667,7 @@ const CheckAvailability = ({
         },
       },
     }),
-    [inventoryGraphData, monthlyView, navigate],
+    [inventoryGraphData, investorGraphStyle, monthlyView, navigate],
   );
 
   //-------------  Remove Duplicates----------------------//
@@ -622,6 +769,21 @@ const CheckAvailability = ({
 
   const onSubmit = (data) => {
     const { location, floor } = data;
+
+    if (!location || !floor) return;
+
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURIComponent(
+        location,
+      )}/${encodeURIComponent(floor)}`,
+      {
+        state: {
+          unitId: selectedUnitId[0],
+          unitNo: floor,
+          building: location,
+        },
+      },
+    );
 
     if (!location || !floor) return;
 
@@ -810,7 +972,18 @@ const CheckAvailability = ({
       border
       normalCase
       title={graphTitle}
-      TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+      TitleAmount={
+        investorGraphStyle && monthlyView
+          ? ""
+          : `TOTAL INVENTORY : ${totalInventoryCount}`
+      }
+      headerRightContent={
+        investorGraphStyle && monthlyView ? (
+          <span className="text-widgetTitle font-pmedium uppercase text-[#1234c9]">
+            AVERAGE OCCUPANCY - {averageOccupancyPercent}%
+          </span>
+        ) : null
+      }
     >
       {inventoryGraphData.length > 0 ? (
         <div className="w-full min-w-0 overflow-hidden">
@@ -870,9 +1043,15 @@ const CheckAvailability = ({
   );
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {cardsFirst ? inventorySummaryCards : inventoryGraph}
-      {cardsFirst ? inventoryGraph : inventorySummaryCards}
+    
+    <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
+      {cardsFirst
+        ? !hideSummaryCards && inventorySummaryCards
+        : inventoryGraph}
+      {!cardsFirst && middleContent}
+      {cardsFirst
+        ? inventoryGraph
+        : !hideSummaryCards && inventorySummaryCards}
 
 
       {!hideCheckInventory && (

@@ -170,6 +170,7 @@ import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClie
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
+
 import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard/AdminDashboard";
@@ -676,10 +677,6 @@ export const routes = createBrowserRouter([
                     element: <InvestorDashboard />,
                   },
                   {
-                    path: "investor-dashboard/historical-P&L",
-                    element: <InvestorDashboard />,
-                   },
-                  {
                     path: "investor-dashboard/income-expense",
                     element: <InvestorDashboard />,
                   },
@@ -687,63 +684,16 @@ export const routes = createBrowserRouter([
                     path: "investor-dashboard/unique-clients",
                     element: <InvestorDashboard />,
                   },
-                  {
-                    path: "investor-dashboard/inventory",
-                    element: <InvestorDashboard />,
-                  },
                      ...[
-                    "meeting-room-utilization",
-                    "external-guests-visited",
-                    "average-room-occupancy",
-                    "busy-time-during-week",
-                    "monthly-total-visitors",
                     "sector-wise-occupancy",
-                    "client-wise-occupancy",
-                    "client-member-gender-wise-data",
-                    "india-wise-members",
-                    "total-desks-company-wise",
-                    "appreciation-center",
-                    "overall-visitor-category",
-                    "overall-visitor-client-type",
-                    "overall-visitor-gender-data",
-                    "meeting-duration-breakdown",
+                    "age-wise-occupancy",
+                    "gender-wise-occupancy",
+                    "india-wise-occupancy",
+                    "real-estate-owned-by-biznest",
                   ].map((path) => ({
                     path: `investor-dashboard/${path}`,
                     element: <InvestorDashboard />,
                   })),
-                  {
-                    path: "investor-dashboard/monthly-profit-loss",
-                    element: (
-                      <MonthlyProfitLoss
-                        routeBase="/app/dashboard/investor-dashboard"
-                        departmentBudgetRoute="/app/dashboard/investor-dashboard/department-wise-budget"
-                      />
-                    ),
-                  },
-                  {
-                    path: "investor-dashboard/monthly-profit-loss/income-details",
-                    element: <IncomeDetails />,
-                  },
-                    {
-                    path: "investor-dashboard/annual-average-profit-loss",
-                    element: <AverageProfitLoss />,
-                  },
-                  {
-                    path: "investor-dashboard/overall-profit-loss",
-                    element: <OverallProfitLoss />,
-                  },
-                  {
-                    path: "investor-dashboard/sqft-wise-data",
-                    element: <SqWiseData />,
-                  },
-                  {
-                    path: "investor-dashboard/department-wise-budget",
-                    element: <DeptWiseBudget />,  
-                  },
-                   {
-                    path: "investor-dashboard/historical-P&L/details",
-                    element: <InvestorDashboard />,
-                  },
                   {
                     path: "finance-dashboard",
                     element: <FinanceLayout />,
@@ -1036,6 +986,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
+                    
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -1050,6 +1001,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
+                         
                               },
                               {
                                 path: "workation-revenue-invoicing",
@@ -1059,6 +1011,7 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
+                          
                               },
                               {
                                 path: "alternate-revenue-invoicing",

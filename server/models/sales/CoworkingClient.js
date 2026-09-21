@@ -42,6 +42,14 @@ const clientSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    billingFrequency: {
+      type: String,
+      enum: ["Yearly", "Monthly"],
+    },
+    clientType: {
+      type: String,
+      enum: ["Annual Client", "Flexy Desk Client"],
+    },
     phone: {
       type: String,
       minlength: 7,

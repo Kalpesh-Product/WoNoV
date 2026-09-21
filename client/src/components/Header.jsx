@@ -25,7 +25,7 @@ import biznestLogo from "../assets/biznest/biznest_logo.jpg";
 import { GiHamburgerMenu } from "react-icons/gi";
 import Abrar from "../assets/abrar.jpeg";
 import useAuth from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useLogout from "../hooks/useLogout";
 import { FaCheck, FaUserTie } from "react-icons/fa6";
 import { FiLogOut } from "react-icons/fi";
@@ -36,6 +36,7 @@ import { toast } from "sonner";
 import { queryClient } from "../main";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
+import CurrencySelector from "./CurrencySelector";
 
 const notificationRoutes = {
   meeting: "/app/meetings/calendar",
@@ -58,10 +59,12 @@ const Header = ({
   //const [isHovered, setIsHovered] = useState(false);
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const navigate = useNavigate();
+  const location = useLocation();
   const { auth } = useAuth(); // Assuming signOut is a method from useAuth()
   const logout = useLogout();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+  const showCurrencySelector = location.pathname.includes("/investor-dashboard");
 
   const { mutate: updateRead, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateRead"],
@@ -158,7 +161,36 @@ const Header = ({
         </div>
         {!isMobile && (
           <>
-            <div className="w-full flex items-center pl-20">
+            <div
+              className={`flex w-full items-center ${
+                showCurrencySelector ? "pl-8" : "pl-20"
+              }`}
+            >
+              {showCurrencySelector && (
+                <nav className="flex shrink-0 items-center gap-6 whitespace-nowrap text-sm font-pmedium text-[#1234c9] xl:gap-10">
+                  <button
+                    type="button"
+                    className="relative pb-2 text-[#1234c9] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#f04a4a]"
+                    aria-current="page"
+                  >
+                    CURRENT COMPANY POSITION
+                  </button>
+                  <button
+                    type="button"
+                    className="pb-2 text-[#1234c9]"
+                    aria-disabled="true"
+                  >
+                    POST SERIES A
+                  </button>
+                  <button
+                    type="button"
+                    className="pb-2 text-[#1234c9]"
+                    aria-disabled="true"
+                  >
+                    END VISION
+                  </button>
+                </nav>
+              )}
               {/* <TextField
                 fullWidth
                 size="small"
@@ -178,7 +210,9 @@ const Header = ({
               /> */}
             </div>
 
-            <div className="flex w-full justify-end gap-4">
+            <div className="flex w-full justify-end items-center gap-4">
+              {showCurrencySelector && <CurrencySelector />}
+
               <button
                 onClick={(e) => {
                   setNotificationAnchorEl(e.currentTarget);

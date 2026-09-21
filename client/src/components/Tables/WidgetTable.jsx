@@ -22,6 +22,7 @@ const WidgetTable = ({
   tableTitle,
   buttonTitle,
   handleSubmit,
+  headerActions,
   checkbox,
   checkAll,
   key,
@@ -49,11 +50,13 @@ const WidgetTable = ({
   totalTitle,
   summaryChipVariant,
   preserveCurrentMonthRange = false,
+  showCalendarWhenEmpty = false,
+  getMissingRangeData,
+  getVisibleColumns,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
-  const today = dayjs();
 
   const [dateRange, setDateRange] = useState([]);
   const [isUserChangedRange, setIsUserChangedRange] = useState(false);
@@ -64,10 +67,23 @@ const WidgetTable = ({
   };
 
   useEffect(() => {
-    if (!data.length || !dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
+    if (!dateColumn || isUserChangedRange) return; // ✅ skip if user manually changed
 
-    const currentMonthStart = today.startOf("month");
-    const currentMonthEnd = today.endOf("month");
+    const currentMonthStart = dayjs().startOf("month");
+    const currentMonthEnd = dayjs().endOf("month");
+
+    if (!data.length) {
+      if (showCalendarWhenEmpty) {
+        setDateRange([
+          {
+            startDate: currentMonthStart.toDate(),
+            endDate: currentMonthEnd.toDate(),
+            key: "selection",
+          },
+        ]);
+      }
+      return;
+    }
 
     if (preserveCurrentMonthRange) {
       setDateRange([
@@ -124,7 +140,7 @@ const WidgetTable = ({
         key: "selection",
       },
     ]);
-  }, [data, dateColumn, isUserChangedRange, preserveCurrentMonthRange]);
+  }, [data, dateColumn, isUserChangedRange, preserveCurrentMonthRange, showCalendarWhenEmpty]);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -147,13 +163,26 @@ const WidgetTable = ({
     const start = dayjs(startDate).startOf("day").toDate();
     const end = dayjs(endDate).endOf("day").toDate();
 
-    return data.filter((item) => {
+  //   return data.filter((item) => {
+  //     const itemDate = dayjs(item[dateColumn]);
+  //     if (!itemDate.isValid()) return false;
+
+  //     return isWithinInterval(itemDate.toDate(), { start, end });
+  //   });
+  // }, [data, dateColumn, dateRange]);
+   const matchingData = data.filter((item) => {
       const itemDate = dayjs(item[dateColumn]);
       if (!itemDate.isValid()) return false;
 
       return isWithinInterval(itemDate.toDate(), { start, end });
     });
-  }, [data, dateColumn, dateRange]);
+
+    // if (matchingData.length || !getMissingRangeData) return matchingData;
+    // return getMissingRangeData(startDate);
+    if (!getMissingRangeData) return matchingData;
+    const missingRangeData = getMissingRangeData(startDate, matchingData) || [];
+    return [...matchingData, ...missingRangeData];
+  }, [data, dateColumn, dateRange, getMissingRangeData]);
 
   const rangeTotal = useMemo(() => {
     if (!filteredData.length || !totalKey) return 0;
@@ -176,7 +205,7 @@ const WidgetTable = ({
   };
 
   useEffect(() => {
-    if (!onMonthChange || !filteredData.length) return;
+    if (!onMonthChange) return;
 
     const total = filteredData.reduce((sum, item) => {
       const amt = parseFloat(
@@ -192,7 +221,11 @@ const WidgetTable = ({
   }, [filteredData, onMonthChange, dateRange]);
 
   const formattedColumns = useMemo(() => {
-    return columns.map((col) => {
+    const visibleColumns = getVisibleColumns
+      ? getVisibleColumns({ filteredData, dateRange })
+      : columns;
+
+    return visibleColumns.map((col) => {
       if (col.field?.toLowerCase().includes("date")) {
         return {
           ...col,
@@ -207,11 +240,16 @@ const WidgetTable = ({
       }
       return col;
     });
-  }, [columns, formatDate, formatTime]);
+  }, [columns, dateRange, filteredData, formatDate, formatTime, getVisibleColumns]);
 
   const exportColumnKeys = useMemo(
-    () => columns.map((col) => col.field).filter(Boolean),
-    [columns]
+    () => {
+      const visibleColumns = getVisibleColumns
+        ? getVisibleColumns({ filteredData, dateRange })
+        : columns;
+      return visibleColumns.map((col) => col.field).filter(Boolean);
+    },
+    [columns, dateRange, filteredData, getVisibleColumns]
   );
 
   const finalTableData = filteredData.map((item, index) => ({
@@ -265,7 +303,15 @@ const WidgetTable = ({
       ...item,
       srNo: index + 1,
     }));
-  }, [filteredData, groupByKey, totalKey, sortByString, sortByNo, sortOrder]);
+  }, [
+    filteredData,
+    finalTableData,
+    groupByKey,
+    totalKey,
+    sortByString,
+    sortByNo,
+    sortOrder,
+  ]);
 
   const sortedTableData = useMemo(() => {
     let sorted = [...finalTableData];
@@ -362,6 +408,7 @@ const WidgetTable = ({
             {buttonTitle && (
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             )}
+            {headerActions}
             {exportData && (
               <PrimaryButton title="Export" handleSubmit={handleExportPass} />
             )}

@@ -53,7 +53,7 @@ const UserDetails = () => {
 
     try {
       const response = await axios.patch(
-        "/api/users/update-single-user",
+        `/api/users/update-single-user/${auth.user._id}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },

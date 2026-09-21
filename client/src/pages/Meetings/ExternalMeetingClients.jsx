@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";
@@ -43,8 +43,20 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
+const refreshMeetingQueries = () => {
+  queryClient.invalidateQueries({
+    queryKey: ["finance-external-meetings"],
+    exact: false,
+  });
+  queryClient.invalidateQueries({
+    queryKey: ["external-meetings"],
+    exact: false,
+  });
+};
+
 const ExternalMeetingCLients = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
   const { auth } = useAuth();
   const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle) || [];
   const [checklistModalOpen, setChecklistModalOpen] = useState(false);
@@ -343,7 +355,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
       return Array.isArray(response.data)
         ? response.data
-        : response.data.data || [];
+      : response.data.data || [];
     },
   });
   const transformedMeetings = meetings
@@ -430,7 +442,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       await axios.patch("/api/meetings/create-housekeeping-tasks", data);
     },
     onSuccess: async () => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      refreshMeetingQueries();
       setSubmittedChecklists((prev) => ({
         ...prev,
         [selectedMeetingId]: true,
@@ -450,7 +462,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         `/api/meetings/cancel-meeting/${selectedMeetingId}`,
         data,
       );
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      refreshMeetingQueries();
       return respone.data;
     },
     onSuccess: (data) => {
@@ -462,7 +474,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   const { mutate: extendMeeting, isPending: isExtendPending } = useMutation({
     mutationFn: async (data) => {
       const respone = await axios.patch(`/api/meetings/extend-meeting`, data);
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      refreshMeetingQueries();
       return respone.data;
     },
     onSuccess: (data) => {
@@ -481,7 +493,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           `/api/meetings/update-meeting-status`,
           data,
         );
-        queryClient.invalidateQueries({ queryKey: ["meetings"] });
+        refreshMeetingQueries();
         return respone.data;
       },
       onSuccess: (data) => {
@@ -506,7 +518,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       return respone.data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      refreshMeetingQueries();
       toast.success(data.message || "UPDATED");
       setDetailsModal(false);
     },
@@ -531,11 +543,16 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     },
     onSuccess: () => {
       toast.success("Payment details updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
+      refreshMeetingQueries();
       setOpenPaymentModal(false);
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast.error(
+        error?.response?.data?.message ||
+          error?.response?.data?.error ||
+          error?.message ||
+          "Payment update failed",
+      );
     },
   });
 
@@ -551,10 +568,36 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
       return respone.data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["meetings"] });
-      toast.success(data.message || "UPDATED");
+    onSuccess: (data, paymentStatus) => {
+      const meetingQueryKey = financeView
+        ? "finance-external-meetings"
+        : "external-meetings";
+
+      queryClient.setQueriesData({ queryKey: [meetingQueryKey] }, (oldData) => {
+        if (!Array.isArray(oldData)) return oldData;
+
+        return oldData.map((meeting) =>
+          meeting?._id === selectedMeeting?._id
+            ? { ...meeting, paymentVerification: paymentStatus }
+            : meeting,
+        );
+      });
+
+      refreshMeetingQueries();
+      const successMessage =
+        paymentStatus === "Completed"
+          ? "Verification Completed. Please Upload the Invoice in Billing"
+          : data.message || "Review Payment Updated";
+
+      toast.success(successMessage);
       setDetailsModal(false);
+
+      if (paymentStatus === "Completed") {
+        navigate(
+          "/app/dashboard/finance-dashboard/billing/client-invoicing/meeting-revenue-invoicing",
+          { replace: true },
+        );
+      }
     },
     onError: (error) => {
       toast.error(error.message);
@@ -837,9 +880,11 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     ).toLowerCase();
 
     if (!isPaid) return "Wait for Payment";
-    if (paymentVerificationStatus === "under review") return "Verify Payment";
-    if (paymentVerificationStatus === "verified") return "Completed";
-    return "Review Payment";
+    if (paymentVerificationStatus === "pending") return "Pending";
+    if (paymentVerificationStatus === "under review") return "Review Payment";
+    if (paymentVerificationStatus === "verified") return "Verify Payment";
+    if (paymentVerificationStatus === "completed") return "Completed";
+    return "Pending";
   };
 
   const getFinanceStatusChipStyle = (status) => {
@@ -847,6 +892,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
     if (normalizedStatus === "completed") {
       return { backgroundColor: "#D1FAE5", color: "#047857" };
+    }
+    if (normalizedStatus === "pending") {
+      return { backgroundColor: "#FFF7ED", color: "#F97316" };
     }
     if (normalizedStatus === "verify payment") {
       return { backgroundColor: "#DBEAFE", color: "#1D4ED8" };
@@ -1033,6 +1081,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             isFinance &&
             paymentVerificationStatus === "Verified" && {
               label: "Completed",
+              onClick: () => handleVerifyPayment(params.data, "Completed"),
             },
 
           // Show the following only when NOT finance
@@ -1081,7 +1130,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               </span>
             </div>
 
-            {!isCancelled && <ThreeDotMenu menuItems={menuItems} />}
+            {!isCancelled && menuItems.length > 0 && (
+              <ThreeDotMenu menuItems={menuItems} />
+            )}
             {/* {shouldHideMenu && menuItems.length > 0 && (
               <ThreeDotMenu menuItems={menuItems} />
             )} */}

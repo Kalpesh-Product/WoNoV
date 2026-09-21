@@ -7,7 +7,6 @@ import { State, City } from "country-state-city";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
@@ -55,6 +54,8 @@ const ClientOnboarding = () => {
       invoiceCompanyName: "",
       tenure: "",
       securityDeposit: 0,
+      billingFrequency: "",
+      clientType: "",
     },
   });
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -70,6 +71,8 @@ const ClientOnboarding = () => {
   const openDesks = useWatch({ control, name: "openDesks" });
   const openDesksRate = useWatch({ control, name: "ratePerOpenDesk" });
   const selectedBuilding = useWatch({ control, name: "building" });
+  const billingFrequency = useWatch({ control, name: "billingFrequency" });
+  const isMonthlyBilling = billingFrequency === "Monthly";
   const totalOpenDeskCost =
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
@@ -86,6 +89,18 @@ const ClientOnboarding = () => {
 
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
+
+  useEffect(() => {
+    setValue(
+      "clientType",
+      billingFrequency === "Monthly"
+        ? "Flexy Desk Client"
+        : billingFrequency === "Yearly"
+          ? "Annual Client"
+          : "",
+      { shouldValidate: true },
+    );
+  }, [billingFrequency, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -179,7 +194,9 @@ const ClientOnboarding = () => {
     });
 
   const onSubmit = (data) => {
-    mutateClientData(data);
+    mutateClientData({
+      ...data,
+    });
   };
 
   const handleReset = () => {
@@ -461,6 +478,39 @@ const ClientOnboarding = () => {
                     />
                   </div>
 
+                 <div className="grid grid-cols-2 gap-4">
+                    <Controller
+                      name="billingFrequency"
+                      control={control}
+                      rules={{ required: "Billing Frequency is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          select
+                          size="small"
+                          label="Billing Frequency"
+                          error={!!errors.billingFrequency}
+                          helperText={errors.billingFrequency?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="">Select Frequency</MenuItem>
+                          <MenuItem value="Yearly">Yearly</MenuItem>
+                          <MenuItem value="Monthly">Monthly</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="clientType"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField {...field} select size="small" label="Client Type" disabled fullWidth>
+                          <MenuItem value="Annual Client">Annual Client</MenuItem>
+                          <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
+                        </TextField>
+                      )}
+                    />
+                  </div>
+
                   <div className="flex gap-2">
                     <div className="w-1/2">
                       <Controller
@@ -549,31 +599,41 @@ const ClientOnboarding = () => {
                   <Controller
                     name="annualIncrement"
                     control={control}
-                    rules={{ required: "Annual Increment is required" }}
+                    //rules={{ required: "Annual Increment is required" }}
+                     rules={{
+                      required: isMonthlyBilling
+                        ? false
+                        : "Annual Increment is required",
+                    }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Annual Increment"
                         type="number"
+                        disabled={isMonthlyBilling}
                         error={!!errors.annualIncrement}
                         helperText={errors.annualIncrement?.message}
                         fullWidth
                       />
                     )}
                   />
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-4">
                     <Controller
                       name="perDeskMeetingCredits"
                       control={control}
                       rules={{
-                        required: "Per Desk Meeting Credits is required",
+                         required: isMonthlyBilling
+                          ? false
+                          : "Per Desk Meeting Credits is required",
+                       // required: "Per Desk Meeting Credits is required",
                       }}
                       render={({ field }) => (
                         <TextField
                           {...field}
                           size="small"
                           type="number"
+                          disabled={isMonthlyBilling}
                           error={!!errors.perDeskMeetingCredits}
                           helperText={errors.perDeskMeetingCredits?.message}
                           label="Per Desk Meeting Credits"
@@ -581,21 +641,22 @@ const ClientOnboarding = () => {
                         />
                       )}
                     />
+                    <Controller
+                      name="totalMeetingCredits"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          disabled
+                         //disabled={isMonthlyBilling}
+                          label="Total Meeting Credits"
+                          fullWidth
+                        />
+                      )}
+                    />
                   </div>
-                  <Controller
-                    name="totalMeetingCredits"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        size="small"
-                        type="number"
-                        disabled
-                        label="Total Meeting Credits"
-                        fullWidth
-                      />
-                    )}
-                  />
                 </div>
               </div>
 
@@ -657,15 +718,12 @@ const ClientOnboarding = () => {
                   <Controller
                     name="lockinPeriod"
                     control={control}
-                    rules={{ required: "Lock-in period is required" }}
                     render={({ field }) => (
                       <TextField
                         {...field}
                         size="small"
                         label="Lock-in Period (Months)"
                         type="number"
-                        error={!!errors.lockinPeriod}
-                        helperText={errors.lockinPeriod?.message}
                         fullWidth
                       />
                     )}
