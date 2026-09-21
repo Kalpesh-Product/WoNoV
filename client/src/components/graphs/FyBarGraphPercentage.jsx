@@ -5,6 +5,7 @@ import { inrFormat } from "../../utils/currencyFormat";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import WidgetSection from "../WidgetSection";
+import { useCurrency } from "../../context/CurrencyContext";
 
 const getCurrentFinancialYearStart = () => {
   const today = dayjs();
@@ -99,6 +100,7 @@ const FyBarGraphPercentage = ({
   hideYearNavigation = false,
   investorVariant = false,
 }) => {
+  const { format } = useCurrency();
   const currentFYStartYear = getCurrentFinancialYearStart();
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -393,7 +395,7 @@ const FyBarGraphPercentage = ({
                     <span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>
                     ${hasProjectedValue ? `Projected ${label}` : label}
                   </span>
-                  <span style="color:#111827; font-weight:500; white-space:nowrap;">INR ${inrFormat(rawVal)}</span>
+                  <span style="color:#111827; font-weight:500; white-space:nowrap;">${format(rawVal)}</span>
                 </div>`;
             }).join("");
 
@@ -411,7 +413,7 @@ const FyBarGraphPercentage = ({
                 </div>
                 ${rowsHtml}
                 <div style="border-top:1px solid #e5e7eb; margin-top:6px; padding-top:8px; text-align:right; color:#111827; font-weight:700;">
-                  Total: INR ${inrFormat(total)}
+                  Total: ${format(total)}
                 </div>
               </div>`;
           }
@@ -478,6 +480,7 @@ const FyBarGraphPercentage = ({
     displayedRawDataMap,
     tooltipBuilder,
     investorVariant,
+    format,
   ]);
 
   if (fyOptions.length === 0) {
@@ -501,8 +504,12 @@ const FyBarGraphPercentage = ({
   const totalHeaderAmount = `INR ${inrFormat(
     Object.values(monthlyTotals).reduce((sum, val) => sum + val, 0)
   )}`;
-  const actualHeaderAmount = `INR ${inrFormat(actualTotal)}`;
-  const projectedHeaderAmount = `INR ${inrFormat(projectedTotal)}`;
+  const actualHeaderAmount = investorVariant
+    ? format(actualTotal)
+    : `INR ${inrFormat(actualTotal)}`;
+  const projectedHeaderAmount = investorVariant
+    ? format(projectedTotal)
+    : `INR ${inrFormat(projectedTotal)}`;
   const headerProps = investorVariant
     ? {
       headerRightContent: (

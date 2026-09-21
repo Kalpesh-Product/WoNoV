@@ -161,9 +161,13 @@ const Header = ({
         </div>
         {!isMobile && (
           <>
-            <div className="w-full flex items-center pl-20">
+            <div
+              className={`flex w-full items-center ${
+                showCurrencySelector ? "pl-8" : "pl-20"
+              }`}
+            >
               {showCurrencySelector && (
-                <nav className="flex items-center gap-10 text-sm font-pmedium text-[#1234c9]">
+                <nav className="flex shrink-0 items-center gap-6 whitespace-nowrap text-sm font-pmedium text-[#1234c9] xl:gap-10">
                   <button
                     type="button"
                     className="relative pb-2 text-[#1234c9] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#f04a4a]"

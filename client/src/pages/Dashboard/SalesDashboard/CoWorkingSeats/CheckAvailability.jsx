@@ -48,6 +48,7 @@ const CheckAvailability = ({
   noOuterPadding = false,
   investorGraphStyle = false,
   middleContent = null,
+  hideSummaryCards = false,
 }) => {
   const navigate = useNavigate();
   const address = useLocation();
@@ -1027,9 +1028,13 @@ const CheckAvailability = ({
 
   return (
     <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
-      {cardsFirst ? inventorySummaryCards : inventoryGraph}
+      {cardsFirst
+        ? !hideSummaryCards && inventorySummaryCards
+        : inventoryGraph}
       {!cardsFirst && middleContent}
-      {cardsFirst ? inventoryGraph : inventorySummaryCards}
+      {cardsFirst
+        ? inventoryGraph
+        : !hideSummaryCards && inventorySummaryCards}
 
 
       {!hideCheckInventory && (

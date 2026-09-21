@@ -31,6 +31,7 @@ const YearlyGraph = ({
   refreshOnDataChange = false,
   navigationLabel = "",
   hideYearNavigation = false,
+  categories,
   dateKey, // 👈 New prop
   minFiscalYear,
 }) => {
@@ -122,7 +123,7 @@ const YearlyGraph = ({
     },
     xaxis: {
       ...options.xaxis,
-       categories: buildYearCategories(selectedYear),
+       categories: categories || buildYearCategories(selectedYear),
     },
   };
 
