@@ -1,5 +1,5 @@
-import AgTable from "../../../../components/AgTable";
-import { Chip } from "@mui/material";
+// import AgTable from "../../../../components/AgTable";
+// import { Chip } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -19,23 +19,58 @@ const ClientRevenue = () => {
   const [clientDetails, setClientDetails] = useState(null);
   const axios = useAxiosPrivate();
   const getValueOrNA = (value) => value ?? "N/A";
+  const getUserDisplayName = (user) => {
+    if (!user) return "";
+    if (typeof user === "string") return user;
+
+    return (
+      user.employeeName ||
+      [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") ||
+      user.name ||
+      ""
+    ).trim();
+  };
+
+  // const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
+  //   queryKey: ["clientRevenue", selectedClient?._id],
+  //   enabled: !!selectedClient?._id,
+  //   queryFn: async () => {
+  //     try {
+  //       const response = await axios.get(
+  //         `/api/sales/coworking-client-revenue/${selectedClient?._id}`
+  //       );
+  //       return response?.data || [];
+  //     } catch (error) {
+  //       console.error("Error fetching revenue data:", error.message);
+  //       return [];
+  //     }
+  //   },
+  // });
 
   const { data: revenueDetails = [], isPending: isRevenuePending } = useQuery({
-    queryKey: ["clientRevenue", selectedClient?._id],
+    queryKey: ["coWorkingData"],
     enabled: !!selectedClient?._id,
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/sales/coworking-client-revenue/${selectedClient?._id}`
+          "/api/sales/fetch-coworking-revenues",
+          { params: { useClientDetails: true } },
         );
-        return response?.data || [];
+        return Array.isArray(response?.data) ? response.data : [];
       } catch (error) {
         console.error("Error fetching revenue data:", error.message);
         return [];
       }
     },
+    select: (monthlyRevenue) =>
+      monthlyRevenue
+        .flatMap((month) => month?.clients || [])
+        .filter(
+          (revenue) =>
+            String(revenue?.clients?._id || revenue?.clients || "") ===
+            String(selectedClient?._id || ""),
+        ),
   });
-
   const viewEmployeeColumns = [
     { field: "srNo", headerName: "SR No", width: 100 },
     {
@@ -110,6 +145,9 @@ const ClientRevenue = () => {
     : Array.isArray(revenueDetails)
       ? revenueDetails.map((item, index) => ({
         ...item,
+        invoiceUploadedAt: item?.invoiceUploadedAt || item?.invoice?.date || null,
+        invoiceUploadedBy: item?.invoiceUploadedBy || null,
+        invoiceUploadedByName: getUserDisplayName(item?.invoiceUploadedBy),
         clientName:
           item?.clientName ?? item?.clients?.clientName ?? selectedClient?.clientName,
         srNo: index + 1,
@@ -174,6 +212,14 @@ const ClientRevenue = () => {
                 title="Annual Increment"
                 detail={`${clientDetails?.annualIncrement || 0}%`}
               />
+              <DetalisFormatted
+                title="Billing Frequency"
+                detail={<span>{selectedClient?.billingFrequency || ""}</span>}
+              />
+              <DetalisFormatted
+                title="Client Type"
+                detail={<span>{selectedClient?.clientType || ""}</span>}
+              />
             </div>
           </div>
           <hr className="my-2" />
@@ -203,6 +249,45 @@ const ClientRevenue = () => {
               <DetalisFormatted
                 title="Past Due Date"
                 detail={humanDate(clientDetails?.pastDueDate) || "N/A"}
+              />
+            </div>
+          </div>
+
+          <div>
+            <span className="text-subtitle font-pmedium mb-4">
+              Finance Invoice Details
+            </span>
+            <div className="grid grid-cols-1 gap-2 mt-2">
+              <DetalisFormatted
+                title="Invoice Link"
+                detail={
+                  clientDetails?.invoice?.link || clientDetails?.invoiceLink ? (
+                    <a
+                      href={clientDetails?.invoice?.link || clientDetails?.invoiceLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline"
+                    >
+                      View PDF
+                    </a>
+                  ) : (
+                    "-"
+                  )
+                }
+              />
+              <DetalisFormatted
+                title="Invoice Uploaded Date"
+                detail={
+                  clientDetails?.invoiceUploadedAt || clientDetails?.invoice?.date
+                    ? humanDate(
+                        clientDetails?.invoiceUploadedAt || clientDetails?.invoice?.date,
+                      )
+                    : "-"
+                }
+              />
+              <DetalisFormatted
+                title="Invoice Uploaded by"
+                detail={clientDetails?.invoiceUploadedByName || "-"}
               />
             </div>
           </div>

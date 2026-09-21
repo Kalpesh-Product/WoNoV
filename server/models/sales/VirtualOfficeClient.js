@@ -59,11 +59,18 @@ const virtualOfficeSchema = new mongoose.Schema(
     // Desks & Credits
     cabinDesks: { type: Number, default: 0 },
     securityDeposit: { type: Number, default: 0 },
+    billingFrequency: {
+      type: String,
+      enum: ["Monthly", "Yearly"],
+      default: "Yearly",
+    },
     cabinDeskRate: { type: Number, default: 0 },
     cabinTotal: { type: Number, default: 0 },
     openDesks: { type: Number, default: 0 },
     openDeskRate: { type: Number, default: 0 },
     openTotal: { type: Number, default: 0 },
+    receivedAmount: { type: Number, required: true, default: 0, min: 0 },
+    totalReceivedAmount: { type: Number, default: 0, min: 0 },
     perDeskMeetingCredits: { type: Number, default: 0 },
     totalMeetingCredits: { type: Number, default: 0 },
 

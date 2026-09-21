@@ -15,6 +15,7 @@ const YearlyGraph = ({
   TitleAmountRed,
   TitleAmountTotal,
   headerRightContent,
+  headerRightContent,
    greenTitle,
   redTitle,
   totalTitle,
@@ -25,6 +26,7 @@ const YearlyGraph = ({
   chartTopContent,
   secondParam = false,
   chartHeight,
+  sectionHeight = "",
   sectionHeight = "",
   currentYear,
   onYearChange,
@@ -98,6 +100,10 @@ const YearlyGraph = ({
       (item) =>
         String(item.group || "").includes(String(selectedYearStart)),
     );
+    filteredData = data.filter(
+      (item) =>
+        String(item.group || "").includes(String(selectedYearStart)),
+    );
   }
 
   if (filteredData.length === 0 && dataPoint !== "name") {
@@ -149,6 +155,7 @@ const YearlyGraph = ({
         TitleAmountGreen={TitleAmountGreen}
         TitleAmountRed={TitleAmountRed}
         totalTitle={totalTitle}
+        headerRightContent={headerRightContent}
         headerRightContent={headerRightContent}
          greenTitle={greenTitle}
         redTitle={redTitle}

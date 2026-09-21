@@ -17,6 +17,137 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useParams } from "react-router-dom";
 
+const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
+const normalizeBookingType = (bookingType) =>
+  String(bookingType || "")
+    .trim()
+    .toLowerCase() === "spv booking"
+    ? "SPV Booking"
+    : "Direct";
+const calculateLockinPeriod = (startDate, endDate, fallback = 0) => {
+  if (!startDate || !endDate) {
+    return fallback;
+  }
+
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start)) {
+    return fallback;
+  }
+
+  return end.diff(start, "month");
+};
+
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+const getCalendarDateInUtc = (value) => {
+  const date = new Date(value);
+  const dateParts =
+    typeof value === "string" && value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+
+  if (dateParts) {
+    return Date.UTC(
+      Number(dateParts[1]),
+      Number(dateParts[2]) - 1,
+      Number(dateParts[3]),
+    );
+  }
+
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+};
+
+const calculateAgreementExpiry = (startDate, endDate) => {
+  const startDay = getCalendarDateInUtc(startDate);
+  const endDay = getCalendarDateInUtc(endDate);
+
+  if (
+    !startDate ||
+    !endDate ||
+    Number.isNaN(startDay) ||
+    Number.isNaN(endDay) ||
+    endDay < startDay
+  ) {
+    return "-";
+  }
+
+  const today = getCalendarDateInUtc(new Date());
+  const totalDays = Math.round((endDay - startDay) / MILLISECONDS_PER_DAY);
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, Math.round((endDay - today) / MILLISECONDS_PER_DAY)),
+  );
+
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
+const calculateCurrentRate = (
+  cabinRate,
+  openRate,
+  annualIncrement,
+  startDate,
+  referenceDate = dayjs(),
+) => {
+  const base = [cabinRate, openRate]
+    .map((rate) => Number(rate))
+    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!base) {
+    return 0;
+  }
+
+  const start = dayjs(startDate);
+  if (!start.isValid()) {
+    return base;
+  }
+
+  const yearsElapsed = Math.max(referenceDate.diff(start, "year"), 0);
+  const rate = base * Math.pow(1 + increment / 100, yearsElapsed);
+
+  return rate;
+};
+
+const formatExactNumber = (value) => {
+  if (value === null || value === undefined || value === "") {
+    return "N/A";
+  }
+
+  return String(value);
+};
+
+const useCurrentMonthStartDate = () => {
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
+    () => dayjs().startOf("month").toISOString(),
+  );
+
+  useEffect(() => {
+    let timeoutId;
+
+    const scheduleNextUpdate = () => {
+      const now = dayjs();
+      const nextMonthStart = now.add(1, "month").startOf("month");
+      const delay = Math.max(nextMonthStart.diff(now), 0);
+
+      timeoutId = window.setTimeout(() => {
+        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        scheduleNextUpdate();
+      }, delay);
+    };
+
+    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    scheduleNextUpdate();
+
+    return () => {
+      if (timeoutId) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, []);
+
+  return currentMonthStartDate;
+};
+
 const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
@@ -45,7 +176,9 @@ const ClientDetails = () => {
       cabinDesks: 0,
       openDesks: 0,
       totalDesks: 0,
-      bookingType: "",
+      bookingType: "Direct",
+      billingFrequency: "",
+      clientType: "",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
       annualIncrement: 0,
@@ -135,6 +268,73 @@ const ClientDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const selectedBuilding = useWatch({ control, name: "building" });
+  const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
+  const watchedOpenDesks = useWatch({ control, name: "openDesks" });
+  const watchedStartDate = useWatch({ control, name: "startDate" });
+  const watchedEndDate = useWatch({ control, name: "endDate" });
+  const watchedAnnualIncrement = useWatch({ control, name: "annualIncrement" });
+  const watchedCabinRate = useWatch({ control, name: "ratePerCabinDesk" });
+  const watchedOpenRate = useWatch({ control, name: "ratePerOpenDesk" });
+  const watchedLockinPeriod = useWatch({ control, name: "lockinPeriod" });
+  const watchedBillingFrequency = useWatch({
+    control,
+    name: "billingFrequency",
+  });
+  const isMonthlyBilling = watchedBillingFrequency === "Monthly";
+
+  useEffect(() => {
+    if (isEditing) {
+      setValue(
+        "clientType",
+        watchedBillingFrequency === "Monthly"
+          ? "Flexy Desk Client"
+          : watchedBillingFrequency === "Yearly"
+            ? "Annual Client"
+            : "",
+      );
+    }
+  }, [isEditing, watchedBillingFrequency, setValue]);
+  const computedNoOfDesks = useMemo(
+    () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
+    [watchedCabinDesks, watchedOpenDesks],
+  );
+  const computedLockinPeriod = useMemo(
+    () =>
+      Number(
+        watchedLockinPeriod ??
+          selectedClient?.lockinPeriod ??
+          selectedClient?.lockInPeriodMonths ??
+          0,
+      ),
+    [
+      selectedClient?.lockInPeriodMonths,
+      selectedClient?.lockinPeriod,
+      watchedLockinPeriod,
+    ],
+  );
+  const computedTotalTerm = useMemo(
+    () => calculateLockinPeriod(watchedStartDate, watchedEndDate, 0),
+    [watchedStartDate, watchedEndDate],
+  );
+  const computedCurrentRate = useMemo(
+    () =>
+      calculateCurrentRate(
+        watchedCabinRate,
+        watchedOpenRate,
+        watchedAnnualIncrement,
+        watchedStartDate,
+      ),
+    [watchedAnnualIncrement, watchedCabinRate, watchedOpenRate, watchedStartDate],
+  );
+  const computedRevenue = useMemo(
+    () => computedNoOfDesks * computedCurrentRate,
+    [computedCurrentRate, computedNoOfDesks],
+  );
+  const computedRentDate = useCurrentMonthStartDate();
+  const computedAgreementExpiry = useMemo(
+    () => calculateAgreementExpiry(watchedStartDate, watchedEndDate),
+    [watchedEndDate, watchedStartDate],
+  );
 
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "client-details"],
@@ -151,6 +351,21 @@ const ClientDetails = () => {
       typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
 
     if (!selectedUnitId) {
+      const buildingId = selectedUnit?.building?._id || selectedUnit?.building;
+      const unitNo = selectedUnit?.unitNo ?? selectedClient?.unitNo;
+      const unitName = selectedUnit?.unitName || selectedClient?.unitName;
+      const matches = buildingId
+        ? units.filter((item) => {
+            const itemBuildingId = item.building?._id || item.building;
+            if (String(itemBuildingId) !== String(buildingId)) return false;
+            if (unitNo !== undefined && unitNo !== null && unitNo !== "") {
+              return String(item.unitNo) === String(unitNo);
+            }
+            return Boolean(unitName) && item.unitName === unitName;
+          })
+        : [];
+
+      if (matches.length === 1) return matches[0];
       return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
     }
 
@@ -158,7 +373,7 @@ const ClientDetails = () => {
       units.find((item) => item._id === selectedUnitId) ||
       (typeof selectedUnit === "object" ? selectedUnit : null)
     );
-  }, [selectedClient?.unit, units]);
+  }, [selectedClient?.unit, selectedClient?.unitNo, selectedClient?.unitName, units]);
 
   useEffect(() => {
     if (selectedClient) {
@@ -193,10 +408,13 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+        bookingType: normalizeBookingType(selectedClient.bookingType),
+        billingFrequency: selectedClient.billingFrequency || "",
+        clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
+        lockinPeriod:
+          selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
         localPocEmail: selectedClient.localPoc?.email || "",
@@ -209,41 +427,41 @@ const ClientDetails = () => {
         updatedAt: selectedClient.updatedAt,
       });
     }
-  }, [reset, selectedClient, selectedUnitDetails]);
+  }, [computedRentDate, reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
     if (!selectedBuilding) {
       return [];
     }
 
-    return units.filter((item) => item.building?._id === selectedBuilding);
-  }, [selectedBuilding, units]);
-
-  useEffect(() => {
-    if (!isEditing) {
-      return;
+    const unitOptions = [...units];
+    if (
+      selectedUnitDetails?._id &&
+      !unitOptions.some((item) => item._id === selectedUnitDetails._id)
+    ) {
+      unitOptions.push(selectedUnitDetails);
     }
 
-    const currentUnit = control._formValues.unit;
-    if (currentUnit && !filteredUnits.some((item) => item._id === currentUnit)) {
-      setValue("unit", "");
-    }
-  }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
+    return unitOptions.filter(
+      (item) => (item.building?._id || item.building) === selectedBuilding,
+    );
+  }, [selectedBuilding, selectedUnitDetails, units]);
 
-  const bookingTypeOptions = React.useMemo(() => {
-    const options = new Set();
+  // const bookingTypeOptions = React.useMemo(() => {
+  //   const options = new Set();
 
-    clientsData?.forEach((client) => {
-      if (client?.bookingType) {
-        options.add(client.bookingType);
-      }
-    });
+  //   clientsData?.forEach((client) => {
+  //     if (client?.bookingType) {
+  //       options.add(client.bookingType);
+  //     }
+  //   });
 
-    if (selectedClient?.bookingType) {
-      options.add(selectedClient.bookingType);
-    }
+  //   if (selectedClient?.bookingType) {
+  //     options.add(selectedClient.bookingType);
+  //   }
 
-    return [...options];
-  }, [clientsData, selectedClient?.bookingType]);
+  //   return [...options];
+  // }, [clientsData, selectedClient?.bookingType]);
+
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -262,6 +480,8 @@ const ClientDetails = () => {
       hoState: data.hoState,
       isActive: data.isActive === true || data.isActive === "true",
       bookingType: data.bookingType,
+      billingFrequency: data.billingFrequency,
+      clientType: data.clientType,
       building: data.building,
       unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
@@ -276,7 +496,7 @@ const ClientDetails = () => {
       startDate: data.startDate,
       endDate: data.endDate,
       lockinPeriod: Number(data.lockinPeriod) || 0,
-      rentDate: data.rentDate,
+      rentDate: computedRentDate,
       nextIncrement: data.nextIncrement,
       localPocName: data.localPocName,
       localPocEmail: data.localPocEmail,
@@ -351,10 +571,13 @@ const ClientDetails = () => {
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits,
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
-        bookingType: selectedClient.bookingType,
+        bookingType: normalizeBookingType(selectedClient.bookingType),
+        billingFrequency: selectedClient.billingFrequency || "",
+        clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
-        lockinPeriod: selectedClient.lockinPeriod,
-        rentDate: selectedClient.rentDate,
+        lockinPeriod:
+          selectedClient.lockinPeriod ?? selectedClient.lockInPeriodMonths ?? 0,
+        rentDate: computedRentDate,
         nextIncrement: selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
         localPocEmail: selectedClient.localPoc?.email || "",
@@ -368,12 +591,14 @@ const ClientDetails = () => {
       });
     }
   };
-  const renderDatePickerField = (field, label) => (
+
+  const renderDatePickerField = (field, label, disabled = false) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
         label={label}
         format="DD-MM-YYYY"
         value={field.value ? dayjs(field.value) : null}
+        disabled={disabled}
         onChange={(dateValue) =>
           field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
         }
@@ -423,6 +648,7 @@ const ClientDetails = () => {
                     "hoCity",
                     "hoState",
                     "bookingType",
+                    "revenue",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -438,12 +664,23 @@ const ClientDetails = () => {
                                 label="Booking Type"
                                 fullWidth
                               >
-                                {bookingTypeOptions.map((bookingType) => (
+                                {/* {bookingTypeOptions.map((bookingType) => (
+                                   */}
+                                  {BOOKING_TYPE_OPTIONS.map((bookingType) => (
                                   <MenuItem key={bookingType} value={bookingType}>
                                     {bookingType}
                                   </MenuItem>
                                 ))}
                               </TextField>
+                            ) : fieldKey === "revenue" ? (
+                              <TextField
+                                {...field}
+                                value={formatExactNumber(computedRevenue)}
+                                disabled
+                                size="small"
+                                label="Revenue"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -470,7 +707,9 @@ const ClientDetails = () => {
                           </div>
                           <div className="w-full">
                             <span className="text-gray-500">
-                              {control._defaultValues[fieldKey] || "N/A"}
+                              {fieldKey === "revenue"
+                                ? formatExactNumber(computedRevenue)
+                                : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -494,7 +733,19 @@ const ClientDetails = () => {
                         name="building"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} select size="small" label="Building" fullWidth>
+                          <TextField
+                            {...field}
+                            onChange={(event) => {
+                              if (event.target.value !== field.value) {
+                                setValue("unit", "");
+                              }
+                              field.onChange(event);
+                            }}
+                            select
+                            size="small"
+                            label="Building"
+                            fullWidth
+                          >
                             <MenuItem value="">Select a Building</MenuItem>
                             {availableBuildings.map((item) => (
                               <MenuItem key={item._id} value={item._id}>
@@ -510,14 +761,14 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField {...field} select size="small" label="Unit" fullWidth>
                             <MenuItem value="">Select a Unit</MenuItem>
-                            {isUnitsLoading ? (
-                              <MenuItem disabled>Loading units...</MenuItem>
-                            ) : filteredUnits.length > 0 ? (
+                            {filteredUnits.length > 0 ? (
                               filteredUnits.map((item) => (
                                 <MenuItem key={item._id} value={item._id}>
                                   {item.unitNo}
                                 </MenuItem>
                               ))
+                            ) : isUnitsLoading ? (
+                              <MenuItem disabled>Loading units...</MenuItem>
                             ) : (
                               <MenuItem disabled>
                                 {selectedBuilding ? "No units available" : "Select a building first"}
@@ -527,22 +778,70 @@ const ClientDetails = () => {
                         )}
                       />
                       {[
+                        "billingFrequency",
+                        "clientType",
                         "cabinDesks",
                         "ratePerCabinDesk",
                         "openDesks",
                         "ratePerOpenDesk",
+                        "noOfDesks",
+                        "currentRate",
                         "isActive",
                       ].map((fieldKey) => (
                         <Controller
                           key={fieldKey}
                           name={fieldKey}
                           control={control}
-                          render={({ field }) =>
-                            fieldKey === "isActive" ? (
+                          rules={fieldKey === "billingFrequency"
+                            ? { required: "Billing Frequency is required" }
+                            : undefined}
+                          render={({ field, fieldState }) =>
+                            fieldKey === "billingFrequency" || fieldKey === "clientType" ? (
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label={fieldKey === "billingFrequency" ? "Billing Frequency" : "Client Type"}
+                                disabled={fieldKey === "clientType"}
+                                error={!!fieldState.error}
+                                helperText={fieldState.error?.message}
+                                fullWidth
+                              >
+                                {fieldKey === "billingFrequency" && (
+                                  <MenuItem value="">Select Frequency</MenuItem>
+                                )}
+                                {(fieldKey === "billingFrequency"
+                                  ? ["Yearly", "Monthly"]
+                                  : ["Annual Client", "Flexy Desk Client"]
+                                ).map((option) => (
+                                  <MenuItem key={option} value={option}>
+                                    {option}
+                                  </MenuItem>
+                                ))}
+                              </TextField>
+                            ) : fieldKey === "isActive" ? (
                               <TextField {...field} select size="small" label="Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
+                            ) : fieldKey === "noOfDesks" ? (
+                              <TextField
+                                {...field}
+                                value={computedNoOfDesks}
+                                disabled
+                                size="small"
+                                label="No of Desk"
+                                fullWidth
+                              />
+                            ) : fieldKey === "currentRate" ? (
+                              <TextField
+                                {...field}
+                                value={formatExactNumber(computedCurrentRate)}
+                                disabled
+                                size="small"
+                                label="Current Rate"
+                                fullWidth
+                              />
                             ) : (
                               <TextField
                                 {...field}
@@ -561,10 +860,14 @@ const ClientDetails = () => {
                     [
                       "buildingName",
                       "unitNo",
+                      "billingFrequency",
+                      "clientType",
                       "cabinDesks",
                       "ratePerCabinDesk",
                       "openDesks",
                       "ratePerOpenDesk",
+                      "noOfDesks",
+                      "currentRate",
                       "isActive",
                     ].map((fieldKey) => (
                       <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
@@ -572,6 +875,10 @@ const ClientDetails = () => {
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "isActive"
                               ? "Status"
+                              : fieldKey === "noOfDesks"
+                                ? "No of Desk"
+                                : fieldKey === "currentRate"
+                                  ? "Current Rate"
                               : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
@@ -586,6 +893,11 @@ const ClientDetails = () => {
                               ? control._defaultValues.isActive
                                 ? "Active"
                                 : "Inactive"
+                              : fieldKey === "noOfDesks"
+                                ? Number(control._defaultValues.cabinDesks || 0) +
+                                  Number(control._defaultValues.openDesks || 0)
+                              : fieldKey === "currentRate"
+                                ? formatExactNumber(computedCurrentRate)
                               : control._defaultValues[fieldKey] || "N/A"}
                           </span>
                         </div>
@@ -613,6 +925,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Annual Increment"
+                            disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}
@@ -647,6 +960,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Per Desk Meeting Credits"
+                             disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}
@@ -681,6 +995,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Total Meeting Credits"
+                            disabled={isMonthlyBilling}
                             fullWidth
                           />
                         )}
@@ -771,9 +1086,11 @@ const ClientDetails = () => {
                         render={({ field }) => (
                           <TextField
                             {...field}
+                            value={`${computedLockinPeriod} months`}
                             size="small"
-                            label="Lock-in Period"
+                            label="Lock-in Period (Months)"
                             fullWidth
+                            disabled
                           />
                         )}
                       />
@@ -789,7 +1106,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {control._defaultValues.lockinPeriod}
+                            {computedLockinPeriod} months
                           </span>
                         </div>
                       </div>
@@ -803,7 +1120,11 @@ const ClientDetails = () => {
                         name="rentDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date")
+                          renderDatePickerField(
+                            { ...field, value: computedRentDate },
+                            "Rent Date",
+                            true,
+                          )
                         }
                       />
                     ) : (
@@ -818,7 +1139,7 @@ const ClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(control._defaultValues.rentDate)}
+                            {humanDate(computedRentDate)}
                           </span>
                         </div>
                       </div>
@@ -848,6 +1169,64 @@ const ClientDetails = () => {
                         <div className="w-full">
                           <span className="text-gray-500">
                             {humanDate(control._defaultValues.nextIncrement)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Total Term */}
+                  <div>
+                    {isEditing ? (
+                      <TextField
+                        value={`${computedTotalTerm} months`}
+                        size="small"
+                        label="Total Term"
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Total Term
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {computedTotalTerm} months
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Agreement Expiry */}
+                  <div>
+                    {isEditing ? (
+                      <TextField
+                        value={computedAgreementExpiry}
+                        size="small"
+                        label="Agreement Expiry"
+                        fullWidth
+                        disabled
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Agreement Expiry
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {computedAgreementExpiry}
                           </span>
                         </div>
                       </div>

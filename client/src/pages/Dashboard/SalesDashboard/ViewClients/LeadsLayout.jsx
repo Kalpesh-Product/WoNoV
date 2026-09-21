@@ -192,6 +192,13 @@ const LeadsLayout = ({
           financialYear: currentFinancialYear,
         })
       : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
+  const resolvedTitleAmount =
+    typeof titleAmount === "function"
+      ? titleAmount({
+          count: selectedFinancialYearClientsCount,
+          financialYear: currentFinancialYear,
+        })
+      : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
 
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = useMemo(() => {

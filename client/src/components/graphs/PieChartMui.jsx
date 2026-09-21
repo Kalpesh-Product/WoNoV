@@ -38,6 +38,9 @@ const PieChartMui = ({
             ? `flex items-center justify-center w-full h-full ${
                 customLegend ? "flex-col" : ""
               }`
+            ? `flex items-center justify-center w-full h-full ${
+                customLegend ? "flex-col" : ""
+              }`
             : "flex items-center"
         }
         style={centerAlign ? undefined : { width, height }}
@@ -46,6 +49,10 @@ const PieChartMui = ({
           // <div style={{ width, height }}>
              <div
             className="w-full"
+            style={{
+              maxWidth: typeof width === "number" ? width : "100%",
+              height: chartAreaHeight,
+            }}
             style={{
               maxWidth: typeof width === "number" ? width : "100%",
               height: chartAreaHeight,

@@ -1,8 +1,31 @@
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
+const Company = require("../../models/hr/Company");
+const mongoose = require("mongoose");
 const transformRevenues = require("../../utils/revenueFormatter");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
+const { PDFDocument } = require("pdf-lib");
 const { parseAmount } = require("../../utils/parseAmount");
+const {
+  handleDocumentUpload,
+  handleFileDelete,
+} = require("../../config/s3Config");
+
+const calculateRevenueAmounts = (taxableAmount, gstRate = 18) => {
+  const taxable = parseAmount(taxableAmount);
+  const rate = Number(gstRate) === 5 ? 5 : 18;
+  const gst = Number(((taxable * rate) / 100).toFixed(2));
+  const invoiceAmount = Number((taxable + gst).toFixed(2));
+
+  return { taxableAmount: taxable, gst, invoiceAmount };
+};
+
+const getInvoiceDate = (value) => {
+  if (!value) return null;
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 const normalizeHeader = (value = "") =>
   value.toString().trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
@@ -72,46 +95,203 @@ const parseCsvDate = (value) => {
 const {
   fetchAlternateRevenueReportService,
 } = require("../../services/reports/revenue");
-const createAlternateRevenue = async (req, res, next) => {
+const saveAlternateRevenueRecord = async (req, res, next) => {
+  let uploadedInvoiceId = null;
+
   try {
-    const company = req.company;
-    const { particulars, name, taxableAmount, gst, invoiceAmount } = req.body;
+    const company = await Company.findById(req.company).lean();
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
 
-    const newRecord = await AlternateRevenue.create({
-      company,
-      particulars,
-      name,
-      taxableAmount,
-      gst,
-      invoiceAmount,
-    });
+    const { revenueId, ...updates } = req.body;
+    const originalClientName = updates.originalClientName
+      ? updates.originalClientName.toString().trim()
+      : "";
+    const hasValidRevenueId =
+      revenueId && mongoose.Types.ObjectId.isValid(revenueId);
 
-    res.status(201).json({ success: true, data: newRecord });
+    const existingRevenue = hasValidRevenueId
+      ? await AlternateRevenue.findOne({
+          _id: revenueId,
+          company: req.company,
+        }).lean()
+      : null;
+
+    const allowedFields = [
+      "name",
+      "clientInvoiceName",
+      "particulars",
+      "taxableAmount",
+      "gst",
+      "invoiceAmount",
+      "invoiceCreationDate",
+      "invoicePaidDate",
+      "status",
+    ];
+
+    const payload = allowedFields.reduce((result, field) => {
+      if (updates[field] !== undefined && updates[field] !== null) {
+        result[field] = updates[field];
+      }
+      return result;
+    }, {});
+
+    if (payload.invoiceCreationDate) {
+      payload.invoiceCreationDate = new Date(payload.invoiceCreationDate);
+    }
+    if (payload.invoicePaidDate) {
+      payload.invoicePaidDate = new Date(payload.invoicePaidDate);
+    }
+
+    if (payload.taxableAmount !== undefined) {
+      const calculatedAmounts = calculateRevenueAmounts(
+        payload.taxableAmount,
+        updates.gstRate,
+      );
+      payload.taxableAmount = calculatedAmounts.taxableAmount;
+      payload.gst = calculatedAmounts.gst;
+      payload.invoiceAmount = calculatedAmounts.invoiceAmount;
+    }
+
+    if (
+      originalClientName &&
+      payload.name &&
+      originalClientName !== payload.name
+    ) {
+      await AlternateRevenue.updateMany(
+        {
+          company: req.company,
+          name: originalClientName,
+        },
+        {
+          $set: {
+            name: payload.name,
+          },
+        },
+      );
+    }
+
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({
+          message: "Invalid file type. Allowed types: PDF, DOC, DOCX",
+        });
+      }
+
+      let processedBuffer = req.file.buffer;
+      if (req.file.mimetype === "application/pdf") {
+        const pdfDoc = await PDFDocument.load(req.file.buffer);
+        pdfDoc.setTitle(
+          req.file.originalname
+            ? req.file.originalname.split(".")[0]
+            : "Invoice",
+        );
+        processedBuffer = await pdfDoc.save();
+      }
+
+      const ownerName =
+        payload.name ||
+        existingRevenue?.name ||
+        "alternate-revenue";
+
+      const uploadResult = await handleDocumentUpload(
+        processedBuffer,
+        `${company.companyName}/alternate-revenues/${ownerName}`,
+        req.file.originalname,
+      );
+
+      if (!uploadResult?.public_id) {
+        return res
+          .status(500)
+          .json({ message: "Failed to upload document" });
+      }
+
+      uploadedInvoiceId = uploadResult.public_id;
+      const invoiceDate =
+        payload.invoicePaidDate ||
+        existingRevenue?.invoicePaidDate ||
+        new Date();
+
+      payload.invoice = {
+        name: req.file.originalname,
+        link: uploadResult.secure_url,
+        id: uploadResult.public_id,
+        date: invoiceDate,
+      };
+      payload.invoicePaidDate = invoiceDate;
+      payload.invoiceUploadedBy = req.user;
+    } else if (payload.invoicePaidDate && existingRevenue?.invoice) {
+      payload.invoice = {
+        ...existingRevenue.invoice,
+        date: payload.invoicePaidDate,
+      };
+    }
+
+    let record;
+
+    if (hasValidRevenueId && existingRevenue) {
+      record = await AlternateRevenue.findOneAndUpdate(
+        { _id: revenueId, company: req.company },
+        payload,
+        { new: true, runValidators: true },
+      );
+    } else {
+      record = await AlternateRevenue.create({
+        ...payload,
+        company: req.company,
+      });
+    }
+
+    if (!record) {
+      return res.status(404).json({ message: "Alternate revenue not found" });
+    }
+
+    if (
+      uploadedInvoiceId &&
+      existingRevenue?.invoice?.id &&
+      existingRevenue.invoice.id !== uploadedInvoiceId
+    ) {
+      await handleFileDelete(existingRevenue.invoice.id).catch(() => null);
+    }
+
+    return res
+      .status(hasValidRevenueId && existingRevenue ? 200 : 201)
+      .json({
+        success: true,
+        data: record,
+      });
   } catch (error) {
+    if (uploadedInvoiceId) {
+      await handleFileDelete(uploadedInvoiceId).catch(() => null);
+    }
     next(error);
   }
 };
 
+const createAlternateRevenue = async (req, res, next) =>
+  saveAlternateRevenueRecord(req, res, next);
+
 const getAlternateRevenues = async (req, res, next) => {
   try {
-    const { id } = req.query || {};
-    if (id) {
-      const record = await AlternateRevenue.findOne({}).lean().exec();
-
-      if (!record) {
-        return res.status(404).json({
-          message: "Alternate revenue with the provided ID not found",
-        });
-      }
-    }
-
-    const payload = await fetchAlternateRevenueReportService({});
+    const payload = await fetchAlternateRevenueReportService({
+      company: req.company,
+    });
 
     return res.status(200).json(payload);
   } catch (error) {
     next(error);
   }
 };
+
+const updateAlternateRevenueInvoice = async (req, res, next) =>
+  saveAlternateRevenueRecord(req, res, next);
 
 const bulkInsertAlternateRevenue = async (req, res, next) => {
   try {
@@ -218,5 +398,6 @@ const bulkInsertAlternateRevenue = async (req, res, next) => {
 module.exports = {
   createAlternateRevenue,
   getAlternateRevenues,
+  updateAlternateRevenueInvoice,
   bulkInsertAlternateRevenue,
 };

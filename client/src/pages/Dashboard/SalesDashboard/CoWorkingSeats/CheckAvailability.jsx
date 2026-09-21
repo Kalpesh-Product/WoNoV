@@ -352,8 +352,11 @@ const CheckAvailability = ({
 
   const barGraphSeries = useMemo(
     () => [
+  const barGraphSeries = useMemo(
+    () => [
     {
       name: "Occupied",
+      data: inventoryGraphData.map((item) => item.occupied),
       data: inventoryGraphData.map((item) => item.occupied),
     },
     {
@@ -372,6 +375,7 @@ const CheckAvailability = ({
     [inventoryGraphData, investorGraphStyle, monthlyView],
   );
 
+  const _barGraphOptionsLegacy = {
   const _barGraphOptionsLegacy = {
     chart: {
       type: "bar",
@@ -783,6 +787,21 @@ const CheckAvailability = ({
         },
       },
     );
+
+    if (!location || !floor) return;
+
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURIComponent(
+        location,
+      )}/${encodeURIComponent(floor)}`,
+      {
+        state: {
+          unitId: selectedUnitId[0],
+          unitNo: floor,
+          building: location,
+        },
+      },
+    );
   };
 
   const inventoryStats = {
@@ -1000,6 +1019,8 @@ const CheckAvailability = ({
           disableColorChange
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.inventory}
         />
 
@@ -1010,6 +1031,8 @@ const CheckAvailability = ({
           disableColorChange
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.occupancy}
         />
 
@@ -1018,6 +1041,8 @@ const CheckAvailability = ({
           titleCenter
           highlightNegativePositive
           disableColorChange
+          disableLinks={disableCardLinks}
+          hideLastDivider={hideInventoryLastDivider}
           disableLinks={disableCardLinks}
           hideLastDivider={hideInventoryLastDivider}
           descriptionData={inventoryCards.freeInventory}
@@ -1119,6 +1144,8 @@ const CheckAvailability = ({
             externalStyles="w-48 mb-20"
           />
         </form>
+        </div>
+      )}
         </div>
       )}
     </div>

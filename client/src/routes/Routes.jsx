@@ -171,6 +171,7 @@ import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalC
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
 import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
+import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
 import AdminDashboard from "../pages/Dashboard/AdminDashboard/AdminDashboard";
 import MaintainanceLayout from "../pages/Dashboard/MaintainanceDashboard/MaintainanceLayout";
@@ -985,6 +986,13 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
+                                // element: <CoWorking showChart={false} />,
+                                 element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -999,9 +1007,22 @@ export const routes = createBrowserRouter([
                                     showInvoiceProjections
                                   />
                                 ),
+                               // element: <VirtualOffice showChart={false} />,
+                                 element: (
+                                  <VirtualOffice
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                               },
                               {
                                 path: "workation-revenue-invoicing",
+                                element: (
+                                  <Workations
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
                                 element: (
                                   <Workations
                                     showChart={false}

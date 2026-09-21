@@ -3,6 +3,9 @@ const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const csvParser = require("csv-parser");
 const { Readable } = require("stream");
 const { parseAmount } = require("../../utils/parseAmount");
+const Company = require("../../models/hr/Company");
+const { handleDocumentUpload, handleFileDelete } = require("../../config/s3Config");
+const { PDFDocument } = require("pdf-lib");
 const {
   fetchVirtualOfficeRevenueReportService,
 } = require("../../services/reports/revenue");
@@ -34,8 +37,46 @@ const getRowValue = (row, aliases = []) => {
 const parseValidDate = (value) => {
   if (!value || String(value).trim() === "") return null;
 
-  const date = new Date(value);
+  const rawValue = String(value).trim();
+  const dateParts = rawValue.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})$/);
+  const date = dateParts
+    ? new Date(
+        Number(dateParts[3]),
+        Number(dateParts[2]) - 1,
+        Number(dateParts[1]),
+      )
+    : new Date(rawValue);
+
+  if (
+    dateParts &&
+    (date.getFullYear() !== Number(dateParts[3]) ||
+      date.getMonth() !== Number(dateParts[2]) - 1 ||
+      date.getDate() !== Number(dateParts[1]))
+  ) {
+    return null;
+  }
+
   return isNaN(date.getTime()) ? null : date;
+};
+
+const normalizeVirtualOfficeChannel = (value) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (normalized === "spv booking" || normalized === "spv") {
+    return "SPV";
+  }
+
+  if (
+    normalized === "direct booking" ||
+    normalized === "direct" ||
+    normalized === ""
+  ) {
+    return "Direct";
+  }
+
+  return value;
 };
 
 const createVirtualOfficeRevenue = async (req, res, next) => {
@@ -46,6 +87,9 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       channel,
       taxableAmount,
       revenue,
+      receivedAmount,
+      totalReceivedAmount,
+      invoiceUploadedAt,
       totalTerm,
       dueTerm,
       rentDate,
@@ -53,6 +97,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       pastDueDate,
       annualIncrement,
       nextIncrementDate,
+      billingFrequency,
       service,
     } = req.body;
 
@@ -61,9 +106,14 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
     const newRevenue = new VirtualOfficeRevenue({
       client,
       location,
-      channel,
+      channel: normalizeVirtualOfficeChannel(channel),
       taxableAmount,
       revenue,
+      receivedAmount: Number(receivedAmount || 0),
+      totalReceivedAmount: Number(
+        totalReceivedAmount !== undefined ? totalReceivedAmount : receivedAmount || 0,
+      ),
+      invoiceUploadedAt: invoiceUploadedAt ? new Date(invoiceUploadedAt) : new Date(),
       totalTerm,
       dueTerm,
       rentDate,
@@ -73,9 +123,21 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
       nextIncrementDate,
       company,
       service,
+      isManualInvoice: true,
     });
 
     await newRevenue.save();
+
+    await VirtualOfficeClient.findOneAndUpdate(
+      { _id: client, company },
+      {
+        $set: {
+          receivedAmount: Number(receivedAmount || 0),
+          ...(billingFrequency ? { billingFrequency } : {}),
+        },
+      },
+      { runValidators: true },
+    );
 
     res.status(201).json({
       message: "Virtual office revenue created",
@@ -89,10 +151,121 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
 const getVirtualOfficeRevenue = async (req, res, next) => {
   try {
     const { company } = req;
-    const payload = await fetchVirtualOfficeRevenueReportService({ company });
+    //const payload = await fetchVirtualOfficeRevenueReportService({ company });
+    const payload = await fetchVirtualOfficeRevenueReportService({
+      company,
+      query: req.query,
+    });
 
     return res.status(200).json(payload);
   } catch (error) {
+    next(error);
+  }
+};
+const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
+  let uploadedInvoiceId = null;
+  try {
+    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const company = await Company.findById(req.company).lean();
+    if (!company) return res.status(404).json({ message: "Company not found" });
+
+    const existingRevenue = revenueId
+      ? await VirtualOfficeRevenue.findOne({ _id: revenueId, company: req.company }).lean()
+      : null;
+    const previousInvoiceId = existingRevenue?.invoice?.id;
+    const allowedFields = [
+      "client", "location", "channel", "taxableAmount", "revenue", "receivedAmount", "totalReceivedAmount", "totalTerm",
+     // "client", "location", "channel", "taxableAmount", "revenue", "totalTerm",
+      "dueTerm", "rentDate", "rentStatus", "pastDueDate", "annualIncrement",
+      "nextIncrementDate", "service", "invoiceUploadedAt",
+    ];
+    const payload = allowedFields.reduce((result, field) => {
+      if (updates[field] !== undefined) result[field] = updates[field];
+      return result;
+    }, {});
+
+    if (payload.channel !== undefined) {
+      payload.channel = normalizeVirtualOfficeChannel(payload.channel);
+    }
+     if (payload.receivedAmount !== undefined) {
+      payload.receivedAmount = Number(payload.receivedAmount);
+      if (!Number.isFinite(payload.receivedAmount) || payload.receivedAmount < 0) {
+        return res.status(400).json({
+          message: "receivedAmount must be a number >= 0",
+        });
+      }
+    }
+    if (payload.totalReceivedAmount !== undefined) {
+      payload.totalReceivedAmount = Number(payload.totalReceivedAmount);
+      if (
+        !Number.isFinite(payload.totalReceivedAmount) ||
+        payload.totalReceivedAmount < 0
+      ) {
+        return res.status(400).json({
+          message: "totalReceivedAmount must be a number >= 0",
+        });
+      }
+    }
+
+    if (payload.invoiceUploadedAt) payload.invoiceUploadedAt = new Date(payload.invoiceUploadedAt);
+    if (!payload.invoiceUploadedBy) {
+      payload.invoiceUploadedBy =
+        existingRevenue?.invoiceUploadedBy || req.user || null;
+    }
+    if (req.file) {
+      const allowedMimeTypes = [
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      ];
+      if (!allowedMimeTypes.includes(req.file.mimetype)) {
+        return res.status(400).json({ message: "Invalid file type. Allowed types: PDF, DOC, DOCX" });
+      }
+      let buffer = req.file.buffer;
+      if (req.file.mimetype === "application/pdf") {
+        const document = await PDFDocument.load(buffer);
+        document.setTitle(req.file.originalname.split(".")[0] || "Invoice");
+        buffer = await document.save();
+      }
+      const result = await handleDocumentUpload(
+        buffer,
+        `${company.companyName}/virtual-office-revenues/${existingRevenue?.client || payload.client || "client"}`,
+        req.file.originalname,
+      );
+      if (!result?.public_id) return res.status(500).json({ message: "Failed to upload document" });
+      uploadedInvoiceId = result.public_id;
+      const date = payload.invoiceUploadedAt || new Date();
+      payload.invoice = { name: req.file.originalname, link: result.secure_url, id: result.public_id, date };
+      payload.invoiceUploadedAt = date;
+      payload.invoiceUploadedBy = req.user || existingRevenue?.invoiceUploadedBy || null;
+    }
+
+    const revenue = revenueId && !isProjected
+      ? await VirtualOfficeRevenue.findOneAndUpdate(
+          { _id: revenueId, company: req.company }, payload, { new: true, runValidators: true },
+        )
+      : await VirtualOfficeRevenue.create({ ...payload, company: req.company });
+    if (!revenue) return res.status(404).json({ message: "Revenue not found" });
+
+    if (payload.receivedAmount !== undefined && revenue.client) {
+      await VirtualOfficeClient.findOneAndUpdate(
+        { _id: revenue.client, company: req.company },
+        { $set: { receivedAmount: payload.receivedAmount } },
+        { runValidators: true },
+      );
+    }
+    if (
+      uploadedInvoiceId &&
+      previousInvoiceId &&
+      previousInvoiceId !== uploadedInvoiceId
+    ) {
+      await handleFileDelete(previousInvoiceId).catch(() => null);
+    }
+    return res.status(isProjected ? 201 : 200).json({
+      message: "Virtual office invoice updated successfully", revenue,
+    });
+  } catch (error) {
+    if (uploadedInvoiceId) await handleFileDelete(uploadedInvoiceId).catch(() => null);
     next(error);
   }
 };
@@ -203,7 +376,7 @@ const bulkInsertVirtualOfficeRevenue = async (req, res, next) => {
           client: clientId,
           company,
           location: location?.trim(),
-          channel: channel?.trim(),
+          channel: normalizeVirtualOfficeChannel(channel),
           taxableAmount: parseAmount(taxableAmount) || 0,
           revenue: parseAmount(revenue) || 0,
           totalTerm: parseInt(totalTerm) || 0,
@@ -254,4 +427,5 @@ module.exports = {
   getVirtualOfficeRevenue,
   createVirtualOfficeRevenue,
   bulkInsertVirtualOfficeRevenue,
+  updateVirtualOfficeRevenueInvoice,
 };

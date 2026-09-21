@@ -1,6 +1,7 @@
 import React from "react";
 import { Breadcrumbs, Typography, Link } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
+import CurrencySelector from "./CurrencySelector";
 
 const BreadCrumbComponent = () => {
   const location = useLocation();
@@ -112,6 +113,11 @@ const BreadCrumbComponent = () => {
       >
         {breadcrumbs}
       </Breadcrumbs>
+      {location.pathname.includes("/investor-dashboard") && (
+        <div className="hidden md:block">
+          <CurrencySelector />
+        </div>
+      )}
     </div>
   );
 };
