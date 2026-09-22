@@ -498,6 +498,7 @@ const bulkInsertCoworkingClientRevenues = async (req, res, next) => {
           dueTerm: 0, // Optional: You can derive logic here if needed
           rentDate: rentDate ? new Date(rentDate) : null,
           rentStatus: rentStatus?.trim(),
+          isBulkUpload: true,
           pastDueDate: pastDueDate ? new Date(pastDueDate) : null,
           annualIncrement: isNaN(parseFloat(annualIncrement))
             ? null

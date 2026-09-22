@@ -52,6 +52,12 @@ const visitorCategoryColors = [
 
 const visitorClientTypeColors = ["#4BC0C0", "#36A2EB"];
 const visitorGenderColors = ["#0056B3", "#FD507E"];
+const nonClickableOccupancyCharts = new Set([
+  "sector",
+  "india",
+  "gender",
+  "age",
+]);
 
 const legendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`;
@@ -374,6 +380,7 @@ const InvestorOperationalCharts = ({
 
   const renderChart = (key) => {
     const chart = chartData[key];
+    const isClickable = !nonClickableOccupancyCharts.has(key) && routes?.[key];
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
@@ -422,14 +429,20 @@ const InvestorOperationalCharts = ({
        // height={fillHeight}
       >
         <div
-          className="cursor-pointer"
-          role="button"
-          tabIndex={0}
-          aria-label={`View ${chart.title}`}
-          onClick={() => navigate(routes[key])}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") navigate(routes[key]);
-          }}
+          className={isClickable ? "cursor-pointer" : ""}
+          {...(isClickable
+            ? {
+                role: "button",
+                tabIndex: 0,
+                "aria-label": `View ${chart.title}`,
+                onClick: () => navigate(routes[key]),
+                onKeyDown: (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    navigate(routes[key]);
+                  }
+                },
+              }
+            : {})}
         >
           {isLoading ? (
             <div className="flex h-80 items-center justify-center">

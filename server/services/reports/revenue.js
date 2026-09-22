@@ -254,6 +254,8 @@ const fetchCoworkingRevenueService = async ({
           null,
         invoice: item.invoice || null,
         rentStatus: item.rentStatus,
+        isBulkUpload:
+          item.isBulkUpload === true || isHistoricalBulkUpload(referenceDate),
         ...(!isReport && { pastDueDate: item.pastDueDate }),
        annualIncrement:
           clientBillingValues.annualIncrement ?? item.annualIncrement,
