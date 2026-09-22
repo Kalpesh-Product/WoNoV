@@ -34,8 +34,7 @@ const getNumericAmount = (value) => {
 };
 
 const isMeetingFinancePaid = (item) =>
-  getNormalizedPaymentStatus(item?.financeStatus) === "verified" &&
-  Boolean(item?.invoiceUploadedAt || item?.invoiceLink || item?.invoice?.link);
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
 
 
 const getRevenueSummaryForDateRange = (data, dateRange) => {
@@ -188,14 +187,44 @@ const IncomeDetails = () => {
     );
   };
 
-  const options = {
-    colors: [
-      "#1E3D73",
-      "#2196F3",
-      "#11daf5",
-      "#00BCD4",
-      "#1976D2",
-    ],
+  const options = {};
+
+  const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
+    const tooltipRows = [
+      { label: "Co-Working", seriesName: "Coworking" },
+      { label: "Meetings", seriesName: "Meeting" },
+      { label: "Virtual Office", seriesName: "Virtual Office" },
+      { label: "Workation", seriesName: "Workation" },
+      { label: "Alt Revenues", seriesName: "Alternate Revenue" },
+    ];
+    let total = 0;
+
+    const rowsHtml = tooltipRows
+      .map(({ label, seriesName }) => {
+        const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
+        const color =
+          seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280";
+        const value = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
+        total += value;
+
+        return `
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <span style="height:10px; width:10px; flex:none; border-radius:50%; background-color:${color}; display:inline-block;"></span>
+            <div style="display:flex; justify-content:space-between; width:100%; gap:24px;">
+              <span>${label}</span>
+              <span>INR ${inrFormat(value)}</span>
+            </div>
+          </div>`;
+      })
+      .join("");
+
+    return `
+      <div style="padding:10px; width:300px;">
+        <div class="apexcharts-tooltip-title" style="margin-bottom:8px; font-weight:bold;">${monthLabel}</div>
+        ${rowsHtml}
+        <hr style="margin-top:6px;" />
+        <div style="text-align:right; font-weight:600;">Total: INR ${inrFormat(total)}</div>
+      </div>`;
   };
 
   return (
@@ -211,6 +240,22 @@ const IncomeDetails = () => {
           valueKey="revenue"
           graphTitle="ANNUAL MONTHLY MIX INCOME"
           chartOptions={options}
+          tooltipBuilder={tooltipBuilder}
+          showSmallLabels
+          seriesColors={{
+            Coworking: "#1E3D73",
+            Meeting: "#2196F3",
+            "Virtual Office": "#11daf5",
+            Workation: "#54C4A7",
+            "Alternate Revenue": "#1976D2",
+          }}
+          legendItems={[
+            { label: "Co-Working", seriesName: "Coworking" },
+            { label: "Meetings", seriesName: "Meeting" },
+            { label: "Virtual Office", seriesName: "Virtual Office" },
+            { label: "Workation", seriesName: "Workation" },
+            { label: "Alt Revenues", seriesName: "Alternate Revenue" },
+          ]}
         />
       )}
 

@@ -154,7 +154,7 @@ const InvestorDashboardCards = ({
       title: "Asset Value Owned",
       value: format(assetValueOwned),
       permission: PERMISSIONS.INVESTOR_ASSET_VALUE_OWNED_CARD.value,
-      route: "/app/dashboard/investor-dashboard/real-estate-owned-by-biznest",
+      clickable: false,
       icon: MdApartment,
       tone: "sky",
     },

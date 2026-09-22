@@ -49,16 +49,21 @@ const getMonthsWithYearLabels = (fyLabel) => {
 };
 
 const PROJECTED_SERIES_PREFIX = "Projected ";
+const PROJECTED_RANK_PREFIX = "Projected Rank ";
 const INVESTOR_ACTUAL_STACK_ORDER = [
   "Co-Working",
-  "Meeting",
   "Alternate",
-  "Workation",
   "Virtual Office",
+  "Workation",
+  "Meeting",
 ];
-const INVESTOR_PROJECTED_STACK_ORDER = INVESTOR_ACTUAL_STACK_ORDER.map(
-  (vertical) => `${PROJECTED_SERIES_PREFIX}${vertical}`
-);
+const INVESTOR_PROJECTED_STACK_ORDER = [
+  "Co-Working",
+  "Alternate",
+  "Virtual Office",
+  "Workation",
+  "Meeting",
+].map((vertical) => `${PROJECTED_SERIES_PREFIX}${vertical}`);
 const INVESTOR_PROJECTED_COLORS = [
   "#3c3c3c",
   "#616161",
@@ -66,12 +71,19 @@ const INVESTOR_PROJECTED_COLORS = [
   "#b4b4b4",
   "#f0f0f0",
 ];
+const INVESTOR_ACTUAL_COLORS = {
+  "Co-Working": "#1E3D73",
+  Meeting: "#2196F3",
+  Alternate: "#1976D2",
+  Workation: "#54C4A7",
+  "Virtual Office": "#11daf5",
+};
 const INVESTOR_LEGEND_ITEMS = [
-  { label: "Meeting", color: "#41619a" },
-  { label: "Alternate", color: "#3fa4ec" },
-  { label: "Virtual Office", color: "#18d4e8" },
-  { label: "Workation", color: "#12b8c5" },
-  { label: "Co-Working", color: "#2f8edc" },
+  { label: "Meeting", color: "#2196F3" },
+  { label: "Alternate", color: "#1976D2" },
+  { label: "Virtual Office", color: "#11daf5" },
+  { label: "Workation", color: "#54C4A7" },
+  { label: "Co-Working", color: "#1E3D73" },
   { label: "Projected", color: "#787878" },
 ];
 const INVESTOR_TOOLTIP_ROWS = [
@@ -99,6 +111,9 @@ const FyBarGraphPercentage = ({
   tooltipBuilder,
   hideYearNavigation = false,
   investorVariant = false,
+  seriesColors = {},
+  legendItems = [],
+  showSmallLabels = false,
 }) => {
   const { format } = useCurrency();
   const currentFYStartYear = getCurrentFinancialYearStart();
@@ -117,6 +132,7 @@ const FyBarGraphPercentage = ({
     currentFYStartYear
   );
   const [hiddenInvestorLegendItems, setHiddenInvestorLegendItems] = useState([]);
+  const [hiddenLegendSeries, setHiddenLegendSeries] = useState([]);
 
   useEffect(() => {
     if (fyOptions.length > 0) {
@@ -199,8 +215,8 @@ const FyBarGraphPercentage = ({
       : preferredStackOrder;
 
     const rawDataMap = {};
-    const stackedSeries = orderedVerticals.map((vertical) => {
-      const monthData = base[vertical];
+    const categorySeries = orderedVerticals.map((vertical) => {
+      const monthData = base[vertical] || {};
       const raw = months.map(({ label }) => monthData[label] || 0);
       rawDataMap[vertical] = raw;
 
@@ -218,6 +234,34 @@ const FyBarGraphPercentage = ({
       return { name: vertical, data };
     });
 
+    const stackedSeries = investorVariant
+      ? [
+          ...categorySeries.filter(
+            ({ name }) => !name.startsWith(PROJECTED_SERIES_PREFIX)
+          ),
+          ...Array.from(
+            {
+              length: categorySeries.filter(({ name }) =>
+                name.startsWith(PROJECTED_SERIES_PREFIX)
+              ).length,
+            },
+            (_, rankIndex) => ({
+              name: `${PROJECTED_RANK_PREFIX}${rankIndex + 1}`,
+              data: months.map((_, monthIndex) => {
+                const rankedValues = categorySeries
+                  .filter(({ name }) =>
+                    name.startsWith(PROJECTED_SERIES_PREFIX)
+                  )
+                  .map(({ data }) => data[monthIndex] || 0)
+                  .sort((a, b) => b - a);
+
+                return rankedValues[rankIndex] || 0;
+              }),
+            })
+          ),
+        ]
+      : categorySeries;
+
     return { stackedSeries, rawDataMap, monthlyTotals, actualTotal, projectedTotal };
   }, [filteredData, selectedFY, valueKey, dateKey, totalValue, investorVariant]);
 
@@ -228,9 +272,9 @@ const FyBarGraphPercentage = ({
 
     hiddenInvestorLegendItems.forEach((label) => {
       if (label === "Projected") {
-        INVESTOR_PROJECTED_STACK_ORDER.forEach((seriesName) =>
-          hiddenSeries.add(seriesName)
-        );
+        stackedSeries
+          .filter(({ name }) => name.startsWith(PROJECTED_RANK_PREFIX))
+          .forEach(({ name }) => hiddenSeries.add(name));
         return;
       }
 
@@ -239,37 +283,45 @@ const FyBarGraphPercentage = ({
     });
 
     return hiddenSeries;
-  }, [hiddenInvestorLegendItems, investorVariant]);
+  }, [hiddenInvestorLegendItems, investorVariant, stackedSeries]);
 
   const displayedStackedSeries = useMemo(() => {
-    if (!investorVariant || hiddenInvestorSeriesNames.size === 0) {
+    const hiddenSeriesNames = investorVariant
+      ? hiddenInvestorSeriesNames
+      : new Set(hiddenLegendSeries);
+
+    if (hiddenSeriesNames.size === 0) {
       return stackedSeries;
     }
 
     return stackedSeries.map((series) =>
-      hiddenInvestorSeriesNames.has(series.name)
+      hiddenSeriesNames.has(series.name)
         ? {
           ...series,
           data: series.data.map(() => 0),
         }
         : series
     );
-  }, [hiddenInvestorSeriesNames, investorVariant, stackedSeries]);
+  }, [hiddenInvestorSeriesNames, hiddenLegendSeries, investorVariant, stackedSeries]);
 
   const displayedRawDataMap = useMemo(() => {
-    if (!investorVariant || hiddenInvestorSeriesNames.size === 0) {
+    const hiddenSeriesNames = investorVariant
+      ? hiddenInvestorSeriesNames
+      : new Set(hiddenLegendSeries);
+
+    if (hiddenSeriesNames.size === 0) {
       return rawDataMap;
     }
 
     return Object.fromEntries(
       Object.entries(rawDataMap).map(([seriesName, values]) => [
         seriesName,
-        hiddenInvestorSeriesNames.has(seriesName)
+        hiddenSeriesNames.has(seriesName)
           ? values.map(() => 0)
           : values,
       ])
     );
-  }, [hiddenInvestorSeriesNames, investorVariant, rawDataMap]);
+  }, [hiddenInvestorSeriesNames, hiddenLegendSeries, investorVariant, rawDataMap]);
 
   const toggleInvestorLegendItem = (label) => {
     setHiddenInvestorLegendItems((current) =>
@@ -295,12 +347,19 @@ const FyBarGraphPercentage = ({
           columnWidth: investorVariant ? "38%" : "40%",
           ...(investorVariant
             ? {
-              dataLabels: {
-                hideOverflowingLabels: false,
-                maxItems: 100,
-              },
-            }
-            : {}),
+                dataLabels: {
+                  hideOverflowingLabels: false,
+                  maxItems: 100,
+                },
+              }
+            : showSmallLabels
+              ? {
+                  dataLabels: {
+                    hideOverflowingLabels: false,
+                    maxItems: 100,
+                  },
+                }
+              : {}),
         },
       },
       dataLabels: {
@@ -308,7 +367,11 @@ const FyBarGraphPercentage = ({
         formatter: function (val) {
           const numericValue = typeof val === "number" ? val : Number(val?.y ?? val);
           const roundedValue = Math.round(numericValue);
-          if (!investorVariant) return `${roundedValue}%`;
+          if (!investorVariant) {
+            return !showSmallLabels || roundedValue >= 4
+              ? `${roundedValue}%`
+              : "";
+          }
           return roundedValue >= 4 ? `${roundedValue}%` : "";
         },
         style: {
@@ -341,7 +404,7 @@ const FyBarGraphPercentage = ({
         },
       },
       legend: {
-        show: !investorVariant,
+        show: !investorVariant && legendItems.length === 0,
         position: "top",
         ...(investorVariant
           ? {
@@ -453,15 +516,19 @@ const FyBarGraphPercentage = ({
       },
 
       colors: investorVariant
-        ? [
-          "#2f8edc",
-          "#41619a",
-          "#3fa4ec",
-          "#12b8c5",
-          "#18d4e8",
-          ...INVESTOR_PROJECTED_COLORS,
-        ]
-        : ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+        ? displayedStackedSeries.map(({ name }) => {
+            if (name.startsWith(PROJECTED_RANK_PREFIX)) {
+              const rank = Number(name.replace(PROJECTED_RANK_PREFIX, "")) - 1;
+              return INVESTOR_PROJECTED_COLORS[rank] || "#f0f0f0";
+            }
+
+            return INVESTOR_ACTUAL_COLORS[name] || "#1E3D73";
+          })
+        : Object.keys(seriesColors).length > 0
+          ? displayedStackedSeries.map(
+              ({ name }) => seriesColors[name] || "#6B7280"
+            )
+          : ["#1E3D73", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
       ...(investorVariant
         ? {
           grid: {
@@ -478,9 +545,13 @@ const FyBarGraphPercentage = ({
     monthsWithLabels,
     chartOptions,
     displayedRawDataMap,
+    displayedStackedSeries,
     tooltipBuilder,
     investorVariant,
     format,
+    seriesColors,
+    legendItems.length,
+    showSmallLabels,
   ]);
 
   if (fyOptions.length === 0) {
@@ -557,12 +628,41 @@ const FyBarGraphPercentage = ({
           </div>
         )}
 
-        <Chart
-          options={mergedChartOptions}
-          series={displayedStackedSeries}
-          type="bar"
-          height={350}
-        />
+        {!investorVariant && legendItems.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-3 text-content text-gray-700">
+            {legendItems.map(({ label, seriesName }) => (
+              <button
+                key={seriesName}
+                type="button"
+                onClick={() =>
+                  setHiddenLegendSeries((current) =>
+                    current.includes(seriesName)
+                      ? current.filter((item) => item !== seriesName)
+                      : [...current, seriesName]
+                  )
+                }
+                className={`flex items-center gap-1 ${
+                  hiddenLegendSeries.includes(seriesName) ? "opacity-40" : ""
+                }`}
+              >
+                <span
+                  className="h-3 w-3 rounded-sm"
+                  style={{ backgroundColor: seriesColors[seriesName] }}
+                />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <div className="fy-percentage-chart">
+          <Chart
+            options={mergedChartOptions}
+            series={displayedStackedSeries}
+            type="bar"
+            height={350}
+          />
+        </div>
 
         {!hideYearNavigation && (
           <div className="flex justify-center items-center gap-4 mt-4">

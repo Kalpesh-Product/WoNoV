@@ -2418,43 +2418,47 @@ const updateMeeting = async (req, res, next) => {
 };
 
 const updateMeetingPaymentStatus = async (req, res, next) => {
-  const { status, meetingId } = req.body;
-  const { user } = req;
+  try {
+    const { status, meetingId } = req.body;
+    const company = req.company;
+    const validStatuses = ["Pending", "Under Review", "Verified", "Completed"];
 
-  // const updatedMeeting = await Meeting.findByIdAndUpdate(
-  //   meetingId,
-   const company = req.company;
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid payment status" });
+    }
 
-  const validStatuses = ["Pending", "Under Review", "Verified", "Completed"];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ message: "Invalid payment status" });
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      return res.status(400).json({ message: "Invalid meeting ID" });
+    }
+
+    const updatedMeeting = await Meeting.findOneAndUpdate(
+      { _id: meetingId, company },
+      { paymentVerification: status },
+      { new: true, runValidators: true },
+    ).populate("bookedBy", "firstName lastName");
+
+    if (!updatedMeeting) {
+      return res.status(404).json({ message: "Meeting not found" });
+    }
+
+    if (status === "Completed") {
+      await MeetingRevenue.findOneAndUpdate(
+        { meeting: updatedMeeting._id, company },
+        { $set: { financeStatus: "Upload Invoice" } },
+      );
+    }
+
+    const message =
+      status === "Completed"
+        ? "Payment verification completed. Invoice upload enabled"
+        : status === "Verified"
+          ? "Payment verified"
+          : "Payment under review";
+
+    return res.status(200).json({ message });
+  } catch (error) {
+    return next(error);
   }
-
-  const updatedMeeting = await Meeting.findOneAndUpdate(
-    { _id: meetingId, company },
-    { paymentVerification: status },
-    { new: true, runValidators: true },
-  ).populate("bookedBy", "firstName lastName");
-
-  if (!updatedMeeting) {
-    return res.status(404).json({ message: "Meeting not found" });
-  }
-  if (status === "Completed") {
-    await MeetingRevenue.findOneAndUpdate(
-      { meeting: updatedMeeting._id, company },
-      { $set: { financeStatus: "Upload Invoice" } },
-    );
-  }
-
-  const message =
-    // status === "Verified" ? "Payment verified" : "Payment under review";
-     status === "Completed"
-      ? "Payment verification completed. Invoice upload enabled"
-      : status === "Verified"
-        ? "Payment verified"
-        : "Payment under review";
-
-  return res.status(200).json({ message });
 };
 
 const updateMeetingStatus = async (req, res, next) => {

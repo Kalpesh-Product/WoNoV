@@ -832,7 +832,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
         },
       },
     },
-    colors: ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+    colors: ["#2196F3"],
   };
 
   return (

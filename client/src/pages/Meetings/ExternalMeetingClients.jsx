@@ -45,11 +45,11 @@ import {
 
 const refreshMeetingQueries = () => {
   queryClient.invalidateQueries({
-    queryKey: ["finance-external-meetings"],
+    queryKey: ["meetings", "finance-external-meetings"],
     exact: false,
   });
   queryClient.invalidateQueries({
-    queryKey: ["external-meetings"],
+    queryKey: ["meetings", "external-meetings"],
     exact: false,
   });
 };
@@ -573,15 +573,18 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         ? "finance-external-meetings"
         : "external-meetings";
 
-      queryClient.setQueriesData({ queryKey: [meetingQueryKey] }, (oldData) => {
-        if (!Array.isArray(oldData)) return oldData;
+      queryClient.setQueriesData(
+        { queryKey: ["meetings", meetingQueryKey] },
+        (oldData) => {
+          if (!Array.isArray(oldData)) return oldData;
 
-        return oldData.map((meeting) =>
-          meeting?._id === selectedMeeting?._id
-            ? { ...meeting, paymentVerification: paymentStatus }
-            : meeting,
-        );
-      });
+          return oldData.map((meeting) =>
+            meeting?._id === selectedMeeting?._id
+              ? { ...meeting, paymentVerification: paymentStatus }
+              : meeting,
+          );
+        },
+      );
 
       refreshMeetingQueries();
       const successMessage =

@@ -119,6 +119,7 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
   });
 
   const selectedClientValue = watch("selectedClient");
+  const clientNameValue = watch("nameOfClient");
   const taxableAmountValue = watch("taxableAmount");
   const gstRateValue = watch("gstRate");
   const gstValue = watch("gst");
@@ -722,6 +723,10 @@ const Workations = ({ showChart = true, showInvoiceProjections = false }) => {
                   label="Select Client"
                   size="small"
                   fullWidth
+                  disabled={
+                    !selectedClientValue &&
+                    Boolean(String(clientNameValue || "").trim())
+                  }
                   onChange={(event) => {
                     const value = event.target.value;
                     field.onChange(value);

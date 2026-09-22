@@ -116,6 +116,7 @@ const AltRevenues = ({ showChart = true }) => {
   });
 
   const selectedClientValue = watch("selectedClient");
+  const clientNameValue = watch("name");
   const taxableAmountValue = watch("taxableAmount");
   const gstRateValue = watch("gstRate");
   const gstValue = watch("gst");
@@ -747,6 +748,10 @@ const AltRevenues = ({ showChart = true }) => {
                     size="small"
                     fullWidth
                     displayEmpty
+                    disabled={
+                      !selectedClientValue &&
+                      Boolean(String(clientNameValue || "").trim())
+                    }
                     onChange={(event) => {
                       field.onChange(event);
                       setValue("name", event.target.value, {

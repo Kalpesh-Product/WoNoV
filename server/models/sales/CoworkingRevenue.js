@@ -64,6 +64,10 @@ const coworkingClientRevenue = new mongoose.Schema(
       type: String,
       // enum: ["paid", "unpaid", "partial"], // Consider enum: ['paid', 'unpaid', 'partial'] if applicable
     },
+    isBulkUpload: {
+      type: Boolean,
+      default: false,
+    },
     pastDueDate: {
       type: Date,
     },

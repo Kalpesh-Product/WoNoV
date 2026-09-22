@@ -1090,7 +1090,7 @@ const getUserDisplayName = (user) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "paid") return sum;
-                return sum + getNumericAmount(item.reportingAmount);
+                return sum + getReportingAmount(item);
               }, 0),
             )}`
           }
@@ -1098,11 +1098,18 @@ const getUserDisplayName = (user) => {
             `INR ${inrFormat(
               filteredData.reduce((sum, item) => {
                 if (item.normalizedStatus !== "unpaid") return sum;
-                return sum + getNumericAmount(item.reportingAmount);
+                return sum + getReportingAmount(item);
               }, 0),
             )}`
           }
-          titleAmountTotal={({ rangeTotal }) => `INR ${inrFormat(rangeTotal)}`}
+          titleAmountTotal={({ filteredData }) =>
+            `INR ${inrFormat(
+              filteredData.reduce(
+                (sum, item) => sum + getReportingAmount(item),
+                0,
+              ),
+            )}`
+          }
           greenTitle="Paid"
           redTitle="Unpaid"
           totalTitle="Total"

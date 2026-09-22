@@ -156,10 +156,9 @@ const getUnpaidInvoiceRowsForMonth = (
 ) => {
   const targetMonth = dayjs(selectedDate).startOf("month");
   const currentMonth = dayjs().startOf("month");
-  const lastMonth = currentMonth.subtract(1, "month");
   if (
     !targetMonth.isValid() ||
-    targetMonth.isBefore(lastMonth)
+    targetMonth.isBefore(currentMonth)
   ) {
     return [];
   }
@@ -487,6 +486,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
         rentDate: client.rentDate,
         rentStatus: client.rentStatus,
         normalizedRentStatus: getNormalizedRentStatus(client.rentStatus),
+        isBulkUpload: client.isBulkUpload === true,
         pastDueDate: client.pastDueDate,
         annualIncrement: client.annualIncrement || 0,
         nextIncrementDate: client.nextIncrementDate,
@@ -505,19 +505,20 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const baseRevenueData = tableData
     .flatMap((month) => month.revenue)
     .filter((row) => {
-      if (!activeCoworkingClientIds.size) return true;
-
       const rowMonth = dayjs(row.rentDate).startOf("month");
       const currentMonth = dayjs().startOf("month");
+      const isPaid = row.normalizedRentStatus === "paid";
+      const clientId = resolveClientIdFromRow(row, coworkingClients);
+      const isActiveClient = activeCoworkingClientIds.has(String(clientId));
 
-      // Preserve historical records. For current and future billing months,
-      // inactive clients are shown only when their current-month invoice is paid.
-      return (
-        rowMonth.isBefore(currentMonth) ||
-        activeCoworkingClientIds.has(String(row.clients)) ||
-        (rowMonth.isSame(currentMonth, "month") &&
-          row.normalizedRentStatus === "paid")
-      );
+      if (rowMonth.isBefore(currentMonth)) {
+        return !row.isBulkUpload || isPaid;
+      }
+      if (rowMonth.isSame(currentMonth, "month")) {
+        return isActiveClient || isPaid;
+      }
+
+      return isActiveClient;
     });
   const flattenedRevenueData = baseRevenueData;
 

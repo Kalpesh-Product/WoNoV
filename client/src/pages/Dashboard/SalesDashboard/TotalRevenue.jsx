@@ -35,8 +35,7 @@ const getNumericAmount = (value) => {
 };
 
 const isMeetingFinancePaid = (item) =>
-  getNormalizedPaymentStatus(item?.financeStatus) === "verified" &&
-  Boolean(item?.invoiceUploadedAt || item?.invoiceLink || item?.invoice?.link);
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
 
 const getRevenueSummaryForDateRange = (data, dateRange) => {
   const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
@@ -301,19 +300,12 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
         horizontal: false,
         columnWidth: "40%",
         borderRadius: 5,
+        dataLabels: {
+          hideOverflowingLabels: false,
+          maxItems: 100,
+        },
       },
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
-    colors: [
-      "#1E3D73", // Dark Blue (Co-Working)
-      "#2196F3", // Bright Blue (Meetings)
-      "#11daf5", // Light Mint Green (Virtual Office)
-      "#00BCD4", // Cyan Blue (Workation)
-      "#1976D2", // Medium Blue (Alt Revenues)
-    ],
   };
   const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
     const tooltipRows = [
@@ -436,6 +428,21 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
           graphTitle="ANNUAL MONTHLY MIX INCOME"
           chartOptions={options}
           tooltipBuilder={tooltipBuilder}
+          showSmallLabels
+          seriesColors={{
+            "Co-Working": "#1E3D73",
+            Meeting: "#2196F3",
+            "Virtual Office": "#11daf5",
+            Workation: "#54C4A7",
+            Alternate: "#1976D2",
+          }}
+          legendItems={[
+            { label: "Co-Working", seriesName: "Co-Working" },
+            { label: "Meetings", seriesName: "Meeting" },
+            { label: "Virtual Office", seriesName: "Virtual Office" },
+            { label: "Workation", seriesName: "Workation" },
+            { label: "Alt Revenues", seriesName: "Alternate" },
+          ]}
         />
       )}
 
