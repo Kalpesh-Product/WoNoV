@@ -165,6 +165,10 @@
 .apexcharts-canvas {
   overflow: hidden !important; 
 }
+
+.fy-percentage-chart .apexcharts-canvas {
+  overflow: visible !important;
+}
 @media (min-width: 1024px) {
   .login-buttons {
     display: block;
