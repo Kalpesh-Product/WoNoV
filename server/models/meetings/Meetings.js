@@ -93,7 +93,7 @@ const meetingSchema = new mongoose.Schema(
     },
     paymentVerification: {
       type: String,
-      enum: ["Pending", "Under Review", "Verified"],
+      enum: ["Pending", "Under Review", "Verified", "Completed"],
       default: "Pending",
     },
     internalParticipants: [
@@ -174,12 +174,6 @@ const meetingSchema = new mongoose.Schema(
   },
   { timestamps: true },
 );
-
-meetingSchema.pre("validate", function () {
-  if (this.paymentVerification === "Completed") {
-    this.paymentVerification = "Verified";
-  }
-});
 
 meetingSchema.index({ company: 1, startDate: -1 });
 meetingSchema.index({ company: 1, meetingType: 1, startDate: -1 });
