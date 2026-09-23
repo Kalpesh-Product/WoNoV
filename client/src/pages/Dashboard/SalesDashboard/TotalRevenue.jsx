@@ -37,6 +37,23 @@ const getNumericAmount = (value) => {
 const isMeetingFinancePaid = (item) =>
   getNormalizedPaymentStatus(item?.financeStatus) === "verified";
 
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
+
 const getRevenueSummaryForDateRange = (data, dateRange) => {
   const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
 
@@ -377,7 +394,7 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Virtual Office",
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
           item.rentStatus ?? item.status,

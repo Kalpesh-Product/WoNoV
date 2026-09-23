@@ -49,6 +49,7 @@ const WidgetTable = ({
   redTitle,
   totalTitle,
   summaryChipVariant,
+  greenChipClassName,
   preserveCurrentMonthRange = false,
   showCalendarWhenEmpty = false,
   getMissingRangeData,
@@ -357,6 +358,7 @@ const WidgetTable = ({
         redTitle={redTitle}
         totalTitle={totalTitle}
         summaryChipVariant={summaryChipVariant}
+        greenChipClassName={greenChipClassName}
       >
          <div className="w-full flex justify-end">
           <div className="flex gap-2 items-center justify-end flex-wrap">

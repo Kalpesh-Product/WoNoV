@@ -614,7 +614,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
   const [editingRevenue, setEditingRevenue] = useState(null);
   const [invoiceFile, setInvoiceFile] = useState(null);
   const [financeStatus, setFinanceStatus] = useState("Pending");
-  const [financePaidTaxable, setFinancePaidTaxable] = useState(0);
+  const [adminPaidTaxable, setAdminPaidTaxable] = useState(0);
  // const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
 
   const {
@@ -689,7 +689,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
     item?.normalizedFinanceStatus === "verified";
   const visibleRevenueData = showChart
     ? allRevenueData.filter(isVerifiedFinanceRow)
-    : allRevenueData;
+    : allRevenueData.filter(
+        (item) => item?.source !== "day-pass" || isPaidRow(item),
+      );
   const updateInvoice = useMutation({
     mutationFn: async () => {
       const formData = new FormData();
@@ -879,11 +881,11 @@ const DayPassInvoiceFields = ({ revenue }) => {
               !showChart ? (
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <Chip
-                    label={`FINANCE PAID : INR ${inrFormat(financePaidTaxable)}`}
+                    label={`ADMIN PAID : INR ${inrFormat(adminPaidTaxable)}`}
                     sx={{
-                      backgroundColor: "#e3f2fd",
-                      color: "#1565c0",
-                      border: "1px solid #bbdefb",
+                      backgroundColor: "#d8f0df",
+                      color: "#16784d",
+                      border: "1px solid #a9ddba",
                       fontWeight: 800,
                       fontSize: "0.84rem",
                       height: "36px",
@@ -919,15 +921,15 @@ const DayPassInvoiceFields = ({ revenue }) => {
             onMonthChange={
               !showChart
                 ? (_total, filteredData) => {
-                    const monthFinancePaid = filteredData.reduce(
+                    const monthAdminPaid = filteredData.reduce(
                       (sum, item) =>
-                        isFinancePaidRow(item)
+                        isPaidRow(item)
                           ? sum + getNumericAmount(item.taxable)
                           : sum,
                       0,
                     );
-                    setFinancePaidTaxable((current) =>
-                      current === monthFinancePaid ? current : monthFinancePaid,
+                    setAdminPaidTaxable((current) =>
+                      current === monthAdminPaid ? current : monthAdminPaid,
                     );
                   }
                 : undefined
@@ -937,7 +939,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
             titleAmountGreen={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                 if (!isPaidRow(item)) {
+                 if (!(showChart ? isPaidRow(item) : isFinancePaidRow(item))) {
                     return sum;
                   }
                   return sum + getNumericAmount(item.taxable);
@@ -962,10 +964,11 @@ const DayPassInvoiceFields = ({ revenue }) => {
             titleAmountTotal={({ rangeTotal }) =>
               `INR ${inrFormat(rangeTotal)}`
             }
-            greenTitle={showChart ? "Paid" : "Admin Paid"}
+            greenTitle={showChart ? "Paid" : "Finance Paid"}
             redTitle={showChart ? "Unpaid" : "Finance Verification"}
             totalTitle="Total"
             summaryChipVariant="ticket"
+            greenChipClassName="flex gap-1 justify-center items-center uppercase bg-[#e3f2fd] text-sm text-[#1565c0] font-pmedium px-3 py-1.5 rounded-lg border border-[#bbdefb]"
             columns={[
               { headerName: "Sr No", field: "srNo", width: 100 },
               // { headerName: "Particulars", field: "particulars", width: 200 },
