@@ -10,6 +10,7 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import AgTable from "../../../../components/AgTable";
+import dayjs from "dayjs";
 
 const SALES_REVENUE_BASE_PATH = "/app/dashboard/sales-dashboard/revenue";
 
@@ -63,6 +64,23 @@ const getNumericAmount = (value) => {
   }
   return 0;
 };
+
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
 
 const normalizeVerticalLabel = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
@@ -155,10 +173,10 @@ const ActualBusinessRevenue = () => {
     (simpleRevenue?.virtualOfficeRevenues || []).forEach((item) => {
       flatten.push({
         vertical: "Virtual Offices",
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus,
+          item.rentStatus ?? item.status,
         ),
       });
     });
