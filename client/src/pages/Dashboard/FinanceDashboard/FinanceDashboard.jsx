@@ -28,6 +28,40 @@ import useAuth from "../../../hooks/useAuth";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import StatusChip from "../../../components/StatusChip";
 
+const getGraphNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getGraphNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
+const isGraphMeetingFinancePaid = (item) =>
+  getGraphNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isBeforeGraphVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getGraphVirtualOfficeReportingAmount = (item) =>
+  isBeforeGraphVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getGraphNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getGraphNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
+
 const FinanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
@@ -508,20 +542,6 @@ const FinanceDashboard = () => {
   // };
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
-  const getGraphNormalizedPaymentStatus = (value) => {
-    if (typeof value === "string") return value.trim().toLowerCase();
-    return value ? "paid" : "unpaid";
-  };
-
-  const getGraphNumericAmount = (value) => {
-    if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const parsedValue = parseFloat(value.replace(/,/g, ""));
-      return Number.isNaN(parsedValue) ? 0 : parsedValue;
-    }
-    return 0;
-  };
-
   const incomeSources = useMemo(() => {
     if (!simpleRevenue) return [];
     const flatten = [];
@@ -530,7 +550,7 @@ const FinanceDashboard = () => {
       flatten.push({
         revenue: getGraphNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
+        normalizedStatus: isGraphMeetingFinancePaid(item) ? "paid" : "unpaid",
       });
     });
 
@@ -544,10 +564,10 @@ const FinanceDashboard = () => {
 
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
-        revenue: getGraphNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getGraphVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getGraphNormalizedPaymentStatus(
-          item.status ?? item.rentStatus
+          item.rentStatus ?? item.status
         ),
       });
     });

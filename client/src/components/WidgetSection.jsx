@@ -28,6 +28,7 @@ const WidgetSection = ({
   fun,
   normalCase,
   summaryChipVariant,
+  greenChipClassName,
   headerRightContent,
   headerCenterContent,
   headerCenterContentInline = false,
@@ -158,7 +159,7 @@ const WidgetSection = ({
                               ? "text-subtitle text-green-800"
                               : "text-body text-green-800 font-pmedium"
                           }`}>
-                          <div className={greenChipClasses}>
+                          <div className={greenChipClassName || greenChipClasses}>
                             {/* <FaArrowTrendUp /> */}
                             {greenTitle && <div>{greenTitle} : </div>}
                             <div>{TitleAmountGreen}</div>

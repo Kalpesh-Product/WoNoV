@@ -45,13 +45,19 @@ const fetchBudgetVoucherService = async ({
   }
 
   if (dashboardView || profitLossView) {
-    const now = new Date();
+    const now = dayjs().tz("Asia/Kolkata");
     const currentFinancialYearStart =
-      now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      now.month() >= 3 ? now.year() : now.year() - 1;
 
     query.dueDate = {
-      $gte: new Date(Date.UTC(currentFinancialYearStart - 2, 3, 1)),
-      $lt: new Date(Date.UTC(currentFinancialYearStart + 1, 3, 1)),
+      $gte: dayjs
+        .tz(`${currentFinancialYearStart - 2}-04-01`, "Asia/Kolkata")
+        .startOf("day")
+        .toDate(),
+      $lt: dayjs
+        .tz(`${currentFinancialYearStart + 1}-04-01`, "Asia/Kolkata")
+        .startOf("day")
+        .toDate(),
     };
   }
 
@@ -120,8 +126,12 @@ const fetchBudgetVoucherService = async ({
       {
         $group: {
           _id: {
-            year: { $year: "$dueDate" },
-            month: { $month: "$dueDate" },
+            year: {
+              $year: { date: "$dueDate", timezone: "Asia/Kolkata" },
+            },
+            month: {
+              $month: { date: "$dueDate", timezone: "Asia/Kolkata" },
+            },
           },
           actualAmount: { $sum: "$actualAmount" },
           projectedAmount: { $sum: "$projectedAmount" },
