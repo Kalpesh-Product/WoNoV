@@ -89,6 +89,12 @@ const bulkInsertRoutes = [
         route: "/api/sales/bulk-insert-workation-revenue",
       },
       {
+        name: "Meeting Revenues",
+        aliases: ["Meeting Revenue"],
+        fileKey: "meeting-revenue",
+        route: "/api/sales/bulk-insert-meeting-revenue",
+      },
+      {
         name: "Expense And Budget",
         fileKey: "budgets",
         route: "/api/budget/bulk-insert-budget/6798bab0e469e809084e249a",
@@ -136,6 +142,12 @@ const bulkInsertRoutes = [
         aliases: ["Virtual Office Revenues"],
         fileKey: "virtual-office-revenue",
         route: "/api/sales/bulk-insert-virtual-office-revenue",
+      },
+      {
+        name: "Meeting Revenues",
+        aliases: ["Meeting Revenue"],
+        fileKey: "meeting-revenue",
+        route: "/api/sales/bulk-insert-meeting-revenue",
       },
       {
         name: "inventory",

@@ -1,10 +1,12 @@
 const { default: mongoose } = require("mongoose");
+const fs = require("fs");
+const path = require("path");
 const Payroll = require("../../models/payrolls/Payroll");
 const PayrollDraft = require("../../models/payrolls/PayrollDraft");
 const User = require("../../models/hr/UserData");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
-const { PDFDocument } = require("pdf-lib");
+const { PDFDocument, StandardFonts, degrees, rgb } = require("pdf-lib");
 const { handleDocumentUpload } = require("../../config/s3Config");
 const Payslip = require("../../models/Payslip");
 const Company = require("../../models/hr/Company");
@@ -13,6 +15,7 @@ const Leave = require("../../models/hr/Leaves");
 const Attendance = require("../../models/hr/Attendance");
 const AttendanceCorrection = require("../../models/hr/AttendanceCorrection");
 const MonthlyAttendanceSummary = require("../../models/hr/MonthlyAttendanceSummary");
+const mailer = require("../../config/nodemailerConfig");
 
 const allowanceOptions = [
   "Special Allowance",
@@ -34,6 +37,18 @@ const additionalDeductionOptions = [
 const numberValue = (value) => Number(value) || 0;
 const roundCurrency = (value) =>
   Math.round((numberValue(value) + Number.EPSILON) * 100) / 100;
+const escapeHtml = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character],
+  );
 const isEnabled = (value) =>
   value === true || ["true", "yes"].includes(String(value).toLowerCase());
 const getEmployeePf = (basic) =>
@@ -46,7 +61,7 @@ const getEmployeeType = (employee) =>
     employee?.employeeType?.name ||
       employee?.employeeType?.employeeType ||
       employee?.employeeType ||
-      ""
+      "",
   ).toLowerCase();
 const isTdsWorker = (employee) => {
   const type = getEmployeeType(employee);
@@ -56,8 +71,432 @@ const getPayPeriodKey = (date) => {
   const value = new Date(date);
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}`;
+};
+
+const getPayslipEmailDetails = ({ draft, employeeName, companyName }) => {
+  const payPeriod = new Date(draft.payPeriod);
+  const periodStart = new Date(
+    Date.UTC(payPeriod.getUTCFullYear(), payPeriod.getUTCMonth(), 1),
+  );
+  const periodEnd = new Date(
+    Date.UTC(payPeriod.getUTCFullYear(), payPeriod.getUTCMonth() + 1, 0),
+  );
+  const formatDate = (date) => {
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    const month = date.toLocaleDateString("en-GB", {
+      month: "short",
+      timeZone: "UTC",
+    });
+    return `${day} ${month}, ${date.getUTCFullYear()}`;
+  };
+  const formattedPeriod = `${formatDate(periodStart)} - ${formatDate(periodEnd)}`;
+  const clientUrl = String(
+    "http://localhost:3009" || process.env.CORS_FRONTEND_URL,
+  ).replace(/\/$/, "");
+  const payslipPageUrl = `${clientUrl}/app/profile/HR/payslips`;
+  const safeEmployeeName = escapeHtml(employeeName || "Employee");
+  const safeCompanyName = escapeHtml(companyName || "Payroll Team");
+  const safePeriod = escapeHtml(formattedPeriod);
+  const safePayslipPageUrl = escapeHtml(payslipPageUrl);
+
+  return {
+    subject: `Your payslip for pay period ${formattedPeriod} is available.`,
+    text: `Hello ${employeeName || "Employee"},\n\nYour payslip for pay period ${formattedPeriod} is attached. You can also view it in WoNo: ${payslipPageUrl}\n\nRegards,\n${companyName || "Payroll Team"}`,
+    html: `
+      <div style="margin:0;padding:30px 16px;background:#f3f4f6;font-family:Arial,sans-serif;color:#24324a;">
+        <div style="max-width:660px;margin:0 auto;">
+          <div style="padding:24px 32px;background:#ffffff;text-align:center;border-radius:5px;">
+            <img src="cid:wono-payroll-logo" alt="WoNo" style="display:inline-block;max-width:190px;height:auto;" />
+          </div>
+          <div style="margin-top:10px;padding:34px;background:#ffffff;border-radius:5px;font-size:16px;line-height:1.65;">
+            <p style="margin:0 0 18px;">Hello ${safeEmployeeName},</p>
+            <p style="margin:0 0 28px;">Please find the attached payslip for pay period <strong>${safePeriod}</strong>. You can also use the button below to view your payslips in WoNo.</p>
+            <div style="margin:32px 0;text-align:center;">
+              <a href="${safePayslipPageUrl}" target="_blank" style="display:inline-block;padding:13px 30px;background:#1e3d73;color:#ffffff;text-decoration:none;border-radius:4px;font-size:15px;font-weight:bold;">VIEW PAYSLIP</a>
+            </div>
+            <p style="margin:36px 0 0;">Regards,<br />${safeCompanyName}</p>
+          </div>
+        </div>
+      </div>`,
+    logoAttachment: {
+      filename: "wono-logo.png",
+      path: path.resolve(
+        __dirname,
+        "../../../client/src/assets/WONO_LOGO_Black_TP.png",
+      ),
+      cid: "wono-payroll-logo",
+    },
+  };
+};
+
+const createPayslipPdf = async ({ draft, summary, employee, companyData }) => {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595.28, 841.89]);
+  const regular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const bizNestLogoPath = path.resolve(
+    __dirname,
+    "../../../client/src/assets/biznest/biznest_logo.jpg",
+  );
+  const bizNestLogo = await pdfDoc.embedJpg(
+    await fs.promises.readFile(bizNestLogoPath),
+  );
+  const black = rgb(0.05, 0.05, 0.05);
+  const muted = rgb(0.48, 0.5, 0.52);
+  const light = rgb(0.88, 0.89, 0.9);
+  const wonoBlue = rgb(30 / 255, 61 / 255, 115 / 255);
+  const left = 25;
+  const right = 570;
+  const leftColumnWidth = 215;
+  const rightColumnX = 270;
+  const rightColumnWidth = right - rightColumnX;
+  let y = 812;
+  const drawText = (text, x, top, options = {}) => {
+    const safeText = String(text ?? "").replace(/[^\x20-\x7E\xA9]/g, " ");
+    page.drawText(safeText, {
+      x,
+      y: top,
+      size: options.size || 7,
+      font: options.bold ? bold : regular,
+      color: options.color || black,
+      rotate: options.rotate,
+    });
+  };
+  const truncate = (value, maxLength) => {
+    const text = String(value || "N/A");
+    return text.length > maxLength
+      ? `${text.slice(0, maxLength - 3)}...`
+      : text;
+  };
+  const amount = (value) =>
+    `INR ${numberValue(value).toLocaleString("en-IN", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  const sectionTitle = (title, x, top, width, rightTitle = "") => {
+    drawText(title.toUpperCase(), x, top, { size: 7, bold: true });
+    if (rightTitle) {
+      const labelWidth = bold.widthOfTextAtSize(rightTitle, 7);
+      drawText(rightTitle, x + width - labelWidth, top, {
+        size: 7,
+        bold: true,
+      });
+    }
+    page.drawLine({
+      start: { x, y: top - 6 },
+      end: { x: x + width, y: top - 6 },
+      thickness: 0.45,
+      color: light,
+    });
+  };
+  const keyValueRow = (label, value, x, top, width, options = {}) => {
+    drawText(label, x, top, { size: 7, bold: options.boldLabel });
+    const display = String(value ?? "N/A");
+    const valueWidth = (options.boldValue ? bold : regular).widthOfTextAtSize(
+      display,
+      7,
+    );
+    drawText(display, x + width - valueWidth, top, {
+      size: 7,
+      bold: options.boldValue,
+    });
+  };
+  const mask = (value, visible = 4) => {
+    const text = String(value || "");
+    if (!text) return "N/A";
+    return `${"*".repeat(Math.max(4, text.length - visible))}${text.slice(-visible)}`;
+  };
+
+  const payStart = new Date(draft.payPeriod);
+  const payEnd = new Date(
+    Date.UTC(payStart.getUTCFullYear(), payStart.getUTCMonth() + 1, 0),
+  );
+  const totalDaysInMonth = payEnd.getUTCDate();
+  const dateLabel = (date) =>
+    date.toLocaleDateString("en-US", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  const employeeName = [employee.firstName, employee.lastName]
+    .filter(Boolean)
+    .join(" ");
+  const employeeAddress = [
+    employee.homeAddress?.addressLine1,
+    employee.homeAddress?.addressLine2,
+    employee.homeAddress?.city,
+    employee.homeAddress?.state,
+    employee.homeAddress?.pinCode,
+  ].filter(Boolean);
+
+  drawText("PAYSLIP", left, y, { size: 10, bold: true });
+  drawText(`${dateLabel(payStart)} - ${dateLabel(payEnd)}`, left, y - 13, {
+    size: 7,
+    bold: true,
+  });
+  const logoWidth = 70;
+  const logoHeight = logoWidth / (bizNestLogo.width / bizNestLogo.height);
+  page.drawImage(bizNestLogo, {
+    x: right - logoWidth,
+    y: y - 1,
+    width: logoWidth,
+    height: logoHeight,
+  });
+  y -= 34;
+  page.drawLine({
+    start: { x: left, y },
+    end: { x: right, y },
+    thickness: 0.5,
+    color: light,
+  });
+  y -= 22;
+
+  const companyDisplayName = String(
+    companyData?.registeredCompanyName || companyData?.companyName || "WoNo",
+  ).toUpperCase();
+  drawText(companyDisplayName, left, y, {
+    size: 7,
+    bold: true,
+    color: /wono/i.test(companyDisplayName) ? wonoBlue : black,
+  });
+  drawText(employeeName.toUpperCase(), rightColumnX, y, {
+    size: 7,
+    bold: true,
+  });
+  const registeredAddressLines = String(companyData?.fullAddress || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const companyLines = registeredAddressLines.length
+    ? [
+        ...registeredAddressLines,
+        companyData?.phoneNumber
+          ? `Phone No: ${companyData.phoneNumber}`
+          : null,
+      ].filter(Boolean)
+    : [
+        [companyData?.companyCity, companyData?.companyState]
+          .filter(Boolean)
+          .join(", "),
+        companyData?.websiteURL,
+        companyData?.phoneNumber
+          ? `Phone No: ${companyData.phoneNumber}`
+          : null,
+      ].filter(Boolean);
+  const employeeLines = [
+    ...employeeAddress,
+    employee.phone ? `Phone No: ${employee.phone}` : null,
+  ].filter(Boolean);
+  companyLines
+    .slice(0, 4)
+    .forEach((lineText, index) =>
+      drawText(truncate(lineText, 48), left, y - 15 - index * 11),
+    );
+  employeeLines
+    .slice(0, 4)
+    .forEach((lineText, index) =>
+      drawText(truncate(lineText, 48), rightColumnX, y - 15 - index * 11),
+    );
+  y -= 105;
+
+  sectionTitle("Basic Information", left, y, leftColumnWidth);
+  sectionTitle(
+    "Earnings/Allowances",
+    rightColumnX,
+    y,
+    rightColumnWidth,
+    "Current Period",
+  );
+  y -= 23;
+  const basicRows = [
+    ["Emp ID", employee.empId || "N/A"],
+    [
+      "Date of Joining",
+      employee.startDate ? dateLabel(new Date(employee.startDate)) : "N/A",
+    ],
+    ["Designation", truncate(employee.designation, 28)],
+    ["Department", truncate(employee.departments?.[0]?.name, 28)],
+    ["Bank Name", truncate(employee.bankInformation?.bankName, 28)],
+    ["Bank IFSC", employee.bankInformation?.bankIFSC || "N/A"],
+    ["Bank A/c", mask(employee.bankInformation?.accountNumber)],
+    ["AADHAAR #", mask(employee.panAadhaarDetails?.aadhaarId)],
+    ["PF A/c #", mask(employee.panAadhaarDetails?.pfAccountNumber)],
+    ["PF UAN #", mask(employee.panAadhaarDetails?.pfUAN)],
+    ["LOP Days", numberValue(summary.lossOfPayDays)],
+    [
+      "Paid Days",
+      Math.max(0, totalDaysInMonth - numberValue(summary.lossOfPayDays)),
+    ],
+  ];
+  const earningRows = [
+    ["Basic", amount(summary.basic)],
+    ...(summary.allowanceItems || []).map((item) => [
+      item.label,
+      amount(item.amount),
+    ]),
+  ];
+  basicRows.forEach(([label, value], index) =>
+    keyValueRow(label, value, left, y - index * 18, leftColumnWidth),
+  );
+  earningRows.forEach(([label, value], index) =>
+    keyValueRow(label, value, rightColumnX, y - index * 18, rightColumnWidth),
+  );
+  let rightY = y - earningRows.length * 18 - 3;
+  page.drawLine({
+    start: { x: rightColumnX + 155, y: rightY + 10 },
+    end: { x: right, y: rightY + 10 },
+    thickness: 0.4,
+    color: light,
+  });
+  keyValueRow(
+    "TOTAL",
+    amount(summary.actualGross),
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+    {
+      boldLabel: true,
+      boldValue: true,
+    },
+  );
+  rightY -= 33;
+
+  sectionTitle(
+    "Deductions",
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+    "Current Period",
+  );
+  rightY -= 23;
+  const deductionRows = summary.deductionItems || [];
+  deductionRows.forEach((item, index) =>
+    keyValueRow(
+      item.label,
+      amount(item.amount),
+      rightColumnX,
+      rightY - index * 18,
+      rightColumnWidth,
+    ),
+  );
+  rightY -= deductionRows.length * 18 + 3;
+  page.drawLine({
+    start: { x: rightColumnX + 155, y: rightY + 10 },
+    end: { x: right, y: rightY + 10 },
+    thickness: 0.4,
+    color: light,
+  });
+  keyValueRow(
+    "TOTAL",
+    amount(summary.deductions),
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+    {
+      boldLabel: true,
+      boldValue: true,
+    },
+  );
+  rightY -= 33;
+
+  sectionTitle(
+    "Loss of Pay",
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+    "Current Period",
+  );
+  rightY -= 23;
+  keyValueRow(
+    "Loss of Pay",
+    amount(summary.lossOfPay),
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+  );
+  rightY -= 36;
+  sectionTitle("Taxes", rightColumnX, rightY, rightColumnWidth);
+  rightY -= 23;
+  const taxes =
+    numberValue(summary.incomeTax) +
+    numberValue(summary.surcharge) +
+    numberValue(summary.cess);
+  keyValueRow("TOTAL", amount(taxes), rightColumnX, rightY, rightColumnWidth, {
+    boldLabel: true,
+    boldValue: true,
+  });
+  rightY -= 36;
+  page.drawLine({
+    start: { x: rightColumnX + 155, y: rightY + 10 },
+    end: { x: right, y: rightY + 10 },
+    thickness: 0.4,
+    color: light,
+  });
+  keyValueRow(
+    "NET AMOUNT",
+    amount(summary.netAmount),
+    rightColumnX,
+    rightY,
+    rightColumnWidth,
+    {
+      boldLabel: true,
+      boldValue: true,
+    },
+  );
+
+  const employerY = y - basicRows.length * 18 - 10;
+  sectionTitle("Employer Contribution", left, employerY, leftColumnWidth);
+  keyValueRow(
+    "PF",
+    amount(companyData?.employerCosts?.employerPf),
+    left,
+    employerY - 23,
+    leftColumnWidth,
+  );
+  if (numberValue(companyData?.employerCosts?.employerEsi) > 0) {
+    keyValueRow(
+      "ESI",
+      amount(companyData.employerCosts.employerEsi),
+      left,
+      employerY - 41,
+      leftColumnWidth,
+    );
+  }
+
+  drawText("Payroll by WONOCO PRIVATE LIMITED", 583, 700, {
+    size: 6,
+    color: wonoBlue,
+    rotate: degrees(-90),
+  });
+  drawText("Payroll by WONOCO PRIVATE LIMITED", 8, 110, {
+    size: 6,
+    color: wonoBlue,
+    rotate: degrees(90),
+  });
+  page.drawLine({
+    start: { x: left, y: 28 },
+    end: { x: right, y: 28 },
+    thickness: 0.5,
+    color: light,
+  });
+  drawText(
+    "This is electronically generated payslip, hence does not require signature",
+    left,
+    15,
+    { size: 6, color: muted },
+  );
+  const copyrightText = "© 2026-27 WONOCO PRIVATE LIMITED";
+  const copyrightWidth = regular.widthOfTextAtSize(copyrightText, 6);
+  drawText(copyrightText, right - copyrightWidth, 15, {
+    size: 6,
+    color: wonoBlue,
+  });
+
+  pdfDoc.setTitle(`Payslip ${employeeName}`);
+  return Buffer.from(await pdfDoc.save());
 };
 const undoableDraftFields = [
   "payrollType",
@@ -83,7 +522,8 @@ const undoableDraftFields = [
   "submittedAt",
 ];
 const createDraftUndoSnapshot = (draft) => {
-  const source = typeof draft.toObject === "function" ? draft.toObject() : draft;
+  const source =
+    typeof draft.toObject === "function" ? draft.toObject() : draft;
   return undoableDraftFields.reduce((snapshot, field) => {
     snapshot[field] = source[field] ?? null;
     return snapshot;
@@ -102,7 +542,7 @@ const saveEmployeeUndoSnapshot = (draft, summary) => {
   draft.markModified("employeeUndoSnapshots");
   if (
     !(draft.undoableEmployeeIds || []).some(
-      (undoEmployeeId) => String(undoEmployeeId) === employeeId
+      (undoEmployeeId) => String(undoEmployeeId) === employeeId,
     )
   ) {
     draft.undoableEmployeeIds.push(summary.employee);
@@ -118,7 +558,7 @@ const recalculateDraftTotals = async (draft) => {
     Company.findById(draft.company).select("employerCosts").lean(),
   ]);
   const employeeById = new Map(
-    employees.map((employee) => [String(employee._id), employee])
+    employees.map((employee) => [String(employee._id), employee]),
   );
   const employerCosts = companyData?.employerCosts || {};
   const totals = rows.reduce(
@@ -134,7 +574,7 @@ const recalculateDraftTotals = async (draft) => {
         (row.deductionItems || [])
           .filter(
             (item) =>
-              String(item.label || "").toLowerCase() === label.toLowerCase()
+              String(item.label || "").toLowerCase() === label.toLowerCase(),
           )
           .reduce((sum, item) => sum + numberValue(item.amount), 0);
 
@@ -146,7 +586,7 @@ const recalculateDraftTotals = async (draft) => {
       result.lossOfPay += numberValue(row.lossOfPay);
       result.employeePf += pfEnabled ? deductionAmount("Provident Fund") : 0;
       result.voluntaryProvidentFund += deductionAmount(
-        "Voluntary Provident Fund"
+        "Voluntary Provident Fund",
       );
       result.employeeEsi += esiEnabled ? deductionAmount("ESI") : 0;
       result.employerPf += pfEnabled
@@ -174,7 +614,7 @@ const recalculateDraftTotals = async (draft) => {
       employeeEsi: 0,
       employerEsi: 0,
       esiEmployeeCount: 0,
-    }
+    },
   );
   Object.assign(draft, totals);
   return draft;
@@ -186,7 +626,11 @@ const createPayrollDraft = async (req, res, next) => {
     const batchName = String(req.body.batchName || "").trim();
     const payPeriod = new Date(`${req.body.payPeriod}-01T00:00:00.000Z`);
 
-    if (!batchName || !req.body.payPeriod || Number.isNaN(payPeriod.getTime())) {
+    if (
+      !batchName ||
+      !req.body.payPeriod ||
+      Number.isNaN(payPeriod.getTime())
+    ) {
       return res.status(400).json({
         message: "A valid payroll batch and pay period are required",
       });
@@ -196,8 +640,7 @@ const createPayrollDraft = async (req, res, next) => {
       company,
       batchName,
       payPeriod,
-    })
-      .select("+undoSnapshot");
+    }).select("+undoSnapshot");
     if (existingDraft?.status === "Processed") {
       return res.status(409).json({
         message: "Processed payroll cannot be recreated or edited",
@@ -209,7 +652,7 @@ const createPayrollDraft = async (req, res, next) => {
       "payrollInformation.payrollBatch": batchName,
     })
       .select(
-        "firstName lastName empId employeeType payrollInformation payrollCompensation salaryPackage"
+        "firstName lastName empId employeeType payrollInformation payrollCompensation salaryPackage",
       )
       .lean();
 
@@ -229,10 +672,7 @@ const createPayrollDraft = async (req, res, next) => {
       month: req.body.payPeriod,
     }).lean();
     const attendanceByEmployee = new Map(
-      attendanceSummaries.map((summary) => [
-        String(summary.employee),
-        summary,
-      ])
+      attendanceSummaries.map((summary) => [String(summary.employee), summary]),
     );
     const employerCosts = companyData?.employerCosts || {};
 
@@ -254,16 +694,16 @@ const createPayrollDraft = async (req, res, next) => {
             .filter(
               (deduction) =>
                 String(deduction.label || "").toLowerCase() ===
-                label.toLowerCase()
+                label.toLowerCase(),
             )
             .reduce(
               (total, deduction) => total + (Number(deduction.amount) || 0),
-              0
+              0,
             );
         const pfEnabled =
           employee.payrollInformation?.includePF === true ||
           ["true", "yes"].includes(
-            String(employee.payrollInformation?.includePF).toLowerCase()
+            String(employee.payrollInformation?.includePF).toLowerCase(),
           );
         const annualCtc =
           Number(employee.salaryPackage?.grossAnnual) ||
@@ -272,7 +712,7 @@ const createPayrollDraft = async (req, res, next) => {
         const esiEnabled =
           (employee.payrollInformation?.includeEsi === true ||
             ["true", "yes"].includes(
-              String(employee.payrollInformation?.includeEsi).toLowerCase()
+              String(employee.payrollInformation?.includeEsi).toLowerCase(),
             )) &&
           annualCtc > 0 &&
           annualCtc / 12 < 21000;
@@ -280,18 +720,18 @@ const createPayrollDraft = async (req, res, next) => {
         const scheduledDays = Number(attendance?.scheduledWorkingDays) || 0;
         const lopDays = Number(attendance?.lop) || 0;
         const employeeLossOfPay = roundCurrency(
-          scheduledDays > 0 ? (annualCtc / 12 / scheduledDays) * lopDays : 0
+          scheduledDays > 0 ? (annualCtc / 12 / scheduledDays) * lopDays : 0,
         );
         const gross = Number(compensation.grossPay) || 0;
         const basic = Number(compensation.basicPay) || 0;
         const allowances = Number(compensation.totalAllowances) || 0;
         const totalDeductions = deductions.reduce(
           (total, deduction) => total + (Number(deduction.amount) || 0),
-          0
+          0,
         );
         const netAmount = Math.max(
           0,
-          (Number(compensation.netPay) || 0) - employeeLossOfPay
+          (Number(compensation.netPay) || 0) - employeeLossOfPay,
         );
 
         employeeSummaries.push({
@@ -326,11 +766,9 @@ const createPayrollDraft = async (req, res, next) => {
         summary.grossAmount += Math.max(0, gross - employeeLossOfPay);
         summary.incomeTax += incomeTax;
         summary.netAmount += netAmount;
-        summary.employeePf += pfEnabled
-          ? deductionAmount("Provident Fund")
-          : 0;
+        summary.employeePf += pfEnabled ? deductionAmount("Provident Fund") : 0;
         summary.voluntaryProvidentFund += deductionAmount(
-          "Voluntary Provident Fund"
+          "Voluntary Provident Fund",
         );
         summary.employeeEsi += esiEnabled ? deductionAmount("ESI") : 0;
         summary.employerPf += pfEnabled
@@ -356,7 +794,7 @@ const createPayrollDraft = async (req, res, next) => {
         employeeEsi: 0,
         employerEsi: 0,
         esiEmployeeCount: 0,
-      }
+      },
     );
 
     const undoState = existingDraft
@@ -384,7 +822,12 @@ const createPayrollDraft = async (req, res, next) => {
           ...undoState,
         },
       },
-      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+      {
+        new: true,
+        upsert: true,
+        runValidators: true,
+        setDefaultsOnInsert: true,
+      },
     ).lean();
 
     res.status(201).json({ message: "Payroll draft saved", data: draft });
@@ -434,21 +877,22 @@ const fetchPayrollDraftExport = async (req, res, next) => {
       _id: req.params.draftId,
       company: req.company,
     }).lean();
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
 
     const summaries = (draft.employeeSummaries || []).filter(
-      (summary) => !summary.isExcluded
+      (summary) => !summary.isExcluded,
     );
     const employees = await User.find({
       _id: { $in: summaries.map((summary) => summary.employee) },
       company: req.company,
     })
       .select(
-        "empId firstName middleName lastName email phone employeeType designation bankInformation panAadhaarDetails payrollInformation salaryPackage payrollCompensation"
+        "empId firstName middleName lastName email phone employeeType designation bankInformation panAadhaarDetails payrollInformation salaryPackage payrollCompensation",
       )
       .lean();
     const employeeById = new Map(
-      employees.map((employee) => [String(employee._id), employee])
+      employees.map((employee) => [String(employee._id), employee]),
     );
     const formatItems = (items) =>
       (items || [])
@@ -528,26 +972,39 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       !mongoose.Types.ObjectId.isValid(draftId) ||
       !mongoose.Types.ObjectId.isValid(employeeId)
     ) {
-      return res.status(400).json({ message: "Invalid payroll draft or employee ID" });
+      return res
+        .status(400)
+        .json({ message: "Invalid payroll draft or employee ID" });
     }
 
-    const draft = await PayrollDraft.findOne({ _id: draftId, company: req.company })
-      .select("+employeeUndoSnapshots");
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+    }).select("+employeeUndoSnapshots");
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
-      return res.status(409).json({ message: "Only draft payroll can be edited" });
+      return res
+        .status(409)
+        .json({ message: "Only draft payroll can be edited" });
     }
 
     const summary = draft.employeeSummaries.find(
-      (row) => String(row.employee) === employeeId && !row.isExcluded
+      (row) => String(row.employee) === employeeId && !row.isExcluded,
     );
     if (!summary) {
-      return res.status(404).json({ message: "Employee is not part of this payroll draft" });
+      return res
+        .status(404)
+        .json({ message: "Employee is not part of this payroll draft" });
     }
-    const employee = await User.findOne({ _id: employeeId, company: req.company })
+    const employee = await User.findOne({
+      _id: employeeId,
+      company: req.company,
+    })
       .select("employeeType payrollInformation salaryPackage")
       .lean();
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
+    if (!employee)
+      return res.status(404).json({ message: "Employee not found" });
 
     const rawAllowances = Array.isArray(req.body.allowanceItems)
       ? req.body.allowanceItems
@@ -574,7 +1031,7 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       }));
       if (
         normalized.some(
-          (item) => !options.includes(item.label) || item.amount < 0
+          (item) => !options.includes(item.label) || item.amount < 0,
         ) ||
         new Set(normalized.map((item) => item.label)).size !== normalized.length
       ) {
@@ -586,21 +1043,35 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
     let allowanceItems;
     let deductionItems;
     try {
-      allowanceItems = validateItems(rawAllowances, validAllowanceOptions, "allowance");
-      deductionItems = validateItems(rawDeductions, validDeductionOptions, "deduction");
+      allowanceItems = validateItems(
+        rawAllowances,
+        validAllowanceOptions,
+        "allowance",
+      );
+      deductionItems = validateItems(
+        rawDeductions,
+        validDeductionOptions,
+        "deduction",
+      );
     } catch (error) {
       return res.status(400).json({ message: error.message });
     }
 
     if (canUseHra) {
       const hraAmount = numberValue(summary.basic) * 0.5;
-      const hra = allowanceItems.find((item) => item.label === "House Rent Allowance");
+      const hra = allowanceItems.find(
+        (item) => item.label === "House Rent Allowance",
+      );
       if (hra) hra.amount = hraAmount;
-      else allowanceItems.push({ label: "House Rent Allowance", amount: hraAmount });
+      else
+        allowanceItems.push({
+          label: "House Rent Allowance",
+          amount: hraAmount,
+        });
     }
     const allowanceTotal = allowanceItems.reduce(
       (total, item) => total + numberValue(item.amount),
-      0
+      0,
     );
     const actualGross = numberValue(summary.basic) + allowanceTotal;
     const annualCtc = getAnnualCtc(employee);
@@ -637,11 +1108,11 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
     const lossOfPay = roundCurrency(
       scheduledDays > 0 && annualCtc > 0
         ? (annualCtc / 12 / scheduledDays) * lossOfPayDays
-        : numberValue(req.body.lossOfPay ?? summary.lossOfPay)
+        : numberValue(req.body.lossOfPay ?? summary.lossOfPay),
     );
     const deductionTotal = deductionItems.reduce(
       (total, item) => total + numberValue(item.amount),
-      0
+      0,
     );
     const incomeTax = deductionItems
       .filter((item) => {
@@ -662,7 +1133,9 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       gross,
       lossOfPayDays,
       lossOfPay,
-      payrollNotes: String(req.body.payrollNotes || "").trim().slice(0, 2000),
+      payrollNotes: String(req.body.payrollNotes || "")
+        .trim()
+        .slice(0, 2000),
       incomeTax,
       netAmount: Math.max(0, gross - deductionTotal),
       updatedBy: req.user,
@@ -684,21 +1157,32 @@ const excludePayrollDraftEmployees = async (req, res, next) => {
     const employeeIds = Array.isArray(req.body.employeeIds)
       ? [...new Set(req.body.employeeIds.map(String))]
       : [];
-    if (!employeeIds.length || employeeIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
-      return res.status(400).json({ message: "Select valid employees to delete" });
+    if (
+      !employeeIds.length ||
+      employeeIds.some((id) => !mongoose.Types.ObjectId.isValid(id))
+    ) {
+      return res
+        .status(400)
+        .json({ message: "Select valid employees to delete" });
     }
     const draft = await PayrollDraft.findOne({
       _id: req.params.draftId,
       company: req.company,
     }).select("+employeeUndoSnapshots");
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
-      return res.status(409).json({ message: "Only draft payroll can be edited" });
+      return res
+        .status(409)
+        .json({ message: "Only draft payroll can be edited" });
     }
     saveDraftUndoSnapshot(draft);
     let excludedCount = 0;
     draft.employeeSummaries.forEach((summary) => {
-      if (employeeIds.includes(String(summary.employee)) && !summary.isExcluded) {
+      if (
+        employeeIds.includes(String(summary.employee)) &&
+        !summary.isExcluded
+      ) {
         saveEmployeeUndoSnapshot(draft, summary);
         summary.isExcluded = true;
         summary.updatedBy = req.user;
@@ -707,7 +1191,9 @@ const excludePayrollDraftEmployees = async (req, res, next) => {
       }
     });
     if (!excludedCount) {
-      return res.status(404).json({ message: "Selected employees were not found in the draft" });
+      return res
+        .status(404)
+        .json({ message: "Selected employees were not found in the draft" });
     }
     await recalculateDraftTotals(draft);
     await draft.save();
@@ -729,12 +1215,17 @@ const undoPayrollDraftChange = async (req, res, next) => {
       _id: req.params.draftId,
       company: req.company,
     }).select("+undoSnapshot");
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
-      return res.status(409).json({ message: "Processed payroll cannot be changed" });
+      return res
+        .status(409)
+        .json({ message: "Processed payroll cannot be changed" });
     }
     if (!draft.canUndo || !draft.undoSnapshot) {
-      return res.status(409).json({ message: "There are no draft changes to undo" });
+      return res
+        .status(409)
+        .json({ message: "There are no draft changes to undo" });
     }
 
     undoableDraftFields.forEach((field) => {
@@ -745,7 +1236,9 @@ const undoPayrollDraftChange = async (req, res, next) => {
     draft.employeeUndoSnapshots = {};
     draft.undoableEmployeeIds = [];
     await draft.save();
-    res.status(200).json({ message: "Last payroll draft change undone", data: draft });
+    res
+      .status(200)
+      .json({ message: "Last payroll draft change undone", data: draft });
   } catch (error) {
     next(error);
   }
@@ -758,25 +1251,34 @@ const undoPayrollDraftEmployeeChange = async (req, res, next) => {
       !mongoose.Types.ObjectId.isValid(draftId) ||
       !mongoose.Types.ObjectId.isValid(employeeId)
     ) {
-      return res.status(400).json({ message: "Invalid payroll draft or employee ID" });
+      return res
+        .status(400)
+        .json({ message: "Invalid payroll draft or employee ID" });
     }
     const draft = await PayrollDraft.findOne({
       _id: draftId,
       company: req.company,
     }).select("+employeeUndoSnapshots");
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
-      return res.status(409).json({ message: "Processed payroll cannot be changed" });
+      return res
+        .status(409)
+        .json({ message: "Processed payroll cannot be changed" });
     }
     const snapshot = draft.employeeUndoSnapshots?.[employeeId];
     if (!snapshot) {
-      return res.status(409).json({ message: "This employee has no saved change to undo" });
+      return res
+        .status(409)
+        .json({ message: "This employee has no saved change to undo" });
     }
     const summaryIndex = draft.employeeSummaries.findIndex(
-      (summary) => String(summary.employee) === employeeId
+      (summary) => String(summary.employee) === employeeId,
     );
     if (summaryIndex === -1) {
-      return res.status(404).json({ message: "Employee is not part of this payroll draft" });
+      return res
+        .status(404)
+        .json({ message: "Employee is not part of this payroll draft" });
     }
 
     draft.employeeSummaries.splice(summaryIndex, 1, snapshot);
@@ -785,7 +1287,7 @@ const undoPayrollDraftEmployeeChange = async (req, res, next) => {
     draft.employeeUndoSnapshots = nextSnapshots;
     draft.markModified("employeeUndoSnapshots");
     draft.undoableEmployeeIds = (draft.undoableEmployeeIds || []).filter(
-      (undoEmployeeId) => String(undoEmployeeId) !== employeeId
+      (undoEmployeeId) => String(undoEmployeeId) !== employeeId,
     );
     draft.undoSnapshot = null;
     draft.canUndo = false;
@@ -809,12 +1311,17 @@ const submitPayrollDraft = async (req, res, next) => {
       _id: req.params.draftId,
       company: req.company,
     });
-    if (!draft) return res.status(404).json({ message: "Payroll draft not found" });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
     if (draft.status !== "Draft") {
-      return res.status(409).json({ message: "Payroll has already been processed" });
+      return res
+        .status(409)
+        .json({ message: "Payroll has already been processed" });
     }
     if (!draft.employeeSummaries.some((summary) => !summary.isExcluded)) {
-      return res.status(400).json({ message: "Payroll must contain at least one employee" });
+      return res
+        .status(400)
+        .json({ message: "Payroll must contain at least one employee" });
     }
     await recalculateDraftTotals(draft);
     draft.status = "Processed";
@@ -822,7 +1329,355 @@ const submitPayrollDraft = async (req, res, next) => {
     draft.submittedAt = new Date();
     draft.runDate = draft.submittedAt;
     await draft.save();
-    res.status(200).json({ message: "Payroll processed successfully", data: draft });
+    res
+      .status(200)
+      .json({ message: "Payroll processed successfully", data: draft });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const releasePayrollDraftPayslips = async (req, res, next) => {
+  try {
+    const { draftId } = req.params;
+    const sendEmails = req.body?.sendEmails === true;
+    if (!mongoose.Types.ObjectId.isValid(draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+    });
+    if (!draft)
+      return res.status(404).json({ message: "Payroll draft not found" });
+    if (draft.status !== "Processed") {
+      return res
+        .status(409)
+        .json({ message: "Process payroll before releasing payslips" });
+    }
+
+    const summaries = draft.employeeSummaries.filter(
+      (summary) => !summary.isExcluded && summary.employee,
+    );
+    const employeeIds = summaries.map((summary) => summary.employee);
+    const [employees, companyData] = await Promise.all([
+      User.find({ _id: { $in: employeeIds }, company: req.company })
+        .select(
+          "firstName lastName empId email phone startDate designation departments homeAddress bankInformation panAadhaarDetails",
+        )
+        .populate("departments", "name")
+        .lean(),
+      Company.findById(req.company)
+        .select(
+          "companyName registeredCompanyName fullAddress phoneNumber companyCity companyState websiteURL employerCosts",
+        )
+        .lean(),
+    ]);
+    const employeeById = new Map(
+      employees.map((employee) => [String(employee._id), employee]),
+    );
+    const releasedPayslips = [];
+
+    for (const summary of summaries) {
+      const employee = employeeById.get(String(summary.employee));
+      if (!employee) continue;
+
+      const pdfBuffer = await createPayslipPdf({
+        draft,
+        summary,
+        employee,
+        companyData,
+      });
+      const employeeName =
+        [employee.firstName, employee.lastName].filter(Boolean).join("") ||
+        employee.empId;
+      const period = getPayPeriodKey(draft.payPeriod);
+      const filename = `Payslip_${employeeName}_${period}.pdf`;
+      const upload = await handleDocumentUpload(
+        pdfBuffer,
+        `${companyData?.companyName || "Company"}/payrolls/${employee.empId || employeeName}`,
+        filename,
+      );
+
+      const allowanceAmount = (label) =>
+        (summary.allowanceItems || [])
+          .filter(
+            (item) => String(item.label).toLowerCase() === label.toLowerCase(),
+          )
+          .reduce((total, item) => total + numberValue(item.amount), 0);
+      const deductionAmount = (label) =>
+        (summary.deductionItems || [])
+          .filter(
+            (item) => String(item.label).toLowerCase() === label.toLowerCase(),
+          )
+          .reduce((total, item) => total + numberValue(item.amount), 0);
+
+      const payslip = await Payslip.findOneAndUpdate(
+        {
+          employee: employee._id,
+          company: req.company,
+          month: draft.payPeriod,
+        },
+        {
+          $set: {
+            payrollDraft: draft._id,
+            basicPay: summary.basic,
+            basic: summary.basic,
+            actualGross: summary.actualGross,
+            gross: summary.gross,
+            netPay: summary.netAmount,
+            netAmount: summary.netAmount,
+            specialAllowance: allowanceAmount("Special Allowance"),
+            hra: allowanceAmount("House Rent Allowance"),
+            medicalAllowance: allowanceAmount("Medical Allowance"),
+            conveyanceAllowance: allowanceAmount("Conveyance Allowance"),
+            employeePf: deductionAmount("Provident Fund"),
+            employeesStateInsurance: deductionAmount("ESI"),
+            professionTax: deductionAmount("Profession Tax"),
+            reduceIncomeTax: summary.incomeTax,
+            incomeTax: summary.incomeTax,
+            surcharge: summary.surcharge,
+            cess: summary.cess,
+            lopDays: summary.lossOfPayDays,
+            lopAmount: summary.lossOfPay,
+            allowanceItems: summary.allowanceItems,
+            deductionItems: summary.deductionItems,
+            payslipName: filename,
+            payslipLink: upload.secure_url,
+            payslipId: upload.public_id,
+            releaseStatus: "Released",
+            emailStatus: sendEmails ? "Pending" : "Not Requested",
+            emailSentAt: null,
+            emailError: "",
+            ifscCode: employee.bankInformation?.bankIFSC || "",
+            accountNumber: employee.bankInformation?.accountNumber || "",
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        },
+      );
+
+      await Payroll.findOneAndUpdate(
+        {
+          employee: employee._id,
+          company: req.company,
+          month: draft.payPeriod,
+        },
+        {
+          $set: {
+            totalSalary: summary.netAmount,
+            payslip: payslip._id,
+            status: "Completed",
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+          runValidators: true,
+          setDefaultsOnInsert: true,
+        },
+      );
+      releasedPayslips.push({ payslip, employee, pdfBuffer, filename });
+    }
+
+    const emailResults = sendEmails
+      ? await Promise.all(
+          releasedPayslips.map(async (released) => {
+            const { payslip, employee, pdfBuffer, filename } = released;
+            const email = String(employee.email || "").trim();
+
+            if (!/^\S+@\S+\.\S+$/.test(email)) {
+              payslip.emailStatus = "Skipped";
+              payslip.emailError =
+                "Employee email address is missing or invalid";
+              await payslip.save();
+              return "skipped";
+            }
+
+            try {
+              const employeeName = [employee.firstName, employee.lastName]
+                .filter(Boolean)
+                .join(" ");
+              const companyName =
+                companyData?.registeredCompanyName ||
+                companyData?.companyName ||
+                "Payroll Team";
+              const emailDetails = getPayslipEmailDetails({
+                draft,
+                employeeName,
+                companyName,
+              });
+
+              await mailer.sendMail({
+                from: `WoNo <${process.env.SENDER_EMAIL}>`,
+                to: email,
+                subject: emailDetails.subject,
+                text: emailDetails.text,
+                html: emailDetails.html,
+                attachments: [
+                  emailDetails.logoAttachment,
+                  {
+                    filename,
+                    content: pdfBuffer,
+                    contentType: "application/pdf",
+                  },
+                ],
+              });
+
+              payslip.emailStatus = "Sent";
+              payslip.emailSentAt = new Date();
+              payslip.emailError = "";
+              await payslip.save();
+              return "sent";
+            } catch (error) {
+              payslip.emailStatus = "Failed";
+              payslip.emailError = String(
+                error.message || "Email delivery failed",
+              ).slice(0, 500);
+              await payslip.save();
+              return "failed";
+            }
+          }),
+        )
+      : [];
+
+    const releaseSummary = {
+      generated: releasedPayslips.length,
+      sent: emailResults.filter((result) => result === "sent").length,
+      failed: emailResults.filter((result) => result === "failed").length,
+      skipped: emailResults.filter((result) => result === "skipped").length,
+      sendEmails,
+    };
+
+    draft.payslipsReleasedAt = new Date();
+    draft.payslipsReleasedBy = req.user;
+    draft.payslipReleaseSummary = releaseSummary;
+    await draft.save();
+
+    return res.status(200).json({
+      message: sendEmails
+        ? `${releaseSummary.generated} payslip${releaseSummary.generated === 1 ? "" : "s"} generated; ${releaseSummary.sent} sent, ${releaseSummary.failed} failed, ${releaseSummary.skipped} skipped`
+        : `${releaseSummary.generated} payslip${releaseSummary.generated === 1 ? "" : "s"} generated successfully`,
+      data: releasedPayslips.map(({ payslip }) => payslip),
+      summary: releaseSummary,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const retryPayrollDraftPayslipEmails = async (req, res, next) => {
+  try {
+    const { draftId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+      status: "Processed",
+    });
+    if (!draft) {
+      return res.status(404).json({ message: "Processed payroll not found" });
+    }
+
+    const payslips = await Payslip.find({
+      payrollDraft: draft._id,
+      company: req.company,
+      emailStatus: { $in: ["Failed", "Skipped"] },
+    }).populate("employee", "firstName lastName email");
+
+    if (!payslips.length) {
+      return res
+        .status(409)
+        .json({ message: "There are no failed payslip emails to retry" });
+    }
+
+    const companyData = await Company.findById(req.company)
+      .select("companyName registeredCompanyName")
+      .lean();
+    const retryResults = await Promise.all(
+      payslips.map(async (payslip) => {
+        const employee = payslip.employee;
+        const email = String(employee?.email || "").trim();
+        if (!/^\S+@\S+\.\S+$/.test(email)) {
+          payslip.emailStatus = "Skipped";
+          payslip.emailError = "Employee email address is missing or invalid";
+          await payslip.save();
+          return "skipped";
+        }
+
+        try {
+          const employeeName = [employee.firstName, employee.lastName]
+            .filter(Boolean)
+            .join(" ");
+          const emailDetails = getPayslipEmailDetails({
+            draft,
+            employeeName,
+            companyName:
+              companyData?.registeredCompanyName ||
+              companyData?.companyName ||
+              "Payroll Team",
+          });
+          await mailer.sendMail({
+            from: `WoNo <${process.env.SENDER_EMAIL}>`,
+            to: email,
+            subject: emailDetails.subject,
+            text: emailDetails.text,
+            html: emailDetails.html,
+            attachments: [
+              emailDetails.logoAttachment,
+              {
+                filename: payslip.payslipName || "Payslip.pdf",
+                path: payslip.payslipLink,
+                contentType: "application/pdf",
+              },
+            ],
+          });
+          payslip.emailStatus = "Sent";
+          payslip.emailSentAt = new Date();
+          payslip.emailError = "";
+          await payslip.save();
+          return "sent";
+        } catch (error) {
+          payslip.emailStatus = "Failed";
+          payslip.emailError = String(
+            error.message || "Email delivery failed",
+          ).slice(0, 500);
+          await payslip.save();
+          return "failed";
+        }
+      }),
+    );
+
+    const previousSummary =
+      draft.payslipReleaseSummary?.toObject?.() ||
+      draft.payslipReleaseSummary ||
+      {};
+    const sent = retryResults.filter((result) => result === "sent").length;
+    const failed = retryResults.filter((result) => result === "failed").length;
+    const skipped = retryResults.filter(
+      (result) => result === "skipped",
+    ).length;
+    draft.payslipReleaseSummary = {
+      generated: numberValue(previousSummary.generated),
+      sent: numberValue(previousSummary.sent) + sent,
+      failed,
+      skipped,
+      sendEmails: true,
+    };
+    await draft.save();
+
+    return res.status(200).json({
+      message: `${sent} payslip email${sent === 1 ? "" : "s"} sent; ${failed} failed, ${skipped} skipped`,
+      summary: draft.payslipReleaseSummary,
+    });
   } catch (error) {
     next(error);
   }
@@ -892,7 +1747,7 @@ const generatePayroll = async (req, res, next) => {
         "Payrolls array required",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -901,7 +1756,7 @@ const generatePayroll = async (req, res, next) => {
         "Maximum 4 payrolls can be processed at once",
         logPath,
         logAction,
-        logSourceKey
+        logSourceKey,
       );
     }
 
@@ -934,7 +1789,7 @@ const generatePayroll = async (req, res, next) => {
           `Missing required fields in payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -943,7 +1798,7 @@ const generatePayroll = async (req, res, next) => {
           `Missing payslip file for payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -952,7 +1807,7 @@ const generatePayroll = async (req, res, next) => {
           `Invalid user ID in payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -966,7 +1821,7 @@ const generatePayroll = async (req, res, next) => {
           logPath,
           logAction,
           logSourceKey,
-          409
+          409,
         );
       }
 
@@ -978,14 +1833,14 @@ const generatePayroll = async (req, res, next) => {
           `User not found in payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       if (!foundCompany)
         throw new CustomError(
           "Company not found",
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
 
       // Upload File
@@ -1000,7 +1855,7 @@ const generatePayroll = async (req, res, next) => {
           `Invalid file type in payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -1016,7 +1871,7 @@ const generatePayroll = async (req, res, next) => {
       const uploadResponse = await handleDocumentUpload(
         processedBuffer,
         `${foundCompany.companyName}/payrolls/${foundUser.firstName} ${foundUser.lastName}`,
-        originalFilename
+        originalFilename,
       );
 
       if (!uploadResponse?.public_id) {
@@ -1024,7 +1879,7 @@ const generatePayroll = async (req, res, next) => {
           `Failed to upload payslip in payroll ${i + 1}`,
           logPath,
           logAction,
-          logSourceKey
+          logSourceKey,
         );
       }
 
@@ -1089,7 +1944,7 @@ const generatePayroll = async (req, res, next) => {
       next(error);
     } else {
       next(
-        new CustomError(error.message, logPath, logAction, logSourceKey, 500)
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
   }
@@ -1106,7 +1961,7 @@ const fetchPayrolls = async (req, res, next) => {
       .populate("departments")
       .populate("role")
       .select(
-        "firstName lastName empId email departments role payrollInformation payrollCompensation salaryPackage"
+        "firstName lastName empId email departments role payrollInformation payrollCompensation salaryPackage",
       )
       .lean();
 
@@ -1153,7 +2008,7 @@ const fetchPayrolls = async (req, res, next) => {
 
       const hasCurrentMonth = userPayrolls.some((entry) => {
         const payrollMonthStart = startOfMonth(
-          new Date(entry.month)
+          new Date(entry.month),
         ).toISOString();
         return payrollMonthStart === currentMonthStart;
       });
@@ -1314,5 +2169,7 @@ module.exports = {
   undoPayrollDraftChange,
   undoPayrollDraftEmployeeChange,
   submitPayrollDraft,
+  releasePayrollDraftPayslips,
+  retryPayrollDraftPayslipEmails,
   voidPayrollDraft,
 };

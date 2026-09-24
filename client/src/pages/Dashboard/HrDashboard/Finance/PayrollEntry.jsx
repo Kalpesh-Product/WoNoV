@@ -3,7 +3,14 @@ import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { MenuItem, TextField } from "@mui/material";
-import { MdDeleteOutline, MdEdit, MdUndo } from "react-icons/md";
+import {
+  MdDeleteOutline,
+  MdCheckCircle,
+  MdEdit,
+  MdRadioButtonUnchecked,
+  MdUndo,
+  MdWarning,
+} from "react-icons/md";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import AgTable from "../../../../components/AgTable";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
@@ -31,6 +38,34 @@ const SummarySection = ({ title, rows }) => (
     </div>
   </section>
 );
+
+const ChecklistItem = ({ icon, title, children, onClick }) => {
+  const content = (
+    <>
+      {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
+      <span className="min-w-0">
+        <span className="block text-left font-medium text-sky-600">{title}</span>
+        {children && (
+          <span className="mt-1 block text-left text-sm text-gray-500">
+            {children}
+          </span>
+        )}
+      </span>
+    </>
+  );
+
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex w-full items-start gap-3 rounded px-2 py-2 hover:bg-gray-50"
+    >
+      {content}
+    </button>
+  ) : (
+    <div className="flex items-start gap-3 px-2 py-2">{content}</div>
+  );
+};
 
 const numberValue = (value) => Number(value) || 0;
 const baseAllowanceOptions = [
@@ -192,6 +227,8 @@ const PayrollEntry = () => {
   const [employeeToUndo, setEmployeeToUndo] = useState(null);
   const [showSubmitConfirmation, setShowSubmitConfirmation] = useState(false);
   const [showVoidConfirmation, setShowVoidConfirmation] = useState(false);
+  const [showReleasePayslips, setShowReleasePayslips] = useState(false);
+  const [sendPayslipEmails, setSendPayslipEmails] = useState("yes");
   const [isPayrollSubmitted, setIsPayrollSubmitted] = useState(false);
   const { data: draft, isLoading, refetch: refetchDraft } = useQuery({
     queryKey: ["payrollDraft", draftId],
@@ -233,6 +270,16 @@ const PayrollEntry = () => {
       return response.data;
     },
   });
+  const { mutateAsync: releasePayslips, isPending: isReleasingPayslips } =
+    useMutation({
+      mutationFn: async (sendEmails) => {
+        const response = await axios.post(
+          `/api/payroll/drafts/${draftId}/release-payslips`,
+          { sendEmails }
+        );
+        return response.data;
+      },
+    });
   const { mutateAsync: undoDraftChange, isPending: isUndoingDraft } =
     useMutation({
       mutationFn: async () => {
@@ -342,6 +389,29 @@ const PayrollEntry = () => {
     .filter(Boolean)
     .join(" ") || "N/A";
   const isProcessed = draft.status === "Processed";
+  const processedDate = dayjs(draft.submittedAt || draft.runDate || draft.updatedAt);
+  const complianceDueMonth = dayjs(draft.payPeriod).add(1, "month");
+  const totalTds =
+    numberValue(draft.incomeTax) +
+    numberValue(draft.surcharge) +
+    numberValue(draft.cess);
+  const totalPf =
+    numberValue(draft.employeePf) +
+    numberValue(draft.employerPf) +
+    numberValue(draft.voluntaryProvidentFund);
+  const totalEsi = numberValue(draft.employeeEsi) + numberValue(draft.employerEsi);
+
+  const handleReleasePayslips = async () => {
+    try {
+      const response = await releasePayslips(sendPayslipEmails === "yes");
+      setShowReleasePayslips(false);
+      await refetchDraft();
+      await queryClient.invalidateQueries({ queryKey: ["employeePayslips"] });
+      toast.success(response.message || "Payslips generated successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to generate payslips");
+    }
+  };
   const confirmVoidPayroll = async () => {
     try {
       const response = await voidDraft();
@@ -811,6 +881,73 @@ const PayrollEntry = () => {
               ["ESI Employees (count)", numberValue(draft.esiEmployeeCount)],
             ]}
           />
+          {isProcessed && (
+            <section className="lg:col-span-2">
+              <h2 className="border-b pb-3 font-pmedium text-subtitle font-semibold text-primary">
+                Post Payroll Checklist
+              </h2>
+              <div className="mt-3 space-y-1">
+                <ChecklistItem
+                  icon={
+                    draft.payslipsReleasedAt ? (
+                      <MdCheckCircle size={18} className="text-sky-500" />
+                    ) : (
+                      <MdRadioButtonUnchecked
+                        size={18}
+                        className="text-gray-400"
+                      />
+                    )
+                  }
+                  title="Release Payslips"
+                  onClick={() => setShowReleasePayslips(true)}
+                />
+                <ChecklistItem
+                  icon={
+                    <MdRadioButtonUnchecked
+                      size={18}
+                      className="text-gray-400"
+                    />
+                  }
+                  title="Pay Date & Payment Method"
+                >
+                  <span className="block">
+                    Pay Date: {processedDate.isValid() ? processedDate.format("DD MMM, YYYY") : "N/A"}
+                  </span>
+                  <span className="block">
+                    Bank Deposit: {numberValue(draft.employeeCount)}, Cash: 0,
+                    Cheque: 0
+                  </span>
+                </ChecklistItem>
+                <ChecklistItem
+                  icon={<MdWarning size={18} className="text-amber-500" />}
+                  title="TDS Payment Tracking"
+                >
+                  <span className="flex flex-wrap justify-between gap-x-8">
+                    <span>Amount: {inrFormat(totalTds)}</span>
+                    <span>Due Date: {complianceDueMonth.date(7).format("DD MMM, YYYY")}</span>
+                  </span>
+                </ChecklistItem>
+                <ChecklistItem
+                  icon={<MdWarning size={18} className="text-amber-500" />}
+                  title="EPF Transfer & Filing Check"
+                >
+                  <span className="flex flex-wrap justify-between gap-x-8">
+                    <span>Amount: {inrFormat(totalPf)}</span>
+                    <span>Due Date: {complianceDueMonth.date(15).format("DD MMM, YYYY")}</span>
+                  </span>
+                </ChecklistItem>
+                <ChecklistItem
+                  icon={<MdWarning size={18} className="text-amber-500" />}
+                  title="ESI Transfer & Filing Check"
+                >
+                  <span className="flex flex-wrap justify-between gap-x-8">
+                    <span>Amount: {inrFormat(totalEsi)}</span>
+                    <span>Due Date: {complianceDueMonth.date(15).format("DD MMM, YYYY")}</span>
+                  </span>
+                </ChecklistItem>
+              </div>
+            </section>
+          )}
           <SummarySection
             title="Activity"
             rows={[
@@ -879,6 +1016,53 @@ const PayrollEntry = () => {
           />
         </div>
       </div>
+
+      <MuiModal
+        open={showReleasePayslips}
+        onClose={() => setShowReleasePayslips(false)}
+        title="Release Payslips"
+        widthClass="w-[90%] max-w-4xl"
+      >
+        <div className="flex min-h-72 flex-col">
+          <p className="text-content text-gray-700">
+            Please confirm whether employees should be notified about their
+            payslips for this pay period. Only employees with an email address
+            in their contact information will receive the payslip email.
+          </p>
+
+          <fieldset className="mt-7 flex flex-wrap items-center gap-4 text-content">
+            <legend className="float-left mr-2">
+              Do you want to send emails to your employees?
+            </legend>
+            {["yes", "no"].map((option) => (
+              <label key={option} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="radio"
+                  name="sendPayslipEmails"
+                  value={option}
+                  checked={sendPayslipEmails === option}
+                  onChange={(event) => setSendPayslipEmails(event.target.value)}
+                />
+                <span className="capitalize">{option}</span>
+              </label>
+            ))}
+          </fieldset>
+
+          <div className="mt-auto flex justify-end gap-3 pt-10">
+            <SecondaryButton
+              title="Cancel"
+              handleSubmit={() => setShowReleasePayslips(false)}
+            />
+            <PrimaryButton
+              title="Release"
+              handleSubmit={handleReleasePayslips}
+              externalStyles="!bg-green-600"
+              disabled={isReleasingPayslips}
+              isLoading={isReleasingPayslips}
+            />
+          </div>
+        </div>
+      </MuiModal>
 
       <MuiModal
         open={Boolean(editingEmployee)}

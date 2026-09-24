@@ -67,10 +67,46 @@ const payslipSchema = new mongoose.Schema(
     payslipId: {
       type: String,
     },
+    releaseStatus: {
+      type: String,
+      enum: ["Generated", "Released"],
+      default: "Generated",
+    },
+    emailStatus: {
+      type: String,
+      enum: ["Not Requested", "Pending", "Sent", "Failed", "Skipped"],
+      default: "Not Requested",
+    },
+    emailSentAt: {
+      type: Date,
+      default: null,
+    },
+    emailError: {
+      type: String,
+      default: "",
+    },
     company: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Company",
     },
+    payrollDraft: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "PayrollDraft",
+    },
+    allowanceItems: [
+      {
+        _id: false,
+        label: { type: String, required: true },
+        amount: { type: Number, default: 0 },
+      },
+    ],
+    deductionItems: [
+      {
+        _id: false,
+        label: { type: String, required: true },
+        amount: { type: Number, default: 0 },
+      },
+    ],
 
     //Additional Fields
 

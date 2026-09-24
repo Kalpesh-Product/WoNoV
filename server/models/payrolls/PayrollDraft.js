@@ -72,6 +72,15 @@ const payrollDraftSchema = new mongoose.Schema(
     runDate: { type: Date, default: null },
     submittedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     submittedAt: { type: Date, default: null },
+    payslipsReleasedAt: { type: Date, default: null },
+    payslipsReleasedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+    payslipReleaseSummary: {
+      generated: { type: Number, min: 0, default: 0 },
+      sent: { type: Number, min: 0, default: 0 },
+      failed: { type: Number, min: 0, default: 0 },
+      skipped: { type: Number, min: 0, default: 0 },
+      sendEmails: { type: Boolean, default: false },
+    },
     undoSnapshot: {
       type: mongoose.Schema.Types.Mixed,
       default: null,

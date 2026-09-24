@@ -4,15 +4,14 @@ const fetchEmployeePayslips = async (req, res, next) => {
   const { company } = req;
   const { user } = req.params;
   try {
-    const payslips = await Payslip.find({ employee: user }).populate({
-      path: "employee",
-      select: "firstName lastName empId email departments role",
-      populate: [{ path: "departments" }, { path: "role" }],
-    });
-
-    if (!payslips) {
-      return res.status(400).json({ message: "No Payslip found" });
-    }
+    const payslips = await Payslip.find({ employee: user, company })
+      .populate({
+        path: "employee",
+        select: "firstName lastName empId email departments role",
+        populate: [{ path: "departments" }, { path: "role" }],
+      })
+      .sort({ month: -1 })
+      .lean();
 
     return res.status(200).json(payslips);
   } catch (error) {

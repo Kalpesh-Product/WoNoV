@@ -36,6 +36,16 @@ const HrMixBag = () => {
       permission: PERMISSIONS.HR_PAYROLL.value,
     },
     {
+      title: "Reports",
+      route: "/app/dashboard/HR-dashboard/mix-bag/reports",
+      permission: PERMISSIONS.HR_PAYROLL.value,
+    },
+    {
+      title: "Payslips",
+      route: "/app/dashboard/HR-dashboard/mix-bag/payslips",
+      permission: PERMISSIONS.HR_PAYROLL.value,
+    },
+    {
       title: "Leave Requests",
       route: "/app/dashboard/HR-dashboard/mix-bag/leaves/pending-approvals",
       permission: PERMISSIONS.HR_LEAVE_REQUESTS_MIX_BAG.value,

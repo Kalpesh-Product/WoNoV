@@ -7,7 +7,6 @@ const allowedOrigins = [
   "http://localhost:4173",
   "https://wonofe.vercel.app",
   "https://wonomasterfe.vercel.app",
-  process.env.CORS_FRONTEND_URL,
 ];
 
 // regex rules for subdomains
