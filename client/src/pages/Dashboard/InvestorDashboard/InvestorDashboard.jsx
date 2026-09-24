@@ -18,16 +18,19 @@ import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailabilit
 import InvestorOperationalCharts from "./InvestorOperationalCharts";
 import { useCurrency } from "../../../context/CurrencyContext";
 import investorBanner from "../../../assets/investor/banner-investor.png";
+import bizNestLogo from "../../../assets/biznest/biznest_logo.jpg";
 import {
-  MdApartment,
   MdBarChart,
   MdCalendarMonth,
   MdCalculate,
-  MdChair,
   MdGroups,
+  MdMapsHomeWork,
   MdReceiptLong,
+  MdTrendingDown,
+  MdTrendingUp,
 } from "react-icons/md";
-import { BsDatabaseFill } from "react-icons/bs";
+import { BsFillDatabaseFill } from "react-icons/bs";
+import { PiDesktopTowerFill } from "react-icons/pi";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -44,13 +47,21 @@ const APPRECIATION_BASE_VALUATION = 60_000_000;
 const APPRECIATION_MONTHLY_INCREMENT = 700_000;
 const APPRECIATION_PROJECTION_START_INDEX = 5;
 
-const BizNestTitle = ({ children, prefix }) => (
+const BizNestTitle = ({ children, prefix, monochrome = false }) => (
   <span className="normal-case">
-    {prefix ? <span className="mr-1 text-[#1234c9]">{prefix}</span> : null}
-    <span className="text-[#1234c9]">BI</span>
-    <span className="text-[#e33434]">Z</span>
-    <span className="text-[#1234c9]"> Nest</span>
-    {children ? <span className="ml-1 text-[#1234c9]">{children}</span> : null}
+    {prefix ? (
+      <span className={`mr-1 ${monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}`}>
+        {prefix}
+      </span>
+    ) : null}
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}>BI</span>
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#e33434]"}>Z</span>
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}> Nest</span>
+    {children ? (
+      <span className={`ml-1 ${monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}`}>
+        {children}
+      </span>
+    ) : null}
   </span>
 );
 
@@ -78,6 +89,7 @@ const InvestorDashboardCards = ({
   projectedExpense = 0,
   projectedProfitLoss = 0,
   projectedRevenueGrowth = 0,
+  compactPercentageChips = false,
 }) => {
   const cards = [
     {
@@ -85,12 +97,18 @@ const InvestorDashboardCards = ({
       period: currentFiscalYear,
       value: format(projectedRevenue),
       suffix: `${projectedRevenueGrowth.toFixed(1)}%`,
-      suffixTone:
-        projectedRevenueGrowth >= 0 ? "text-[#13a573]" : "text-[#f04a4a]",
+      suffixTone: "text-[#13a573]",
+      suffixChip: true,
+      trendValue: projectedRevenueGrowth,
       permission: PERMISSIONS.INVESTOR_PROJECTED_REVENUE_CARD.value,
       clickable: false,
       icon: InvestorBarsIcon,
       tone: "blue",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 whitespace-nowrap text-[15px] font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
     },
     {
       title: "Projected Expense",
@@ -101,6 +119,11 @@ const InvestorDashboardCards = ({
       icon: MdReceiptLong,
       tone: "red",
       valueTone: "text-[#f04a4a]",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
     },
     {
       title: "Projected Profit/Loss",
@@ -112,6 +135,11 @@ const InvestorDashboardCards = ({
       tone: "green",
       valueTone:
         projectedProfitLoss >= 0 ? "text-[#12a573]" : "text-[#f04a4a]",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
     },
     {
       title: "Average Unique Clients",
@@ -121,23 +149,36 @@ const InvestorDashboardCards = ({
       clickable: false,
       icon: MdGroups,
       tone: "sky",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
     },
     {
       title: "Total Inventory",
       value: String(totalInventory),
       permission: PERMISSIONS.INVESTOR_TOTAL_INVENTORY_CARD.value,
       route: "/app/dashboard/investor-dashboard",
-      icon: BsDatabaseFill,
-      tone: "indigo",
+      icon: BsFillDatabaseFill,
+      tone: "lightNavy",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
     },
     {
       title: "Occupied Inventory",
       value: String(occupiedInventory),
       suffix: `${inventoryOccupancyPercent}%`,
+      suffixChip: true,
+      trendValue: inventoryOccupancyPercent,
       permission: PERMISSIONS.INVESTOR_OCCUPIED_INVENTORY_CARD.value,
       route: "/app/dashboard/investor-dashboard",
-      icon: MdChair,
+      icon: PiDesktopTowerFill,
       tone: "blue",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 whitespace-nowrap text-[15px] font-pregular",
+      valueClassName: "text-lg font-pmedium",
     },
     {
       title: "Per Sq. Ft.",
@@ -148,15 +189,21 @@ const InvestorDashboardCards = ({
       permission: PERMISSIONS.INVESTOR_PER_SQ_FT_CARD.value,
       clickable: false,
       icon: MdCalculate,
-      tone: "indigo",
+      tone: "lightNavy",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      metricsClassName: "mt-1 flex items-center gap-2 text-sm font-pmedium",
     },
     {
       title: "Asset Value Owned",
       value: format(assetValueOwned),
       permission: PERMISSIONS.INVESTOR_ASSET_VALUE_OWNED_CARD.value,
       clickable: false,
-      icon: MdApartment,
+      icon: MdMapsHomeWork,
       tone: "sky",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
     },
   ];
 
@@ -167,6 +214,8 @@ const InvestorDashboardCards = ({
     green: "bg-[#eafbf3] text-[#12a573]",
     sky: "bg-[#ecf9ff] text-[#13a9e8]",
     indigo: "bg-[#edf1ff] text-[#244ad8]",
+    navy: "bg-[#eaf0f8] text-[#1E3D73]",
+    lightNavy: "bg-[#eaf0f8] text-[#3F6291]",
   };
 
   const visibleCards = cards.filter((card) => hasPermission(card.permission));
@@ -185,21 +234,10 @@ const InvestorDashboardCards = ({
             {...(card.clickable === false
               ? {}
               : { type: "button", onClick: () => navigate(card.route) })}
-            className={`relative flex min-h-[92px] items-center gap-4 rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm ${
-              card.clickable === false
-                ? ""
-                : "transition hover:-translate-y-0.5 hover:shadow-md"
+            className={`relative flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+              card.suffix ? "gap-2" : "gap-4"
             }`}
           >
-            {card.suffix && (
-              <span
-                className={`absolute right-4 top-4 text-sm font-psemibold ${
-                  card.suffixTone || "text-[#13a573]"
-                }`}
-              >
-                {card.suffix}
-              </span>
-            )}
             <span
               className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
                 toneClasses[card.tone]
@@ -207,17 +245,72 @@ const InvestorDashboardCards = ({
             >
               <Icon size={34} />
             </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-pmedium text-[#1234c9]">
-                {card.title}
+            <span className="min-w-0 flex-1">
+              <span className="flex w-full items-center gap-2">
+                <span
+                  className={`block leading-tight text-[#1E3D73] ${
+                    card.titleClassName ||
+                    (card.swapTitleValueStyle
+                      ? "text-base font-semibold"
+                      : "text-sm font-pmedium")
+                  }`}
+                >
+                  {card.title}
+                </span>
+                {card.suffix && (
+                  <span
+                    className={`flex shrink-0 items-center font-semibold ${
+                      compactPercentageChips
+                        ? "gap-0.5 text-[10px]"
+                        : "ml-auto gap-1 text-sm"
+                    } ${
+                      card.suffixChip
+                        ? card.trendValue >= 0
+                          ? `rounded-full bg-[#e8f8ed] text-[#169b4d] ${
+                              compactPercentageChips
+                                ? "px-1.5 py-0.5"
+                                : "px-2.5 py-1"
+                            }`
+                          : `rounded-full bg-[#fdeaea] text-[#d64545] ${
+                              compactPercentageChips
+                                ? "px-1.5 py-0.5"
+                                : "px-2.5 py-1"
+                            }`
+                        : card.suffixTone || "text-[#13a573]"
+                    }`}
+                  >
+                    {card.suffixChip &&
+                      (card.trendValue >= 0 ? (
+                        <MdTrendingUp
+                          size={compactPercentageChips ? 12 : 18}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <MdTrendingDown
+                          size={compactPercentageChips ? 12 : 18}
+                          aria-hidden="true"
+                        />
+                      ))}
+                    {card.suffix}
+                  </span>
+                )}
               </span>
               {card.period && (
-                <span className="block text-xs font-pregular text-[#1234c9]">
+                <span
+                  className={`block text-xs text-[#58709A] ${
+                    card.periodSemibold ? "font-semibold" : "font-pregular"
+                  } ${card.periodClassName || ""}`}
+                >
                   {card.period}
                 </span>
               )}
               {card.metrics ? (
-                <span className="mt-2 flex items-center gap-2 text-sm font-psemibold">
+                <span
+                  className={
+                    card.metricsClassName ||
+                    "mt-2 flex items-center gap-2 text-sm font-semibold"
+                  }
+                >
                   {card.metrics.map((metric, index) => (
                     <span key={metric.label} className="flex items-center gap-2">
                       {index > 0 && (
@@ -229,8 +322,13 @@ const InvestorDashboardCards = ({
                 </span>
               ) : (
                 <span
-                  className={`mt-1 block text-xl font-pbold ${
-                    card.valueTone || "text-[#0035d4]"
+                  className={`mt-1 block ${
+                    card.valueClassName ||
+                    (card.swapTitleValueStyle
+                      ? "text-sm font-pmedium"
+                      : "text-xl font-pbold")
+                  } ${
+                    card.valueTone || "text-[#1E3D73]"
                   }`}
                 >
                   {card.value}
@@ -247,7 +345,7 @@ const InvestorDashboardCards = ({
 const InvestorSnapshotSection = ({
   format,
   hasPermission,
-  incomePerSqFtByYear = {},
+  perSqFtFinancialsByYear = {},
   currentAssetValueOwned = APPRECIATION_BASE_VALUATION,
   currentProjectedFinancials = {},
   actualFinancialsByYear = {},
@@ -255,6 +353,30 @@ const InvestorSnapshotSection = ({
   const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
   const [calendarValue, setCalendarValue] = useState(() => dayjs("2025-04-01"));
   const isCalendarOpen = Boolean(calendarAnchorEl);
+  const getPerSqFtRows = (fiscalYear) => {
+    const values = perSqFtFinancialsByYear[fiscalYear] || {};
+
+    return [
+      {
+        label: "Per Sq. Ft. Income",
+        value: format(values.income || 0),
+        tone: "text-[#12a573]",
+      },
+      {
+        label: "Per Sq. Ft. Expense",
+        value: format(values.expense || 0),
+        tone: "text-[#f04a4a]",
+      },
+      {
+        label: "Per Sq. Ft. Profit/Loss",
+        value: format(values.profitLoss || 0),
+        tone:
+          (values.profitLoss || 0) >= 0
+            ? "text-[#12a573]"
+            : "text-[#f04a4a]",
+      },
+    ];
+  };
   const cards = [
     {
       title: "FY - 2026-27 - PROJECTIONS",
@@ -273,17 +395,13 @@ const InvestorSnapshotSection = ({
         },
         { label: "Exit Inventory", value: "1,000 Desks", tone: "text-[#12a573]" },
         { label: "Asset Owned", value: format(currentAssetValueOwned), tone: "text-[#12a573]" },
-        {
-          label: "Per Sq. Ft.",
-          value: format(incomePerSqFtByYear["FY 2026-27"] || 0),
-          tone: "text-[#12a573]",
-        },
       ],
+      perSqFtRows: getPerSqFtRows("FY 2026-27"),
     },
     {
-      title: "FY - 2025-26",
+      title: "FY - 2025-26 - PROJECTIONS",
       icon: MdCalendarMonth,
-      tone: "text-[#244ad8] bg-[#edf1ff]",
+      tone: "text-[#3F6291] bg-[#eaf0f8]",
       hasCalendar: true,
       rows: [
         { label: "Revenues", value: format(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
@@ -298,17 +416,13 @@ const InvestorSnapshotSection = ({
         },
         { label: "Exit Inventory", value: "850 Desks", tone: "text-[#12a573]" },
         { label: "Asset Owned", value: `${format(35_000_000)}+`, tone: "text-[#12a573]" },
-        {
-          label: "Per Sq. Ft.",
-          value: format(incomePerSqFtByYear["FY 2025-26"] || 0),
-          tone: "text-[#12a573]",
-        },
       ],
+      perSqFtRows: getPerSqFtRows("FY 2025-26"),
     },
     {
-      title: "FY - 2024-25",
+      title: "FY - 2024-25 - PROJECTIONS",
       icon: InvestorBarsIcon,
-      tone: "text-[#244ad8] bg-[#edf1ff]",
+      tone: "text-[#3F6291] bg-[#eaf0f8]",
       rows: [
         { label: "Revenues", value: format(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
         { label: "Expenses", value: format(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
@@ -322,12 +436,8 @@ const InvestorSnapshotSection = ({
         },
         { label: "Exit Inventory", value: "500 Desks", tone: "text-[#12a573]" },
         { label: "Asset Owned", value: `${format(25_000_000)}+`, tone: "text-[#12a573]" },
-        {
-          label: "Per Sq. Ft.",
-          value: format(incomePerSqFtByYear["FY 2024-25"] || 0),
-          tone: "text-[#12a573]",
-        },
       ],
+      perSqFtRows: getPerSqFtRows("FY 2024-25"),
     },
   ];
 
@@ -336,54 +446,84 @@ const InvestorSnapshotSection = ({
   }
 
   return (
-    <WidgetSection border title={<BizNestTitle>3 YEARS SNAPSHOT</BizNestTitle>}>
+    <WidgetSection
+      border
+      borderColor="#1E3D73"
+      bodyBorderColor="#9FB2CF"
+      title={
+        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="block h-5 w-auto object-contain"
+          />
+          <span className="leading-5">3 YEARS SNAPSHOT</span>
+        </span>
+      }
+    >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         {cards.map((card) => {
           const Icon = card.icon;
 
           return (
-            <div
-              key={card.title}
-              className="rounded-lg border border-[#e8ecf4] bg-white p-5 text-left shadow-sm"
-            >
-              <div className="mb-4 flex items-center gap-4">
-                {card.hasCalendar ? (
-                  <button
-                    type="button"
-                    aria-label="Open FY 2025-26 calendar"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setCalendarAnchorEl(event.currentTarget);
-                    }}
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
-                  >
-                    <Icon size={28} />
-                  </button>
-                ) : (
-                  <span
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
-                  >
-                    <Icon size={28} />
+            <div key={card.title} className="flex flex-col gap-3">
+              <div className="rounded-lg border border-[#e8ecf4] bg-white p-5 text-left shadow-sm">
+                <div className="mb-4 flex items-center gap-4">
+                  {card.hasCalendar ? (
+                    <button
+                      type="button"
+                      aria-label="Open FY 2025-26 calendar"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCalendarAnchorEl(event.currentTarget);
+                      }}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
+                    >
+                      <Icon size={28} />
+                    </button>
+                  ) : (
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
+                    >
+                      <Icon size={28} />
+                    </span>
+                  )}
+                  <span className="text-base font-pmedium text-[#1E3D73]">
+                    {card.title}
                   </span>
-                )}
-                <span className="text-base font-pmedium text-[#1234c9]">
-                  {card.title}
-                </span>
+                </div>
+                <div className="flex flex-col divide-y divide-[#edf1f6]">
+                  {card.rows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between gap-4 py-2 text-sm"
+                    >
+                      <span className="text-sm font-pregular text-[#1E3D73]">
+                        {row.label}
+                      </span>
+                      <span className={`text-sm font-pregular ${row.tone}`}>
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="flex flex-col divide-y divide-[#edf1f6]">
-                {card.rows.map((row) => (
+              <div className="rounded-lg border border-[#e8ecf4] bg-white px-5 py-3 text-left shadow-sm">
+                <div className="flex flex-col divide-y divide-[#edf1f6]">
+                  {card.perSqFtRows.map((row) => (
                   <div
                     key={row.label}
                     className="flex items-center justify-between gap-4 py-2 text-sm"
                   >
-                    <span className="text-sm font-pmedium text-[#1234c9]">
+                    <span className="text-sm font-pregular text-[#1E3D73]">
                       {row.label}
                     </span>
-                    <span className={`font-pbold text-base ${row.tone}`}>
+                    <span className={`text-sm font-pregular ${row.tone}`}>
                       {row.value}
                     </span>
                   </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           );
@@ -411,7 +551,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   const axios = useAxiosPrivate();
 
   const { data: simpleRevenue = [], isLoading } = useQuery({
-    queryKey: ["investor-simple-revenue"],
+    queryKey: ["simpleRevenue"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/simple-consolidated-revenue");
       return response.data;
@@ -429,7 +569,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
         vertical: "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
+        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
       });
     });
 
@@ -445,10 +585,10 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Virtual Office",
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus,
+          item.rentStatus ?? item.status,
         ),
       });
     });
@@ -475,30 +615,61 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   }, [simpleRevenue]);
 
   const investorMixIncomeData = useMemo(() => {
-    const actualMonthKeys = new Set(
-      paidRevenueData
-        .map((item) => dayjs(item.date))
-        .filter((date) => date.isValid())
-        .map((date) => date.format("YYYY-MM")),
+    const today = dayjs();
+    const fiscalStartYear = today.month() >= 3 ? today.year() : today.year() - 1;
+    const fiscalStart = dayjs(`${fiscalStartYear}-04-01`).startOf("month");
+    const fiscalEnd = fiscalStart.add(11, "month");
+    const projectionStart = today.startOf("month");
+    const completedMonthCount = projectionStart.diff(fiscalStart, "month");
+    const projectedVerticals = [
+      "Co-Working",
+      "Virtual Office",
+      "Meeting",
+      "Alternate",
+    ];
+
+    const completedFiscalYearData = paidRevenueData.filter((item) => {
+      const date = dayjs(item.date);
+      return (
+        date.isValid() &&
+        !date.isBefore(fiscalStart, "month") &&
+        date.isBefore(projectionStart, "month")
+      );
+    });
+
+    const averageByVertical = Object.fromEntries(
+      projectedVerticals.map((vertical) => {
+        const total = completedFiscalYearData
+          .filter((item) => item.vertical === vertical)
+          .reduce((sum, item) => sum + getNumericAmount(item.revenue), 0);
+
+        return [
+          vertical,
+          completedMonthCount > 0 ? Math.round(total / completedMonthCount) : 0,
+        ];
+      }),
     );
 
-    const projectedRecords = INVESTOR_ANNUAL_MIX_PROJECTED_MONTHS.flatMap(
-      ({ monthKey, date, total, split }) => {
-        if (actualMonthKeys.has(monthKey)) return [];
+    const projectedRecords = [];
+    for (
+      let month = projectionStart;
+      !month.isAfter(fiscalEnd, "month");
+      month = month.add(1, "month")
+    ) {
+      projectedVerticals.forEach((vertical) => {
+        projectedRecords.push({
+          vertical,
+          revenue: averageByVertical[vertical],
+          date: month.format("YYYY-MM-DD"),
+          normalizedStatus: "projected",
+          isProjected: true,
+        });
+      });
+    }
 
-        return split.map(
-          ({ vertical, percent }) => ({
-            vertical,
-            revenue: Math.round((total * percent) / 100),
-            date,
-            normalizedStatus: "projected",
-            isProjected: true,
-          }),
-        );
-      },
+    return [...completedFiscalYearData, ...projectedRecords].filter(
+      (item) => item.vertical !== "Workation",
     );
-
-    return [...paidRevenueData, ...projectedRecords];
   }, [paidRevenueData]);
 
   if (!hasPermission(PERMISSIONS.INVESTOR_ANNUAL_MONTHLY_MIX_INCOME.value)) {
@@ -516,10 +687,23 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       data={investorMixIncomeData}
       dateKey="date"
       valueKey="revenue"
-      graphTitle={<BizNestTitle>ANNUAL MONTHLY MIX INCOME</BizNestTitle>}
+      graphTitle={
+        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="block h-5 w-auto object-contain"
+          />
+          <span className="leading-5">
+            {`Monthly Income Breakdown Distribution - ${fiscalYearLabel(dayjs())}`}
+          </span>
+        </span>
+      }
       chartOptions={options}
       hideYearNavigation
       investorVariant
+      hideHeaderAmounts
+      showFiscalYearInTitle={false}
     />
   );
 };
@@ -543,7 +727,14 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
         investorGraphStyle
         hideSummaryCards
         graphTitle={
-          <BizNestTitle>- INVENTORY VS OCCUPANCY</BizNestTitle>
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-[1em] w-auto object-contain"
+            />
+            <span>- INVENTORY VS OCCUPANCY</span>
+          </span>
         }
         monthlyView
         middleContent={
@@ -578,76 +769,23 @@ const getNumericAmount = (value) => {
   }
   return 0;
 };
-const INVESTOR_PROJECTED_MONTHLY_INCOME_AMOUNT = 70_000_000 / 12;
-const INVESTOR_PROJECTED_MONTHLY_EXPENSE_AMOUNT = 63_000_000 / 12;
-const INVESTOR_ANNUAL_MIX_PROJECTED_MONTHS = [
-  {
-    monthKey: "2026-10",
-    date: "2026-10-01",
-    total: 5_800_000,
-    split: [
-      { vertical: "Co-Working", percent: 55 },
-      { vertical: "Meeting", percent: 4 },
-      { vertical: "Alternate", percent: 21 },
-      { vertical: "Virtual Office", percent: 20 },
-    ],
-  },
-  {
-    monthKey: "2026-11",
-    date: "2026-11-01",
-    total: 5_650_000,
-    split: [
-      { vertical: "Co-Working", percent: 58 },
-      { vertical: "Meeting", percent: 5 },
-      { vertical: "Alternate", percent: 19 },
-      { vertical: "Virtual Office", percent: 18 },
-    ],
-  },
-  {
-    monthKey: "2026-12",
-    date: "2026-12-01",
-    total: 5_900_000,
-    split: [
-      { vertical: "Co-Working", percent: 54 },
-      { vertical: "Meeting", percent: 6 },
-      { vertical: "Alternate", percent: 22 },
-      { vertical: "Virtual Office", percent: 18 },
-    ],
-  },
-  {
-    monthKey: "2027-01",
-    date: "2027-01-01",
-    total: 5_720_000,
-    split: [
-      { vertical: "Co-Working", percent: 52 },
-      { vertical: "Meeting", percent: 8 },
-      { vertical: "Alternate", percent: 20 },
-      { vertical: "Virtual Office", percent: 20 },
-    ],
-  },
-  {
-    monthKey: "2027-02",
-    date: "2027-02-01",
-    total: 5_860_000,
-    split: [
-      { vertical: "Co-Working", percent: 57 },
-      { vertical: "Meeting", percent: 5 },
-      { vertical: "Alternate", percent: 18 },
-      { vertical: "Virtual Office", percent: 20 },
-    ],
-  },
-  {
-    monthKey: "2027-03",
-    date: "2027-03-01",
-    total: 6_050_000,
-    split: [
-      { vertical: "Co-Working", percent: 53 },
-      { vertical: "Meeting", percent: 7 },
-      { vertical: "Alternate", percent: 22 },
-      { vertical: "Virtual Office", percent: 18 },
-    ],
-  },
-];
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
 const INVESTOR_INCOME_COLOR = "#3cb37180";
 const INVESTOR_INCOME_GRADIENT_END = "#3cb37145";
 const INVESTOR_EXPENSE_COLOR = "#ff000080";
@@ -688,7 +826,7 @@ const fiscalYearMonths = (fiscalYear) => {
 };
 
 const InvestorAppreciationCenter = () => {
-  const { format } = useCurrency();
+  const { currency, format } = useCurrency();
   const [valuationAsOf, setValuationAsOf] = useState(() => dayjs());
   const currentFiscalYear = fiscalYearLabel(valuationAsOf);
 
@@ -724,6 +862,17 @@ const InvestorAppreciationCenter = () => {
     ],
     [currentFiscalYear, valuationMonths],
   );
+  const marchValuation = valuationMonths.find(({ month }) =>
+    month.startsWith("Mar-"),
+  );
+  const maximumValuationInCrores = Math.max(
+    0,
+    ...valuationMonths.map(({ amount }) => amount / 10_000_000),
+  );
+  const valuationScaleMaximum = Math.max(
+    8,
+    Math.ceil(maximumValuationInCrores / 2) * 2,
+  );
 
   const options = {
     chart: {
@@ -732,7 +881,7 @@ const InvestorAppreciationCenter = () => {
       fontFamily: "Poppins-Regular",
     },
 
-    colors: ["#18c96e"],
+    colors: ["#3CB371"],
 
     legend: {
       show: false,
@@ -760,16 +909,11 @@ const InvestorAppreciationCenter = () => {
       enabled: true,
       formatter: (_value, { dataPointIndex }) => {
         const amount = valuationMonths[dataPointIndex]?.amount || 0;
-        return format(amount, {
-          notation: "compact",
-          compactDisplay: "short",
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 2,
-        });
+        return format(amount);
       },
       offsetY: -20,
       style: {
-        colors: ["#1234c9"],
+        colors: ["#1E3D73"],
         fontSize: "12px",
         fontWeight: 600,
       },
@@ -784,26 +928,26 @@ const InvestorAppreciationCenter = () => {
       crosshairs: { show: false },
       labels: {
         style: {
-          colors: "#1234c9",
+          colors: "#1E3D73",
         },
       },
     },
 
     yaxis: {
       min: 0,
-      max: 10,
-      tickAmount: 5,
+      max: valuationScaleMaximum,
+      tickAmount: valuationScaleMaximum / 2,
       title: {
-        text: "Property Owned",
+        text: `Property Owned (${currency})`,
         style: {
-          color: "#1234c9",
+          color: "#1E3D73",
         },
       },
 
       labels: {
         formatter: (value) => Number(value).toFixed(0),
         style: {
-          colors: "#1234c9",
+          colors: "#1E3D73",
         },
       },
     },
@@ -816,7 +960,7 @@ const InvestorAppreciationCenter = () => {
         return (
           `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
           `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${month || ""}</div>` +
-          `<div style="padding:10px 12px;font-size:12px;color:#111827;">Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></div>` +
+          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#3CB371;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></span></div>` +
           `</div>`
         );
       },
@@ -827,17 +971,33 @@ const InvestorAppreciationCenter = () => {
     <div>
       <YearlyGraph
         title={
-          <BizNestTitle prefix="REAL ESTATE OWNED BY">
-            {`- ${currentFiscalYear}`}
-          </BizNestTitle>
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <span>REAL ESTATE OWNED BY</span>
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-5 w-auto object-contain"
+            />
+            <span>{`- ${currentFiscalYear}`}</span>
+          </span>
         }
         data={graphData}
         options={options}
         currentYear={currentFiscalYear}
         categories={valuationMonths.map(({ month }) => month)}
+        headerRightContent={
+          marchValuation ? (
+            <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium text-[#274784]">
+              <span>REAL ESTATE VALUE :</span>
+              <span>{format(marchValuation.amount)}</span>
+            </div>
+          ) : null
+        }
         hideYearNavigation
         chartHeight={360}
         refreshOnDataChange
+        sectionBorderColor="#1E3D73"
+        sectionBodyBorderColor="#9FB2CF"
       />
     </div>
   );
@@ -1037,24 +1197,36 @@ const InvestorUniqueClientsGraph = () => {
     const elapsedMonths =
       financialYear === currentFinancialYear
         ? currentDate.month() >= 3
-          ? currentDate.month() - 2
-          : 12
+          ? currentDate.month() - 3
+          : currentDate.month() + 9
         : financialYear < currentFinancialYear
           ? 12
           : 1;
 
-    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(count / elapsedMonths).toFixed(2)}`;
+    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(
+      count / Math.max(elapsedMonths, 1)
+    ).toFixed(2)}`;
   };
 
   return (
     <LeadsLayout
       data={clientsByMonth}
       hideAccordion
-      title={<BizNestTitle>UNIQUE CLIENTS</BizNestTitle>}
+      title={
+        <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="h-[1em] w-auto object-contain"
+          />
+          <span>UNIQUE CLIENTS</span>
+        </span>
+      }
       titleAmount={averageMonthlyUniqueClientTitle}
       hideMonthAxisTitle
       noOuterPadding
       investorBlueStyle
+      investorTitleAmountChip
       hideFinancialYearControls
     >
       {/*
@@ -1093,8 +1265,12 @@ const parseMeetingMinutes = (duration = "") => {
   return match[2] === "h" ? value * 60 : value;
 };
 
-const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) => {
-  const { currency, format } = useCurrency();
+const InvestorIncomeExpenseGraph = ({
+  assetValueOwned,
+  projectedFinancials,
+  snapshotAssetValueOwned = assetValueOwned,
+}) => {
+  const { currency, convert, format } = useCurrency();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const { hasPermission } = useUserPermissions();
@@ -1237,7 +1413,7 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       ...(snapshotRevenue.meetingRevenue || []).map((item) => ({
         amount: item.taxable,
         date: item.date,
-        status: item.status,
+        status: isMeetingFinancePaid(item) ? "paid" : "unpaid",
       })),
       ...(snapshotRevenue.alternateRevenues || []).map((item) => ({
         amount: item.taxableAmount,
@@ -1245,9 +1421,9 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
         status: item.status,
       })),
       ...(snapshotRevenue.virtualOfficeRevenues || []).map((item) => ({
-        amount: item.revenue ?? item.taxableAmount,
+        amount: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
-        status: item.status ?? item.rentStatus,
+        status: item.rentStatus ?? item.status,
       })),
       ...(snapshotRevenue.workationRevenues || []).map((item) => ({
         amount: item.taxableAmount,
@@ -1294,22 +1470,25 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       ]),
     );
   }, [budgetData, snapshotIncomeSources]);
-  const incomePerSqFtByYear = useMemo(() => {
+  const perSqFtFinancialsByYear = useMemo(() => {
     if (!totalSqft) return {};
 
     return Object.fromEntries(
       Object.entries(actualFinancialsByYear).map(([fiscalYear, values]) => [
         fiscalYear,
-        values.income / totalSqft,
+        {
+          income: values.income / totalSqft,
+          expense: values.expense / totalSqft,
+          profitLoss: values.profitLoss / totalSqft,
+        },
       ]),
     );
   }, [actualFinancialsByYear, totalSqft]);
 
  const {
     series,
-    selectedIncome,
-    selectedExpense,
-    projectionAmount,
+    projectedIncomeTotal,
+    projectedExpenseTotal,
     projectionFlags,
   } = useMemo(() => {
     const incomeByYear = new Map();
@@ -1322,21 +1501,9 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       map.set(year, values);
     };
 
-    revenueExpenseData.forEach((entry) => {
-      const income = entry?.income || {};
-      [
-        ...asArray(income.meetingRevenue),
-        ...asArray(income.alternateRevenues),
-        ...asArray(income.virtualOfficeRevenues),
-        ...asArray(income.workationRevenues),
-        ...asArray(income.coworkingRevenues),
-      ].forEach((item) =>
-        addAmount(
-          incomeByYear,
-          item.date || item.rentDate || item.invoiceCreationDate,
-          item.taxableAmount || item.revenue || item.taxable,
-        ),
-      );
+    snapshotIncomeSources.forEach((item) => {
+      if (getNormalizedPaymentStatus(item.status) !== "paid") return;
+      addAmount(incomeByYear, item.date, item.amount);
     });
 
     budgetData.forEach((item) =>
@@ -1349,23 +1516,41 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       currentFiscalYear,
     ]);
     const projectedMonthsByYear = new Map();
+    const projectionAveragesByYear = new Map();
+    const currentFiscalMonthIndex = fiscalMonthIndex(dayjs());
     const graphSeries = [...years].flatMap((group) => {
       const incomeValues = incomeByYear.get(group) || Array(12).fill(0);
       const expenseValues = expenseByYear.get(group) || Array(12).fill(0);
+      const isCurrentYear = group === currentFiscalYear;
+      const completedMonthCount = isCurrentYear ? currentFiscalMonthIndex : 12;
+      const averageIncome = completedMonthCount
+        ? Math.round(
+            incomeValues
+              .slice(0, completedMonthCount)
+              .reduce((sum, value) => sum + value, 0) / completedMonthCount,
+          )
+        : 0;
+      const averageExpense = completedMonthCount
+        ? Math.round(
+            expenseValues
+              .slice(0, completedMonthCount)
+              .reduce((sum, value) => sum + value, 0) / completedMonthCount,
+          )
+        : 0;
       const projectedFlags = incomeValues.map(
-        (incomeAmount, monthIndex) =>
-          incomeAmount === 0 && expenseValues[monthIndex] === 0,
+        (_incomeAmount, monthIndex) =>
+          isCurrentYear && monthIndex >= currentFiscalMonthIndex,
       );
       projectedMonthsByYear.set(group, projectedFlags);
+      projectionAveragesByYear.set(group, {
+        income: averageIncome,
+        expense: averageExpense,
+      });
       const incomeGraphValues = incomeValues.map((incomeAmount, monthIndex) =>
-        projectedFlags[monthIndex]
-          ? INVESTOR_PROJECTED_MONTHLY_INCOME_AMOUNT
-          : incomeAmount,
+        projectedFlags[monthIndex] ? averageIncome : incomeAmount,
       );
       const expenseGraphValues = expenseValues.map((expenseAmount, monthIndex) =>
-        projectedFlags[monthIndex]
-          ? INVESTOR_PROJECTED_MONTHLY_EXPENSE_AMOUNT
-          : expenseAmount,
+        projectedFlags[monthIndex] ? averageExpense : expenseAmount,
       );
       return [
         { name: "Income", group, data: incomeGraphValues },
@@ -1376,6 +1561,9 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
     const expense = expenseByYear.get(selectedFiscalYear) || [];
     const selectedProjectionFlags =
       projectedMonthsByYear.get(selectedFiscalYear) || Array(12).fill(false);
+    const selectedProjectionAverages = projectionAveragesByYear.get(
+      selectedFiscalYear,
+    ) || { income: 0, expense: 0 };
 
     return {
       series: graphSeries,
@@ -1383,22 +1571,25 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
         income: income.reduce((sum, value) => sum + value, 0),
         expense: expense.reduce((sum, value) => sum + value, 0),
       },
-      selectedIncome: income,
-      selectedExpense: expense,
-      projectionAmount: selectedProjectionFlags.reduce(
+      projectedIncomeTotal: selectedProjectionFlags.reduce(
         (sum, isProjected, monthIndex) =>
           sum +
           (isProjected
-            ? INVESTOR_PROJECTED_MONTHLY_INCOME_AMOUNT
-            : income[monthIndex] || 0) -
+            ? selectedProjectionAverages.income
+            : income[monthIndex] || 0),
+        0,
+      ),
+      projectedExpenseTotal: selectedProjectionFlags.reduce(
+        (sum, isProjected, monthIndex) =>
+          sum +
           (isProjected
-            ? INVESTOR_PROJECTED_MONTHLY_EXPENSE_AMOUNT
+            ? selectedProjectionAverages.expense
             : expense[monthIndex] || 0),
         0,
       ),
       projectionFlags: selectedProjectionFlags,
     };
-  }, [budgetData, currentFiscalYear, revenueExpenseData, selectedFiscalYear]);
+  }, [budgetData, currentFiscalYear, selectedFiscalYear, snapshotIncomeSources]);
   const displayedProjectionSeries = useMemo(
     () =>
       series.map((item) => ({
@@ -1430,6 +1621,15 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
         : [...current, label],
     );
   };
+  const projectionAxisStep = 2_500_000;
+  const highestProjectionValue = Math.max(
+    0,
+    ...series.flatMap((item) => item.data.map((value) => Number(value) || 0)),
+  );
+  const projectionAxisMax = Math.max(
+    7_500_000,
+    Math.ceil(highestProjectionValue / projectionAxisStep) * projectionAxisStep,
+  );
   const options = {
     chart: {
       id: "investor-income-vs-expense",
@@ -1456,6 +1656,7 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
         horizontal: false,
         columnWidth: "70%",
         borderRadius: 5,
+        dataLabels: { position: "top" },
       },
     },
     stroke: {
@@ -1463,7 +1664,28 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       width: 2,
       colors: ["#ffffff"],
     },
-    dataLabels: { enabled: false },
+    dataLabels: {
+      enabled: true,
+      formatter: (value) =>
+        Number(value) > 0
+          ? currency === "INR"
+            ? `${format(value / 100_000, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}L`
+            : format(value, {
+                notation: "compact",
+                maximumFractionDigits: 2,
+              })
+          : "",
+      offsetY: -20,
+      style: {
+        colors: ["#1E3D73"],
+        fontSize: "12px",
+        fontWeight: 600,
+      },
+      background: { enabled: false },
+    },
     legend: {
       show: false,
     },
@@ -1483,34 +1705,40 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
       labels: {
         show: true,
         style: {
-          colors: "#1234c9",
+          colors: "#1E3D73",
         },
       },
     },
     yaxis: {
       min: 0,
-      max: 10_000_000,
-      tickAmount: 5,
+      max: projectionAxisMax,
+      tickAmount: projectionAxisMax / projectionAxisStep,
       forceNiceScale: false,
       title: {
-        text: `Amount In Lakhs (${currency})`,
+        text:
+          currency === "INR"
+            ? "Amount In Lakhs (INR)"
+            : `Amount In Thousands (${currency})`,
         style: {
-          color: "#1234c9",
+          color: "#1E3D73",
         },
       },
       labels: {
         show: true,
         style: {
-          colors: "#1234c9",
+          colors: "#1E3D73",
         },
-        formatter: (value) => `${Math.round(value / 100000)}`,
+        formatter: (value) =>
+          currency === "INR"
+            ? `${Math.round(value / 100_000)}`
+            : `${Math.round(convert(value) / 1_000)}`,
       },
     },
     tooltip: { y: { formatter: (value) => format(value) } },
   };
 
   const projectionLegend = (
-    <div className="flex items-center justify-center gap-4 text-sm">
+    <div className="flex items-center justify-center gap-4 text-xs">
       {[
         { label: "Income", color: INVESTOR_INCOME_COLOR },
         { label: "Expense", color: INVESTOR_EXPENSE_COLOR },
@@ -1520,7 +1748,7 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
           key={item.label}
           type="button"
           onClick={() => toggleProjectionLegendItem(item.label)}
-          className={`flex items-center gap-1.5 text-[#1234c9] ${
+          className={`flex items-center gap-1.5 text-[#1E3D73] ${
             hiddenProjectionLegendItems.includes(item.label) ? "opacity-40" : ""
           }`}
         >
@@ -1541,25 +1769,34 @@ const InvestorIncomeExpenseGraph = ({ assetValueOwned, projectedFinancials }) =>
         options={options}
         chartId="bargraph-investor-income-expense"
         title={
-          <BizNestTitle>{`PROJECTIONS - ${selectedFiscalYear}`}</BizNestTitle>
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-[1em] w-auto object-contain"
+            />
+            <span>{`PROJECTIONS - ${selectedFiscalYear}`}</span>
+          </span>
         }
-        chartHeight={400}
+        chartHeight={360}
         chartTopContent={projectionLegend}
         headerRightContent={
           <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
             <span>Projection:</span>
-            <span>{format(projectionAmount)}</span>
+            <span>{format(projectedIncomeTotal + projectedExpenseTotal)}</span>
           </div>
         }
         currentYear={selectedFiscalYear}
         onYearChange={setSelectedFiscalYear}
         hideYearNavigation
+        sectionBorderColor="#1E3D73"
+        sectionBodyBorderColor="#9FB2CF"
       />
       <InvestorSnapshotSection
         format={format}
         hasPermission={hasPermission}
-        incomePerSqFtByYear={incomePerSqFtByYear}
-        currentAssetValueOwned={assetValueOwned}
+        perSqFtFinancialsByYear={perSqFtFinancialsByYear}
+        currentAssetValueOwned={snapshotAssetValueOwned}
         currentProjectedFinancials={projectedFinancials}
         actualFinancialsByYear={actualFinancialsByYear}
       />
@@ -1575,6 +1812,21 @@ const InvestorDashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { hasPermission } = useUserPermissions();
+  const [isBrowserZoomedOut, setIsBrowserZoomedOut] = useState(false);
+
+  useEffect(() => {
+    const updateBrowserZoom = () => {
+      const viewportZoomRatio = window.outerWidth / window.innerWidth;
+      setIsBrowserZoomedOut(
+        viewportZoomRatio < 0.9 || window.devicePixelRatio < 0.9,
+      );
+    };
+
+    updateBrowserZoom();
+    window.addEventListener("resize", updateBrowserZoom);
+    return () => window.removeEventListener("resize", updateBrowserZoom);
+  }, []);
+
   const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
   const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
   const showAppreciationCenterPage = location.pathname.endsWith(
@@ -1758,6 +2010,8 @@ const InvestorDashboard = () => {
   const assetValueOwned =
     APPRECIATION_BASE_VALUATION +
     APPRECIATION_MONTHLY_INCREMENT * currentAppreciationMonthIndex;
+  const marchAssetValueOwned =
+    APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * 6;
   const canViewIncomeExpenseGraph = hasPermission(
     PERMISSIONS.INVESTOR_INCOME_EXPENSE_GRAPH.value,
   );
@@ -1903,53 +2157,68 @@ const InvestorDashboard = () => {
       values[fiscalMonthIndex(date)] += Number(amount) || 0;
     };
 
-    revenueExpenseData.forEach((entry) => {
-      const entryIncome = entry?.income || {};
-      [
-        ...asArray(entryIncome.meetingRevenue),
-        ...asArray(entryIncome.alternateRevenues),
-        ...asArray(entryIncome.virtualOfficeRevenues),
-        ...asArray(entryIncome.workationRevenues),
-        ...asArray(entryIncome.coworkingRevenues),
-      ].forEach((item) => {
-        const date = item.date || item.rentDate || item.invoiceCreationDate;
-        const amount =
-          Number(item.taxableAmount) ||
-          Number(item.revenue) ||
-          Number(item.taxable) ||
-          0;
-        addAmount(
-          income,
-          date,
-          amount,
-        );
-        if (
-          date &&
-          dayjs(date).isValid() &&
-          fiscalYearLabel(date) === previousFiscalYear
-        ) {
-          previousYearRevenue += amount;
-        }
-      });
+    const incomeSources = [
+      ...(investorSimpleRevenue.meetingRevenue || []).map((item) => ({
+        amount: item.taxable,
+        date: item.date,
+        status: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+      })),
+      ...(investorSimpleRevenue.alternateRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.invoiceCreationDate,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.virtualOfficeRevenues || []).map((item) => ({
+        amount: getVirtualOfficeReportingAmount(item),
+        date: item.rentDate,
+        status: item.rentStatus ?? item.status,
+      })),
+      ...(investorSimpleRevenue.workationRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.date,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.coworkingRevenues || []).map((item) => ({
+        amount: item.revenue,
+        date: item.rentDate,
+        status: item.rentStatus,
+      })),
+    ];
+
+    incomeSources.forEach((item) => {
+      if (getNormalizedPaymentStatus(item.status) !== "paid") return;
+
+      const amount = getNumericAmount(item.amount);
+      addAmount(income, item.date, amount);
+      if (
+        item.date &&
+        dayjs(item.date).isValid() &&
+        fiscalYearLabel(item.date) === previousFiscalYear
+      ) {
+        previousYearRevenue += amount;
+      }
     });
     investorBudgetData.forEach((item) =>
       addAmount(expense, item?.dueDate, item?.actualAmount),
     );
 
-    const totals = income.reduce(
-      (result, incomeAmount, monthIndex) => {
-        const expenseAmount = expense[monthIndex];
-        const isProjected = incomeAmount === 0 && expenseAmount === 0;
-        result.revenue += isProjected
-          ? INVESTOR_PROJECTED_MONTHLY_INCOME_AMOUNT
-          : incomeAmount;
-        result.expense += isProjected
-          ? INVESTOR_PROJECTED_MONTHLY_EXPENSE_AMOUNT
-          : expenseAmount;
-        return result;
-      },
-      { revenue: 0, expense: 0 },
-    );
+    const completedMonthCount = fiscalMonthIndex(dayjs());
+    const actualRevenue = income
+      .slice(0, completedMonthCount)
+      .reduce((sum, amount) => sum + amount, 0);
+    const actualExpense = expense
+      .slice(0, completedMonthCount)
+      .reduce((sum, amount) => sum + amount, 0);
+    const averageRevenue = completedMonthCount
+      ? Math.round(actualRevenue / completedMonthCount)
+      : 0;
+    const averageExpense = completedMonthCount
+      ? Math.round(actualExpense / completedMonthCount)
+      : 0;
+    const totals = {
+      revenue: averageRevenue,
+      expense: averageExpense,
+    };
     const profitLoss = totals.revenue - totals.expense;
 
     return {
@@ -1957,10 +2226,10 @@ const InvestorDashboard = () => {
       expense: totals.expense,
       profitLoss,
       revenueGrowth: previousYearRevenue
-        ? ((totals.revenue - previousYearRevenue) / previousYearRevenue) * 100
+        ? (((averageRevenue * 12) - previousYearRevenue) / previousYearRevenue) * 100
         : 0,
     };
-  }, [investorBudgetData, revenueExpenseData]);
+  }, [investorBudgetData, investorSimpleRevenue]);
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
@@ -1972,19 +2241,33 @@ const InvestorDashboard = () => {
               alt="Investor dashboard banner"
               className="h-full w-full object-cover object-left"
             />
-            <div className="absolute inset-y-0 left-0 flex w-[54%] flex-col justify-center px-0 py-3">
-              <p className="absolute left-0 top-2 font-pmedium text-xs uppercase tracking-[0.02em] text-[#6c7cff] sm:text-base lg:text-lg">
+            <div className="absolute inset-y-0 left-0 flex w-[58%] flex-col justify-between px-0 py-2">
+              <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#58709A] sm:text-base lg:text-lg">
                 Investor Dashboard
               </p>
-              <h1 className="mt-1 font-serif text-3xl font-semibold leading-[0.88] text-[#1234c9] sm:text-5xl md:whitespace-nowrap lg:text-5xl min-[1800px]:text-6xl">
+              <h1
+                className={`max-w-full font-serif text-3xl font-semibold leading-[0.88] text-[#1E3D73] sm:text-5xl md:whitespace-nowrap ${
+                  isBrowserZoomedOut
+                    ? "lg:text-7xl xl:text-[74px]"
+                    : "lg:text-5xl xl:text-[56px]"
+                }`}
+              >
                 MARKET LEADER
               </h1>
-              <p className="mt-1 font-serif text-xl font-semibold leading-[0.94] text-[#1234c9] sm:text-4xl md:whitespace-nowrap lg:text-4xl min-[1800px]:text-5xl">
-                Indian Destination Workspace.
+              <p
+                className={`max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:text-3xl md:whitespace-nowrap ${
+                  isBrowserZoomedOut
+                    ? "lg:text-[46px]"
+                    : "lg:text-[35px]"
+                }`}
+              >
+                Indian Destination Workspace
               </p>
-              <p className="mt-2 font-pmedium text-xs uppercase text-[#6c7cff] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
-                WORK TO LIVE.
-                <span className="ml-3 text-[#f04a4a]">LIVE TO WORK</span>
+              <p className="font-pregular text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
+                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-0.5 after:w-full after:-rotate-6 after:bg-[#E64B4B] after:content-['']">
+                  WORK TO LIVE.
+                </span>
+                <span className="ml-3 text-[#E64B4B]">LIVE TO WORK</span>
               </p>
             </div>
           </div>
@@ -1998,7 +2281,7 @@ const InvestorDashboard = () => {
           totalInventory={totalInventory}
           occupiedInventory={occupiedInventory}
           inventoryOccupancyPercent={inventoryOccupancyPercent}
-          assetValueOwned={assetValueOwned}
+          assetValueOwned={marchAssetValueOwned}
           incomePerSqFt={incomePerSqFt}
           expensePerSqFt={expensePerSqFt}
           averageUniqueClients={averageUniqueClients}
@@ -2007,6 +2290,7 @@ const InvestorDashboard = () => {
           projectedExpense={projectedFinancials.expense}
           projectedProfitLoss={projectedFinancials.profitLoss}
           projectedRevenueGrowth={projectedFinancials.revenueGrowth}
+          compactPercentageChips={!isBrowserZoomedOut}
         />
       )}
       {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
@@ -2014,6 +2298,7 @@ const InvestorDashboard = () => {
           <InvestorIncomeExpenseGraph
             assetValueOwned={assetValueOwned}
             projectedFinancials={projectedFinancials}
+            snapshotAssetValueOwned={marchAssetValueOwned}
           />
         </div>
       )}

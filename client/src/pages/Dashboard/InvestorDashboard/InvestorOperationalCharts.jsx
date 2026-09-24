@@ -68,12 +68,20 @@ const singleLineLegendFormatter = (seriesName) =>
 const blueLegendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1234c9;">${seriesName}</span>`;
 
+const navyLegendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1E3D73;">${seriesName}</span>`;
+
+const singleLineNavyLegendFormatter = (seriesName) =>
+  `<span title="${seriesName}" style="display:inline-block;white-space:nowrap;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1E3D73;">${seriesName}</span>`;
+
 const pieOptions = (
   labels,
   suffix,
   colors = palette,
   singleLine = false,
   blueLegend = false,
+  navyLegend = false,
+  compactLegend = false,
 ) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
@@ -84,26 +92,30 @@ const pieOptions = (
     horizontalAlign: "center",
     width: "100%",
     height: labels.length > 8 ? 72 : 48,
-    ...(singleLine
+    ...(singleLine || compactLegend
       ? {
-          width: 850,
-          fontSize: "10px",
+          width: singleLine ? 850 : "100%",
+          fontSize: compactLegend ? "12px" : "10px",
           markers: { width: 8, height: 8 },
         }
       : {}),
     itemMargin: {
-      horizontal: singleLine ? 2 : 4,
-      vertical: singleLine ? 0 : 4,
+      horizontal: singleLine || compactLegend ? 2 : 4,
+      vertical: singleLine || compactLegend ? 0 : 4,
     },
-    ...(blueLegend
+    ...(blueLegend || navyLegend
       ? {
           labels: {
-            colors: "#1234c9",
+            colors: navyLegend ? "#1E3D73" : "#1234c9",
           },
         }
       : {}),
-    formatter: blueLegend
-      ? blueLegendFormatter
+    formatter: compactLegend
+      ? singleLineNavyLegendFormatter
+      : navyLegend
+      ? navyLegendFormatter
+      : blueLegend
+        ? blueLegendFormatter
       : singleLine
         ? singleLineLegendFormatter
         : legendFormatter,
@@ -384,18 +396,32 @@ const InvestorOperationalCharts = ({
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
-    const hasScrollableLegend = ["sector", "age"].includes(key);
+    const hasScrollableLegend = ["sector", "age", "gender", "india"].includes(
+      key,
+    );
     const useBlueText =
       ["age", "gender", "sector", "india"].includes(key) ||
       (investorInventoryStyle && ["sector", "india"].includes(key));
+    const useNavyText = ["age", "gender", "sector", "india"].includes(key);
+    const useInvestorBorder = ["age", "gender", "sector", "india"].includes(
+      key,
+    );
     const customChartLegend = hasScrollableLegend && (
       <div className="w-full max-w-full px-2 pb-1 select-none">
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+        <div
+          className={`flex items-center justify-center gap-y-2 ${
+            key === "age" ? "flex-nowrap gap-x-2" : "flex-wrap gap-x-4"
+          }`}
+        >
           {labels.map((label, index) => (
             <div
               key={label}
               className={`flex min-w-0 items-center gap-1 text-xs ${
-                useBlueText ? "text-[#1234c9]" : ""
+                useNavyText
+                  ? "text-[#1E3D73]"
+                  : useBlueText
+                    ? "text-[#1234c9]"
+                    : ""
               }`}
             >
               <span
@@ -417,9 +443,13 @@ const InvestorOperationalCharts = ({
     return (
       <WidgetSection
         key={key}
+        borderColor={useInvestorBorder ? "#1E3D73" : undefined}
+        bodyBorderColor={useInvestorBorder ? "#9FB2CF" : undefined}
         title={
           useBlueText ? (
-            <span className="text-[#1234c9]">{chart.title}</span>
+            <span className={useNavyText ? "text-[#1E3D73]" : "text-[#1234c9]"}>
+              {chart.title}
+            </span>
           ) : (
             chart.title
           )
@@ -466,10 +496,15 @@ const InvestorOperationalCharts = ({
                 chartColors,
                 hasScrollableLegend,
                 useBlueText,
+                useNavyText,
+                key === "age",
               )}
               width={500}
               height={350}
               customLegend={customChartLegend}
+              customChartAreaHeight={
+                key === "age" || key === "gender" ? 302 : undefined
+              }
               centerAlign
             />
           )}

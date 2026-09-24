@@ -36,6 +36,8 @@ const YearlyGraph = ({
   categories,
   dateKey, // 👈 New prop
   minFiscalYear,
+  sectionBorderColor,
+  sectionBodyBorderColor,
 }) => {
    const yearKey = dataPoint === "name" ? "name" : "group";
   const currentDate = new Date();
@@ -163,6 +165,8 @@ const YearlyGraph = ({
         headerCenterContent={headerCenterContent}
         headerCenterContentInline={headerCenterContentInline}
         height={sectionHeight}
+        borderColor={sectionBorderColor}
+        bodyBorderColor={sectionBodyBorderColor}
       >
         <div className="flex flex-col gap-4">
           {chartTopContent}

@@ -167,24 +167,24 @@ const Header = ({
               }`}
             >
               {showCurrencySelector && (
-                <nav className="flex shrink-0 items-center gap-6 whitespace-nowrap text-sm font-pmedium text-[#1234c9] xl:gap-10">
+                <nav className="flex shrink-0 items-center gap-6 whitespace-nowrap text-sm font-pmedium text-[#1E3D73] xl:gap-10">
                   <button
                     type="button"
-                    className="relative pb-2 text-[#1234c9] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#f04a4a]"
+                    className="relative pb-2 text-[#1E3D73] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:rounded-full after:bg-[#f04a4a]"
                     aria-current="page"
                   >
                     CURRENT COMPANY POSITION
                   </button>
                   <button
                     type="button"
-                    className="pb-2 text-[#1234c9]"
+                    className="relative pb-2 text-[#1E3D73] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-[#f04a4a] after:transition-transform hover:after:scale-x-100"
                     aria-disabled="true"
                   >
                     POST SERIES A
                   </button>
                   <button
                     type="button"
-                    className="pb-2 text-[#1234c9]"
+                    className="relative pb-2 text-[#1E3D73] after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-full after:origin-left after:scale-x-0 after:rounded-full after:bg-[#f04a4a] after:transition-transform hover:after:scale-x-100"
                     aria-disabled="true"
                   >
                     END VISION

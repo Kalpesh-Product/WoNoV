@@ -192,8 +192,63 @@ const CheckAvailability = ({
       );
     }, 0);
 
+    const getActualOccupancy = (month) => {
+      const occupied = monthlyClients.reduce((sum, client) => {
+        const buildingName = client?.unit?.building?.buildingName;
+        if (!isMonthlyGraphBuilding(buildingName)) return sum;
+
+        const startDate = dayjs(client?.startDate);
+        if (!startDate.isValid()) return sum;
+
+        const endDate = client?.endDate ? dayjs(client.endDate) : null;
+        const effectiveEndDate = endDate?.isValid() ? endDate : dayjs();
+        const overlapsMonth =
+          startDate.isBefore(month.end.add(1, "day")) &&
+          effectiveEndDate.isAfter(month.start.subtract(1, "day"));
+
+        if (!overlapsMonth) return sum;
+
+        return (
+          sum +
+          (Number(client?.openDesks) || 0) +
+          (Number(client?.cabinDesks) || 0)
+        );
+      }, 0);
+
+      const occupiedSeats = Math.min(occupied, totalInventory);
+
+      return {
+        occupied: occupiedSeats,
+        remaining: Math.max(totalInventory - occupiedSeats, 0),
+      };
+    };
+
+    const completedInvestorMonths = investorGraphStyle
+      ? months.filter((month) => month.start.isBefore(currentMonth, "month"))
+      : [];
+    const investorProjection = completedInvestorMonths.reduce(
+      (projection, month) => {
+        const actual = getActualOccupancy(month);
+
+        return {
+          occupied: projection.occupied + actual.occupied,
+          remaining: projection.remaining + actual.remaining,
+        };
+      },
+      { occupied: 0, remaining: 0 },
+    );
+    const completedMonthCount = completedInvestorMonths.length;
+    const projectedOccupied = completedMonthCount
+      ? Math.round(investorProjection.occupied / completedMonthCount)
+      : 0;
+    const projectedRemaining = completedMonthCount
+      ? Math.round(investorProjection.remaining / completedMonthCount)
+      : 0;
+
     return months.map((month) => {
-      const isUpcoming = month.start.isAfter(currentMonth, "month");
+      const isUpcoming = investorGraphStyle
+        ? !month.start.isBefore(currentMonth, "month")
+        : month.start.isAfter(currentMonth, "month");
 
       if (isUpcoming) {
         if (!investorGraphStyle) {
@@ -210,58 +265,22 @@ const CheckAvailability = ({
         const projectedOverride = PROJECTED_MONTH_OVERRIDES[month.label] || {};
         const projectedTotalInventory =
           Number(projectedOverride.total) || totalInventory;
-        const projectedOccupiedSeats = Math.max(
-          Math.min(
-            Number(projectedOverride.occupied) || projectedTotalInventory,
-            projectedTotalInventory,
-          ),
-          0,
-        );
-        const cappedProjectedRemainingSeats = Math.max(
-          projectedTotalInventory - projectedOccupiedSeats,
-          0,
-        );
-
         return {
           name: month.label,
-          occupied: projectedOccupiedSeats,
-          remaining: cappedProjectedRemainingSeats,
+          occupied: projectedOccupied,
+          remaining: projectedRemaining,
           upcoming: 0,
           total: projectedTotalInventory,
           isUpcoming: true,
         };
       }
 
-      const occupied = monthlyClients.reduce((sum, client) => {
-        const buildingName = client?.unit?.building?.buildingName;
-        if (!isMonthlyGraphBuilding(buildingName)) return sum;
-
-        const startDate = dayjs(client?.startDate);
-        if (!startDate.isValid()) return sum;
-
-        const endDate = client?.endDate ? dayjs(client.endDate) : null;
-        const effectiveEndDate =
-          endDate?.isValid() ? endDate : dayjs();
-        const overlapsMonth =
-          startDate.isBefore(month.end.add(1, "day")) &&
-          effectiveEndDate.isAfter(month.start.subtract(1, "day"));
-
-        if (!overlapsMonth) return sum;
-
-        return (
-          sum +
-          (Number(client?.openDesks) || 0) +
-          (Number(client?.cabinDesks) || 0)
-        );
-      }, 0);
-
-      const occupiedSeats = Math.min(occupied, totalInventory);
-      const remainingSeats = Math.max(totalInventory - occupiedSeats, 0);
+      const actual = getActualOccupancy(month);
 
       return {
         name: month.label,
-        occupied: occupiedSeats,
-        remaining: remainingSeats,
+        occupied: actual.occupied,
+        remaining: actual.remaining,
         upcoming: 0,
         total: totalInventory,
         isUpcoming: false,
@@ -357,7 +376,7 @@ const CheckAvailability = ({
       data: inventoryGraphData.map((item) => item.occupied),
     },
     {
-      name: investorGraphStyle ? "Un - Occupied" : "Remaining",
+      name: investorGraphStyle ? "Unoccupied" : "Remaining",
       data: inventoryGraphData.map((item) => item.remaining),
     },
     ...(monthlyView && !investorGraphStyle
@@ -455,7 +474,7 @@ const CheckAvailability = ({
 
             <div style="display:flex; justify-content:space-between; font-size : 12px">
               <div style="width : 100%">
-                ${investorGraphStyle ? "Un - Occupied" : "Remaining"}
+                ${investorGraphStyle ? "Unoccupied" : "Remaining"}
               </div>
               <div style="width : 100%">
               ${remaining} desks
@@ -506,7 +525,7 @@ const CheckAvailability = ({
           ...(investorGraphStyle
             ? {
               style: {
-                color: "#1234c9",
+                color: "#1E3D73",
               },
             }
             : {}),
@@ -515,7 +534,7 @@ const CheckAvailability = ({
           ? {
             labels: {
               style: {
-                colors: "#1234c9",
+                colors: "#1E3D73",
               },
             },
           }
@@ -527,7 +546,7 @@ const CheckAvailability = ({
           ...(investorGraphStyle
             ? {
               style: {
-                color: "#1234c9",
+                color: "#1E3D73",
               },
             }
             : {}),
@@ -536,7 +555,7 @@ const CheckAvailability = ({
           ...(investorGraphStyle
             ? {
               style: {
-                colors: "#1234c9",
+                colors: "#1E3D73",
               },
             }
             : {}),
@@ -549,7 +568,7 @@ const CheckAvailability = ({
         ...(investorGraphStyle
           ? {
             labels: {
-              colors: "#1234c9",
+              colors: "#1E3D73",
             },
           }
           : {}),
@@ -569,7 +588,7 @@ const CheckAvailability = ({
                     return Number(item.total) || "";
                   },
                   style: {
-                    color: "#1234c9",
+                    color: "#1E3D73",
                     fontSize: "12px",
                     fontWeight: 700,
                   },
@@ -634,6 +653,46 @@ const CheckAvailability = ({
           const remaining = Number(selectedItem.remaining) || 0;
           const total = Number(selectedItem.total) || occupied + remaining;
 
+          if (investorGraphStyle && monthlyView) {
+            const occupiedColor = selectedItem.isUpcoming
+              ? "#b4b4b4"
+              : "#3cb37180";
+            const unoccupiedColor = selectedItem.isUpcoming
+              ? "#616161"
+              : "#ff000080";
+            const projectedPrefix = selectedItem.isUpcoming ? "Projected " : "";
+
+            return `
+              <div style="min-width: 155px; font-family: Poppins-Regular, sans-serif; font-size: 12px; line-height: 1.4;">
+                <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-size: 12px; font-weight: 400;">${label}</div>
+                <div style="padding: 0 10px 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 7px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: ${occupiedColor};"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Occupied:</span>&nbsp;
+                      <strong>${occupied.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: ${unoccupiedColor};"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Unoccupied:</span>&nbsp;
+                      <strong>${remaining.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                  <hr style="margin: 7px 0 0; border: 0; border-top: 1px solid #e5e7eb;" />
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 7px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: #1E3D73;"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Total:</span>&nbsp;
+                      <strong>${total.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+
           return `
             <div style="padding:8px; width : 220px">
               <div style="display:flex; justify-content:flex-start; gap:8px; font-weight:600">
@@ -659,7 +718,7 @@ const CheckAvailability = ({
                 <div style="width : 100%">${occupied} desks</div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size : 12px">
-                <div style="width : 100%">${investorGraphStyle ? "Un - Occupied" : "Remaining"}</div>
+                <div style="width : 100%">${investorGraphStyle ? "Unoccupied" : "Remaining"}</div>
                 <div style="width : 100%">${remaining} desks</div>
               </div>
             </div>
@@ -970,6 +1029,8 @@ const CheckAvailability = ({
     <WidgetSection
       layout={1}
       border
+      borderColor={investorGraphStyle ? "#1E3D73" : undefined}
+      bodyBorderColor={investorGraphStyle ? "#9FB2CF" : undefined}
       normalCase
       title={graphTitle}
       TitleAmount={
@@ -979,7 +1040,7 @@ const CheckAvailability = ({
       }
       headerRightContent={
         investorGraphStyle && monthlyView ? (
-          <span className="text-widgetTitle font-pmedium uppercase text-[#1234c9]">
+          <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
             AVERAGE OCCUPANCY - {averageOccupancyPercent}%
           </span>
         ) : null
