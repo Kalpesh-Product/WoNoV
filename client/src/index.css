@@ -169,6 +169,14 @@
 .fy-percentage-chart .apexcharts-canvas {
   overflow: visible !important;
 }
+
+.investor-unique-clients-chart .apexcharts-canvas {
+  overflow: visible !important;
+}
+
+.investor-unique-clients-chart .apexcharts-tooltip {
+  z-index: 20 !important;
+}
 @media (min-width: 1024px) {
   .login-buttons {
     display: block;

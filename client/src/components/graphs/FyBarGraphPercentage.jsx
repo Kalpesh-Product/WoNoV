@@ -49,20 +49,19 @@ const getMonthsWithYearLabels = (fyLabel) => {
 };
 
 const PROJECTED_SERIES_PREFIX = "Projected ";
+const ACTUAL_RANK_PREFIX = "Actual Rank ";
 const PROJECTED_RANK_PREFIX = "Projected Rank ";
 const INVESTOR_ACTUAL_STACK_ORDER = [
   "Co-Working",
-  "Alternate",
   "Virtual Office",
-  "Workation",
   "Meeting",
+  "Alternate",
 ];
 const INVESTOR_PROJECTED_STACK_ORDER = [
   "Co-Working",
-  "Alternate",
   "Virtual Office",
-  "Workation",
   "Meeting",
+  "Alternate",
 ].map((vertical) => `${PROJECTED_SERIES_PREFIX}${vertical}`);
 const INVESTOR_PROJECTED_COLORS = [
   "#3c3c3c",
@@ -72,32 +71,29 @@ const INVESTOR_PROJECTED_COLORS = [
   "#f0f0f0",
 ];
 const INVESTOR_ACTUAL_COLORS = {
-  "Co-Working": "#1E3D73",
+  "Co-Working": "#365D96",
   Meeting: "#2196F3",
-  Alternate: "#1976D2",
+  Alternate: "#80CED6",
   Workation: "#54C4A7",
   "Virtual Office": "#11daf5",
 };
 const INVESTOR_LEGEND_ITEMS = [
-  { label: "Meeting", color: "#2196F3" },
-  { label: "Alternate", color: "#1976D2" },
+  { label: "Co-Working", color: "#365D96" },
   { label: "Virtual Office", color: "#11daf5" },
-  { label: "Workation", color: "#54C4A7" },
-  { label: "Co-Working", color: "#1E3D73" },
+  { label: "Meeting", color: "#2196F3" },
+  { label: "Alternate", color: "#80CED6" },
   { label: "Projected", color: "#787878" },
 ];
 const INVESTOR_TOOLTIP_ROWS = [
   { vertical: "Co-Working", label: "Co-Working" },
-  { vertical: "Meeting", label: "Meetings" },
   { vertical: "Virtual Office", label: "Virtual Office" },
-  { vertical: "Workation", label: "Workation" },
+  { vertical: "Meeting", label: "Meetings" },
   { vertical: "Alternate", label: "Alt Revenues" },
 ];
 const INVESTOR_LEGEND_TO_SERIES = {
   Meeting: "Meeting",
   Alternate: "Alternate",
   "Virtual Office": "Virtual Office",
-  Workation: "Workation",
   "Co-Working": "Co-Working",
 };
 
@@ -114,6 +110,8 @@ const FyBarGraphPercentage = ({
   seriesColors = {},
   legendItems = [],
   showSmallLabels = false,
+  hideHeaderAmounts = false,
+  showFiscalYearInTitle = true,
 }) => {
   const { format } = useCurrency();
   const currentFYStartYear = getCurrentFinancialYearStart();
@@ -234,30 +232,47 @@ const FyBarGraphPercentage = ({
       return { name: vertical, data };
     });
 
+    const createRankedSeries = (seriesGroup, rankPrefix, projected = false) =>
+      Array.from({ length: seriesGroup.length }, (_, rankIndex) => ({
+        name: `${rankPrefix}${rankIndex + 1}`,
+        data: months.map(({ label }, monthIndex) => {
+          const rankedValues = seriesGroup
+            .map(({ name, data }) => ({
+              name,
+              value: data[monthIndex] || 0,
+            }))
+            .sort((a, b) => a.value - b.value);
+          const rankedPoint = rankedValues[rankIndex];
+          const vertical = projected
+            ? rankedPoint?.name.replace(PROJECTED_SERIES_PREFIX, "")
+            : rankedPoint?.name;
+          const stackIndex = INVESTOR_ACTUAL_STACK_ORDER.indexOf(vertical);
+
+          return {
+            x: label,
+            y: rankedPoint?.value || 0,
+            sourceSeriesName: rankedPoint?.name,
+            fillColor: projected
+              ? INVESTOR_PROJECTED_COLORS[stackIndex] || "#f0f0f0"
+              : INVESTOR_ACTUAL_COLORS[vertical] || "#1E3D73",
+          };
+        }),
+      }));
+
     const stackedSeries = investorVariant
       ? [
-          ...categorySeries.filter(
-            ({ name }) => !name.startsWith(PROJECTED_SERIES_PREFIX)
+          ...createRankedSeries(
+            categorySeries.filter(
+              ({ name }) => !name.startsWith(PROJECTED_SERIES_PREFIX)
+            ),
+            ACTUAL_RANK_PREFIX
           ),
-          ...Array.from(
-            {
-              length: categorySeries.filter(({ name }) =>
-                name.startsWith(PROJECTED_SERIES_PREFIX)
-              ).length,
-            },
-            (_, rankIndex) => ({
-              name: `${PROJECTED_RANK_PREFIX}${rankIndex + 1}`,
-              data: months.map((_, monthIndex) => {
-                const rankedValues = categorySeries
-                  .filter(({ name }) =>
-                    name.startsWith(PROJECTED_SERIES_PREFIX)
-                  )
-                  .map(({ data }) => data[monthIndex] || 0)
-                  .sort((a, b) => b - a);
-
-                return rankedValues[rankIndex] || 0;
-              }),
-            })
+          ...createRankedSeries(
+            categorySeries.filter(({ name }) =>
+              name.startsWith(PROJECTED_SERIES_PREFIX)
+            ),
+            PROJECTED_RANK_PREFIX,
+            true
           ),
         ]
       : categorySeries;
@@ -294,14 +309,21 @@ const FyBarGraphPercentage = ({
       return stackedSeries;
     }
 
-    return stackedSeries.map((series) =>
-      hiddenSeriesNames.has(series.name)
-        ? {
-          ...series,
-          data: series.data.map(() => 0),
-        }
-        : series
-    );
+    return stackedSeries.map((series) => ({
+      ...series,
+      data: series.data.map((point) => {
+        const sourceSeriesName = point?.sourceSeriesName;
+        const shouldHide =
+          hiddenSeriesNames.has(series.name) ||
+          (sourceSeriesName && hiddenSeriesNames.has(sourceSeriesName));
+
+        return shouldHide
+          ? typeof point === "object"
+            ? { ...point, y: 0 }
+            : 0
+          : point;
+      }),
+    }));
   }, [hiddenInvestorSeriesNames, hiddenLegendSeries, investorVariant, stackedSeries]);
 
   const displayedRawDataMap = useMemo(() => {
@@ -383,10 +405,17 @@ const FyBarGraphPercentage = ({
       },
       xaxis: {
         categories: monthsWithLabels.map((m) => m.label),
+        ...(investorVariant
+          ? {
+              crosshairs: {
+                show: false,
+              },
+            }
+          : {}),
         labels: {
           style: investorVariant
             ? {
-              colors: "#1234c9",
+              colors: "#1E3D73",
             }
             : {},
         },
@@ -397,7 +426,7 @@ const FyBarGraphPercentage = ({
         labels: {
           style: investorVariant
             ? {
-              colors: "#1234c9",
+              colors: "#1E3D73",
             }
             : {},
           formatter: (val) => `${val.toFixed(0)}%`,
@@ -409,7 +438,7 @@ const FyBarGraphPercentage = ({
         ...(investorVariant
           ? {
             labels: {
-              colors: "#1234c9",
+              colors: "#1E3D73",
             },
           }
           : {}),
@@ -435,31 +464,31 @@ const FyBarGraphPercentage = ({
           }
 
           if (investorVariant) {
-            const seriesNames = w?.globals?.seriesNames || [];
-            const colors = w?.globals?.colors || [];
             const hasProjectedValue = INVESTOR_TOOLTIP_ROWS.some(({ vertical }) => {
               const seriesName = `${PROJECTED_SERIES_PREFIX}${vertical}`;
               return (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0) > 0;
             });
 
-            const rowsHtml = INVESTOR_TOOLTIP_ROWS.map(({ vertical, label }, rowIndex) => {
+            const rowsHtml = INVESTOR_TOOLTIP_ROWS.map(({ vertical, label }) => {
               const seriesName = hasProjectedValue
                 ? `${PROJECTED_SERIES_PREFIX}${vertical}`
                 : vertical;
-              const seriesIndex = seriesNames.indexOf(seriesName);
+              const projectedColorIndex =
+                INVESTOR_ACTUAL_STACK_ORDER.indexOf(vertical);
               const color = hasProjectedValue
-                ? INVESTOR_PROJECTED_COLORS[rowIndex] || "#b4b4b4"
-                : colors[seriesIndex] || "#2f8edc";
+                ? INVESTOR_PROJECTED_COLORS[projectedColorIndex] || "#787878"
+                : INVESTOR_ACTUAL_COLORS[vertical] || "#2f8edc";
               const rawVal = displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
 
               return `
-                <div style="display:flex; align-items:center; justify-content:space-between; gap:42px; padding:4px 0;">
-                  <span style="display:flex; align-items:center; gap:8px; color:#111827; font-weight:500;">
-                    <span style="width:9px; height:9px; border-radius:50%; background:${color}; display:inline-block;"></span>
-                    ${hasProjectedValue ? `Projected ${label}` : label}
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
+                  <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:${color}; display:inline-block;"></span>
+                  <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
+                    <span>${hasProjectedValue ? `Projected ${label}` : label}:</span>
+                    <strong>${format(rawVal)}</strong>
                   </span>
-                  <span style="color:#111827; font-weight:500; white-space:nowrap;">${format(rawVal)}</span>
-                </div>`;
+                </div>
+                ${vertical === "Alternate" ? '<hr style="margin:2px 0 8px; border:0; border-top:1px solid #e5e7eb;" />' : ""}`;
             }).join("");
 
             const total = INVESTOR_TOOLTIP_ROWS.reduce((sum, { vertical }) => {
@@ -470,13 +499,17 @@ const FyBarGraphPercentage = ({
             }, 0);
 
             return `
-              <div style="min-width:290px; padding:10px; background:#ffffff; border-radius:4px; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
-                <div style="background:#e5e7eb; color:#111827; font-weight:600; padding:8px 10px; margin:-10px -10px 8px; border-radius:4px 4px 0 0;">
-                  ${monthLabel}
-                </div>
-                ${rowsHtml}
-                <div style="border-top:1px solid #e5e7eb; margin-top:6px; padding-top:8px; text-align:right; color:#111827; font-weight:700;">
-                  Total: ${format(total)}
+              <div style="width:max-content; min-width:0; font-family:Poppins-Regular,sans-serif; font-size:12px; line-height:1.4;">
+                <div class="apexcharts-tooltip-title" style="margin-bottom:8px; font-size:12px; font-weight:400;">${monthLabel}</div>
+                <div style="padding:0 10px 10px;">
+                  ${rowsHtml}
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
+                    <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
+                      <span>${hasProjectedValue ? "Projected Total" : "Total"}:</span>
+                      <strong>${format(total)}</strong>
+                    </span>
+                  </div>
                 </div>
               </div>`;
           }
@@ -516,14 +549,9 @@ const FyBarGraphPercentage = ({
       },
 
       colors: investorVariant
-        ? displayedStackedSeries.map(({ name }) => {
-            if (name.startsWith(PROJECTED_RANK_PREFIX)) {
-              const rank = Number(name.replace(PROJECTED_RANK_PREFIX, "")) - 1;
-              return INVESTOR_PROJECTED_COLORS[rank] || "#f0f0f0";
-            }
-
-            return INVESTOR_ACTUAL_COLORS[name] || "#1E3D73";
-          })
+        ? displayedStackedSeries.map(({ name }) =>
+            name.startsWith(PROJECTED_RANK_PREFIX) ? "#787878" : "#1E3D73"
+          )
         : Object.keys(seriesColors).length > 0
           ? displayedStackedSeries.map(
               ({ name }) => seriesColors[name] || "#6B7280"
@@ -565,12 +593,14 @@ const FyBarGraphPercentage = ({
   const title = React.isValidElement(graphTitle) ? (
     <>
       {graphTitle}
-      <span className={investorVariant ? "ml-1 text-[#1234c9]" : "ml-1"}>
-        {investorVariant ? `- ${selectedFY}` : selectedFY}
-      </span>
+      {showFiscalYearInTitle && (
+        <span className={investorVariant ? "ml-1 text-[#1E3D73]" : "ml-1"}>
+          {investorVariant ? `- ${selectedFY}` : selectedFY}
+        </span>
+      )}
     </>
   ) : (
-    `${graphTitle} ${selectedFY}`
+    `${graphTitle}${showFiscalYearInTitle ? ` ${selectedFY}` : ""}`
   );
   const totalHeaderAmount = `INR ${inrFormat(
     Object.values(monthlyTotals).reduce((sum, val) => sum + val, 0)
@@ -583,7 +613,7 @@ const FyBarGraphPercentage = ({
     : `INR ${inrFormat(projectedTotal)}`;
   const headerProps = investorVariant
     ? {
-      headerRightContent: (
+      headerRightContent: hideHeaderAmounts ? null : (
         <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="flex items-center justify-center rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
             {actualHeaderAmount}
@@ -601,12 +631,14 @@ const FyBarGraphPercentage = ({
   return (
     <WidgetSection
       border
+      borderColor={investorVariant ? "#1E3D73" : undefined}
+      bodyBorderColor={investorVariant ? "#9FB2CF" : undefined}
       title={title}
       {...headerProps}
     >
       <div className="flex flex-col gap-4 rounded-md">
         {investorVariant && (
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-3 text-content text-[#1234c9]">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-3 text-xs text-[#1E3D73]">
             {INVESTOR_LEGEND_ITEMS.map((item) => (
               <button
                 key={item.label}

@@ -8,53 +8,15 @@ import WidgetSection from "../../../../components/WidgetSection";
 import dayjs from "dayjs";
 import SecondaryButton from "../../../../components/SecondaryButton";
 
-const PROJECTED_UNIQUE_CLIENTS_BY_MONTH = {
-  "Oct-26": {
-    "Projected Co-Working": 10,
-    "Projected Virtual Office": 6,
-    "Projected External Meetings": 6,
-    "Projected Open Desk": 3,
-  },
-  "Nov-26": {
-    "Projected Co-Working": 11,
-    "Projected Virtual Office": 7,
-    "Projected External Meetings": 7,
-    "Projected Open Desk": 4,
-  },
-  "Dec-26": {
-    "Projected Co-Working": 12,
-    "Projected Virtual Office": 6,
-    "Projected External Meetings": 7,
-    "Projected Open Desk": 4,
-  },
-  "Jan-27": {
-    "Projected Co-Working": 12,
-    "Projected Virtual Office": 7,
-    "Projected External Meetings": 6,
-    "Projected Open Desk": 4,
-  },
-  "Feb-27": {
-    "Projected Co-Working": 13,
-    "Projected Virtual Office": 7,
-    "Projected External Meetings": 7,
-    "Projected Open Desk": 5,
-  },
-  "Mar-27": {
-    "Projected Co-Working": 14,
-    "Projected Virtual Office": 8,
-    "Projected External Meetings": 7,
-    "Projected Open Desk": 5,
-  },
-};
 const PROJECTED_UNIQUE_CLIENT_SERIES = [
-  "Projected Co-Working",
   "Projected Virtual Office",
+  "Projected Co-Working",
   "Projected External Meetings",
   "Projected Open Desk",
 ];
 const ACTUAL_UNIQUE_CLIENT_SERIES = [
-  "Co-Working",
   "Virtual Office",
+  "Co-Working",
   "External Meetings",
   "Open Desk",
 ];
@@ -64,6 +26,16 @@ const PROJECTED_UNIQUE_CLIENT_COLORS = [
   "#787878",
   "#b4b4b4",
 ];
+const UNIQUE_CLIENT_COLOR_BY_SERIES = {
+  "Co-Working": "#1E3D73",
+  "Virtual Office": "#80BF01",
+  "External Meetings": "#FFC300",
+  "Open Desk": "#00C8D7",
+  "Projected Co-Working": PROJECTED_UNIQUE_CLIENT_COLORS[0],
+  "Projected Virtual Office": PROJECTED_UNIQUE_CLIENT_COLORS[1],
+  "Projected External Meetings": PROJECTED_UNIQUE_CLIENT_COLORS[2],
+  "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
+};
 
 const LeadsLayout = ({
   hideAccordion,
@@ -75,6 +47,7 @@ const LeadsLayout = ({
   hideMonthAxisTitle = false,
   noOuterPadding = false,
   investorBlueStyle = false,
+  investorTitleAmountChip = false,
   hideFinancialYearControls = false,
 }) => {
   const allClients = useMemo(
@@ -173,17 +146,32 @@ const LeadsLayout = ({
   }, [allClients, currentFinancialYear, financialYearMonths]);
 
   const selectedFinancialYearClientsCount = useMemo(
-    () =>
-      transformedData.reduce(
+    () => {
+      const currentMonth = dayjs();
+      const currentFinancialYearStart =
+        currentMonth.month() >= 3
+          ? currentMonth.year()
+          : currentMonth.year() - 1;
+      const completedMonthCount =
+        currentMonth.month() >= 3
+          ? currentMonth.month() - 3
+          : currentMonth.month() + 9;
+      const countableData =
+        investorBlueStyle && currentFinancialYear === currentFinancialYearStart
+          ? transformedData.slice(0, completedMonthCount)
+          : transformedData;
+
+      return countableData.reduce(
         (total, item) =>
           total +
           (item["Coworking"] || 0) +
           (item["Virtualoffice"] || 0) +
           (item["External Meetings"] || 0) +
           (item["Open Desk"] || 0),
-        0
-      ),
-    [transformedData]
+        0,
+      );
+    },
+    [currentFinancialYear, investorBlueStyle, transformedData],
   );
 
   const resolvedTitleAmount =
@@ -205,7 +193,7 @@ const LeadsLayout = ({
         .month(3 + monthIndex)
         .startOf("month");
 
-      return monthDate.isAfter(currentMonth) ? 0 : item[key] || 0;
+      return monthDate.isBefore(currentMonth) ? item[key] || 0 : 0;
     };
     const actualSeries = [
       {
@@ -244,19 +232,58 @@ const LeadsLayout = ({
 
     if (!investorBlueStyle) return actualSeries;
 
+    const currentFinancialYearStart =
+      currentMonth.month() >= 3
+        ? currentMonth.year()
+        : currentMonth.year() - 1;
+    const elapsedMonths =
+      currentFinancialYear === currentFinancialYearStart
+        ? currentMonth.month() >= 3
+          ? currentMonth.month() - 3
+          : currentMonth.month() + 9
+        : currentFinancialYear < currentFinancialYearStart
+          ? 12
+          : 0;
+    const actualSeriesByName = new Map(
+      actualSeries.map((series) => [series.name, series]),
+    );
+    const investorActualSeries = [
+      actualSeries[1],
+      actualSeries[0],
+      actualSeries[2],
+      actualSeries[3],
+    ].sort(
+      (a, b) =>
+        b.data.reduce((sum, value) => sum + value, 0) -
+        a.data.reduce((sum, value) => sum + value, 0),
+    );
     const projectedSeries = PROJECTED_UNIQUE_CLIENT_SERIES.map((seriesName) => ({
       name: seriesName,
-      data: transformedData.map((item, monthIndex) => {
+      data: transformedData.map((_, monthIndex) => {
         const monthDate = dayjs()
           .year(currentFinancialYear)
           .month(3 + monthIndex)
           .startOf("month");
-        if (!monthDate.isAfter(currentMonth)) return 0;
-        return PROJECTED_UNIQUE_CLIENTS_BY_MONTH[item.month]?.[seriesName] || 0;
-      }),
-    }));
+        if (monthDate.isBefore(currentMonth)) return 0;
 
-    return [...actualSeries, ...projectedSeries];
+        const actualSeriesName = seriesName.replace(/^Projected /, "");
+        const actualValues = actualSeriesByName.get(actualSeriesName)?.data || [];
+        const actualTotal = actualValues.reduce(
+          (sum, value) => sum + (Number(value) || 0),
+          0,
+        );
+
+        return elapsedMonths > 0
+          ? Math.round(actualTotal / elapsedMonths)
+          : 0;
+      }),
+    })).sort(
+      (a, b) =>
+        b.data.reduce((sum, value) => sum + value, 0) -
+        a.data.reduce((sum, value) => sum + value, 0),
+    );
+
+    return [...investorActualSeries, ...projectedSeries];
   }, [currentFinancialYear, investorBlueStyle, transformedData]);
   const displayedUniqueClientsData = useMemo(
     () =>
@@ -271,6 +298,50 @@ const LeadsLayout = ({
       }),
     [hiddenInvestorSeries, uniqueClientsData]
   );
+  const investorRankedMonthEntries = useMemo(() => {
+    if (!investorBlueStyle) return [];
+
+    const actualSeries = displayedUniqueClientsData.slice(
+      0,
+      ACTUAL_UNIQUE_CLIENT_SERIES.length,
+    );
+    const projectedSeries = displayedUniqueClientsData.slice(
+      ACTUAL_UNIQUE_CLIENT_SERIES.length,
+    );
+
+    return financialYearMonths.map((_, monthIndex) => {
+      const hasProjectedData = projectedSeries.some(
+        (series) => (series.data[monthIndex] || 0) > 0,
+      );
+      const monthSeries = hasProjectedData ? projectedSeries : actualSeries;
+
+      const entries = monthSeries.map((series) => ({
+          name: series.name,
+          value: series.data[monthIndex] || 0,
+          color: UNIQUE_CLIENT_COLOR_BY_SERIES[series.name] || "#6B7280",
+        }));
+
+      return entries.sort((a, b) => b.value - a.value);
+    });
+  }, [displayedUniqueClientsData, financialYearMonths, investorBlueStyle]);
+  const investorRankedSeries = useMemo(() => {
+    if (!investorBlueStyle) return [];
+
+    return Array.from(
+      { length: ACTUAL_UNIQUE_CLIENT_SERIES.length },
+      (_, rankIndex) => ({
+        name: `Rank ${rankIndex + 1}`,
+        data: investorRankedMonthEntries.map((entries, monthIndex) => {
+          const entry = entries[entries.length - 1 - rankIndex];
+          return {
+            x: financialYearMonths[monthIndex],
+            y: entry?.value || 0,
+            fillColor: entry?.color || "#6B7280",
+          };
+        }),
+      }),
+    );
+  }, [financialYearMonths, investorBlueStyle, investorRankedMonthEntries]);
   const toggleInvestorSeries = (seriesName) => {
     setHiddenInvestorSeries((current) => {
       const next = new Set(current);
@@ -303,7 +374,7 @@ const LeadsLayout = ({
               ...(investorBlueStyle
                 ? {
                     style: {
-                      color: "#1234c9",
+                      color: "#1E3D73",
                     },
                   }
                 : {}),
@@ -313,7 +384,7 @@ const LeadsLayout = ({
         ? {
             labels: {
               style: {
-                colors: "#1234c9",
+                colors: "#1E3D73",
               },
             },
           }
@@ -325,7 +396,7 @@ const LeadsLayout = ({
         ...(investorBlueStyle
           ? {
               style: {
-                color: "#1234c9",
+                color: "#1E3D73",
               },
             }
           : {}),
@@ -334,7 +405,7 @@ const LeadsLayout = ({
         ? {
             labels: {
               style: {
-                colors: "#1234c9",
+                colors: "#1E3D73",
               },
             },
           }
@@ -367,30 +438,20 @@ const LeadsLayout = ({
       ? {
           shared: false,
           intersect: true,
-          custom: ({ series, dataPointIndex, w }) => {
-            const isProjectedMonth = series
-              .slice(4)
-              .some((values) => (values[dataPointIndex] || 0) > 0);
-            const startIndex = isProjectedMonth ? 4 : 0;
-            const endIndex = isProjectedMonth ? 8 : 4;
-            const rows = [];
-
-            for (let index = startIndex; index < endIndex; index += 1) {
-              const value = series[index]?.[dataPointIndex] || 0;
-              const seriesLabel = w.globals.seriesNames[index].replace(
-                /^Projected /,
-                ""
-              );
-              rows.push(`
+          custom: ({ dataPointIndex, w }) => {
+            const entries = investorRankedMonthEntries[dataPointIndex] || [];
+            const rows = entries.map((entry) => {
+              const seriesLabel = entry.name;
+              return `
                 <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;color:#222;white-space:nowrap;">
                   <span style="display:flex;align-items:center;gap:7px;">
-                    <span style="width:9px;height:9px;border-radius:50%;background:${w.globals.colors[index]};display:inline-block;"></span>
+                    <span style="width:9px;height:9px;border-radius:50%;background:${entry.color};display:inline-block;"></span>
                     ${seriesLabel}:
                   </span>
-                  <strong>${value} Clients</strong>
+                  <strong>${entry.value} Clients</strong>
                 </div>
-              `);
-            }
+              `;
+            });
 
             return `
               <div style="background:#fff;color:#222;border:1px solid #d9dce1;border-radius:5px;box-shadow:0 2px 8px rgba(0,0,0,.15);overflow:hidden;font-family:Poppins-Regular;font-size:12px;">
@@ -408,13 +469,9 @@ const LeadsLayout = ({
           y: { formatter: (val) => `${val} Clients` },
         },
     colors: investorBlueStyle
-      ? [
-          "#1E3D73",
-          "#80BF01",
-          "#FFC300",
-          "#00C8D7",
-          ...PROJECTED_UNIQUE_CLIENT_COLORS,
-        ]
+      ? uniqueClientsData.map(
+          ({ name }) => UNIQUE_CLIENT_COLOR_BY_SERIES[name] || "#6B7280",
+        )
       : ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
   };
 
@@ -439,12 +496,20 @@ const LeadsLayout = ({
       <WidgetSection
         layout={1}
         border
+        borderColor={investorBlueStyle ? "#1E3D73" : undefined}
+        bodyBorderColor={investorBlueStyle ? "#9FB2CF" : undefined}
         padding
         title={title}
         TitleAmount={investorBlueStyle ? "" : resolvedTitleAmount}
         headerRightContent={
           investorBlueStyle ? (
-            <span className="text-widgetTitle font-pmedium uppercase text-[#1234c9]">
+            <span
+              className={
+                investorTitleAmountChip
+                  ? "rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]"
+                  : "text-widgetTitle font-pmedium uppercase text-[#1E3D73]"
+              }
+            >
               {resolvedTitleAmount}
             </span>
           ) : null
@@ -456,13 +521,10 @@ const LeadsLayout = ({
           <div className="flex flex-wrap items-center justify-center gap-4 pb-2 pt-1">
             {[...ACTUAL_UNIQUE_CLIENT_SERIES, "Projected"].map(
               (seriesName, index) => {
-                const legendColors = [
-                  "#1E3D73",
-                  "#80BF01",
-                  "#FFC300",
-                  "#00C8D7",
-                  "#3c3c3c",
-                ];
+                const legendColor =
+                  seriesName === "Projected"
+                    ? "#3c3c3c"
+                    : UNIQUE_CLIENT_COLOR_BY_SERIES[seriesName];
                 const isHidden = hiddenInvestorSeries.has(seriesName);
 
                 return (
@@ -470,14 +532,14 @@ const LeadsLayout = ({
                     key={seriesName}
                     type="button"
                     onClick={() => toggleInvestorSeries(seriesName)}
-                    className={`flex items-center gap-1 text-xs text-[#1234c9] transition-opacity ${
+                    className={`flex items-center gap-1 text-xs text-[#1E3D73] transition-opacity ${
                       isHidden ? "opacity-40" : "opacity-100"
                     }`}
                     aria-pressed={!isHidden}
                   >
                     <span
                       className="h-3 w-3"
-                      style={{ backgroundColor: legendColors[index] }}
+                      style={{ backgroundColor: legendColor }}
                     />
                     <span>{seriesName}</span>
                   </button>
@@ -487,16 +549,18 @@ const LeadsLayout = ({
           </div>
         ) : null}
 
-        <BarGraph
-          data={
-            investorBlueStyle
-              ? displayedUniqueClientsData
-              : uniqueClientsData
-          }
-          title=""
-          options={barChartOptions}
-          height={investorBlueStyle ? 350 : 400}
-        />
+        <div className={investorBlueStyle ? "investor-unique-clients-chart" : ""}>
+          <BarGraph
+            data={
+              investorBlueStyle
+                ? investorRankedSeries
+                : uniqueClientsData
+            }
+            title=""
+            options={barChartOptions}
+            height={investorBlueStyle ? 350 : 400}
+          />
+        </div>
         {!hideFinancialYearControls && (
           <div className="flex justify-center items-center pt-4 pb-2">
             <div className="flex items-center gap-[2px] mt-4">

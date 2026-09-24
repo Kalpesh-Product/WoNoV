@@ -33,6 +33,8 @@ const WidgetSection = ({
   headerCenterContent,
   headerCenterContentInline = false,
   gridGap = "gap-4",
+  borderColor,
+  bodyBorderColor,
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -71,8 +73,21 @@ const WidgetSection = ({
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
-         
-          className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
+          style={
+            borderColor
+              ? {
+                  borderWidth: "2px",
+                  borderStyle: "solid",
+                  borderColor,
+                  borderBottomWidth: "0px",
+                  boxShadow: "none",
+                  outline: "none",
+                }
+              : undefined
+          }
+          className={`relative p-4 flex w-full justify-between items-center rounded-t-xl ${
+            borderColor ? "" : "border-default border-[#7D7D7E]"
+          } ${
             normalCase ? "" : "uppercase"
           }`}>
           <div
@@ -193,7 +208,20 @@ const WidgetSection = ({
         </div>
       )}
       <div
-        style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
+        style={
+          border
+            ? {
+                border: `2px solid ${
+                  bodyBorderColor || borderColor || "#d1d5db"
+                }`,
+                borderTop: borderColor
+                  ? `2px solid ${borderColor}`
+                  : "none",
+                boxShadow: "none",
+                outline: "none",
+              }
+            : {}
+        }
         className="h-full rounded-b-xl">
         <div
           style={{ padding: padding ? "0" : "1rem" }}

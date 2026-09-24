@@ -9,11 +9,14 @@ const PieChartMui = ({
   width = 500,
   height = 320,
   customLegend,
+  customChartAreaHeight,
   centerAlign = false,
 }) => {
   const chartData = data.map((item) => parseFloat(item.value));
   const { containerRef, chartKey } = useResponsiveChart();
-  const chartAreaHeight = customLegend ? Math.max(220, height - 76) : height;
+  const chartAreaHeight = customLegend
+    ? customChartAreaHeight || Math.max(220, height - 76)
+    : height;
 
   const updatedOptions = {
     ...options,
