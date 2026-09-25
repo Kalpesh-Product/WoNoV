@@ -6,6 +6,8 @@ const {
   getMyTasks,
   updateTask,
   deleteTask,
+  permanentlyDeleteMyTask,
+  permanentlyDeleteDepartmentTask,
   todayTasks,
   getMyTodayTasks,
   getTeamMembersTasks,
@@ -38,6 +40,8 @@ router.patch("/complete-tasks/", completeTasks);
 router.get("/get-completed-tasks/:deptId", getCompletedTasks);
 router.get("/get-my-completed-tasks", getMyCompletedTasks);
 router.patch("/delete-task/:id", deleteTask);
+router.delete("/my-task/:id", permanentlyDeleteMyTask);
+router.delete("/department-task/:id", permanentlyDeleteDepartmentTask);
 router.get("/get-my-assigned-tasks", getMyAssignedTasks);
 router.get("/get-tasks-summary", getTasksSummary); // consolidated data for graph
 router.post("/bulk-insert", upload.single("file"), bulkInsertTasks);

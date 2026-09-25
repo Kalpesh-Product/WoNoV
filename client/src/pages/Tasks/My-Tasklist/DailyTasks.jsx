@@ -190,7 +190,7 @@ const DailyTasks = () => {
   const { mutate: deleteMyTask, isPending: isDeletePending } = useMutation({
     mutationKey: ["deleteMyTask"],
     mutationFn: async (taskId) => {
-      const response = await axios.patch(`/api/tasks/delete-task/${taskId}`);
+      const response = await axios.delete(`/api/tasks/my-task/${taskId}`);
       return response.data;
     },
     onSuccess: (data) => {

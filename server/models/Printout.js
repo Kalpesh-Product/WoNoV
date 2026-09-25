@@ -55,6 +55,23 @@ const printoutSchema = new mongoose.Schema(
     remark: {
       type: String,
     },
+     isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
+    deletedByPrivilegedDepartment: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

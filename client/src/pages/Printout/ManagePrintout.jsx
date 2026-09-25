@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { CircularProgress, MenuItem, Popover, TextField } from "@mui/material";
+import {
+  CircularProgress,
+  IconButton,
+  MenuItem,
+  Popover,
+  TextField,
+} from "@mui/material";
 import {
   DatePicker,
   LocalizationProvider,
@@ -10,8 +16,14 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "sonner";
-import { MdCalendarToday, MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  MdCalendarToday,
+  MdDeleteForever,
+  MdOutlineRestore,
+  MdOutlineRemoveRedEye,
+} from "react-icons/md";
 import AgTable from "../../components/AgTable";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -25,6 +37,7 @@ import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
 const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const getId = (value) => (typeof value === "object" ? value?._id : value) || "";
 
@@ -44,6 +57,15 @@ const getLocationName = (location, unit) =>
   location?.buildingName || unit?.building?.buildingName || "—";
 const getUnitName = (unit) => unit?.unitNo || unit?.unitName || "—";
 const getDepartmentName = (department) => department?.name || "—";
+
+const PERMANENT_DELETE_DEPARTMENTS = new Set([
+  "top management",
+  "tech department",
+]);
+
+const isPermanentDeleteDepartment = (department) =>
+  getId(department) === TECH_DEPARTMENT_ID ||
+  PERMANENT_DELETE_DEPARTMENTS.has(department?.name?.trim().toLowerCase());
 
 const formatDateTime = (value) =>
   value && dayjs(value).isValid()
@@ -79,9 +101,14 @@ const ManagePrintout = () => {
   const queryClient = useQueryClient();
   const companyId = auth?.user?.company?._id || BIZNEST_COMPANY_ID;
 
+  const canPermanentlyDelete = (auth?.user?.departments || []).some(
+    isPermanentDeleteDepartment,
+  );
+
   const [selectedPrintout, setSelectedPrintout] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [dateRange, setDateRange] = useState([
     {
       startDate: dayjs().startOf("month").toDate(),
@@ -110,9 +137,11 @@ const ManagePrintout = () => {
   const isBiznestClient = selectedClient === companyId;
 
   const { data: printouts = [], isLoading: isPrintoutsLoading } = useQuery({
-    queryKey: ["printouts"],
+    queryKey: ["printouts", canPermanentlyDelete],
     queryFn: async () => {
-      const response = await axios.get("/api/printout");
+      const response = await axios.get("/api/printout", {
+        params: { includeDeleted: canPermanentlyDelete },
+      });
       return response.data?.printouts || [];
     },
   });
@@ -227,6 +256,49 @@ const ManagePrintout = () => {
     [filteredPrintouts],
   );
 
+  const { mutate: deletePrintout, isPending: isDeletingPrintout } = useMutation(
+    {
+      mutationKey: ["deletePrintout"],
+      mutationFn: async (printoutId) => {
+        const response = await axios.delete(`/api/printout/${printoutId}`);
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data?.message || "Printout deleted successfully");
+        setConfirmationAction(null);
+        queryClient.invalidateQueries({ queryKey: ["printouts"] });
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            "An error occurred while deleting printout",
+        );
+      },
+    },
+  );
+
+  const { mutate: restorePrintout, isPending: isRestoringPrintout } =
+    useMutation({
+      mutationKey: ["restorePrintout"],
+      mutationFn: async (printoutId) => {
+        const response = await axios.patch(
+          `/api/printout/${printoutId}/restore`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data?.message || "Printout restored successfully");
+        setConfirmationAction(null);
+        queryClient.invalidateQueries({ queryKey: ["printouts"] });
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            "An error occurred while restoring printout",
+        );
+      },
+    });
+
   const { mutate: updatePrintout, isPending: isUpdatingPrintout } = useMutation(
     {
       mutationKey: ["updatePrintout"],
@@ -325,6 +397,48 @@ const ManagePrintout = () => {
     setAnchorEl(null);
   };
 
+  const handleDeletePrintout = (row) => {
+    setConfirmationAction({
+      type:
+        row.rawPrintout.isDeleted || canPermanentlyDelete
+          ? "permanent-delete"
+          : "delete",
+      row,
+    });
+  };
+
+  const handleRestorePrintout = (row) => {
+    setConfirmationAction({ type: "restore", row });
+  };
+
+  const confirmPrintoutAction = () => {
+    const printoutId = confirmationAction?.row?.rawPrintout?._id;
+    if (!printoutId) return;
+
+    if (confirmationAction.type === "restore") {
+      restorePrintout(printoutId);
+      return;
+    }
+
+    deletePrintout(printoutId);
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete Printout",
+      message: "Are you sure you want to delete this printout entry?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Printout Item",
+      message:
+        "Are you sure you want to permanently delete this printout entry?",
+    },
+    restore: {
+      title: "Restore Printout",
+      message: "Are you sure you want to restore this printout entry?",
+    },
+  }[confirmationAction?.type];
+
   const columns = [
     { field: "srNo", headerName: "Sr. No.", width: 110 },
     { field: "takenBy", headerName: "Taken By", flex: 1 },
@@ -341,17 +455,75 @@ const ManagePrintout = () => {
       headerName: "Action",
       pinned: "right",
       cellRenderer: ({ data }) => (
-        <div className="flex items-center gap-2">
-          <div
-            role="button"
-            onClick={() => openViewModal(data)}
-            className="p-2 rounded-full hover:bg-borderGray cursor-pointer"
-          >
-            <MdOutlineRemoveRedEye />
-          </div>
-          <ThreeDotMenu
-            menuItems={[{ label: "Edit", onClick: () => openEditModal(data) }]}
-          />
+        <div className="flex items-center gap-1 h-full">
+          {data.rawPrintout.isDeleted ? (
+            <>
+              <IconButton
+                size="small"
+                aria-label="View printout details"
+                onClick={() => openViewModal(data)}
+                className="!text-[#5f6368] hover:!bg-[#f5f5f5]"
+              >
+                <MdOutlineRemoveRedEye size={20} />
+              </IconButton>
+              <button
+                type="button"
+                aria-label="Restore printout"
+                title="Restore printout"
+                disabled={isDeletingPrintout || isRestoringPrintout}
+                onClick={() => handleRestorePrintout(data)}
+                className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <MdOutlineRestore size={22} className="shrink-0" />
+              </button>
+              <button
+                type="button"
+                aria-label="Permanently delete printout"
+                title="Permanently delete printout"
+                disabled={isDeletingPrintout || isRestoringPrintout}
+                onClick={() => handleDeletePrintout(data)}
+                className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <MdDeleteForever size={22} />
+              </button>
+            </>
+          ) : (
+            <>
+              <IconButton
+                size="small"
+                aria-label="View printout details"
+                onClick={() => openViewModal(data)}
+                className="!text-[#5f6368] hover:!bg-[#f5f5f5]"
+              >
+                <MdOutlineRemoveRedEye size={20} />
+              </IconButton>
+              <button
+                type="button"
+                aria-label="Delete printout"
+                title={
+                  !canPermanentlyDelete &&
+                  isPermanentDeleteDepartment(data.rawPrintout.department)
+                    ? "Only Top Management or Tech Department users can delete this printout"
+                    : "Delete printout"
+                }
+                disabled={
+                  isDeletingPrintout ||
+                  (!canPermanentlyDelete &&
+                    isPermanentDeleteDepartment(data.rawPrintout.department))
+                }
+                onClick={() => handleDeletePrintout(data)}
+                className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+              >
+                <MdDeleteForever size={22} />
+              </button>
+              <ThreeDotMenu
+                rowId={data.rawPrintout._id}
+                menuItems={[
+                  { label: "Edit", onClick: () => openEditModal(data) },
+                ]}
+              />
+            </>
+          )}
         </div>
       ),
     },
@@ -410,6 +582,15 @@ const ManagePrintout = () => {
             columns={columns}
             search
             tableHeight={500}
+            getRowStyle={({ data }) =>
+              data?.rawPrintout?.isDeleted
+                ? {
+                    backgroundColor: "#eef1f5",
+                    color: "#6b7280",
+                    opacity: 0.82,
+                  }
+                : undefined
+            }
             //hideFilter
             //hideTitle
             paginationPageSize={10}
@@ -759,6 +940,17 @@ const ManagePrintout = () => {
           </div>
         </form>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={isDeletingPrintout || isRestoringPrintout}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmPrintoutAction}
+      />
     </div>
   );
 };

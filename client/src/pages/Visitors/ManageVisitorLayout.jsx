@@ -41,7 +41,10 @@ const ManageVisitorLayout = () => {
       basePath="/app/visitors/manage-visitors"
       defaultTabPath="internal-visitors"
       tabs={tabs}
-      hideTabsCondition={(pathname) => pathname.includes("internal-visitors/")}
+      hideTabsCondition={(pathname) =>
+        pathname.includes("internal-visitors/") ||
+        pathname.includes("visitor-history/")
+      }
     />
   );
 };

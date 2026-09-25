@@ -132,6 +132,7 @@ const RepeatInternalVisitors = () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
         params: {
           filters: visitorFilters,
+          includeVisitCounts: true,
         },
       });
       return response.data;
@@ -231,7 +232,30 @@ const RepeatInternalVisitors = () => {
       navigate("/app/visitors/manage-visitors/internal-visitors");
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || "Failed to repeat visitor");
+      const responseData = error.response?.data;
+      const conflict = responseData?.conflict;
+      const toastOptions = conflict?.requiresCheckout
+        ? {
+            duration: 10000,
+            action: {
+              label: "Check out",
+              onClick: () => {
+                const params = new URLSearchParams();
+                if (conflict.checkIn) {
+                  params.set("lastVisitedAt", conflict.checkIn);
+                }
+                navigate(
+                  `/app/visitors/manage-visitors/internal-visitors?${params.toString()}`,
+                );
+              },
+            },
+          }
+        : undefined;
+
+      toast.error(
+        responseData?.message || "Failed to repeat visitor",
+        toastOptions,
+      );
     },
   });
 
@@ -416,6 +440,7 @@ const RepeatInternalVisitors = () => {
           visitorCompany: item.visitorCompany,
           date: item.date,
           phoneNumber: item.phoneNumber,
+          visitCount: item.visitCounts?.internal ?? 0,
           purposeOfVisit: item.purposeOfVisit,
           toMeet: item.toMeet
             ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
@@ -443,6 +468,7 @@ const RepeatInternalVisitors = () => {
     { field: "purposeOfVisit", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
     { field: "date", headerName: "Date of Visit" },
+    { field: "visitCount", headerName: "Visit Count" },
     {
       field: "checkIn",
       headerName: "Check In",
