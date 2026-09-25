@@ -12,12 +12,16 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
 import { MdDownload } from "react-icons/md";
+import { toast } from "sonner";
 
 const HrPayslips = () => {
   const axios = useAxiosPrivate();
   const [financialYear, setFinancialYear] = useState("All");
-  const [employeeStatus, setEmployeeStatus] = useState("Active");
-  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [employeeStatus, setEmployeeStatus] = useState("All");
+  const [selectedEmployee, setSelectedEmployee] = useState({
+    _id: "all",
+    firstName: "All",
+  });
 
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["payslipEmployees"],
@@ -28,12 +32,14 @@ const HrPayslips = () => {
   });
 
   const { data: payslips = [], isLoading: isPayslipLoading } = useQuery({
-    queryKey: ["employeePayslips", selectedEmployee?._id],
+    queryKey: ["employeePayslips", selectedEmployee?._id || "all"],
     enabled: Boolean(selectedEmployee?._id),
     queryFn: async () => {
-      const response = await axios.get(
-        `/api/payslip/get-payslips/${selectedEmployee._id}`
-      );
+      const endpoint =
+        selectedEmployee._id === "all"
+          ? "/api/payslip/get-payslips"
+          : `/api/payslip/get-payslips/${selectedEmployee._id}`;
+      const response = await axios.get(endpoint);
       return response.data || [];
     },
   });
@@ -50,13 +56,25 @@ const HrPayslips = () => {
   }, []);
 
   const employeeOptions = useMemo(() => {
-    if (employeeStatus === "All") return employees;
+    const allOption = { _id: "all", firstName: "All" };
+    if (employeeStatus === "All") return [allOption, ...employees];
     const active = employeeStatus === "Active";
-    return employees.filter((employee) => Boolean(employee.isActive) === active);
+    return [
+      allOption,
+      ...employees.filter(
+        (employee) => Boolean(employee.isActive) === active
+      ),
+    ];
   }, [employeeStatus, employees]);
 
   const filteredPayslips = useMemo(() => {
     return payslips.filter((payslip) => {
+      if (employeeStatus !== "All") {
+        const shouldBeActive = employeeStatus === "Active";
+        if (Boolean(payslip.employee?.isActive) !== shouldBeActive) {
+          return false;
+        }
+      }
       if (financialYear === "All") return true;
       const startYear = Number(financialYear.match(/FY (\d{4})/)?.[1]);
       if (!startYear) return true;
@@ -67,9 +85,35 @@ const HrPayslips = () => {
         !month.isBefore(financialYearStart) && month.isBefore(financialYearEnd)
       );
     });
-  }, [financialYear, payslips]);
+  }, [employeeStatus, financialYear, payslips]);
+
+  const handleDownloadPayslip = async (payslip) => {
+    try {
+      const response = await axios.get(
+        `/api/payslip/download-payslip/${payslip._id}`,
+        { responseType: "blob" }
+      );
+      const objectUrl = URL.createObjectURL(response.data);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = objectUrl;
+      downloadLink.download = payslip.payslipName || "Payslip.pdf";
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || "Unable to download the payslip"
+      );
+    }
+  };
 
   const columns = [
+    {
+      field: "employeeName",
+      headerName: "Employee Name",
+      minWidth: 190,
+    },
     {
       field: "period",
       headerName: "Period",
@@ -97,6 +141,12 @@ const HrPayslips = () => {
     { field: "cess", headerName: "Cess (INR)", minWidth: 120, valueFormatter: ({ value }) => inrFormat(value) },
     { field: "netAmount", headerName: "Net Amount (INR)", minWidth: 160, valueFormatter: ({ value }) => inrFormat(value) },
     {
+      field: "payslipPdfLink",
+      headerName: "Payslip PDF Link",
+      hide: true,
+      suppressColumnsToolPanel: true,
+    },
+    {
       field: "incomeTaxSheet",
       headerName: "Income Tax Sheet",
       minWidth: 170,
@@ -112,15 +162,14 @@ const HrPayslips = () => {
       suppressCsvExport: true,
       cellRenderer: ({ data }) =>
         data?.payslipLink ? (
-          <a
-            href={data.payslipLink}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => handleDownloadPayslip(data)}
             title="Download payslip"
             className="inline-flex h-full items-center text-primary"
           >
             <MdDownload size={20} />
-          </a>
+          </button>
         ) : (
           "-"
         ),
@@ -130,6 +179,10 @@ const HrPayslips = () => {
   const rows = filteredPayslips.map((payslip) => ({
     ...payslip,
     id: payslip._id,
+    employeeName:
+      [payslip.employee?.firstName, payslip.employee?.lastName]
+        .filter(Boolean)
+        .join(" ") || payslip.employee?.empId || "N/A",
     period: `${dayjs(payslip.month).startOf("month").format("DD MMM, YYYY")} to ${dayjs(
       payslip.month
     )
@@ -146,6 +199,7 @@ const HrPayslips = () => {
       0
     ),
     netAmount: payslip.netAmount ?? payslip.netPay ?? 0,
+    payslipPdfLink: payslip.payslipLink || "",
   }));
 
   return (
@@ -169,7 +223,10 @@ const HrPayslips = () => {
           select
           label="Employee Status"
           value={employeeStatus}
-          onChange={(event) => setEmployeeStatus(event.target.value)}
+          onChange={(event) => {
+            setEmployeeStatus(event.target.value);
+            setSelectedEmployee({ _id: "all", firstName: "All" });
+          }}
           size="small"
         >
           <MenuItem value="All">All</MenuItem>
@@ -183,7 +240,9 @@ const HrPayslips = () => {
           loading={isLoading}
           onChange={(_, employee) => setSelectedEmployee(employee)}
           getOptionLabel={(employee) =>
-            `${employee.firstName || ""} ${employee.lastName || ""} (${employee.empId || "N/A"})`.trim()
+            employee?._id === "all"
+              ? "All"
+              : `${employee.firstName || ""} ${employee.lastName || ""} (${employee.empId || "N/A"})`.trim()
           }
           isOptionEqualToValue={(option, value) => option._id === value._id}
           renderInput={(params) => (

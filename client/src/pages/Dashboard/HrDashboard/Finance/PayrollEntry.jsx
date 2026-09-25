@@ -39,7 +39,7 @@ const SummarySection = ({ title, rows }) => (
   </section>
 );
 
-const ChecklistItem = ({ icon, title, children, onClick }) => {
+const ChecklistItem = ({ icon, title, children, onClick, disabled = false }) => {
   const content = (
     <>
       {icon && <span className="mt-0.5 shrink-0">{icon}</span>}
@@ -58,7 +58,8 @@ const ChecklistItem = ({ icon, title, children, onClick }) => {
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full items-start gap-3 rounded px-2 py-2 hover:bg-gray-50"
+      disabled={disabled}
+      className="flex w-full items-start gap-3 rounded px-2 py-2 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
     >
       {content}
     </button>
@@ -280,6 +281,29 @@ const PayrollEntry = () => {
         return response.data;
       },
     });
+  const { mutateAsync: retryPayslipEmails, isPending: isRetryingPayslipEmails } =
+    useMutation({
+      mutationFn: async () => {
+        const response = await axios.post(
+          `/api/payroll/drafts/${draftId}/retry-payslip-emails`
+        );
+        return response.data;
+      },
+    });
+  const {
+    data: payslipEmailStatus,
+    refetch: refetchPayslipEmailStatus,
+    isFetching: isFetchingPayslipEmailStatus,
+  } = useQuery({
+    queryKey: ["payrollPayslipEmailStatus", draftId],
+    enabled: Boolean(showReleasePayslips && draft?.payslipsReleasedAt),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/payroll/drafts/${draftId}/payslip-email-status`
+      );
+      return response.data;
+    },
+  });
   const { mutateAsync: undoDraftChange, isPending: isUndoingDraft } =
     useMutation({
       mutationFn: async () => {
@@ -400,14 +424,44 @@ const PayrollEntry = () => {
     numberValue(draft.employerPf) +
     numberValue(draft.voluntaryProvidentFund);
   const totalEsi = numberValue(draft.employeeEsi) + numberValue(draft.employerEsi);
+  const releaseSummary = draft.payslipReleaseSummary || {};
+  const generatedPayslipCount = numberValue(releaseSummary.generated);
+  const sentPayslipCount = numberValue(releaseSummary.sent);
+  const failedPayslipEmailCount =
+    numberValue(releaseSummary.failed) + numberValue(releaseSummary.skipped);
+  const payslipsGenerated =
+    generatedPayslipCount > 0 || Boolean(draft.payslipsReleasedAt);
+  const allPayslipEmailsSent =
+    generatedPayslipCount > 0 && sentPayslipCount >= generatedPayslipCount;
+  const isReleasingOrRetrying =
+    isReleasingPayslips || isRetryingPayslipEmails;
 
   const handleReleasePayslips = async () => {
     try {
-      const response = await releasePayslips(sendPayslipEmails === "yes");
-      setShowReleasePayslips(false);
+      const shouldSendEmails = sendPayslipEmails === "yes";
+      const response =
+        payslipsGenerated && shouldSendEmails
+          ? await retryPayslipEmails()
+          : await releasePayslips(shouldSendEmails);
       await refetchDraft();
       await queryClient.invalidateQueries({ queryKey: ["employeePayslips"] });
-      toast.success(response.message || "Payslips generated successfully");
+      await queryClient.invalidateQueries({ queryKey: ["payslips"] });
+      await queryClient.invalidateQueries({
+        queryKey: ["payrollPayslipEmailStatus", draftId],
+      });
+      const failedToSend =
+        numberValue(response.summary?.failed) +
+        numberValue(response.summary?.skipped);
+      if (shouldSendEmails && failedToSend > 0) {
+        setShowReleasePayslips(true);
+        await refetchPayslipEmailStatus();
+        toast.warning(
+          `${numberValue(response.summary?.sent)} email(s) sent; ${failedToSend} could not be sent. Review the reasons and retry.`
+        );
+      } else {
+        setShowReleasePayslips(false);
+        toast.success(response.message || "Payslips generated successfully");
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to generate payslips");
     }
@@ -889,7 +943,11 @@ const PayrollEntry = () => {
               <div className="mt-3 space-y-1">
                 <ChecklistItem
                   icon={
-                    draft.payslipsReleasedAt ? (
+                    allPayslipEmailsSent ? (
+                      <MdCheckCircle size={18} className="text-green-600" />
+                    ) : payslipsGenerated && failedPayslipEmailCount > 0 ? (
+                      <MdWarning size={18} className="text-amber-500" />
+                    ) : payslipsGenerated ? (
                       <MdCheckCircle size={18} className="text-sky-500" />
                     ) : (
                       <MdRadioButtonUnchecked
@@ -899,7 +957,13 @@ const PayrollEntry = () => {
                     )
                   }
                   title="Release Payslips"
-                  onClick={() => setShowReleasePayslips(true)}
+                  onClick={() => {
+                    if (!allPayslipEmailsSent) {
+                      if (payslipsGenerated) setSendPayslipEmails("yes");
+                      setShowReleasePayslips(true);
+                    }
+                  }}
+                  disabled={allPayslipEmailsSent}
                 />
                 <ChecklistItem
                   icon={
@@ -1035,12 +1099,20 @@ const PayrollEntry = () => {
               Do you want to send emails to your employees?
             </legend>
             {["yes", "no"].map((option) => (
-              <label key={option} className="flex cursor-pointer items-center gap-2">
+              <label
+                key={option}
+                className={`flex items-center gap-2 ${
+                  option === "no" && payslipsGenerated
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer"
+                }`}
+              >
                 <input
                   type="radio"
                   name="sendPayslipEmails"
                   value={option}
                   checked={sendPayslipEmails === option}
+                  disabled={option === "no" && payslipsGenerated}
                   onChange={(event) => setSendPayslipEmails(event.target.value)}
                 />
                 <span className="capitalize">{option}</span>
@@ -1048,17 +1120,80 @@ const PayrollEntry = () => {
             ))}
           </fieldset>
 
+          {payslipsGenerated && (
+            <div className="mt-6">
+              <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                <span>
+                  Generated: {numberValue(payslipEmailStatus?.summary?.generated)}
+                </span>
+                <span className="text-green-700">
+                  Sent: {numberValue(payslipEmailStatus?.summary?.sent)}
+                </span>
+                <span className="text-red-600">
+                  Failed to send:{" "}
+                  {numberValue(payslipEmailStatus?.summary?.failedToSend)}
+                </span>
+              </div>
+
+              {payslipEmailStatus?.systemError && (
+                <div className="mt-3 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {payslipEmailStatus.systemError}
+                </div>
+              )}
+
+              <div className="mt-3 max-h-56 overflow-auto rounded border">
+                <table className="w-full border-collapse text-left text-sm">
+                  <thead className="sticky top-0 bg-gray-50 text-gray-700">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Employee</th>
+                      <th className="px-3 py-2 font-medium">Email</th>
+                      <th className="px-3 py-2 font-medium">Status</th>
+                      <th className="px-3 py-2 font-medium">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(payslipEmailStatus?.employees || []).map((employee) => (
+                      <tr key={employee.employeeId} className="border-t">
+                        <td className="px-3 py-2">{employee.employeeName}</td>
+                        <td className="px-3 py-2">{employee.email || "N/A"}</td>
+                        <td
+                          className={`px-3 py-2 font-medium ${
+                            employee.status === "Sent"
+                              ? "text-green-700"
+                              : employee.status === "Failed to send"
+                                ? "text-red-600"
+                                : "text-gray-600"
+                          }`}
+                        >
+                          {employee.status}
+                        </td>
+                        <td className="px-3 py-2 text-gray-600">
+                          {employee.reason}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {isFetchingPayslipEmailStatus && (
+                  <p className="p-3 text-sm text-gray-500">
+                    Loading email status...
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="mt-auto flex justify-end gap-3 pt-10">
             <SecondaryButton
               title="Cancel"
               handleSubmit={() => setShowReleasePayslips(false)}
             />
             <PrimaryButton
-              title="Release"
+              title={payslipsGenerated ? "Retry Emails" : "Release"}
               handleSubmit={handleReleasePayslips}
               externalStyles="!bg-green-600"
-              disabled={isReleasingPayslips}
-              isLoading={isReleasingPayslips}
+              disabled={isReleasingOrRetrying || allPayslipEmailsSent}
+              isLoading={isReleasingOrRetrying}
             />
           </div>
         </div>

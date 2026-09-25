@@ -131,6 +131,67 @@ const getPayslipEmailDetails = ({ draft, employeeName, companyName }) => {
   };
 };
 
+const getFriendlyPayslipEmailReason = (payslip) => {
+  const status = String(payslip?.emailStatus || "Not Requested");
+  const rawError = String(payslip?.emailError || "");
+
+  if (status === "Sent") return "Sent successfully";
+  if (status === "Not Requested") return "Email was not requested";
+  if (status === "Skipped") {
+    if (/missing/i.test(rawError)) return "Email address is missing";
+    if (/invalid/i.test(rawError)) return "Email address is invalid";
+    return "Employee email address is missing or invalid";
+  }
+  if (
+    /535|badcredentials|invalid login|username and password not accepted/i.test(
+      rawError,
+    )
+  ) {
+    return "Payslip generated, but the email could not be sent because the sender email account is not configured correctly. Please contact the administrator and retry.";
+  }
+  return "Payslip generated, but the email could not be delivered. Please retry or contact the administrator.";
+};
+
+const getPayslipEmailStatusPayload = (payslips) => {
+  const employees = payslips.map((payslip) => {
+    const employee = payslip.employee || {};
+    const status = String(payslip.emailStatus || "Not Requested");
+    return {
+      employeeId: employee._id,
+      employeeCode: employee.empId || "",
+      employeeName:
+        [employee.firstName, employee.lastName].filter(Boolean).join(" ") ||
+        employee.empId ||
+        "Employee",
+      email: employee.email || "",
+      status:
+        status === "Failed" || status === "Skipped"
+          ? "Failed to send"
+          : status,
+      reason: getFriendlyPayslipEmailReason(payslip),
+      emailSentAt: payslip.emailSentAt,
+    };
+  });
+  const senderConfigurationError = employees.find((employee) =>
+    employee.reason.includes("sender email account is not configured correctly"),
+  )?.reason;
+
+  return {
+    summary: {
+      generated: payslips.length,
+      sent: payslips.filter((payslip) => payslip.emailStatus === "Sent").length,
+      failedToSend: payslips.filter((payslip) =>
+        ["Failed", "Skipped"].includes(payslip.emailStatus),
+      ).length,
+      notRequested: payslips.filter(
+        (payslip) => payslip.emailStatus === "Not Requested",
+      ).length,
+    },
+    systemError: senderConfigurationError || null,
+    employees,
+  };
+};
+
 const createPayslipPdf = async ({ draft, summary, employee, companyData }) => {
   const pdfDoc = await PDFDocument.create();
   const page = pdfDoc.addPage([595.28, 841.89]);
@@ -1356,6 +1417,12 @@ const releasePayrollDraftPayslips = async (req, res, next) => {
         .status(409)
         .json({ message: "Process payroll before releasing payslips" });
     }
+    if (draft.payslipsReleasedAt) {
+      return res.status(409).json({
+        message:
+          "Payslips have already been generated. Retry pending emails instead.",
+      });
+    }
 
     const summaries = draft.employeeSummaries.filter(
       (summary) => !summary.isExcluded && summary.employee,
@@ -1491,10 +1558,11 @@ const releasePayrollDraftPayslips = async (req, res, next) => {
             const { payslip, employee, pdfBuffer, filename } = released;
             const email = String(employee.email || "").trim();
 
-            if (!/^\S+@\S+\.\S+$/.test(email)) {
+            if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
               payslip.emailStatus = "Skipped";
-              payslip.emailError =
-                "Employee email address is missing or invalid";
+              payslip.emailError = email
+                ? "Employee email address is invalid"
+                : "Employee email address is missing";
               await payslip.save();
               return "skipped";
             }
@@ -1561,11 +1629,40 @@ const releasePayrollDraftPayslips = async (req, res, next) => {
 
     return res.status(200).json({
       message: sendEmails
-        ? `${releaseSummary.generated} payslip${releaseSummary.generated === 1 ? "" : "s"} generated; ${releaseSummary.sent} sent, ${releaseSummary.failed} failed, ${releaseSummary.skipped} skipped`
+        ? `${releaseSummary.generated} payslip${releaseSummary.generated === 1 ? "" : "s"} generated. ${releaseSummary.sent} email${releaseSummary.sent === 1 ? "" : "s"} sent; ${releaseSummary.failed + releaseSummary.skipped} could not be sent.`
         : `${releaseSummary.generated} payslip${releaseSummary.generated === 1 ? "" : "s"} generated successfully`,
       data: releasedPayslips.map(({ payslip }) => payslip),
       summary: releaseSummary,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const fetchPayrollDraftPayslipEmailStatus = async (req, res, next) => {
+  try {
+    const { draftId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(draftId)) {
+      return res.status(400).json({ message: "Invalid payroll draft ID" });
+    }
+
+    const draft = await PayrollDraft.findOne({
+      _id: draftId,
+      company: req.company,
+    }).select("_id");
+    if (!draft) {
+      return res.status(404).json({ message: "Payroll draft not found" });
+    }
+
+    const payslips = await Payslip.find({
+      payrollDraft: draft._id,
+      company: req.company,
+    })
+      .select("employee emailStatus emailSentAt emailError")
+      .populate("employee", "firstName lastName empId email")
+      .lean();
+
+    return res.status(200).json(getPayslipEmailStatusPayload(payslips));
   } catch (error) {
     next(error);
   }
@@ -1590,13 +1687,13 @@ const retryPayrollDraftPayslipEmails = async (req, res, next) => {
     const payslips = await Payslip.find({
       payrollDraft: draft._id,
       company: req.company,
-      emailStatus: { $in: ["Failed", "Skipped"] },
+      emailStatus: { $in: ["Not Requested", "Failed", "Skipped"] },
     }).populate("employee", "firstName lastName email");
 
     if (!payslips.length) {
       return res
         .status(409)
-        .json({ message: "There are no failed payslip emails to retry" });
+        .json({ message: "There are no pending payslip emails to send" });
     }
 
     const companyData = await Company.findById(req.company)
@@ -1606,9 +1703,11 @@ const retryPayrollDraftPayslipEmails = async (req, res, next) => {
       payslips.map(async (payslip) => {
         const employee = payslip.employee;
         const email = String(employee?.email || "").trim();
-        if (!/^\S+@\S+\.\S+$/.test(email)) {
+        if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
           payslip.emailStatus = "Skipped";
-          payslip.emailError = "Employee email address is missing or invalid";
+          payslip.emailError = email
+            ? "Employee email address is invalid"
+            : "Employee email address is missing";
           await payslip.save();
           return "skipped";
         }
@@ -1660,14 +1759,18 @@ const retryPayrollDraftPayslipEmails = async (req, res, next) => {
       draft.payslipReleaseSummary?.toObject?.() ||
       draft.payslipReleaseSummary ||
       {};
+    const generated = await Payslip.countDocuments({
+      payrollDraft: draft._id,
+      company: req.company,
+    });
     const sent = retryResults.filter((result) => result === "sent").length;
     const failed = retryResults.filter((result) => result === "failed").length;
     const skipped = retryResults.filter(
       (result) => result === "skipped",
     ).length;
     draft.payslipReleaseSummary = {
-      generated: numberValue(previousSummary.generated),
-      sent: numberValue(previousSummary.sent) + sent,
+      generated,
+      sent: Math.min(generated, numberValue(previousSummary.sent) + sent),
       failed,
       skipped,
       sendEmails: true,
@@ -1675,7 +1778,7 @@ const retryPayrollDraftPayslipEmails = async (req, res, next) => {
     await draft.save();
 
     return res.status(200).json({
-      message: `${sent} payslip email${sent === 1 ? "" : "s"} sent; ${failed} failed, ${skipped} skipped`,
+      message: `${sent} payslip email${sent === 1 ? "" : "s"} sent; ${failed + skipped} could not be sent`,
       summary: draft.payslipReleaseSummary,
     });
   } catch (error) {
@@ -2170,6 +2273,7 @@ module.exports = {
   undoPayrollDraftEmployeeChange,
   submitPayrollDraft,
   releasePayrollDraftPayslips,
+  fetchPayrollDraftPayslipEmailStatus,
   retryPayrollDraftPayslipEmails,
   voidPayrollDraft,
 };
