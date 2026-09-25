@@ -97,6 +97,74 @@ const INVESTOR_LEGEND_TO_SERIES = {
   "Co-Working": "Co-Working",
 };
 
+const roundInvestorStackedBars = (chartContext) => {
+  window.requestAnimationFrame(() => {
+    const chartRoot = chartContext?.el;
+    const svg = chartRoot?.querySelector("svg");
+    if (!svg) return;
+
+    svg
+      .querySelectorAll("clipPath[data-investor-stack-clip]")
+      .forEach((clipPath) => clipPath.remove());
+
+    let defs = svg.querySelector("defs");
+    if (!defs) {
+      defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+      svg.prepend(defs);
+    }
+
+    const barsByMonth = new Map();
+    chartRoot
+      .querySelectorAll(".apexcharts-bar-series path.apexcharts-bar-area")
+      .forEach((bar) => {
+        const monthIndex = bar.getAttribute("j");
+        if (monthIndex === null) return;
+        const bars = barsByMonth.get(monthIndex) || [];
+        bars.push(bar);
+        barsByMonth.set(monthIndex, bars);
+      });
+
+    barsByMonth.forEach((bars, monthIndex) => {
+      const visibleBars = bars.filter((bar) => {
+        const box = bar.getBBox();
+        return box.width > 0 && box.height > 0;
+      });
+      if (visibleBars.length === 0) return;
+
+      const boxes = visibleBars.map((bar) => bar.getBBox());
+      const left = Math.min(...boxes.map((box) => box.x));
+      const top = Math.min(...boxes.map((box) => box.y));
+      const right = Math.max(...boxes.map((box) => box.x + box.width));
+      const bottom = Math.max(...boxes.map((box) => box.y + box.height));
+      const clipId = `investor-stack-${monthIndex}`;
+      const clipPath = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "clipPath",
+      );
+      const rect = document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "rect",
+      );
+
+      clipPath.setAttribute("id", clipId);
+      clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
+      clipPath.setAttribute("data-investor-stack-clip", "true");
+      rect.setAttribute("x", left);
+      rect.setAttribute("y", top);
+      rect.setAttribute("width", right - left);
+      rect.setAttribute("height", bottom - top);
+      rect.setAttribute("rx", "6");
+      rect.setAttribute("ry", "6");
+      clipPath.appendChild(rect);
+      defs.appendChild(clipPath);
+
+      visibleBars.forEach((bar) => {
+        bar.setAttribute("clip-path", `url(#${clipId})`);
+      });
+    });
+  });
+};
+
 const FyBarGraphPercentage = ({
   data = [],
   dateKey = "date",
@@ -241,7 +309,7 @@ const FyBarGraphPercentage = ({
               name,
               value: data[monthIndex] || 0,
             }))
-            .sort((a, b) => a.value - b.value);
+            .sort((a, b) => b.value - a.value);
           const rankedPoint = rankedValues[rankIndex];
           const vertical = projected
             ? rankedPoint?.name.replace(PROJECTED_SERIES_PREFIX, "")
@@ -361,10 +429,18 @@ const FyBarGraphPercentage = ({
         height: 350,
         toolbar: { show: false },
         fontFamily: "Poppins-Regular",
+        ...(investorVariant
+          ? {
+              events: {
+                mounted: roundInvestorStackedBars,
+                updated: roundInvestorStackedBars,
+              },
+            }
+          : {}),
       },
       plotOptions: {
         bar: {
-          borderRadius: 4,
+          borderRadius: investorVariant ? 0 : 4,
           horizontal: false,
           columnWidth: investorVariant ? "38%" : "40%",
           ...(investorVariant

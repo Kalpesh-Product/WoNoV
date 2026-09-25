@@ -862,9 +862,10 @@ const InvestorAppreciationCenter = () => {
     ],
     [currentFiscalYear, valuationMonths],
   );
-  const marchValuation = valuationMonths.find(({ month }) =>
-    month.startsWith("Mar-"),
-  );
+  const currentValuation =
+    valuationMonths.find(
+      ({ month }) => month === valuationAsOf.format("MMM-YY"),
+    ) || valuationMonths[0];
   const maximumValuationInCrores = Math.max(
     0,
     ...valuationMonths.map(({ amount }) => amount / 10_000_000),
@@ -881,7 +882,7 @@ const InvestorAppreciationCenter = () => {
       fontFamily: "Poppins-Regular",
     },
 
-    colors: ["#3CB371"],
+    colors: ["#0BDA51"],
 
     legend: {
       show: false,
@@ -960,7 +961,7 @@ const InvestorAppreciationCenter = () => {
         return (
           `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
           `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${month || ""}</div>` +
-          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#3CB371;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></span></div>` +
+          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0BDA51;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></span></div>` +
           `</div>`
         );
       },
@@ -986,10 +987,10 @@ const InvestorAppreciationCenter = () => {
         currentYear={currentFiscalYear}
         categories={valuationMonths.map(({ month }) => month)}
         headerRightContent={
-          marchValuation ? (
+          currentValuation ? (
             <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium text-[#274784]">
               <span>REAL ESTATE VALUE :</span>
-              <span>{format(marchValuation.amount)}</span>
+              <span>{format(currentValuation.amount)}</span>
             </div>
           ) : null
         }
@@ -2010,8 +2011,6 @@ const InvestorDashboard = () => {
   const assetValueOwned =
     APPRECIATION_BASE_VALUATION +
     APPRECIATION_MONTHLY_INCREMENT * currentAppreciationMonthIndex;
-  const marchAssetValueOwned =
-    APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * 6;
   const canViewIncomeExpenseGraph = hasPermission(
     PERMISSIONS.INVESTOR_INCOME_EXPENSE_GRAPH.value,
   );
@@ -2264,7 +2263,7 @@ const InvestorDashboard = () => {
                 Indian Destination Workspace
               </p>
               <p className="font-pregular text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
-                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-0.5 after:w-full after:-rotate-6 after:bg-[#E64B4B] after:content-['']">
+                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-0.5 after:w-full after:bg-[#E64B4B] after:content-['']">
                   WORK TO LIVE.
                 </span>
                 <span className="ml-3 text-[#E64B4B]">LIVE TO WORK</span>
@@ -2281,7 +2280,7 @@ const InvestorDashboard = () => {
           totalInventory={totalInventory}
           occupiedInventory={occupiedInventory}
           inventoryOccupancyPercent={inventoryOccupancyPercent}
-          assetValueOwned={marchAssetValueOwned}
+          assetValueOwned={assetValueOwned}
           incomePerSqFt={incomePerSqFt}
           expensePerSqFt={expensePerSqFt}
           averageUniqueClients={averageUniqueClients}
@@ -2298,7 +2297,7 @@ const InvestorDashboard = () => {
           <InvestorIncomeExpenseGraph
             assetValueOwned={assetValueOwned}
             projectedFinancials={projectedFinancials}
-            snapshotAssetValueOwned={marchAssetValueOwned}
+            snapshotAssetValueOwned={assetValueOwned}
           />
         </div>
       )}
