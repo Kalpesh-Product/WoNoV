@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Printout = require("./../models/Printout");
 const Company = require("../models/hr/Company");
+const User = require("../models/hr/UserData");
+const Department = require("../models/Departments");
 const buildDateFilter = require("../utils/dateFilter");
 const {
   fetchPrintoutReportService,
@@ -10,8 +12,21 @@ const {
 
 const clientModels = ["CoworkingClient", "Company"];
 const requestedByModels = ["CoworkingMember", "UserData"];
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const PERMANENT_DELETE_DEPARTMENTS = new Set([
+  "top management",
+  "tech department",
+]);
 
 const isValidObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
+const belongsToPermanentDeleteDepartment = (departments = []) =>
+  departments.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      PERMANENT_DELETE_DEPARTMENTS.has(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
 
 const validatePrintoutPayload = (payload, { isUpdate = false } = {}) => {
   const errors = [];
@@ -176,10 +191,18 @@ const editPrintout = async (req, res) => {
       });
     }
 
-    const printout = await Printout.findByIdAndUpdate(id, printoutPayload, {
-      new: true,
-      runValidators: true,
-    })
+    // const printout = await Printout.findByIdAndUpdate(id, printoutPayload, {
+    //   new: true,
+    //   runValidators: true,
+    // })
+      const printout = await Printout.findOneAndUpdate(
+      { _id: id, isDeleted: { $ne: true } },
+      printoutPayload,
+      {
+        new: true,
+        runValidators: true,
+      },
+    )
       .populate(populatePrintout)
       .lean()
       .exec();
@@ -195,6 +218,124 @@ const editPrintout = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       message: "An error occurred while updating the printout",
+      error: error.message,
+    });
+  }
+};
+
+const deletePrintout = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid printout ID provided" });
+    }
+
+    const [printout, user] = await Promise.all([
+      Printout.findById(id).populate("department", "name").exec(),
+      User.findById(req.user).populate("departments", "name").lean().exec(),
+    ]);
+
+    if (!printout) {
+      return res.status(404).json({ message: "Printout not found" });
+    }
+
+    const canPermanentlyDelete = belongsToPermanentDeleteDepartment(
+      user?.departments,
+    );
+    const isProtectedPrintout = belongsToPermanentDeleteDepartment([
+      printout.department,
+    ]);
+
+    if (!canPermanentlyDelete && isProtectedPrintout) {
+      return res.status(403).json({
+        message:
+          "Only Top Management or Tech Department users can delete this printout",
+      });
+    }
+
+    if (canPermanentlyDelete) {
+      await printout.deleteOne();
+      return res.status(200).json({
+        message: "Printout permanently deleted successfully",
+        deletionType: "permanent",
+      });
+    }
+
+    if (printout.isDeleted) {
+      return res.status(403).json({
+        message:
+          "Only Top Management or Tech Department users can permanently delete this printout",
+      });
+    }
+
+    printout.isDeleted = true;
+    printout.deletedAt = new Date();
+    printout.deletedBy = req.user;
+    printout.deletedByPrivilegedDepartment = false;
+    await printout.save();
+
+    return res.status(200).json({
+      message: "Printout deleted successfully",
+      deletionType: "soft",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An error occurred while deleting the printout",
+      error: error.message,
+    });
+  }
+};
+
+const restorePrintout = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid printout ID provided" });
+    }
+
+    const user = await User.findById(req.user)
+      .populate("departments", "name")
+      .lean()
+      .exec();
+
+    if (!belongsToPermanentDeleteDepartment(user?.departments)) {
+      return res.status(403).json({
+        message:
+          "Only Top Management or Tech Department users can restore this printout",
+      });
+    }
+
+    const printout = await Printout.findOneAndUpdate(
+      { _id: id, isDeleted: true },
+      {
+        $set: { isDeleted: false },
+        $unset: {
+          deletedAt: 1,
+          deletedBy: 1,
+          deletedByPrivilegedDepartment: 1,
+        },
+      },
+      { new: true },
+    )
+      .populate(populatePrintout)
+      .lean()
+      .exec();
+
+    if (!printout) {
+      return res.status(404).json({
+        message: "Deleted printout entry not found",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Printout restored successfully",
+      printout: sanitizePrintout(printout),
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "An error occurred while restoring the printout",
       error: error.message,
     });
   }
@@ -235,6 +376,7 @@ const getPrintouts = async (req, res) => {
       toDate,
       search,
       searchContext,
+      includeDeleted,
     } = req.query;
     const filters = {};
     const requestDateFilter = req.query?.dateFilter ||
@@ -302,12 +444,42 @@ const getPrintouts = async (req, res) => {
       });
     }
 
+    let canViewDeleted = false;
+    let privilegedUserIds = [];
+    if (includeDeleted === "true") {
+      const user = await User.findById(req.user)
+        .populate("departments", "name")
+        .lean()
+        .exec();
+      canViewDeleted = belongsToPermanentDeleteDepartment(user?.departments);
+
+      if (canViewDeleted) {
+        const privilegedDepartments = await Department.find({
+          $or: [
+            { name: /^top management$/i },
+            { _id: TECH_DEPARTMENT_ID },
+          ],
+        })
+          .select("_id")
+          .lean()
+          .exec();
+
+        privilegedUserIds = await User.find({
+          departments: {
+            $in: privilegedDepartments.map((department) => department._id),
+          },
+        }).distinct("_id");
+      }
+    }
+
     const { printouts, pagination } = await fetchPrintoutReportService({
       filters,
       page: req.query?.page,
       limit: req.query?.limit,
       search,
       searchContext,
+      includeDeleted: canViewDeleted,
+      excludedDeletedBy: privilegedUserIds,
       ...(dateFilter && { dateFilter }),
     });
 
@@ -325,6 +497,8 @@ const getPrintouts = async (req, res) => {
 
 module.exports = {
   addPrintout,
+  deletePrintout,
   editPrintout,
   getPrintouts,
+  restorePrintout,
 };
