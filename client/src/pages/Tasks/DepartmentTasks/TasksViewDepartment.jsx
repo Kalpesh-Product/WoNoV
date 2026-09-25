@@ -76,6 +76,13 @@ const TasksViewDepartment = () => {
   const isMasterOrSuperAdmin = roleTitles.some(
     (roleTitle) => roleTitle === "Master Admin" || roleTitle === "Super Admin",
   );
+  const isTopManagement =
+    roleTitles.some(
+      (roleTitle) => roleTitle.trim().toLowerCase() === "top management",
+    ) ||
+    auth?.user?.departments?.some(
+      (dept) => dept?.name?.trim().toLowerCase() === "top management",
+    );
   const isDepartmentAdmin = roleTitles.some(
     (roleTitle) =>
       roleTitle.endsWith("Admin") &&
@@ -105,7 +112,8 @@ const TasksViewDepartment = () => {
     return item._id.toString() === deptId.toString();
   });
 
-  const showCheckBox = allowedDept;
+  const showCheckBox =
+    allowedDept || isTopManagement || isMasterOrSuperAdmin;
 
   const refreshDepartmentTaskQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["fetchedTasks"] });
@@ -243,7 +251,9 @@ const TasksViewDepartment = () => {
     useMutation({
       mutationKey: ["deleteDepartmentTask"],
       mutationFn: async (taskId) => {
-        const response = await axios.patch(`/api/tasks/delete-task/${taskId}`);
+        const response = await axios.delete(
+          `/api/tasks/department-task/${taskId}`,
+        );
         return response.data;
       },
       onSuccess: (data) => {

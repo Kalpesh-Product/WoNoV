@@ -22,6 +22,10 @@ const {
   getTodayUtcRange,
   getRequestTimezone,
 } = require("../../utils/dateTimezone");
+const {
+  hasDepartmentAdminAccess,
+  hasGlobalReportAccess,
+} = require("../../services/reports/access");
 
 const VALID_BULK_TASK_STATUSES = ["Pending", "InProgress", "Completed"];
 const BULK_TASK_REQUIRED_FIELDS = [
@@ -1448,6 +1452,158 @@ const deleteTask = async (req, res, next) => {
   }
 };
 
+const permanentlyDeleteMyTask = async (req, res, next) => {
+  const { company, user, ip } = req;
+  const logPath = "tasks/TaskLog";
+  const logAction = "Permanently Delete My Task";
+  const logSourceKey = "task";
+
+  try {
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError(
+        "Invalid task ID provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const deletedTask = await Task.findOneAndDelete({
+      _id: id,
+      company,
+      assignedBy: user,
+      taskType: "Self",
+    });
+
+    if (!deletedTask) {
+      throw new CustomError(
+        "My Task not found or you are not allowed to delete it",
+        logPath,
+        logAction,
+        logSourceKey,
+        404,
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "My Task permanently deleted successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: deletedTask._id,
+      changes: { permanentlyDeleted: true },
+    });
+
+    return res.status(200).json({
+      message: "Task permanently deleted successfully",
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
+const permanentlyDeleteDepartmentTask = async (req, res, next) => {
+  const { company, user, ip, departments = [], roles = [] } = req;
+  const logPath = "tasks/TaskLog";
+  const logAction = "Permanently Delete Department Task";
+  const logSourceKey = "task";
+
+  try {
+    const { id } = req.params;
+
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      throw new CustomError(
+        "Invalid task ID provided",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
+    }
+
+    const requester = await User.findById(user)
+      .populate("departments", "name")
+      .lean()
+      .exec();
+    const isTopManagement =
+      roles.some(
+        (role) =>
+          String(role?.roleTitle || role?.title || role)
+            .trim()
+            .toLowerCase() === "top management",
+      ) ||
+      requester?.departments?.some(
+        (department) =>
+          department?.name?.trim().toLowerCase() === "top management",
+      );
+    const hasGlobalAccess = hasGlobalReportAccess(roles) || isTopManagement;
+    const hasDepartmentAccess = hasDepartmentAdminAccess(roles);
+
+    if (!hasGlobalAccess && !hasDepartmentAccess) {
+      throw new CustomError(
+        "Only department managers can delete department tasks",
+        logPath,
+        logAction,
+        logSourceKey,
+        403,
+      );
+    }
+
+    const deletedTask = await Task.findOneAndDelete({
+      _id: id,
+      company,
+      taskType: "Department",
+      ...(!hasGlobalAccess && { department: { $in: departments } }),
+    });
+
+    if (!deletedTask) {
+      throw new CustomError(
+        "Department task not found or you are not allowed to delete it",
+        logPath,
+        logAction,
+        logSourceKey,
+        404,
+      );
+    }
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Department task permanently deleted successfully",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: deletedTask._id,
+      changes: { permanentlyDeleted: true },
+    });
+
+    return res.status(200).json({
+      message: "Department task permanently deleted successfully",
+    });
+  } catch (error) {
+    if (error instanceof CustomError) {
+      next(error);
+    } else {
+      next(
+        new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+      );
+    }
+  }
+};
+
 const getTasksSummary = async (req, res, next) => {
   try {
     const { company, departments, roles } = req;
@@ -1658,6 +1814,8 @@ module.exports = {
   getAllDeptTasks,
   completeTasks,
   deleteTask,
+  permanentlyDeleteMyTask,
+  permanentlyDeleteDepartmentTask,
   getCompletedTasks,
   getMyCompletedTasks,
   getMyAssignedTasks,

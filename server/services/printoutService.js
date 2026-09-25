@@ -162,6 +162,8 @@ const fetchPrintoutReportService = async ({
   limit,
   search,
   isReport = false,
+  includeDeleted = false,
+  excludedDeletedBy = [],
 }) => {
   const {
     shouldPaginate,
@@ -171,6 +173,14 @@ const fetchPrintoutReportService = async ({
   } = getPagination({ page, limit });
 
   let printoutFilters = {
+    ...(includeDeleted
+      ? {
+          deletedByPrivilegedDepartment: { $ne: true },
+          ...(excludedDeletedBy.length
+            ? { deletedBy: { $nin: excludedDeletedBy } }
+            : {}),
+        }
+      : { isDeleted: { $ne: true } }),
     ...filters,
     ...(dateFilter || {}),
   };
