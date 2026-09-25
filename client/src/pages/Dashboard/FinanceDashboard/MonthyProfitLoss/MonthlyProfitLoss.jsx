@@ -13,6 +13,40 @@ import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount
+      );
+
 const MonthlyProfitLoss = ({
   routeBase = "/app/dashboard/finance-dashboard",
   departmentBudgetRoute = "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
@@ -126,20 +160,6 @@ const MonthlyProfitLoss = ({
     });
   };
 
-  const getNormalizedPaymentStatus = (value) => {
-    if (typeof value === "string") return value.trim().toLowerCase();
-    return value ? "paid" : "unpaid";
-  };
-
-  const getNumericAmount = (value) => {
-    if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const parsedValue = parseFloat(value.replace(/,/g, ""));
-      return Number.isNaN(parsedValue) ? 0 : parsedValue;
-    }
-    return 0;
-  };
-
   //-------INCOME-------//
   const monthWiseIncome = {};
 
@@ -151,7 +171,7 @@ const MonthlyProfitLoss = ({
       flatten.push({
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
+        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
       });
     });
 
@@ -165,10 +185,10 @@ const MonthlyProfitLoss = ({
 
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus
+          item.rentStatus ?? item.status
         ),
       });
     });

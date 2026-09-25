@@ -26,6 +26,13 @@ const InvoiceCreation = () => {
   const [viewDetails, setViewDetails] = useState(null);
   const [viewAddTemplateModal, setViewAddTemplateModal] = useState(false);
 
+  const getInvoicePaymentStatus = (item) => {
+    const paidStatus = String(item?.paidStatus || "").trim().toLowerCase();
+    const paymentStatus = String(item?.paymentStatus || "").trim().toLowerCase();
+
+    return paidStatus === "paid" || paymentStatus === "paid" ? "Paid" : "Unpaid";
+  };
+
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
     queryFn: async () => {
@@ -193,7 +200,7 @@ const InvoiceCreation = () => {
     clientName: item?.client?.clientName || "N/A",
     invoiceName: item?.invoice?.name || "N/A",
     uploadDate: item?.invoiceUploadedAt,
-    status: item?.paidStatus || item?.paymentStatus ? "Paid" : "Unpaid",
+    status: getInvoicePaymentStatus(item),
     ...item,
   }));
 
@@ -256,11 +263,7 @@ const InvoiceCreation = () => {
             />
             <DetalisFormatted
               title="Status"
-              detail={
-                viewDetails?.paidStatus || viewDetails?.paymentStatus
-                  ? "Paid"
-                  : "Unpaid"
-              }
+              detail={getInvoicePaymentStatus(viewDetails)}
             />
           </div>
         </MuiModal>

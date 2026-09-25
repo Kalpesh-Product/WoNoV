@@ -1444,13 +1444,37 @@ const updateDepartmentTemplateLastModifiedAt = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid template ID" });
     }
 
-    const department = await Department.findById(departmentId);
-    if (!department) {
-      return res.status(404).json({ message: "Department not found" });
+    let department = await Department.findById(departmentId);
+    let template = department?.templates?.id(templateId) || null;
+
+    if (!template && departmentId === TECH_DEPARTMENT_ID) {
+      const fallbackDepartment = await Department.findOne({
+        $or: [{ "templates._id": templateId }, { "templates.documentId": templateId }],
+      });
+
+      if (fallbackDepartment) {
+        department = fallbackDepartment;
+        template =
+          fallbackDepartment.templates.id(templateId) ||
+          fallbackDepartment.templates.find(
+            (item) =>
+              item.documentId === templateId ||
+              item.name?.trim().toLowerCase() === String(templateId).trim().toLowerCase(),
+          ) ||
+          null;
+      }
     }
 
-    const template = department.templates.id(templateId);
-    if (!template) {
+    if (!department || !template) {
+      if (departmentId === TECH_DEPARTMENT_ID) {
+        return res.status(200).json({
+          message: "Template update skipped for tech department.",
+          downloadedAt: null,
+          uploadedAt: null,
+          templateId,
+        });
+      }
+
       return res.status(404).json({ message: "Template not found" });
     }
 

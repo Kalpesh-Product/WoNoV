@@ -51,6 +51,10 @@ const LogPage = () => {
     setSelectedLogDate((prevDate) => prevDate.add(1, "day"));
   }, []);
 
+  const handleLogDateChange = useCallback((date) => {
+    setSelectedLogDate(dayjs(date).startOf("day"));
+  }, []);
+
   const handleViewlog = (data) => {
     setselectedLog(data);
     setOpenModal(true);
@@ -403,6 +407,8 @@ const LogPage = () => {
           search={true}
           showDateNavigator
           selectedDateLabel={selectedLogDateLabel}
+          selectedDate={selectedLogDate}
+          onSelectedDateChange={handleLogDateChange}
           onPreviousDay={handlePreviousLogDay}
           onNextDay={handleNextLogDay}
         />

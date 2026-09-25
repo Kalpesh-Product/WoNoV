@@ -38,7 +38,10 @@ const AdminClientsData = () => {
   };
 
   const handleClickRow = (clientData) => {
-    dispatch(setSelectedClient(clientData));
+    const resolvedClient =
+      clientsData.find((item) => item._id === clientData._id) || clientData;
+
+    dispatch(setSelectedClient(resolvedClient));
     navigate(
       `/app/dashboard/admin-dashboard/mix-bag/client-members/client-members-data/${encodeURIComponent(
         clientData.clientName,

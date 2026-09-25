@@ -39,6 +39,41 @@ const yearCategories = {
   ],
 };
 
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const getVirtualOfficeReportingAmount = (item) => {
+  const reportingDate = dayjs(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt
+  );
+  const usesHistoricalRevenue =
+    reportingDate.isValid() &&
+    reportingDate.isBefore(dayjs("2026-09-01"), "month");
+
+  return usesHistoricalRevenue
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount
+      );
+};
+
 const HistoricalPnl = () => {
   const axios = useAxiosPrivate();
 
@@ -49,6 +84,17 @@ const HistoricalPnl = () => {
       return Array.isArray(response.data?.response) ? response.data.response : [];
     },
   });
+
+  const { data: simpleRevenue = {}, isLoading: isSimpleRevenueLoading } =
+    useQuery({
+      queryKey: ["simpleRevenue"],
+      queryFn: async () => {
+        const response = await axios.get(
+          "/api/sales/simple-consolidated-revenue"
+        );
+        return response.data || {};
+      },
+    });
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   // Base data for first 3 years
@@ -61,32 +107,59 @@ const HistoricalPnl = () => {
       .filter((item) => item.expense)
       .flatMap((item) => item.expense || []);
 
-    const incomeItems = revenueExpenseData.flatMap((item) => {
-      const income = item.income || {};
-      return [
-        ...(Array.isArray(income.meetingRevenue) ? income.meetingRevenue : []),
-        ...(Array.isArray(income.alternateRevenues)
-          ? income.alternateRevenues
-          : []),
-        ...(Array.isArray(income.virtualOfficeRevenues)
-          ? income.virtualOfficeRevenues
-          : []),
-        ...(Array.isArray(income.workationRevenues)
-          ? income.workationRevenues
-          : []),
-        ...(Array.isArray(income.coworkingRevenues)
-          ? income.coworkingRevenues
-          : []),
-      ];
+    const incomeItems = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      incomeItems.push({
+        amount: getNumericAmount(item.taxable),
+        date: item.date,
+        paid: isMeetingFinancePaid(item),
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      incomeItems.push({
+        amount: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        paid: getNormalizedPaymentStatus(item.status) === "paid",
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      incomeItems.push({
+        amount: getVirtualOfficeReportingAmount(item),
+        date: item.rentDate,
+        paid:
+          getNormalizedPaymentStatus(item.rentStatus ?? item.status) ===
+          "paid",
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      incomeItems.push({
+        amount: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        paid: getNormalizedPaymentStatus(item.status) === "paid",
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      incomeItems.push({
+        amount: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        paid: getNormalizedPaymentStatus(item.rentStatus) === "paid",
+      });
     });
 
     const summary = Object.entries(yearCategories).map(([fiscalYear, months]) => {
       const income = incomeItems.reduce((sum, item) => {
-        const rawDate = item.date || item.rentDate || item.invoiceCreationDate;
+        if (!item.paid) return sum;
+
+        const rawDate = item.date;
         if (!rawDate || !dayjs(rawDate).isValid()) return sum;
         if (!months.includes(dayjs(rawDate).format("MMM-YY"))) return sum;
 
-        return sum + (Number(item.taxableAmount) || Number(item.revenue) || Number(item.taxable) || 0);
+        return sum + item.amount;
       }, 0);
 
       const expense = expenseItems.reduce((sum, item) => {
@@ -105,7 +178,7 @@ const HistoricalPnl = () => {
     });
 
     return summary;
-  }, [revenueExpenseData]);
+  }, [revenueExpenseData, simpleRevenue]);
 
   const incomeExpenseData = [
     {
@@ -202,7 +275,7 @@ const HistoricalPnl = () => {
     <div className="flex flex-col gap-8">
       <WidgetSection layout={1} padding>
         <WidgetSection border title={"Historical P&L"}>
-          {isLoading ? (
+          {isLoading || isSimpleRevenueLoading ? (
             <div className="h-72 flex items-center justify-center">
               <CircularProgress />
             </div>

@@ -33,6 +33,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { isAlphanumeric, noOnlyWhitespace } from "../utils/validators";
 import dayjs from "dayjs";
 import ConfirmationModal from "./ConfirmationModal";
+import AttendanceCameraModal from "./AttendanceCameraModal";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -55,6 +56,7 @@ const ClockInOutAttendance = () => {
   const [openModal, setOpenModal] = useState(false);
   const [openClockOutConfirmation, setOpenClockOutConfirmation] =
     useState(false);
+     const [cameraAction, setCameraAction] = useState(null);
 
   const {
     control,
@@ -188,11 +190,17 @@ const ClockInOutAttendance = () => {
   }, [startTime, offset]);
 
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
-    mutationFn: async (inTime) => {
-      const res = await axios.post("/api/attendance/clock-in", {
-        inTime,
-        entryType: "web",
-      });
+    // mutationFn: async (inTime) => {
+    //   const res = await axios.post("/api/attendance/clock-in", {
+    //     inTime,
+    //     entryType: "web",
+    //   });
+     mutationFn: async ({ time: inTime, image }) => {
+      const payload = new FormData();
+      payload.append("inTime", inTime);
+      payload.append("entryType", "web");
+      payload.append("image", image, "clock-in.jpg");
+      const res = await axios.post("/api/attendance/clock-in", payload);
       return { data: res.data, inTime }; // Return both server response and time
     },
     onSuccess: ({ data, inTime }) => {
@@ -207,15 +215,21 @@ const ClockInOutAttendance = () => {
       dispatch(setClockInTime(inTime));
       dispatch(setHasClockedIn(true));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
   });
 
   const { mutate: clockOut, isPending: isClockingOut } = useMutation({
-    mutationFn: async (outTime) => {
-      const res = await axios.patch("/api/attendance/clock-out", {
-        outTime,
-      });
+    // mutationFn: async (outTime) => {
+    //   const res = await axios.patch("/api/attendance/clock-out", {
+    //     outTime,
+    //   });
+     mutationFn: async ({ time: outTime, image }) => {
+      const payload = new FormData();
+      payload.append("outTime", outTime);
+      payload.append("image", image, "clock-out.jpg");
+      const res = await axios.patch("/api/attendance/clock-out", payload);
       return { data: res.data, outTime };
     },
     onSuccess: ({ data, outTime }) => {
@@ -252,16 +266,22 @@ const ClockInOutAttendance = () => {
 
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      setCameraAction(null);
     },
     onError: (error) =>
       toast.error(error.response?.data?.message || "Clock-out failed"),
   });
 
   const { mutate: startBreak, isPending: isStartbreak } = useMutation({
-    mutationFn: async (breakTime) => {
-      const res = await axios.patch("/api/attendance/start-break", {
-        startBreak: breakTime,
-      });
+    // mutationFn: async (breakTime) => {
+    //   const res = await axios.patch("/api/attendance/start-break", {
+    //     startBreak: breakTime,
+    //   });
+     mutationFn: async ({ time: breakTime, image }) => {
+      const payload = new FormData();
+      payload.append("startBreak", breakTime);
+      payload.append("image", image, "break-in.jpg");
+      const res = await axios.patch("/api/attendance/start-break", payload);
       return { data: res.data, breakTime }; // Return both server response and time
     },
     onSuccess: ({ data, breakTime }) => {
@@ -299,15 +319,21 @@ const ClockInOutAttendance = () => {
         ),
       );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+       setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
   });
 
   const { mutate: endBreak, isPending: isEndBreak } = useMutation({
-    mutationFn: async (breakTime) => {
-      const res = await axios.patch("/api/attendance/end-break", {
-        endBreak: breakTime,
-      });
+    // mutationFn: async (breakTime) => {
+    //   const res = await axios.patch("/api/attendance/end-break", {
+    //     endBreak: breakTime,
+    //   });
+     mutationFn: async ({ time: breakTime, image }) => {
+      const payload = new FormData();
+      payload.append("endBreak", breakTime);
+      payload.append("image", image, "break-out.jpg");
+      const res = await axios.patch("/api/attendance/end-break", payload);
       return { data: res.data, breakTime }; // Return both server response and time
     },
     onSuccess: ({ data, breakTime }) => {
@@ -336,6 +362,7 @@ const ClockInOutAttendance = () => {
       dispatch(setHasTakenBreak(false));
       dispatch(setBreakHours(calculateTotalHours(updatedBreaks)));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+       setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
   });
@@ -372,9 +399,30 @@ const ClockInOutAttendance = () => {
 
     correctionPost(data);
   };
-  const handleStart = () => {
-    const now = new Date().toISOString();
-    clockIn(now); // Only call the API, don't start timer yet
+  // const handleStart = () => {
+  //   const now = new Date().toISOString();
+  //   clockIn(now); // Only call the API, don't start timer yet
+  // };
+
+  // const handleStop = () => {
+  //   setOpenClockOutConfirmation(true);
+  // };
+
+  // const handleConfirmClockOut = () => {
+  //   const now = new Date().toISOString();
+  //   clockOut(now);
+  // };
+
+  // const handleStartBreak = () => {
+  //   const now = new Date().toISOString();
+  //   startBreak(now);
+  // };
+  // const handleEnBreak = () => {
+  //   const now = new Date().toISOString();
+  //   endBreak(now);
+  // };
+   const handleStart = () => {
+    setCameraAction("clock-in");
   };
 
   const handleStop = () => {
@@ -382,17 +430,22 @@ const ClockInOutAttendance = () => {
   };
 
   const handleConfirmClockOut = () => {
-    const now = new Date().toISOString();
-    clockOut(now);
+    setOpenClockOutConfirmation(false);
+    setCameraAction("clock-out");
   };
 
   const handleStartBreak = () => {
-    const now = new Date().toISOString();
-    startBreak(now);
+    setCameraAction("break-in");
   };
   const handleEnBreak = () => {
-    const now = new Date().toISOString();
-    endBreak(now);
+    setCameraAction("break-out");
+  };
+  const handleCameraCapture = (image, time) => {
+    const payload = { image, time };
+    if (cameraAction === "clock-in") clockIn(payload);
+    if (cameraAction === "clock-out") clockOut(payload);
+    if (cameraAction === "break-in") startBreak(payload);
+    if (cameraAction === "break-out") endBreak(payload);
   };
 
   const formatElapsedTime = (seconds) => {
@@ -779,6 +832,13 @@ const ClockInOutAttendance = () => {
         confirmText="Clock Out"
         cancelText="Cancel"
         isLoading={isClockingOut}
+      />
+       <AttendanceCameraModal
+        open={Boolean(cameraAction)}
+        title={`Capture photo for ${cameraAction?.replace("-", " ") || "attendance"}`}
+        onClose={() => setCameraAction(null)}
+        onCapture={handleCameraCapture}
+        isLoading={isClockingIn || isClockingOut || isStartbreak || isEndBreak}
       />
     </div>
   );

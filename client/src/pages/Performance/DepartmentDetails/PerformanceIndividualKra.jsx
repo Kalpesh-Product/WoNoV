@@ -855,8 +855,12 @@ const PerformanceIndividualKra = () => {
                                    // isAddKraDisabled || !canShowControls
                                 }
                                 handleSubmit={handleOpenAddModal}
-                                  showDateNavigator
+                                showDateNavigator
                                 selectedDateLabel={selectedDateLabel}
+                                selectedDate={selectedDate}
+                                onSelectedDateChange={(date) =>
+                                    setSelectedDate(dayjs(date).startOf("day"))
+                                }
                                 onPreviousDay={() => setSelectedDate((prev) => prev.subtract(1, "day"))}
                                 onNextDay={() => setSelectedDate((prev) => prev.add(1, "day"))}
                                 tableTitle={`${departmentName} - INDIVIDUAL DAILY KRA - ${activeMemberName}`}

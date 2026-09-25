@@ -77,7 +77,8 @@ const externalVisitSchema = new mongoose.Schema(
     },
     paymentVerification: {
       type: String,
-      enum: ["Pending", "Under Review", "Verified"],
+       enum: ["Pending", "Under Review", "Verified", "Completed"],
+     // enum: ["Pending", "Under Review", "Verified"],
       default: "Pending",
     },
     paymentMode: {
@@ -101,6 +102,22 @@ const externalVisitSchema = new mongoose.Schema(
       id: {
         type: String,
       },
+    },
+    invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    financeStatus: {
+      type: String,
+      enum: ["Pending", "Upload Invoice", "Verified"],
+      default: "Pending",
     },
     unit: {
       type: mongoose.Schema.Types.ObjectId,

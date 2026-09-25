@@ -168,6 +168,18 @@ const companySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  registeredCompanyName: {
+    type: String,
+    trim: true,
+  },
+  fullAddress: {
+    type: String,
+    trim: true,
+  },
+  phoneNumber: {
+    type: String,
+    trim: true,
+  },
   industry: {
     type: String,
     required: true,

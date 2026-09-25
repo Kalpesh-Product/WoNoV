@@ -183,6 +183,26 @@ const getNumericAmount = (value) => {
   return 0;
 };
 
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
+
 const SalesDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(
@@ -550,7 +570,11 @@ const SalesDashboard = () => {
     };
 
     (simpleRevenue?.meetingRevenue || []).forEach((item) => {
-      addRevenue(item?.date, item?.taxable, item?.status);
+      addRevenue(
+        item?.date,
+        item?.taxable,
+        isMeetingFinancePaid(item) ? "paid" : "unpaid",
+      );
     });
 
     (simpleRevenue?.alternateRevenues || []).forEach((item) => {
@@ -560,8 +584,8 @@ const SalesDashboard = () => {
     (simpleRevenue?.virtualOfficeRevenues || []).forEach((item) => {
       addRevenue(
         item?.rentDate,
-        item?.revenue ?? item?.taxableAmount,
-        item?.status ?? item?.rentStatus,
+        getVirtualOfficeReportingAmount(item),
+        item?.rentStatus ?? item?.status,
       );
     });
 

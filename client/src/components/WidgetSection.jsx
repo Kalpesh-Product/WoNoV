@@ -28,10 +28,13 @@ const WidgetSection = ({
   fun,
   normalCase,
   summaryChipVariant,
+  greenChipClassName,
   headerRightContent,
   headerCenterContent,
   headerCenterContentInline = false,
   gridGap = "gap-4",
+  borderColor,
+  bodyBorderColor,
 }) => {
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
@@ -70,7 +73,21 @@ const WidgetSection = ({
     <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
       {title && (
         <div
-          className={`relative border-default border-[#7D7D7E] p-4 flex w-full justify-between items-center rounded-t-xl ${
+          style={
+            borderColor
+              ? {
+                  borderWidth: "2px",
+                  borderStyle: "solid",
+                  borderColor,
+                  borderBottomWidth: "0px",
+                  boxShadow: "none",
+                  outline: "none",
+                }
+              : undefined
+          }
+          className={`relative p-4 flex w-full justify-between items-center rounded-t-xl ${
+            borderColor ? "" : "border-default border-[#7D7D7E]"
+          } ${
             normalCase ? "" : "uppercase"
           }`}>
           <div
@@ -157,13 +174,14 @@ const WidgetSection = ({
                               ? "text-subtitle text-green-800"
                               : "text-body text-green-800 font-pmedium"
                           }`}>
-                          <div className={greenChipClasses}>
+                          <div className={greenChipClassName || greenChipClasses}>
                             {/* <FaArrowTrendUp /> */}
                             {greenTitle && <div>{greenTitle} : </div>}
                             <div>{TitleAmountGreen}</div>
                           </div>
                         </span>
                       )}
+                   
                     {TitleAmountRed !== undefined && TitleAmountRed !== null && (
                       <span
                         className={`${
@@ -190,13 +208,27 @@ const WidgetSection = ({
         </div>
       )}
       <div
-        style={border ? { border: "2px solid #d1d5db", borderTop: "0" } : {}}
+        style={
+          border
+            ? {
+                border: `2px solid ${
+                  bodyBorderColor || borderColor || "#d1d5db"
+                }`,
+                borderTop: borderColor
+                  ? `2px solid ${borderColor}`
+                  : "none",
+                boxShadow: "none",
+                outline: "none",
+              }
+            : {}
+        }
         className="h-full rounded-b-xl">
         <div
           style={{ padding: padding ? "0" : "1rem" }}
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
+         
            className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
           {visibleChildren.map((child, index) => (
             <div key={index}>{child}</div>

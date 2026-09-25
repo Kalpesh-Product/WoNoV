@@ -16,6 +16,14 @@ const MONTHLY_GRAPH_BUILDINGS = [
   "dempo trade centre",
   "dempo trade center",
 ];
+const PROJECTED_MONTH_OVERRIDES = {
+  "Oct-26": { occupied: 713 },
+  "Nov-26": { occupied: 727 },
+  "Dec-26": { occupied: 719 },
+  "Jan-27": { occupied: 738 },
+  "Feb-27": { total: 800, occupied: 746 },
+  "Mar-27": { total: 900, occupied: 812 },
+};
 
 const normalizeText = (value) => String(value || "").trim().toLowerCase();
 
@@ -37,6 +45,10 @@ const CheckAvailability = ({
   graphTitle = "TOTAL v/s OCCUPIED",
   monthlyView = false,
   hideInventoryLastDivider = false,
+  noOuterPadding = false,
+  investorGraphStyle = false,
+  middleContent = null,
+  hideSummaryCards = false,
 }) => {
   const navigate = useNavigate();
   const address = useLocation();
@@ -180,20 +192,7 @@ const CheckAvailability = ({
       );
     }, 0);
 
-    return months.map((month) => {
-      const isUpcoming = month.start.isAfter(currentMonth, "month");
-
-      if (isUpcoming) {
-        return {
-          name: month.label,
-          occupied: 0,
-          remaining: 0,
-          upcoming: totalInventory,
-          total: totalInventory,
-          isUpcoming: true,
-        };
-      }
-
+    const getActualOccupancy = (month) => {
       const occupied = monthlyClients.reduce((sum, client) => {
         const buildingName = client?.unit?.building?.buildingName;
         if (!isMonthlyGraphBuilding(buildingName)) return sum;
@@ -202,8 +201,7 @@ const CheckAvailability = ({
         if (!startDate.isValid()) return sum;
 
         const endDate = client?.endDate ? dayjs(client.endDate) : null;
-        const effectiveEndDate =
-          endDate?.isValid() ? endDate : dayjs();
+        const effectiveEndDate = endDate?.isValid() ? endDate : dayjs();
         const overlapsMonth =
           startDate.isBefore(month.end.add(1, "day")) &&
           effectiveEndDate.isAfter(month.start.subtract(1, "day"));
@@ -218,18 +216,77 @@ const CheckAvailability = ({
       }, 0);
 
       const occupiedSeats = Math.min(occupied, totalInventory);
-      const remainingSeats = Math.max(totalInventory - occupiedSeats, 0);
+
+      return {
+        occupied: occupiedSeats,
+        remaining: Math.max(totalInventory - occupiedSeats, 0),
+      };
+    };
+
+    const completedInvestorMonths = investorGraphStyle
+      ? months.filter((month) => month.start.isBefore(currentMonth, "month"))
+      : [];
+    const investorProjection = completedInvestorMonths.reduce(
+      (projection, month) => {
+        const actual = getActualOccupancy(month);
+
+        return {
+          occupied: projection.occupied + actual.occupied,
+          remaining: projection.remaining + actual.remaining,
+        };
+      },
+      { occupied: 0, remaining: 0 },
+    );
+    const completedMonthCount = completedInvestorMonths.length;
+    const projectedOccupied = completedMonthCount
+      ? Math.round(investorProjection.occupied / completedMonthCount)
+      : 0;
+    const projectedRemaining = completedMonthCount
+      ? Math.round(investorProjection.remaining / completedMonthCount)
+      : 0;
+
+    return months.map((month) => {
+      const isUpcoming = investorGraphStyle
+        ? !month.start.isBefore(currentMonth, "month")
+        : month.start.isAfter(currentMonth, "month");
+
+      if (isUpcoming) {
+        if (!investorGraphStyle) {
+          return {
+            name: month.label,
+            occupied: 0,
+            remaining: 0,
+            upcoming: totalInventory,
+            total: totalInventory,
+            isUpcoming: true,
+          };
+        }
+
+        const projectedOverride = PROJECTED_MONTH_OVERRIDES[month.label] || {};
+        const projectedTotalInventory =
+          Number(projectedOverride.total) || totalInventory;
+        return {
+          name: month.label,
+          occupied: projectedOccupied,
+          remaining: projectedRemaining,
+          upcoming: 0,
+          total: projectedTotalInventory,
+          isUpcoming: true,
+        };
+      }
+
+      const actual = getActualOccupancy(month);
 
       return {
         name: month.label,
-        occupied: occupiedSeats,
-        remaining: remainingSeats,
+        occupied: actual.occupied,
+        remaining: actual.remaining,
         upcoming: 0,
         total: totalInventory,
         isUpcoming: false,
       };
     });
-  }, [activeUnits, currentMonth, monthlyClients, monthlyView]);
+  }, [activeUnits, currentMonth, investorGraphStyle, monthlyClients, monthlyView]);
 
   const inventoryGraphData = monthlyView ? monthlyChartData : chartData;
 
@@ -244,6 +301,23 @@ const CheckAvailability = ({
       0,
     );
   }, [chartData, monthlyChartData, monthlyView]);
+  const averageOccupancyPercent = useMemo(() => {
+    const completedMonths = inventoryGraphData.filter(
+      (item) => !item?.isUpcoming && Number(item?.total) > 0,
+    );
+
+    if (completedMonths.length === 0) return 0;
+
+    const average =
+      completedMonths.reduce((sum, item) => {
+        const total = Number(item.total) || 0;
+        const occupied = Number(item.occupied) || 0;
+
+        return sum + (total ? (occupied / total) * 100 : 0);
+      }, 0) / completedMonths.length;
+
+    return Math.round(average);
+  }, [inventoryGraphData]);
   // //-------------  Remove Duplicates----------------------//
   // // STEP 2: Build unique units map by unitNo (to ensure uniqueness)
   // const unitMap = new Map();
@@ -302,10 +376,10 @@ const CheckAvailability = ({
       data: inventoryGraphData.map((item) => item.occupied),
     },
     {
-      name: "Remaining",
+      name: investorGraphStyle ? "Unoccupied" : "Remaining",
       data: inventoryGraphData.map((item) => item.remaining),
     },
-    ...(monthlyView
+    ...(monthlyView && !investorGraphStyle
       ? [
           {
             name: "Upcoming",
@@ -314,9 +388,10 @@ const CheckAvailability = ({
         ]
       : []),
     ],
-    [inventoryGraphData, monthlyView],
+    [inventoryGraphData, investorGraphStyle, monthlyView],
   );
 
+  
   const _barGraphOptionsLegacy = {
     chart: {
       type: "bar",
@@ -399,7 +474,7 @@ const CheckAvailability = ({
 
             <div style="display:flex; justify-content:space-between; font-size : 12px">
               <div style="width : 100%">
-                Remaining
+                ${investorGraphStyle ? "Unoccupied" : "Remaining"}
               </div>
               <div style="width : 100%">
               ${remaining} desks
@@ -442,39 +517,130 @@ const CheckAvailability = ({
       xaxis: {
         categories: inventoryGraphData.map((item) => item.name),
         title: {
-          text: monthlyView ? "Month" : "Building Name",
+          text: investorGraphStyle && monthlyView
+            ? ""
+            : monthlyView
+              ? "Month"
+              : "Building Name",
+          ...(investorGraphStyle
+            ? {
+              style: {
+                color: "#1E3D73",
+              },
+            }
+            : {}),
         },
+        ...(investorGraphStyle
+          ? {
+            labels: {
+              style: {
+                colors: "#1E3D73",
+              },
+            },
+          }
+          : {}),
       },
       yaxis: {
         title: {
-          text: "Percentage",
+          text: investorGraphStyle && monthlyView ? "Inventory" : "Percentage",
+          ...(investorGraphStyle
+            ? {
+              style: {
+                color: "#1E3D73",
+              },
+            }
+            : {}),
         },
         labels: {
+          ...(investorGraphStyle
+            ? {
+              style: {
+                colors: "#1E3D73",
+              },
+            }
+            : {}),
           formatter: (val) => `${Math.round(val)}%`,
         },
         max: 100,
       },
       legend: {
         position: "top",
+        ...(investorGraphStyle
+          ? {
+            labels: {
+              colors: "#1E3D73",
+            },
+          }
+          : {}),
       },
       plotOptions: {
         bar: {
           horizontal: false,
           columnWidth: monthlyView ? "45%" : "10%",
           borderRadius: 2,
+          ...(investorGraphStyle
+            ? {
+              dataLabels: {
+                total: {
+                  enabled: true,
+                  formatter: (_value, opts) => {
+                    const item = inventoryGraphData[opts.dataPointIndex] || {};
+                    return Number(item.total) || "";
+                  },
+                  style: {
+                    color: "#1E3D73",
+                    fontSize: "12px",
+                    fontWeight: 700,
+                  },
+                },
+              },
+            }
+            : {}),
         },
       },
       dataLabels: {
         enabled: true,
-        formatter: (val, { dataPointIndex }) => {
-          if (monthlyView && inventoryGraphData[dataPointIndex]?.isUpcoming) {
+        formatter: (val, { dataPointIndex, seriesIndex }) => {
+          const item = inventoryGraphData[dataPointIndex] || {};
+
+          if (investorGraphStyle && monthlyView) {
+            const values = [
+              Number(item.occupied) || 0,
+              Number(item.remaining) || 0,
+            ];
+            const deskCount = values[seriesIndex] || 0;
+
+            return deskCount ? `${deskCount}` : "";
+          }
+
+          if (monthlyView && item.isUpcoming) {
             return "";
           }
 
           return `${Math.round(val)}%`;
         },
+        ...(investorGraphStyle
+          ? {
+            style: {
+              colors: ["#ffffff"],
+              fontSize: "12px",
+              fontWeight: 700,
+            },
+          }
+          : {}),
       },
-      colors: ["#36BA98", "#E83F25", "#C4C4C4"],
+      colors: investorGraphStyle
+        ? [
+          ({ dataPointIndex }) =>
+            inventoryGraphData[dataPointIndex]?.isUpcoming
+              ? "#b4b4b4"
+              : "#3cb37180",
+          ({ dataPointIndex }) =>
+            inventoryGraphData[dataPointIndex]?.isUpcoming
+              ? "#616161"
+              : "#ff000080",
+        ]
+        : ["#36BA98", "#E83F25", "#C4C4C4"],
       tooltip: {
         custom: function ({ dataPointIndex, w }) {
           const label = w.globals.labels[dataPointIndex];
@@ -486,6 +652,46 @@ const CheckAvailability = ({
           const occupied = Number(selectedItem.occupied) || 0;
           const remaining = Number(selectedItem.remaining) || 0;
           const total = Number(selectedItem.total) || occupied + remaining;
+
+          if (investorGraphStyle && monthlyView) {
+            const occupiedColor = selectedItem.isUpcoming
+              ? "#b4b4b4"
+              : "#3cb37180";
+            const unoccupiedColor = selectedItem.isUpcoming
+              ? "#616161"
+              : "#ff000080";
+            const projectedPrefix = selectedItem.isUpcoming ? "Projected " : "";
+
+            return `
+              <div style="min-width: 155px; font-family: Poppins-Regular, sans-serif; font-size: 12px; line-height: 1.4;">
+                <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-size: 12px; font-weight: 400;">${label}</div>
+                <div style="padding: 0 10px 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 7px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: ${occupiedColor};"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Occupied:</span>&nbsp;
+                      <strong>${occupied.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: ${unoccupiedColor};"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Unoccupied:</span>&nbsp;
+                      <strong>${remaining.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                  <hr style="margin: 7px 0 0; border: 0; border-top: 1px solid #e5e7eb;" />
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 7px;">
+                    <span style="width: 10px; height: 10px; flex: 0 0 10px; border-radius: 50%; background: #1E3D73;"></span>
+                    <div style="white-space: nowrap;">
+                      <span>${projectedPrefix}Total:</span>&nbsp;
+                      <strong>${total.toLocaleString("en-IN")}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
 
           return `
             <div style="padding:8px; width : 220px">
@@ -512,7 +718,7 @@ const CheckAvailability = ({
                 <div style="width : 100%">${occupied} desks</div>
               </div>
               <div style="display:flex; justify-content:space-between; font-size : 12px">
-                <div style="width : 100%">Remaining</div>
+                <div style="width : 100%">${investorGraphStyle ? "Unoccupied" : "Remaining"}</div>
                 <div style="width : 100%">${remaining} desks</div>
               </div>
             </div>
@@ -520,7 +726,7 @@ const CheckAvailability = ({
         },
       },
     }),
-    [inventoryGraphData, monthlyView, navigate],
+    [inventoryGraphData, investorGraphStyle, monthlyView, navigate],
   );
 
   //-------------  Remove Duplicates----------------------//
@@ -622,6 +828,21 @@ const CheckAvailability = ({
 
   const onSubmit = (data) => {
     const { location, floor } = data;
+
+    if (!location || !floor) return;
+
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/inventory/${encodeURIComponent(
+        location,
+      )}/${encodeURIComponent(floor)}`,
+      {
+        state: {
+          unitId: selectedUnitId[0],
+          unitNo: floor,
+          building: location,
+        },
+      },
+    );
 
     if (!location || !floor) return;
 
@@ -808,9 +1029,22 @@ const CheckAvailability = ({
     <WidgetSection
       layout={1}
       border
+      borderColor={investorGraphStyle ? "#1E3D73" : undefined}
+      bodyBorderColor={investorGraphStyle ? "#9FB2CF" : undefined}
       normalCase
       title={graphTitle}
-      TitleAmount={`TOTAL INVENTORY : ${totalInventoryCount}`}
+      TitleAmount={
+        investorGraphStyle && monthlyView
+          ? ""
+          : `TOTAL INVENTORY : ${totalInventoryCount}`
+      }
+      headerRightContent={
+        investorGraphStyle && monthlyView ? (
+          <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+            AVERAGE OCCUPANCY - {averageOccupancyPercent}%
+          </span>
+        ) : null
+      }
     >
       {inventoryGraphData.length > 0 ? (
         <div className="w-full min-w-0 overflow-hidden">
@@ -870,9 +1104,15 @@ const CheckAvailability = ({
   );
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {cardsFirst ? inventorySummaryCards : inventoryGraph}
-      {cardsFirst ? inventoryGraph : inventorySummaryCards}
+    
+    <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
+      {cardsFirst
+        ? !hideSummaryCards && inventorySummaryCards
+        : inventoryGraph}
+      {!cardsFirst && middleContent}
+      {cardsFirst
+        ? inventoryGraph
+        : !hideSummaryCards && inventorySummaryCards}
 
 
       {!hideCheckInventory && (

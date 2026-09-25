@@ -3,13 +3,17 @@ import { useLocation } from "react-router-dom";
 
 const STORAGE_KEY = "investor-dashboard-currency";
 const RATES_STORAGE_KEY = "investor-dashboard-exchange-rates";
+const SUPPORTED_CURRENCIES = ["INR", "USD", "AED"];
 const CurrencyContext = createContext(null);
 
 export const CurrencyProvider = ({ children }) => {
    const { pathname } = useLocation();
   const isInvestorDashboard = pathname.includes("/investor-dashboard");
   const [currency, setCurrency] = useState(
-    () => localStorage.getItem(STORAGE_KEY) || "INR",
+    () => {
+      const savedCurrency = localStorage.getItem(STORAGE_KEY);
+      return SUPPORTED_CURRENCIES.includes(savedCurrency) ? savedCurrency : "INR";
+    },
   );
   const [rates, setRates] = useState(() => {
     try {
@@ -81,11 +85,7 @@ export const CurrencyProvider = ({ children }) => {
         ...options,
       }).format(Number(amount) || 0);
 
-    const currencies = Object.keys(rates).sort((first, second) => {
-      if (first === "INR") return -1;
-      if (second === "INR") return 1;
-      return first.localeCompare(second);
-    });
+    const currencies = SUPPORTED_CURRENCIES;
 
     return {
       currency,
