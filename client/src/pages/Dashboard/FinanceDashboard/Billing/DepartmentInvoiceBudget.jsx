@@ -164,6 +164,36 @@ const DepartmentInvoiceBudget = () => {
     .filter((row) => ["Approved", "Pending"].includes(row.status));
 
 
+  const invoiceFiles = (viewDetails?.invoices?.length
+    ? viewDetails.invoices
+    : viewDetails?.invoice?.link ? [viewDetails.invoice] : []
+  ).filter((file) => file.link);
+  const invoiceChips = invoiceFiles.length ? (
+    <span className="flex flex-wrap gap-2 max-w-full">
+      {invoiceFiles.map((file, index) => {
+        const name = file.name || `Invoice ${index + 1}`;
+        return (
+          <Chip
+            key={file.id || `${file.link}-${index}`}
+            component="a"
+            href={file.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            clickable
+            label={name.length > 28
+              ? `${name.slice(0, 20)}...${name.includes(".") ? name.slice(name.lastIndexOf(".")) : ""}`
+              : name}
+            title={name}
+            size="small"
+            variant="outlined"
+            color="primary"
+            sx={{ maxWidth: "100%" }}
+          />
+        );
+      })}
+    </span>
+  ) : "-";
+
   return (
     <div className="flex flex-col gap-4">
       <PageFrame>
@@ -248,7 +278,7 @@ const DepartmentInvoiceBudget = () => {
             />
             <DetalisFormatted
               title="Invoice Name"
-              detail={viewDetails.invoiceName || "-"}
+              detail={`${invoiceFiles.length} ${invoiceFiles.length === 1 ? "file" : "files"} uploaded`}
             />
             {/* <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} /> */}
             <DetalisFormatted
@@ -273,19 +303,7 @@ const DepartmentInvoiceBudget = () => {
             />
             <DetalisFormatted
               title="Invoice File"
-              detail={
-                viewDetails.invoiceLink !== "-" ? (
-                  <a
-                    href={viewDetails.invoiceLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline">
-                    {viewDetails.invoiceName}
-                  </a>
-                ) : (
-                  "-"
-                )
-              }
+              detail={invoiceChips}
             />
 
             {/* Finance details fields are intentionally commented out for Department-Invoice Budget popup. */}

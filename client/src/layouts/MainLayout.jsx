@@ -94,6 +94,7 @@ const MainLayout = () => {
     return total + count;
   }, 0);
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const isInvestorDashboard = location.pathname.includes("/investor-dashboard");
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -156,9 +157,11 @@ const MainLayout = () => {
 
         <div className="w-full">
           <main className="w-full bg-[#F7F8FA] p-3 flex flex-col gap-2">
-            <div className="p-4 rounded-t-md bg-white">
-              <BreadCrumbComponent />
-            </div>
+            {!isInvestorDashboard && (
+              <div className="p-4 rounded-t-md bg-white">
+                <BreadCrumbComponent />
+              </div>
+            )}
             <div
               id="scrollable-content"
               className="bg-white h-[80vh] overflow-y-auto flex flex-col justify-between"

@@ -14,6 +14,7 @@ const {
 } = require("../controllers/salesControllers/coworkingClientControllers");
 const {
   bulkInsertWorkationClients,
+  getWorkationClients,
 } = require("../controllers/salesControllers/workationControllers");
 const {
   createClientService,
@@ -44,6 +45,7 @@ const {
   addRevenue,
   getRevenues,
   bulkInsertCoworkingClientRevenues,
+  updateRevenueInvoice,
 } = require("../controllers/salesControllers/coworkingClientRevenue");
 
 const {
@@ -62,12 +64,14 @@ const {
   createAlternateRevenue,
   getAlternateRevenues,
   bulkInsertAlternateRevenue,
+  updateAlternateRevenueInvoice,
 } = require("../controllers/salesControllers/alternateRevenuesControllers");
 
 const {
   createWorkationRevenue,
   getWorkationRevenues,
   bulkInsertWorkationRevenue,
+  updateWorkationRevenueInvoice,
 } = require("../controllers/salesControllers/workationRevenueController");
 const {
   getMembersByUnit,
@@ -83,6 +87,7 @@ const {
   getVirtualOfficeRevenue,
   createVirtualOfficeRevenue,
   bulkInsertVirtualOfficeRevenue,
+  updateVirtualOfficeRevenueInvoice,
 } = require("../controllers/salesControllers/virtualOfficeRevenueControllers");
 
 const {
@@ -153,6 +158,11 @@ router.patch(
 //Revenues
 router.post("/add-coworking-revenue", addRevenue);
 router.get("/fetch-coworking-revenues", getRevenues);
+router.patch(
+  "/coworking-revenue-invoice",
+  upload.single("client-invoice"),
+  updateRevenueInvoice,
+);
 router.get(
   "/coworking-client-revenue/:coworkingId",
   getCoworkingClientRevenues,
@@ -164,7 +174,12 @@ router.post(
 );
 
 router.post("/create-meeting-revenue", createMeetingRevenue);
-router.patch("/update-meeting-revenue", updateMeetingRevenue);
+//router.patch("/update-meeting-revenue", updateMeetingRevenue);
+router.patch(
+  "/update-meeting-revenue/:id",
+  upload.single("client-invoice"),
+  updateMeetingRevenue,
+);
 router.get("/get-meeting-revenue", getMeetingRevenue);
 router.post(
   "/bulk-insert-meeting-revenue",
@@ -173,13 +188,27 @@ router.post(
 );
 
 router.get("/get-alternate-revenue", getAlternateRevenues);
-router.post("/create-alternate-revenue", createAlternateRevenue);
+router.patch(
+  "/alternate-revenue-invoice",
+  upload.single("client-invoice"),
+  updateAlternateRevenueInvoice,
+);
+router.post(
+  "/create-alternate-revenue",
+  upload.single("client-invoice"),
+  createAlternateRevenue,
+);
 router.post(
   "/bulk-insert-alternate-revenue",
   upload.single("alternate-revenue"),
   bulkInsertAlternateRevenue,
 );
 router.get("/get-virtual-office-revenue", getVirtualOfficeRevenue);
+router.patch(
+  "/virtual-office-revenue-invoice",
+  upload.single("client-invoice"),
+  updateVirtualOfficeRevenueInvoice,
+);
 router.post(
   "/bulk-insert-virtual-office-revenue",
   upload.single("virtual-office-revenue"),
@@ -187,6 +216,11 @@ router.post(
 );
 router.post("/create-virtual-office-revenue", createVirtualOfficeRevenue);
 router.get("/get-workation-revenue", getWorkationRevenues);
+router.patch(
+  "/workation-revenue-invoice",
+  upload.single("client-invoice"),
+  updateWorkationRevenueInvoice,
+);
 router.post(
   "/bulk-insert-workation-revenue",
   upload.single("workation-revenue"),
@@ -197,6 +231,7 @@ router.post(
   upload.single("workation-clients"),
   bulkInsertWorkationClients,
 );
+router.get("/get-workation-clients", getWorkationClients);
 router.post("/create-workation-revenue", createWorkationRevenue);
 router.get("/consolidated-revenue", getConsolidatedRevenue);
 router.get("/simple-consolidated-revenue", getSimpleConsolidatedRevenue);

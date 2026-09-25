@@ -10,9 +10,11 @@ import MuiModal from "../../components/MuiModal";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import PrimaryButton from "../../components/PrimaryButton";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAuth from "../../hooks/useAuth";
 
 const DepartmentTicketSettings = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { departmentName, departmentId: legacyDepartmentId } = useParams();
@@ -29,13 +31,48 @@ const DepartmentTicketSettings = () => {
     },
   });
 
+  const roleTitles = useMemo(
+    () => auth?.user?.role?.map((role) => role?.roleTitle || "") || [],
+    [auth?.user?.role]
+  );
+
+  const isTopManagementUser = useMemo(
+    () =>
+      roleTitles.some((roleTitle) =>
+        ["Master Admin", "Super Admin", "Top Management"].includes(roleTitle)
+      ) ||
+      auth?.user?.departments?.some(
+        (department) =>
+          department?.name?.trim().toLowerCase() === "top management"
+      ),
+    [auth?.user?.departments, roleTitles]
+  );
+
+  const userDepartmentIds = useMemo(
+    () =>
+      new Set(
+        (auth?.user?.departments || [])
+          .map((department) => department?._id?.toString())
+          .filter(Boolean)
+      ),
+    [auth?.user?.departments]
+  );
+
+  const accessibleDepartments = useMemo(() => {
+    if (isTopManagementUser) return departments;
+
+    return departments.filter((item) =>
+      userDepartmentIds.has(item.department?._id?.toString())
+    );
+  }, [departments, isTopManagementUser, userDepartmentIds]);
+
   const selectedDepartment = useMemo(
-    () => departments.find((item) =>
+    () => accessibleDepartments.find((item) =>
       departmentName
         ? item.department?.name === departmentName || item.department?._id === departmentName
         : legacyDepartmentId && item.department?._id === legacyDepartmentId
     ),
-    [departments, departmentName, legacyDepartmentId]
+    [accessibleDepartments, departmentName, legacyDepartmentId]
   );
   const departmentId = selectedDepartment?.department?._id;
 
@@ -131,7 +168,7 @@ const DepartmentTicketSettings = () => {
     return <div className="flex justify-center p-20"><CircularProgress /></div>;
   }
 
-  const departmentRows = departments.map((item, index) => ({
+  const departmentRows = accessibleDepartments.map((item, index) => ({
     id: item.department?._id,
     srNo: index + 1,
     department: item.department?.name,

@@ -25,6 +25,16 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    receivedAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    totalReceivedAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     totalTerm: {
       type: Number, // Assuming in months
       // required: true,
@@ -37,12 +47,27 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       type: Date,
       // required: true,
     },
+     invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     status: {
       type: Boolean,
       default: true,
     },
     rentStatus: {
       type: String,
+    },
+    isManualInvoice: {
+      type: Boolean,
+      default: false,
     },
     pastDueDate: {
       type: Date,

@@ -10,6 +10,9 @@ const workationRevenueSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    clientInvoiceName: {
+      type: String,
+    },
     client: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "WorkationClient",
@@ -36,6 +39,17 @@ const workationRevenueSchema = new mongoose.Schema(
     date: {
       type: Date,
       required: true,
+    },
+    invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedAt: Date,
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
   },
   { timestamps: true },

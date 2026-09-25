@@ -2,23 +2,35 @@ import AgTable from "../../../components/AgTable";
 import WidgetSection from "../../../components/WidgetSection";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { inrFormat } from "../../../utils/currencyFormat";
-import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
+import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentage";
 import dayjs from "dayjs";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, Popover } from "@mui/material";
+import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
-import FinanceCard from "../../../components/FinanceCard";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
-import BarGraph from "../../../components/graphs/BarGraph";
-import HeatMap from "../../../components/graphs/HeatMap";
 import InvestorOperationalCharts from "./InvestorOperationalCharts";
 import { useCurrency } from "../../../context/CurrencyContext";
-//import PieChartMui from "../../../components/graphs/PieChartMui";
+import investorBanner from "../../../assets/investor/banner-investor.png";
+import bizNestLogo from "../../../assets/biznest/biznest_logo.jpg";
+import {
+  MdBarChart,
+  MdCalendarMonth,
+  MdCalculate,
+  MdGroups,
+  MdMapsHomeWork,
+  MdReceiptLong,
+  MdTrendingDown,
+  MdTrendingUp,
+} from "react-icons/md";
+import { BsFillDatabaseFill } from "react-icons/bs";
+import { PiDesktopTowerFill } from "react-icons/pi";
 
 const fiscalYearLabel = (date) => {
   const value = dayjs(date);
@@ -32,19 +44,755 @@ const fiscalMonthIndex = (date) => {
 };
 
 const APPRECIATION_BASE_VALUATION = 60_000_000;
-const APPRECIATION_MONTHLY_GROWTH_RATE = 0.07;
+const APPRECIATION_MONTHLY_INCREMENT = 700_000;
+const APPRECIATION_PROJECTION_START_INDEX = 5;
 
-const BizNestTitle = ({ children }) => (
+const BizNestTitle = ({ children, prefix, monochrome = false }) => (
   <span className="normal-case">
-    <span className="text-[#292929]">BI</span>
-    <span className="text-[#e33434]">Z</span>
-    <span className="text-[#292929]"> Nest</span>
-    {children ? <span className="ml-1">{children}</span> : null}
+    {prefix ? (
+      <span className={`mr-1 ${monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}`}>
+        {prefix}
+      </span>
+    ) : null}
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}>BI</span>
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#e33434]"}>Z</span>
+    <span className={monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}> Nest</span>
+    {children ? (
+      <span className={`ml-1 ${monochrome ? "text-[#1E3D73]" : "text-[#1234c9]"}`}>
+        {children}
+      </span>
+    ) : null}
   </span>
 );
 
+const InvestorBarsIcon = ({ className = "" }) => (
+  <span className={`flex h-8 w-8 items-end justify-center gap-1 ${className}`}>
+    <span className="h-3 w-1.5 rounded-full bg-current" />
+    <span className="h-5 w-1.5 rounded-full bg-current" />
+    <span className="h-7 w-1.5 rounded-full bg-current" />
+  </span>
+);
+
+const InvestorDashboardCards = ({
+  format,
+  hasPermission,
+  navigate,
+  totalInventory = 0,
+  occupiedInventory = 0,
+  inventoryOccupancyPercent = 0,
+  assetValueOwned = APPRECIATION_BASE_VALUATION,
+  incomePerSqFt = 0,
+  expensePerSqFt = 0,
+  averageUniqueClients = 0,
+  currentFiscalYear = fiscalYearLabel(dayjs()),
+  projectedRevenue = 0,
+  projectedExpense = 0,
+  projectedProfitLoss = 0,
+  projectedRevenueGrowth = 0,
+  compactPercentageChips = false,
+}) => {
+  const cards = [
+    {
+      title: "Projected Revenue",
+      period: currentFiscalYear,
+      value: format(projectedRevenue),
+      suffix: `${projectedRevenueGrowth.toFixed(1)}%`,
+      suffixTone: "text-[#13a573]",
+      suffixChip: true,
+      trendValue: projectedRevenueGrowth,
+      permission: PERMISSIONS.INVESTOR_PROJECTED_REVENUE_CARD.value,
+      clickable: false,
+      icon: InvestorBarsIcon,
+      tone: "blue",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 whitespace-nowrap text-[15px] font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
+    },
+    {
+      title: "Projected Expense",
+      period: currentFiscalYear,
+      value: format(projectedExpense),
+      permission: PERMISSIONS.INVESTOR_PROJECTED_EXPENSE_CARD.value,
+      clickable: false,
+      icon: MdReceiptLong,
+      tone: "red",
+      valueTone: "text-[#f04a4a]",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
+    },
+    {
+      title: "Projected Profit/Loss",
+      period: currentFiscalYear,
+      value: format(projectedProfitLoss),
+      permission: PERMISSIONS.INVESTOR_PROJECTED_PROFIT_CARD.value,
+      clickable: false,
+      icon: InvestorBarsIcon,
+      tone: "green",
+      valueTone:
+        projectedProfitLoss >= 0 ? "text-[#12a573]" : "text-[#f04a4a]",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
+    },
+    {
+      title: "Average Unique Clients",
+      period: currentFiscalYear,
+      value: averageUniqueClients.toFixed(2),
+      permission: PERMISSIONS.INVESTOR_AVERAGE_UNIQUE_CLIENTS_CARD.value,
+      clickable: false,
+      icon: MdGroups,
+      tone: "sky",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+      periodClassName: "mb-2",
+      periodSemibold: true,
+    },
+    {
+      title: "Total Inventory",
+      value: String(totalInventory),
+      permission: PERMISSIONS.INVESTOR_TOTAL_INVENTORY_CARD.value,
+      route: "/app/dashboard/investor-dashboard",
+      icon: BsFillDatabaseFill,
+      tone: "lightNavy",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+    },
+    {
+      title: "Occupied Inventory",
+      value: String(occupiedInventory),
+      suffix: `${inventoryOccupancyPercent}%`,
+      suffixChip: true,
+      trendValue: inventoryOccupancyPercent,
+      permission: PERMISSIONS.INVESTOR_OCCUPIED_INVENTORY_CARD.value,
+      route: "/app/dashboard/investor-dashboard",
+      icon: PiDesktopTowerFill,
+      tone: "blue",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 whitespace-nowrap text-[15px] font-pregular",
+      valueClassName: "text-lg font-pmedium",
+    },
+    {
+      title: "Per Sq. Ft.",
+      metrics: [
+        { label: `Revenue - ${format(incomePerSqFt)}`, tone: "text-[#13a573]" },
+        { label: `Expense - ${format(expensePerSqFt)}`, tone: "text-[#f04a4a]" },
+      ],
+      permission: PERMISSIONS.INVESTOR_PER_SQ_FT_CARD.value,
+      clickable: false,
+      icon: MdCalculate,
+      tone: "lightNavy",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      metricsClassName: "mt-1 flex items-center gap-2 text-sm font-pmedium",
+    },
+    {
+      title: "Asset Value Owned",
+      value: format(assetValueOwned),
+      permission: PERMISSIONS.INVESTOR_ASSET_VALUE_OWNED_CARD.value,
+      clickable: false,
+      icon: MdMapsHomeWork,
+      tone: "sky",
+      swapTitleValueStyle: true,
+      titleClassName: "mb-1 text-base font-pregular",
+      valueClassName: "text-lg font-pmedium",
+    },
+  ];
+
+  const toneClasses = {
+    blue: "bg-[#eaf4ff] text-[#1d7ed0]",
+    pink: "bg-[#fff0f6] text-[#e63875]",
+    red: "bg-[#fff0f0] text-[#f04a4a]",
+    green: "bg-[#eafbf3] text-[#12a573]",
+    sky: "bg-[#ecf9ff] text-[#13a9e8]",
+    indigo: "bg-[#edf1ff] text-[#244ad8]",
+    navy: "bg-[#eaf0f8] text-[#1E3D73]",
+    lightNavy: "bg-[#eaf0f8] text-[#3F6291]",
+  };
+
+  const visibleCards = cards.filter((card) => hasPermission(card.permission));
+
+  if (visibleCards.length === 0) return null;
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      {visibleCards.map((card) => {
+        const Icon = card.icon;
+        const CardElement = card.clickable === false ? "div" : "button";
+
+        return (
+          <CardElement
+            key={card.title}
+            {...(card.clickable === false
+              ? {}
+              : { type: "button", onClick: () => navigate(card.route) })}
+            className={`relative flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+              card.suffix ? "gap-2" : "gap-4"
+            }`}
+          >
+            <span
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${
+                toneClasses[card.tone]
+              }`}
+            >
+              <Icon size={34} />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="flex w-full items-center gap-2">
+                <span
+                  className={`block leading-tight text-[#1E3D73] ${
+                    card.titleClassName ||
+                    (card.swapTitleValueStyle
+                      ? "text-base font-semibold"
+                      : "text-sm font-pmedium")
+                  }`}
+                >
+                  {card.title}
+                </span>
+                {card.suffix && (
+                  <span
+                    className={`flex shrink-0 items-center font-semibold ${
+                      compactPercentageChips
+                        ? "gap-0.5 text-[10px]"
+                        : "ml-auto gap-1 text-sm"
+                    } ${
+                      card.suffixChip
+                        ? card.trendValue >= 0
+                          ? `rounded-full bg-[#e8f8ed] text-[#169b4d] ${
+                              compactPercentageChips
+                                ? "px-1.5 py-0.5"
+                                : "px-2.5 py-1"
+                            }`
+                          : `rounded-full bg-[#fdeaea] text-[#d64545] ${
+                              compactPercentageChips
+                                ? "px-1.5 py-0.5"
+                                : "px-2.5 py-1"
+                            }`
+                        : card.suffixTone || "text-[#13a573]"
+                    }`}
+                  >
+                    {card.suffixChip &&
+                      (card.trendValue >= 0 ? (
+                        <MdTrendingUp
+                          size={compactPercentageChips ? 12 : 18}
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <MdTrendingDown
+                          size={compactPercentageChips ? 12 : 18}
+                          aria-hidden="true"
+                        />
+                      ))}
+                    {card.suffix}
+                  </span>
+                )}
+              </span>
+              {card.period && (
+                <span
+                  className={`block text-xs text-[#58709A] ${
+                    card.periodSemibold ? "font-semibold" : "font-pregular"
+                  } ${card.periodClassName || ""}`}
+                >
+                  {card.period}
+                </span>
+              )}
+              {card.metrics ? (
+                <span
+                  className={
+                    card.metricsClassName ||
+                    "mt-2 flex items-center gap-2 text-sm font-semibold"
+                  }
+                >
+                  {card.metrics.map((metric, index) => (
+                    <span key={metric.label} className="flex items-center gap-2">
+                      {index > 0 && (
+                        <span className="h-4 w-px bg-[#d7dce8]" aria-hidden="true" />
+                      )}
+                      <span className={metric.tone}>{metric.label}</span>
+                    </span>
+                  ))}
+                </span>
+              ) : (
+                <span
+                  className={`mt-1 block ${
+                    card.valueClassName ||
+                    (card.swapTitleValueStyle
+                      ? "text-sm font-pmedium"
+                      : "text-xl font-pbold")
+                  } ${
+                    card.valueTone || "text-[#1E3D73]"
+                  }`}
+                >
+                  {card.value}
+                </span>
+              )}
+            </span>
+          </CardElement>
+        );
+      })}
+    </div>
+  );
+};
+
+const InvestorSnapshotSection = ({
+  format,
+  hasPermission,
+  perSqFtFinancialsByYear = {},
+  currentAssetValueOwned = APPRECIATION_BASE_VALUATION,
+  currentProjectedFinancials = {},
+  actualFinancialsByYear = {},
+}) => {
+  const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
+  const [calendarValue, setCalendarValue] = useState(() => dayjs("2025-04-01"));
+  const isCalendarOpen = Boolean(calendarAnchorEl);
+  const getPerSqFtRows = (fiscalYear) => {
+    const values = perSqFtFinancialsByYear[fiscalYear] || {};
+
+    return [
+      {
+        label: "Per Sq. Ft. Income",
+        value: format(values.income || 0),
+        tone: "text-[#12a573]",
+      },
+      {
+        label: "Per Sq. Ft. Expense",
+        value: format(values.expense || 0),
+        tone: "text-[#f04a4a]",
+      },
+      {
+        label: "Per Sq. Ft. Profit/Loss",
+        value: format(values.profitLoss || 0),
+        tone:
+          (values.profitLoss || 0) >= 0
+            ? "text-[#12a573]"
+            : "text-[#f04a4a]",
+      },
+    ];
+  };
+  const cards = [
+    {
+      title: "FY - 2026-27 - PROJECTIONS",
+      icon: InvestorBarsIcon,
+      tone: "text-[#12a573] bg-[#eafbf3]",
+      rows: [
+        { label: "Revenues", value: format(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: format(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
+        {
+          label: "Profit/Loss",
+          value: format(currentProjectedFinancials.profitLoss || 0),
+          tone:
+            (currentProjectedFinancials.profitLoss || 0) >= 0
+              ? "text-[#12a573]"
+              : "text-[#f04a4a]",
+        },
+        { label: "Exit Inventory", value: "1,000 Desks", tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: format(currentAssetValueOwned), tone: "text-[#12a573]" },
+      ],
+      perSqFtRows: getPerSqFtRows("FY 2026-27"),
+    },
+    {
+      title: "FY - 2025-26 - PROJECTIONS",
+      icon: MdCalendarMonth,
+      tone: "text-[#3F6291] bg-[#eaf0f8]",
+      hasCalendar: true,
+      rows: [
+        { label: "Revenues", value: format(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: format(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
+        {
+          label: "Profit/Loss",
+          value: format(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
+          tone:
+            (actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0) >= 0
+              ? "text-[#12a573]"
+              : "text-[#f04a4a]",
+        },
+        { label: "Exit Inventory", value: "850 Desks", tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: `${format(35_000_000)}+`, tone: "text-[#12a573]" },
+      ],
+      perSqFtRows: getPerSqFtRows("FY 2025-26"),
+    },
+    {
+      title: "FY - 2024-25 - PROJECTIONS",
+      icon: InvestorBarsIcon,
+      tone: "text-[#3F6291] bg-[#eaf0f8]",
+      rows: [
+        { label: "Revenues", value: format(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: format(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
+        {
+          label: "Profit/Loss",
+          value: format(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
+          tone:
+            (actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0) >= 0
+              ? "text-[#12a573]"
+              : "text-[#f04a4a]",
+        },
+        { label: "Exit Inventory", value: "500 Desks", tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: `${format(25_000_000)}+`, tone: "text-[#12a573]" },
+      ],
+      perSqFtRows: getPerSqFtRows("FY 2024-25"),
+    },
+  ];
+
+  if (!hasPermission(PERMISSIONS.INVESTOR_BIZNEST_3_YEARS_SNAPSHOT.value)) {
+    return null;
+  }
+
+  return (
+    <WidgetSection
+      border
+      borderColor="#1E3D73"
+      bodyBorderColor="#9FB2CF"
+      title={
+        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="block h-5 w-auto object-contain"
+          />
+          <span className="leading-5">3 YEARS SNAPSHOT</span>
+        </span>
+      }
+    >
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {cards.map((card) => {
+          const Icon = card.icon;
+
+          return (
+            <div key={card.title} className="flex flex-col gap-3">
+              <div className="rounded-lg border border-[#e8ecf4] bg-white p-5 text-left shadow-sm">
+                <div className="mb-4 flex items-center gap-4">
+                  {card.hasCalendar ? (
+                    <button
+                      type="button"
+                      aria-label="Open FY 2025-26 calendar"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setCalendarAnchorEl(event.currentTarget);
+                      }}
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
+                    >
+                      <Icon size={28} />
+                    </button>
+                  ) : (
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
+                    >
+                      <Icon size={28} />
+                    </span>
+                  )}
+                  <span className="text-base font-pmedium text-[#1E3D73]">
+                    {card.title}
+                  </span>
+                </div>
+                <div className="flex flex-col divide-y divide-[#edf1f6]">
+                  {card.rows.map((row) => (
+                    <div
+                      key={row.label}
+                      className="flex items-center justify-between gap-4 py-2 text-sm"
+                    >
+                      <span className="text-sm font-pregular text-[#1E3D73]">
+                        {row.label}
+                      </span>
+                      <span className={`text-sm font-pregular ${row.tone}`}>
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-lg border border-[#e8ecf4] bg-white px-5 py-3 text-left shadow-sm">
+                <div className="flex flex-col divide-y divide-[#edf1f6]">
+                  {card.perSqFtRows.map((row) => (
+                  <div
+                    key={row.label}
+                    className="flex items-center justify-between gap-4 py-2 text-sm"
+                  >
+                    <span className="text-sm font-pregular text-[#1E3D73]">
+                      {row.label}
+                    </span>
+                    <span className={`text-sm font-pregular ${row.tone}`}>
+                      {row.value}
+                    </span>
+                  </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <Popover
+        open={isCalendarOpen}
+        anchorEl={calendarAnchorEl}
+        onClose={() => setCalendarAnchorEl(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+      >
+        <LocalizationProvider dateAdapter={AdapterDayjs}>
+          <DateCalendar
+            value={calendarValue}
+            onChange={(newValue) => setCalendarValue(newValue)}
+          />
+        </LocalizationProvider>
+      </Popover>
+    </WidgetSection>
+  );
+};
+
+const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
+  const axios = useAxiosPrivate();
+
+  const { data: simpleRevenue = [], isLoading } = useQuery({
+    queryKey: ["simpleRevenue"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      return response.data;
+    },
+    enabled: hasPermission(PERMISSIONS.INVESTOR_ANNUAL_MONTHLY_MIX_INCOME.value),
+  });
+
+  const paidRevenueData = useMemo(() => {
+    if (!simpleRevenue) return [];
+
+    const flatten = [];
+
+    simpleRevenue.meetingRevenue?.forEach((item) => {
+      flatten.push({
+        vertical: "Meeting",
+        revenue: getNumericAmount(item.taxable),
+        date: item.date,
+        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+      });
+    });
+
+    simpleRevenue.alternateRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Alternate",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.invoiceCreationDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Virtual Office",
+        revenue: getVirtualOfficeReportingAmount(item),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(
+          item.rentStatus ?? item.status,
+        ),
+      });
+    });
+
+    simpleRevenue.workationRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Workation",
+        revenue: getNumericAmount(item.taxableAmount),
+        date: item.date,
+        normalizedStatus: getNormalizedPaymentStatus(item.status),
+      });
+    });
+
+    simpleRevenue.coworkingRevenues?.forEach((item) => {
+      flatten.push({
+        vertical: "Co-Working",
+        revenue: getNumericAmount(item.revenue),
+        date: item.rentDate,
+        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+      });
+    });
+
+    return flatten.filter((item) => item.normalizedStatus === "paid");
+  }, [simpleRevenue]);
+
+  const investorMixIncomeData = useMemo(() => {
+    const today = dayjs();
+    const fiscalStartYear = today.month() >= 3 ? today.year() : today.year() - 1;
+    const fiscalStart = dayjs(`${fiscalStartYear}-04-01`).startOf("month");
+    const fiscalEnd = fiscalStart.add(11, "month");
+    const projectionStart = today.startOf("month");
+    const completedMonthCount = projectionStart.diff(fiscalStart, "month");
+    const projectedVerticals = [
+      "Co-Working",
+      "Virtual Office",
+      "Meeting",
+      "Alternate",
+    ];
+
+    const completedFiscalYearData = paidRevenueData.filter((item) => {
+      const date = dayjs(item.date);
+      return (
+        date.isValid() &&
+        !date.isBefore(fiscalStart, "month") &&
+        date.isBefore(projectionStart, "month")
+      );
+    });
+
+    const averageByVertical = Object.fromEntries(
+      projectedVerticals.map((vertical) => {
+        const total = completedFiscalYearData
+          .filter((item) => item.vertical === vertical)
+          .reduce((sum, item) => sum + getNumericAmount(item.revenue), 0);
+
+        return [
+          vertical,
+          completedMonthCount > 0 ? Math.round(total / completedMonthCount) : 0,
+        ];
+      }),
+    );
+
+    const projectedRecords = [];
+    for (
+      let month = projectionStart;
+      !month.isAfter(fiscalEnd, "month");
+      month = month.add(1, "month")
+    ) {
+      projectedVerticals.forEach((vertical) => {
+        projectedRecords.push({
+          vertical,
+          revenue: averageByVertical[vertical],
+          date: month.format("YYYY-MM-DD"),
+          normalizedStatus: "projected",
+          isProjected: true,
+        });
+      });
+    }
+
+    return [...completedFiscalYearData, ...projectedRecords].filter(
+      (item) => item.vertical !== "Workation",
+    );
+  }, [paidRevenueData]);
+
+  if (!hasPermission(PERMISSIONS.INVESTOR_ANNUAL_MONTHLY_MIX_INCOME.value)) {
+    return null;
+  }
+
+  const options = {};
+
+  return isLoading ? (
+    <div className="flex h-72 items-center justify-center">
+      <CircularProgress />
+    </div>
+  ) : (
+    <FyBarGraphPercentage
+      data={investorMixIncomeData}
+      dateKey="date"
+      valueKey="revenue"
+      graphTitle={
+        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="block h-5 w-auto object-contain"
+          />
+          <span className="leading-5">
+            {`Monthly Income Breakdown Distribution - ${fiscalYearLabel(dayjs())}`}
+          </span>
+        </span>
+      }
+      chartOptions={options}
+      hideYearNavigation
+      investorVariant
+      hideHeaderAmounts
+      showFiscalYearInTitle={false}
+    />
+  );
+};
+
+const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
+  const occupancyGraphRoutes = {
+    sector: "/app/dashboard/investor-dashboard/sector-wise-occupancy",
+    india: "/app/dashboard/investor-dashboard/india-wise-occupancy",
+  };
+  const visibleOccupancyGraphs = [
+    hasPermission(PERMISSIONS.INVESTOR_SECTOR_WISE_OCCUPANCY.value) && "sector",
+    hasPermission(PERMISSIONS.INVESTOR_INDIA_WISE_OCCUPANCY.value) && "india",
+  ].filter(Boolean);
+
+  return (
+    <div className={className}>
+      <CheckAvailability
+        hideCheckInventory
+        graphHeight={390}
+        noOuterPadding
+        investorGraphStyle
+        hideSummaryCards
+        graphTitle={
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-[1em] w-auto object-contain"
+            />
+            <span>- INVENTORY VS OCCUPANCY</span>
+          </span>
+        }
+        monthlyView
+        middleContent={
+          <>
+            {visibleOccupancyGraphs.length > 0 && (
+              <InvestorOperationalCharts
+                visibleCharts={visibleOccupancyGraphs}
+                routes={occupancyGraphRoutes}
+                investorInventoryStyle
+              />
+            )}
+            {hasPermission(PERMISSIONS.INVESTOR_UNIQUE_CLIENTS_GRAPH.value) && (
+              <InvestorUniqueClientsGraph />
+            )}
+          </>
+        }
+      />
+    </div>
+  );
+};
+
 const asArray = (value) => (Array.isArray(value) ? value : []);
-const INVESTOR_MONTHLY_PROJECTED_AMOUNT = 5_000_000;
+const getNormalizedPaymentStatus = (value) => {
+  if (typeof value === "string") return value.trim().toLowerCase();
+  return value ? "paid" : "unpaid";
+};
+const getNumericAmount = (value) => {
+  if (typeof value === "number") return value;
+  if (typeof value === "string") {
+    const parsedValue = parseFloat(value.replace(/,/g, ""));
+    return Number.isNaN(parsedValue) ? 0 : parsedValue;
+  }
+  return 0;
+};
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
+const INVESTOR_INCOME_COLOR = "#3cb37180";
+const INVESTOR_INCOME_GRADIENT_END = "#3cb37145";
+const INVESTOR_EXPENSE_COLOR = "#ff000080";
+const INVESTOR_EXPENSE_GRADIENT_END = "#ff000045";
+const INVESTOR_PROJECTED_INCOME_COLOR = "#787878";
+const INVESTOR_PROJECTED_EXPENSE_COLOR = "#b4b4b4";
+const INVESTOR_PROJECTED_COLOR = INVESTOR_PROJECTED_INCOME_COLOR;
 const visitorTypes = [
   "Half-Day Pass",
   "Full-Day Pass",
@@ -79,18 +827,8 @@ const fiscalYearMonths = (fiscalYear) => {
 
 const InvestorAppreciationCenter = () => {
   const { currency, format } = useCurrency();
-  const location = useLocation();
-  const isAppreciationCenterPage = location.pathname.endsWith(
-    "/appreciation-center",
-  );
   const [valuationAsOf, setValuationAsOf] = useState(() => dayjs());
   const currentFiscalYear = fiscalYearLabel(valuationAsOf);
-  const currentFiscalYearStart = Number(
-    currentFiscalYear.match(/\d{4}/)?.[0],
-  );
-  const [selectedFiscalYear, setSelectedFiscalYear] = useState(
-    currentFiscalYear,
-  );
 
   useEffect(() => {
     const nextMonth = valuationAsOf.add(1, "month").startOf("month");
@@ -102,25 +840,18 @@ const InvestorAppreciationCenter = () => {
     return () => window.clearTimeout(timer);
   }, [valuationAsOf]);
 
-  useEffect(() => {
-    setSelectedFiscalYear(currentFiscalYear);
-  }, [currentFiscalYear]);
-
   const valuationMonths = useMemo(
     () =>
-      fiscalYearMonths(currentFiscalYear).map((month, index) => ({
-        month,
-        amount: Math.round(
-          APPRECIATION_BASE_VALUATION *
-            Math.pow(1 + APPRECIATION_MONTHLY_GROWTH_RATE, index),
-        ),
-      })),
+      fiscalYearMonths(currentFiscalYear)
+        .slice(APPRECIATION_PROJECTION_START_INDEX)
+        .map((month, index) => ({
+          month,
+          amount:
+            APPRECIATION_BASE_VALUATION +
+            APPRECIATION_MONTHLY_INCREMENT * index,
+        })),
     [currentFiscalYear],
   );
-  const currentMonthIndex = fiscalMonthIndex(valuationAsOf);
-  const currentMonthValuation =
-    valuationMonths[currentMonthIndex]?.amount || APPRECIATION_BASE_VALUATION;
-  const selectedYearSupportsData = selectedFiscalYear === currentFiscalYear;
   const graphData = useMemo(
     () => [
       {
@@ -131,13 +862,17 @@ const InvestorAppreciationCenter = () => {
     ],
     [currentFiscalYear, valuationMonths],
   );
-  const yAxisMax = Math.ceil(
-    Math.max(...valuationMonths.map(({ amount }) => amount / 10_000_000)) + 1,
+  const currentValuation =
+    valuationMonths.find(
+      ({ month }) => month === valuationAsOf.format("MMM-YY"),
+    ) || valuationMonths[0];
+  const maximumValuationInCrores = Math.max(
+    0,
+    ...valuationMonths.map(({ amount }) => amount / 10_000_000),
   );
-  const barColors = valuationMonths.map((_, index) =>
-    selectedYearSupportsData && index <= currentMonthIndex
-      ? "#24467E"
-      : "#C4C4C4",
+  const valuationScaleMaximum = Math.max(
+    8,
+    Math.ceil(maximumValuationInCrores / 2) * 2,
   );
 
   const options = {
@@ -147,7 +882,7 @@ const InvestorAppreciationCenter = () => {
       fontFamily: "Poppins-Regular",
     },
 
-    colors: barColors,
+    colors: ["#0BDA51"],
 
     legend: {
       show: false,
@@ -156,8 +891,7 @@ const InvestorAppreciationCenter = () => {
     plotOptions: {
       bar: {
         borderRadius: 5,
-        columnWidth: "40%",
-        distributed: true,
+        columnWidth: "38%",
         dataLabels: {
           position: "top",
         },
@@ -173,7 +907,17 @@ const InvestorAppreciationCenter = () => {
     },
 
     dataLabels: {
-      enabled: false,
+      enabled: true,
+      formatter: (_value, { dataPointIndex }) => {
+        const amount = valuationMonths[dataPointIndex]?.amount || 0;
+        return format(amount);
+      },
+      offsetY: -20,
+      style: {
+        colors: ["#1E3D73"],
+        fontSize: "12px",
+        fontWeight: 600,
+      },
     },
 
     states: {
@@ -183,32 +927,41 @@ const InvestorAppreciationCenter = () => {
 
     xaxis: {
       crosshairs: { show: false },
+      labels: {
+        style: {
+          colors: "#1E3D73",
+        },
+      },
     },
 
     yaxis: {
       min: 0,
-      max: yAxisMax,
+      max: valuationScaleMaximum,
+      tickAmount: valuationScaleMaximum / 2,
       title: {
-        text: `Amount In Crores (${currency})`,
+        text: `Property Owned (${currency})`,
+        style: {
+          color: "#1E3D73",
+        },
       },
 
       labels: {
-        formatter: (value) => Number(value).toFixed(1),
+        formatter: (value) => Number(value).toFixed(0),
+        style: {
+          colors: "#1E3D73",
+        },
       },
     },
 
     tooltip: {
       custom: ({ dataPointIndex }) => {
-        const valuation = selectedYearSupportsData
-          ? valuationMonths[dataPointIndex]
-          : null;
-        const month =
-          valuation?.month || fiscalYearMonths(selectedFiscalYear)[dataPointIndex];
+        const valuation = valuationMonths[dataPointIndex];
+        const month = valuation?.month;
 
         return (
           `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
           `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${month || ""}</div>` +
-          `<div style="padding:10px 12px;font-size:12px;color:#111827;">Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></div>` +
+          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0BDA51;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></span></div>` +
           `</div>`
         );
       },
@@ -216,29 +969,36 @@ const InvestorAppreciationCenter = () => {
   };
 
   return (
-    <div className="h-[425px]">
+    <div>
       <YearlyGraph
-        title={<BizNestTitle>APPRECIATION CENTER</BizNestTitle>}
-        headerRightContent={
-          <span
-            className={`flex items-center border border-[#1e3d73] bg-[#24467E] font-pmedium text-white ${
-              isAppreciationCenterPage
-                ? "gap-1 rounded-lg px-3 py-1.5 text-body"
-                : "gap-0.5 rounded-md px-2 py-1 text-xs"
-            }`}
-          >
-            <span>CURRENT AMOUNT VALUATION :</span>
-            <span>{format(currentMonthValuation)}</span>
+        title={
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <span>REAL ESTATE OWNED BY</span>
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-5 w-auto object-contain"
+            />
+            <span>{`- ${currentFiscalYear}`}</span>
           </span>
         }
         data={graphData}
         options={options}
         currentYear={currentFiscalYear}
-        onYearChange={setSelectedFiscalYear}
-        minFiscalYear={currentFiscalYearStart}
-        chartHeight={280}
-        sectionHeight="h-[425px]"
+        categories={valuationMonths.map(({ month }) => month)}
+        headerRightContent={
+          currentValuation ? (
+            <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium text-[#274784]">
+              <span>REAL ESTATE VALUE :</span>
+              <span>{format(currentValuation.amount)}</span>
+            </div>
+          ) : null
+        }
+        hideYearNavigation
+        chartHeight={360}
         refreshOnDataChange
+        sectionBorderColor="#1E3D73"
+        sectionBodyBorderColor="#9FB2CF"
       />
     </div>
   );
@@ -438,22 +1198,37 @@ const InvestorUniqueClientsGraph = () => {
     const elapsedMonths =
       financialYear === currentFinancialYear
         ? currentDate.month() >= 3
-          ? currentDate.month() - 2
-          : 12
+          ? currentDate.month() - 3
+          : currentDate.month() + 9
         : financialYear < currentFinancialYear
           ? 12
           : 1;
 
-    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(count / elapsedMonths).toFixed(2)}`;
+    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(
+      count / Math.max(elapsedMonths, 1)
+    ).toFixed(2)}`;
   };
 
   return (
     <LeadsLayout
       data={clientsByMonth}
       hideAccordion
-      title={<BizNestTitle>UNIQUE CLIENTS</BizNestTitle>}
+      title={
+        <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+          <img
+            src={bizNestLogo}
+            alt="BIZ Nest"
+            className="h-[1em] w-auto object-contain"
+          />
+          <span>UNIQUE CLIENTS</span>
+        </span>
+      }
       titleAmount={averageMonthlyUniqueClientTitle}
       hideMonthAxisTitle
+      noOuterPadding
+      investorBlueStyle
+      investorTitleAmountChip
+      hideFinancialYearControls
     >
       {/*
       <div className="border-b border-borderGray px-4 pb-4">
@@ -491,782 +1266,122 @@ const parseMeetingMinutes = (duration = "") => {
   return match[2] === "h" ? value * 60 : value;
 };
 
-const InvestorMeetingAnalytics = ({ visibleGraphs }) => {
+const InvestorIncomeExpenseGraph = ({
+  assetValueOwned,
+  projectedFinancials,
+  snapshotAssetValueOwned = assetValueOwned,
+}) => {
+  const { currency, convert, format } = useCurrency();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const showDurationDetails =
-    visibleGraphs.length === 1 && visibleGraphs[0] === "duration";
-
-  const now = dayjs();
-  const currentMonthLabel = now.format("MMM-YY");
-
-  const fiscalStartYear = now.month() >= 3 ? now.year() : now.year() - 1;
-
-  const fiscalLabel = `FY ${fiscalStartYear}-${String(
-    fiscalStartYear + 1,
-  ).slice(-2)}`;
-
-  const months = Array.from({ length: 12 }, (_, index) =>
-   dayjs(`${fiscalStartYear}-04-01`)
-      .add(index, "month")
-      .format("MMM-YY"),
-  );
-
-  const { data: meetings = [] } = useQuery({
-    queryKey: ["meetings"],
-    queryFn: async () =>
-      (await axios.get("/api/meetings/get-meetings")).data,
-     refetchInterval: 30000,
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["rooms"],
-    queryFn: async () =>
-      (await axios.get("/api/meetings/get-rooms")).data,
-     refetchInterval: 30000,
-    refetchOnWindowFocus: true,
-  });
-
-  const { data: visitors = [] } = useQuery({
-     queryKey: ["investor-visitors"],
-    queryFn: async () => {
-      const response = await axios.get("/api/visitors/fetch-visitors");
-      return Array.isArray(response.data) ? response.data : [];
-    },
-  });
-
-  const analytics = useMemo(() => {
-     const activeRooms = rooms.filter((room) => room.isActive === true);
-    //const activeRooms = rooms.filter((room) => room.isActive !== false);
-
-    const activeRoomNames = new Set(
-      activeRooms.map((room) => room.name),
-    );
-
-    const workingDays = (date) => {
-      let count = 0;
-
-      for (let day = 1; day <= date.daysInMonth(); day += 1) {
-        const weekday = date.date(day).day();
-
-        if (weekday >= 1 && weekday <= 6) {
-          count += 1;
-        }
-      }
-
-      return count;
-    };
-
-    const bookedByMonth = Object.fromEntries(
-      months.map((month) => [month, 0]),
-    );
-
-    meetings.forEach((meeting) => {
-      if (
-        activeRoomNames.size &&
-        !activeRoomNames.has(meeting.roomName)
-      ) {
-        return;
-      }
-
-      const date = dayjs(meeting.date || meeting.startTime);
-      const label = date.format("MMM-YY");
-
-      if (date.isValid() && label in bookedByMonth) {
-        bookedByMonth[label] +=
-          parseMeetingMinutes(meeting.duration) / 60;
-      }
-    });
-
-    const bookedHours = Object.values(bookedByMonth).reduce(
-      (sum, value) => sum + value,
-      0,
-    );
-
-    const utilization = [
-      {
-        group: fiscalLabel,
-        data: months.map((month) => {
-          const date = dayjs(month, "MMM-YY");
-          const capacity =
-            activeRooms.length * 9 * workingDays(date);
-
-          return {
-            x: month,
-            y: capacity
-              ? (bookedByMonth[month] / capacity) * 100
-              : 0,
-          };
-        }),
-      },
-    ];
-
-    const guestMonths = [];
-    const monthlyGuestMap = {};
-    for (let i = 0; i < 12; i += 1) {
-      const month = now.subtract(11 - i, "month");
-      const label = month.format("MMM-YY");
-      guestMonths.push(label);
-      monthlyGuestMap[label] = 0;
-    }
-
-    const guestCounts = Object.fromEntries(months.map((month) => [month, 0]));
-    const visitorTypeCounts = Object.fromEntries(
-      visitorTypes.map((type) => [
-        type,
-        Object.fromEntries(months.map((month) => [month, 0])),
-      ]),
-    );
-
-    visitors.forEach((visitor) => {
-      const date = dayjs(visitor.dateOfVisit || visitor.checkIn || visitor.createdAt);
-      const label = date.format("MMM-YY");
-      const visitorType = visitor.visitorType;
-
-      if (date.isValid() && label in guestCounts) {
-        guestCounts[label] += 1;
-        if (visitorType && visitorTypeCounts[visitorType]) {
-          visitorTypeCounts[visitorType][label] += 1;
-        }
-      }
-
-      if (date.isValid() && monthlyGuestMap[label] !== undefined) {
-        monthlyGuestMap[label] += 1;
-      }
-    });
-
-    // const roomNames = activeRooms
-    //   .map((room) => room.name)
-    //   .sort();
-
-    const roomNames = rooms.map((room) => room.name).sort();
-
-
-    const roomHours = Object.fromEntries(
-      roomNames.map((name) => [name, 0]),
-    );
-
-    meetings.forEach((meeting) => {
-      const date = dayjs(meeting.date || meeting.startTime);
-
-      if (
-        date.isSame(now, "month") &&
-        meeting.roomName in roomHours
-      ) {
-        roomHours[meeting.roomName] +=
-          parseMeetingMinutes(meeting.duration) / 60;
-      }
-    });
-
-    const monthlyCapacity = 9 * workingDays(now);
-
-    const occupancy = [
-      {
-        name: "Average Occupancy",
-        data: roomNames.map((name) => ({
-          x: name,
-          y: monthlyCapacity
-            ? (roomHours[name] / monthlyCapacity) * 100
-            : 0,
-        })),
-      },
-    ];
-
-    const dayNames = [
-      "Sun",
-      "Mon",
-      "Tue",
-      "Wed",
-      "Thu",
-      "Fri",
-      "Sat",
-    ];
-
-    const timeSlots = Array.from({ length: 12 }, (_, index) => {
-      const start = dayjs()
-        .hour(index + 8)
-        .minute(0);
-
-      return `${start.format("hA")}-${start
-        .add(1, "hour")
-        .format("hA")}`;
-    });
-
-    // const weekStart = now.startOf("week");
-
-   const matrix = timeSlots.map(() => Array(7).fill(0));
-
-    const monday = now
-      .subtract((now.day() + 6) % 7, "day")
-      .startOf("day");
-    const meetingWeekDays = Array.from({ length: 6 }, (_, index) =>
-      monday.add(index, "day").format("YYYY-MM-DD"),
-    );
-
-    meetings.forEach((meeting) => {
-      const date = dayjs(meeting.startTime);
-      const slot = date.hour() - 8;
-      const dayIndex = meetingWeekDays.indexOf(date.format("YYYY-MM-DD"));
-
-      if (
-        date.isValid() &&
-        dayIndex !== -1 &&
-        slot >= 0 &&
-        slot < 12
-      ) {
-        matrix[slot][dayIndex] += 1;
-      }
-    });
-
-    const heatmap = timeSlots.map((name, index) => ({
-      name,
-      data: dayNames.map((day, dayIndex) => ({
-        x: day,
-        y: matrix[index][dayIndex],
-      })),
-    }));
-
-    const durationBuckets = [15, 30, 60, 90, 120, 150, "Others"];
-    const durationCounts = Array(durationBuckets.length).fill(0);
-    const longerDurationCounts = {};
-
-    meetings.forEach((meeting) => {
-      const minutes = parseMeetingMinutes(meeting.duration);
-      const bucketIndex = [15, 30, 60, 90, 120, 150].findIndex(
-        (limit) => minutes <= limit,
-      );
-      if (bucketIndex === -1) {
-        longerDurationCounts[minutes] = (longerDurationCounts[minutes] || 0) + 1;
-      }
-      durationCounts[bucketIndex === -1 ? 6 : bucketIndex] += 1;
-    });
-
-    const externalGuestsData = [
-      {
-        name: "Visitors",
-        data: guestMonths.map((month) => monthlyGuestMap[month]),
-      },
-    ];
-    const externalGuestsMax = Math.max(
-      120,
-      Math.ceil(
-        Math.max(...guestMonths.map((month) => monthlyGuestMap[month]), 0) / 20,
-      ) * 20,
-    );
-
-    const externalGuestsOptions = {
-      chart: {
-        type: "bar",
-        fontFamily: "Poppins-Regular",
-        toolbar: {
-          show: false,
-        },
-      },
-      xaxis: {
-        categories: guestMonths,
-        title: {
-          text: "",
-        },
-        labels: {
-          style: {
-            fontSize: "8px",
-            fontFamily: "Poppins-Regular",
-            colors: "#333",
-          },
-        },
-      },
-      yaxis: {
-        max: externalGuestsMax,
-        min: 0,
-        tickAmount: 4,
-        forceNiceScale: false,
-        title: {
-          text: "Guest Count",
-        },
-      },
-      plotOptions: {
-        bar: {
-          horizontal: false,
-          columnWidth: "65%",
-          borderRadius: 5,
-          dataLabels: {
-            position: "top",
-          },
-        },
-      },
-      dataLabels: {
-        enabled: true,
-        style: {
-          fontSize: "12px",
-          colors: ["#000"],
-        },
-        offsetY: -22,
-      },
-      colors: ["#08b6bc"],
-    };
-
-    // const bucketLabels = [
-    //   "15",
-    //   "30",
-    //   "60",
-    //   "90",
-    //   "120",
-    //   "Others",
-    // ];
-
-    // const bucketCounts = Array(6).fill(0);
-
-    // meetings.forEach((meeting) => {
-    //   const minutes = parseMeetingMinutes(meeting.duration);
-
-    //   const index = [15, 30, 60, 90, 120].findIndex(
-    //     (limit) => minutes <= limit,
-    //   );
-
-    //   bucketCounts[index < 0 ? 5 : index] += 1;
-    // });
-
-    return {
-      bookedHours,
-      utilization,
-      guestCounts,
-      visitorTypeCounts,
-      externalGuestsData,
-      externalGuestsOptions,
-      totalVisitors: Object.values(guestCounts).reduce(
-        (total, count) => total + count,
-        0,
-      ),
-      roomNames,
-      roomHours,
-      occupancy,
-      heatmap,
-      duration: durationBuckets.map((bucket, index) => ({
-        label: bucket === "Others" ? bucket : `${bucket} min`,
-        value: durationCounts[index],
-      })),
-      durationDetails: [
-        ...durationBuckets.slice(0, -1).map((bucket, index) => ({
-          label: `${bucket} min`,
-          value: durationCounts[index],
-        })),
-        ...Object.entries(longerDurationCounts)
-          .sort(([minutesA], [minutesB]) => Number(minutesA) - Number(minutesB))
-          .map(([minutes, value]) => ({
-            label: `${minutes} min`,
-            value,
-          })),
-      ],
-    };
-  }, [fiscalLabel, meetings, months, now, rooms, visitors]);
-
-  const goTo = (route) => () =>
-    navigate(`/app/dashboard/investor-dashboard/${route}`);
-
-  const utilizationOptions = {
-    chart: {
-      type: "bar",
-      toolbar: { show: false },
-      fontFamily: "Poppins-Regular",
-    },
-    xaxis: {
-      categories: months,
-    },
-    yaxis: {
-      min: 0,
-      max: 100,
-      tickAmount: 4,
-      forceNiceScale: false,
-      title: {
-        text: "Utilization (%)",
-      },
-      labels: {
-        formatter: (value) => Math.round(value),
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (value) => `${value.toFixed(1)}%`,
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 5,
-        columnWidth: "40%",
-      },
-    },
-  };
-
-  const barOptions = (categories, yTitle, formatter, showDataLabels = true) => {
-    const isOccupancy = yTitle.includes("Occupancy");
-
-    return {
-      chart: {
-        type: "bar",
-        toolbar: { show: false },
-        fontFamily: "Poppins-Regular",
-      },
-      xaxis: {
-        categories,
-        labels: {
-          rotate: isOccupancy ? -45 : 0,
-          trim: true,
-          hideOverlappingLabels: true,
-          style: {
-            fontSize: isOccupancy ? "10px" : "12px",
-          },
-        },
-      },
-      yaxis: {
-        max: isOccupancy ? 100 : undefined,
-        min: 0,
-        tickAmount: isOccupancy ? 5 : undefined,
-        forceNiceScale: false,
-        title: {
-          text: yTitle,
-        },
-        labels: {
-          formatter: (value) =>
-            isOccupancy ? `${Math.round(value)}%` : Math.round(value),
-        },
-      },
-      colors: ["#2DC1C6"],
-      dataLabels: {
-        enabled: showDataLabels,
-        formatter,
-        offsetY: -18,
-        style: {
-          colors: ["#111"],
-        },
-      },
-      plotOptions: {
-        bar: {
-          borderRadius: 5,
-          columnWidth: "55%",
-          dataLabels: {
-            position: "top",
-          },
-        },
-      },
-    };
-  };
-
-  const heatmapOptions = {
-    chart: {
-      type: "heatmap",
-      toolbar: { show: false },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    plotOptions: {
-      heatmap: {
-        colorScale: {
-          ranges: [
-            {
-              from: 0,
-              to: 0,
-              color: "#d1d5db",
-              name: "No Bookings",
-            },
-            {
-              from: 1,
-              to: 5,
-              color: "#B2FFB2",
-              name: "Low (1-5)",
-            },
-            {
-              from: 6,
-              to: 10,
-              color: "#4CAF50",
-              name: "Moderate (6-10)",
-            },
-            {
-              from: 11,
-              to: 15,
-              color: "#2E7D32",
-              name: "High (11-15)",
-            },
-            {
-              from: 16,
-              to: 999,
-              color: "#1B5E20",
-              name: "Very High (16-20)",
-            },
-          ],
-        },
-      },
-    },
-  };
-  const visitorOptions = {
-    ...barOptions(
-      months,
-      "No. of Visitors",
-      (value) => value.toFixed(0),
-      false,
-    ),
-    colors: ["#2196F3", "#16B8C4", "#3498DB", "#174EA6", "#5C6BC0"],
-    legend: {
-      show: true,
-      position: "top",
-      horizontalAlign: "center",
-    },
-    tooltip: {
-      y: {
-        formatter: (value) => `${Number(value || 0).toFixed(0)}`,
-      },
-    },
-  };
-
-  const meetingDurationOptions = {
-    ...barOptions(
-      analytics.duration.map((item) => item.label),
-      "Meeting Count",
-      (value) => Math.round(value),
-    ),
-    xaxis: {
-      ...barOptions(
-        analytics.duration.map((item) => item.label),
-        "Meeting Count",
-        (value) => Math.round(value),
-      ).xaxis,
-      title: {
-        text: "Minutes",
-      },
-      crosshairs: {
-        show: false,
-      },
-    },
-    yaxis: {
-      ...barOptions(
-        analytics.duration.map((item) => item.label),
-        "Meeting Count",
-        (value) => Math.round(value),
-      ).yaxis,
-      crosshairs: {
-        show: false,
-      },
-    },
-    plotOptions: {
-      bar: {
-        borderRadius: 5,
-        columnWidth: "35%",
-        dataLabels: {
-          position: "top",
-        },
-      },
-    },
-    dataLabels: {
-      enabled: true,
-      formatter: (value) => Math.round(value),
-      offsetY: -26,
-      style: {
-        colors: ["#111"],
-      },
-    },
-    colors: ["#9FA1FF"],
-  };
-
-  // const pieOptions = {
-  //   labels: analytics.duration.map((item) => item.label),
-  //   legend: {
-  //     position: "bottom",
-  //   },
-  //   colors: [
-  //     "#1E3D73",
-  //     "#34528A",
-  //     "#4A68A1",
-  //     "#608DB8",
-  //     "#76A2CF",
-  //     "#8CB8E6",
-  //   ],
-  //   dataLabels: {
-  //     enabled: true,
-  //     formatter: (value) => `${value.toFixed(1)}%`,
-  //   },
-  // };
-
-  const show = (key) => visibleGraphs.includes(key);
-
-  return (
-    <div className="flex flex-col gap-6">
-      {show("utilization") && (
-        <div
-          onClick={goTo("meeting-room-utilization")}
-          className="cursor-pointer"
-        >
-          <YearlyGraph
-            title={<BizNestTitle>AVERAGE MEETING ROOM UTILIZATION</BizNestTitle>}
-            data={analytics.utilization}
-            options={utilizationOptions}
-            currentYear={fiscalLabel}
-          />
-        </div>
-      )}
-
-      {(show("guests") || show("occupancy")) && (
-        <WidgetSection
-          layout={Number(show("guests")) + Number(show("occupancy"))}
-           padding
-          gridGap="gap-x-6 gap-y-6"
-        >
-          {show("guests") && (
-            <WidgetSection
-              border
-              padding
-              height="min-h-[430px]"
-              title="EXTERNAL GUESTS VISITED"
-              titleLabel={currentMonthLabel}
-            >
-              <div
-                onClick={goTo("external-guests-visited")}
-                className="cursor-pointer"
-              >
-                <BarGraph
-                  data={analytics.externalGuestsData}
-                  options={analytics.externalGuestsOptions}
-                  height={450}
-                />
-              </div>
-            </WidgetSection>
-          )}
-
-          {show("occupancy") && (
-            <WidgetSection
-              border
-              padding
-              height="min-h-[430px]"
-              title="AVERAGE OCCUPANCY OF ROOMS IN %"
-              titleLabel={currentMonthLabel}
-            >
-              <div
-                onClick={goTo("average-room-occupancy")}
-                className="cursor-pointer"
-              >
-                <BarGraph
-                  data={analytics.occupancy}
-                  options={barOptions(
-                    analytics.roomNames,
-                    "Occupancy (%)",
-                    (value) => `${value.toFixed(0)}%`,
-                  )}
-                  height={450}
-                />
-              </div>
-            </WidgetSection>
-          )}
-        </WidgetSection>
-      )}
-
-      {show("busy") && (
-        <WidgetSection
-          border
-          title={<BizNestTitle>BUSY TIME DURING THE WEEK</BizNestTitle>}
-        >
-          <div
-            onClick={goTo("busy-time-during-week")}
-            className="cursor-pointer"
-          >
-            <HeatMap
-              data={analytics.heatmap}
-              options={heatmapOptions}
-              height={500}
-            />
-          </div>
-        </WidgetSection>
-      )}
-      {show("duration") && (
-        <WidgetSection
-          border
-          title={<BizNestTitle>MEETING DURATION BREAKDOWN</BizNestTitle>}
-        >
-          <div
-            onClick={goTo("meeting-duration-breakdown")}
-            className="cursor-pointer"
-          >
-            <BarGraph
-              data={[
-                {
-                  name: "Meetings",
-                  data: analytics.duration.map((item) => item.value),
-                },
-              ]}
-              options={meetingDurationOptions}
-              height={450}
-            />
-          </div>
-        </WidgetSection>
-      )}
-      {showDurationDetails && (
-        <WidgetSection
-          border
-          title={<BizNestTitle>MEETING DURATION BREAKDOWN DETAILS</BizNestTitle>}
-        >
-          <AgTable
-            data={analytics.durationDetails.map((item, index) => ({
-              id: index + 1,
-              minute: item.label,
-              meeting: item.value,
-            }))}
-            columns={[
-              { field: "id", headerName: "Sr No", flex: 1.5 },
-              { field: "minute", headerName: "Minute", flex: 1.5 },
-              { field: "meeting", headerName: "Meeting Count", flex: 1 },
-                ]}
-            search
-              />
-        </WidgetSection>
-      )}
-      {show("visitors") && (
-        <div
-          onClick={goTo("monthly-total-visitors")}
-          className="cursor-pointer"
-        >
-          <YearlyGraph
-            title={<BizNestTitle>{`MONTHLY TOTAL VISITORS ${fiscalLabel}`}</BizNestTitle>}
-            headerRightContent={
-              <span className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium">
-                TOTAL COUNT: {analytics.totalVisitors}
-              </span>
-            }
-            data={[
-              ...visitorTypes.map((type) => ({
-                name: type,
-                group: fiscalLabel,
-                data: months.map((month) => analytics.visitorTypeCounts[type][month]),
-              })),
-            ]}
-            options={visitorOptions}
-            chartHeight={380}
-            currentYear={fiscalLabel}
-          />
-        </div>
-      )}
-    </div>
-  );
-};
-
-
-const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
-  const { currency, format } = useCurrency();
-  const axios = useAxiosPrivate();
-  const navigate = useNavigate();
+  const { hasPermission } = useUserPermissions();
   const currentFiscalYear = fiscalYearLabel(dayjs());
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(currentFiscalYear);
+  const [hiddenProjectionLegendItems, setHiddenProjectionLegendItems] = useState([]);
+  const applyProjectionGradients = () => {
+    window.requestAnimationFrame(() => {
+      const chart = document.querySelector("#bargraph-investor-income-expense");
+      const svg = chart?.querySelector("svg");
+      if (!svg) return;
+
+      let defs = svg.querySelector("defs");
+      if (!defs) {
+        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        svg.prepend(defs);
+      }
+
+      const ensureGradient = (id, startColor, endColor) => {
+        let gradient = svg.querySelector(`#${id}`);
+        if (gradient) return gradient;
+
+        gradient = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "linearGradient",
+        );
+        gradient.setAttribute("id", id);
+        gradient.setAttribute("x1", "0%");
+        gradient.setAttribute("y1", "0%");
+        gradient.setAttribute("x2", "100%");
+        gradient.setAttribute("y2", "0%");
+
+        const start = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        start.setAttribute("offset", "0%");
+        start.setAttribute("stop-color", startColor);
+
+        const end = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        end.setAttribute("offset", "100%");
+        end.setAttribute("stop-color", endColor);
+
+        gradient.append(start, end);
+        defs.append(gradient);
+        return gradient;
+      };
+
+      ensureGradient(
+        "investor-income-gradient",
+        INVESTOR_INCOME_COLOR,
+        INVESTOR_INCOME_GRADIENT_END,
+      );
+      ensureGradient(
+        "investor-expense-gradient",
+        INVESTOR_EXPENSE_COLOR,
+        INVESTOR_EXPENSE_GRADIENT_END,
+      );
+
+      svg.querySelectorAll("path, rect").forEach((bar) => {
+        bar.style.transform = "";
+        bar.style.transformBox = "";
+        bar.style.transformOrigin = "";
+
+        const fill = bar.getAttribute("fill")?.toLowerCase();
+        if (fill === INVESTOR_INCOME_COLOR.toLowerCase()) {
+          bar.setAttribute("fill", "url(#investor-income-gradient)");
+        } else if (
+          fill === INVESTOR_EXPENSE_COLOR.toLowerCase() ||
+          fill === "#ff0000"
+        ) {
+          bar.setAttribute("fill", "url(#investor-expense-gradient)");
+        }
+      });
+
+      const hideIncome = hiddenProjectionLegendItems.includes("Income");
+      const hideExpense = hiddenProjectionLegendItems.includes("Expense");
+      const visibleActualSeries = hideIncome !== hideExpense
+        ? hideIncome
+          ? "Expense"
+          : "Income"
+        : null;
+
+      if (!visibleActualSeries) return;
+
+      const seriesGroup = svg.querySelector(
+        `.apexcharts-series[seriesName="${visibleActualSeries}"]`,
+      );
+      if (!seriesGroup) return;
+
+      seriesGroup.querySelectorAll("path, rect").forEach((bar) => {
+        const dataPointIndex = Number(
+          bar.getAttribute("j") ??
+          bar.getAttribute("data\\:realIndex") ??
+          bar.getAttribute("data-realIndex"),
+        );
+
+        if (!Number.isInteger(dataPointIndex) || projectionFlags[dataPointIndex]) {
+          return;
+        }
+
+        bar.style.transformBox = "fill-box";
+        bar.style.transformOrigin = "center";
+        bar.style.transform = "scaleX(1.95)";
+      });
+    });
+  };
 
   const { data: revenueExpenseData = [] } = useQuery({
     queryKey: ["revenueExpenseData"],
     queryFn: async () => {
       const response = await axios.get("/api/finance/income-expense");
       return Array.isArray(response.data?.response) ? response.data.response : [];
-    },
-  });
-
-  const { data: managedUnitsData = [] } = useQuery({
-    queryKey: ["investor-managed-units"],
-    queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-simple-units");
-      return Array.isArray(response.data) ? response.data : [];
     },
   });
 
@@ -1279,8 +1394,104 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       return Array.isArray(response.data?.allBudgets) ? response.data.allBudgets : [];
     },
   });
+  const { data: snapshotRevenue = {} } = useQuery({
+    queryKey: ["finance-dashboard-simpleRevenue"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      return response.data || {};
+    },
+  });
+  const totalSqft = useMemo(
+    () =>
+      revenueExpenseData
+        .filter((item) => item?.units)
+        .flatMap((item) => asArray(item.units))
+        .reduce((total, unit) => total + (Number(unit?.sqft) || 0), 0),
+    [revenueExpenseData],
+  );
+  const snapshotIncomeSources = useMemo(
+    () => [
+      ...(snapshotRevenue.meetingRevenue || []).map((item) => ({
+        amount: item.taxable,
+        date: item.date,
+        status: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+      })),
+      ...(snapshotRevenue.alternateRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.invoiceCreationDate,
+        status: item.status,
+      })),
+      ...(snapshotRevenue.virtualOfficeRevenues || []).map((item) => ({
+        amount: getVirtualOfficeReportingAmount(item),
+        date: item.rentDate,
+        status: item.rentStatus ?? item.status,
+      })),
+      ...(snapshotRevenue.workationRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.date,
+        status: item.status,
+      })),
+      ...(snapshotRevenue.coworkingRevenues || []).map((item) => ({
+        amount: item.revenue,
+        date: item.rentDate,
+        status: item.rentStatus,
+      })),
+    ],
+    [snapshotRevenue],
+  );
+  const actualFinancialsByYear = useMemo(() => {
+    const yearlyFinancials = {};
+    snapshotIncomeSources.forEach((item) => {
+      if (
+        !item.date ||
+        !dayjs(item.date).isValid() ||
+        getNormalizedPaymentStatus(item.status) !== "paid"
+      ) {
+        return;
+      }
 
- const { series, totals, selectedIncome, selectedExpense } = useMemo(() => {
+      const fiscalYear = fiscalYearLabel(item.date);
+      yearlyFinancials[fiscalYear] ||= { income: 0, expense: 0 };
+      yearlyFinancials[fiscalYear].income += getNumericAmount(item.amount);
+    });
+    budgetData.forEach((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) return;
+      const fiscalYear = fiscalYearLabel(item.dueDate);
+      yearlyFinancials[fiscalYear] ||= { income: 0, expense: 0 };
+      yearlyFinancials[fiscalYear].expense += Number(item.actualAmount) || 0;
+    });
+
+    return Object.fromEntries(
+      Object.entries(yearlyFinancials).map(([fiscalYear, values]) => [
+        fiscalYear,
+        {
+          ...values,
+          profitLoss: values.income - values.expense,
+        },
+      ]),
+    );
+  }, [budgetData, snapshotIncomeSources]);
+  const perSqFtFinancialsByYear = useMemo(() => {
+    if (!totalSqft) return {};
+
+    return Object.fromEntries(
+      Object.entries(actualFinancialsByYear).map(([fiscalYear, values]) => [
+        fiscalYear,
+        {
+          income: values.income / totalSqft,
+          expense: values.expense / totalSqft,
+          profitLoss: values.profitLoss / totalSqft,
+        },
+      ]),
+    );
+  }, [actualFinancialsByYear, totalSqft]);
+
+ const {
+    series,
+    projectedIncomeTotal,
+    projectedExpenseTotal,
+    projectionFlags,
+  } = useMemo(() => {
     const incomeByYear = new Map();
     const expenseByYear = new Map();
     const addAmount = (map, date, amount) => {
@@ -1291,21 +1502,9 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       map.set(year, values);
     };
 
-    revenueExpenseData.forEach((entry) => {
-      const income = entry?.income || {};
-      [
-        ...asArray(income.meetingRevenue),
-        ...asArray(income.alternateRevenues),
-        ...asArray(income.virtualOfficeRevenues),
-        ...asArray(income.workationRevenues),
-        ...asArray(income.coworkingRevenues),
-      ].forEach((item) =>
-        addAmount(
-          incomeByYear,
-          item.date || item.rentDate || item.invoiceCreationDate,
-          item.taxableAmount || item.revenue || item.taxable,
-        ),
-      );
+    snapshotIncomeSources.forEach((item) => {
+      if (getNormalizedPaymentStatus(item.status) !== "paid") return;
+      addAmount(incomeByYear, item.date, item.amount);
     });
 
     budgetData.forEach((item) =>
@@ -1317,24 +1516,55 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
       ...expenseByYear.keys(),
       currentFiscalYear,
     ]);
+    const projectedMonthsByYear = new Map();
+    const projectionAveragesByYear = new Map();
+    const currentFiscalMonthIndex = fiscalMonthIndex(dayjs());
     const graphSeries = [...years].flatMap((group) => {
       const incomeValues = incomeByYear.get(group) || Array(12).fill(0);
       const expenseValues = expenseByYear.get(group) || Array(12).fill(0);
-       const projectedValues = incomeValues.map((incomeAmount, monthIndex) => {
-        const expenseAmount = expenseValues[monthIndex];
-
-        return incomeAmount === 0 && expenseAmount === 0
-          ? INVESTOR_MONTHLY_PROJECTED_AMOUNT
-          : 0;
+      const isCurrentYear = group === currentFiscalYear;
+      const completedMonthCount = isCurrentYear ? currentFiscalMonthIndex : 12;
+      const averageIncome = completedMonthCount
+        ? Math.round(
+            incomeValues
+              .slice(0, completedMonthCount)
+              .reduce((sum, value) => sum + value, 0) / completedMonthCount,
+          )
+        : 0;
+      const averageExpense = completedMonthCount
+        ? Math.round(
+            expenseValues
+              .slice(0, completedMonthCount)
+              .reduce((sum, value) => sum + value, 0) / completedMonthCount,
+          )
+        : 0;
+      const projectedFlags = incomeValues.map(
+        (_incomeAmount, monthIndex) =>
+          isCurrentYear && monthIndex >= currentFiscalMonthIndex,
+      );
+      projectedMonthsByYear.set(group, projectedFlags);
+      projectionAveragesByYear.set(group, {
+        income: averageIncome,
+        expense: averageExpense,
       });
+      const incomeGraphValues = incomeValues.map((incomeAmount, monthIndex) =>
+        projectedFlags[monthIndex] ? averageIncome : incomeAmount,
+      );
+      const expenseGraphValues = expenseValues.map((expenseAmount, monthIndex) =>
+        projectedFlags[monthIndex] ? averageExpense : expenseAmount,
+      );
       return [
-        { name: "Income", group, data: incomeValues },
-        { name: "Expense", group, data: expenseValues },
-         { name: "Projected", group, data: projectedValues },
+        { name: "Income", group, data: incomeGraphValues },
+        { name: "Expense", group, data: expenseGraphValues },
       ];
     });
     const income = incomeByYear.get(selectedFiscalYear) || [];
     const expense = expenseByYear.get(selectedFiscalYear) || [];
+    const selectedProjectionFlags =
+      projectedMonthsByYear.get(selectedFiscalYear) || Array(12).fill(false);
+    const selectedProjectionAverages = projectionAveragesByYear.get(
+      selectedFiscalYear,
+    ) || { income: 0, expense: 0 };
 
     return {
       series: graphSeries,
@@ -1342,304 +1572,459 @@ const InvestorIncomeExpenseGraph = ({ showSummaryCards }) => {
         income: income.reduce((sum, value) => sum + value, 0),
         expense: expense.reduce((sum, value) => sum + value, 0),
       },
-    selectedIncome: income,
-      selectedExpense: expense,
+      projectedIncomeTotal: selectedProjectionFlags.reduce(
+        (sum, isProjected, monthIndex) =>
+          sum +
+          (isProjected
+            ? selectedProjectionAverages.income
+            : income[monthIndex] || 0),
+        0,
+      ),
+      projectedExpenseTotal: selectedProjectionFlags.reduce(
+        (sum, isProjected, monthIndex) =>
+          sum +
+          (isProjected
+            ? selectedProjectionAverages.expense
+            : expense[monthIndex] || 0),
+        0,
+      ),
+      projectionFlags: selectedProjectionFlags,
     };
-  }, [budgetData, currentFiscalYear, revenueExpenseData, selectedFiscalYear]);
-  const totalSqft = useMemo(
+  }, [budgetData, currentFiscalYear, selectedFiscalYear, snapshotIncomeSources]);
+  const displayedProjectionSeries = useMemo(
     () =>
-      revenueExpenseData
-        .filter((item) => item?.units)
-        .flatMap((item) => asArray(item.units))
-        .reduce((sum, item) => sum + (Number(item?.sqft) || 0), 0),
-    [revenueExpenseData],
+      series.map((item) => ({
+        ...item,
+        data: item.data.map((value, monthIndex) => {
+          if (
+            hiddenProjectionLegendItems.includes("Projected") &&
+            projectionFlags[monthIndex]
+          ) {
+            return null;
+          }
+
+          if (
+            hiddenProjectionLegendItems.includes(item.name) &&
+            !projectionFlags[monthIndex]
+          ) {
+            return null;
+          }
+
+          return value;
+        }),
+      })),
+    [hiddenProjectionLegendItems, projectionFlags, series],
   );
-  const annualManagedSqft = useMemo(() => {
-    const managedBuildings = new Set(["sunteck kanaka", "dempo trade center"]);
-    const totalManagedSqft = managedUnitsData
-      .filter((unit) => {
-        const buildingName = String(
-          unit?.building?.buildingName || unit?.buildingName || "",
-        )
-          .trim()
-          .toLowerCase()
-          .replace(/centre/g, "center");
-
-        return managedBuildings.has(buildingName);
-      })
-      .reduce((sum, unit) => sum + (Number(unit?.sqft) || 0), 0);
-
-    return totalManagedSqft / 12;
-  }, [managedUnitsData]);
-
-  const previousMonthIndex = fiscalMonthIndex(dayjs().subtract(1, "month"));
-  const selectedYearStart = Number(selectedFiscalYear.match(/\d{4}/)?.[0]);
-  const selectedMonthDate = Number.isFinite(selectedYearStart)
-    ? dayjs(`${selectedYearStart}-04-01`).add(previousMonthIndex, "month")
-    : null;
-  const summaryMonthLabel = selectedMonthDate
-    ? `${selectedMonthDate.format("MMMM")} - ${selectedFiscalYear}`
-    : "-";
-  const summaryMonthIncome = selectedIncome[previousMonthIndex] || 0;
-  const summaryMonthExpense = selectedExpense[previousMonthIndex] || 0;
-  const perSqft = (value) => (totalSqft ? value / totalSqft : 0);
-  const projectedAmount = (series.find(
-    (item) => item.name === "Projected" && item.group === selectedFiscalYear,
-  )?.data || []).reduce((sum, value) => sum + value, 0);
-
-  const buildCardData = (cardTitle, values, highlightNegativePositive = false) => ({
-    cardTitle,
-    timePeriod: selectedFiscalYear,
-    highlightNegativePositive,
-    descriptionData: [
-      {
-        title: summaryMonthLabel,
-        value: format(values.month),
-        route: "#",
-      },
-      {
-        title: "Annual Average",
-        value: format(values.total / 12),
-        route: "#",
-      },
-      {
-        title: "Overall Manage Sq.Ft",
-        value: `${inrFormat(annualManagedSqft)} Sq.Ft`,
-        route: "#",
-      },
-      {
-        title: "Per Sq. Ft.",
-        value: format(perSqft(values.total)),
-        route: "#",
-      },
-    ],
-  });
-
+  const toggleProjectionLegendItem = (label) => {
+    setHiddenProjectionLegendItems((current) =>
+      current.includes(label)
+        ? current.filter((item) => item !== label)
+        : [...current, label],
+    );
+  };
+  const projectionAxisStep = 2_500_000;
+  const highestProjectionValue = Math.max(
+    0,
+    ...series.flatMap((item) => item.data.map((value) => Number(value) || 0)),
+  );
+  const projectionAxisMax = Math.max(
+    7_500_000,
+    Math.ceil(highestProjectionValue / projectionAxisStep) * projectionAxisStep,
+  );
   const options = {
     chart: {
       id: "investor-income-vs-expense",
       animations: { enabled: false },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
+      events: {
+        mounted: applyProjectionGradients,
+        updated: applyProjectionGradients,
+      },
     },
-     colors: ["#54C4A7", "#EB5C45", "#c4c4c4"],
-    plotOptions: { bar: { horizontal: false, columnWidth: "70%", borderRadius: 6 } },
-    dataLabels: { enabled: false },
-    legend: {
+     colors: [
+      ({ dataPointIndex }) =>
+        projectionFlags[dataPointIndex]
+          ? INVESTOR_PROJECTED_INCOME_COLOR
+          : INVESTOR_INCOME_COLOR,
+      ({ dataPointIndex }) =>
+        projectionFlags[dataPointIndex]
+          ? INVESTOR_PROJECTED_EXPENSE_COLOR
+          : INVESTOR_EXPENSE_COLOR,
+    ],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "70%",
+        borderRadius: 5,
+        dataLabels: { position: "top" },
+      },
+    },
+    stroke: {
       show: true,
-      position: "top",
-      onItemHover: { highlightDataSeries: false },
+      width: 2,
+      colors: ["#ffffff"],
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (value) =>
+        Number(value) > 0
+          ? currency === "INR"
+            ? `${format(value / 100_000, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}L`
+            : format(value, {
+                notation: "compact",
+                maximumFractionDigits: 2,
+              })
+          : "",
+      offsetY: -20,
+      style: {
+        colors: ["#1E3D73"],
+        fontSize: "12px",
+        fontWeight: 600,
+      },
+      background: { enabled: false },
+    },
+    legend: {
+      show: false,
+    },
+    grid: {
+      padding: {
+        left: 24,
+        right: 24,
+      },
     },
     states: {
       hover: { filter: { type: "none" } },
       active: { filter: { type: "none" } },
     },
     xaxis: {
+      tickPlacement: "between",
       crosshairs: { show: false },
+      labels: {
+        show: true,
+        style: {
+          colors: "#1E3D73",
+        },
+      },
     },
     yaxis: {
       min: 0,
-      title: { text: `Amount In Lakhs (${currency})` },
-      labels: { formatter: (value) => `${Math.round(value / 100000)}` },
+      max: projectionAxisMax,
+      tickAmount: projectionAxisMax / projectionAxisStep,
+      forceNiceScale: false,
+      title: {
+        text:
+          currency === "INR"
+            ? "Amount In Lakhs (INR)"
+            : `Amount In Thousands (${currency})`,
+        style: {
+          color: "#1E3D73",
+        },
+      },
+      labels: {
+        show: true,
+        style: {
+          colors: "#1E3D73",
+        },
+        formatter: (value) =>
+          currency === "INR"
+            ? `${Math.round(value / 100_000)}`
+            : `${Math.round(convert(value) / 1_000)}`,
+      },
     },
     tooltip: { y: { formatter: (value) => format(value) } },
   };
 
+  const projectionLegend = (
+    <div className="flex items-center justify-center gap-4 text-xs">
+      {[
+        { label: "Income", color: INVESTOR_INCOME_COLOR },
+        { label: "Expense", color: INVESTOR_EXPENSE_COLOR },
+        { label: "Projected", color: INVESTOR_PROJECTED_COLOR },
+      ].map((item) => (
+        <button
+          key={item.label}
+          type="button"
+          onClick={() => toggleProjectionLegendItem(item.label)}
+          className={`flex items-center gap-1.5 text-[#1E3D73] ${
+            hiddenProjectionLegendItems.includes(item.label) ? "opacity-40" : ""
+          }`}
+        >
+          <span
+            className="h-3 w-3 rounded-sm"
+            style={{ backgroundColor: item.color }}
+          />
+          <span>{item.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   return (
    <div className="flex flex-col gap-4">
       <YearlyGraph
-        data={series}
+        data={displayedProjectionSeries}
         options={options}
         chartId="bargraph-investor-income-expense"
         title={
-          <BizNestTitle>{`FINANCE INCOME V/S EXPENSE - ${selectedFiscalYear}`}</BizNestTitle>
+          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
+            <img
+              src={bizNestLogo}
+              alt="BIZ Nest"
+              className="h-[1em] w-auto object-contain"
+            />
+            <span>{`PROJECTIONS - ${selectedFiscalYear}`}</span>
+          </span>
         }
-        chartHeight={450}
-        headerCenterContentInline
-        headerCenterContent={
-          <div className="flex gap-2 justify-center items-center uppercase bg-[#c4c4c4] p-2 rounded-lg text-body text-black font-pmedium">
-          Projected: {format(projectedAmount)}
+        chartHeight={360}
+        chartTopContent={projectionLegend}
+        headerRightContent={
+          <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+            <span>Projection:</span>
+            <span>{format(projectedIncomeTotal + projectedExpenseTotal)}</span>
           </div>
         }
-        TitleAmountGreen={format(totals.income)}
-        TitleAmountRed={format(totals.expense)}
         currentYear={selectedFiscalYear}
         onYearChange={setSelectedFiscalYear}
-        refreshOnDataChange
+        hideYearNavigation
+        sectionBorderColor="#1E3D73"
+        sectionBodyBorderColor="#9FB2CF"
       />
-      {showSummaryCards && (
-        <div className="mt-2">
-          <WidgetSection
-            border
-            height="min-h-[340px]"
-            title={<BizNestTitle>PROFIT & LOSS - LAST MONTHS</BizNestTitle>}
-          >
-            <div className="mt-4 mb-4 grid grid-cols-1 gap-5 lg:grid-cols-3">
-              {[
-                {
-                  title: "Income",
-                  month: summaryMonthIncome,
-                  total: totals.income,
-                },
-                {
-                  title: "Expense",
-                  month: summaryMonthExpense,
-                  total: totals.expense,
-                },
-                {
-                  title: "Profit & Loss",
-                  month: summaryMonthIncome - summaryMonthExpense,
-                  total: totals.income - totals.expense,
-                  highlightNegativePositive: true,
-                },
-              ].map((card) => {
-                const cardData = buildCardData(
-                  card.title,
-                  { month: card.month, total: card.total },
-                  card.highlightNegativePositive,
-                );
-                return (
-                  <div key={card.title} className="flex flex-col gap-3">
-                    <FinanceCard
-                      cardTitle={card.title}
-                      timePeriod={selectedFiscalYear}
-                      descriptionData={[]}
-                      minHeight="min-h-[50px]"
-                      hideHeaderDivider
-                      centerContent
-                      disableLinks
-                    />
-                    <FinanceCard
-                      {...cardData}
-                      descriptionData={cardData.descriptionData.slice(0, 2)}
-                      minHeight="min-h-[110px]"
-                      hideHeader
-                      hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
-                      disableLinks
-                    />
-                    <FinanceCard
-                      {...cardData}
-                      descriptionData={cardData.descriptionData.slice(2)}
-                      minHeight="min-h-[110px]"
-                      hideHeader
-                      hideDividerAfter={["Annual Average", "Per Sq. Ft."]}
-                      disableLinks
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </WidgetSection>
-        </div>
-      )}
+      <InvestorSnapshotSection
+        format={format}
+        hasPermission={hasPermission}
+        perSqFtFinancialsByYear={perSqFtFinancialsByYear}
+        currentAssetValueOwned={snapshotAssetValueOwned}
+        currentProjectedFinancials={projectedFinancials}
+        actualFinancialsByYear={actualFinancialsByYear}
+      />
+      <InvestorAnnualMonthlyMixIncome hasPermission={hasPermission} />
+      <InvestorOccupiedInventoryGraph hasPermission={hasPermission} />
     </div>      
   );
 };
 
-const yearCategories = {
-  "FY 2024-2025": [
-    "Apr-24",
-    "May-24",
-    "Jun-24",
-    "Jul-24",
-    "Aug-24",
-    "Sep-24",
-    "Oct-24",
-    "Nov-24",
-    "Dec-24",
-    "Jan-25",
-    "Feb-25",
-    "Mar-25",
-  ],
-  "FY 2025-2026": [
-    "Apr-25",
-    "May-25",
-    "Jun-25",
-    "Jul-25",
-    "Aug-25",
-    "Sep-25",
-    "Oct-25",
-    "Nov-25",
-    "Dec-25",
-    "Jan-26",
-    "Feb-26",
-    "Mar-26",
-  ],
-};
-
 const InvestorDashboard = () => {
-  const { currency, format } = useCurrency();
+  const { format } = useCurrency();
   const axios = useAxiosPrivate();
   const location = useLocation();
   const navigate = useNavigate();
   const { hasPermission } = useUserPermissions();
-  const showDetails = location.pathname.endsWith("/historical-P&L");
+  const [isBrowserZoomedOut, setIsBrowserZoomedOut] = useState(false);
+
+  useEffect(() => {
+    const updateBrowserZoom = () => {
+      const viewportZoomRatio = window.outerWidth / window.innerWidth;
+      setIsBrowserZoomedOut(
+        viewportZoomRatio < 0.9 || window.devicePixelRatio < 0.9,
+      );
+    };
+
+    updateBrowserZoom();
+    window.addEventListener("resize", updateBrowserZoom);
+    return () => window.removeEventListener("resize", updateBrowserZoom);
+  }, []);
+
   const showIncomeExpensePage = location.pathname.endsWith("/income-expense");
   const showUniqueClientsPage = location.pathname.endsWith("/unique-clients");
-  const showInventoryPage = location.pathname.endsWith("/inventory");
   const showAppreciationCenterPage = location.pathname.endsWith(
-    "/appreciation-center",
+    "/real-estate-owned-by-biznest",
   );
-  const selectedHistoricalFiscalYear = fiscalYearLabel(dayjs());
-   const meetingGraphRoutes = {
-    utilization: "/meeting-room-utilization",
-    guests: "/external-guests-visited",
-    occupancy: "/average-room-occupancy",
-    busy: "/busy-time-during-week",
-    visitors: "/monthly-total-visitors",
-    duration: "/meeting-duration-breakdown",
-  };
-   const operationalGraphRoutes = {
+  const operationalGraphRoutes = {
     sector: "/app/dashboard/investor-dashboard/sector-wise-occupancy",
-    client: "/app/dashboard/investor-dashboard/client-wise-occupancy",
-    gender: "/app/dashboard/investor-dashboard/client-member-gender-wise-data",
-    india: "/app/dashboard/investor-dashboard/india-wise-members",
-    desks: "/app/dashboard/investor-dashboard/total-desks-company-wise",
-    visitorCategory: "/app/dashboard/investor-dashboard/overall-visitor-category",
-    visitorClientType: "/app/dashboard/investor-dashboard/overall-visitor-client-type",
-    visitorGender: "/app/dashboard/investor-dashboard/overall-visitor-gender-data",
+    gender: "/app/dashboard/investor-dashboard/gender-wise-occupancy",
+    age: "/app/dashboard/investor-dashboard/age-wise-occupancy",
+    india: "/app/dashboard/investor-dashboard/india-wise-occupancy",
   };
   const showDashboardHome = location.pathname.endsWith("/investor-dashboard");
-  const canViewHistoricalPnlGraph = hasPermission(
-    PERMISSIONS.INVESTOR_HISTORICAL_PNL_GRAPH.value,
+  const { data: inventoryUnits = [] } = useQuery({
+    queryKey: ["workLocations"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/fetch-units");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: showDashboardHome,
+  });
+  const { data: dashboardUniqueClients = {} } = useQuery({
+    queryKey: ["investor-unique-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/consolidated-clients");
+      return response.data && typeof response.data === "object"
+        ? response.data
+        : {};
+    },
+    enabled: showDashboardHome,
+  });
+  const averageUniqueClients = useMemo(() => {
+    const currentDate = dayjs();
+    const currentFiscalYear =
+      currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
+    const elapsedMonths =
+      currentDate.month() >= 3 ? currentDate.month() - 2 : 12;
+
+    const count = Object.entries(dashboardUniqueClients).reduce(
+      (total, [key, clients]) =>
+        total +
+        asArray(clients).filter((client) => {
+          let clientType = key.replace(/Clients$/, "");
+          if (clientType === "meeting") {
+            const purpose = String(client?.purposeOfVisit || "")
+              .trim()
+              .toLowerCase();
+            if (purpose === "meeting room booking") clientType = "externalMeeting";
+            else if (purpose === "half-day pass" || purpose === "full-day pass") {
+              clientType = "openDesk";
+            }
+          }
+          if (clientType === "coworking" && client?.service?.serviceName) {
+            const serviceName = client.service.serviceName.toLowerCase();
+            if (serviceName.includes("workation")) clientType = "workation";
+            else if (serviceName.includes("living")) clientType = "coliving";
+          }
+          if (
+            !["coworking", "virtualOffice", "externalMeeting", "openDesk"].includes(
+              clientType,
+            )
+          ) {
+            return false;
+          }
+
+          const rawDate =
+            clientType === "coworking"
+              ? client.startDate
+              : clientType === "virtualOffice"
+                ? client.termStartDate || client.rentDate
+                : client.dateOfVisit || client.scheduledDate;
+          if (!rawDate || !dayjs(rawDate).isValid()) return false;
+
+          const clientDate = dayjs(rawDate);
+          const clientFiscalYear =
+            clientDate.month() >= 3
+              ? clientDate.year()
+              : clientDate.year() - 1;
+          return clientFiscalYear === currentFiscalYear;
+        }).length,
+      0,
+    );
+
+    return count / elapsedMonths;
+  }, [dashboardUniqueClients]);
+  const investorInventoryUnits = useMemo(
+    () =>
+      inventoryUnits.filter((unit) => {
+        if (!unit?.isActive || unit?.isOnlyBudget) return false;
+
+        const buildingName = String(
+          unit?.building?.buildingName || "",
+        ).toLowerCase();
+        return (
+          buildingName.includes("sunteck kanaka") ||
+          buildingName.includes("dempo trade centre") ||
+          buildingName.includes("dempo trade center")
+        );
+      }),
+    [inventoryUnits],
   );
+  const { data: investorOccupancyClients = [] } = useQuery({
+    queryKey: ["co-working-monthly-occupancy", true],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    enabled: showDashboardHome,
+  });
+  const totalInventory = useMemo(
+    () =>
+      investorInventoryUnits.reduce(
+        (total, unit) =>
+          total +
+          (Number(unit?.openDesks) || 0) +
+          (Number(unit?.cabinDesks) || 0),
+        0,
+      ),
+    [investorInventoryUnits],
+  );
+  const occupiedInventory = useMemo(
+    () => {
+      if (!totalInventory) return 0;
+
+      const currentMonth = dayjs().startOf("month");
+      const fiscalYearStart = dayjs()
+        .year(currentMonth.month() >= 3 ? currentMonth.year() : currentMonth.year() - 1)
+        .month(3)
+        .startOf("month");
+      const completedMonths = Array.from(
+        { length: currentMonth.diff(fiscalYearStart, "month") + 1 },
+        (_, index) => fiscalYearStart.add(index, "month"),
+      );
+      const monthlyOccupancy = completedMonths.map((monthStart) => {
+        const monthEnd = monthStart.endOf("month");
+        const occupied = investorOccupancyClients.reduce((total, client) => {
+          const buildingName = String(
+            client?.unit?.building?.buildingName || "",
+          ).toLowerCase();
+          const isInvestorBuilding =
+            buildingName.includes("sunteck kanaka") ||
+            buildingName.includes("dempo trade centre") ||
+            buildingName.includes("dempo trade center");
+          if (!isInvestorBuilding) return total;
+
+          const startDate = dayjs(client?.startDate);
+          if (!startDate.isValid()) return total;
+          const endDate = client?.endDate ? dayjs(client.endDate) : currentMonth;
+          const effectiveEndDate = endDate.isValid() ? endDate : currentMonth;
+          const overlapsMonth =
+            startDate.isBefore(monthEnd.add(1, "day")) &&
+            effectiveEndDate.isAfter(monthStart.subtract(1, "day"));
+          if (!overlapsMonth) return total;
+
+          return (
+            total +
+            (Number(client?.openDesks) || 0) +
+            (Number(client?.cabinDesks) || 0)
+          );
+        }, 0);
+
+        return Math.min(occupied, totalInventory);
+      });
+
+      return Math.round(
+        monthlyOccupancy.reduce((sum, value) => sum + value, 0) /
+          monthlyOccupancy.length,
+      );
+    },
+    [investorOccupancyClients, totalInventory],
+  );
+  const inventoryOccupancyPercent = totalInventory
+    ? Math.round((occupiedInventory / totalInventory) * 100)
+    : 0;
+  const currentAppreciationMonthIndex = Math.max(
+    0,
+    Math.min(
+      6,
+      fiscalMonthIndex(dayjs()) - APPRECIATION_PROJECTION_START_INDEX,
+    ),
+  );
+  const assetValueOwned =
+    APPRECIATION_BASE_VALUATION +
+    APPRECIATION_MONTHLY_INCREMENT * currentAppreciationMonthIndex;
   const canViewIncomeExpenseGraph = hasPermission(
     PERMISSIONS.INVESTOR_INCOME_EXPENSE_GRAPH.value,
-  );
-   const canViewFinanceSummaryCards = hasPermission(
-    PERMISSIONS.INVESTOR_FINANCE_SUMMARY_CARDS.value,
   );
  const canViewUniqueClientsGraph = hasPermission(
     PERMISSIONS.INVESTOR_UNIQUE_CLIENTS_GRAPH.value,
   );
-  const canViewInventoryOverview = hasPermission(
-    PERMISSIONS.INVESTOR_INVENTORY_OVERVIEW.value,
-  );
   const canViewAppreciationCenter = hasPermission(
-    PERMISSIONS.INVESTOR_APPRECIATION_CENTER.value,
-  );
-  const meetingGraphPermissions = {
-    utilization: PERMISSIONS.INVESTOR_MEETING_ROOM_UTILIZATION.value,
-    guests: PERMISSIONS.INVESTOR_EXTERNAL_GUESTS_VISITED.value,
-    occupancy: PERMISSIONS.INVESTOR_AVERAGE_ROOM_OCCUPANCY.value,
-    busy: PERMISSIONS.INVESTOR_BUSY_TIME_WEEK.value,
-    duration: PERMISSIONS.INVESTOR_MEETING_DURATION_BREAKDOWN.value,
-       visitors: PERMISSIONS.INVESTOR_MONTHLY_TOTAL_VISITORS.value,
-  };
-  const visibleMeetingGraphs = Object.keys(meetingGraphRoutes).filter(
-    (key) =>
-      hasPermission(meetingGraphPermissions[key]) &&
-      (showDashboardHome || location.pathname.endsWith(meetingGraphRoutes[key])),
+    PERMISSIONS.INVESTOR_REAL_ESTATE_OWNED_BY_BIZNEST_GRAPH.value,
   );
  const operationalGraphPermissions = {
     sector: PERMISSIONS.INVESTOR_SECTOR_WISE_OCCUPANCY.value,
-    client: PERMISSIONS.INVESTOR_CLIENT_WISE_OCCUPANCY.value,
-    gender: PERMISSIONS.INVESTOR_CLIENT_MEMBER_GENDER_WISE_DATA.value,
-    india: PERMISSIONS.INVESTOR_INDIA_WISE_MEMBERS.value,
-    desks: PERMISSIONS.INVESTOR_TOTAL_DESKS_COMPANY_WISE.value,
-    visitorCategory: PERMISSIONS.INVESTOR_OVERALL_VISITOR_CATEGORY.value,
-    visitorClientType: PERMISSIONS.INVESTOR_OVERALL_VISITOR_CLIENT_TYPE.value,
-    visitorGender: PERMISSIONS.INVESTOR_OVERALL_VISITOR_GENDER_DATA.value,
+    age: PERMISSIONS.INVESTOR_AGE_WISE_OCCUPANCY.value,
+    gender: PERMISSIONS.INVESTOR_GENDER_WISE_OCCUPANCY.value,
+    india: PERMISSIONS.INVESTOR_INDIA_WISE_OCCUPANCY.value,
   };
   const visibleOperationalGraphs = Object.keys(operationalGraphRoutes).filter(
     (key) =>
@@ -1648,295 +2033,304 @@ const InvestorDashboard = () => {
   );
   const operationalGraphsBeforeMeeting = [
     "sector",
-    "client",
+    "age",
     "gender",
     "india",
-    "desks",
   ];
-  const { data: revenueExpenseData = [], isLoading } = useQuery({
+  const { data: revenueExpenseData = [] } = useQuery({
     queryKey: ["historicalIncomeExpense"],
     queryFn: async () => {
       const response = await axios.get("/api/finance/income-expense");
       return Array.isArray(response.data?.response) ? response.data.response : [];
     },
-     enabled: showDetails || canViewHistoricalPnlGraph,
+     enabled: showDashboardHome,
   });
-
-  //-----------------------------------------------------Graph------------------------------------------------------//
-  // Base data for first 3 years
-  const baseIncomeData = [25174680, 31929380, 31929380];
-  const baseExpenseData = [24168780, 33899540, 33899540];
-
-  // Replace last year with Redux values (default to 0 if not available)
-  const historicalData = useMemo(() => {
-    const expenseItems = revenueExpenseData
-      .filter((item) => item.expense)
-      .flatMap((item) => item.expense || []);
-
-    const incomeItems = revenueExpenseData.flatMap((item) => {
-      const income = item.income || {};
-      return [
-        ...(Array.isArray(income.meetingRevenue) ? income.meetingRevenue : []),
-        ...(Array.isArray(income.alternateRevenues)
-          ? income.alternateRevenues
-          : []),
-        ...(Array.isArray(income.virtualOfficeRevenues)
-          ? income.virtualOfficeRevenues
-          : []),
-        ...(Array.isArray(income.workationRevenues)
-          ? income.workationRevenues
-          : []),
-        ...(Array.isArray(income.coworkingRevenues)
-          ? income.coworkingRevenues
-          : []),
-      ];
-    });
-
-    const summary = Object.entries(yearCategories).map(([fiscalYear, months]) => {
-      const income = incomeItems.reduce((sum, item) => {
-        const rawDate = item.date || item.rentDate || item.invoiceCreationDate;
-        if (!rawDate || !dayjs(rawDate).isValid()) return sum;
-        if (!months.includes(dayjs(rawDate).format("MMM-YY"))) return sum;
-
-        return sum + (Number(item.taxableAmount) || Number(item.revenue) || Number(item.taxable) || 0);
-      }, 0);
-
-      const expense = expenseItems.reduce((sum, item) => {
-        if (!item?.dueDate || !dayjs(item.dueDate).isValid()) return sum;
-        if (!months.includes(dayjs(item.dueDate).format("MMM-YY"))) return sum;
-
-        return sum + (Number(item.actualAmount) || 0);
-      }, 0);
-
-      return {
-        fiscalYear,
-        income,
-        expense,
-        profitLoss: income - expense,
-      };
-    });
-
-    return summary;
-  }, [revenueExpenseData]);
-
-  const incomeExpenseData = [
-    {
-      name: "Income",
-      data: [...baseIncomeData, ...historicalData.map((item) => item.income)],
+  const { data: investorSimpleRevenue = {} } = useQuery({
+    queryKey: ["finance-dashboard-simpleRevenue"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      return response.data || {};
     },
-    {
-      name: "Expense",
-      data: [...baseExpenseData, ...historicalData.map((item) => item.expense)],
+    enabled: showDashboardHome,
+  });
+  const { data: investorBudgetData = [] } = useQuery({
+    queryKey: ["budgetData", "finance-dashboard"],
+    queryFn: async () => {
+      const response = await axios.get("/api/budget/company-budget", {
+        params: { view: "dashboard" },
+      });
+      return Array.isArray(response.data?.allBudgets)
+        ? response.data.allBudgets
+        : [];
     },
-  ];
+    enabled: showDashboardHome,
+  });
+  const { incomePerSqFt, expensePerSqFt } = useMemo(() => {
+    const totalSqft = revenueExpenseData
+      .filter((item) => item?.units)
+      .flatMap((item) => (Array.isArray(item.units) ? item.units : []))
+      .reduce((total, unit) => total + (Number(unit?.sqft) || 0), 0);
 
-  const incomeExpenseOptions = {
-    chart: {
-      id: "income-vs-expense-bar",
-      toolbar: { show: false },
-      fontFamily: "Poppins-Regular",
-    },
-    colors: ["#54C4A7", "#EB5C45"],
-    legend: {
-      show: true,
-      position: "top",
-    },
-    plotOptions: {
-      bar: {
-        horizontal: false,
-        columnWidth: "40%",
-        borderRadius: 6,
-        dataLabels: {
-          position: "top",
-        },
-      },
-    },
-    dataLabels: {
-      enabled: false,
-    },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ["transparent"],
-    },
-    xaxis: {
-      categories:
-        ["FY 2021-22", "FY 2022-23", "FY 2023-24", ...historicalData.map((item) => item.fiscalYear)],
-    },
-     yaxis: {
-      title: {
-        text: `Amount In Crores (${currency})`,
-      },
-      labels: {
-        formatter: (val) => `${Math.round(val / 10000000)}`,
-      },
-    },
-    fill: {
-      opacity: 1,
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => format(val),
-      },
-    },
-  };
+    if (!totalSqft) return { incomePerSqFt: 0, expensePerSqFt: 0 };
 
-  const historicalTableData = [
-    ...baseIncomeData,
-    ...historicalData.map(item => item.income),
-  ].map((incomeValue, index) => {
-    const isBaseYear = index < 3;
-
-    const name = isBaseYear
-      ? `FY ${2021 + index}-${2022 + index}`
-      : historicalData[index - 3].fiscalYear;
-
-    const income = isBaseYear
-      ? baseIncomeData[index]
-      : historicalData[index - 3].income;
-
-    const expense = isBaseYear
-      ? baseExpenseData[index]
-      : historicalData[index - 3].expense;
-
-    const profitLoss = income - expense;
+    const normalizeStatus = (value) =>
+      typeof value === "string"
+        ? value.trim().toLowerCase()
+        : value
+          ? "paid"
+          : "unpaid";
+    const numericAmount = (value) => {
+      if (typeof value === "number") return value;
+      const parsedValue = parseFloat(String(value || "").replace(/,/g, ""));
+      return Number.isNaN(parsedValue) ? 0 : parsedValue;
+    };
+    const sources = [
+      ...(investorSimpleRevenue.meetingRevenue || []).map((item) => ({
+        amount: item.taxable,
+        date: item.date,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.alternateRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.invoiceCreationDate,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.virtualOfficeRevenues || []).map((item) => ({
+        amount: item.revenue ?? item.taxableAmount,
+        date: item.rentDate,
+        status: item.status ?? item.rentStatus,
+      })),
+      ...(investorSimpleRevenue.workationRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.date,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.coworkingRevenues || []).map((item) => ({
+        amount: item.revenue,
+        date: item.rentDate,
+        status: item.rentStatus,
+      })),
+    ];
+    const currentFiscalYear = fiscalYearLabel(dayjs());
+    const totalIncome = sources.reduce((total, item) => {
+      if (
+        !item.date ||
+        !dayjs(item.date).isValid() ||
+        fiscalYearLabel(item.date) !== currentFiscalYear ||
+        normalizeStatus(item.status) !== "paid"
+      ) {
+        return total;
+      }
+      return total + numericAmount(item.amount);
+    }, 0);
+    const totalExpense = investorBudgetData.reduce((total, item) => {
+      if (
+        !item?.dueDate ||
+        !dayjs(item.dueDate).isValid() ||
+        fiscalYearLabel(item.dueDate) !== currentFiscalYear
+      ) {
+        return total;
+      }
+      return total + (Number(item.actualAmount) || 0);
+    }, 0);
 
     return {
-      srNo: index + 1,           // ← this is the clean fix
-      name,
-      totalIncome: format(income),
-      totalExpense: format(expense),
-      totalProfitLoss: format(profitLoss),
+      incomePerSqFt: totalIncome / totalSqft,
+      expensePerSqFt: totalExpense / totalSqft,
     };
-  });
+  }, [investorBudgetData, investorSimpleRevenue, revenueExpenseData]);
+  const projectedFinancials = useMemo(() => {
+    const income = Array(12).fill(0);
+    const expense = Array(12).fill(0);
+    const currentFiscalYear = fiscalYearLabel(dayjs());
+    const previousFiscalYear = fiscalYearLabel(dayjs().subtract(1, "year"));
+    let previousYearRevenue = 0;
+    const addAmount = (values, date, amount) => {
+      if (
+        !date ||
+        !dayjs(date).isValid() ||
+        fiscalYearLabel(date) !== currentFiscalYear
+      ) {
+        return;
+      }
+      values[fiscalMonthIndex(date)] += Number(amount) || 0;
+    };
+
+    const incomeSources = [
+      ...(investorSimpleRevenue.meetingRevenue || []).map((item) => ({
+        amount: item.taxable,
+        date: item.date,
+        status: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+      })),
+      ...(investorSimpleRevenue.alternateRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.invoiceCreationDate,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.virtualOfficeRevenues || []).map((item) => ({
+        amount: getVirtualOfficeReportingAmount(item),
+        date: item.rentDate,
+        status: item.rentStatus ?? item.status,
+      })),
+      ...(investorSimpleRevenue.workationRevenues || []).map((item) => ({
+        amount: item.taxableAmount,
+        date: item.date,
+        status: item.status,
+      })),
+      ...(investorSimpleRevenue.coworkingRevenues || []).map((item) => ({
+        amount: item.revenue,
+        date: item.rentDate,
+        status: item.rentStatus,
+      })),
+    ];
+
+    incomeSources.forEach((item) => {
+      if (getNormalizedPaymentStatus(item.status) !== "paid") return;
+
+      const amount = getNumericAmount(item.amount);
+      addAmount(income, item.date, amount);
+      if (
+        item.date &&
+        dayjs(item.date).isValid() &&
+        fiscalYearLabel(item.date) === previousFiscalYear
+      ) {
+        previousYearRevenue += amount;
+      }
+    });
+    investorBudgetData.forEach((item) =>
+      addAmount(expense, item?.dueDate, item?.actualAmount),
+    );
+
+    const completedMonthCount = fiscalMonthIndex(dayjs());
+    const actualRevenue = income
+      .slice(0, completedMonthCount)
+      .reduce((sum, amount) => sum + amount, 0);
+    const actualExpense = expense
+      .slice(0, completedMonthCount)
+      .reduce((sum, amount) => sum + amount, 0);
+    const averageRevenue = completedMonthCount
+      ? Math.round(actualRevenue / completedMonthCount)
+      : 0;
+    const averageExpense = completedMonthCount
+      ? Math.round(actualExpense / completedMonthCount)
+      : 0;
+    const totals = {
+      revenue: averageRevenue,
+      expense: averageExpense,
+    };
+    const profitLoss = totals.revenue - totals.expense;
+
+    return {
+      revenue: totals.revenue,
+      expense: totals.expense,
+      profitLoss,
+      revenueGrowth: previousYearRevenue
+        ? (((averageRevenue * 12) - previousYearRevenue) / previousYearRevenue) * 100
+        : 0,
+    };
+  }, [investorBudgetData, investorSimpleRevenue]);
 
   return (
-    <div className="flex flex-col gap-4 pt-5">
-      {(showDashboardHome || showDetails) && canViewHistoricalPnlGraph && (
-        <WidgetSection layout={1}>
-          <WidgetSection
-            border
-            title={
-              <BizNestTitle>{`HISTORICAL P&L - ${selectedHistoricalFiscalYear}`}</BizNestTitle>
-            }
-          >
-            {isLoading ? (
-              <div className="h-72 flex items-center justify-center">
-                <CircularProgress />
-              </div>
-            ) : (
-              <div
-                className="cursor-pointer"
-                onClick={() =>
-                  navigate(
-                    "/app/dashboard/investor-dashboard/historical-P&L",
-                  )
-                }
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    navigate(
-                      "/app/dashboard/investor-dashboard/historical-P&L",
-                    );
-                  }
-                }}
-                role="button"
-                tabIndex={0}
-                aria-label="View historical profit and loss details"
-              >
-                <NormalBarGraph
-                  data={incomeExpenseData}
-                  options={incomeExpenseOptions}
-                  height={450}
-                />
-              </div>
-            )}
-          </WidgetSection>
-        </WidgetSection>
-      )}
-
-      {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
-        <div className="-mt-6">
-          <WidgetSection layout={1}>
-            <InvestorIncomeExpenseGraph
-              showSummaryCards={canViewFinanceSummaryCards}
+    <div className="flex flex-col gap-4 p-3 pt-3">
+      {showDashboardHome && (
+        <div className="overflow-hidden rounded-lg">
+          <div className="relative h-44 w-full md:h-56 xl:h-64">
+            <img
+              src={investorBanner}
+              alt="Investor dashboard banner"
+              className="h-full w-full object-cover object-left"
             />
-          </WidgetSection>
+            <div className="absolute inset-y-0 left-0 flex w-[58%] flex-col justify-between px-0 py-2">
+              <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#58709A] sm:text-base lg:text-lg">
+                Investor Dashboard
+              </p>
+              <h1
+                className={`max-w-full font-serif text-3xl font-semibold leading-[0.88] text-[#1E3D73] sm:text-5xl md:whitespace-nowrap ${
+                  isBrowserZoomedOut
+                    ? "lg:text-7xl xl:text-[74px]"
+                    : "lg:text-5xl xl:text-[56px]"
+                }`}
+              >
+                MARKET LEADER
+              </h1>
+              <p
+                className={`max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:text-3xl md:whitespace-nowrap ${
+                  isBrowserZoomedOut
+                    ? "lg:text-[46px]"
+                    : "lg:text-[35px]"
+                }`}
+              >
+                Indian Destination Workspace
+              </p>
+              <p className="font-pregular text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
+                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-0.5 after:w-full after:bg-[#E64B4B] after:content-['']">
+                  WORK TO LIVE.
+                </span>
+                <span className="ml-3 text-[#E64B4B]">LIVE TO WORK</span>
+              </p>
+            </div>
+          </div>
         </div>
       )}
-      {(showDashboardHome || showUniqueClientsPage) &&
-        canViewUniqueClientsGraph && (
+      {showDashboardHome && (
+        <InvestorDashboardCards
+          format={format}
+          hasPermission={hasPermission}
+          navigate={navigate}
+          totalInventory={totalInventory}
+          occupiedInventory={occupiedInventory}
+          inventoryOccupancyPercent={inventoryOccupancyPercent}
+          assetValueOwned={assetValueOwned}
+          incomePerSqFt={incomePerSqFt}
+          expensePerSqFt={expensePerSqFt}
+          averageUniqueClients={averageUniqueClients}
+          currentFiscalYear={fiscalYearLabel(dayjs())}
+          projectedRevenue={projectedFinancials.revenue}
+          projectedExpense={projectedFinancials.expense}
+          projectedProfitLoss={projectedFinancials.profitLoss}
+          projectedRevenueGrowth={projectedFinancials.revenueGrowth}
+          compactPercentageChips={!isBrowserZoomedOut}
+        />
+      )}
+      {(showDashboardHome || showIncomeExpensePage) && canViewIncomeExpenseGraph && (
+        <div>
+          <InvestorIncomeExpenseGraph
+            assetValueOwned={assetValueOwned}
+            projectedFinancials={projectedFinancials}
+            snapshotAssetValueOwned={assetValueOwned}
+          />
+        </div>
+      )}
+      {showUniqueClientsPage && canViewUniqueClientsGraph && (
           <div className="-mt-6">
             <InvestorUniqueClientsGraph />
           </div>
         )}
 
-      {(showDashboardHome || showInventoryPage) && canViewInventoryOverview && (
-        <div className="-mt-6">
-          <CheckAvailability
-            cardsFirst
-            disableCardLinks
-            hideCheckInventory
-            graphHeight={450}
-            cardsBorder
-            hideInventoryLastDivider
-            cardsTitle={<BizNestTitle>INVENTORY DETAILS</BizNestTitle>}
-            graphTitle={
-              <BizNestTitle>OCCUPIED v/s UNOCCUPIED - FY 2026-27</BizNestTitle>
-            }
-            monthlyView
-          />
-        </div>
-      )}
-
       {visibleOperationalGraphs.some((key) =>
-        operationalGraphsBeforeMeeting.includes(key),
+        operationalGraphsBeforeMeeting.includes(key) &&
+          !(showDashboardHome && ["sector", "india"].includes(key)),
       ) && (
-        <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
+        <div className={showDashboardHome ? "" : "mt-0.5"}>
             <InvestorOperationalCharts
               visibleCharts={visibleOperationalGraphs.filter((key) =>
               operationalGraphsBeforeMeeting.includes(key) &&
-                (key !== "desks" || !showDashboardHome),
+                !(showDashboardHome && ["sector", "india"].includes(key)),
               )}
               routes={operationalGraphRoutes}
               showDetails={!showDashboardHome}
+              noOuterPadding={showDashboardHome}
             />
           </div>
         )}
-      {showDashboardHome && visibleOperationalGraphs.includes("desks") && (
-        <div className="-mt-2 grid w-full grid-cols-1 items-stretch gap-x-4 gap-y-4 px-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:grid-rows-[425px]">
-          <div className="flex h-full min-w-0 w-full flex-col">
-            <InvestorOperationalCharts
-              visibleCharts={["desks"]}
-              routes={operationalGraphRoutes}
-               flushLayout  
-            />
-          </div>
-          {canViewAppreciationCenter && (
-            <div className="flex h-full min-w-0 w-full flex-col">
-              <InvestorAppreciationCenter />
-            </div>
-          )}
-        </div>
-      )}
       {(showDashboardHome || showAppreciationCenterPage) &&
         canViewAppreciationCenter && (
-          <div
-            className={showDashboardHome ? "-mt-6" : "mt-0.5"}
-            hidden={showDashboardHome && visibleOperationalGraphs.includes("desks")}
-          >
-            <WidgetSection layout={1}>
+          <div className={showDashboardHome ? "" : "mt-0.5"}>
+            <WidgetSection layout={1} padding>
               <InvestorAppreciationCenter />
             </WidgetSection>
           </div>
         )}
-      {visibleMeetingGraphs.length > 0 && (
-        <div className={showDashboardHome ? "-mt-6" : "mt-0.5"}>
-          <WidgetSection layout={1}>
-            <InvestorMeetingAnalytics visibleGraphs={visibleMeetingGraphs} />
-          </WidgetSection>
-        </div>
-      )}
       {visibleOperationalGraphs.some(
         (key) => !operationalGraphsBeforeMeeting.includes(key),
       ) && (
@@ -1948,33 +2342,6 @@ const InvestorDashboard = () => {
             routes={operationalGraphRoutes}
           />
         </div>
-      )}
-
-
-      {showDetails && (
-        <WidgetSection layout={1}>
-          <WidgetSection
-            title={
-              <BizNestTitle>{`HISTORICAL P&L DETAILS ${selectedHistoricalFiscalYear}`}</BizNestTitle>
-            }
-            border
-          >
-            <AgTable
-              columns={[
-                { field: "srNo", headerName: "Sr No", sort: "desc" },
-                { field: "name", headerName: "Financial Year", flex: 1 },
-               { field: "totalIncome", headerName: `Total Income (${currency})` },
-                { field: "totalExpense", headerName: `Total Expense (${currency})` },
-                {
-                  field: "totalProfitLoss",
-                  headerName: `Total Profit / Loss (${currency})`,
-                },
-              ]}
-              hideFilter
-              data={historicalTableData}
-            />
-          </WidgetSection>
-        </WidgetSection>
       )}
     </div>
   );

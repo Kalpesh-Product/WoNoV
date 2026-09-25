@@ -1,4 +1,8 @@
 const mongoose = require("mongoose");
+const attendanceImageSchema = new mongoose.Schema(
+  { url: { type: String, required: true }, publicId: { type: String, required: true } },
+  { _id: false },
+);
 
 const shiftSnapshotSchema = new mongoose.Schema(
   {
@@ -32,6 +36,8 @@ const attendanceSchema = new mongoose.Schema(
     outTime: {
       type: Date,
     },
+    inImage: attendanceImageSchema,
+    outImage: attendanceImageSchema,
     breaks: [
       {
         startBreak: {
@@ -40,6 +46,8 @@ const attendanceSchema = new mongoose.Schema(
         endBreak: {
           type: Date,
         },
+        startImage: attendanceImageSchema,
+        endImage: attendanceImageSchema,
       },
     ],
     breakDuration: {

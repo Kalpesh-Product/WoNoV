@@ -34,6 +34,26 @@ const getNumericAmount = (value) => {
   return 0;
 };
 
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isBeforeVirtualOfficeUploadLogicStart = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
+};
+
+const getVirtualOfficeReportingAmount = (item) =>
+  isBeforeVirtualOfficeUploadLogicStart(
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
+  )
+    ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
+    : getNumericAmount(
+        item?.reportingAmount ??
+          item?.receivedAmount ??
+          item?.revenue ??
+          item?.taxableAmount,
+      );
+
 const getRevenueSummaryForDateRange = (data, dateRange) => {
   const selectedRange = Array.isArray(dateRange) ? dateRange[0] : null;
 
@@ -297,19 +317,12 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
         horizontal: false,
         columnWidth: "40%",
         borderRadius: 5,
+        dataLabels: {
+          hideOverflowingLabels: false,
+          maxItems: 100,
+        },
       },
     },
-    legend: {
-      show: true,
-      position: "top",
-    },
-    colors: [
-      "#1E3D73", // Dark Blue (Co-Working)
-      "#2196F3", // Bright Blue (Meetings)
-      "#11daf5", // Light Mint Green (Virtual Office)
-      "#00BCD4", // Cyan Blue (Workation)
-      "#1976D2", // Medium Blue (Alt Revenues)
-    ],
   };
   const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
     const tooltipRows = [
@@ -364,7 +377,8 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
         vertical: "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
+        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+       // normalizedStatus: getNormalizedPaymentStatus(item.status),
       });
     });
 
@@ -380,10 +394,10 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
     simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
       flatten.push({
         vertical: "Virtual Office",
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
+        revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus,
+          item.rentStatus ?? item.status,
         ),
       });
     });
@@ -431,6 +445,21 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
           graphTitle="ANNUAL MONTHLY MIX INCOME"
           chartOptions={options}
           tooltipBuilder={tooltipBuilder}
+          showSmallLabels
+          seriesColors={{
+            "Co-Working": "#1E3D73",
+            Meeting: "#2196F3",
+            "Virtual Office": "#11daf5",
+            Workation: "#54C4A7",
+            Alternate: "#1976D2",
+          }}
+          legendItems={[
+            { label: "Co-Working", seriesName: "Co-Working" },
+            { label: "Meetings", seriesName: "Meeting" },
+            { label: "Virtual Office", seriesName: "Virtual Office" },
+            { label: "Workation", seriesName: "Workation" },
+            { label: "Alt Revenues", seriesName: "Alternate" },
+          ]}
         />
       )}
 

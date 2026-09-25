@@ -11,6 +11,7 @@ const {
   approveCorrectionRequest,
   rejectCorrectionRequest,
   getAttendanceRequests,
+  getAttendanceLogs,
 } = require("../controllers/attendanceControllers");
 const upload = require("../config/multerConfig");
 const {
@@ -20,10 +21,16 @@ const {
 } = require("../controllers/monthlyAttendanceSummaryController");
 
 const router = require("express").Router();
-router.post("/clock-in", clockIn);
-router.patch("/clock-out", clockOut);
-router.patch("/start-break", startBreak);
-router.patch("/end-break", endBreak);
+// router.post("/clock-in", clockIn);
+// router.patch("/clock-out", clockOut);
+// router.patch("/start-break", startBreak);
+// router.patch("/end-break", endBreak);
+
+const attendancePhoto = upload.single("image");
+router.post("/clock-in", attendancePhoto, clockIn);
+router.patch("/clock-out", attendancePhoto, clockOut);
+router.patch("/start-break", attendancePhoto, startBreak);
+router.patch("/end-break", attendancePhoto, endBreak);
 router.post("/correct-attendance", correctAttendance);
 router.patch(
   "/approve-correct-attendance/:attendanceId",
@@ -35,6 +42,7 @@ router.patch(
 );
 router.get("/get-attendance-requests", getAttendanceRequests);
 router.get("/get-all-attendance", getAllAttendance);
+router.get("/logs", getAttendanceLogs);
 router.get("/get-attendance/:id", getAttendance);
 router.get("/monthly-summaries", getMonthlyAttendanceSummaries);
 router.patch("/monthly-summaries/status", updateMonthlyAttendanceSummaryStatus);

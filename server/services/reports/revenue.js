@@ -4,6 +4,51 @@ const MeetingRevenue = require("../../models/sales/MeetingRevenue");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationRevenue = require("../../models/sales/WorkationRevenue");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
+const dayjs = require("dayjs");
+
+const getPaymentStatusLabel = (value) => {
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
+
+  return value === true || normalized === "paid" || normalized === "true"
+    ? "Paid"
+    : "Unpaid";
+};
+
+const getVirtualOfficeCurrentRate = (startDate, endDate, baseRate, annualIncrement) => {
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+  const normalizedBaseRate = Number(baseRate) || 0;
+  const increment = Number(annualIncrement) || 0;
+
+  if (!start.isValid() || !end.isValid() || !end.isAfter(start, "day")) {
+    return normalizedBaseRate;
+  }
+
+  const yearsElapsed = Math.max(end.diff(start, "year"), 0);
+
+  return normalizedBaseRate * Math.pow(1 + increment / 100, yearsElapsed);
+};
+
+const normalizeCoworkingChannel = (bookingType) =>
+  String(bookingType || "")
+    .trim()
+    .toLowerCase() === "spv booking"
+    ? "SPV Booking"
+    : "Direct";
+
+const UPLOAD_LOGIC_START = dayjs("2026-09-01").startOf("month");
+
+const isHistoricalBulkUpload = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(UPLOAD_LOGIC_START, "month");
+};
+
+const isBeforeCurrentMonth = (value) => {
+  const date = dayjs(value);
+  return date.isValid() && date.isBefore(dayjs().startOf("month"), "month");
+};
 
 const fetchCoworkingRevenueService = async ({
   dateFilter,
@@ -13,6 +58,8 @@ const fetchCoworkingRevenueService = async ({
   type,
 }) => {
   try {
+    const useClientDetails =
+      String(query?.useClientDetails || "").toLowerCase() === "true";
     const filter = { company };
     if (query && query.serviceId) {
       filter.service = query.serviceId;
@@ -20,8 +67,19 @@ const fetchCoworkingRevenueService = async ({
     if (dateFilter) {
       filter.rentDate = dateFilter.rentDate;
     }
-
-    const revenues = await CoworkingRevenue.find(filter).lean().exec();
+   // const revenues = await CoworkingRevenue.find(filter).lean().exec();
+    const revenues = await CoworkingRevenue.find(filter)
+      .populate({
+        path: "clients",
+        select:
+          "clientName bookingType cabinDesks openDesks ratePerCabinDesk ratePerOpenDesk annualIncrement nextIncrement startDate endDate lockinPeriod rentDate",
+      })
+      .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName name",
+      })
+      .lean()
+      .exec();
 
     const MONTHS_SHORT = [
       "Jan",
@@ -41,6 +99,85 @@ const fetchCoworkingRevenueService = async ({
     const monthlyMap = new Map();
 
     revenues.forEach((item) => {
+      let clientBillingValues = {};
+      const billingReferenceDate =
+        item.rentDate || item.invoiceUploadedAt || item.createdAt;
+      // Keep pre-September bulk uploads fixed; September onward follows sales changes.
+      const useStoredRevenue =
+        useClientDetails && isHistoricalBulkUpload(billingReferenceDate);
+
+      if (useClientDetails && item.clients) {
+        const client = item.clients;
+        const noOfDesks =
+          Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+        const baseRate = [client.ratePerCabinDesk, client.ratePerOpenDesk]
+          .map(Number)
+          .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+        const startDate = dayjs(client.startDate);
+        const endDate = dayjs(client.endDate);
+        const annualIncrement = Number(client.annualIncrement) || 0;
+        // const yearsElapsed = startDate.isValid()
+        //   ? Math.max(dayjs().diff(startDate, "year"), 0)
+        //   : 0;
+         const billingDate = dayjs(item.rentDate || item.createdAt);
+        const yearsElapsed =
+          startDate.isValid() &&
+          billingDate.isValid() &&
+          !billingDate.isBefore(startDate, "day")
+            ? Math.max(billingDate.diff(startDate, "year"), 0)
+            : 0;
+        const currentRate =
+          baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+        const computedRevenue = noOfDesks * currentRate;
+        const computedTotalTerm =
+          startDate.isValid() &&
+          endDate.isValid() &&
+          endDate.isAfter(startDate)
+            ? endDate.diff(startDate, "month")
+            : Number(client.lockinPeriod) || 0;
+        const storedRevenue = Number(item.revenue);
+        const storedNoOfDesks = Number(item.noOfDesks);
+        const storedDeskRate = Number(item.deskRate);
+        const storedTotalTerm = Number(item.totalTerm);
+
+        clientBillingValues = {
+          clientName: useStoredRevenue
+            ? item.clientName || item.clientInvoiceName || client.clientName
+            : client.clientName,
+          channel: useStoredRevenue
+            ? item.channel || normalizeCoworkingChannel(client.bookingType)
+            : client.bookingType,
+          annualIncrement: useStoredRevenue
+            ? item.annualIncrement ?? annualIncrement
+            : annualIncrement,
+          nextIncrementDate: useStoredRevenue
+            ? item.nextIncrementDate || client.nextIncrement
+            : client.nextIncrement,
+          revenue:
+            useStoredRevenue && Number.isFinite(storedRevenue)
+              ? storedRevenue
+              : computedRevenue,
+          noOfDesks:
+            useStoredRevenue &&
+            Number.isFinite(storedNoOfDesks) &&
+            storedNoOfDesks > 0
+              ? storedNoOfDesks
+              : noOfDesks,
+          deskRate:
+            useStoredRevenue &&
+            Number.isFinite(storedDeskRate) &&
+            storedDeskRate > 0
+              ? storedDeskRate
+              : currentRate,
+          totalTerm:
+            useStoredRevenue &&
+            Number.isFinite(storedTotalTerm) &&
+            storedTotalTerm > 0
+              ? storedTotalTerm
+              : computedTotalTerm,
+          rentDate: item.rentDate || client.rentDate,
+        };
+      }
       const referenceDate = item.rentDate || item.createdAt;
       const dateObj = new Date(referenceDate);
       const month = MONTHS_SHORT[dateObj.getMonth()];
@@ -55,26 +192,79 @@ const fetchCoworkingRevenueService = async ({
         });
       }
 
+    //   const monthData = monthlyMap.get(monthKey);
+    //   const invoiceDate = item.invoice?.date || null;
+
+    //   monthData.totalRevenue += item.revenue || 0;
+
+    //   monthData.clients.push({
+    //     _id: item._id,
+    //     clients: item.clients,
+    //     service: item.service,
+    //     clientName: item.clientName || item.client?.clientName,
+    //     clientInvoiceName: item.clientInvoiceName,
+    //     channel: item.channel,
+    //     noOfDesks: item.noOfDesks,
+    //     deskRate: item.deskRate,
+    //     occupation: item.occupation,
+    //     revenue: item.revenue,
+    //     totalTerm: item.totalTerm,
+    //     ...(!isReport && { dueTerm: item.dueTerm }),
+    //     rentDate: item.rentDate,
+    //     invoiceName: item.invoice?.name || null,
+    //     invoiceLink: item.invoice?.link || null,
+    //     invoiceUploadedAt: invoiceDate,
+    //     invoice: item.invoice || null,
+    //     rentStatus: item.rentStatus,
+    //     ...(!isReport && { pastDueDate: item.pastDueDate }),
+    //     annualIncrement: item.annualIncrement,
+    //     nextIncrementDate: item.nextIncrementDate,
+    //     ...(!isReport && { serviceName: item.service?.serviceName }),
+    //   });
+    // });
       const monthData = monthlyMap.get(monthKey);
-      monthData.totalRevenue += item.revenue || 0;
+      const invoiceDate = item.invoice?.date || null;
+
+      monthData.totalRevenue += clientBillingValues.revenue ?? item.revenue ?? 0;
 
       monthData.clients.push({
-        clientName: item.clientName || item.client?.clientName,
-        channel: item.channel,
-        noOfDesks: item.noOfDesks,
-        deskRate: item.deskRate,
+        _id: item._id,
+        clients: item.clients?._id || item.clients,
+        service: item.service,
+        clientName: clientBillingValues.clientName ?? item.clientName,
+        clientInvoiceName: item.clientInvoiceName,
+        channel: clientBillingValues.channel ?? item.channel,
+        noOfDesks: clientBillingValues.noOfDesks ?? item.noOfDesks,
+        deskRate: clientBillingValues.deskRate ?? item.deskRate,
         occupation: item.occupation,
-        revenue: item.revenue,
-        totalTerm: item.totalTerm,
+        revenue: clientBillingValues.revenue ?? item.revenue,
+        totalTerm: clientBillingValues.totalTerm ?? item.totalTerm,
         ...(!isReport && { dueTerm: item.dueTerm }),
-        rentDate: item.rentDate,
+        rentDate: item.rentDate || clientBillingValues.rentDate,
+        invoiceName: item.invoice?.name || null,
+        invoiceLink: item.invoice?.link || null,
+        invoiceUploadedAt: invoiceDate,
+        invoiceUploadedBy: item.invoiceUploadedBy || null,
+        invoiceUploadedByName:
+          item.invoiceUploadedBy?.employeeName ||
+          [item.invoiceUploadedBy?.firstName, item.invoiceUploadedBy?.middleName, item.invoiceUploadedBy?.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          item.invoiceUploadedBy?.name ||
+          null,
+        invoice: item.invoice || null,
         rentStatus: item.rentStatus,
+        isBulkUpload:
+          item.isBulkUpload === true || isHistoricalBulkUpload(referenceDate),
         ...(!isReport && { pastDueDate: item.pastDueDate }),
-        annualIncrement: item.annualIncrement,
-        nextIncrementDate: item.nextIncrementDate,
+       annualIncrement:
+          clientBillingValues.annualIncrement ?? item.annualIncrement,
+        nextIncrementDate:
+          clientBillingValues.nextIncrementDate ?? item.nextIncrementDate,
         ...(!isReport && { serviceName: item.service?.serviceName }),
       });
     });
+
 
     const transformedData = Array.from(monthlyMap.values());
 
@@ -97,16 +287,24 @@ const fetchCoworkingRevenueService = async ({
 };
 
 const fetchAlternateRevenueReportService = async ({
+  company,
   dateFilter,
   isReport = false,
 }) => {
   let filter = {};
+  if (company) {
+    filter.company = company;
+  }
   if (dateFilter) {
     filter.invoiceCreationDate = dateFilter.invoiceCreationDate;
   }
 
   const records = await AlternateRevenue.find(filter)
     .sort({ createdAt: -1 })
+    .populate({
+      path: "invoiceUploadedBy",
+      select: "firstName middleName lastName employeeName name",
+    })
     .lean()
     .exec();
 
@@ -144,18 +342,25 @@ const fetchAlternateRevenueReportService = async ({
     }
 
     const monthData = monthlyMap.get(monthKey);
+    const invoiceDate = item.invoice?.date || item.invoicePaidDate || null;
 
     monthData.taxable += item.taxableAmount || 0;
 
     monthData.revenue.push({
+      _id: item._id,
       name: item.name,
+      clientInvoiceName: item.clientInvoiceName || null,
       particulars: item.particulars,
       taxableAmount: item.taxableAmount,
       invoiceAmount: item.invoiceAmount,
       invoiceCreationDate: item.invoiceCreationDate,
-      invoicePaidDate: item.invoicePaidDate,
+      invoicePaidDate: invoiceDate,
+      invoiceUploadedBy: item.invoiceUploadedBy || null,
       gst: item.gst,
       status: item.status || "Unpaid",
+      invoiceName: item.invoice?.name || null,
+      invoiceLink: item.invoice?.link || null,
+      invoice: item.invoice || null,
     });
   });
 
@@ -182,6 +387,35 @@ const fetchMeetingRevenueReportService = async ({
   dateFilter,
   isReport = false,
 }) => {
+  const isHistoricalRevenue = (value) => {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return false;
+
+    const now = new Date();
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    return date < currentMonthStart;
+  };
+
+  //  const getFinanceStatus = (item) => {
+  //   if (
+  //     item.source === "day-pass" &&
+  //     item.paymentVerification === "Completed"
+  //   ) {
+  //     return "Upload Invoice";
+  //   }
+   const getFinanceStatus = (item) => {
+    if (isHistoricalRevenue(item.date) || item.financeStatus === "Verified") {
+      return "Verified";
+    }
+    if (
+      item.paymentVerification === "Completed" ||
+      item.meeting?.paymentVerification === "Completed"
+    ) {
+      return "Upload Invoice";
+    }
+    return "Pending";
+  };
+
   const filter = {};
 
   if (company) {
@@ -201,28 +435,64 @@ const fetchMeetingRevenueReportService = async ({
 
   const [meetingRevenues, dayPassVisits] = await Promise.all([
     MeetingRevenue.find(filter)
-      .sort({ date: -1 })
+      .sort({ date: -1, updatedAt: -1, createdAt: -1 })
+      .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName",
+      })
       .populate({
         path: "meeting",
-        select: "meetingType bookedRoom",
-        populate: {
-          path: "bookedRoom",
-          select: "location",
-          populate: {
-            path: "location",
-            select: "unitNo unitName building",
-            populate: { path: "building", select: "buildingName" },
+        select:
+          "meetingType subject agenda startTime endTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentProof",
+        populate: [
+          {
+            path: "bookedBy",
+            select: "firstName middleName lastName employeeName",
           },
-        },
+          {
+            path: "receptionist",
+            select: "firstName middleName lastName employeeName",
+          },
+          {
+            path: "client",
+            select: "clientName",
+          },
+          {
+            path: "externalClient",
+            select: "registeredClientCompany",
+          },
+          {
+            path: "bookedRoom",
+            select: "name location",
+            populate: {
+              path: "location",
+              select: "unitNo unitName building",
+              populate: { path: "building", select: "buildingName" },
+            },
+          },
+        ],
       })
       .lean()
       .exec(),
     ExternalVisits.find(dayPassFilter)
       .sort({ dateOfVisit: -1 })
+        .populate({
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName",
+      })
       .populate({
         path: "visitorId",
         select:
-          "firstName middleName lastName registeredClientCompany brandName visitorCompany",
+          // "firstName middleName lastName registeredClientCompany brandName visitorCompany",
+           "firstName middleName lastName email phoneNumber gender purposeOfVisit registeredClientCompany brandName visitorCompany state city sector gstNumber gstFile idProof otherFile",
+      })
+      .populate({
+        path: "checkedInBy",
+        select: "firstName middleName lastName employeeName",
+      })
+      .populate({
+        path: "checkedOutBy",
+        select: "firstName middleName lastName employeeName",
       })
       .populate({
         path: "unit",
@@ -232,6 +502,22 @@ const fetchMeetingRevenueReportService = async ({
       .lean()
       .exec(),
   ]);
+
+  // const uniqueMeetingRevenues = [];
+  // const seenMeetingKeys = new Set();
+
+  // meetingRevenues.forEach((item) => {
+  //   const meetingKey =
+  //     item?.meeting?._id?.toString?.() ||
+  //     item?.meeting?.toString?.() ||
+  //     item?._id?.toString?.();
+
+  //   if (!meetingKey || seenMeetingKeys.has(meetingKey)) return;
+
+  //   seenMeetingKeys.add(meetingKey);
+  //   uniqueMeetingRevenues.push(item);
+  // });
+
 
   const dayPassRevenues = dayPassVisits.map((visit) => {
     const visitorName = [
@@ -243,6 +529,7 @@ const fetchMeetingRevenueReportService = async ({
       .join(" ");
 
     return {
+       _id: visit._id,
       client:
         visit.visitorId?.registeredClientCompany ||
         visit.visitorId?.brandName ||
@@ -260,16 +547,53 @@ const fetchMeetingRevenueReportService = async ({
         Number(visit.amount || 0) - Number(visit.discount || 0),
         0,
       ),
-      gst: Number(visit.gstAmount || 0),
+     gst: Number(visit.gstAmount || 0),
+      discount: Number(visit.discount || 0),
       totalAmount: Number(visit.totalAmount || 0),
       date: visit.dateOfVisit,
       paymentDate: visit.paymentStatus ? visit.updatedAt : null,
-      status: visit.paymentStatus ? "Paid" : "Unpaid",
+      visitorDetails: {
+        firstName: visit.visitorId?.firstName || "",
+        lastName: visit.visitorId?.lastName || "",
+        email: visit.visitorId?.email || "",
+        phoneNumber: visit.visitorId?.phoneNumber || "",
+        gender: visit.visitorId?.gender || "",
+        purposeOfVisit: visit.purposeOfVisit || visit.visitorId?.purposeOfVisit || visit.visitorType,
+        brandName: visit.visitorId?.brandName || "",
+        registeredClientCompany: visit.visitorId?.registeredClientCompany || "",
+        state: visit.visitorId?.state || "",
+        city: visit.visitorId?.city || "",
+        sector: visit.visitorId?.sector || "",
+        gstNumber: visit.visitorId?.gstNumber || "",
+        gstFile: visit.visitorId?.gstFile || null,
+        idType: visit.visitorId?.idProof?.idType || "",
+        idNumber: visit.visitorId?.idProof?.idNumber || "",
+        otherFile: visit.visitorId?.otherFile || null,
+        checkIn: visit.checkIn || null,
+        checkOut: visit.checkOut || null,
+        checkedInBy: visit.checkedInBy || null,
+        checkedOutBy: visit.checkedOutBy || null,
+      },
+  // //     status: visit.paymentStatus ? "Paid" : "Unpaid",
+  // //     paymentProof: visit.paymentProof || null,
+  // //     remarks: visit.paymentMode || "-",
+  // //     source: "day-pass",
+  // //   };
+  // // });
+
+  // // const revenues = [...uniqueMeetingRevenues, ...dayPassRevenues].sort(
+  //  status: getPaymentStatusLabel(visit.paymentStatus),
+  paymentVerification: visit.paymentVerification || "Pending",
+      status: getPaymentStatusLabel(visit.paymentStatus),
+      paymentProof: visit.paymentProof || null,
+      invoice: visit.invoice,
+      invoiceUploadedAt: visit.invoiceUploadedAt,
+      invoiceUploadedBy: visit.invoiceUploadedBy,
+      financeStatus: visit.financeStatus,
       remarks: visit.paymentMode || "-",
       source: "day-pass",
     };
   });
-
   const revenues = [...meetingRevenues, ...dayPassRevenues].sort(
     (a, b) => new Date(b.date || 0) - new Date(a.date || 0),
   );
@@ -312,6 +636,9 @@ const fetchMeetingRevenueReportService = async ({
     monthData.actual += item.taxable || 0;
 
     monthData.revenue.push({
+      id: item._id,
+      source: item.source || "meeting-revenue",
+      visitorDetails: item.visitorDetails || null,
       clientName: item.client,
       meetingType:
         item.source === "day-pass"
@@ -325,11 +652,60 @@ const fetchMeetingRevenueReportService = async ({
       costPerHour: item.costPerHour,
       taxable: item.taxable,
       gst: item.gst,
-      status: item.status,
+      discount: item.discount || 0,
+      // status: item.status,
+      // // financeStatus: item.financeStatus || "Upload Invoice",
+      // financeStatus:
+      //   item.financeStatus === "Verified"
+      //     ? "Verified"
+      //     : item.meeting?.paymentVerification === "Completed"
+      //       ? "Upload Invoice"
+      //       : "Pending",
+      invoiceLink: item.invoice?.link || "",
+      invoiceName: item.invoice?.name || "",
+      invoiceUploadedAt: item.invoiceUploadedAt || item.invoice?.date || null,
+      invoiceUploadedBy: item.invoiceUploadedBy,
       totalAmount: item.totalAmount,
       date: item.date,
       paymentDate: item.paymentDate,
       meetingRoomName: item.meetingRoomName,
+      status:
+        // item.source === "day-pass"
+        //   ? item.status
+        //   : item.meeting?.paymentStatus
+        //     ? "Paid"
+        //     : item.status || "Unpaid",
+         item.source === "day-pass"
+          ? getPaymentStatusLabel(item.status)
+          : item.meeting
+            ? getPaymentStatusLabel(item.meeting.paymentStatus)
+            : getPaymentStatusLabel(item.status),
+      paymentProofLink:
+        item.source === "day-pass"
+          ? item.paymentProof?.url || ""
+          : item.meeting?.paymentProof?.link || "",
+      paymentProofName:
+        item.source === "day-pass"
+          ? item.paymentProof?.name || "View File"
+          : item.meeting?.paymentProof?.name || "",
+            paymentVerification:
+        item.paymentVerification || item.meeting?.paymentVerification || "N/A",
+      //paymentVerification: item.meeting?.paymentVerification || "N/A",
+      paymentMode: item.meeting?.paymentMode || item.remarks || "N/A",
+      meetingTitle: item.meeting?.subject || "",
+      meetingAgenda: item.meeting?.agenda || "",
+      meetingStartTime: item.meeting?.startTime || null,
+      meetingEndTime: item.meeting?.endTime || null,
+      meetingStatus: item.meeting?.status || "N/A",
+      meetingTypeRaw: item.meeting?.meetingType || item.meetingType || "N/A",
+      meetingHousekeepingStatus: item.meeting?.houeskeepingStatus || "N/A",
+      meetingBookedBy: item.meeting?.bookedBy || null,
+      meetingReceptionist: item.meeting?.receptionist || null,
+      meetingCompanyName:
+        item.meeting?.client?.clientName ||
+        item.meeting?.externalClient?.registeredClientCompany ||
+        item.client ||
+        "N/A",
       unit:
         item.source === "day-pass"
           ? item.unit
@@ -339,6 +715,14 @@ const fetchMeetingRevenueReportService = async ({
           ? item.building
           : item.meeting?.bookedRoom?.location?.building?.buildingName ||
             "N/A",
+      // financeStatus: isHistoricalRevenue(item.date)
+      //   ? "Verified"
+      //   : item.financeStatus === "Verified"
+      //     ? "Verified"
+      //     : item.meeting?.paymentVerification === "Completed"
+      //       ? "Upload Invoice"
+      //       : "Pending",
+       financeStatus: getFinanceStatus(item),
       remarks: item.remarks || "",
     });
   });
@@ -376,23 +760,134 @@ const fetchVirtualOfficeRevenueReportService = async ({
   isReport = false,
 }) => {
   let filter = { company };
-
+  const useClientDetails =
+    String(query?.useClientDetails || "").toLowerCase() === "true";
   if (dateFilter) {
     filter.rentDate = dateFilter.rentDate;
   }
+  const currentMonthStart = dayjs().startOf("month");
 
   const revenues = await VirtualOfficeRevenue.find(filter)
-    .populate([{ path: "client", select: "clientName" }])
+     .populate([
+      {
+        path: "client",
+        select:
+          "clientName bookingType cabinDesks openDesks totalDesks cabinDeskRate openDeskRate annualIncrement termStartDate termEnd totalTerm rentDate nextIncrementDate securityDeposit billingFrequency clientStatus",
+      },
+      {
+        path: "invoiceUploadedBy",
+        select: "firstName middleName lastName employeeName name",
+      },
+    ])
     .lean()
     .exec();
+  const billingRevenues = revenues.map((item) => {
+    const isHistoricalBilling = isHistoricalBulkUpload(
+      item.rentDate || item.invoiceUploadedAt || item.createdAt,
+    );
+
+    if (!useClientDetails || !item.client) {
+      return { ...item, isHistoricalBilling };
+    }
+
+    const client = item.client;
+    const noOfDesks =
+      Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
+    const baseRate = [client.cabinDeskRate, client.openDeskRate]
+      .map(Number)
+      .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+    const startDate = dayjs(client.termStartDate);
+    const endDate = dayjs(client.termEnd);
+    const annualIncrement = Number(client.annualIncrement) || 0;
+    const currentRate = getVirtualOfficeCurrentRate(
+      startDate,
+      endDate,
+      baseRate,
+      annualIncrement,
+    );
+    // Virtual Office billing uses bulk-upload values for completed months;
+    // current and future months continue to follow live client details.
+    const useStoredRevenue = isHistoricalBilling;
+    // const billingDate = dayjs(item.rentDate || item.createdAt);
+    // const yearsElapsed =
+    //   startDate.isValid() &&
+    //   billingDate.isValid() &&
+    //   !billingDate.isBefore(startDate, "day")
+    //     ? Math.max(billingDate.diff(startDate, "year"), 0)
+    //     : 0;
+    // const currentRate =
+    //   baseRate * Math.pow(1 + annualIncrement / 100, yearsElapsed);
+    const totalTerm =
+      typeof client.totalTerm === "number" && client.totalTerm >= 0
+        ? client.totalTerm
+        : startDate.isValid() && endDate.isValid() && endDate.isAfter(startDate)
+          ? endDate.diff(startDate, "month")
+          : item.totalTerm;
+    const storedRevenue = Number(item.revenue);
+    const storedNoOfDesks = Number(item.noOfDesks);
+    const storedDeskRate = Number(item.deskRate);
+
+    return {
+      ...item,
+      isHistoricalBilling,
+      client: {
+        _id: client._id,
+        clientName: item.clientName || client.clientName,
+        ...(useStoredRevenue
+          ? {}
+          : {
+              clientName: client.clientName,
+              securityDeposit: client.securityDeposit,
+              billingFrequency: client.billingFrequency,
+            }),
+        clientStatus: client.clientStatus,
+      },
+      channel: useStoredRevenue
+        ? item.channel || ""
+        : client.bookingType ?? item.channel,
+      noOfDesks:
+        useStoredRevenue
+          ? Number.isFinite(storedNoOfDesks)
+            ? storedNoOfDesks
+            : 0
+          : noOfDesks,
+      deskRate:
+        useStoredRevenue
+          ? Number.isFinite(storedDeskRate)
+            ? storedDeskRate
+            : 0
+          : currentRate,
+      revenue:
+        useStoredRevenue && Number.isFinite(storedRevenue)
+          ? storedRevenue
+          : noOfDesks * currentRate,
+      totalTerm: useStoredRevenue ? item.totalTerm ?? 0 : totalTerm,
+      rentDate: item.rentDate || client.rentDate,
+      annualIncrement: useStoredRevenue
+        ? item.annualIncrement ?? null
+        : client.annualIncrement ?? item.annualIncrement,
+      nextIncrementDate:
+        useStoredRevenue
+          ? item.nextIncrementDate || null
+          : client.nextIncrementDate || item.nextIncrementDate,
+      invoiceUploadedBy: item.invoiceUploadedBy || null,
+      invoiceUploadedByName:
+        item.invoiceUploadedBy?.employeeName ||
+        [item.invoiceUploadedBy?.firstName, item.invoiceUploadedBy?.middleName, item.invoiceUploadedBy?.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        item.invoiceUploadedBy?.name ||
+        null,
+    };
+  });
 
   if (isReport) {
-    return revenues.map(
+     return billingRevenues.map(
       ({ pastDueDate, unitNo, unitName, buildingName, ...item }) => item,
     );
   }
 
-  return revenues;
+  return billingRevenues;
 };
 
 const fetchWorkationRevenueReportService = async ({
@@ -400,14 +895,21 @@ const fetchWorkationRevenueReportService = async ({
   isReport = false,
   dateFilter,
 }) => {
-  let filter = {};
+  const filter = {};
 
+  if (company) {
+    filter.company = company;
+  }
   if (dateFilter) {
     filter.date = dateFilter.date;
   }
 
   const revenues = await WorkationRevenue.find(filter)
     .populate("client")
+    .populate({
+      path: "invoiceUploadedBy",
+      select: "firstName middleName lastName employeeName name",
+    })
     .lean()
     .exec();
 
@@ -456,9 +958,13 @@ const fetchVerticalRevenueReportService = async ({ company, dateFilter }) => {
     workationRevenues,
     coworkingRevenues,
   ] = await Promise.all([
-    MeetingRevenue.find(
-      buildVerticalRevenueFilter(company, dateFilter, "date", status),
-    )
+    // MeetingRevenue.find(
+    //   buildVerticalRevenueFilter(company, dateFilter, "date", status),
+    // )
+     MeetingRevenue.find({
+      ...buildVerticalRevenueFilter(company, dateFilter, "date", status),
+      invoiceUploadedAt: { $ne: null },
+    })
       .select("taxable")
       .lean()
       .exec(),

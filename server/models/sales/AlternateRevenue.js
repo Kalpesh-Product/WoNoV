@@ -14,6 +14,9 @@ const alternateRevenueSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    clientInvoiceName: {
+      type: String,
+    },
     taxableAmount: {
       type: Number,
       required: true,
@@ -33,6 +36,16 @@ const alternateRevenueSchema = new mongoose.Schema(
     invoicePaidDate: {
       type: Date,
       // required: true,
+    },
+    invoice: {
+      name: String,
+      link: String,
+      id: String,
+      date: Date,
+    },
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
     },
     status: {
       type: String,

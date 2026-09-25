@@ -39,9 +39,34 @@ const coworkingClientRevenue = new mongoose.Schema(
     rentDate: {
       type: Date,
     },
+    invoice: {
+      name: {
+        type: String,
+      },
+      link: {
+        type: String,
+      },
+      id: {
+        type: String,
+      },
+      date: {
+        type: Date,
+      },
+    },
+    invoiceUploadedAt: {
+      type: Date,
+    },
+    invoiceUploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
     rentStatus: {
       type: String,
       // enum: ["paid", "unpaid", "partial"], // Consider enum: ['paid', 'unpaid', 'partial'] if applicable
+    },
+    isBulkUpload: {
+      type: Boolean,
+      default: false,
     },
     pastDueDate: {
       type: Date,

@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { CircularProgress } from "@mui/material";
+import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
@@ -10,6 +11,10 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
+import ThreeDotMenu from "../../../components/ThreeDotMenu";
+import UploadFileInput from "../../../components/UploadFileInput";
+import PrimaryButton from "../../../components/PrimaryButton";
+import dayjs from "dayjs";
 
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
@@ -79,11 +84,538 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const isPreviousMonth = (dateValue) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const today = new Date();
+  const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+  return date < currentMonthStart;
+};
+
+const getUserDisplayName = (user) => {
+  if (!user) return "";
+  if (typeof user === "string") return user;
+  return (
+    user.employeeName ||
+    [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ")
+  );
+};
+
+const formatMeetingTimeRange = (startTime, endTime) => {
+  const start = dayjs(startTime);
+  const end = dayjs(endTime);
+
+  if (!start.isValid() || !end.isValid()) return "N/A";
+
+  return `${start.format("h:mm a")} - ${end.format("h:mm a")}`;
+};
+
+const formatMeetingDuration = (startTime, endTime, fallbackHours) => {
+  const start = dayjs(startTime);
+  const end = dayjs(endTime);
+
+  if (start.isValid() && end.isValid() && end.isAfter(start)) {
+    const minutes = end.diff(start, "minute");
+    if (minutes < 60) return `${minutes}min`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return remainingMinutes > 0
+      ? `${hours}h ${remainingMinutes}min`
+      : `${hours}h`;
+  }
+
+  const numericHours = Number(fallbackHours || 0);
+  if (!Number.isFinite(numericHours) || numericHours <= 0) return "N/A";
+  if (numericHours < 1) return `${Math.round(numericHours * 60)}min`;
+  return `${numericHours}h`;
+};
+
+const getFileLink = (file) => file?.link || file?.url || "";
+
+const formatTimeValue = (value) => {
+  const time = dayjs(value);
+
+  return value && time.isValid() ? time.format("h:mm a") : "N/A";
+};
+
+const DetailSection = ({ title }) => (
+  <div className="font-bold text-lg pt-4 first:pt-0">
+    {title}
+  </div>
+);
+
+const FileDetail = ({ file, label = "View File" }) => {
+  const link = getFileLink(file);
+
+  return link ? (
+    <a
+      href={link}
+      target="_blank"
+      rel="noreferrer"
+      className="text-primary underline"
+    >
+      {label}
+    </a>
+  ) : (
+    "-"
+  );
+};
+
+const DayPassRevenueDetails = ({ revenue }) => {
+  const visitor = revenue.visitorDetails || {};
+
+  return (
+    <div className="grid grid-cols-1 gap-4 w-full">
+      {/* Client Details */}
+      <DetailSection title="Client Details" />
+
+      <DetalisFormatted
+        title="First Name"
+        detail={visitor.firstName || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Last Name"
+        detail={visitor.lastName || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Email"
+        detail={visitor.email || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Phone Number"
+        detail={visitor.phoneNumber || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Gender"
+        detail={visitor.gender || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Purpose of Visit"
+        detail={
+          visitor.purposeOfVisit ||
+          revenue.meetingType ||
+          "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Building"
+        detail={revenue.building || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Unit"
+        detail={getUnitLabel(revenue.unit)}
+      />
+
+      {/* Company Details */}
+      <DetailSection title="Company Details" />
+
+      <DetalisFormatted
+        title="Brand Name"
+        detail={visitor.brandName || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Registered Company"
+        detail={visitor.registeredClientCompany || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="State"
+        detail={visitor.state || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="City"
+        detail={visitor.city || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Sector"
+        detail={visitor.sector || "N/A"}
+      />
+
+      {/* GST */}
+      <DetailSection title="GST" />
+
+      <DetalisFormatted
+        title="GST Number"
+        detail={visitor.gstNumber || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Upload File"
+        detail={<FileDetail file={visitor.gstFile} />}
+      />
+
+      {/* Verification */}
+      <DetailSection title="Verification" />
+
+      <DetalisFormatted
+        title="ID Type"
+        detail={visitor.idType || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="ID Number"
+        detail={visitor.idNumber || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Upload File"
+        detail={<FileDetail file={visitor.otherFile} />}
+      />
+
+      {/* Others */}
+      <DetailSection title="Others" />
+
+      <DetalisFormatted
+        title="Date of Visit"
+        detail={
+          revenue.date ? humanDate(revenue.date) : "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Checkin Time"
+        detail={formatTimeValue(visitor.checkIn)}
+      />
+
+      <DetalisFormatted
+        title="Checkin By"
+        detail={
+          getUserDisplayName(visitor.checkedInBy) || "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Checkout Time"
+        detail={formatTimeValue(visitor.checkOut)}
+      />
+
+      <DetalisFormatted
+        title="Checkout By"
+        detail={
+          getUserDisplayName(visitor.checkedOutBy) || "N/A"
+        }
+      />
+
+      {/* Payment Details */}
+      <DetailSection title="Payment Details" />
+
+      <DetalisFormatted
+        title="Taxable Amount"
+        detail={`INR ${inrFormat(revenue.taxable || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="GST Amount"
+        detail={`INR ${inrFormat(revenue.gst || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="Total Amount"
+        detail={`INR ${inrFormat(revenue.totalAmount || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="Discount"
+        detail={`INR ${inrFormat(revenue.discount || 0)}`}
+      />
+
+      <DetalisFormatted
+        title="Mode"
+        detail={
+          revenue.paymentMode ||
+          revenue.remarks ||
+          "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Status"
+        detail={revenue.status || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Verification"
+        detail={
+          revenue.paymentVerification || "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Uploaded File"
+        detail={
+          <FileDetail
+            file={{ link: revenue.paymentProofLink }}
+          />
+        }
+      />
+
+      {/* Finance Invoice Details */}
+      <DetailSection title="Finance Invoice Details" />
+
+      <DetalisFormatted
+        title="Invoice Link"
+        detail={
+          <FileDetail
+            file={{ link: revenue.invoiceLink }}
+            label="View PDF"
+          />
+        }
+      />
+
+      <DetalisFormatted
+        title="Invoice Uploaded At"
+        detail={
+          revenue.invoiceUploadedAt
+            ? humanDate(revenue.invoiceUploadedAt)
+            : "N/A"
+        }
+      />
+
+      <DetalisFormatted
+        title="Invoice Uploaded By"
+        detail={revenue.invoiceUploadedByName || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Finance Status"
+        detail={revenue.financeStatus || "Pending"}
+      />
+    </div>
+  );
+};
+
+const DisabledInvoiceField = ({
+  label,
+  value,
+  className = "",
+}) => (
+  <TextField
+    size="small"
+    fullWidth
+    label={label}
+    value={value || "-"}
+    disabled
+    className={className}
+  />
+);
+
+const DayPassInvoiceFields = ({ revenue }) => {
+  const visitor = revenue.visitorDetails || {};
+
+  const dateValue = (value) => {
+    const date = dayjs(value);
+
+    return value && date.isValid()
+      ? date.format("DD-MM-YYYY")
+      : "-";
+  };
+
+  const amountValue = (value) =>
+    `INR ${Number(value || 0).toLocaleString("en-IN")}`;
+
+  return (
+    <>
+      <DisabledInvoiceField
+        label="First Name"
+        value={visitor.firstName}
+      />
+
+      <DisabledInvoiceField
+        label="Last Name"
+        value={visitor.lastName}
+      />
+
+      <DisabledInvoiceField
+        label="Email"
+        value={visitor.email}
+      />
+
+      <DisabledInvoiceField
+        label="Phone Number"
+        value={visitor.phoneNumber}
+      />
+
+      <DisabledInvoiceField
+        label="Gender"
+        value={visitor.gender}
+      />
+
+      <DisabledInvoiceField
+        label="Purpose of Visit"
+        value={
+          visitor.purposeOfVisit ||
+          revenue.meetingType
+        }
+      />
+
+      <DisabledInvoiceField
+        label="Building"
+        value={revenue.building}
+      />
+
+      <DisabledInvoiceField
+        label="Unit"
+        value={getUnitLabel(revenue.unit)}
+      />
+
+      <DisabledInvoiceField
+        label="Brand Name"
+        value={visitor.brandName}
+      />
+
+      <DisabledInvoiceField
+        label="Registered Company"
+        value={visitor.registeredClientCompany}
+      />
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="State"
+          value={visitor.state}
+        />
+
+        <DisabledInvoiceField
+          label="City"
+          value={visitor.city}
+        />
+
+        <DisabledInvoiceField
+          label="Sector"
+          value={visitor.sector}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="GST Number"
+          value={visitor.gstNumber}
+        />
+
+        <DisabledInvoiceField
+          label="GST File"
+          value={getFileLink(visitor.gstFile)}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="ID Type"
+          value={visitor.idType}
+        />
+
+        <DisabledInvoiceField
+          label="ID Number"
+          value={visitor.idNumber}
+        />
+
+        <DisabledInvoiceField
+          label="ID File"
+          value={getFileLink(visitor.otherFile)}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="Checkin Time"
+          value={formatTimeValue(visitor.checkIn)}
+        />
+
+        <DisabledInvoiceField
+          label="Checkin By"
+          value={getUserDisplayName(visitor.checkedInBy)}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <DisabledInvoiceField
+          label="Checkout Time"
+          value={formatTimeValue(visitor.checkOut)}
+        />
+
+        <DisabledInvoiceField
+          label="Checkout By"
+          value={getUserDisplayName(visitor.checkedOutBy)}
+        />
+      </div>
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="Taxable Amount"
+          value={amountValue(revenue.taxable)}
+        />
+
+        <DisabledInvoiceField
+          label="GST Amount"
+          value={amountValue(revenue.gst)}
+        />
+
+        <DisabledInvoiceField
+          label="Total Amount"
+          value={amountValue(revenue.totalAmount)}
+        />
+      </div>
+
+      <DisabledInvoiceField
+        label="Discount"
+        value={amountValue(revenue.discount)}
+      />
+
+      <DisabledInvoiceField
+        label="Mode"
+        value={
+          revenue.paymentMode ||
+          revenue.remarks
+        }
+      />
+
+      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+        <DisabledInvoiceField
+          label="Admin Status"
+          value={revenue.status}
+        />
+
+        <DisabledInvoiceField
+          label="Payment Verification"
+          value={revenue.paymentVerification}
+        />
+
+        <DisabledInvoiceField
+          label="Admin Payment Proof"
+          value={revenue.paymentProofLink}
+        />
+      </div>
+    </>
+  );
+};
+
 // const MeetingRevenue = () => {
+  // const MeetingRevenue = ({ showChart = true }) => {
+  // const axios = useAxiosPrivate();
+  // const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  // const [selectedRevenue, setSelectedRevenue] = useState(null);
+
   const MeetingRevenue = ({ showChart = true }) => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   const [selectedRevenue, setSelectedRevenue] = useState(null);
+  const [editingRevenue, setEditingRevenue] = useState(null);
+  const [invoiceFile, setInvoiceFile] = useState(null);
+  const [financeStatus, setFinanceStatus] = useState("Pending");
+  const [adminPaidTaxable, setAdminPaidTaxable] = useState(0);
+ // const [financeStatus, setFinanceStatus] = useState("Upload Invoice");
 
   const {
     data: meetingsData = [],
@@ -111,23 +643,118 @@ const getFinancialYear = (dateValue) => {
       date: client.date,
       paymentDate: client.paymentDate,
       normalizedStatus: getNormalizedPaymentStatus(client.status),
+      normalizedFinanceStatus: getNormalizedPaymentStatus(client.financeStatus),
+      hasUploadedInvoice: Boolean(client.invoiceUploadedAt || client.invoiceLink),
+      paymentProofLink: client.paymentProofLink || "",
+      paymentProofName: client.paymentProofName || "",
+      paymentVerification: client.paymentVerification || "N/A",
+      paymentMode: client.paymentMode || "N/A",
+      meetingTitle: client.meetingTitle || "",
+      meetingAgenda: client.meetingAgenda || "",
+      meetingStartTime: client.meetingStartTime || null,
+      meetingEndTime: client.meetingEndTime || null,
+      meetingStatus: client.meetingStatus || "N/A",
+      meetingTypeRaw: client.meetingTypeRaw || client.meetingType || "N/A",
+      meetingHousekeepingStatus: client.meetingHousekeepingStatus || "N/A",
+      meetingBookedByName: getUserDisplayName(client.meetingBookedBy),
+      meetingReceptionistName: getUserDisplayName(client.meetingReceptionist),
+      meetingCompanyName: client.meetingCompanyName || client.clientName || "N/A",
+      meetingLocationLabel:
+        client.unit?.unitNo && client.unit?.unitName
+          ? `${client.unit.unitNo} (${client.unit.unitName})`
+          : getUnitLabel(client.unit),
+      meetingTimeLabel: formatMeetingTimeRange(
+        client.meetingStartTime,
+        client.meetingEndTime,
+      ),
+      meetingDurationLabel: formatMeetingDuration(
+        client.meetingStartTime,
+        client.meetingEndTime,
+        client.hoursBooked,
+      ),
+      invoiceUploadedBy: client.invoiceUploadedBy || null,
+      invoiceUploadedByName: getUserDisplayName(client.invoiceUploadedBy),
       remarks: client.remarks || "-",
+      source: client.source || "meeting-revenue",
+      visitorDetails: client.visitorDetails || null,
     })),
   }));
 
-  const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
+  const allRevenueData = tableData.flatMap((month) => month.revenue);
+  const isVerifiedFinanceRow = (item) =>
+    item?.normalizedFinanceStatus === "verified";
+  const isPaidRow = (item) => item?.normalizedStatus === "paid";
+  const isFinancePaidRow = (item) =>
+    item?.normalizedFinanceStatus === "verified";
+  const visibleRevenueData = showChart
+    ? allRevenueData.filter(isVerifiedFinanceRow)
+    : allRevenueData.filter(
+        (item) => item?.source !== "day-pass" || isPaidRow(item),
+      );
+  const updateInvoice = useMutation({
+    mutationFn: async () => {
+      const formData = new FormData();
+      formData.append("financeStatus", financeStatus);
+      if (invoiceFile) formData.append("client-invoice", invoiceFile);
+      return axios.patch(
+        `/api/sales/update-meeting-revenue/${editingRevenue.id}`,
+        formData,
+      );
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["meetings-revenue"] });
+      setEditingRevenue(null);
+      setInvoiceFile(null);
+    },
+  });
+
+  const openEditModal = (row) => {
+    setEditingRevenue(row);
+    setFinanceStatus(row.financeStatus || "Pending");
+   // setFinanceStatus(row.financeStatus || "Upload Invoice");
+    setInvoiceFile(null);
+  };
+  const formatDateValue = (value) => {
+    if (!value) return "-";
+    const date = dayjs(value);
+    return date.isValid() ? date.format("DD-MM-YYYY") : "-";
+  };
+  const formatNumberValue = (value) => {
+    if (value === 0) return "0";
+    if (value === null || value === undefined || value === "") return "-";
+    const numericValue = Number(String(value).replace(/,/g, ""));
+    return Number.isNaN(numericValue)
+      ? String(value)
+      : numericValue.toLocaleString("en-IN");
+  };
+  const editableInvoiceFile =
+    invoiceFile ||
+    (editingRevenue?.invoiceLink
+      ? {
+          name: editingRevenue?.invoiceName || "Uploaded Invoice",
+          url: editingRevenue.invoiceLink,
+        }
+      : null);
+  const clientLabel = editingRevenue?.clientName || editingRevenue?.client || "-";
+  const meetingTypeLabel = editingRevenue?.meetingType || "-";
+  const meetingRoomLabel = editingRevenue?.meetingRoomName || "-";
+  const hoursBookedLabel =
+    editingRevenue?.hoursBooked || editingRevenue?.unitsOrHours || "-";
+  const isUpdateDisabled = updateInvoice.isPending;
+
   const graphData = useMemo(
     () =>
       isMeetingsLoading
         ? []
-        : flattenedRevenueData
-            .filter((item) => item.normalizedStatus === "paid")
+        : allRevenueData
+            .filter(isVerifiedFinanceRow)
             .map((item) => ({
               date: item.date,
               taxable: getNumericAmount(item.taxable),
               vertical: "Meeting",
             })),
-    [flattenedRevenueData, isMeetingsLoading],
+    [allRevenueData, isMeetingsLoading],
   );
   const selectedFiscalYearRevenue = useMemo(
     () =>
@@ -207,7 +834,7 @@ const getFinancialYear = (dateValue) => {
         },
       },
     },
-    colors: ["#2196F3", "#4CAF50", "#FF9800", "#9C27B0", "#F44336"],
+    colors: ["#2196F3"],
   };
 
   return (
@@ -244,21 +871,77 @@ const getFinancialYear = (dateValue) => {
               chartOptions={options}
               selectedFY={selectedFY}
               onSelectedFYChange={setSelectedFY}
+              disableHoverCrosshair
             />
           )}
 
           <WidgetTable
-            data={flattenedRevenueData}
-            tableTitle={"Monthly Revenue with Client Details"}
+            data={visibleRevenueData}
+            headerActions={
+              !showChart ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <Chip
+                    label={`ADMIN PAID : INR ${inrFormat(adminPaidTaxable)}`}
+                    sx={{
+                      backgroundColor: "#d8f0df",
+                      color: "#16784d",
+                      border: "1px solid #a9ddba",
+                      fontWeight: 800,
+                      fontSize: "0.84rem",
+                      height: "36px",
+                      borderRadius: "8px",
+                      px: 1.15,
+                      "& .MuiChip-label": {
+                        px: 0.9,
+                        fontWeight: 800,
+                      },
+                    }}
+                  />
+                  <PrimaryButton
+                    title="Manage Meeting"
+                    handleSubmit={() =>
+                      navigate(
+                        "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+                      )
+                    }
+                  />
+                </div>
+              ) : null
+            }
+              tableTitle={
+              showChart
+                ? "Monthly Revenue with Client Details"
+                : "Meeting Revenue Client Invoicing"
+            }
+           // tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
             formatDate
             exportData
+            preserveCurrentMonthRange={!showChart}
+            onMonthChange={
+              !showChart
+                ? (_total, filteredData) => {
+                    const monthAdminPaid = filteredData.reduce(
+                      (sum, item) =>
+                        isPaidRow(item)
+                          ? sum + getNumericAmount(item.taxable)
+                          : sum,
+                      0,
+                    );
+                    setAdminPaidTaxable((current) =>
+                      current === monthAdminPaid ? current : monthAdminPaid,
+                    );
+                  }
+                : undefined
+            }
             totalKey="taxable"
             titleAmountOverride=""
             titleAmountGreen={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (item.normalizedStatus !== "paid") return sum;
+                 if (!(showChart ? isPaidRow(item) : isFinancePaidRow(item))) {
+                    return sum;
+                  }
                   return sum + getNumericAmount(item.taxable);
                 }, 0),
               )}`
@@ -266,18 +949,26 @@ const getFinancialYear = (dateValue) => {
             titleAmountRed={({ filteredData }) =>
               `INR ${inrFormat(
                 filteredData.reduce((sum, item) => {
-                  if (item.normalizedStatus !== "unpaid") return sum;
-                  return sum + getNumericAmount(item.taxable);
+                  if (showChart) {
+                    return isPaidRow(item)
+                      ? sum
+                      : sum + getNumericAmount(item.taxable);
+                  }
+
+                  return isFinancePaidRow(item)
+                    ? sum
+                    : sum + getNumericAmount(item.taxable);
                 }, 0),
               )}`
             }
             titleAmountTotal={({ rangeTotal }) =>
               `INR ${inrFormat(rangeTotal)}`
             }
-            greenTitle="Paid"
-            redTitle="Unpaid"
+            greenTitle={showChart ? "Paid" : "Finance Paid"}
+            redTitle={showChart ? "Unpaid" : "Finance Verification"}
             totalTitle="Total"
             summaryChipVariant="ticket"
+            greenChipClassName="flex gap-1 justify-center items-center uppercase bg-[#e3f2fd] text-sm text-[#1565c0] font-pmedium px-3 py-1.5 rounded-lg border border-[#bbdefb]"
             columns={[
               { headerName: "Sr No", field: "srNo", width: 100 },
               // { headerName: "Particulars", field: "particulars", width: 200 },
@@ -312,11 +1003,80 @@ const getFinancialYear = (dateValue) => {
               { headerName: "Payment Date", field: "paymentDate" },
               { headerName: "Remarks", field: "remarks" },
               {
-                headerName: "Status",
+                 headerName: "Admin Status",
                 field: "status",
                 pinned: "right",
                 cellRenderer: (params) => <StatusChip status={params.value} />,
               },
+              ...(showChart
+                ? [
+                    {
+                      headerName: "Finance Status",
+                      field: "financeStatus",
+                      pinned: "right",
+                      cellRenderer: (params) => (
+                        <StatusChip status={params.value} />
+                      ),
+                    },
+                  ]
+                : []),
+               ...(!showChart
+                ? [
+                    {
+                      headerName: "Admin Payment Proof",
+                      field: "paymentProofLink",
+                      pinned:"right",
+                      cellRenderer: ({ value }) =>
+                        value ? (
+                          <a
+                            className="text-primary underline"
+                            href={value}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View File
+                          </a>
+                        ) : (
+                          "-"
+                        ),
+                    },
+                    {
+                      headerName: "Invoice Link",
+                      field: "invoiceLink",
+                      pinned:"right",
+                      cellRenderer: ({ value, data }) => {
+                        const link = value || data?.invoice?.link;
+                        return link ? (
+                          <a
+                            className="text-primary underline"
+                            href={link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View PDF
+                          </a>
+                        ) : (
+                          "-"
+                        );
+                      },
+                    },
+                    {
+                      headerName: "Invoice Uploaded On",
+                      field: "invoiceUploadedAt",
+                      pinned:"right",
+                      valueFormatter: ({ value }) =>
+                        value ? humanDate(value) : "-",
+                    },
+                      {
+                      headerName: "Finance Status",
+                      field: "financeStatus",
+                      pinned:"right",
+                      cellRenderer: ({ value }) => (
+                        <StatusChip status={value} />
+                      ),
+                    },
+                  ]
+                : []),
               {
                 headerName: "Actions",
                 field: "actions",
@@ -324,40 +1084,115 @@ const getFinancialYear = (dateValue) => {
                 sortable: false,
                 filter: false,
                 cellRenderer: (params) => (
-                  <button
-                    type="button"
-                    aria-label="View meeting revenue details"
-                    className="p-2 rounded-full hover:bg-gray-200 transition-colors"
-                    onClick={() => setSelectedRevenue(params.data)}
-                  >
-                    <MdOutlineRemoveRedEye size={20} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      aria-label="View meeting revenue details"
+                      className="p-2 rounded-full hover:bg-gray-200"
+                      onClick={() => setSelectedRevenue(params.data)}
+                      >
+                        <MdOutlineRemoveRedEye size={20} />
+                      </button>
+                    {!showChart && params.data.id && (
+                      <ThreeDotMenu
+                        rowId={params.data.id}
+                          disabled={
+                          (params.data.financeStatus || "Pending") === "Pending"
+                        }
+                        menuItems={[
+                          {
+                            label: "Edit",
+                            onClick: () => openEditModal(params.data),
+                          },
+                        ]}
+                      />
+                    )}
+                  </div>
                 ),
               },
             ]}
           />
           <MuiModal
-            title="Meeting Revenue Details"
+           // title="Meeting Revenue Details" 
+             title={selectedRevenue?.source === "day-pass" ? "Visitor Revenue Detail" : "Meeting Revenue Details"}  
             open={Boolean(selectedRevenue)}
             onClose={() => setSelectedRevenue(null)}
+             widthClassName="w-[92vw] max-w-[770px]"
           >
-            {selectedRevenue && (
+            {selectedRevenue && (selectedRevenue.source === "day-pass" ? (
+              <DayPassRevenueDetails revenue={selectedRevenue} />
+            ) : (
               <div className="grid grid-cols-1 gap-4 w-full">
+                <div className="font-bold text-lg">Basic Info</div>
                 <DetalisFormatted
-                  title="Client Name"
-                  detail={selectedRevenue.clientName || "N/A"}
+                  title="Title"
+                  detail={selectedRevenue.meetingTitle || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Meeting Type"
-                  detail={selectedRevenue.meetingType || "N/A"}
+                  title="Agenda"
+                  detail={selectedRevenue.meetingAgenda || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Meeting Date"
+                  title="Date"
                   detail={humanDate(selectedRevenue.date)}
                 />
                 <DetalisFormatted
+                  title="Time"
+                  detail={selectedRevenue.meetingTimeLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Duration"
+                  detail={selectedRevenue.meetingDurationLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedRevenue.meetingStatus || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Type"
+                  detail={selectedRevenue.meetingTypeRaw || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Company"
+                  detail={selectedRevenue.meetingCompanyName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Booked By"
+                  detail={selectedRevenue.meetingBookedByName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Receptionist"
+                  detail={selectedRevenue.meetingReceptionistName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Client"
+                  detail={selectedRevenue.clientName || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Venue Details</div>
+                <DetalisFormatted
+                  title="Room"
+                  detail={selectedRevenue.meetingRoomName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Location"
+                  detail={selectedRevenue.meetingLocationLabel || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Building"
+                  detail={selectedRevenue.building || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Housekeeping Status"
+                  detail={selectedRevenue.meetingHousekeepingStatus || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Payment Details</div>
+                <DetalisFormatted
                   title="Payment Date"
-                  detail={humanDate(selectedRevenue.paymentDate)}
+                  detail={
+                    selectedRevenue.paymentDate
+                      ? humanDate(selectedRevenue.paymentDate)
+                      : "N/A"
+                  }
                 />
                 <DetalisFormatted
                   title="Unit"
@@ -388,14 +1223,311 @@ const getFinancialYear = (dateValue) => {
                   detail={`INR ${inrFormat(selectedRevenue.totalAmount || 0)}`}
                 />
                 <DetalisFormatted
-                  title="Status"
+                  title="Admin Status"
                   detail={selectedRevenue.status || "N/A"}
                 />
                 <DetalisFormatted
+                  title="Admin Payment Proof"
+                  detail={
+                    selectedRevenue.paymentProofLink ? (
+                      <a
+                        href={selectedRevenue.paymentProofLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        {selectedRevenue.paymentProofName || "View File"}
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Payment Verification"
+                  detail={selectedRevenue.paymentVerification || "N/A"}
+                />
+                <DetalisFormatted
                   title="Remarks"
-                  detail={selectedRevenue.remarks || "N/A"}
+                  detail={selectedRevenue.remarks || selectedRevenue.paymentMode || "N/A"}
+                />
+                <div className="font-bold text-lg pt-4">Finance Invoice Details</div>
+                <DetalisFormatted
+                  title="Invoice Link"
+                  detail={
+                    selectedRevenue.invoiceLink ? (
+                      <a
+                        href={selectedRevenue.invoiceLink}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-primary underline"
+                      >
+                        View PDF
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded At"
+                  detail={
+                    selectedRevenue.invoiceUploadedAt
+                      ? humanDate(selectedRevenue.invoiceUploadedAt)
+                      : "N/A"
+                  }
+                />
+                <DetalisFormatted
+                  title="Invoice Uploaded By"
+                  detail={selectedRevenue.invoiceUploadedByName || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Finance Status"
+                  detail={selectedRevenue.financeStatus || "Pending"}
+                  //detail={selectedRevenue.financeStatus || "Upload Invoice"}
                 />
               </div>
+            ))}
+          </MuiModal>
+          <MuiModal
+         // title="Edit Meeting Invoice"
+          title={editingRevenue?.source === "day-pass" ? "Edit Visitor Invoice" : "Edit Meeting Invoice"}
+            open={Boolean(editingRevenue)}
+            onClose={() => setEditingRevenue(null)}
+            widthClassName="w-[94vw] max-w-[920px]"
+          >
+            {editingRevenue && (
+              <form
+                className="grid grid-cols-1 gap-4"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  updateInvoice.mutate();
+                }}
+              >
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  {editingRevenue.source === "day-pass" ? (
+                    <>
+                      <DayPassInvoiceFields revenue={editingRevenue} />
+
+                      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <TextField
+                          size="small"
+                          fullWidth
+                          label="Date of Visit"
+                          value={formatDateValue(editingRevenue.date)}
+                          disabled
+                        />
+
+                        <TextField
+                          size="small"
+                          fullWidth
+                          label="Invoice Upload Date"
+                          value={formatDateValue(new Date())}
+                          disabled
+                        />
+                      </div>
+
+                      <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                        <UploadFileInput
+                          value={editableInvoiceFile}
+                          onChange={setInvoiceFile}
+                          label="Upload File"
+                          allowedExtensions={["pdf", "doc", "docx"]}
+                          previewType="pdf"
+                        />
+
+                        <TextField
+                          select
+                          size="small"
+                          fullWidth
+                          label="Finance Status"
+                          value={financeStatus}
+                          onChange={(event) => setFinanceStatus(event.target.value)}
+                        >
+                          <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
+                          <MenuItem value="Verified">Verified</MenuItem>
+                        </TextField>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                  <TextField
+                    select
+                    size="small"
+                    fullWidth
+                    label="Select Client"
+                    value={clientLabel}
+                    disabled
+                  >
+                    <MenuItem value={clientLabel}>{clientLabel}</MenuItem>
+                  </TextField>
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Client Name"
+                    value={clientLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Type"
+                    value={meetingTypeLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Room"
+                    value={meetingRoomLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Unit"
+                    value={getUnitLabel(editingRevenue.unit)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Building"
+                    value={editingRevenue.building || "-"}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="No. of Hours"
+                    value={hoursBookedLabel}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Cost Per Hour"
+                    value={formatNumberValue(editingRevenue.costPerHour)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Taxable"
+                    value={formatNumberValue(editingRevenue.taxable)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="GST"
+                    value={formatNumberValue(editingRevenue.gst)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Total Amount"
+                    value={formatNumberValue(editingRevenue.totalAmount)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Meeting Date"
+                    value={formatDateValue(editingRevenue.date)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Payment Date"
+                    value={formatDateValue(editingRevenue.paymentDate)}
+                    disabled
+                  />
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Admin Status"
+                    value={editingRevenue.status || "-"}
+                    disabled
+                  />
+
+                  <div className="md:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label="Invoice Upload Date"
+                      value={formatDateValue(new Date())}
+                      disabled
+                    />
+
+                    <TextField
+                      select
+                      size="small"
+                      fullWidth
+                      label="Finance Status"
+                      value={financeStatus}
+                      onChange={(event) => setFinanceStatus(event.target.value)}
+                      >
+                      <MenuItem value="Upload Invoice">Upload Invoice</MenuItem>
+                      <MenuItem value="Verified">Verified</MenuItem>
+                    </TextField>
+                  </div>
+
+                  <TextField
+                    size="small"
+                    fullWidth
+                    label="Remarks"
+                    value={editingRevenue.remarks || "-"}
+                    disabled
+                    multiline
+                    minRows={2}
+                    className="md:col-span-2"
+                  />
+
+                  <div className="md:col-span-2">
+                    <UploadFileInput
+                      value={editableInvoiceFile}
+                      onChange={setInvoiceFile}
+                      label="Upload File"
+                      allowedExtensions={["pdf", "doc", "docx"]}
+                      previewType="pdf"
+                    />
+                  </div>
+                   </>
+                  )}
+                </div>
+
+                {updateInvoice.isError && (
+                  <p className="text-sm text-red-600">
+                    {updateInvoice.error?.response?.data?.message ||
+                      "Unable to update invoice."}
+                  </p>
+                )}
+
+                <PrimaryButton
+                  type="submit"
+                  title="Update Invoice"
+                  className="w-full py-3 text-[15px]"
+                  disabled={isUpdateDisabled}
+                  isLoading={updateInvoice.isPending}
+                >
+                </PrimaryButton>
+              </form>
             )}
           </MuiModal>
         </>

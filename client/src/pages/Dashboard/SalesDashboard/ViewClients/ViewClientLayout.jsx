@@ -5,13 +5,14 @@ import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 const ViewClientLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const isVirtualOfficeClient = location.pathname.includes("/virtual-office/");
 
   // Map routes to tabs
   const tabs = [
     { label: "Client Details", path: "client-details" },
     { label: "Desks", path: "desks" },
     { label: "Revenue", path: "revenue" },
-    { label: "Members", path: "members" },
+    ...(!isVirtualOfficeClient ? [{ label: "Members", path: "members" }] : []),
   ];
 
   useEffect(() => {
