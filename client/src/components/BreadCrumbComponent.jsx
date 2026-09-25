@@ -46,6 +46,7 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
+    const isNonNavigableSegment = segment === "visitor-history";
 
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
@@ -61,9 +62,12 @@ const BreadCrumbComponent = () => {
     // .replace(/-/g, " ")
     // .replace(/\b\w/g, (char) => char.toUpperCase());
 
-    const displayText = formatLabel(segment);
+    const displayText =
+      isLast && location.state?.breadcrumbLabel
+        ? location.state.breadcrumbLabel
+        : formatLabel(segment);
 
-    return isLast ? (
+    return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">
         {displayText}
       </Typography>

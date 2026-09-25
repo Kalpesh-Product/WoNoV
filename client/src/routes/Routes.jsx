@@ -196,6 +196,7 @@ import VisitorLayout from "../pages/Visitors/VisitorLayout";
 import VisitorDashboard from "../pages/Visitors/VisitorDashboard";
 import AddVisitor from "../pages/Visitors/Forms/AddVisitor";
 import ManageVisitors from "../pages/Visitors/ManageVisitors";
+import VisitorHistory from "../pages/Visitors/VisitorHistory";
 import VisitorTeamMembers from "../pages/Visitors/VisitorTeamMembers";
 import VisitorReports from "../pages/Visitors/VisitorReports";
 import VisitorReviews from "../pages/Visitors/VisitorReviews";
@@ -4609,6 +4610,10 @@ export const routes = createBrowserRouter([
                         path: "external-clients", // Page with table showing a list of all visitors
                         element: <ExternalClients />,
                         index: true,
+                      },
+                      {
+                        path: "visitor-history/:visitorId",
+                        element: <VisitorHistory />,
                       },
                     ],
                   },

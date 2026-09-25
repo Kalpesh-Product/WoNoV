@@ -2,6 +2,7 @@ const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
   fetchVisitors,
+  fetchVisitorHistory,
   checkExistingVisitor,
   addVisitor,
   updateVisitor,
@@ -19,6 +20,7 @@ const {
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
+router.get("/visitor-history/:visitorId", fetchVisitorHistory);
 router.get("/check-existing", checkExistingVisitor);
 router.get("/fetch-team-members", fetchTeamMembers);
 router.post(

@@ -19,6 +19,45 @@ const Unit = require("../../models/locations/Unit");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const buildDateFilter = require("../../utils/dateFilter");
 const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
+const INACTIVE_VISIT_STATUSES = ["Cancelled", "Canceled", "Deleted"];
+
+const activeVisitFilter = {
+  isDeleted: { $ne: true },
+  status: { $nin: INACTIVE_VISIT_STATUSES },
+};
+
+const getISTDayBounds = (date) => {
+  const day = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
+  return {
+    start: new Date(`${day}T00:00:00.000+05:30`),
+    end: new Date(`${day}T23:59:59.999+05:30`),
+  };
+};
+
+const formatVisitTime = (date) =>
+  date
+    ? new Date(date).toLocaleString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        dateStyle: "medium",
+        timeStyle: "short",
+      })
+    : "Ongoing";
+
+const findOpenVisit = (visitorId, company) =>
+  ExternalVisits.findOne({
+    visitorId,
+    company,
+    checkOut: null,
+    ...activeVisitFilter,
+  })
+    .select("_id visitorType checkIn checkOut")
+    .lean();
 
 async function fetchVisitors(req, res, next) {
   try {
@@ -38,6 +77,7 @@ async function fetchVisitors(req, res, next) {
       search: req.query?.search,
       searchContext: req.query?.searchContext,
       multipleVisits: req.query?.multipleVisits === "true",
+      includeVisitCounts: req.query?.includeVisitCounts === "true",
       dateFilter: buildDateFilter({
         startDate: requestFilters?.startDate,
         endDate: requestFilters?.endDate,
@@ -50,6 +90,82 @@ async function fetchVisitors(req, res, next) {
     return next(error);
   }
 }
+
+const fetchVisitorHistory = async (req, res, next) => {
+  try {
+    const { visitorId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(visitorId)) {
+      return res.status(400).json({ message: "Invalid visitor id provided" });
+    }
+
+    const visitor = await Visitor.findOne({
+      _id: visitorId,
+      company: req.company,
+    })
+      .select(
+        "firstName lastName email phoneNumber visitorFlag visitorRoles visitorType purposeOfVisit dateOfVisit checkIn checkOut checkedInBy checkedOutBy visitorCompany amount discount gstAmount totalAmount paymentStatus paymentVerification paymentMode createdAt",
+      )
+      .populate("checkedInBy", "firstName lastName")
+      .populate("checkedOutBy", "firstName lastName")
+      .lean();
+
+    if (!visitor) {
+      return res.status(404).json({ message: "Visitor not found" });
+    }
+
+    let visits = await ExternalVisits.find({
+      visitorId,
+      company: req.company,
+    })
+      .select("-__v")
+      .sort({ checkIn: -1, dateOfVisit: -1, createdAt: -1 })
+      .populate("checkedInBy", "firstName lastName")
+      .populate("checkedOutBy", "firstName lastName")
+      .populate("toMeet", "firstName lastName")
+      .populate("clientToMeet", "employeeName email")
+      .populate("toMeetCompany", "clientName companyName name")
+      .populate("department", "name")
+      .populate({
+        path: "unit",
+        select: "unitNo unitName building",
+        populate: { path: "building", select: "buildingName" },
+      })
+      .lean();
+
+    if (visits.length === 0 && (visitor.checkIn || visitor.dateOfVisit)) {
+      visits = [
+        {
+          _id: visitor._id,
+          visitorId: visitor._id,
+          visitorFlag: visitor.visitorFlag,
+          visitorRoles: visitor.visitorRoles,
+          visitorType: visitor.visitorType,
+          purposeOfVisit: visitor.purposeOfVisit,
+          dateOfVisit: visitor.dateOfVisit || visitor.checkIn,
+          checkIn: visitor.checkIn,
+          checkOut: visitor.checkOut,
+          checkedInBy: visitor.checkedInBy,
+          checkedOutBy: visitor.checkedOutBy,
+          visitorCompany: visitor.visitorCompany,
+          amount: visitor.amount,
+          discount: visitor.discount,
+          gstAmount: visitor.gstAmount,
+          totalAmount: visitor.totalAmount,
+          paymentStatus: visitor.paymentStatus,
+          paymentVerification: visitor.paymentVerification,
+          paymentMode: visitor.paymentMode,
+          createdAt: visitor.createdAt,
+          isLegacyRecord: true,
+        },
+      ];
+    }
+
+    return res.status(200).json({ visitor, visits });
+  } catch (error) {
+    return next(error);
+  }
+};
 
 const checkExistingVisitor = async (req, res, next) => {
   try {
@@ -1361,6 +1477,50 @@ const repeatInternalVisitor = async (req, res, next) => {
       }
     }
 
+    const openVisit =
+      (await findOpenVisit(visitor._id, company)) ||
+      (visitor.checkIn && !visitor.checkOut
+        ? {
+            visitorType: visitor.visitorType,
+            checkIn: visitor.checkIn,
+            checkOut: visitor.checkOut,
+          }
+        : null);
+    if (openVisit) {
+      return res.status(409).json({
+        message: `This visitor already has an unchecked-out visit from ${formatVisitTime(openVisit.checkIn)}. Check out that visit before creating another one.`,
+        conflict: {
+          visitId: openVisit._id || null,
+          checkIn: openVisit.checkIn,
+          visitorType: openVisit.visitorType,
+          visitorCategory: "internal",
+          requiresCheckout: true,
+        },
+      });
+    }
+
+    const { start: visitDayStart, end: visitDayEnd } =
+      getISTDayBounds(checkInDate);
+    const requestedEnd = checkOutDate || visitDayEnd;
+    const duplicateVisit = await ExternalVisits.findOne({
+      visitorId: visitor._id,
+      company,
+      ...activeVisitFilter,
+      checkIn: { $gte: visitDayStart, $lte: visitDayEnd, $lt: requestedEnd },
+      $or: [{ checkOut: null }, { checkOut: { $gt: checkInDate } }],
+      toMeetCompany: toMeetCompany || null,
+      toMeet: toMeet || null,
+      clientToMeet: clientToMeet || null,
+    })
+      .select("_id visitorType checkIn checkOut")
+      .lean();
+
+    if (duplicateVisit) {
+      return res.status(409).json({
+        message: `A visit for the same visitor, meeting target, and overlapping time already exists (${formatVisitTime(duplicateVisit.checkIn)} to ${formatVisitTime(duplicateVisit.checkOut)}).`,
+      });
+    }
+
     visitor.visitorType = visitorType;
     visitor.purposeOfVisit = purposeOfVisit;
     visitor.building = building || null;
@@ -1708,6 +1868,10 @@ const rebookClient = async (req, res, next) => {
     const hasCheckOutTime = !!checkOutTime;
     const checkOut = hasCheckOutTime ? new Date(checkOutTime) : null;
 
+    if (Number.isNaN(checkIn.getTime())) {
+      return res.status(400).json({ message: "Invalid checkInTime provided" });
+    }
+
     if (hasCheckOutTime && Number.isNaN(checkOut.getTime())) {
       return res.status(400).json({ message: "Invalid checkOutTime provided" });
     }
@@ -1718,87 +1882,73 @@ const rebookClient = async (req, res, next) => {
       });
     }
 
-    // const ongoingVisit = await ExternalVisits.findOne({
-    //   visitorId: sourceVisitor._id,
-    //   company,
-    //   checkOut: null,
-    // }).lean();
+    const openVisit =
+      (await findOpenVisit(sourceVisitor._id, company)) ||
+      (sourceVisitor.checkIn && !sourceVisitor.checkOut
+        ? {
+            visitorType: sourceVisitor.visitorType,
+            checkIn: sourceVisitor.checkIn,
+            checkOut: sourceVisitor.checkOut,
+          }
+        : null);
+    if (openVisit) {
+      return res.status(409).json({
+        message: `This visitor already has an unchecked-out visit from ${formatVisitTime(openVisit.checkIn)}. Check out that visit before creating another one.`,
+        conflict: {
+          visitId: openVisit._id || null,
+          checkIn: openVisit.checkIn,
+          visitorType: openVisit.visitorType,
+          visitorCategory: "client",
+          requiresCheckout: true,
+        },
+      });
+    }
 
-    // console.log("Ongoing visit check:", ongoingVisit);
-    // if (ongoingVisit) {
-    //   return res.status(409).json({
-    //     message: "Visitor already has an active visit. Checkout first.",
-    //   });
-    // }
+    const { start: visitDayStart, end: visitDayEnd } = getISTDayBounds(checkIn);
+    const dayPassFilter = {
+      visitorId: sourceVisitor._id,
+      company,
+      visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
+      checkIn: { $gte: visitDayStart, $lte: visitDayEnd },
+      ...activeVisitFilter,
+    };
 
-    // // const conflictingDayPassVisit = await ExternalVisits.findOne({
-    // //   visitorId: sourceVisitor._id,
-    // //   company,
-    // //   visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
-    // //   $or: [
-    // //     {
-    // //       checkOut: { $ne: null },
-    // //       checkIn: { $lt: checkOut },
-    // //       checkOut: { $gt: checkIn },
-    // //     },
-    // //     {
-    // //       checkOut: null,
-    // //       checkIn: { $lt: checkOut },
-    // //     },
-    // //   ],
-    // // })
-    // //   .select("_id checkIn checkOut visitorType")
-    // //   .lean();
+    let conflictingDayPassVisit;
+    if (normalizedVisitorType === "Full-Day Pass") {
+      conflictingDayPassVisit = await ExternalVisits.findOne(dayPassFilter)
+        .select("_id visitorType checkIn checkOut")
+        .lean();
+    } else {
+      const requestedEnd = checkOut || visitDayEnd;
+      conflictingDayPassVisit = await ExternalVisits.findOne({
+        ...dayPassFilter,
+        $or: [
+          { visitorType: "Full-Day Pass" },
+          {
+            visitorType: "Half-Day Pass",
+            checkIn: {
+              $gte: visitDayStart,
+              $lte: visitDayEnd,
+              $lt: requestedEnd,
+            },
+            checkOut: { $gt: checkIn },
+          },
+        ],
+      })
+        .select("_id visitorType checkIn checkOut")
+        .lean();
+    }
 
-    // const conflictingDayPassVisit = await ExternalVisits.findOne({
-    //   visitorId: sourceVisitor._id,
-    //   company,
-    //   visitorType: { $in: ["Full-Day Pass", "Half-Day Pass"] },
-    //   $or: [
-    //     {
-    //       // completed visit that overlaps requested range
-    //       $and: [
-    //         { checkOut: { $ne: null } },
-    //         { checkOut: { $gt: checkIn } },
-    //         { checkIn: { $lt: checkOut } },
-    //       ],
-    //     },
-    //     {
-    //       // ongoing visit that starts before requested checkout/checkin
-    //       checkOut: null,
-    //       checkIn: { $lt: checkOut || checkIn },
-    //     },
-    //   ],
-    // })
-    //   .select("_id checkIn checkOut visitorType")
-    //   .lean();
+    if (conflictingDayPassVisit) {
+      const conflictReason =
+        normalizedVisitorType === "Full-Day Pass"
+          ? "A day pass already exists for this visitor on the selected date."
+          : "A full-day or overlapping half-day pass already exists for this visitor.";
 
-    // const formatToIST = (date) => {
-    //   return new Date(date).toLocaleString("en-IN", {
-    //     timeZone: "Asia/Kolkata",
-    //     hour: "2-digit",
-    //     minute: "2-digit",
-    //     day: "2-digit",
-    //     month: "short",
-    //     year: "numeric",
-    //     hour12: true,
-    //   });
-    // };
-
-    // if (conflictingDayPassVisit) {
-    //   const conflictingCheckIn = conflictingDayPassVisit.checkIn
-    //     ? formatToIST(conflictingDayPassVisit.checkIn)
-    //     : "N/A";
-
-    //   const conflictingCheckOut = conflictingDayPassVisit.checkOut
-    //     ? formatToIST(conflictingDayPassVisit.checkOut)
-    //     : "Ongoing";
-
-    //   return res.status(409).json({
-    //     message: `Day pass timing conflict. Choose a different time range.Existing ${conflictingDayPassVisit.visitorType}: ${conflictingCheckIn} to ${conflictingCheckOut}`,
-    //     conflictingVisit: conflictingDayPassVisit,
-    //   });
-    // }
+      return res.status(409).json({
+        message: `${conflictReason} Existing ${conflictingDayPassVisit.visitorType}: ${formatVisitTime(conflictingDayPassVisit.checkIn)} to ${formatVisitTime(conflictingDayPassVisit.checkOut)}.`,
+      });
+    }
 
     let fullDayPassAmount = 850;
     if (sourceVisitor.building) {
@@ -2338,6 +2488,7 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
 
 module.exports = {
   fetchVisitors,
+  fetchVisitorHistory,
   checkExistingVisitor,
   addVisitor,
   updateVisitor,

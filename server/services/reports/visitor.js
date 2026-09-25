@@ -236,6 +236,91 @@ const attachExternalVisits = async (visitors, companyId, dateFilter) => {
   }));
 };
 
+const attachVisitCounts = async (visitors, companyId) => {
+  if (!Array.isArray(visitors) || visitors.length === 0) return visitors;
+
+  const visitorIds = visitors.map((visitor) => visitor._id).filter(Boolean);
+  const counts = await ExternalVisits.aggregate([
+    {
+      $match: {
+        visitorId: { $in: visitorIds },
+        ...(companyId && { company: companyId }),
+      },
+    },
+    {
+      $group: {
+        _id: "$visitorId",
+        internal: {
+          $sum: {
+            $cond: [
+              {
+                $or: [
+                  { $eq: ["$visitorFlag", "Visitor"] },
+                  { $in: ["Visitor", { $ifNull: ["$visitorRoles", []] }] },
+                  { $in: ["$visitorType", ["Walk In", "Scheduled"]] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        client: {
+          $sum: {
+            $cond: [
+              {
+                $or: [
+                  { $eq: ["$visitorFlag", "Client"] },
+                  { $in: ["Client", { $ifNull: ["$visitorRoles", []] }] },
+                  {
+                    $in: [
+                      "$visitorType",
+                      ["Meeting", "Full-Day Pass", "Half-Day Pass"],
+                    ],
+                  },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+      },
+    },
+  ]);
+
+  const countsByVisitor = new Map(
+    counts.map((count) => [count._id.toString(), count]),
+  );
+  const normalizeType = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z]/g, "");
+
+  return visitors.map((visitor) => {
+    const storedCounts = countsByVisitor.get(visitor._id.toString()) || {};
+    const roles = Array.isArray(visitor.visitorRoles)
+      ? visitor.visitorRoles
+      : [];
+    const normalizedType = normalizeType(visitor.visitorType);
+    const isInternal =
+      visitor.visitorFlag === "Visitor" ||
+      roles.includes("Visitor") ||
+      ["walkin", "scheduled"].includes(normalizedType);
+    const isClient =
+      visitor.visitorFlag === "Client" ||
+      roles.includes("Client") ||
+      ["meeting", "fulldaypass", "halfdaypass"].includes(normalizedType);
+    const internal = Number(storedCounts.internal || 0) || (isInternal ? 1 : 0);
+    const client = Number(storedCounts.client || 0) || (isClient ? 1 : 0);
+
+    return {
+      ...visitor,
+      visitCounts: { internal, client, total: internal + client },
+    };
+  });
+};
+
 const getDayPassPaymentSearchConditions = (search) => {
   const normalizedSearch = String(search || "")
     .trim()
@@ -373,6 +458,7 @@ const fetchVisitorReportService = async ({
   company,
   visitorFlag,
   multipleVisits = false,
+  includeVisitCounts = false,
   isMeeting = false,
   isOpendDesk = false,
   page,
@@ -893,6 +979,10 @@ const fetchVisitorReportService = async ({
 
     if (multipleVisits) {
       visitors = await attachExternalVisits(visitors, companyId, dateFilter);
+    }
+
+    if (includeVisitCounts) {
+      visitors = await attachVisitCounts(visitors, companyId);
     }
 
     if (!shouldPaginate) {

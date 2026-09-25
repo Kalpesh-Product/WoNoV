@@ -87,6 +87,7 @@ const RepeatExternalCompaanies = () => {
           limit: pagination.limit,
           search: debouncedCompanySearch || undefined,
           searchContext: "repeat-external-companies",
+          includeVisitCounts: true,
         },
       });
       const visitors = visitorsResponse.data.data || [];
@@ -135,6 +136,7 @@ const RepeatExternalCompaanies = () => {
           item.brandName ||
           item.registeredClientCompany ||
           "N/A",
+        visitCount: item.visitCounts?.client ?? 0,
         locationId:
           item?.building?._id ||
           item?.location?._id ||
@@ -238,7 +240,30 @@ const RepeatExternalCompaanies = () => {
       reset();
       navigate("/app/visitors/manage-visitors/external-clients");
     } catch (error) {
-      toast.error(error?.response?.data?.message || "Failed to repeat client.");
+      const responseData = error?.response?.data;
+      const conflict = responseData?.conflict;
+      const toastOptions = conflict?.requiresCheckout
+        ? {
+            duration: 10000,
+            action: {
+              label: "Check out",
+              onClick: () => {
+                const params = new URLSearchParams();
+                if (conflict.checkIn) {
+                  params.set("lastVisitedAt", conflict.checkIn);
+                }
+                navigate(
+                  `/app/visitors/manage-visitors/external-clients?${params.toString()}`,
+                );
+              },
+            },
+          }
+        : undefined;
+
+      toast.error(
+        responseData?.message || "Failed to repeat client.",
+        toastOptions,
+      );
     } finally {
       setIsSubmittingRepeatClient(false);
     }
@@ -249,6 +274,7 @@ const RepeatExternalCompaanies = () => {
       { field: "srNo", headerName: "Sr No" },
       { field: "visitorName", headerName: "Visitor Name", flex: 1 },
       { field: "company", headerName: "Company", flex: 1 },
+      { field: "visitCount", headerName: "Visit Count" },
       {
         field: "action",
         headerName: "Action",
