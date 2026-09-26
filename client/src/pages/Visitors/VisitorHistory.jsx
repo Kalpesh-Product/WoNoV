@@ -304,6 +304,22 @@ const VisitorHistory = () => {
     );
   };
 
+  const renderFileLink = (file) => {
+    const link = typeof file === "string" ? file : file?.link || file?.url;
+    if (!link) return "N/A";
+
+    return (
+      <a
+        href={link}
+        target="_blank"
+        rel="noreferrer"
+        className="text-primary underline"
+      >
+        View File
+      </a>
+    );
+  };
+
   return (
     <PageFrame>
       <div className="mb-4 flex items-center justify-between gap-4">
@@ -332,11 +348,19 @@ const VisitorHistory = () => {
       <MuiModal
         open={Boolean(selectedVisit)}
         onClose={() => setSelectedVisit(null)}
-        title="Visit Details"
+        title={isInternalHistory ? "Visitor Details" : "Visitor Detail"}
         widthClass="w-2/5"
       >
         <div className="grid grid-cols-1 gap-4">
-          <DetalisFormatted title="Name" detail={visitorName || "N/A"} />
+          {!isInternalHistory && <div className="font-bold">Client Details</div>}
+          <DetalisFormatted
+            title="First Name"
+            detail={data?.visitor?.firstName || "N/A"}
+          />
+          <DetalisFormatted
+            title="Last Name"
+            detail={data?.visitor?.lastName || "N/A"}
+          />
           <DetalisFormatted
             title="Email"
             detail={data?.visitor?.email || "N/A"}
@@ -345,37 +369,26 @@ const VisitorHistory = () => {
             title="Phone Number"
             detail={data?.visitor?.phoneNumber || "N/A"}
           />
+          {!isInternalHistory && (
+            <DetalisFormatted
+              title="Gender"
+              detail={data?.visitor?.gender || "N/A"}
+            />
+          )}
           <DetalisFormatted
-            title="Visit Type"
-            detail={selectedVisit?.visitorType}
-          />
-          <DetalisFormatted
-            title="Purpose"
+            title={isInternalHistory ? "Purpose" : "Purpose of Visit"}
             detail={selectedVisit?.purposeOfVisit}
-          />
-          <DetalisFormatted
-            title="Date of Visit"
-            detail={selectedVisit?.dateOfVisit}
-          />
-          <DetalisFormatted title="Check In" detail={selectedVisit?.checkIn} />
-          <DetalisFormatted
-            title="Check Out"
-            detail={selectedVisit?.checkOut}
-          />
-          <DetalisFormatted
-            title="Checked In By"
-            detail={selectedVisit?.checkedInBy}
-          />
-          <DetalisFormatted
-            title="Checked Out By"
-            detail={selectedVisit?.checkedOutBy}
-          />
-          <DetalisFormatted
-            title="Visitor Company"
-            detail={selectedVisit?.visitorCompany || "N/A"}
           />
           {isInternalHistory && (
             <>
+              <DetalisFormatted
+                title="Visitor Type"
+                detail={selectedVisit?.visitorType}
+              />
+              <DetalisFormatted
+                title="Visitor Company"
+                detail={selectedVisit?.visitorCompany || "N/A"}
+              />
               <DetalisFormatted
                 title="Department"
                 detail={selectedVisit?.department?.name || "N/A"}
@@ -408,40 +421,115 @@ const VisitorHistory = () => {
           />
           {!isInternalHistory && (
             <>
+              <br />
+              <div className="font-bold">Company Details</div>
+              <DetalisFormatted
+                title="Brand Name"
+                detail={data?.visitor?.brandName || "N/A"}
+              />
+              <DetalisFormatted
+                title="Registered Company"
+                detail={data?.visitor?.registeredClientCompany || "N/A"}
+              />
+              <DetalisFormatted
+                title="State"
+                detail={data?.visitor?.state || "N/A"}
+              />
+              <DetalisFormatted
+                title="City"
+                detail={data?.visitor?.city || "N/A"}
+              />
+              <DetalisFormatted
+                title="Sector"
+                detail={data?.visitor?.sector || "N/A"}
+              />
+              <br />
+              <div className="font-bold">GST</div>
+              <DetalisFormatted
+                title="GST Number"
+                detail={data?.visitor?.gstNumber || "N/A"}
+              />
+              <DetalisFormatted
+                title="Upload File"
+                detail={renderFileLink(data?.visitor?.gstFile)}
+              />
+              <br />
+              <div className="font-bold">Verification</div>
+              <DetalisFormatted
+                title="ID Type"
+                detail={data?.visitor?.idProof?.idType || "N/A"}
+              />
+              <DetalisFormatted
+                title="ID Number"
+                detail={data?.visitor?.idProof?.idNumber || "N/A"}
+              />
+              <DetalisFormatted
+                title="Upload File"
+                detail={renderFileLink(data?.visitor?.otherFile)}
+              />
+              <br />
+              <div className="font-bold">Others</div>
+            </>
+          )}
+          <DetalisFormatted
+            title="Date of Visit"
+            detail={selectedVisit?.dateOfVisit}
+          />
+          <DetalisFormatted
+            title={isInternalHistory ? "Check In" : "Checkin Time"}
+            detail={selectedVisit?.checkIn}
+          />
+          <DetalisFormatted
+            title={isInternalHistory ? "Check In By" : "Checkin By"}
+            detail={selectedVisit?.checkedInBy}
+          />
+          <DetalisFormatted
+            title={isInternalHistory ? "Check Out" : "Checkout Time"}
+            detail={selectedVisit?.checkOut}
+          />
+          <DetalisFormatted
+            title={isInternalHistory ? "Check Out By" : "Checkout By"}
+            detail={selectedVisit?.checkedOutBy}
+          />
+          {!isInternalHistory &&
+            selectedVisit?.purposeOfVisit !== "Meeting Room Booking" && (
+            <>
+              <br />
+              <div className="font-bold">Payment Details</div>
               <DetalisFormatted
                 title="Taxable Amount"
                 detail={`INR ${inrFormat(selectedVisit?.amount || 0)}`}
               />
-          <DetalisFormatted
-            title="Discount"
-            detail={`INR ${inrFormat(selectedVisit?.discount || 0)}`}
-          />
-          <DetalisFormatted
-            title="GST Amount"
-            detail={`INR ${inrFormat(selectedVisit?.gstAmount || 0)}`}
-          />
-          <DetalisFormatted
-            title="Total Amount"
-            detail={`INR ${inrFormat(selectedVisit?.rawTotalAmount || 0)}`}
-          />
-          <DetalisFormatted
-            title="Payment Status"
-            detail={selectedVisit?.paymentStatus}
-          />
-          <DetalisFormatted
-            title="Payment Verification"
-            detail={selectedVisit?.paymentVerification || "N/A"}
-          />
-          <DetalisFormatted
-            title="Payment Mode"
-            detail={selectedVisit?.paymentMode || "N/A"}
-          />
-          <DetalisFormatted
-            title="Uploaded File"
-            detail={renderPaymentProof(selectedVisit)}
-          />
+              <DetalisFormatted
+                title="GST Amount"
+                detail={`INR ${inrFormat(selectedVisit?.gstAmount || 0)}`}
+              />
+              <DetalisFormatted
+                title="Total Amount"
+                detail={`INR ${inrFormat(selectedVisit?.rawTotalAmount || 0)}`}
+              />
+              <DetalisFormatted
+                title="Discount"
+                detail={`INR ${inrFormat(selectedVisit?.discount || 0)}`}
+              />
+              <DetalisFormatted
+                title="Mode"
+                detail={selectedVisit?.paymentMode || "N/A"}
+              />
+              <DetalisFormatted
+                title="Status"
+                detail={selectedVisit?.paymentStatus}
+              />
+              <DetalisFormatted
+                title="Verification"
+                detail={selectedVisit?.paymentVerification || "N/A"}
+              />
+              <DetalisFormatted
+                title="Uploaded File"
+                detail={renderPaymentProof(selectedVisit)}
+              />
             </>
-          )}
+            )}
         </div>
       </MuiModal>
     </PageFrame>
