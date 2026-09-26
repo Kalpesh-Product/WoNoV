@@ -104,7 +104,7 @@ const fetchVisitorHistory = async (req, res, next) => {
       company: req.company,
     })
       .select(
-        "firstName lastName email phoneNumber visitorFlag visitorRoles visitorType purposeOfVisit dateOfVisit checkIn checkOut checkedInBy checkedOutBy visitorCompany amount discount gstAmount totalAmount paymentStatus paymentVerification paymentMode createdAt",
+        "firstName lastName email phoneNumber gender city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorFlag visitorRoles visitorType purposeOfVisit dateOfVisit checkIn checkOut checkedInBy checkedOutBy visitorCompany amount discount gstAmount totalAmount paymentStatus paymentVerification paymentMode createdAt",
       )
       .populate("checkedInBy", "firstName lastName")
       .populate("checkedOutBy", "firstName lastName")
