@@ -2,8 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useCurrency } from "../context/CurrencyContext";
 
 const CurrencySelector = () => {
-  const { currencies, currency, isRatesLoading, ratesError, setCurrency } =
-    useCurrency();
+  const {
+    currencies,
+    currency,
+    isRatesLoading,
+    ratesDate,
+    ratesError,
+    setCurrency,
+  } = useCurrency();
   const [isOpen, setIsOpen] = useState(false);
   const selectorRef = useRef(null);
 
@@ -34,7 +40,10 @@ const CurrencySelector = () => {
         type="button"
         aria-label="Investor dashboard currency"
         aria-expanded={isOpen}
-        title={ratesError || "Live INR exchange rates"}
+        title={
+          ratesError ||
+          (ratesDate ? `Exchange rates as of ${ratesDate}` : "Exchange rates")
+        }
         onClick={() => setIsOpen((open) => !open)}
         className="flex h-10 w-full items-center justify-between rounded-md border border-[#1E3D73] bg-[#1E3D73] px-3 text-left font-normal text-white outline-none focus:ring-1 focus:ring-[#1E3D73]"
       >

@@ -1,4 +1,5 @@
 import { HiOutlineDocumentText } from "react-icons/hi2";
+import { useNavigate } from "react-router-dom";
 
 const reportSections = [
   {
@@ -29,7 +30,6 @@ const reportSections = [
   {
     title: "Leave Management",
     reports: [
-      "Leaves Usage Report",
       "Paid & Unpaid Leave Report",
       "Current Leave Balance Report",
       "Leaves History Report",
@@ -38,6 +38,22 @@ const reportSections = [
 ];
 
 const HrReportDirectory = () => {
+  const navigate = useNavigate();
+
+  const openReport = (report) => {
+    if (report === "Paid & Unpaid Leave Report") {
+      navigate("/app/dashboard/HR-dashboard/mix-bag/reports/paid-unpaid-leaves");
+      return;
+    }
+    if (report === "Current Leave Balance Report") {
+      navigate("/app/dashboard/HR-dashboard/mix-bag/reports/current-leave-balance");
+      return;
+    }
+    if (report === "Leaves History Report") {
+      navigate("/app/dashboard/HR-dashboard/mix-bag/reports/leave-history");
+    }
+  };
+
   return (
     <div className="p-4" style={{ fontFamily: "Poppins-Regular" }}>
       <h1
@@ -62,16 +78,23 @@ const HrReportDirectory = () => {
 
             <div className="flex flex-col gap-2 px-5 py-4">
               {section.reports.map((report) => (
-                <div
+                <button
+                  type="button"
                   key={report}
-                  className="flex items-center gap-2 text-sm text-sky-600"
+                  onClick={() => openReport(report)}
+                  disabled={
+                    report !== "Paid & Unpaid Leave Report" &&
+                    report !== "Current Leave Balance Report" &&
+                    report !== "Leaves History Report"
+                  }
+                  className="flex items-center gap-2 text-left text-sm text-sky-600 disabled:cursor-default"
                 >
                   <HiOutlineDocumentText
                     aria-hidden="true"
                     className="shrink-0 text-base"
                   />
                   <span>{report}</span>
-                </div>
+                </button>
               ))}
             </div>
           </section>
