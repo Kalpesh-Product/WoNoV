@@ -20,8 +20,12 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import useAuth from "../../hooks/useAuth";
 import buildDateFilterPayload from "../../utils/buildDateFilter";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const ManageVisitors = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectedVisitDate = searchParams.get("lastVisitedAt");
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const allowedVisitScheduleEditorIds = [
@@ -62,12 +66,17 @@ const ManageVisitors = () => {
   const editedCheckInRaw = watch("checkInRaw");
 
   const initialVisitorDateRange = useMemo(
-    () => ({
-      startDate: dayjs().startOf("month").toDate(),
-      endDate: dayjs().endOf("month").toDate(),
-      key: "selection",
-    }),
-    [],
+    () => {
+      const requestedDate = dayjs(redirectedVisitDate);
+      const rangeDate = requestedDate.isValid() ? requestedDate : dayjs();
+
+      return {
+        startDate: rangeDate.startOf("month").toDate(),
+        endDate: rangeDate.endOf("month").toDate(),
+        key: "selection",
+      };
+    },
+    [redirectedVisitDate],
   );
   const [visitorDateRange, setVisitorDateRange] = useState(
     initialVisitorDateRange,
@@ -95,6 +104,7 @@ const ManageVisitors = () => {
         params: {
           filters: visitorFilters,
           multipleVisits: true,
+          includeVisitCounts: true,
         },
       });
       return response.data;
@@ -234,7 +244,7 @@ const ManageVisitors = () => {
   };
 
   const visitorsColumns = [
-    { field: "srNo", headerName: "Sr No" },
+    { field: "srNo", headerName: "Sr No", width: 80, minWidth: 80 },
     // { field: "firstName", headerName: "First Name" },
     // { field: "lastName", headerName: "Last Name" },
     { field: "name", headerName: "Name" },
@@ -243,6 +253,7 @@ const ManageVisitors = () => {
     { field: "purposeOfVisit", headerName: "Purpose" },
     { field: "toMeet", headerName: "To Meet" },
     { field: "date", headerName: "Date of Visit" },
+    { field: "visitCount", headerName: "Visit Count" },
     {
       field: "checkIn",
       headerName: "Check In",
@@ -267,6 +278,18 @@ const ManageVisitors = () => {
             </div>
             <ThreeDotMenu
               menuItems={[
+                {
+                  label: "View History",
+                  onClick: () =>
+                    navigate(
+                      `/app/visitors/manage-visitors/visitor-history/${data.mongoId}?type=internal`,
+                      {
+                        state: {
+                          breadcrumbLabel: data.name || "Visitor History",
+                        },
+                      },
+                    ),
+                },
                 {
                   label: "Edit",
                   onClick: () => openModalWithMode(data, "edit"),
@@ -375,13 +398,26 @@ const ManageVisitors = () => {
               latestVisitorVisit?.visitorCompany || item.visitorCompany,
             date: latestVisitorVisit?.dateOfVisit || item.date,
             phoneNumber: item.phoneNumber,
+            visitCount: item.visitCounts?.internal ?? 0,
             purposeOfVisit:
               latestVisitorVisit?.purposeOfVisit || item.purposeOfVisit,
-            toMeet: item.toMeet
-              ? `${item.toMeet?.firstName} ${item.toMeet?.lastName}`
-              : item.clientToMeet
-                ? item?.clientToMeet?.employeeName
+            toMeet: latestVisitorVisit?.toMeet
+              ? `${latestVisitorVisit.toMeet?.firstName || ""} ${latestVisitorVisit.toMeet?.lastName || ""}`.trim()
+              : item.toMeet
+                ? `${item.toMeet?.firstName || ""} ${item.toMeet?.lastName || ""}`.trim()
                 : "",
+            clientToMeet:
+              latestVisitorVisit?.clientToMeet?.employeeName ||
+              item.clientToMeet?.employeeName ||
+              "N/A",
+            toMeetCompany:
+              latestVisitorVisit?.toMeetCompany?.clientName ||
+              latestVisitorVisit?.toMeetCompany?.companyName ||
+              latestVisitorVisit?.toMeetCompany?.name ||
+              item.toMeetCompany?.clientName ||
+              item.toMeetCompany?.companyName ||
+              item.toMeetCompany?.name ||
+              "N/A",
             buildingName: getBuildingName(item),
             unitName: getUnitName(item),
             checkIn: latestVisitorVisit?.checkIn || item.checkIn,
@@ -408,7 +444,7 @@ const ManageVisitors = () => {
         <YearWiseTable
           dateColumn={"checkIn"}
           search
-          tableTitle="Visitors Today"
+          tableTitle="Internal Visitors"
           initialDateRange={initialVisitorDateRange}
           onDateFilterChange={handleVisitorDateFilterChange}
           // data={visitorsData
@@ -502,6 +538,14 @@ const ManageVisitors = () => {
               <DetalisFormatted
                 title="To Meet"
                 detail={selectedVisitor?.toMeet}
+              />
+              <DetalisFormatted
+                title="Client To Meet"
+                detail={selectedVisitor?.clientToMeet || "N/A"}
+              />
+              <DetalisFormatted
+                title="Company To Meet"
+                detail={selectedVisitor?.toMeetCompany || "N/A"}
               />
               <DetalisFormatted
                 title="Building"

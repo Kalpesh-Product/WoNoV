@@ -34,7 +34,7 @@ const BreadCrumbComponent = () => {
   const queryParamEntries = Array.from(searchParams.entries());
 
   // Extract and process the path, excluding 'app' for display purposes
-  const pathSegments =
+  const basePathSegments =
     location.pathname === "/app/dashboard"
       ? ["dashboard"]
       : location.pathname
@@ -43,27 +43,47 @@ const BreadCrumbComponent = () => {
           (segment) => segment && segment !== "app" && segment !== "dashboard"
         );
 
+  const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
+  const historyType = searchParams.get("type");
+  const pathSegments = [...basePathSegments];
+
+  if (isVisitorHistoryPath && historyType) {
+    const historyIndex = pathSegments.indexOf("visitor-history");
+    const historyTab =
+      historyType === "internal" ? "internal-visitors" : "external-clients";
+    pathSegments.splice(historyIndex, 0, historyTab);
+  }
+
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
+    const isNonNavigableSegment = segment === "visitor-history";
+    const isHistoryTabSegment =
+      isVisitorHistoryPath &&
+      (segment === "internal-visitors" || segment === "external-clients");
 
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isDirectAppPath
-      ? `/app/${path}`
-      : `/app/dashboard/${path}`;
+    const fullPath = isHistoryTabSegment
+      ? `/app/visitors/manage-visitors/${segment}`
+      : isDirectAppPath
+        ? `/app/${path}`
+        : `/app/dashboard/${path}`;
 
     // Capitalize for display
     // const displayText = decodeURIComponent(segment)
     // .replace(/-/g, " ")
     // .replace(/\b\w/g, (char) => char.toUpperCase());
 
-    const displayText = formatLabel(segment);
+    const displayText =
+      isLast && location.state?.breadcrumbLabel
+        ? location.state.breadcrumbLabel
+        : formatLabel(segment);
 
-    return isLast ? (
+    return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">
         {displayText}
       </Typography>
@@ -82,6 +102,8 @@ const BreadCrumbComponent = () => {
 
   // Append query parameters dynamically to the breadcrumb
   queryParamEntries.forEach(([key, value], index) => {
+    if (isVisitorHistoryPath && key === "type") return;
+
     breadcrumbs.push(
       <Typography key={`param-${index}`} color="text.primary">
         {formatLabel(value)}

@@ -74,6 +74,8 @@ import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
 import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
+import HrReportDirectory from "../pages/Dashboard/HrDashboard/Mixbag/HrReportDirectory";
+import HrPayslips from "../pages/Dashboard/HrDashboard/Mixbag/HrPayslips";
 import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
 import ComapanyHandbook from "../pages/Dashboard/HrDashboard/Complaince/CompanyHandbook";
@@ -194,6 +196,7 @@ import VisitorLayout from "../pages/Visitors/VisitorLayout";
 import VisitorDashboard from "../pages/Visitors/VisitorDashboard";
 import AddVisitor from "../pages/Visitors/Forms/AddVisitor";
 import ManageVisitors from "../pages/Visitors/ManageVisitors";
+import VisitorHistory from "../pages/Visitors/VisitorHistory";
 import VisitorTeamMembers from "../pages/Visitors/VisitorTeamMembers";
 import VisitorReports from "../pages/Visitors/VisitorReports";
 import VisitorReviews from "../pages/Visitors/VisitorReviews";
@@ -2703,6 +2706,14 @@ export const routes = createBrowserRouter([
                         element: <PayrollEntry />,
                       },
                       {
+                        path: "mix-bag/reports",
+                        element: <HrReportDirectory />,
+                      },
+                      {
+                        path: "mix-bag/payslips",
+                        element: <HrPayslips />,
+                      },
+                      {
                         path: "mix-bag/department-kpa-kra",
                         element: <HrTasksLayout />,
                         children: [
@@ -4599,6 +4610,10 @@ export const routes = createBrowserRouter([
                         path: "external-clients", // Page with table showing a list of all visitors
                         element: <ExternalClients />,
                         index: true,
+                      },
+                      {
+                        path: "visitor-history/:visitorId",
+                        element: <VisitorHistory />,
                       },
                     ],
                   },

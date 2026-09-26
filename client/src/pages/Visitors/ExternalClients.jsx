@@ -28,7 +28,7 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";
@@ -49,7 +49,9 @@ const ExternalClients = ({
   financeView = false,
 }) => {
   const axios = useAxiosPrivate();
-   const navigate = useNavigate();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectedVisitDate = searchParams.get("lastVisitedAt");
   const { auth } = useAuth();
   const allowedVisitScheduleEditorIds = [
     "67b83885daad0f7bab2f18a9",
@@ -127,12 +129,17 @@ const ExternalClients = ({
   };
 
   const initialClientDateRange = useMemo(
-    () => ({
-      startDate: dayjs().startOf("month").toDate(),
-      endDate: dayjs().endOf("month").toDate(),
-      key: "selection",
-    }),
-    [],
+    () => {
+      const requestedDate = dayjs(redirectedVisitDate);
+      const rangeDate = requestedDate.isValid() ? requestedDate : dayjs();
+
+      return {
+        startDate: rangeDate.startOf("month").toDate(),
+        endDate: rangeDate.endOf("month").toDate(),
+        key: "selection",
+      };
+    },
+    [redirectedVisitDate],
   );
   const [clientDateRange, setClientDateRange] = useState(
     initialClientDateRange,
@@ -184,6 +191,7 @@ const ExternalClients = ({
           params: {
             filters: clientFilters,
             multipleVisits: true,
+            includeVisitCounts: true,
             ...(financeView && {
               type: "day-pass",
               visitorFlag: "Client",
@@ -608,7 +616,13 @@ const ExternalClients = ({
   ];
 
   const visitorsColumns = [
-    { field: "srNo", headerName: "Sr No", sort: "desc" },
+    {
+      field: "srNo",
+      headerName: "Sr No",
+      sort: "desc",
+      width: 80,
+      minWidth: 80,
+    },
     // { field: "firstName", headerName: "First Name" },
     // { field: "lastName", headerName: "Last Name" },
     { field: "name", headerName: "Name" },
@@ -619,6 +633,9 @@ const ExternalClients = ({
       headerName: "Purpose",
     },
     { field: "dateOfVisit", headerName: "Date of Visit" },
+    ...(!financeView
+      ? [{ field: "visitCount", headerName: "Visit Count" }]
+      : []),
     {
       field: "checkIn",
       headerName: "Check In",
@@ -698,6 +715,18 @@ const ExternalClients = ({
           params.data.paymentVerification || "Pending",
         ).toLowerCase();
 
+        const historyMenuItem = {
+          label: "View History",
+          onClick: () =>
+            navigate(
+              `/app/visitors/manage-visitors/visitor-history/${params.data.mongoId}?type=client`,
+              {
+                state: {
+                  breadcrumbLabel: params.data.name || "Visitor History",
+                },
+              },
+            ),
+        };
         const menuItems = financeStatusMenu
           ? [
               !isPaid && {
@@ -740,6 +769,7 @@ const ExternalClients = ({
                 },
             ].filter(Boolean)
           : [
+              historyMenuItem,
               {
                 label: "Edit",
                 onClick: () => {
@@ -1002,23 +1032,48 @@ const ExternalClients = ({
           initialDateRange={initialClientDateRange}
           onDateFilterChange={handleClientDateFilterChange}
           data={[
-            ...visitorsData
-
-              .filter((visitor) => hasRole(visitor, "Client"))
+            ...Array.from(
+              new Map(
+                visitorsData
+                  .filter((visitor) => hasRole(visitor, "Client"))
+                  .map((visitor) => [String(visitor._id), visitor]),
+              ).values(),
+            )
               .map((item, index) => {
                 const latestVisit =
                   Array.isArray(item?.externalVisits) &&
                   item.externalVisits.length > 0
                     ? [...item.externalVisits]
                         .filter(
-                          (visit) =>
-                            visit?.visitorType === "Full-Day Pass" ||
-                            visit?.visitorType === "Half-Day Pass",
+                          (visit) => {
+                            const visitRoles = Array.isArray(visit?.visitorRoles)
+                              ? visit.visitorRoles
+                              : [];
+                            return (
+                              visit?.visitorFlag === "Client" ||
+                              visitRoles.includes("Client") ||
+                              [
+                                "Meeting",
+                                "Full-Day Pass",
+                                "Half-Day Pass",
+                              ].includes(visit?.visitorType)
+                            );
+                          },
                         )
                         .sort(
                           (a, b) =>
-                            new Date(b?.dateOfVisit || 0).getTime() -
-                            new Date(a?.dateOfVisit || 0).getTime(),
+                            new Date(
+                              b?.checkIn ||
+                                b?.dateOfVisit ||
+                                b?.createdAt ||
+                                0,
+                            ).getTime() -
+                            new Date(
+                              a?.checkIn ||
+                                a?.dateOfVisit ||
+                                a?.createdAt ||
+                                0,
+                            ).getTime(),
                         )[0] || null
                     : null;
 
@@ -1052,6 +1107,7 @@ const ExternalClients = ({
                   name: `${item.firstName} ${item.lastName}`,
                   address: item.address,
                   phoneNumber: item.phoneNumber,
+                  visitCount: item.visitCounts?.client ?? 0,
                   dateOfVisit: latestVisit?.dateOfVisit || item.dateOfVisit,
                   email: item.email,
                   // purposeOfVisit:
