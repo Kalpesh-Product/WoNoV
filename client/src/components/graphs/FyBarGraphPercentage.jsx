@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
 import { inrFormat } from "../../utils/currencyFormat";
@@ -179,9 +179,20 @@ const FyBarGraphPercentage = ({
   legendItems = [],
   showSmallLabels = false,
   hideHeaderAmounts = false,
+  hideTooltipCurrencySymbol = false,
   showFiscalYearInTitle = true,
 }) => {
-  const { format } = useCurrency();
+  const { convert, format } = useCurrency();
+  const formatTooltipAmount = useCallback(
+    (amount) =>
+      hideTooltipCurrencySymbol
+        ? new Intl.NumberFormat("en-IN", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(Math.trunc(convert(amount)))
+        : format(amount),
+    [convert, format, hideTooltipCurrencySymbol],
+  );
   const currentFYStartYear = getCurrentFinancialYearStart();
   const fyOptions = useMemo(() => {
     const yearsSet = new Set();
@@ -561,7 +572,7 @@ const FyBarGraphPercentage = ({
                   <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:${color}; display:inline-block;"></span>
                   <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
                     <span>${hasProjectedValue ? `Projected ${label}` : label}:</span>
-                    <strong>${format(rawVal)}</strong>
+                    <strong>${formatTooltipAmount(rawVal)}</strong>
                   </span>
                 </div>
                 ${vertical === "Alternate" ? '<hr style="margin:2px 0 8px; border:0; border-top:1px solid #e5e7eb;" />' : ""}`;
@@ -583,7 +594,7 @@ const FyBarGraphPercentage = ({
                     <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
                     <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
                       <span>${hasProjectedValue ? "Projected Total" : "Total"}:</span>
-                      <strong>${format(total)}</strong>
+                      <strong>${formatTooltipAmount(total)}</strong>
                     </span>
                   </div>
                 </div>
@@ -652,7 +663,7 @@ const FyBarGraphPercentage = ({
     displayedStackedSeries,
     tooltipBuilder,
     investorVariant,
-    format,
+    formatTooltipAmount,
     seriesColors,
     legendItems.length,
     showSmallLabels,

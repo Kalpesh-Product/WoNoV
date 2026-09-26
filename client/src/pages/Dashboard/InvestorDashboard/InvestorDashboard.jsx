@@ -46,6 +46,29 @@ const fiscalMonthIndex = (date) => {
 const APPRECIATION_BASE_VALUATION = 60_000_000;
 const APPRECIATION_MONTHLY_INCREMENT = 700_000;
 const APPRECIATION_PROJECTION_START_INDEX = 5;
+const formatGraphAmount = (amount, currency, convert, options = {}) =>
+  new Intl.NumberFormat("en-IN", {
+    ...options,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.trunc(convert(amount)));
+
+const formatGraphScaleAmount = (
+  amount,
+  convert,
+  scale,
+  fractionDigits,
+  locale = "en-IN",
+) => {
+  const scaledAmount = convert(amount) / scale;
+  const precision = 10 ** fractionDigits;
+  const truncatedAmount = Math.trunc(scaledAmount * precision) / precision;
+
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
+  }).format(truncatedAmount);
+};
 
 const BizNestTitle = ({ children, prefix, monochrome = false }) => (
   <span className="normal-case">
@@ -347,6 +370,7 @@ const InvestorSnapshotSection = ({
   hasPermission,
   perSqFtFinancialsByYear = {},
   currentAssetValueOwned = APPRECIATION_BASE_VALUATION,
+  currentExitInventory = 0,
   currentProjectedFinancials = {},
   actualFinancialsByYear = {},
 }) => {
@@ -393,7 +417,11 @@ const InvestorSnapshotSection = ({
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
-        { label: "Exit Inventory", value: "1,000 Desks", tone: "text-[#12a573]" },
+        {
+          label: "Exit Inventory",
+          value: `${Number(currentExitInventory).toLocaleString("en-IN")} Desks`,
+          tone: "text-[#12a573]",
+        },
         { label: "Asset Owned", value: format(currentAssetValueOwned), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2026-27"),
@@ -414,7 +442,7 @@ const InvestorSnapshotSection = ({
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
-        { label: "Exit Inventory", value: "850 Desks", tone: "text-[#12a573]" },
+        { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
         { label: "Asset Owned", value: `${format(4_885_986)}+`, tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2025-26"),
@@ -434,7 +462,7 @@ const InvestorSnapshotSection = ({
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
-        { label: "Exit Inventory", value: "500 Desks", tone: "text-[#12a573]" },
+        { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
         { label: "Asset Owned", value: `${format(4_427_360)}+`, tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2024-25"),
@@ -703,6 +731,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       hideYearNavigation
       investorVariant
       hideHeaderAmounts
+      hideTooltipCurrencySymbol
       showFiscalYearInTitle={false}
     />
   );
@@ -826,7 +855,7 @@ const fiscalYearMonths = (fiscalYear) => {
 };
 
 const InvestorAppreciationCenter = () => {
-  const { currency, format } = useCurrency();
+  const { currency, convert } = useCurrency();
   const [valuationAsOf, setValuationAsOf] = useState(() => dayjs());
   const currentFiscalYear = fiscalYearLabel(valuationAsOf);
 
@@ -852,28 +881,45 @@ const InvestorAppreciationCenter = () => {
         })),
     [currentFiscalYear],
   );
+  const currentValuation =
+    valuationMonths.find(
+      ({ month }) => month === valuationAsOf.format("MMM-YY"),
+    ) || valuationMonths[0];
+  const maximumConvertedValuation = Math.max(
+    0,
+    ...valuationMonths.map(({ amount }) => convert(amount)),
+  );
+  const valuationDisplayScale =
+    maximumConvertedValuation >= 10_000_000
+      ? 10_000_000
+      : maximumConvertedValuation >= 100_000
+        ? 100_000
+        : 1_000;
+  const valuationScaleLabel =
+    valuationDisplayScale === 10_000_000
+      ? "Crores"
+      : valuationDisplayScale === 100_000
+        ? "Lakhs"
+        : "Thousands";
   const graphData = useMemo(
     () => [
       {
         group: currentFiscalYear,
         name: "Amount Valuation",
-        data: valuationMonths.map(({ amount }) => amount / 10_000_000),
+        data: valuationMonths.map(
+          ({ amount }) => convert(amount) / valuationDisplayScale,
+        ),
       },
     ],
-    [currentFiscalYear, valuationMonths],
+    [convert, currentFiscalYear, valuationDisplayScale, valuationMonths],
   );
-  const currentValuation =
-    valuationMonths.find(
-      ({ month }) => month === valuationAsOf.format("MMM-YY"),
-    ) || valuationMonths[0];
-  const maximumValuationInCrores = Math.max(
-    0,
-    ...valuationMonths.map(({ amount }) => amount / 10_000_000),
+  const maximumScaledValuation =
+    maximumConvertedValuation / valuationDisplayScale;
+  const valuationAxisStep = Math.max(
+    1,
+    Math.ceil(maximumScaledValuation / 4),
   );
-  const valuationScaleMaximum = Math.max(
-    8,
-    Math.ceil(maximumValuationInCrores / 2) * 2,
-  );
+  const valuationScaleMaximum = valuationAxisStep * 4;
 
   const options = {
     chart: {
@@ -910,7 +956,12 @@ const InvestorAppreciationCenter = () => {
       enabled: true,
       formatter: (_value, { dataPointIndex }) => {
         const amount = valuationMonths[dataPointIndex]?.amount || 0;
-        return format(amount);
+        return formatGraphScaleAmount(
+          amount,
+          convert,
+          valuationDisplayScale,
+          2,
+        );
       },
       offsetY: -20,
       style: {
@@ -937,9 +988,9 @@ const InvestorAppreciationCenter = () => {
     yaxis: {
       min: 0,
       max: valuationScaleMaximum,
-      tickAmount: valuationScaleMaximum / 2,
+      tickAmount: 4,
       title: {
-        text: `Property Owned (${currency})`,
+        text: `Property Owned ${valuationScaleLabel} (${currency})`,
         style: {
           color: "#1E3D73",
         },
@@ -961,7 +1012,7 @@ const InvestorAppreciationCenter = () => {
         return (
           `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
           `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${month || ""}</div>` +
-          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0BDA51;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? format(valuation.amount) : "-"}</span></span></div>` +
+          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0BDA51;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? formatGraphAmount(valuation.amount, currency, convert) : "-"}</span></span></div>` +
           `</div>`
         );
       },
@@ -990,7 +1041,9 @@ const InvestorAppreciationCenter = () => {
           currentValuation ? (
             <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium text-[#274784]">
               <span>REAL ESTATE VALUE :</span>
-              <span>{format(currentValuation.amount)}</span>
+              <span>
+                {formatGraphAmount(currentValuation.amount, currency, convert)}
+              </span>
             </div>
           ) : null
         }
@@ -1270,6 +1323,7 @@ const InvestorIncomeExpenseGraph = ({
   assetValueOwned,
   projectedFinancials,
   snapshotAssetValueOwned = assetValueOwned,
+  totalInventory,
 }) => {
   const { currency, convert, format } = useCurrency();
   const axios = useAxiosPrivate();
@@ -1474,22 +1528,40 @@ const InvestorIncomeExpenseGraph = ({
   const perSqFtFinancialsByYear = useMemo(() => {
     if (!totalSqft) return {};
 
-    return Object.fromEntries(
-      Object.entries(actualFinancialsByYear).map(([fiscalYear, values]) => [
-        fiscalYear,
-        {
-          income: values.income / totalSqft,
-          expense: values.expense / totalSqft,
-          profitLoss: values.profitLoss / totalSqft,
-        },
-      ]),
+    const sqftReductionByFiscalYear = {
+      "FY 2025-26": 5_000,
+      "FY 2024-25": 7_500,
+    };
+    const financialsByYear = Object.fromEntries(
+      Object.entries(actualFinancialsByYear).map(([fiscalYear, values]) => {
+        const fiscalYearSqft = Math.max(
+          totalSqft - (sqftReductionByFiscalYear[fiscalYear] || 0),
+          0,
+        );
+
+        return [
+          fiscalYear,
+          {
+            income: fiscalYearSqft ? values.income / fiscalYearSqft : 0,
+            expense: fiscalYearSqft ? values.expense / fiscalYearSqft : 0,
+            profitLoss: fiscalYearSqft ? values.profitLoss / fiscalYearSqft : 0,
+          },
+        ];
+      }),
     );
-  }, [actualFinancialsByYear, totalSqft]);
+
+    financialsByYear[currentFiscalYear] = {
+      income: (Number(projectedFinancials?.revenue) || 0) / totalSqft,
+      expense: (Number(projectedFinancials?.expense) || 0) / totalSqft,
+      profitLoss: (Number(projectedFinancials?.profitLoss) || 0) / totalSqft,
+    };
+
+    return financialsByYear;
+  }, [actualFinancialsByYear, currentFiscalYear, projectedFinancials, totalSqft]);
 
  const {
     series,
     projectedIncomeTotal,
-    projectedExpenseTotal,
     projectionFlags,
   } = useMemo(() => {
     const incomeByYear = new Map();
@@ -1631,6 +1703,15 @@ const InvestorIncomeExpenseGraph = ({
     7_500_000,
     Math.ceil(highestProjectionValue / projectionAxisStep) * projectionAxisStep,
   );
+  const highestConvertedProjectionValue = convert(highestProjectionValue);
+  const projectionDisplayScale =
+    currency === "INR" || highestConvertedProjectionValue >= 100_000
+      ? 100_000
+      : 1_000;
+  const projectionScaleLabel =
+    projectionDisplayScale === 100_000 ? "Lakhs" : "Thousands";
+  const projectionBarFractionDigits =
+    currency === "INR" || projectionDisplayScale === 100_000 ? 2 : 1;
   const options = {
     chart: {
       id: "investor-income-vs-expense",
@@ -1669,15 +1750,13 @@ const InvestorIncomeExpenseGraph = ({
       enabled: true,
       formatter: (value) =>
         Number(value) > 0
-          ? currency === "INR"
-            ? `${format(value / 100_000, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-              })}L`
-            : format(value, {
-                notation: "compact",
-                maximumFractionDigits: 2,
-              })
+          ? formatGraphScaleAmount(
+              value,
+              convert,
+              projectionDisplayScale,
+              projectionBarFractionDigits,
+              "de-DE",
+            )
           : "",
       offsetY: -20,
       style: {
@@ -1716,10 +1795,7 @@ const InvestorIncomeExpenseGraph = ({
       tickAmount: projectionAxisMax / projectionAxisStep,
       forceNiceScale: false,
       title: {
-        text:
-          currency === "INR"
-            ? "Amount In Lakhs (INR)"
-            : `Amount In Thousands (${currency})`,
+        text: `Amount In ${projectionScaleLabel} (${currency})`,
         style: {
           color: "#1E3D73",
         },
@@ -1735,7 +1811,11 @@ const InvestorIncomeExpenseGraph = ({
             : `${Math.round(convert(value) / 1_000)}`,
       },
     },
-    tooltip: { y: { formatter: (value) => format(value) } },
+    tooltip: {
+      y: {
+        formatter: (value) => formatGraphAmount(value, currency, convert),
+      },
+    },
   };
 
   const projectionLegend = (
@@ -1784,7 +1864,9 @@ const InvestorIncomeExpenseGraph = ({
         headerRightContent={
           <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
             <span>Projection:</span>
-            <span>{format(projectedIncomeTotal + projectedExpenseTotal)}</span>
+            <span>
+              {formatGraphAmount(projectedIncomeTotal, currency, convert)}
+            </span>
           </div>
         }
         currentYear={selectedFiscalYear}
@@ -1794,10 +1876,13 @@ const InvestorIncomeExpenseGraph = ({
         sectionBodyBorderColor="#9FB2CF"
       />
       <InvestorSnapshotSection
-        format={format}
+        format={(amount, options) =>
+          formatGraphAmount(amount, currency, convert, options)
+        }
         hasPermission={hasPermission}
         perSqFtFinancialsByYear={perSqFtFinancialsByYear}
         currentAssetValueOwned={snapshotAssetValueOwned}
+        currentExitInventory={totalInventory}
         currentProjectedFinancials={projectedFinancials}
         actualFinancialsByYear={actualFinancialsByYear}
       />
@@ -1808,7 +1893,7 @@ const InvestorIncomeExpenseGraph = ({
 };
 
 const InvestorDashboard = () => {
-  const { format } = useCurrency();
+  const { currency, convert } = useCurrency();
   const axios = useAxiosPrivate();
   const location = useLocation();
   const navigate = useNavigate();
@@ -2065,80 +2150,14 @@ const InvestorDashboard = () => {
     },
     enabled: showDashboardHome,
   });
-  const { incomePerSqFt, expensePerSqFt } = useMemo(() => {
-    const totalSqft = revenueExpenseData
-      .filter((item) => item?.units)
-      .flatMap((item) => (Array.isArray(item.units) ? item.units : []))
-      .reduce((total, unit) => total + (Number(unit?.sqft) || 0), 0);
-
-    if (!totalSqft) return { incomePerSqFt: 0, expensePerSqFt: 0 };
-
-    const normalizeStatus = (value) =>
-      typeof value === "string"
-        ? value.trim().toLowerCase()
-        : value
-          ? "paid"
-          : "unpaid";
-    const numericAmount = (value) => {
-      if (typeof value === "number") return value;
-      const parsedValue = parseFloat(String(value || "").replace(/,/g, ""));
-      return Number.isNaN(parsedValue) ? 0 : parsedValue;
-    };
-    const sources = [
-      ...(investorSimpleRevenue.meetingRevenue || []).map((item) => ({
-        amount: item.taxable,
-        date: item.date,
-        status: item.status,
-      })),
-      ...(investorSimpleRevenue.alternateRevenues || []).map((item) => ({
-        amount: item.taxableAmount,
-        date: item.invoiceCreationDate,
-        status: item.status,
-      })),
-      ...(investorSimpleRevenue.virtualOfficeRevenues || []).map((item) => ({
-        amount: item.revenue ?? item.taxableAmount,
-        date: item.rentDate,
-        status: item.status ?? item.rentStatus,
-      })),
-      ...(investorSimpleRevenue.workationRevenues || []).map((item) => ({
-        amount: item.taxableAmount,
-        date: item.date,
-        status: item.status,
-      })),
-      ...(investorSimpleRevenue.coworkingRevenues || []).map((item) => ({
-        amount: item.revenue,
-        date: item.rentDate,
-        status: item.rentStatus,
-      })),
-    ];
-    const currentFiscalYear = fiscalYearLabel(dayjs());
-    const totalIncome = sources.reduce((total, item) => {
-      if (
-        !item.date ||
-        !dayjs(item.date).isValid() ||
-        fiscalYearLabel(item.date) !== currentFiscalYear ||
-        normalizeStatus(item.status) !== "paid"
-      ) {
-        return total;
-      }
-      return total + numericAmount(item.amount);
-    }, 0);
-    const totalExpense = investorBudgetData.reduce((total, item) => {
-      if (
-        !item?.dueDate ||
-        !dayjs(item.dueDate).isValid() ||
-        fiscalYearLabel(item.dueDate) !== currentFiscalYear
-      ) {
-        return total;
-      }
-      return total + (Number(item.actualAmount) || 0);
-    }, 0);
-
-    return {
-      incomePerSqFt: totalIncome / totalSqft,
-      expensePerSqFt: totalExpense / totalSqft,
-    };
-  }, [investorBudgetData, investorSimpleRevenue, revenueExpenseData]);
+  const totalSqft = useMemo(
+    () =>
+      revenueExpenseData
+        .filter((item) => item?.units)
+        .flatMap((item) => (Array.isArray(item.units) ? item.units : []))
+        .reduce((total, unit) => total + (Number(unit?.sqft) || 0), 0),
+    [revenueExpenseData],
+  );
   const projectedFinancials = useMemo(() => {
     const income = Array(12).fill(0);
     const expense = Array(12).fill(0);
@@ -2214,9 +2233,10 @@ const InvestorDashboard = () => {
     const averageExpense = completedMonthCount
       ? Math.round(actualExpense / completedMonthCount)
       : 0;
+    const projectedMonthCount = Math.max(0, 12 - completedMonthCount);
     const totals = {
-      revenue: averageRevenue,
-      expense: averageExpense,
+      revenue: actualRevenue + averageRevenue * projectedMonthCount,
+      expense: actualExpense + averageExpense * projectedMonthCount,
     };
     const profitLoss = totals.revenue - totals.expense;
 
@@ -2225,10 +2245,18 @@ const InvestorDashboard = () => {
       expense: totals.expense,
       profitLoss,
       revenueGrowth: previousYearRevenue
-        ? (((averageRevenue * 12) - previousYearRevenue) / previousYearRevenue) * 100
+        ? ((totals.revenue - previousYearRevenue) / previousYearRevenue) * 100
         : 0,
     };
   }, [investorBudgetData, investorSimpleRevenue]);
+  const { incomePerSqFt, expensePerSqFt } = useMemo(() => {
+    if (!totalSqft) return { incomePerSqFt: 0, expensePerSqFt: 0 };
+
+    return {
+      incomePerSqFt: projectedFinancials.revenue / totalSqft,
+      expensePerSqFt: projectedFinancials.expense / totalSqft,
+    };
+  }, [projectedFinancials, totalSqft]);
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
@@ -2274,7 +2302,9 @@ const InvestorDashboard = () => {
       )}
       {showDashboardHome && (
         <InvestorDashboardCards
-          format={format}
+          format={(amount, options) =>
+            formatGraphAmount(amount, currency, convert, options)
+          }
           hasPermission={hasPermission}
           navigate={navigate}
           totalInventory={totalInventory}
@@ -2298,6 +2328,7 @@ const InvestorDashboard = () => {
             assetValueOwned={assetValueOwned}
             projectedFinancials={projectedFinancials}
             snapshotAssetValueOwned={assetValueOwned}
+            totalInventory={totalInventory}
           />
         </div>
       )}
