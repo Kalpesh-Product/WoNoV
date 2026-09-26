@@ -75,6 +75,9 @@ import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummar
 import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
 import HrReportDirectory from "../pages/Dashboard/HrDashboard/Mixbag/HrReportDirectory";
+import PaidUnpaidLeaveReport from "../pages/Dashboard/HrDashboard/Mixbag/PaidUnpaidLeaveReport";
+import CurrentLeaveBalanceReport from "../pages/Dashboard/HrDashboard/Mixbag/CurrentLeaveBalanceReport";
+import LeaveHistoryReport from "../pages/Dashboard/HrDashboard/Mixbag/LeaveHistoryReport";
 import HrPayslips from "../pages/Dashboard/HrDashboard/Mixbag/HrPayslips";
 import CompensationStructure from "../pages/Dashboard/HrDashboard/OnBoarding/CompensationStructure";
 import HrReports from "../pages/Dashboard/HrDashboard/Data/Reports";
@@ -2708,6 +2711,18 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag/reports",
                         element: <HrReportDirectory />,
+                      },
+                      {
+                        path: "mix-bag/reports/paid-unpaid-leaves",
+                        element: <PaidUnpaidLeaveReport />,
+                      },
+                      {
+                        path: "mix-bag/reports/current-leave-balance",
+                        element: <CurrentLeaveBalanceReport />,
+                      },
+                      {
+                        path: "mix-bag/reports/leave-history",
+                        element: <LeaveHistoryReport />,
                       },
                       {
                         path: "mix-bag/payslips",
