@@ -16,11 +16,12 @@ import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
 import useAuth from "../../hooks/useAuth";
 import {
+  MdDeleteForever,
   MdEventSeat,
-  MdOutlineRateReview,
   MdOutlineRemoveRedEye,
 } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -43,6 +44,7 @@ const BookMeetings = () => {
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("");
+  const [meetingToDelete, setMeetingToDelete] = useState(null);
   const locations = auth.user.company.workLocations;
   const isEmployee = auth.user.company.companyName === "BizNest";
   const company = "6799f0cd6a01edbe1bc3fcea";
@@ -217,6 +219,23 @@ const BookMeetings = () => {
     },
   });
 
+  const { mutate: deleteMeeting, isPending: isDeletingMeeting } = useMutation({
+    mutationFn: async (meetingId) => {
+      const response = await axios.delete(
+        `/api/meetings/my-meetings/${meetingId}`,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setMeetingToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["myMeetings"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Unable to delete meeting");
+    },
+  });
+
   const submitReview = (data) => {
     addReview({
       meetingId: selectedMeeting.meetingId,
@@ -289,32 +308,42 @@ const BookMeetings = () => {
             ? [rawReview]
             : [];
         const userName = `${auth.user?.firstName} ${auth.user?.lastName}`;
+        const canAddReview =
+          meetingReviews.length === 0 &&
+          userName === params.data.bookedBy &&
+          params.data.status === "Completed";
 
         return (
           <div className="p-2 flex items-center gap-2">
-            {meetingReviews.length > 0 ? (
-              "Review added"
-            ) : (
-              <>
-                {userName === params.data.bookedBy &&
-                  params.data.status === "Completed" ? (
-                  <span
-                    onClick={() => handleAddReview(params.data)}
-                    className="cursor-pointer"
-                  >
-                    <MdOutlineRateReview size={20} />
-                  </span>
-                ) : (
-                  ""
-                )}
-              </>
-            )}
             <span
               className="text-subtitle cursor-pointer"
               onClick={() => handleViewDetails(params.data)}
             >
               <MdOutlineRemoveRedEye />
             </span>
+            {params.data.status === "Upcoming" ? (
+              <button
+                type="button"
+                aria-label="Permanently delete meeting"
+                title="Delete meeting"
+                disabled={isDeletingMeeting}
+                onClick={() => setMeetingToDelete(params.data)}
+                className="p-1 text-red-600 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <MdDeleteForever size={20} />
+              </button>
+            ) : null}
+            {canAddReview ? (
+              <ThreeDotMenu
+                rowId={params.data.meetingId}
+                menuItems={[
+                  {
+                    label: "Add Review",
+                    onClick: () => handleAddReview(params.data),
+                  },
+                ]}
+              />
+            ) : null}
           </div>
         );
       },
@@ -645,6 +674,14 @@ const BookMeetings = () => {
           </form>
         </MuiModal>
       )}
+      <ConfirmationModal
+        open={Boolean(meetingToDelete)}
+        onClose={() => setMeetingToDelete(null)}
+        onConfirm={() => deleteMeeting(meetingToDelete?.meetingId)}
+        title="Delete Meeting"
+        message="Are you sure you want to delete this meeting?"
+        isLoading={isDeletingMeeting}
+      />
       {modalMode === "review" && (
         <MuiModal
           open={openModal}

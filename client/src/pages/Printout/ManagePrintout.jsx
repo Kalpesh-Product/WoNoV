@@ -439,6 +439,9 @@ const ManagePrintout = () => {
     },
   }[confirmationAction?.type];
 
+  const shouldShowDeletedBy =
+    canPermanentlyDelete && selectedPrintout?.isDeleted;
+
   const columns = [
     { field: "srNo", headerName: "Sr. No.", width: 110 },
     { field: "takenBy", headerName: "Taken By", flex: 1 },
@@ -614,6 +617,12 @@ const ManagePrintout = () => {
             title="Taken By"
             detail={getUserName(selectedPrintout?.takenBy)}
           />
+          {shouldShowDeletedBy ? (
+            <DetalisFormatted
+              title="Deleted By"
+              detail={getUserName(selectedPrintout?.deletedBy)}
+            />
+          ) : null}
           <DetalisFormatted
             title="Taken At"
             detail={formatDateTime(selectedPrintout?.takenAt)}

@@ -1496,7 +1496,7 @@ const filterMyTickets = async (req, res, next) => {
   const { user, company } = req;
 
   try {
-    const myTickets = await Ticket.find({ raisedBy: user })
+    const myTickets = await Ticket.find({ raisedBy: user, company })
       .select(
          "raisedBy raisedToDepartment status ticket assignedTo description reject acceptedBy acceptedAt image attachments createdAt closedBy closedAt closingRemark closingCategories",
       )
@@ -1577,6 +1577,38 @@ const filterMyTickets = async (req, res, next) => {
     });
 
     return res.status(200).json(updatedTickets);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteTicket = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid ticket ID provided" });
+    }
+
+    const ticket = await Ticket.findOne({
+      _id: id,
+      company: req.company,
+      raisedBy: req.user,
+      status: "Open",
+    }).exec();
+
+    if (!ticket) {
+      return res.status(404).json({
+        message: "Only your open tickets can be deleted",
+      });
+    }
+
+    await ticket.deleteOne();
+
+    return res.status(200).json({
+      message: "Ticket permanently deleted successfully",
+      deletionType: "permanent",
+    });
   } catch (error) {
     next(error);
   }
@@ -1719,4 +1751,5 @@ module.exports = {
   getTeamMemberTickets,
   updateOtherTicket,
   ticketsReports,
+  deleteTicket,
 };
