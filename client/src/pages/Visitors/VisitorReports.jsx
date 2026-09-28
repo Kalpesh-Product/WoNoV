@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
+import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -19,6 +20,11 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
+
+const formatPaymentAmount = (value) =>
+  value === "-" || value == null || !Number.isFinite(Number(value))
+    ? "-"
+    : `INR ${inrFormat(value)}`;
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "-";
@@ -421,6 +427,14 @@ const VisitorReports = () => {
         paymentSource?.paymentAmount ??
         paymentSource?.totalAmount ??
         "-",
+      deskAmount: paymentSource?.amount ?? "-",
+      taxableAmount:
+        paymentSource?.amount != null
+          ? Math.max(
+              Number(paymentSource.amount) - Number(paymentSource.discount ?? 0),
+              0,
+            )
+          : "-",
       discountAmount:
         paymentSource?.discount ?? paymentSource?.discountAmount ?? "-",
       gstAmount: paymentSource?.gstAmount ?? "-",
@@ -654,6 +668,68 @@ const VisitorReports = () => {
               title="Scheduled Date"
               detail={selectedVisitor.scheduledDate}
             />
+            {(selectedVisitor.visitorFlag === "Client" ||
+              ["Full-Day Pass", "Half-Day Pass", "Meeting"].includes(
+                selectedVisitor.visitorType,
+              )) && (
+              <>
+                <div className="font-bold">Payment Details</div>
+                <DetalisFormatted
+                  title="Desk Amount"
+                  detail={formatPaymentAmount(selectedVisitor.deskAmount)}
+                />
+                <DetalisFormatted
+                  title="Discount"
+                  detail={formatPaymentAmount(selectedVisitor.discountAmount)}
+                />
+                <DetalisFormatted
+                  title="Taxable Amount"
+                  detail={formatPaymentAmount(selectedVisitor.taxableAmount)}
+                />
+                <DetalisFormatted
+                  title="GST Amount"
+                  detail={formatPaymentAmount(selectedVisitor.gstAmount)}
+                />
+                <DetalisFormatted
+                  title="Total Amount"
+                  detail={formatPaymentAmount(selectedVisitor.totalAmount)}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={["true", "paid"].includes(String(selectedVisitor.paymentStatus).toLowerCase())
+                      ? "Paid"
+                      : ["false", "unpaid"].includes(String(selectedVisitor.paymentStatus).toLowerCase())
+                        ? "Unpaid"
+                        : selectedVisitor.paymentStatus || "-"}
+                />
+                <DetalisFormatted
+                  title="Payment Proof"
+                  detail={
+                    selectedVisitor.paymentProofUrl &&
+                    selectedVisitor.paymentProofUrl !== "-" ? (
+                      <a
+                        href={selectedVisitor.paymentProofUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline"
+                      >
+                        View File
+                      </a>
+                    ) : (
+                      "-"
+                    )
+                  }
+                />
+                <DetalisFormatted
+                  title="Payment Mode"
+                  detail={selectedVisitor.paymentMode}
+                />
+                <DetalisFormatted
+                  title="Payment Verification"
+                  detail={selectedVisitor.paymentVerification}
+                />
+              </>
+            )}
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">
                 <img

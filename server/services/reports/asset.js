@@ -344,6 +344,16 @@ const fetchAssetReportService = async ({
     const isTopManagement = userDepartments.some(
       (dept) => dept.name === "Top Management",
     );
+    const canViewDeleted =
+      !isReport &&
+      query.includeDeleted === "true" &&
+      userDepartments.some(
+        (department) =>
+          ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+            String(department?._id || department),
+          ) ||
+          ["Top Management", "Tech Department"].includes(department?.name),
+      );
     const userDepartmentIds = userDepartments.map((dept) => dept._id);
 
     const companyId = user.company;
@@ -357,6 +367,8 @@ const fetchAssetReportService = async ({
         createdAt: dateFilter?.createdAt,
       }),
     };
+
+    if (!canViewDeleted) assetFilter.isDeleted = { $ne: true };
 
     if (!isTopManagement) assetFilter.department = { $in: userDepartmentIds };
 
@@ -381,6 +393,7 @@ const fetchAssetReportService = async ({
     let assetsQuery = Asset.find(assetFilter)
       .populate([
         { path: "department", select: "name" },
+        { path: "deletedBy", select: "firstName lastName" },
 
         {
           path: "vendor",
@@ -476,16 +489,21 @@ const fetchAssetReportService = async ({
     ]);
 
     const assetIds = assets.map((asset) => asset._id);
-    const pendingRequests = await AssignAsset.find({
+    const assignmentRequests = await AssignAsset.find({
       asset: { $in: assetIds },
-      status: "Pending",
+      status: { $in: ["Pending", "Approved"] },
     })
-      .select("asset")
+      .select("asset status")
       .lean()
       .exec();
 
     const pendingAssetIds = new Set(
-      pendingRequests.map((request) => request.asset?.toString()),
+      assignmentRequests
+        .filter((request) => request.status === "Pending")
+        .map((request) => request.asset?.toString()),
+    );
+    const blockedAssetIds = new Set(
+      assignmentRequests.map((request) => request.asset?.toString()),
     );
 
     const assetsWithAssignmentState = assets.map((asset) => {
@@ -495,6 +513,10 @@ const fetchAssetReportService = async ({
         : asset.isAssigned
           ? "Assigned"
           : "Available";
+      parsedAsset.canDelete =
+        asset.status === "Active" &&
+        !asset.isAssigned &&
+        !blockedAssetIds.has(asset._id.toString());
       return parsedAsset;
     });
 

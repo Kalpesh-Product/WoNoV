@@ -543,6 +543,7 @@ const fetchMeetingRevenueReportService = async ({
         visit.unit?.unitName || visit.unit?.unitNo || "N/A",
       unit: visit.unit,
       building: visit.unit?.building?.buildingName || "N/A",
+      deskAmount: Number(visit.amount || 0),
       taxable: Math.max(
         Number(visit.amount || 0) - Number(visit.discount || 0),
         0,
@@ -650,6 +651,7 @@ const fetchMeetingRevenueReportService = async ({
       unitsOrHours: item.unitsOrHours,
       hoursBooked: item.hoursBooked,
       costPerHour: item.costPerHour,
+      deskAmount: item.deskAmount,
       taxable: item.taxable,
       gst: item.gst,
       discount: item.discount || 0,

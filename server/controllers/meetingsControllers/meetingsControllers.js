@@ -1362,6 +1362,94 @@ const getMyMeetings = async (req, res, next) => {
   }
 };
 
+const deleteMyMeeting = async (req, res, next) => {
+  try {
+    const { meetingId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(meetingId)) {
+      return res.status(400).json({ message: "Invalid meeting ID provided" });
+    }
+
+    const meeting = await Meeting.findOne({
+      _id: meetingId,
+      company: req.company,
+      status: "Upcoming",
+    })
+      .populate("clientBookedBy", "email")
+      .populate("clientParticipants", "email")
+      .exec();
+
+    if (!meeting) {
+      return res.status(404).json({
+        message: "Only your upcoming meetings can be deleted",
+      });
+    }
+
+    const currentUser = await User.findById(req.user)
+      .select("email firstName lastName phone")
+      .lean();
+    const currentUserFullName = [
+      currentUser?.firstName,
+      currentUser?.lastName,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .trim()
+      .toLowerCase();
+    const memberLookupConditions = [
+      ...(currentUser?.email ? [{ email: currentUser.email }] : []),
+      ...(currentUserFullName
+        ? [{ employeeName: currentUserFullName }]
+        : []),
+      ...(currentUser?.phone ? [{ mobileNo: currentUser.phone }] : []),
+    ];
+    const companyMembers = memberLookupConditions.length
+      ? await CoworkingMember.find({
+          company: req.company,
+          $or: memberLookupConditions,
+        })
+          .select("_id")
+          .collation({ locale: "en", strength: 2 })
+          .lean()
+      : [];
+    const fallbackMembers =
+      companyMembers.length || !memberLookupConditions.length
+        ? []
+        : await CoworkingMember.find({ $or: memberLookupConditions })
+            .select("_id")
+            .collation({ locale: "en", strength: 2 })
+            .lean();
+    const currentClientMemberIds = (
+      companyMembers.length ? companyMembers : fallbackMembers
+    ).map((member) => member._id.toString());
+    const isBookedByUser = meeting.bookedBy?.toString() === req.user.toString();
+    const isInternalParticipant = meeting.internalParticipants.some(
+      (participantId) => participantId.toString() === req.user.toString(),
+    );
+    const isClientUser =
+      currentClientMemberIds.includes(
+        meeting.clientBookedBy?._id?.toString(),
+      ) ||
+      meeting.clientParticipants.some((participant) =>
+        currentClientMemberIds.includes(participant?._id?.toString()),
+      );
+
+    if (!isBookedByUser && !isInternalParticipant && !isClientUser) {
+      return res.status(403).json({
+        message: "You do not have permission to delete this meeting",
+      });
+    }
+
+    await meeting.deleteOne();
+
+    return res.status(200).json({
+      message: "Meeting permanently deleted successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const addHousekeepingTask = async (req, res, next) => {
   try {
     const { housekeepingTasks, meetingId, roomName } = req.body;
@@ -3079,6 +3167,7 @@ module.exports = {
   addMeetings,
   getMeetings,
   getMyMeetings,
+  deleteMyMeeting,
   extendMeeting,
   addHousekeepingTask,
   deleteHousekeepingTask,

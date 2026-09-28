@@ -2410,7 +2410,7 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
     }
 
     //const allowedStatuses = ["Pending", "Under Review", "Verified"];
-     const allowedStatuses = [
+    const allowedStatuses = [
       "Pending",
       "Under Review",
       "Verified",
@@ -2463,18 +2463,18 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
 
     return res.status(200).json({
       message:
-       status === "Completed"
+        status === "Completed"
           ? "Verification completed. Please upload the invoice in Billing"
           : status === "Verified"
             ? "Payment verified"
             : status === "Under Review"
               ? "Payment moved to review"
               : "Payment status updated",
-        // status === "Verified"
-        //   ? "Payment verified"
-        //   : status === "Under Review"
-        //     ? "Payment moved to review"
-        //     : "Payment status updated",
+      // status === "Verified"
+      //   ? "Payment verified"
+      //   : status === "Under Review"
+      //     ? "Payment moved to review"
+      //     : "Payment status updated",
       externalVisit,
     });
   } catch (error) {

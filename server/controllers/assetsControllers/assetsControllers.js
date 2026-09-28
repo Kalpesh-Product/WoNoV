@@ -19,6 +19,73 @@ const { Readable } = require("stream");
 const csvParser = require("csv-parser");
 const Unit = require("../../models/locations/Unit");
 const buildDateFilter = require("../../utils/dateFilter");
+const mongoose = require("mongoose");
+
+const canManageDeletedAssets = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) ||
+      ["Top Management", "Tech Department"].includes(department?.name),
+  );
+};
+
+const deleteAsset = async (req, res, next) => {
+  try {
+    const { assetId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(assetId)) {
+      return res.status(400).json({ message: "Invalid asset ID" });
+    }
+
+    const asset = await Asset.findOne({ _id: assetId, company: req.company });
+    if (!asset) return res.status(404).json({ message: "Asset not found" });
+
+    const assignmentExists = await AssignAsset.exists({
+      asset: assetId,
+      status: { $in: ["Pending", "Approved"] },
+    });
+    if (asset.status !== "Active" || asset.isAssigned || assignmentExists) {
+      return res.status(400).json({
+        message: "Only active and unassigned assets can be deleted",
+      });
+    }
+
+    if (await canManageDeletedAssets(req.user)) {
+      await asset.deleteOne();
+      return res.status(200).json({ message: "Asset permanently deleted" });
+    }
+
+    asset.isDeleted = true;
+    asset.deletedAt = new Date();
+    asset.deletedBy = req.user;
+    await asset.save();
+    return res.status(200).json({ message: "Asset deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreAsset = async (req, res, next) => {
+  try {
+    if (!(await canManageDeletedAssets(req.user))) {
+      return res.status(403).json({ message: "You cannot restore this asset" });
+    }
+    const asset = await Asset.findOneAndUpdate(
+      { _id: req.params.assetId, company: req.company, isDeleted: true },
+      { $set: { isDeleted: false }, $unset: { deletedAt: 1, deletedBy: 1 } },
+    );
+    if (!asset) return res.status(404).json({ message: "Asset not found" });
+    return res.status(200).json({ message: "Asset restored successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const calculateFutureDateByMonths = (baseDate, monthsToAdd) => {
   const parsedBaseDate = new Date(baseDate);
@@ -1297,4 +1364,6 @@ module.exports = {
   getAssetsWithDepartments,
   bulkInsertAssets,
   bulkAssignedAssets,
+  deleteAsset,
+  restoreAsset,
 };

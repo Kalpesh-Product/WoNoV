@@ -34,11 +34,11 @@ router.patch("/end-break", attendancePhoto, endBreak);
 router.post("/correct-attendance", correctAttendance);
 router.patch(
   "/approve-correct-attendance/:attendanceId",
-  approveCorrectionRequest
+  approveCorrectionRequest,
 );
 router.patch(
   "/reject-correct-attendance/:attendanceId",
-  rejectCorrectionRequest
+  rejectCorrectionRequest,
 );
 router.get("/get-attendance-requests", getAttendanceRequests);
 router.get("/get-all-attendance", getAllAttendance);
@@ -53,8 +53,7 @@ const attendanceUpload = [
     { name: "attandance", maxCount: 1 },
   ]),
   (req, res, next) => {
-    req.file =
-      req.files?.attendance?.[0] || req.files?.attandance?.[0] || null;
+    req.file = req.files?.attendance?.[0] || req.files?.attandance?.[0] || null;
     next();
   },
 ];

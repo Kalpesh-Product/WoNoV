@@ -2694,39 +2694,90 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "mix-bag/monthly-attendance",
-                        element: <MonthlyAttendanceSummary />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.HR_MONTHLY_ATTENDANCE_SUMMARY_MIX_BAG,
+                            ]}
+                            element={<MonthlyAttendanceSummary />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/payroll",
-                        element: <HrPayroll />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_RUN_PAYROLL_MIX_BAG]}
+                            element={<HrPayroll />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/payroll-summary",
-                        element: <PayrollSummary />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.HR_SUMMARY_PAYROLL_MIX_BAG,
+                            ]}
+                            element={<PayrollSummary />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/payroll-summary/:draftId",
-                        element: <PayrollEntry />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[
+                              PERMISSIONS.HR_SUMMARY_PAYROLL_MIX_BAG,
+                            ]}
+                            element={<PayrollEntry />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/reports",
-                        element: <HrReportDirectory />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_REPORTS_MIX_BAG]}
+                            element={<HrReportDirectory />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/reports/paid-unpaid-leaves",
-                        element: <PaidUnpaidLeaveReport />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_REPORTS_MIX_BAG]}
+                            element={<PaidUnpaidLeaveReport />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/reports/current-leave-balance",
-                        element: <CurrentLeaveBalanceReport />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_REPORTS_MIX_BAG]}
+                            element={<CurrentLeaveBalanceReport />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/reports/leave-history",
-                        element: <LeaveHistoryReport />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_REPORTS_MIX_BAG]}
+                            element={<LeaveHistoryReport />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/payslips",
-                        element: <HrPayslips />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.HR_PAYSLIPS_MIX_BAG]}
+                            element={<HrPayslips />}
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/department-kpa-kra",
