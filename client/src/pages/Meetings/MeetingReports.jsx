@@ -616,8 +616,12 @@ const MeetingReports = () => {
                 <br />
                 <div className="font-bold">Payment Details</div>
                 <DetalisFormatted
-                  title="Amount"
+                  title="Total Amount"
                   detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
                 />
                 <DetalisFormatted
                   title="Discount"
@@ -626,20 +630,16 @@ const MeetingReports = () => {
                   )}`}
                 />
                 <DetalisFormatted
-                  title="Mode"
+                  title="Payment Mode"
                   detail={selectedMeeting?.paymentMode || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Status"
-                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
-                />
-                <DetalisFormatted
-                  title="Verification"
+                  title="Payment Verification"
                   detail={selectedMeeting?.paymentVerification || "N/A"}
                 />
                 {selectedMeeting?.paymentProofUrl && (
                   <DetalisFormatted
-                    title="Proof"
+                    title="Payment Proof"
                     detail={
                       <a
                         href={selectedMeeting.paymentProofUrl}

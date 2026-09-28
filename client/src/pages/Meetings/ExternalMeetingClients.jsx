@@ -1467,6 +1467,12 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             <br />
             <div className="font-bold">Payment Details</div>
             <DetalisFormatted
+              title="Discount"
+              detail={`INR ${inrFormat(
+                selectedMeeting?.paymnetDiscountAmount,
+              )}`}
+            />
+            <DetalisFormatted
               title="Taxable Amount"
               detail={`INR ${inrFormat(selectedMeeting?.paymentBaseAmount)}`}
             />
@@ -1479,30 +1485,23 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
             />
             <DetalisFormatted
-              title="Discount"
-              detail={`INR ${inrFormat(
-                selectedMeeting?.paymnetDiscountAmount,
-              )}`}
-            />
-            <DetalisFormatted
-              title="Mode"
-              detail={selectedMeeting?.paymentMode || "N/A"}
-            />
-
-            <DetalisFormatted
               title="Status"
               detail={
                 selectedMeeting?.paymentStatus === "Paid" ? "Paid" : "Unpaid"
               }
             />
+            <DetalisFormatted
+              title="Payment Mode"
+              detail={selectedMeeting?.paymentMode || "N/A"}
+            />
 
             <DetalisFormatted
-              title="Verification"
+              title="Payment Verification"
               detail={selectedMeeting?.paymentVerification}
             />
             {selectedMeeting?.paymentProofUrl && (
               <DetalisFormatted
-                title="Proof"
+                title="Payment Proof"
                 detail={
                   <a
                     href={selectedMeeting.paymentProofUrl}
