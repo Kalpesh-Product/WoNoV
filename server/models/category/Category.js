@@ -24,6 +24,12 @@ const categorySchema = new mongoose.Schema(
       enum: ["asset", "inventory"],
       required: true,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
   {
     timestamps: true,
