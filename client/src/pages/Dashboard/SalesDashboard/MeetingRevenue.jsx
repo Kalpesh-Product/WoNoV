@@ -311,18 +311,8 @@ const DayPassRevenueDetails = ({ revenue }) => {
       <DetailSection title="Payment Details" />
 
       <DetalisFormatted
-        title="Taxable Amount"
-        detail={`INR ${inrFormat(revenue.taxable || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="GST Amount"
-        detail={`INR ${inrFormat(revenue.gst || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="Total Amount"
-        detail={`INR ${inrFormat(revenue.totalAmount || 0)}`}
+        title="Desk Amount"
+        detail={`INR ${inrFormat(revenue.deskAmount ?? (Number(revenue.taxable || 0) + Number(revenue.discount || 0)))}`}
       />
 
       <DetalisFormatted
@@ -331,47 +321,45 @@ const DayPassRevenueDetails = ({ revenue }) => {
       />
 
       <DetalisFormatted
-        title="Mode"
-        detail={
-          revenue.paymentMode ||
-          revenue.remarks ||
-          "N/A"
-        }
+        title="Taxable Amount"
+        detail={`INR ${inrFormat(revenue.taxable || 0)}`}
       />
 
+      <DetalisFormatted
+        title="GST Amount"
+        detail={`INR ${inrFormat(revenue.gst || 0)}`}
+      />
+      <DetalisFormatted
+        title="Total Amount"
+        detail={`INR ${inrFormat(revenue.totalAmount || 0)}`}
+      />
       <DetalisFormatted
         title="Status"
         detail={revenue.status || "N/A"}
       />
 
       <DetalisFormatted
-        title="Verification"
-        detail={
-          revenue.paymentVerification || "N/A"
-        }
+        title="Payment Proof"
+        detail={<FileDetail file={{ link: revenue.paymentProofLink }} />}
       />
 
       <DetalisFormatted
-        title="Uploaded File"
-        detail={
-          <FileDetail
-            file={{ link: revenue.paymentProofLink }}
-          />
-        }
+        title="Invoice Link"
+        detail={<FileDetail file={{ link: revenue.invoiceLink }} label="View PDF" />}
+      />
+
+      <DetalisFormatted
+        title="Payment Mode"
+        detail={revenue.paymentMode || revenue.remarks || "N/A"}
+      />
+
+      <DetalisFormatted
+        title="Payment Verification"
+        detail={revenue.paymentVerification || "N/A"}
       />
 
       {/* Finance Invoice Details */}
       <DetailSection title="Finance Invoice Details" />
-
-      <DetalisFormatted
-        title="Invoice Link"
-        detail={
-          <FileDetail
-            file={{ link: revenue.invoiceLink }}
-            label="View PDF"
-          />
-        }
-      />
 
       <DetalisFormatted
         title="Invoice Uploaded At"
@@ -1195,14 +1183,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   }
                 />
                 <DetalisFormatted
-                  title="Unit"
-                  detail={getUnitLabel(selectedRevenue.unit)}
-                />
-                <DetalisFormatted
-                  title="Building"
-                  detail={selectedRevenue.building || "N/A"}
-                />
-                <DetalisFormatted
                   title="Hours Booked"
                   detail={selectedRevenue.hoursBooked || "N/A"}
                 />
@@ -1223,11 +1203,11 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   detail={`INR ${inrFormat(selectedRevenue.totalAmount || 0)}`}
                 />
                 <DetalisFormatted
-                  title="Admin Status"
+                  title="Status"
                   detail={selectedRevenue.status || "N/A"}
                 />
                 <DetalisFormatted
-                  title="Admin Payment Proof"
+                  title="Payment Proof"
                   detail={
                     selectedRevenue.paymentProofLink ? (
                       <a
@@ -1248,8 +1228,12 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   detail={selectedRevenue.paymentVerification || "N/A"}
                 />
                 <DetalisFormatted
+                  title="Payment Mode"
+                  detail={selectedRevenue.paymentMode || "N/A"}
+                />
+                <DetalisFormatted
                   title="Remarks"
-                  detail={selectedRevenue.remarks || selectedRevenue.paymentMode || "N/A"}
+                  detail={selectedRevenue.remarks || "N/A"}
                 />
                 <div className="font-bold text-lg pt-4">Finance Invoice Details</div>
                 <DetalisFormatted

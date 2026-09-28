@@ -452,6 +452,111 @@ const fetchFinanceDayPassVisits = async ({
   };
 };
 
+const fetchVisitorReportVisits = async ({
+  companyId,
+  dateFilter,
+  search,
+  shouldPaginate,
+  parsedPage,
+  parsedLimit,
+  skip,
+}) => {
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const searchRegex = buildSearchRegex(normalizedSearch);
+  const visitFilter = {
+    company: companyId,
+    visitorId: { $ne: null },
+    ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
+  };
+
+  if (searchRegex) {
+    const visitorSearchConditions = await buildVisitorSearchConditions({
+      company: companyId,
+      search: normalizedSearch,
+    });
+    const matchingVisitorIds = await Visitor.find({
+      company: companyId,
+      $or: visitorSearchConditions,
+    }).distinct("_id");
+    const { users, members, clients } = await resolveReferenceIds(searchRegex, [
+      {
+        key: "users",
+        model: UserData,
+        fields: ["firstName", "lastName", "email"],
+        extraFilter: { company: companyId },
+      },
+      {
+        key: "members",
+        model: CoworkingMember,
+        fields: ["employeeName", "email"],
+        extraFilter: { company: companyId },
+      },
+      {
+        key: "clients",
+        model: CoworkingClient,
+        fields: ["clientName", "companyName", "name"],
+      },
+    ]);
+
+    visitFilter.$or = [
+      { purposeOfVisit: searchRegex },
+      { visitorType: searchRegex },
+      { visitorCompany: searchRegex },
+      { paymentMode: searchRegex },
+      { paymentVerification: searchRegex },
+      ...(matchingVisitorIds.length
+        ? [{ visitorId: { $in: matchingVisitorIds } }]
+        : []),
+      ...(users.length ? [{ toMeet: { $in: users } }] : []),
+      ...(users.length ? [{ checkedInBy: { $in: users } }] : []),
+      ...(users.length ? [{ checkedOutBy: { $in: users } }] : []),
+      ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
+      ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
+    ];
+  }
+
+  let visitsQuery = ExternalVisits.find(visitFilter)
+    .sort({ dateOfVisit: -1, checkIn: -1, _id: -1 })
+    .populate({
+      path: "visitorId",
+      select:
+        "firstName middleName lastName email gender phoneNumber city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorCompany visitorFlag visitorRoles",
+    })
+    .populate(populateExternalVisitFields)
+    .lean();
+
+  if (shouldPaginate) {
+    visitsQuery = visitsQuery.skip(skip).limit(parsedLimit);
+  }
+
+  const [visits, total] = await Promise.all([
+    visitsQuery.exec(),
+    shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
+  ]);
+  const data = visits
+    .filter((visit) => visit.visitorId)
+    .map((visit) => {
+      const { visitorId, ...visitData } = visit;
+      return {
+        ...visitorId,
+        ...visitData,
+        externalVisits: [visitData],
+      };
+    });
+
+  if (!shouldPaginate) return data;
+
+  return {
+    data,
+    pagination: {
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+    },
+  };
+};
+
 const fetchVisitorReportService = async ({
   dateFilter,
   query,
@@ -485,6 +590,18 @@ const fetchVisitorReportService = async ({
 
     if (searchContext === "finance-day-pass" && type === "day-pass") {
       return fetchFinanceDayPassVisits({
+        companyId,
+        dateFilter,
+        search: normalizedSearch,
+        shouldPaginate,
+        parsedPage,
+        parsedLimit,
+        skip,
+      });
+    }
+
+    if (searchContext === "visitor-reports") {
+      return fetchVisitorReportVisits({
         companyId,
         dateFilter,
         search: normalizedSearch,

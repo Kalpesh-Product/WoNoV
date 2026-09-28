@@ -1807,6 +1807,36 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/HR-dashboard/mix-bag/attendance/pending-approvals",
   },
+  HR_MONTHLY_ATTENDANCE_SUMMARY_MIX_BAG: {
+    value: "hr_monthly_attendance_summary_card",
+    title: "Monthly Attendance Summary",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/monthly-attendance",
+  },
+  HR_RUN_PAYROLL_MIX_BAG: {
+    value: "hr_run_payroll_card",
+    title: "Run Payroll",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/payroll",
+  },
+  HR_SUMMARY_PAYROLL_MIX_BAG: {
+    value: "hr_summary_payroll_card",
+    title: "Summary Payroll",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/payroll-summary",
+  },
+  HR_REPORTS_MIX_BAG: {
+    value: "hr_reports_card",
+    title: "Reports",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/reports",
+  },
+  HR_PAYSLIPS_MIX_BAG: {
+    value: "hr_payslips_card",
+    title: "Payslips",
+    type: "read",
+    route: "/app/dashboard/HR-dashboard/mix-bag/payslips",
+  },
   HR_LEAVE_REQUESTS_MIX_BAG: {
     value: "hr_leave_requests_tab",
     title: "Leave Requests",

@@ -23,17 +23,17 @@ const HrMixBag = () => {
     {
       title: "Monthly Attendance Summary",
       route: "/app/dashboard/HR-dashboard/mix-bag/monthly-attendance",
-      permission: PERMISSIONS.HR_ATTENDANCE_REQUESTS_MIX_BAG.value,
+      permission: PERMISSIONS.HR_MONTHLY_ATTENDANCE_SUMMARY_MIX_BAG.value,
     },
     {
       title: "Run Payroll",
       route: "/app/dashboard/HR-dashboard/mix-bag/payroll",
-      permission: PERMISSIONS.HR_PAYROLL.value,
+      permission: PERMISSIONS.HR_RUN_PAYROLL_MIX_BAG.value,
     },
     {
       title: "Summary Payroll",
       route: "/app/dashboard/HR-dashboard/mix-bag/payroll-summary",
-      permission: PERMISSIONS.HR_PAYROLL.value,
+      permission: PERMISSIONS.HR_SUMMARY_PAYROLL_MIX_BAG.value,
     },
      {
       title: "Logs Timeline",
@@ -43,12 +43,12 @@ const HrMixBag = () => {
     {
       title: "Reports",
       route: "/app/dashboard/HR-dashboard/mix-bag/reports",
-      permission: PERMISSIONS.HR_PAYROLL.value,
+      permission: PERMISSIONS.HR_REPORTS_MIX_BAG.value,
     },
     {
       title: "Payslips",
       route: "/app/dashboard/HR-dashboard/mix-bag/payslips",
-      permission: PERMISSIONS.HR_PAYROLL.value,
+      permission: PERMISSIONS.HR_PAYSLIPS_MIX_BAG.value,
     },
     {
       title: "Leave Requests",

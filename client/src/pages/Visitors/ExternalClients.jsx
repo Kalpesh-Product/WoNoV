@@ -973,7 +973,9 @@ const ExternalClients = ({
       visitor.visitorType || visitor.purposeOfVisit,
     );
     if (!defaultAmount || defaultAmount === 0) {
-      if (normalizedVisitorType === "Full-Day Pass") defaultAmount = 850;
+      if (normalizedVisitorType === "Full-Day Pass") {
+        defaultAmount = visitor.buildingName === "Dempo Trade Centre" ? 750 : 850;
+      }
       else if (normalizedVisitorType === "Half-Day Pass") defaultAmount = 500;
     }
     // if (!defaultAmount || defaultAmount === 0) {
@@ -1702,8 +1704,16 @@ const ExternalClients = ({
                       <>
                         <div className="font-bold">Payment Details</div>
                         <DetalisFormatted
+                          title="Desk Amount"
+                          detail={`INR ${inrFormat((selectedVisitor?.rawPaymentAmount) || 0)}`}
+                        />
+                        <DetalisFormatted
+                          title="Discount"
+                          detail={`INR ${selectedVisitor?.discountAmount || 0}`}
+                        />
+                        <DetalisFormatted
                           title="Taxable Amount"
-                          detail={`INR ${selectedVisitor?.rawPaymentAmount || 0}`}
+                          detail={`INR ${inrFormat(Math.max(Number(selectedVisitor?.rawPaymentAmount || 0) - Number(selectedVisitor?.discountAmount || 0), 0))}`}
                         />
                         <DetalisFormatted
                           title="GST Amount"
@@ -1714,24 +1724,20 @@ const ExternalClients = ({
                           detail={`INR ${selectedVisitor?.finalAmount || 0}`}
                         />
                         <DetalisFormatted
-                          title="Discount"
-                          detail={`INR ${selectedVisitor?.discountAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Mode"
-                          detail={selectedVisitor?.paymentMode}
-                        />
-                        <DetalisFormatted
                           title="Status"
                           detail={selectedVisitor?.paymentStatus}
                         />
                         <DetalisFormatted
-                          title="Verification"
-                          detail={selectedVisitor?.paymentVerification}
+                          title="Payment Proof"
+                          detail={renderFileLink(selectedVisitor?.paymentProof)}
                         />
                         <DetalisFormatted
-                          title="Uploaded File"
-                          detail={renderFileLink(selectedVisitor?.paymentProof)}
+                          title="Payment Mode"
+                          detail={selectedVisitor?.paymentMode}
+                        />
+                        <DetalisFormatted
+                          title="Payment Verification"
+                          detail={selectedVisitor?.paymentVerification}
                         />
                       </>
                     )}
