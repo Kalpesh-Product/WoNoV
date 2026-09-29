@@ -8,6 +8,21 @@ const Role = require("../models/roles/Roles");
 const UserData = require("../models/hr/UserData");
 const Department = require("../models/Departments");
 
+const canManageDeletedItems = async (userId) => {
+  const user = await UserData.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) ||
+      ["Top Management", "Tech Department"].includes(department?.name),
+  );
+};
+
 const addItem = async (req, res) => {
   try {
     const { name, department, category } = req.body;
@@ -77,6 +92,11 @@ const getItems = async (req, res) => {
     const { department, category } = req.query;
 
     let filter = {};
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await canManageDeletedItems(req.user));
+
+    if (!includeDeleted) filter.isDeleted = { $ne: true };
 
     // ✅ Validate before using in query
     if (department) {
@@ -100,9 +120,9 @@ const getItems = async (req, res) => {
     }
 
     const items = await Item.find(filter)
-      .select("name department category isActive createdAt updatedAt")
+      .select("name department category isActive isDeleted deletedAt deletedBy createdAt updatedAt")
       .populate("department", "name")
-      .populate("category", "categoryName")
+      .populate("category", "categoryName isActive isDeleted")
       .populate("addedBy", "firstName lastName")
       .sort({ name: 1 })
       .lean();
@@ -117,6 +137,71 @@ const getItems = async (req, res) => {
       success: false,
       message: error.message || "Something went wrong",
     });
+  }
+};
+
+const deleteItem = async (req, res) => {
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: "Invalid item id" });
+    }
+
+    const item = await Item.findById(req.params.id).populate(
+      "category",
+      "company isActive isDeleted",
+    );
+    const categoryCompanyId = item?.category?.company?._id || item?.category?.company;
+    const requestCompanyId = req.company?._id || req.company;
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    if (!item.isActive) {
+      return res.status(400).json({ message: "Only active items can be deleted" });
+    }
+    if (item.category && (!item.category.isActive || item.category.isDeleted)) {
+      return res.status(400).json({
+        message: "Please activate this item's category before deleting the item",
+      });
+    }
+    if (String(categoryCompanyId) !== String(requestCompanyId)) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    if (await canManageDeletedItems(req.user)) {
+      await item.deleteOne();
+      return res.status(200).json({ message: "Item permanently deleted" });
+    }
+
+    item.isDeleted = true;
+    item.deletedAt = new Date();
+    item.deletedBy = req.user;
+    await item.save();
+    return res.status(200).json({ message: "Item deleted successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || "Failed to delete item" });
+  }
+};
+
+const restoreItem = async (req, res) => {
+  try {
+    if (!(await canManageDeletedItems(req.user))) {
+      return res.status(403).json({ message: "You cannot restore this item" });
+    }
+
+    const item = await Item.findById(req.params.id).populate("category", "company");
+    const categoryCompanyId = item?.category?.company?._id || item?.category?.company;
+    const requestCompanyId = req.company?._id || req.company;
+    if (!item || !item.isDeleted || String(categoryCompanyId) !== String(requestCompanyId)) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+
+    item.isDeleted = false;
+    item.deletedAt = undefined;
+    item.deletedBy = undefined;
+    await item.save();
+    return res.status(200).json({ message: "Item restored successfully" });
+  } catch (error) {
+    return res.status(500).json({ message: error.message || "Failed to restore item" });
   }
 };
 
@@ -397,4 +482,11 @@ const bulkUploadItems = async (req, res) => {
   }
 };
 
-module.exports = { addItem, getItems, updateItem, bulkUploadItems };
+module.exports = {
+  addItem,
+  getItems,
+  updateItem,
+  deleteItem,
+  restoreItem,
+  bulkUploadItems,
+};

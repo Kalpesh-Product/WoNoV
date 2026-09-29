@@ -11,6 +11,7 @@ const { Readable } = require("stream");
 const SubCategory = require("../../models/category/SubCategories");
 const Asset = require("../../models/assets/Assets");
 const User = require("../../models/hr/UserData");
+const Item = require("../../models/Item");
 
 const canManageDeletedCategories = async (userId) => {
   const user = await User.findById(userId)
@@ -36,6 +37,26 @@ const deleteCategory = async (req, res, next) => {
     if (!category) return res.status(404).json({ message: "Category not found" });
     if (!category.isActive) {
       return res.status(400).json({ message: "Only active categories can be deleted" });
+    }
+
+    const hasSubCategories = await AssetSubCategory.exists({
+      category: category._id,
+      isDeleted: { $ne: true },
+    });
+    if (hasSubCategories) {
+      return res.status(400).json({
+        message: "Please delete all sub-categories linked to this category before deleting the category.",
+      });
+    }
+
+    const hasItems = await Item.exists({
+      category: category._id,
+      isDeleted: { $ne: true },
+    });
+    if (hasItems) {
+      return res.status(400).json({
+        message: "Please delete all items linked to this category before deleting the category.",
+      });
     }
 
     if (await canManageDeletedCategories(req.user)) {
@@ -72,14 +93,30 @@ const restoreCategory = async (req, res, next) => {
 const deleteSubCategory = async (req, res, next) => {
   try {
     const subCategory = await AssetSubCategory.findById(req.params.subCategoryId)
-      .populate("category", "company");
-    if (!subCategory || String(subCategory.category?.company) !== String(req.company)) {
+      .populate("category", "company isActive isDeleted");
+    if (!subCategory) {
       return res.status(404).json({ message: "Sub-category not found" });
     }
     if (!subCategory.isActive) {
       return res
         .status(400)
         .json({ message: "Only active sub-categories can be deleted" });
+    }
+    if (
+      !subCategory.isDeleted &&
+      subCategory.category &&
+      (!subCategory.category.isActive || subCategory.category.isDeleted)
+    ) {
+      return res.status(400).json({
+        message: "Please activate this sub-category's category before deleting the sub-category",
+      });
+    }
+
+    const categoryCompanyId =
+      subCategory.category?.company?._id || subCategory.category?.company;
+    const requestCompanyId = req.company?._id || req.company;
+    if (String(categoryCompanyId) !== String(requestCompanyId)) {
+      return res.status(404).json({ message: "Sub-category not found" });
     }
 
     if (await canManageDeletedCategories(req.user)) {
@@ -393,21 +430,6 @@ const updateCategory = async (req, res, next) => {
       return res.status(400).json({ message: "Failed to update category" });
     }
 
-    if (typeof status === "boolean" && !status) {
-      const subCategory = await AssetSubCategory.updateMany(
-        { category: updatedCategory._id },
-        {
-          isActive: false,
-        },
-      );
-
-      if (!subCategory) {
-        return res
-          .status(400)
-          .json({ message: "Failed to update sub category" });
-      }
-    }
-
     return res.status(200).json({ message: "Category updated successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -654,7 +676,7 @@ const getSubCategory = async (req, res, next) => {
     }).populate([
       {
         path: "category",
-        select: "categoryName",
+        select: "categoryName isActive isDeleted",
         populate: { path: "department", select: "name" },
       },
       { path: "deletedBy", select: "firstName lastName" },
