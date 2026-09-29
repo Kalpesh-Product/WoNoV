@@ -1,3 +1,5 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -491,8 +493,11 @@ const VisitorHistory = () => {
             title={isInternalHistory ? "Check Out By" : "Checkout By"}
             detail={selectedVisit?.checkedOutBy}
           />
+          {!isInternalHistory && isMeetingVisit(selectedVisit || {}) && (
+            <MeetingPaymentDetails revenue={selectedVisit?.meetingPaymentDetails} showFinanceDetails={false} />
+          )}
           {!isInternalHistory &&
-            selectedVisit?.purposeOfVisit !== "Meeting Room Booking" && (
+            !isMeetingVisit(selectedVisit || {}) && (
             <>
               <br />
               <div className="font-bold">Payment Details</div>
