@@ -28,6 +28,7 @@ const { handleDocumentUpload } = require("../../config/s3Config");
 const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const buildDateFilter = require("../../utils/dateFilter");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const getEffectiveEndTime = (meeting) => {
   const originalEndTime = new Date(meeting?.endTime);
@@ -1441,6 +1442,11 @@ const deleteMyMeeting = async (req, res, next) => {
     }
 
     await meeting.deleteOne();
+    setAuditLogContext(req, "Permanently Delete Meeting", {
+      meetingId: String(meeting._id),
+      meetingSubject: meeting.subject,
+      deletionType: "permanent",
+    });
 
     return res.status(200).json({
       message: "Meeting permanently deleted successfully",
@@ -1627,6 +1633,12 @@ const deleteHousekeepingTask = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: meetingId,
       changes: { deletedTask: housekeepingTask },
+    });
+
+    setAuditLogContext(req, "Delete Housekeeping Task", {
+      meetingId: String(updatedMeeting._id),
+      housekeepingTask,
+      deletionType: "permanent",
     });
 
     return res.status(200).json({

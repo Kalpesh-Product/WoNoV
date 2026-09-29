@@ -268,9 +268,27 @@ const AssetsSubCategories = () => {
                 type="button"
                 title={params.data.isDeleted ? "Delete permanently" : "Delete"}
                 className="h-8 w-8 flex items-center justify-center text-red-600 hover:text-red-700"
-                onClick={() =>
-                  setConfirmationAction({ type: "delete", row: params.data })
-                }
+                onClick={() => {
+                  const category = assetCategories.find(
+                    (item) =>
+                      String(item?._id) === String(params.data.category?._id),
+                  );
+                  const isCategoryActive =
+                    category?.isActive ?? params.data.category?.isActive;
+                  const isCategoryDeleted =
+                    category?.isDeleted ?? params.data.category?.isDeleted;
+
+                  if (
+                    !params.data.isDeleted &&
+                    (!isCategoryActive || isCategoryDeleted)
+                  ) {
+                    toast.error(
+                      "Please activate this sub-category's category before deleting the sub-category",
+                    );
+                    return;
+                  }
+                  setConfirmationAction({ type: "delete", row: params.data });
+                }}
               >
                 <MdDeleteForever size={26} />
               </button>

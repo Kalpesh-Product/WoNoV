@@ -56,10 +56,23 @@ const sumParticularAmounts = (particulars = []) => {
   );
 };
 
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const PERMANENT_DELETE_DEPARTMENTS = new Set([
+  "top management",
+  "tech department",
+]);
+
+const isPermanentDeleteDepartment = (department) =>
+  String(department?._id || department) === TECH_DEPARTMENT_ID ||
+  PERMANENT_DELETE_DEPARTMENTS.has(department?.name?.trim().toLowerCase());
+
 const BudgetPage = () => {
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
   const { auth } = useAuth();
+  const canManageDeletedBudgets = (auth?.user?.departments || []).some(
+    isPermanentDeleteDepartment,
+  );
   const location = useLocation();
   const department = usePageDepartment();
   const queryClient = useQueryClient();
@@ -113,10 +126,10 @@ const BudgetPage = () => {
   const selectedBuilding = watch("building");
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
-    queryKey: ["departmentBudget", department?._id],
+    queryKey: ["departmentBudget", department?._id, canManageDeletedBudgets],
     queryFn: async () => {
       const response = await axios.get(
-        `/api/budget/company-budget?departmentId=${department._id}`,
+        `/api/budget/company-budget?departmentId=${department._id}&includeDeleted=${canManageDeletedBudgets}`,
       );
       const budgets = response.data.allBudgets;
       return Array.isArray(budgets) ? budgets : [];
@@ -276,6 +289,8 @@ const BudgetPage = () => {
       invoice: item.invoice || null,
       invoiceDate: item?.invoice?.date || item?.invoices?.[0]?.date || null,
       invoices: item.invoices || [],
+      isDeleted: Boolean(item.isDeleted),
+      deletedBy: item.deletedBy,
     });
 
     return acc;

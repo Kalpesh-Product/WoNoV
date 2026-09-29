@@ -26,6 +26,7 @@ const {
   hasDepartmentAdminAccess,
   hasGlobalReportAccess,
 } = require("../../services/reports/access");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const VALID_BULK_TASK_STATUSES = ["Pending", "InProgress", "Completed"];
 const BULK_TASK_REQUIRED_FIELDS = [
@@ -1440,6 +1441,12 @@ const deleteTask = async (req, res, next) => {
       changes: { isDeleted: true },
     });
 
+    setAuditLogContext(req, "Delete Task", {
+      taskId: String(deletedTask._id),
+      taskName: deletedTask.taskName,
+      deletionType: "soft",
+    });
+
     return res.status(200).json({ message: "Task deleted successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -1498,6 +1505,12 @@ const permanentlyDeleteMyTask = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: deletedTask._id,
       changes: { permanentlyDeleted: true },
+    });
+
+    setAuditLogContext(req, "Permanently Delete My Task", {
+      taskId: String(deletedTask._id),
+      taskName: deletedTask.taskName,
+      deletionType: "permanent",
     });
 
     return res.status(200).json({
@@ -1588,6 +1601,12 @@ const permanentlyDeleteDepartmentTask = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: deletedTask._id,
       changes: { permanentlyDeleted: true },
+    });
+
+    setAuditLogContext(req, "Permanently Delete Department Task", {
+      taskId: String(deletedTask._id),
+      taskName: deletedTask.taskName,
+      deletionType: "permanent",
     });
 
     return res.status(200).json({

@@ -1051,7 +1051,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     {
                       headerName: "Invoice Uploaded On",
                       field: "invoiceUploadedAt",
-                      pinned:"right",
+                      //pinned:"right",
                       valueFormatter: ({ value }) =>
                         value ? humanDate(value) : "-",
                     },

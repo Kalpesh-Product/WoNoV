@@ -4,6 +4,7 @@ const Company = require("../models/hr/Company");
 const User = require("../models/hr/UserData");
 const Department = require("../models/Departments");
 const buildDateFilter = require("../utils/dateFilter");
+const setAuditLogContext = require("../utils/auditLogContext");
 const {
   fetchPrintoutReportService,
   populatePrintout,
@@ -256,6 +257,10 @@ const deletePrintout = async (req, res) => {
 
     if (canPermanentlyDelete) {
       await printout.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Printout", {
+        printoutId: String(printout._id),
+        deletionType: "permanent",
+      });
       return res.status(200).json({
         message: "Printout permanently deleted successfully",
         deletionType: "permanent",
@@ -274,6 +279,10 @@ const deletePrintout = async (req, res) => {
     printout.deletedBy = req.user;
     printout.deletedByPrivilegedDepartment = false;
     await printout.save();
+    setAuditLogContext(req, "Delete Printout", {
+      printoutId: String(printout._id),
+      deletionType: "soft",
+    });
 
     return res.status(200).json({
       message: "Printout deleted successfully",
@@ -328,6 +337,11 @@ const restorePrintout = async (req, res) => {
         message: "Deleted printout entry not found",
       });
     }
+
+    setAuditLogContext(req, "Restore Printout", {
+      printoutId: String(printout._id),
+      deletionType: "restore",
+    });
 
     return res.status(200).json({
       message: "Printout restored successfully",

@@ -20,6 +20,7 @@ const csvParser = require("csv-parser");
 const Unit = require("../../models/locations/Unit");
 const buildDateFilter = require("../../utils/dateFilter");
 const mongoose = require("mongoose");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const canManageDeletedAssets = async (userId) => {
   const user = await User.findById(userId)
@@ -58,6 +59,11 @@ const deleteAsset = async (req, res, next) => {
 
     if (await canManageDeletedAssets(req.user)) {
       await asset.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Asset", {
+        assetId: String(asset._id),
+        assetName: asset.name,
+        deletionType: "permanent",
+      });
       return res.status(200).json({ message: "Asset permanently deleted" });
     }
 
@@ -65,6 +71,11 @@ const deleteAsset = async (req, res, next) => {
     asset.deletedAt = new Date();
     asset.deletedBy = req.user;
     await asset.save();
+    setAuditLogContext(req, "Delete Asset", {
+      assetId: String(asset._id),
+      assetName: asset.name,
+      deletionType: "soft",
+    });
     return res.status(200).json({ message: "Asset deleted successfully" });
   } catch (error) {
     next(error);
@@ -81,6 +92,11 @@ const restoreAsset = async (req, res, next) => {
       { $set: { isDeleted: false }, $unset: { deletedAt: 1, deletedBy: 1 } },
     );
     if (!asset) return res.status(404).json({ message: "Asset not found" });
+    setAuditLogContext(req, "Restore Asset", {
+      assetId: String(asset._id),
+      assetName: asset.name,
+      deletionType: "restore",
+    });
     return res.status(200).json({ message: "Asset restored successfully" });
   } catch (error) {
     next(error);

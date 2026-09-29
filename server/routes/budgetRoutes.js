@@ -13,6 +13,8 @@ const {
   approveFinanceBudget,
   fetchApprovedbudgets,
   updateBudget,
+  deleteBudget,
+  restoreBudget,
 } = require("../controllers/budgetControllers/budgetController");
 
 router.post(
@@ -29,6 +31,8 @@ router.get("/approved-budgets", fetchApprovedbudgets);
 router.patch("/approve-budget", upload.single("voucher"), approveFinanceBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch("/update-budget/:budgetId", updateBudget);
+router.delete("/:budgetId", deleteBudget);
+router.patch("/:budgetId/restore", restoreBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",
   // upload.single("invoice"),
