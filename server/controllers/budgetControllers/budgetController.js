@@ -33,6 +33,30 @@ const belongsToPermanentDeleteDepartment = (departments = []) =>
       ),
   );
 
+const canManageBudgetDeletes = (roles = []) =>
+  roles.some((role) => {
+    const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
+    return (
+      !roleTitle.includes("employee") &&
+      ["manager", "admin", "top management"].some((title) =>
+        roleTitle.includes(title),
+      )
+    );
+  });
+
+const setBudgetAuditContext = (req, action, budget, deletionType) => {
+  req.logContext = {
+    performedBy: req.user,
+    company: req.company,
+    action,
+    payload: {
+      budgetId: String(budget._id),
+      expenseName: budget.expanseName,
+      deletionType,
+    },
+  };
+};
+
 const normalizeMonth = (value) => {
   if (!value) return null;
 
@@ -617,11 +641,21 @@ const deleteBudget = async (req, res, next) => {
 
     const [budget, user] = await Promise.all([
       Budget.findOne({ _id: budgetId, company: req.company }).exec(),
-      User.findById(req.user).populate("departments", "name").lean().exec(),
+      User.findById(req.user)
+        .populate("departments", "name")
+        .populate("role", "roleTitle")
+        .lean()
+        .exec(),
     ]);
 
     if (!budget) {
       return res.status(404).json({ message: "Budget not found" });
+    }
+
+    if (!canManageBudgetDeletes(user?.role)) {
+      return res.status(403).json({
+        message: "Only department managers can delete budgets",
+      });
     }
 
     if (budget.status !== "Pending") {
@@ -632,6 +666,12 @@ const deleteBudget = async (req, res, next) => {
 
     if (belongsToPermanentDeleteDepartment(user?.departments)) {
       await budget.deleteOne();
+      setBudgetAuditContext(
+        req,
+        "Permanently Delete Budget",
+        budget,
+        "permanent",
+      );
       return res.status(200).json({
         message: "Budget permanently deleted successfully",
         deletionType: "permanent",
@@ -649,6 +689,8 @@ const deleteBudget = async (req, res, next) => {
     budget.deletedAt = new Date();
     budget.deletedBy = req.user;
     await budget.save();
+
+    setBudgetAuditContext(req, "Delete Budget", budget, "soft");
 
     return res.status(200).json({
       message: "Budget deleted successfully",
@@ -669,10 +711,14 @@ const restoreBudget = async (req, res, next) => {
 
     const user = await User.findById(req.user)
       .populate("departments", "name")
+      .populate("role", "roleTitle")
       .lean()
       .exec();
 
-    if (!belongsToPermanentDeleteDepartment(user?.departments)) {
+    if (
+      !canManageBudgetDeletes(user?.role) ||
+      !belongsToPermanentDeleteDepartment(user?.departments)
+    ) {
       return res.status(403).json({
         message: "Only Top Management or Tech Department users can restore this budget",
       });
@@ -687,6 +733,8 @@ const restoreBudget = async (req, res, next) => {
     if (!budget) {
       return res.status(404).json({ message: "Deleted budget not found" });
     }
+
+    setBudgetAuditContext(req, "Restore Budget", budget, "restore");
 
     return res.status(200).json({ message: "Budget restored successfully" });
   } catch (error) {

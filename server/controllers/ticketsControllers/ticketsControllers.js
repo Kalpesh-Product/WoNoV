@@ -25,6 +25,7 @@ const Ticket = require("../../models/tickets/Tickets");
 const validateUsers = require("../../utils/validateUsers");
 const UserData = require("../../models/hr/UserData");
 const emitter = require("../../utils/eventEmitter");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const raiseTicket = async (req, res, next) => {
   const logPath = "tickets/TicketLog";
@@ -1604,6 +1605,11 @@ const deleteTicket = async (req, res, next) => {
     }
 
     await ticket.deleteOne();
+    setAuditLogContext(req, "Permanently Delete Ticket", {
+      ticketId: String(ticket._id),
+      ticketName: ticket.ticket,
+      deletionType: "permanent",
+    });
 
     return res.status(200).json({
       message: "Ticket permanently deleted successfully",

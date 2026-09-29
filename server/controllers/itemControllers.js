@@ -7,6 +7,7 @@ const { Readable } = require("stream");
 const Role = require("../models/roles/Roles");
 const UserData = require("../models/hr/UserData");
 const Department = require("../models/Departments");
+const setAuditLogContext = require("../utils/auditLogContext");
 
 const canManageDeletedItems = async (userId) => {
   const user = await UserData.findById(userId)
@@ -124,6 +125,7 @@ const getItems = async (req, res) => {
       .populate("department", "name")
       .populate("category", "categoryName isActive isDeleted")
       .populate("addedBy", "firstName lastName")
+      .populate("deletedBy", "firstName lastName")
       .sort({ name: 1 })
       .lean();
 
@@ -169,6 +171,11 @@ const deleteItem = async (req, res) => {
 
     if (await canManageDeletedItems(req.user)) {
       await item.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Item", {
+        itemId: String(item._id),
+        itemName: item.name,
+        deletionType: "permanent",
+      });
       return res.status(200).json({ message: "Item permanently deleted" });
     }
 
@@ -176,6 +183,11 @@ const deleteItem = async (req, res) => {
     item.deletedAt = new Date();
     item.deletedBy = req.user;
     await item.save();
+    setAuditLogContext(req, "Delete Item", {
+      itemId: String(item._id),
+      itemName: item.name,
+      deletionType: "soft",
+    });
     return res.status(200).json({ message: "Item deleted successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Failed to delete item" });
@@ -199,6 +211,11 @@ const restoreItem = async (req, res) => {
     item.deletedAt = undefined;
     item.deletedBy = undefined;
     await item.save();
+    setAuditLogContext(req, "Restore Item", {
+      itemId: String(item._id),
+      itemName: item.name,
+      deletionType: "restore",
+    });
     return res.status(200).json({ message: "Item restored successfully" });
   } catch (error) {
     return res.status(500).json({ message: error.message || "Failed to restore item" });

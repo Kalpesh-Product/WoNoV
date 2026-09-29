@@ -12,6 +12,7 @@ const SubCategory = require("../../models/category/SubCategories");
 const Asset = require("../../models/assets/Assets");
 const User = require("../../models/hr/UserData");
 const Item = require("../../models/Item");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const canManageDeletedCategories = async (userId) => {
   const user = await User.findById(userId)
@@ -61,6 +62,11 @@ const deleteCategory = async (req, res, next) => {
 
     if (await canManageDeletedCategories(req.user)) {
       await category.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Category", {
+        categoryId: String(category._id),
+        categoryName: category.categoryName,
+        deletionType: "permanent",
+      });
       return res.status(200).json({ message: "Category permanently deleted" });
     }
 
@@ -68,6 +74,11 @@ const deleteCategory = async (req, res, next) => {
     category.deletedAt = new Date();
     category.deletedBy = req.user;
     await category.save();
+    setAuditLogContext(req, "Delete Category", {
+      categoryId: String(category._id),
+      categoryName: category.categoryName,
+      deletionType: "soft",
+    });
     return res.status(200).json({ message: "Category deleted successfully" });
   } catch (error) {
     next(error);
@@ -84,6 +95,11 @@ const restoreCategory = async (req, res, next) => {
       { $set: { isDeleted: false }, $unset: { deletedAt: 1, deletedBy: 1 } },
     );
     if (!category) return res.status(404).json({ message: "Category not found" });
+    setAuditLogContext(req, "Restore Category", {
+      categoryId: String(category._id),
+      categoryName: category.categoryName,
+      deletionType: "restore",
+    });
     return res.status(200).json({ message: "Category restored successfully" });
   } catch (error) {
     next(error);
@@ -121,6 +137,11 @@ const deleteSubCategory = async (req, res, next) => {
 
     if (await canManageDeletedCategories(req.user)) {
       await subCategory.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Sub-category", {
+        subCategoryId: String(subCategory._id),
+        subCategoryName: subCategory.subCategoryName,
+        deletionType: "permanent",
+      });
       return res.status(200).json({ message: "Sub-category permanently deleted" });
     }
 
@@ -128,6 +149,11 @@ const deleteSubCategory = async (req, res, next) => {
     subCategory.deletedAt = new Date();
     subCategory.deletedBy = req.user;
     await subCategory.save();
+    setAuditLogContext(req, "Delete Sub-category", {
+      subCategoryId: String(subCategory._id),
+      subCategoryName: subCategory.subCategoryName,
+      deletionType: "soft",
+    });
     return res.status(200).json({ message: "Sub-category deleted successfully" });
   } catch (error) {
     next(error);
@@ -152,6 +178,11 @@ const restoreSubCategory = async (req, res, next) => {
     subCategory.deletedAt = undefined;
     subCategory.deletedBy = undefined;
     await subCategory.save();
+    setAuditLogContext(req, "Restore Sub-category", {
+      subCategoryId: String(subCategory._id),
+      subCategoryName: subCategory.subCategoryName,
+      deletionType: "restore",
+    });
     return res.status(200).json({ message: "Sub-category restored successfully" });
   } catch (error) {
     next(error);

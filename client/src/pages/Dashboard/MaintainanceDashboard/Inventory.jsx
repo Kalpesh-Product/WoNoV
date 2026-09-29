@@ -2850,6 +2850,18 @@ function getUnitInventorySummaryValues(rows = []) {
                 title="Status"
                 detail={selectedCategory?.isActive ? "Active" : "Inactive"}
               />
+              {selectedCategory?.isDeleted && (
+                <>
+                  <br />
+                  <DetalisFormatted
+                    title="Deleted By"
+                    detail={
+                      `${selectedCategory?.deletedBy?.firstName || ""} ${selectedCategory?.deletedBy?.lastName || ""}`.trim() ||
+                      "N/A"
+                    }
+                  />
+                </>
+              )}
             </div>
             {/* <div>
               <div className="font-semibold mb-2">Action</div>
@@ -3056,6 +3068,15 @@ function getUnitInventorySummaryValues(rows = []) {
                 title="Status"
                 detail={selectedItem?.isActive ? "Active" : "Inactive"}
               />
+              {selectedItem?.isDeleted && (
+                <DetalisFormatted
+                  title="Deleted By"
+                  detail={
+                    `${selectedItem?.deletedBy?.firstName || ""} ${selectedItem?.deletedBy?.lastName || ""}`.trim() ||
+                    "N/A"
+                  }
+                />
+              )}
             </div>
             {/* <div>
               <div className="font-semibold mb-2">Action</div>

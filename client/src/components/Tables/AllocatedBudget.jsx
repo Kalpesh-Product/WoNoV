@@ -51,6 +51,17 @@ const isPermanentDeleteDepartment = (department) =>
   String(department?._id || department) === TECH_DEPARTMENT_ID ||
   PERMANENT_DELETE_DEPARTMENTS.has(department?.name?.trim().toLowerCase());
 
+const canManageBudgetDeletes = (user) =>
+  (user?.role || []).some((role) => {
+    const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
+    return (
+      !roleTitle.includes("employee") &&
+      ["manager", "admin", "top management"].some((title) =>
+        roleTitle.includes(title),
+      )
+    );
+  });
+
 const getUserName = (user) =>
   user?.employeeName ||
   [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
@@ -151,6 +162,7 @@ const AllocatedBudget = ({
   const canPermanentlyDelete = (auth?.user?.departments || []).some(
     isPermanentDeleteDepartment,
   );
+  const canDeleteBudgets = canManageBudgetDeletes(auth?.user);
   const agGridRef = useRef(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -616,7 +628,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                 >
                   <MdOutlineRemoveRedEye />
                 </button>
-                {params.data.isDeleted ? (
+                {params.data.isDeleted && canDeleteBudgets ? (
                   <button
                     type="button"
                     aria-label="Restore budget"
@@ -630,7 +642,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                     <MdOutlineRestore size={22} />
                   </button>
                 ) : null}
-                {params.data.status === "Pending" && (
+                {params.data.status === "Pending" && canDeleteBudgets && (
                   <button
                     type="button"
                     aria-label="Delete budget"
@@ -698,6 +710,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     return base;
   }, [
     canPermanentlyDelete,
+    canDeleteBudgets,
     enableActionMenu,
     financialData,
     isDeletePending,
@@ -706,6 +719,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   ]);
 
   console.log("filtered ata : ", filteredRows);
+
+  const disabledRows = useMemo(
+    () => filteredRows.filter((row) => row.isDeleted),
+    [filteredRows],
+  );
 
   const totalActualAmount = useMemo(() => {
     return filteredRows.reduce(
@@ -720,6 +738,23 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       0
     );
   }, [filteredRows]);
+
+  const disabledActualAmount = useMemo(
+    () =>
+      disabledRows.reduce(
+        (sum, row) => sum + normalizeBudgetAmount(row.actualAmount),
+        0,
+      ),
+    [disabledRows],
+  );
+  const disabledProjectedAmount = useMemo(
+    () =>
+      disabledRows.reduce(
+        (sum, row) => sum + normalizeBudgetAmount(row.projectedAmount),
+        0,
+      ),
+    [disabledRows],
+  );
 
   const handleExportPass = () => {
     if (!agGridRef.current) return;
@@ -767,6 +802,30 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         greenTitle="Actual"
         TitleAmountTotal={`INR ${inrFormat(totalProjectedAmount)}`}
         totalTitle="Projected"
+        additionalSummaryChips={
+          canPermanentlyDelete && disabledRows.length > 0
+            ? [
+                {
+                  title: "Disabled Projected",
+                  value: `INR ${inrFormat(disabledProjectedAmount)}`,
+                  style: {
+                    backgroundColor: "#B0C4DE",
+                    borderColor: "#B0C4DE",
+                    color: "#1f2937",
+                  },
+                },
+                {
+                  title: "Disabled Actual",
+                  value: `INR ${inrFormat(disabledActualAmount)}`,
+                  style: {
+                    backgroundColor: "#7FFFD4",
+                    borderColor: "#7FFFD4",
+                    color: "#1f2937",
+                  },
+                },
+              ]
+            : []
+        }
         summaryChipVariant="budget"
         border
       >
