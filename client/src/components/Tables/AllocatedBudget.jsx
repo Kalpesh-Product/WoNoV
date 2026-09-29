@@ -23,6 +23,7 @@ import AgTable from "../AgTable";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
 import DetalisFormatted from "../DetalisFormatted";
+import ConfirmationModal from "../ConfirmationModal";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 //import UploadFileInput from "../UploadFileInput";
@@ -30,14 +31,32 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { queryClient } from "../../main";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import useAuth from "../../hooks/useAuth";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 //import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
-import { MdCalendarToday, MdDelete, MdNavigateNext, MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdCalendarToday, MdDeleteForever, MdNavigateNext, MdOutlineRemoveRedEye, MdOutlineRestore } from "react-icons/md";
 import { LuImageUp } from "react-icons/lu";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const PERMANENT_DELETE_DEPARTMENTS = new Set([
+  "top management",
+  "tech department",
+]);
+
+const isPermanentDeleteDepartment = (department) =>
+  String(department?._id || department) === TECH_DEPARTMENT_ID ||
+  PERMANENT_DELETE_DEPARTMENTS.has(department?.name?.trim().toLowerCase());
+
+const getUserName = (user) =>
+  user?.employeeName ||
+  [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+  user?.name ||
+  user?.email ||
+  "-";
 
 const InvoiceFilesInput = ({ value = [], onChange, id }) => {
   const files = Array.isArray(value) ? value : [];
@@ -128,6 +147,10 @@ const AllocatedBudget = ({
   exportData = false,
 }) => {
  const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const canPermanentlyDelete = (auth?.user?.departments || []).some(
+    isPermanentDeleteDepartment,
+  );
   const agGridRef = useRef(null);
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploadModalOpen, setUploadModalOpen] = useState(false);
@@ -156,6 +179,7 @@ const AllocatedBudget = ({
   }, [viewBudget]);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const [actionRow, setActionRow] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const openCalendar = Boolean(anchorEl);
   const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
@@ -296,6 +320,64 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         toast.error(error?.response?.data?.message || "Failed to update budget");
       },
     });
+
+  const { mutate: deleteBudgetMutation, isPending: isDeletePending } =
+    useMutation({
+      mutationFn: async (budgetId) =>
+        (await axios.delete(`/api/budget/${budgetId}`)).data,
+      onSuccess: (data) => {
+        toast.success(data.message || "Budget deleted successfully");
+        setConfirmationAction(null);
+        queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+        queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || "Failed to delete budget");
+      },
+    });
+
+  const { mutate: restoreBudgetMutation, isPending: isRestorePending } =
+    useMutation({
+      mutationFn: async (budgetId) =>
+        (await axios.patch(`/api/budget/${budgetId}/restore`)).data,
+      onSuccess: (data) => {
+        toast.success(data.message || "Budget restored successfully");
+        setConfirmationAction(null);
+        queryClient.invalidateQueries({ queryKey: ["financeBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+        queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || "Failed to restore budget");
+      },
+    });
+
+  const confirmBudgetAction = () => {
+    if (!confirmationAction?.row?.id) return;
+    if (confirmationAction.type === "restore") {
+      restoreBudgetMutation(confirmationAction.row.id);
+      return;
+    }
+    deleteBudgetMutation(confirmationAction.row.id);
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete Budget",
+      message: "Are you sure you want to delete this budget?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Budget",
+      message: "Are you sure you want to permanently delete this budget?",
+    },
+    restore: {
+      title: "Restore Budget",
+      message: "Are you sure you want to restore this budget?",
+    },
+  }[confirmationAction?.type];
 
   const handleOpenActionMenu = (event, row) => {
     setActionAnchorEl(event.currentTarget);
@@ -534,15 +616,51 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                 >
                   <MdOutlineRemoveRedEye />
                 </button>
-                <IconButton
-                 disabled={
-    params.data.invoiceAttached === true ||
-    params.data.invoiceAttached === "true"
-  }
-  onClick={(event) => handleOpenActionMenu(event, params.data)}
->
-  <HiOutlineDotsHorizontal />
-</IconButton>
+                {params.data.isDeleted ? (
+                  <button
+                    type="button"
+                    aria-label="Restore budget"
+                    title="Restore budget"
+                    disabled={isDeletePending || isRestorePending}
+                    onClick={() =>
+                      setConfirmationAction({ type: "restore", row: params.data })
+                    }
+                    className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <MdOutlineRestore size={22} />
+                  </button>
+                ) : null}
+                {params.data.status === "Pending" && (
+                  <button
+                    type="button"
+                    aria-label="Delete budget"
+                    title={params.data.isDeleted ? "Permanently delete budget" : "Delete budget"}
+                    disabled={isDeletePending || isRestorePending}
+                    onClick={() =>
+                      setConfirmationAction({
+                        type:
+                          params.data.isDeleted || canPermanentlyDelete
+                            ? "permanent-delete"
+                            : "delete",
+                        row: params.data,
+                      })
+                    }
+                    className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  >
+                    <MdDeleteForever size={22} />
+                  </button>
+                )}
+                {!params.data.isDeleted && (
+                  <IconButton
+                    disabled={
+                      params.data.invoiceAttached === true ||
+                      params.data.invoiceAttached === "true"
+                    }
+                    onClick={(event) => handleOpenActionMenu(event, params.data)}
+                  >
+                    <HiOutlineDotsHorizontal />
+                  </IconButton>
+                )}
               </div>
             );
           }
@@ -578,7 +696,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       });
     }
     return base;
-  }, [financialData, noInvoice, enableActionMenu]);
+  }, [
+    canPermanentlyDelete,
+    enableActionMenu,
+    financialData,
+    isDeletePending,
+    isRestorePending,
+    noInvoice,
+  ]);
 
   console.log("filtered ata : ", filteredRows);
 
@@ -733,6 +858,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               columns={tableColumns}
               tableRef={agGridRef}
               tableHeight={350}
+              getRowStyle={({ data }) =>
+                data?.isDeleted
+                  ? {
+                      backgroundColor: "#eef1f5",
+                      color: "#6b7280",
+                      opacity: 0.82,
+                    }
+                  : undefined
+              }
             />
           ) : (
             <div className="h-96 flex justify-center items-center text-muted">
@@ -849,6 +983,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                 </span>
               ) : "-"}
             />
+            {viewBudget.isDeleted ? (
+              <DetalisFormatted
+                title="Deleted By"
+                detail={getUserName(viewBudget.deletedBy)}
+              />
+            ) : null}
           </div>
         </MuiModal>
       )}
@@ -1168,6 +1308,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
           ))}
         </div>
       </MuiModal>
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmBudgetAction}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText={confirmationAction?.type === "restore" ? "Restore" : "Delete"}
+        isLoading={isDeletePending || isRestorePending}
+      />
     </>
   );
 };
