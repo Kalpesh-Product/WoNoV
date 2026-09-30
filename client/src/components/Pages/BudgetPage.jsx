@@ -823,17 +823,6 @@ legend: {
         summaryChipVariant="budget"
       />
 
-      {canRequestBudget && (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Request Budget"}
-            padding="px-5 py-2"
-            fontSize="text-base"
-            handleSubmit={() => setOpenModal(true)}
-          />
-        </div>
-      )}
-
       <AllocatedBudget
         financialData={financialData}
         noInvoice={false}
@@ -841,6 +830,7 @@ legend: {
         filterApprovedAndPendingOnly
         newTitle="BIZ Nest EXPENSE DETAILS"
         exportData
+        onRequestBudget={canRequestBudget ? () => setOpenModal(true) : undefined}
       />
       <MuiModal
         title="Request Budget"
@@ -1017,7 +1007,6 @@ legend: {
                 <DatePicker
                   {...field}
                   label="Due Date"
-                  disablePast
                   format="DD-MM-YYYY"
                   value={field.value ? dayjs(field.value) : null}
                   onChange={(date) =>
