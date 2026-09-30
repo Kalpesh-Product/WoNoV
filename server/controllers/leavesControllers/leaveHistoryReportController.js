@@ -67,6 +67,17 @@ const getLeaveHistoryReport = async (req, res, next) => {
       leavePeriod: leave.leavePeriod || "N/A",
       hours: Number(leave.hours) || 0,
       description: leave.description || "N/A",
+      comments: leave.comment || "",
+      createdOn: leave.createdAt
+        ? new Intl.DateTimeFormat("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            timeZone: "Asia/Kolkata",
+          }).format(new Date(leave.createdAt))
+        : "N/A",
       status: leave.status || "N/A",
       addedBy: formatName(leave.addedBy),
       takenBy: formatName(leave.takenBy),
@@ -82,6 +93,8 @@ const getLeaveHistoryReport = async (req, res, next) => {
             row.leavePeriod,
             row.hours,
             row.description,
+            row.comments,
+            row.createdOn,
             row.status,
             row.addedBy,
             row.takenBy,

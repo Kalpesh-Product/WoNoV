@@ -19,7 +19,6 @@ const EmployeeDetails = () => {
     { label: "Agreements", path: "agreements", permission: PERMISSIONS.HR_EMPLOYEE_AGREEMENTS_DETAILS.value },
     // { label: "KPI'S", path: "kpi" },
     // { label: "KRA'S", path: "kra" },
-    { label: "Payslip", path: "payslip", permission: PERMISSIONS.HR_EMPLOYEE_PAYSLIP_DETAILS.value },
   ];
 
   const allowedTabs = tabs.filter((tab) => userPermissions.includes(tab.permission));

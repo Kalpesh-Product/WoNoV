@@ -1,17 +1,21 @@
+import { useState } from "react";
+import MuiModal from "../../../../components/MuiModal";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
-import { Chip } from "@mui/material";
+import { Chip, TextField, Button } from "@mui/material";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 export default function PendingLeaveRequests() {
   const axios = useAxiosPrivate();
+  const [selectedLeave, setSelectedLeave] = useState(null);
+  const [comment, setComment] = useState("");
 
   const { data: leavesData = [], isPending: isLeavesPending } = useQuery({
-    queryKey: ["leave-requests"],
+    queryKey: ["leave-requests", "pending"],
     queryFn: async () => {
       const response = await axios.get("/api/leaves/view-all-leaves");
       return response.data.filter((data) => data.status === "Pending");
@@ -20,10 +24,12 @@ export default function PendingLeaveRequests() {
 
   const { mutate: approveLeave, isPending: isApproving } = useMutation({
     mutationFn: async (leaveId) => {
-      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`);
+      const res = await axios.patch(`/api/leaves/approve-leave/${leaveId}`, { comment: comment.trim() });
       return res.data;
     },
     onSuccess: (data) => {
+      setSelectedLeave(null);
+      setComment("");
       toast.success(data.message || "Leave Approved");
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
@@ -34,10 +40,12 @@ export default function PendingLeaveRequests() {
 
   const { mutate: rejectLeave, isPending: isRejecting } = useMutation({
     mutationFn: async (leaveId) => {
-      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`);
+      const res = await axios.patch(`/api/leaves/reject-leave/${leaveId}`, { comment: comment.trim() });
       return res.data;
     },
     onSuccess: (data) => {
+      setSelectedLeave(null);
+      setComment("");
       toast.success(data.message || "Leave Rejected");
       queryClient.invalidateQueries({ queryKey: ["leave-requests"] });
     },
@@ -108,8 +116,10 @@ export default function PendingLeaveRequests() {
         <ThreeDotMenu
           rowId={params.data.id}
           menuItems={[
-            { label: "Accept", onClick: () => approveLeave(params.data._id) },
-            { label: "Reject", onClick: () => rejectLeave(params.data._id) },
+            { label: "Manage Leave", onClick: () => {
+              setSelectedLeave(params.data);
+              setComment("");
+            } },
           ]}
         />
       ),
@@ -131,6 +141,42 @@ export default function PendingLeaveRequests() {
           exportData
         />
       </PageFrame>
+      <MuiModal
+        open={Boolean(selectedLeave)}
+        onClose={() => {
+          if (isApproving || isRejecting) return;
+          setSelectedLeave(null);
+          setComment("");
+        }}
+        title="Manage Leave"
+      >
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-gray-600">
+            {selectedLeave?.takenBy?.firstName} {selectedLeave?.takenBy?.lastName}
+            {" ? "}{selectedLeave?.leaveType} ({selectedLeave?.hours} hours)
+          </p>
+          <TextField
+            label="Comment"
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            multiline
+            minRows={3}
+            fullWidth
+            inputProps={{ maxLength: 2000 }}
+            disabled={isApproving || isRejecting}
+          />
+          <div className="flex justify-end gap-3">
+            <Button variant="outlined" color="error" disabled={isApproving || isRejecting}
+              onClick={() => rejectLeave(selectedLeave._id)}>
+              {isRejecting ? "Rejecting..." : "Reject"}
+            </Button>
+            <Button variant="contained" disabled={isApproving || isRejecting}
+              onClick={() => approveLeave(selectedLeave._id)}>
+              {isApproving ? "Approving..." : "Approve"}
+            </Button>
+          </div>
+        </div>
+      </MuiModal>
     </div>
   );
 }

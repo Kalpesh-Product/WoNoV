@@ -1,3 +1,4 @@
+const { buildBulkPayroll, parseImportDate } = require("../../utils/bulkUserPayroll");
 const Company = require("../../models/hr/Company");
 const UserData = require("../../models/hr/UserData");
 const bcrypt = require("bcryptjs");
@@ -1132,18 +1133,27 @@ const bulkInsertUsers = async (req, res, next) => {
     const newUsers = [];
     const newAgreements = [];
 
-    const rowPromises = [];
-
+    const rows = [];
+    const text = req.file.buffer.toString("utf-8").replace(/^\uFEFF/, "").trim();
+    const header = text.split(/\r?\n/, 1)[0];
+    const separator = header.includes("\t") ? "\t" : ",";
     await new Promise((resolve, reject) => {
-      const stream = Readable.from(req.file.buffer.toString("utf-8").trim());
-      stream
-        .pipe(csvParser())
-        .on("data", (row) => {
-          // Push a promise for each row's async processing
-          rowPromises.push(
-            (async () => {
-              try {
-                // console.log("Row keys:", Object.keys(row));
+      Readable.from([text])
+        .pipe(csvParser({ separator, strict: true, mapHeaders: ({ header }) => header.trim(), mapValues: ({ value }) => value.trim() }))
+        .on("data", row => { if (Object.values(row).some(Boolean)) rows.push(row); })
+        .on("end", resolve)
+        .on("error", error => reject(new CustomError(error.message, logPath, logAction, logSourceKey, 400)));
+    });
+    const seenIds = new Set();
+    const seenEmails = new Set();
+    for (const [index, row] of rows.entries()) {
+      try {
+        for (const key of ["Emp ID", "First Name", "Last Name", "Gender", "Date Of Birth", "Phone Number", "Company Email", "Date Of Joining"]) {
+          if (!row[key]) throw new Error(`Missing ${key}`);
+        }
+        const email = row["Company Email"].toLowerCase();
+        if (seenIds.has(row["Emp ID"]) || seenEmails.has(email)) throw new Error("Duplicate Emp ID or Company Email in upload");
+        seenIds.add(row["Emp ID"]); seenEmails.add(email);
                 const departmentIds = row["Department (ID)"]
                   ? row["Department (ID)"].split("/").map((d) => d.trim())
                   : [];
@@ -1160,9 +1170,10 @@ const bulkInsertUsers = async (req, res, next) => {
                 const roleIds = row["Role ID"]
                   ? row["Role ID"].split("/").map((r) => r.trim())
                   : [];
-                const roleObjectIds = roleIds
-                  .map((id) => roleMap.get(id))
-                  .filter(Boolean);
+                const roleObjectIds = roleIds.map((id) => {
+                  if (!roleMap.has(id)) throw new Error(`Invalid Role ID: ${id}`);
+                  return roleMap.get(id);
+                });
 
                 // console.log("role map", roleMap);
                 // console.log("roleObjectIds", roleObjectIds);
@@ -1171,16 +1182,17 @@ const bulkInsertUsers = async (req, res, next) => {
                   : null;
 
                 // console.log("reportsToId", reportsToId);
+                if (row["Reports To (Role ID)"] && !reportsToId) throw new Error("Reports To (Role ID) must match an existing roleID");
                 const defaultPassword = "xyz@123";
                 const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
                 const userObj = {
                   empId: row["Emp ID"],
                   firstName: row["First Name"].trim(),
-                  middleName: row["Middle Name (optional)"].trim() || "",
+                  middleName: String(row["Middle Name (optional)"] || "").trim() || "",
                   lastName: row["Last Name"].trim(),
                   gender: row["Gender"].trim(),
-                  dateOfBirth: new Date(row["Date Of Birth"]),
+                  dateOfBirth: parseImportDate(row["Date Of Birth"], "Date Of Birth"),
                   phone: row["Phone Number"],
                   email: row["Company Email"].trim().toLowerCase(),
                   company: new mongoose.Types.ObjectId(companyId),
@@ -1199,14 +1211,8 @@ const bulkInsertUsers = async (req, res, next) => {
                     ],
                   },
                   designation: row["Designation"],
-                  startDate: new Date(row["Date Of Joining"]),
-                  // dateOfExit: new Date(row["Date of Exit"]) || null,
-                  dateOfExit:
-                    row["Date of Exit"] &&
-                    !isNaN(Date.parse(row["Date of Exit"]))
-                      ? new Date(row["Date of Exit"])
-                      : null,
-
+                  startDate: parseImportDate(row["Date Of Joining"], "Date Of Joining"),
+                  dateOfExit: parseImportDate(row["Date of Exit"], "Date of Exit"),
                   isActive: row["Date of Exit"] ? false : true,
                   workLocation: row["Work Building"],
                   shift: row["Shift Policy"] || "General",
@@ -1231,17 +1237,7 @@ const bulkInsertUsers = async (req, res, next) => {
                     pfUAN: row["PF UAN"] || "",
                     esiAccountNumber: row["ESI Account Number"] || "",
                   },
-                  payrollInformation: {
-                    includeInPayroll:
-                      row["Include In Payroll (Yes/No)"] === "Yes",
-                    professionTaxExemption:
-                      row["Profession Tax Exemption"] === "Yes",
-                    includePF: row["Include PF"] === "Yes",
-                    pfContributionRate: parseFloat(
-                      row["Employer PF Contri"] || "0",
-                    ),
-                    employeePF: parseFloat(row["Employee PF"] || "0"),
-                  },
+                  ...buildBulkPayroll(row, row["Employement Type"] || "Full-Time"),
                   familyInformation: {
                     fatherName: row["Father's Name"] || "",
                     motherName: row["Mother's Name"] || "",
@@ -1249,13 +1245,7 @@ const bulkInsertUsers = async (req, res, next) => {
                   },
                 };
 
-                if (isNaN(userObj.dateOfBirth?.getTime())) {
-                  console.log("Invalid DOB Row:", row);
-                }
-
-                if (isNaN(userObj.startDate?.getTime())) {
-                  console.log("Invalid DOJ Row:", row);
-                }
+                await new UserData(userObj).validate();
 
                 newUsers.push(userObj);
 
@@ -1283,34 +1273,10 @@ const bulkInsertUsers = async (req, res, next) => {
                     });
                   }
                 });
-              } catch (error) {
-                reject(
-                  new CustomError(
-                    error.message,
-                    "hr/HrLog",
-                    "Bulk Insert Users",
-                    "user",
-                  ),
-                );
-              }
-            })(),
-          );
-        })
-        .on("end", () => resolve())
-        .on("error", (err) =>
-          reject(
-            new CustomError(
-              err.message,
-              "hr/HrLog",
-              "Bulk Insert Users",
-              "user",
-            ),
-          ),
-        );
-    });
-
-    // Wait for all row processing to complete
-    await Promise.all(rowPromises);
+      } catch (error) {
+        throw new CustomError(`Row ${index + 2} (${row["Emp ID"] || "unknown"}): ${error.message}`, logPath, logAction, logSourceKey, 400);
+      }
+    }
 
     if (newUsers.length === 0) {
       throw new CustomError(
@@ -1321,11 +1287,11 @@ const bulkInsertUsers = async (req, res, next) => {
       );
     }
 
-    if (newAgreements.length === 0) {
-      return res.status(400).json({
-        message: "No valid data found in CSV while bulk inserting agreements",
-      });
-    }
+    const duplicate = await UserData.findOne({ $or: [
+      { empId: { $in: newUsers.map(item => item.empId) } },
+      { email: { $in: newUsers.map(item => item.email) } },
+    ] }).select("empId email").lean();
+    if (duplicate) throw new CustomError(`Employee already exists: ${duplicate.empId} (${duplicate.email})`, logPath, logAction, logSourceKey, 409);
 
     const uploadedUserData = await UserData.insertMany(newUsers);
 
@@ -1348,9 +1314,7 @@ const bulkInsertUsers = async (req, res, next) => {
       return matchedUser ? { ...agreement, user: matchedUser._id } : agreement;
     });
 
-    const uploadedAgreements = await Agreements.insertMany(
-      transformedAgreements,
-    );
+    if (transformedAgreements.length) await Agreements.insertMany(transformedAgreements);
 
     return res.status(201).json({
       message: "Bulk data inserted successfully",
@@ -1358,12 +1322,8 @@ const bulkInsertUsers = async (req, res, next) => {
     });
   } catch (error) {
     next(
-      new CustomError(
-        error.message,
-        500,
-        "hr/HrLog",
-        "Bulk Insert Users",
-        "user",
+      error instanceof CustomError ? error : new CustomError(
+        error.message, logPath, logAction, logSourceKey, error.code === 11000 ? 409 : 500,
       ),
     );
   }

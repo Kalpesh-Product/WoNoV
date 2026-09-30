@@ -53,6 +53,7 @@ const attendanceUpload = [
     { name: "attandance", maxCount: 1 },
   ]),
   (req, res, next) => {
+    s;
     req.file = req.files?.attendance?.[0] || req.files?.attandance?.[0] || null;
     next();
   },

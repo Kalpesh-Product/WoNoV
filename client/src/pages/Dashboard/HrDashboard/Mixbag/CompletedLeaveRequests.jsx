@@ -8,7 +8,7 @@ export default function CompletedLeaveRequests() {
   const axios = useAxiosPrivate();
 
   const { data: leavesData = [], isPending: isLeavesPending } = useQuery({
-    queryKey: ["leave-requests"],
+    queryKey: ["leave-requests", "completed"],
     queryFn: async () => {
       const response = await axios.get("/api/leaves/view-all-leaves");
       return response.data.filter((data) => data.status !== "Pending");
@@ -39,6 +39,7 @@ export default function CompletedLeaveRequests() {
     { headerName: "To Date", field: "toDate" },
     { headerName: "Hours", field: "hours" },
     { headerName: "Description", field: "description" },
+    { headerName: "Comment", field: "comment" },
     {
       field: "status",
       headerName: "Status",

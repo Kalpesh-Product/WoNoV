@@ -4,10 +4,14 @@ import dayjs from "dayjs";
 import {
   Autocomplete,
   CircularProgress,
+  IconButton,
+  Tooltip,
   MenuItem,
   TextField,
 } from "@mui/material";
 import AgTable from "../../../../components/AgTable";
+import MuiAside from "../../../../components/MuiAside";
+import { IoFilter } from "react-icons/io5";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
@@ -16,6 +20,7 @@ import { toast } from "sonner";
 
 const HrPayslips = () => {
   const axios = useAxiosPrivate();
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [financialYear, setFinancialYear] = useState("All");
   const [employeeStatus, setEmployeeStatus] = useState("All");
   const [selectedEmployee, setSelectedEmployee] = useState({
@@ -61,9 +66,7 @@ const HrPayslips = () => {
     const active = employeeStatus === "Active";
     return [
       allOption,
-      ...employees.filter(
-        (employee) => Boolean(employee.isActive) === active
-      ),
+      ...employees.filter((employee) => Boolean(employee.isActive) === active),
     ];
   }, [employeeStatus, employees]);
 
@@ -91,7 +94,7 @@ const HrPayslips = () => {
     try {
       const response = await axios.get(
         `/api/payslip/download-payslip/${payslip._id}`,
-        { responseType: "blob" }
+        { responseType: "blob" },
       );
       const objectUrl = URL.createObjectURL(response.data);
       const downloadLink = document.createElement("a");
@@ -103,7 +106,7 @@ const HrPayslips = () => {
       URL.revokeObjectURL(objectUrl);
     } catch (error) {
       toast.error(
-        error.response?.data?.message || "Unable to download the payslip"
+        error.response?.data?.message || "Unable to download the payslip",
       );
     }
   };
@@ -132,14 +135,54 @@ const HrPayslips = () => {
           value
         ),
     },
-    { field: "gross", headerName: "Gross (INR)", minWidth: 130, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "basic", headerName: "Basic (INR)", minWidth: 130, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "allowances", headerName: "Allowances (INR)", minWidth: 160, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "deductions", headerName: "Deductions (INR)", minWidth: 160, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "incomeTax", headerName: "Income Tax (INR)", minWidth: 160, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "surcharge", headerName: "Surcharge (INR)", minWidth: 150, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "cess", headerName: "Cess (INR)", minWidth: 120, valueFormatter: ({ value }) => inrFormat(value) },
-    { field: "netAmount", headerName: "Net Amount (INR)", minWidth: 160, valueFormatter: ({ value }) => inrFormat(value) },
+    {
+      field: "gross",
+      headerName: "Gross (INR)",
+      minWidth: 130,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "basic",
+      headerName: "Basic (INR)",
+      minWidth: 130,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "allowances",
+      headerName: "Allowances (INR)",
+      minWidth: 160,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "deductions",
+      headerName: "Deductions (INR)",
+      minWidth: 160,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "incomeTax",
+      headerName: "Income Tax (INR)",
+      minWidth: 160,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "surcharge",
+      headerName: "Surcharge (INR)",
+      minWidth: 150,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "cess",
+      headerName: "Cess (INR)",
+      minWidth: 120,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
+    {
+      field: "netAmount",
+      headerName: "Net Amount (INR)",
+      minWidth: 160,
+      valueFormatter: ({ value }) => inrFormat(value),
+    },
     {
       field: "payslipPdfLink",
       headerName: "Payslip PDF Link",
@@ -182,9 +225,11 @@ const HrPayslips = () => {
     employeeName:
       [payslip.employee?.firstName, payslip.employee?.lastName]
         .filter(Boolean)
-        .join(" ") || payslip.employee?.empId || "N/A",
+        .join(" ") ||
+      payslip.employee?.empId ||
+      "N/A",
     period: `${dayjs(payslip.month).startOf("month").format("DD MMM, YYYY")} to ${dayjs(
-      payslip.month
+      payslip.month,
     )
       .endOf("month")
       .format("DD MMM, YYYY")}`,
@@ -192,11 +237,11 @@ const HrPayslips = () => {
     basic: payslip.basicPay ?? payslip.basic ?? 0,
     allowances: (payslip.allowanceItems || []).reduce(
       (total, item) => total + (Number(item.amount) || 0),
-      0
+      0,
     ),
     deductions: (payslip.deductionItems || []).reduce(
       (total, item) => total + (Number(item.amount) || 0),
-      0
+      0,
     ),
     netAmount: payslip.netAmount ?? payslip.netPay ?? 0,
     payslipPdfLink: payslip.payslipLink || "",
@@ -204,72 +249,99 @@ const HrPayslips = () => {
 
   return (
     <PageFrame>
-      <div className="mx-auto mb-6 flex w-full max-w-xl flex-col gap-4">
-        <TextField
-          select
-          label="Financial Year"
-          value={financialYear}
-          onChange={(event) => setFinancialYear(event.target.value)}
-          size="small"
-        >
-          {financialYears.map((year) => (
-            <MenuItem key={year} value={year}>
-              {year}
-            </MenuItem>
-          ))}
-        </TextField>
+      <MuiAside
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        title="Advanced Filters"
+      >
+        <div className="flex flex-col gap-4 pt-4">
+          <TextField
+            select
+            label="Financial Year"
+            value={financialYear}
+            onChange={(event) => setFinancialYear(event.target.value)}
+            size="small"
+          >
+            {financialYears.map((year) => (
+              <MenuItem key={year} value={year}>
+                {year}
+              </MenuItem>
+            ))}
+          </TextField>
 
-        <TextField
-          select
-          label="Employee Status"
-          value={employeeStatus}
-          onChange={(event) => {
-            setEmployeeStatus(event.target.value);
-            setSelectedEmployee({ _id: "all", firstName: "All" });
-          }}
-          size="small"
-        >
-          <MenuItem value="All">All</MenuItem>
-          <MenuItem value="Active">Active</MenuItem>
-          <MenuItem value="Inactive">Inactive</MenuItem>
-        </TextField>
+          <TextField
+            select
+            label="Employee Status"
+            value={employeeStatus}
+            onChange={(event) => {
+              setEmployeeStatus(event.target.value);
+              setSelectedEmployee({ _id: "all", firstName: "All" });
+            }}
+            size="small"
+          >
+            <MenuItem value="All">All</MenuItem>
+            <MenuItem value="Active">Active</MenuItem>
+            <MenuItem value="Inactive">Inactive</MenuItem>
+          </TextField>
 
-        <Autocomplete
-          options={employeeOptions}
-          value={selectedEmployee}
-          loading={isLoading}
-          onChange={(_, employee) => setSelectedEmployee(employee)}
-          getOptionLabel={(employee) =>
-            employee?._id === "all"
-              ? "All"
-              : `${employee.firstName || ""} ${employee.lastName || ""} (${employee.empId || "N/A"})`.trim()
-          }
-          isOptionEqualToValue={(option, value) => option._id === value._id}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Employee"
-              placeholder="Search employee"
-              size="small"
-              InputProps={{
-                ...params.InputProps,
-                endAdornment: (
-                  <>
-                    {isLoading ? <CircularProgress size={18} /> : null}
-                    {params.InputProps.endAdornment}
-                  </>
-                ),
-              }}
-            />
-          )}
-        />
-      </div>
+          <Autocomplete
+            options={employeeOptions}
+            value={selectedEmployee}
+            loading={isLoading}
+            onChange={(_, employee) => setSelectedEmployee(employee)}
+            getOptionLabel={(employee) =>
+              employee?._id === "all"
+                ? "All"
+                : `${employee.firstName || ""} ${employee.lastName || ""} (${employee.empId || "N/A"})`.trim()
+            }
+            isOptionEqualToValue={(option, value) => option._id === value._id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Employee"
+                placeholder="Search employee"
+                size="small"
+                InputProps={{
+                  ...params.InputProps,
+                  endAdornment: (
+                    <>
+                      {isLoading ? <CircularProgress size={18} /> : null}
+                      {params.InputProps.endAdornment}
+                    </>
+                  ),
+                }}
+              />
+            )}
+          />
+        </div>
+      </MuiAside>
 
       <AgTable
         data={rows}
         columns={columns}
         search
         exportData
+        hideFilter
+        exportBeforeHeaderActions
+        headerActions={
+          <Tooltip title="Filter payslips">
+            <IconButton
+              aria-label="Filter payslips"
+              aria-expanded={filtersOpen}
+              onClick={() => setFiltersOpen(true)}
+              color={
+                financialYear !== "All" ||
+                employeeStatus !== "All" ||
+                (selectedEmployee && selectedEmployee._id !== "all")
+                  ? "primary"
+                  : "default"
+              }
+              size="small"
+            >
+              <IoFilter />
+            </IconButton>
+          </Tooltip>
+        }
         tableTitle="Payslips"
         tableHeight={420}
       />
