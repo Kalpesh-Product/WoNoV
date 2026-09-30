@@ -7,6 +7,37 @@ const csvParser = require("csv-parser");
 const Category = require("../../models/category/Category");
 const Item = require("../../models/Item");
 const Unit = require("../../models/locations/Unit");
+const User = require("../../models/hr/UserData");
+const setAuditLogContext = require("../../utils/auditLogContext");
+
+const PRIVILEGED_INVENTORY_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const getInventoryDeleteAccess = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+  const departments = user?.departments || [];
+  const canManageDeleted = departments.some(
+    (department) =>
+      PRIVILEGED_INVENTORY_DEPARTMENT_IDS.has(
+        String(department?._id || department),
+      ) ||
+      ["top management", "tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
+
+  return {
+    canManageDeleted,
+    departmentIds: departments.map((department) =>
+      String(department?._id || department),
+    ),
+  };
+};
 
 const createInventory = async (req, res, next) => {
   const { user, company } = req;
@@ -95,15 +126,112 @@ const createInventory = async (req, res, next) => {
   }
 };
 
+const deleteInventory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid inventory ID" });
+    }
+
+    const [inventory, access] = await Promise.all([
+      Inventory.findOne({ _id: id, company: req.company }),
+      getInventoryDeleteAccess(req.user),
+    ]);
+
+    if (!inventory) {
+      return res.status(404).json({ message: "Inventory record not found" });
+    }
+
+    if (
+      !access.canManageDeleted &&
+      !access.departmentIds.includes(String(inventory.department))
+    ) {
+      return res.status(403).json({
+        message: "You cannot delete another department's inventory record",
+      });
+    }
+
+    if (access.canManageDeleted) {
+      await inventory.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Inventory", {
+        inventoryId: String(inventory._id),
+        deletionType: "permanent",
+      });
+      return res.status(200).json({
+        message: "Inventory permanently deleted successfully",
+        deletionType: "permanent",
+      });
+    }
+
+    if (inventory.isDeleted) {
+      return res.status(400).json({ message: "Inventory record is already deleted" });
+    }
+
+    inventory.isDeleted = true;
+    inventory.deletedAt = new Date();
+    inventory.deletedBy = req.user;
+    await inventory.save();
+    setAuditLogContext(req, "Delete Inventory", {
+      inventoryId: String(inventory._id),
+      deletionType: "soft",
+    });
+
+    return res.status(200).json({
+      message: "Inventory deleted successfully",
+      deletionType: "soft",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreInventory = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid inventory ID" });
+    }
+
+    const access = await getInventoryDeleteAccess(req.user);
+    if (!access.canManageDeleted) {
+      return res.status(403).json({
+        message: "Only Top Management or Tech Department can restore inventory",
+      });
+    }
+
+    const inventory = await Inventory.findOneAndUpdate(
+      { _id: id, company: req.company, isDeleted: true },
+      { $set: { isDeleted: false }, $unset: { deletedAt: 1, deletedBy: 1 } },
+      { new: true },
+    );
+
+    if (!inventory) {
+      return res.status(404).json({ message: "Deleted inventory record not found" });
+    }
+
+    setAuditLogContext(req, "Restore Inventory", {
+      inventoryId: String(inventory._id),
+      deletionType: "restore",
+    });
+    return res.status(200).json({ message: "Inventory restored successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // GET Inventories with Aggregation (for complex derived fields and optimized lookups)
 
 const getInventories = async (req, res, next) => {
   try {
     const { department } = req.query;
     const { company } = req;
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await getInventoryDeleteAccess(req.user)).canManageDeleted;
 
     const match = {
       company: new mongoose.Types.ObjectId(company),
+      ...(!includeDeleted && { isDeleted: { $ne: true } }),
       ...(department && {
         department: new mongoose.Types.ObjectId(department),
       }),
@@ -338,12 +466,7 @@ const getInventories = async (req, res, next) => {
     const inventories = await Inventory.aggregate([
       /* ------------------ Match ------------------ */
       {
-        $match: {
-          company: new mongoose.Types.ObjectId(company),
-          ...(department && {
-            department: new mongoose.Types.ObjectId(department),
-          }),
-        },
+        $match: match,
       },
 
       /* ------------------ Sort ASC (required for window) ------------------ */
@@ -356,6 +479,39 @@ const getInventories = async (req, res, next) => {
         $addFields: {
           totalConsumed: {
             $sum: "$consumptions.quantity",
+          },
+        },
+      },
+
+      {
+        $addFields: {
+          inventoryDelta: {
+            $cond: [
+              { $gt: [{ $ifNull: ["$assignedUnits", 0] }, 0] },
+              "$assignedUnits",
+              {
+                $subtract: [
+                  {
+                    $cond: [
+                      {
+                        $and: [
+                          { $gt: ["$totalConsumed", 0] },
+                          {
+                            $ne: [
+                              { $ifNull: ["$openingInventoryUnits", null] },
+                              null,
+                            ],
+                          },
+                        ],
+                      },
+                      0,
+                      { $ifNull: ["$newPurchaseUnits", 0] },
+                    ],
+                  },
+                  "$totalConsumed",
+                ],
+              },
+            ],
           },
         },
       },
@@ -387,6 +543,24 @@ const getInventories = async (req, res, next) => {
             },
             prevConsumed: {
               $shift: { output: "$totalConsumed", by: -1 },
+            },
+          },
+        },
+      },
+
+      {
+        $setWindowFields: {
+          partitionBy: {
+            itemName: "$itemName",
+            unit: { $ifNull: ["$unit", null] },
+            department: "$department",
+            buildingName: { $ifNull: ["$buildingName", ""] },
+          },
+          sortBy: { createdAt: 1 },
+          output: {
+            calculatedRemaining: {
+              $sum: "$inventoryDelta",
+              window: { documents: ["unbounded", "current"] },
             },
           },
         },
@@ -424,7 +598,7 @@ const getInventories = async (req, res, next) => {
           lastConsumed: { $ifNull: ["$prevConsumed", 0] },
 
           /* Current Remaining */
-          remainingNewPurchaseInventoryUnits: "$remainingUnits",
+          remainingNewPurchaseInventoryUnits: "$calculatedRemaining",
         },
       },
 
@@ -478,6 +652,16 @@ const getInventories = async (req, res, next) => {
         },
       },
       { $unwind: { path: "$addedBy", preserveNullAndEmptyArrays: true } },
+
+      {
+        $lookup: {
+          from: "userdatas",
+          localField: "deletedBy",
+          foreignField: "_id",
+          as: "deletedBy",
+        },
+      },
+      { $unwind: { path: "$deletedBy", preserveNullAndEmptyArrays: true } },
 
       {
         $lookup: {
@@ -553,6 +737,13 @@ const getInventories = async (req, res, next) => {
             firstName: "$addedBy.firstName",
             lastName: "$addedBy.lastName",
           },
+
+          deletedBy: {
+            firstName: "$deletedBy.firstName",
+            lastName: "$deletedBy.lastName",
+          },
+          isDeleted: 1,
+          deletedAt: 1,
 
           /* 🔥 Opening */
           openingInventoryUnits: 1,
@@ -1709,6 +1900,8 @@ module.exports = {
   updateInventory,
   editInventory,
   bulkInsertInventory,
+  deleteInventory,
+  restoreInventory,
 };
 
 //BULK UPLOAD FLOW FOR INVENTORY

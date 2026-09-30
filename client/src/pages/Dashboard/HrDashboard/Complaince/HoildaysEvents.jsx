@@ -14,11 +14,14 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import humanDate from "../../../../utils/humanDateForamt";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 import { Controller, useForm } from "react-hook-form";
+import { MdDeleteForever } from "react-icons/md";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 
 const HoildaysEvents = ({ title }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [holidayToDelete, setHolidayToDelete] = useState(null);
 
   const {
     control,
@@ -40,9 +43,27 @@ const HoildaysEvents = ({ title }) => {
     {
       field: "start",
       headerName: "Date",
+      flex: 1,
       cellRenderer: (params) => humanDate(params.value),
     },
-    { field: "day", headerName: "Day" },
+    { field: "day", headerName: "Day" ,flex: 1},
+    {
+      field: "action",
+      headerName: "Action",
+     pinned: "right",
+      flex: 1,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          title="Delete"
+          aria-label="Delete holiday"
+          className="flex h-full w-8 items-center justify-center text-red-600 hover:text-red-700"
+          onClick={() => setHolidayToDelete(params.data)}
+        >
+          <MdDeleteForever size={24} />
+        </button>
+      ),
+    },
   ];
 
   const { data: holidayEvents = [] } = useQuery({
@@ -56,6 +77,7 @@ const HoildaysEvents = ({ title }) => {
   const combinedEvents = holidayEvents.map((holiday) => {
     const date = dayjs(holiday.start);
     return {
+      _id: holiday._id,
       title: holiday.title,
       day: date.format("dddd"),
       start: holiday.start,
@@ -75,6 +97,25 @@ const HoildaysEvents = ({ title }) => {
     },
     onError: () => {
       toast.error("Failed to add holiday.");
+    },
+  });
+
+  const deleteHolidayMutation = useMutation({
+    mutationFn: async () => {
+      const response = await axios.patch(
+        `/api/events/delete/${holidayToDelete?._id}`,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Holiday permanently deleted successfully");
+      setHolidayToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to delete holiday.",
+      );
     },
   });
 
@@ -194,6 +235,17 @@ const HoildaysEvents = ({ title }) => {
             </form>
           </LocalizationProvider>
         </MuiModal>
+
+        <ConfirmationModal
+          open={Boolean(holidayToDelete)}
+          title="Delete Holiday"
+          message="Are you sure you want to delete this holiday?"
+          confirmText="Yes"
+          cancelText="No"
+          isLoading={deleteHolidayMutation.isPending}
+          onClose={() => setHolidayToDelete(null)}
+          onConfirm={() => deleteHolidayMutation.mutate()}
+        />
       </div>
     </PageFrame>
   );

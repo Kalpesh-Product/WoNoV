@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
@@ -7,8 +7,12 @@ import AgTable from "../../../components/AgTable";
 import PageFrame from "../../../components/Pages/PageFrame";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import ConfirmationModal from "../../../components/ConfirmationModal";
 import { inrFormat } from "../../../utils/currencyFormat";
 import formatDateTime from "../../../utils/formatDateTime";
+import { queryClient } from "../../../main";
+import { toast } from "sonner";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
 
 const normalizeUnitNo = (value) =>
   String(value || "")
@@ -50,6 +54,7 @@ const InventoryRecordHistory = () => {
   const department = usePageDepartment();
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [inventoryAction, setInventoryAction] = useState(null);
 
   const decodedUnitNo = useMemo(
     () => (unitNo ? decodeURIComponent(unitNo) : ""),
@@ -139,11 +144,11 @@ const InventoryRecordHistory = () => {
   );
 
   const { data: inventoryData = [] } = useQuery({
-    queryKey: ["inventory-record-history", department?._id],
+    queryKey: ["inventory-record-history", department?._id, "include-deleted"],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/inventory/get-inventories?department=${department._id}`,
+        `/api/inventory/get-inventories?department=${department._id}&includeDeleted=true`,
       );
 
       return (response.data || []).map((item) => {
@@ -212,6 +217,11 @@ const InventoryRecordHistory = () => {
               item.addedBy.email ||
               "N/A"
             : "N/A",
+          deletedByName: item?.deletedBy
+            ? [item.deletedBy.firstName, item.deletedBy.lastName]
+                .filter(Boolean)
+                .join(" ") || "N/A"
+            : "N/A",
 
           rawDateTime: safeDate,
           inventoryStamp: formatDateTime(safeDate),
@@ -219,6 +229,48 @@ const InventoryRecordHistory = () => {
       });
     },
   });
+
+  const { mutate: deleteInventory, isPending: isDeletingInventory } =
+    useMutation({
+      mutationFn: async (inventoryId) =>
+        (await axios.delete(`/api/inventory/${inventoryId}`)).data,
+      onSuccess: (data) => {
+        toast.success(data.message);
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-record-history"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["maintainance-inventory"],
+        });
+        setInventoryAction(null);
+        setIsViewModalOpen(false);
+      },
+      onError: (error) =>
+        toast.error(
+          error?.response?.data?.message || "Failed to delete inventory",
+        ),
+    });
+
+  const { mutate: restoreInventory, isPending: isRestoringInventory } =
+    useMutation({
+      mutationFn: async (inventoryId) =>
+        (await axios.patch(`/api/inventory/${inventoryId}/restore`)).data,
+      onSuccess: (data) => {
+        toast.success(data.message);
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-record-history"],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["maintainance-inventory"],
+        });
+        setInventoryAction(null);
+        setIsViewModalOpen(false);
+      },
+      onError: (error) =>
+        toast.error(
+          error?.response?.data?.message || "Failed to restore inventory",
+        ),
+    });
 
   const historyRows = useMemo(() => {
     const unitKey = normalizeUnitNo(decodedUnitNo);
@@ -569,8 +621,56 @@ const InventoryRecordHistory = () => {
         minWidth: 160,
         cellRenderer: (params) => params.value,
       },
+      {
+        field: "actions",
+        headerName: "Action",
+        pinned: "right",
+        width: 120,
+        cellRenderer: (params) => (
+          <div className="flex h-full items-center gap-1">
+            {params.data.isDeleted && (
+              <button
+                type="button"
+                aria-label="Restore inventory"
+                title="Restore inventory"
+                disabled={isDeletingInventory || isRestoringInventory}
+                onClick={() =>
+                  setInventoryAction({
+                    type: "restore",
+                    row: params.data,
+                  })
+                }
+                className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
+              >
+                <MdOutlineRestore size={24} />
+              </button>
+            )}
+            <button
+              type="button"
+              aria-label="Delete inventory"
+              title={
+                params.data.isDeleted
+                  ? "Delete inventory permanently"
+                  : "Delete inventory"
+              }
+              disabled={isDeletingInventory || isRestoringInventory}
+              onClick={() =>
+                setInventoryAction({ type: "delete", row: params.data })
+              }
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        ),
+      },
     ];
-  }, [getUnitAssignedDisplayValue, isOverallInventoryHistoryRoute]);
+  }, [
+    getUnitAssignedDisplayValue,
+    isDeletingInventory,
+    isOverallInventoryHistoryRoute,
+    isRestoringInventory,
+  ]);
 
   const resolvedCategoryName = useMemo(() => {
     if (location.state?.inventoryCategory) {
@@ -601,7 +701,16 @@ const InventoryRecordHistory = () => {
           search={true}
           tableTitle={tableTitle}
           tableHeight={450}
-         // hideFilter
+          getRowStyle={({ data }) =>
+            data?.isDeleted
+              ? {
+                  backgroundColor: "#eef1f5",
+                  color: "#6b7280",
+                  opacity: 0.82,
+                }
+              : undefined
+          }
+          // hideFilter
           exportData
         />
       </PageFrame>
@@ -721,6 +830,18 @@ const InventoryRecordHistory = () => {
                   />
                 </div>
               </div>
+
+              {selectedAsset.isDeleted && (
+                <div>
+                  <div className="font-bold mb-4">Inventory Deleted By</div>
+                  <div className="space-y-4">
+                    <DetalisFormatted
+                      title="Name"
+                      detail={selectedAsset.deletedByName || "N/A"}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-1 gap-3 px-2 py-4">
@@ -801,9 +922,44 @@ const InventoryRecordHistory = () => {
                 title="Name"
                 detail={selectedAsset.addedByName || "N/A"}
               />
+              {selectedAsset.isDeleted && (
+                <>
+                  <br />
+                  <div className="font-bold">Inventory Deleted By</div>
+                  <DetalisFormatted
+                    title="Name"
+                    detail={selectedAsset.deletedByName || "N/A"}
+                  />
+                </>
+              )}
             </div>
           ))}
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(inventoryAction)}
+        onClose={() => setInventoryAction(null)}
+        onConfirm={() =>
+          inventoryAction?.type === "restore"
+            ? restoreInventory(inventoryAction.row._id)
+            : deleteInventory(inventoryAction?.row._id)
+        }
+        title={
+          inventoryAction?.type === "restore"
+            ? "Restore Inventory"
+            : inventoryAction?.row?.isDeleted
+              ? "Permanently Delete Inventory"
+              : "Delete Inventory"
+        }
+        message={
+          inventoryAction?.type === "restore"
+            ? "Are you sure you want to restore this inventory record?"
+            : inventoryAction?.row?.isDeleted
+              ? "Are you sure you want to permanently delete this inventory record?"
+              : "Are you sure you want to delete this inventory record?"
+        }
+        isLoading={isDeletingInventory || isRestoringInventory}
+      />
     </>
   );
 };

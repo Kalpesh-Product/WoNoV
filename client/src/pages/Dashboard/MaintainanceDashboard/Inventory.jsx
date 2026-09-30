@@ -674,11 +674,11 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   ]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
-    queryKey: ["maintainance-inventory", department?._id],
+    queryKey: ["maintainance-inventory", department?._id, "include-deleted"],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/inventory/get-inventories?department=${department._id}`,
+        `/api/inventory/get-inventories?department=${department._id}&includeDeleted=true`,
       );
 
       return response.data.map((item) => {
@@ -2764,6 +2764,15 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                   tableHeight={450}
                   dateColumn={"date"}
                   columns={unitInventoryColumns}
+                  getRowStyle={({ data }) =>
+                    data?.isDeleted
+                      ? {
+                          backgroundColor: "#eef1f5",
+                          color: "#6b7280",
+                          opacity: 0.82,
+                        }
+                      : undefined
+                  }
                   headerActions={
                     <div className="flex items-center gap-2 flex-wrap">
                       {selectedUnitInventorySummaryCards.map((card) => (

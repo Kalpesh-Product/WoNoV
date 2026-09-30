@@ -156,6 +156,7 @@ const AllocatedBudget = ({
   enableActionMenu = false,
   filterApprovedAndPendingOnly = false,
   exportData = false,
+  onRequestBudget,
 }) => {
  const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -830,9 +831,19 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
-          {exportData && (
-            <div className="flex justify-end">
-              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+          {(exportData || onRequestBudget) && (
+            <div className="flex justify-end gap-2">
+              {exportData && (
+                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+              )}
+              {onRequestBudget && (
+                <PrimaryButton
+                  title="Request Budget"
+                  padding="px-5 py-2"
+                  fontSize="text-base"
+                  handleSubmit={onRequestBudget}
+                />
+              )}
             </div>
           )}
 

@@ -794,10 +794,10 @@ const fetchVirtualOfficeRevenueReportService = async ({
 
     const client = item.client;
     const noOfDesks =
+      Number(client.totalDesks) ||
       Number(client.cabinDesks || 0) + Number(client.openDesks || 0);
-    const baseRate = [client.cabinDeskRate, client.openDeskRate]
-      .map(Number)
-      .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+    const baseRate =
+      Number(client.openDeskRate ?? client.cabinDeskRate ?? 0) || 0;
     const startDate = dayjs(client.termStartDate);
     const endDate = dayjs(client.termEnd);
     const annualIncrement = Number(client.annualIncrement) || 0;
@@ -847,6 +847,7 @@ const fetchVirtualOfficeRevenueReportService = async ({
       channel: useStoredRevenue
         ? item.channel || ""
         : client.bookingType ?? item.channel,
+      billingFrequency: client.billingFrequency ?? item.billingFrequency,
       noOfDesks:
         useStoredRevenue
           ? Number.isFinite(storedNoOfDesks)

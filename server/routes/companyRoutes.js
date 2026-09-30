@@ -18,6 +18,7 @@ const {
   addNewHouseKeepingMember,
   getHouseKeepingStaff,
   softDeleteHouseKeepingMember,
+  restoreHouseKeepingMember,
   updateHouseKeepingMember,
   assignHouseKeepingMember,
   getHouseKeepingAssignments,
@@ -184,6 +185,10 @@ router.patch("/update-housekeeping-member/:id", updateHouseKeepingMember);
 router.delete(
   "/soft-delete-housekeeping-member/:id",
   softDeleteHouseKeepingMember,
+);
+router.patch(
+  "/restore-housekeeping-member/:id",
+  restoreHouseKeepingMember,
 );
 router.post("/assign-new-housekeeping-schedule", assignHouseKeepingMember);
 router.get("/get-housekeeping-schedule", getHouseKeepingAssignments);
