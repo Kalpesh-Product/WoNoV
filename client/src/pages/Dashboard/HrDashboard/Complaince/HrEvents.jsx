@@ -64,7 +64,7 @@ const HrEvents = ({ title }) => {
   ];
 
   const { data: holidayEvents = [] } = useQuery({
-    queryKey: ["holidayEvents"],
+    queryKey: ["hrEvents"],
     queryFn: async () => {
       const response = await axios.get("/api/events/get-events");
       return response.data;
@@ -87,7 +87,7 @@ const HrEvents = ({ title }) => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+      queryClient.invalidateQueries({ queryKey: ["hrEvents"] });
       toast.success("Event added successfully!");
       reset(); // Clear form
       setModalOpen(false);
@@ -107,7 +107,7 @@ const HrEvents = ({ title }) => {
     onSuccess: (data) => {
       toast.success(data.message || "Event permanently deleted successfully");
       setEventToDelete(null);
-      queryClient.invalidateQueries({ queryKey: ["holidayEvents"] });
+      queryClient.invalidateQueries({ queryKey: ["hrEvents"] });
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to delete event.");
