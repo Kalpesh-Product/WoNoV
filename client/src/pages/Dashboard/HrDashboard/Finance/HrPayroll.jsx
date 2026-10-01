@@ -2,7 +2,7 @@ import React from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, CircularProgress, MenuItem } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
@@ -92,9 +92,27 @@ const HrPayroll = () => {
   );
   const [activePayrollStep, setActivePayrollStep] = useState(0);
   const [completedPayrollSteps, setCompletedPayrollSteps] = useState([]);
+  const [attendanceApproval, setAttendanceApproval] = useState({
+    isLoading: true,
+    total: 0,
+    approved: 0,
+    allApproved: false,
+  });
   const [payrollProgress, setPayrollProgress] = useState(readPayrollProgress);
   const payrollProgressKey = `${selectedBatch}::${selectedPayPeriod}`;
   const currentPayrollProgress = payrollProgress[payrollProgressKey];
+  const handleAttendanceApprovalChange = useCallback((approval) => {
+    setAttendanceApproval(approval);
+  }, []);
+
+  useEffect(() => {
+    setAttendanceApproval({
+      isLoading: true,
+      total: 0,
+      approved: 0,
+      allApproved: false,
+    });
+  }, [selectedBatch, selectedPayPeriod]);
   const updatePayrollProgress = (key, progress) => {
     setPayrollProgress((currentProgress) => {
       const nextProgress = { ...currentProgress };
@@ -1005,6 +1023,7 @@ const tableData = isLoading
             payrollView
             fixedMonth={selectedPayPeriod}
             payrollBatch={selectedBatch}
+            onApprovalStateChange={handleAttendanceApprovalChange}
           />
         ) : isMixBagPayroll && activePayrollStep === 2 ? (
           <AgTable
@@ -1082,7 +1101,12 @@ const tableData = isLoading
                   ? "Submit"
                   : "Continue"
               }
-              disabled={isSavingPayrollDraft}
+              disabled={
+                isSavingPayrollDraft ||
+                (activePayrollStep === 1 &&
+                  (attendanceApproval.isLoading ||
+                    !attendanceApproval.allApproved))
+              }
               handleSubmit={() => {
                 if (activePayrollStep === payrollSteps.length - 1) {
                   savePayrollDraft();

@@ -1529,21 +1529,23 @@ const ViewPayroll = ({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            {status !== "Completed" && (
+          {!compensationOnly && (
+            <div className="flex flex-wrap items-center justify-center gap-4">
+              {status !== "Completed" && (
+                <PrimaryButton
+                  title={"Generate Payslip"}
+                  handleSubmit={handleGeneratePayslip}
+                  disabled
+                />
+              )}
+
               <PrimaryButton
-                title={"Generate Payslip"}
-                handleSubmit={handleGeneratePayslip}
+                title={"Download Payslip"}
+                handleSubmit={handleDownloadPayslip}
                 disabled
               />
-            )}
-
-            <PrimaryButton
-              title={"Download Payslip"}
-              handleSubmit={handleDownloadPayslip}
-              disabled
-            />
-          </div>
+            </div>
+          )}
         </div>
       </WidgetSection>}
       <MuiModal

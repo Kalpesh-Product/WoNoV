@@ -781,6 +781,10 @@ const getUserDisplayName = (user) => {
       field: "channel",
     },
     {
+      headerName: "Client Type",
+      field: "billingFrequency",
+    },
+    {
       headerName: "Revenue (INR)",
       field: "revenue",
       cellRenderer: (params) => inrFormat(params.value || 0),

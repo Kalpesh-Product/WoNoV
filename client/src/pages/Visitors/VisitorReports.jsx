@@ -1,3 +1,7 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
+import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
+import { getDayPassPaymentDetails } from "../../utils/dayPassPaymentDetails";
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -411,16 +415,27 @@ const VisitorReports = () => {
       date: visitor.checkIn,
       // The report is queried and paginated by check-in, so show that same DB
       // value instead of a separately scheduled visit date.
-      dateOfVisit: formatDateValue(visitor.checkIn),
+      dateOfVisit: formatDateValue(visitor.dateOfVisit || visitor.checkIn),
       scheduledDate: formatDateValue(visitor.scheduledDate),
       gstFile: visitor?.gstFile?.link,
       otherFile: visitor?.otherFile?.link,
       panFile: visitor?.panFile?.link,
+      isMeeting: isMeetingVisit(paymentSource),
+      meetingPaymentDetails: paymentSource.meetingPaymentDetails,
+      paymentDetails: getDayPassPaymentDetails(paymentSource),
       paymentAmount:
         paymentSource?.amount ??
         paymentSource?.paymentAmount ??
         paymentSource?.totalAmount ??
         "-",
+      deskAmount: paymentSource?.amount ?? "-",
+      taxableAmount:
+        paymentSource?.amount != null
+          ? Math.max(
+              Number(paymentSource.amount) - Number(paymentSource.discount ?? 0),
+              0,
+            )
+          : "-",
       discountAmount:
         paymentSource?.discount ?? paymentSource?.discountAmount ?? "-",
       gstAmount: paymentSource?.gstAmount ?? "-",
@@ -654,6 +669,16 @@ const VisitorReports = () => {
               title="Scheduled Date"
               detail={selectedVisitor.scheduledDate}
             />
+            {(selectedVisitor.isMeeting || selectedVisitor.visitorFlag === "Client" ||
+              ["Full-Day Pass", "Half-Day Pass", "Meeting"].includes(
+                selectedVisitor.visitorType,
+              )) && (
+              selectedVisitor.isMeeting ? (
+                <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} />
+              ) : (
+                <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} />
+              )
+            )}
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">
                 <img

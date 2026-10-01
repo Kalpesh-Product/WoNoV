@@ -1,3 +1,5 @@
+import MeetingPaymentDetails from "../../../components/MeetingPaymentDetails";
+import DayPassPaymentDetails from "../../../components/DayPassPaymentDetails";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../utils/currencyFormat";
@@ -307,90 +309,7 @@ const DayPassRevenueDetails = ({ revenue }) => {
         }
       />
 
-      {/* Payment Details */}
-      <DetailSection title="Payment Details" />
-
-      <DetalisFormatted
-        title="Taxable Amount"
-        detail={`INR ${inrFormat(revenue.taxable || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="GST Amount"
-        detail={`INR ${inrFormat(revenue.gst || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="Total Amount"
-        detail={`INR ${inrFormat(revenue.totalAmount || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="Discount"
-        detail={`INR ${inrFormat(revenue.discount || 0)}`}
-      />
-
-      <DetalisFormatted
-        title="Mode"
-        detail={
-          revenue.paymentMode ||
-          revenue.remarks ||
-          "N/A"
-        }
-      />
-
-      <DetalisFormatted
-        title="Status"
-        detail={revenue.status || "N/A"}
-      />
-
-      <DetalisFormatted
-        title="Verification"
-        detail={
-          revenue.paymentVerification || "N/A"
-        }
-      />
-
-      <DetalisFormatted
-        title="Uploaded File"
-        detail={
-          <FileDetail
-            file={{ link: revenue.paymentProofLink }}
-          />
-        }
-      />
-
-      {/* Finance Invoice Details */}
-      <DetailSection title="Finance Invoice Details" />
-
-      <DetalisFormatted
-        title="Invoice Link"
-        detail={
-          <FileDetail
-            file={{ link: revenue.invoiceLink }}
-            label="View PDF"
-          />
-        }
-      />
-
-      <DetalisFormatted
-        title="Invoice Uploaded At"
-        detail={
-          revenue.invoiceUploadedAt
-            ? humanDate(revenue.invoiceUploadedAt)
-            : "N/A"
-        }
-      />
-
-      <DetalisFormatted
-        title="Invoice Uploaded By"
-        detail={revenue.invoiceUploadedByName || "N/A"}
-      />
-
-      <DetalisFormatted
-        title="Finance Status"
-        detail={revenue.financeStatus || "Pending"}
-      />
+      <DayPassPaymentDetails revenue={revenue} />
     </div>
   );
 };
@@ -1063,7 +982,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     {
                       headerName: "Invoice Uploaded On",
                       field: "invoiceUploadedAt",
-                      pinned:"right",
+                      //pinned:"right",
                       valueFormatter: ({ value }) =>
                         value ? humanDate(value) : "-",
                     },
@@ -1185,107 +1104,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   title="Housekeeping Status"
                   detail={selectedRevenue.meetingHousekeepingStatus || "N/A"}
                 />
-                <div className="font-bold text-lg pt-4">Payment Details</div>
-                <DetalisFormatted
-                  title="Payment Date"
-                  detail={
-                    selectedRevenue.paymentDate
-                      ? humanDate(selectedRevenue.paymentDate)
-                      : "N/A"
-                  }
-                />
-                <DetalisFormatted
-                  title="Unit"
-                  detail={getUnitLabel(selectedRevenue.unit)}
-                />
-                <DetalisFormatted
-                  title="Building"
-                  detail={selectedRevenue.building || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Hours Booked"
-                  detail={selectedRevenue.hoursBooked || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Cost Per Hour"
-                  detail={`INR ${inrFormat(selectedRevenue.costPerHour || 0)}`}
-                />
-                <DetalisFormatted
-                  title="Taxable Amount"
-                  detail={`INR ${inrFormat(selectedRevenue.taxable || 0)}`}
-                />
-                <DetalisFormatted
-                  title="GST Amount"
-                  detail={`INR ${inrFormat(selectedRevenue.gst || 0)}`}
-                />
-                <DetalisFormatted
-                  title="Total Amount"
-                  detail={`INR ${inrFormat(selectedRevenue.totalAmount || 0)}`}
-                />
-                <DetalisFormatted
-                  title="Admin Status"
-                  detail={selectedRevenue.status || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Admin Payment Proof"
-                  detail={
-                    selectedRevenue.paymentProofLink ? (
-                      <a
-                        href={selectedRevenue.paymentProofLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline"
-                      >
-                        {selectedRevenue.paymentProofName || "View File"}
-                      </a>
-                    ) : (
-                      "-"
-                    )
-                  }
-                />
-                <DetalisFormatted
-                  title="Payment Verification"
-                  detail={selectedRevenue.paymentVerification || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Remarks"
-                  detail={selectedRevenue.remarks || selectedRevenue.paymentMode || "N/A"}
-                />
-                <div className="font-bold text-lg pt-4">Finance Invoice Details</div>
-                <DetalisFormatted
-                  title="Invoice Link"
-                  detail={
-                    selectedRevenue.invoiceLink ? (
-                      <a
-                        href={selectedRevenue.invoiceLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-primary underline"
-                      >
-                        View PDF
-                      </a>
-                    ) : (
-                      "-"
-                    )
-                  }
-                />
-                <DetalisFormatted
-                  title="Invoice Uploaded At"
-                  detail={
-                    selectedRevenue.invoiceUploadedAt
-                      ? humanDate(selectedRevenue.invoiceUploadedAt)
-                      : "N/A"
-                  }
-                />
-                <DetalisFormatted
-                  title="Invoice Uploaded By"
-                  detail={selectedRevenue.invoiceUploadedByName || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Finance Status"
-                  detail={selectedRevenue.financeStatus || "Pending"}
-                  //detail={selectedRevenue.financeStatus || "Upload Invoice"}
-                />
+                <MeetingPaymentDetails revenue={selectedRevenue} />
               </div>
             ))}
           </MuiModal>

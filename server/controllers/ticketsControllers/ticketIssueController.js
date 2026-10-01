@@ -4,6 +4,7 @@ const User = require("../../models/hr/UserData");
 const { createLog } = require("../../utils/moduleLogs");
 const CustomError = require("../../utils/customErrorlogs");
 const NewTicketIssue = require("../../models/tickets/NewTicketIssue");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 // const addTicketIssue = async (req, res, next) => {
 //   const logPath = "hr/HrLog";
@@ -288,6 +289,11 @@ const deleteDepartmentTicketIssue = async (req, res, next) => {
     if (!issue) return res.status(404).json({ message: "Ticket Issue not found" });
     issue.deleteOne();
     await companyDoc.save();
+    setAuditLogContext(req, "Delete Ticket Issue", {
+      ticketIssueId: String(issue._id),
+      ticketIssueName: issue.title,
+      deletionType: "permanent",
+    });
     return res.status(200).json({ message: "Ticket Issue deleted successfully" });
   } catch (error) {
     next(error);
@@ -373,6 +379,12 @@ const rejectTicketIssue = async (req, res, next) => {
       sourceKey: logSourceKey,
       sourceId: rejectedTicket._id,
       changes: rejectedTicket,
+    });
+
+    setAuditLogContext(req, "Reject Ticket Issue", {
+      ticketIssueId: String(rejectedTicket._id),
+      ticketIssueName: rejectedTicket.issueTitle,
+      deletionType: "permanent",
     });
 
     return res.status(200).json({ message: "Ticket rejected successfully" });

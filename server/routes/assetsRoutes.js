@@ -7,6 +7,8 @@ const {
   getAssetsWithDepartments,
   bulkInsertAssets,
   bulkAssignedAssets,
+  deleteAsset,
+  restoreAsset,
 } = require("../controllers/assetsControllers/assetsControllers");
 const {
   addSubCategory,
@@ -17,6 +19,10 @@ const {
   getSubCategory,
   updateCategory,
   updateSubCategory,
+  deleteCategory,
+  restoreCategory,
+  deleteSubCategory,
+  restoreSubCategory,
 } = require("../controllers/assetsControllers/categoryControllers");
 
 const {
@@ -63,6 +69,12 @@ router.patch("/update-category", updateCategory);
 router.patch("/update-subcategory", updateSubCategory);
 router.get("/get-category", getCategory);
 router.get("/get-subcategory", getSubCategory);
+router.delete("/category/:categoryId", deleteCategory);
+router.patch("/category/:categoryId/restore", restoreCategory);
+router.delete("/subcategory/:subCategoryId", deleteSubCategory);
+router.patch("/subcategory/:subCategoryId/restore", restoreSubCategory);
+router.delete("/asset/:assetId", deleteAsset);
+router.patch("/asset/:assetId/restore", restoreAsset);
 
 // Asset Assignment Routes
 router.post("/new-asset-assignment", assignAsset);

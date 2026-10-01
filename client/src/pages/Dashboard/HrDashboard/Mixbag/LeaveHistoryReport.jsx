@@ -87,18 +87,11 @@ const LeaveHistoryReport = () => {
   );
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 80 },
-    { field: "takenBy", headerName: "Taken By", width: 180 },
-    { field: "takenByEmpId", headerName: "Taken By Emp ID", width: 165 },
-    { field: "fromDate", headerName: "From Date", width: 135 },
-    { field: "toDate", headerName: "To Date", width: 135 },
-    { field: "leaveType", headerName: "Leave Type", width: 150 },
-    { field: "leavePeriod", headerName: "Leave Period", width: 145 },
-    { field: "hours", headerName: "Hours", width: 100 },
-    { field: "description", headerName: "Description", minWidth: 220, flex: 1 },
-    { field: "status", headerName: "Status", width: 130 },
-    { field: "addedBy", headerName: "Added By", width: 180 },
-    { field: "approvedBy", headerName: "Approved By", width: 180 },
-    { field: "rejectedBy", headerName: "Rejected By", width: 180 },
+    { field: "comments", headerName: "Comments", minWidth: 220 },
+    { field: "takenBy", headerName: "Employee Name", width: 180 },
+    { field: "takenByEmpId", headerName: "Employee ID", width: 165 },
+    { field: "addedBy", headerName: "Created By", width: 180 },
+    { field: "createdOn", headerName: "Created On", width: 190 },
   ];
 
   return (

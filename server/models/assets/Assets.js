@@ -125,6 +125,12 @@ const assetsSchema = new mongoose.Schema(
       id: String,
       url: String,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
   { timestamps: true },
 );

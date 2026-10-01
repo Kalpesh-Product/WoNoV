@@ -1,3 +1,4 @@
+const { getPayrollDays } = require("../../utils/payrollDays");
 const { default: mongoose } = require("mongoose");
 const fs = require("fs");
 const path = require("path");
@@ -274,7 +275,7 @@ const createPayslipPdf = async ({ draft, summary, employee, companyData }) => {
   const payEnd = new Date(
     Date.UTC(payStart.getUTCFullYear(), payStart.getUTCMonth() + 1, 0),
   );
-  const totalDaysInMonth = payEnd.getUTCDate();
+  const { paidDays } = getPayrollDays(summary.scheduledWorkingDays, summary.lossOfPayDays);
   const dateLabel = (date) =>
     date.toLocaleDateString("en-US", {
       day: "2-digit",
@@ -389,7 +390,7 @@ const createPayslipPdf = async ({ draft, summary, employee, companyData }) => {
     ["LOP Days", numberValue(summary.lossOfPayDays)],
     [
       "Paid Days",
-      Math.max(0, totalDaysInMonth - numberValue(summary.lossOfPayDays)),
+      paidDays,
     ],
   ];
   const earningRows = [
@@ -778,8 +779,9 @@ const createPayrollDraft = async (req, res, next) => {
           annualCtc > 0 &&
           annualCtc / 12 < 21000;
         const attendance = attendanceByEmployee.get(String(employee._id));
-        const scheduledDays = Number(attendance?.scheduledWorkingDays) || 0;
-        const lopDays = Number(attendance?.lop) || 0;
+        const { scheduledWorkingDays: scheduledDays, lossOfPayDays: lopDays } = getPayrollDays(
+          attendance?.scheduledWorkingDays, attendance?.lop ?? 0,
+        );
         const employeeLossOfPay = roundCurrency(
           scheduledDays > 0 ? (annualCtc / 12 / scheduledDays) * lopDays : 0,
         );
@@ -814,6 +816,7 @@ const createPayrollDraft = async (req, res, next) => {
             label: item.label,
             amount: numberValue(item.amount),
           })),
+          scheduledWorkingDays: scheduledDays,
           lossOfPayDays: lopDays,
           lossOfPay: employeeLossOfPay,
           payrollNotes: "",
@@ -1011,6 +1014,8 @@ const fetchPayrollDraftExport = async (req, res, next) => {
         allowanceDetails: formatItems(summary.allowanceItems),
         deductions: numberValue(summary.deductions),
         deductionDetails: formatItems(summary.deductionItems),
+        scheduledWorkingDays: summary.scheduledWorkingDays,
+        paidDays: getPayrollDays(summary.scheduledWorkingDays, summary.lossOfPayDays).paidDays,
         lossOfPayDays: numberValue(summary.lossOfPayDays),
         lossOfPayAmount: numberValue(summary.lossOfPay),
         incomeTax: numberValue(summary.incomeTax),
@@ -1165,7 +1170,9 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
     })
       .select("scheduledWorkingDays")
       .lean();
-    const scheduledDays = numberValue(attendance?.scheduledWorkingDays);
+    const { scheduledWorkingDays: scheduledDays } = getPayrollDays(
+      attendance?.scheduledWorkingDays, lossOfPayDays,
+    );
     const lossOfPay = roundCurrency(
       scheduledDays > 0 && annualCtc > 0
         ? (annualCtc / 12 / scheduledDays) * lossOfPayDays
@@ -1192,6 +1199,7 @@ const updatePayrollDraftEmployee = async (req, res, next) => {
       deductions: deductionTotal,
       actualGross,
       gross,
+      scheduledWorkingDays: scheduledDays,
       lossOfPayDays,
       lossOfPay,
       payrollNotes: String(req.body.payrollNotes || "")
@@ -1384,6 +1392,9 @@ const submitPayrollDraft = async (req, res, next) => {
         .status(400)
         .json({ message: "Payroll must contain at least one employee" });
     }
+    for (const summary of draft.employeeSummaries.filter((item) => !item.isExcluded)) {
+      getPayrollDays(summary.scheduledWorkingDays, summary.lossOfPayDays);
+    }
     await recalculateDraftTotals(draft);
     draft.status = "Processed";
     draft.submittedBy = req.user;
@@ -1427,6 +1438,9 @@ const releasePayrollDraftPayslips = async (req, res, next) => {
     const summaries = draft.employeeSummaries.filter(
       (summary) => !summary.isExcluded && summary.employee,
     );
+    for (const summary of summaries) {
+      getPayrollDays(summary.scheduledWorkingDays, summary.lossOfPayDays);
+    }
     const employeeIds = summaries.map((summary) => summary.employee);
     const [employees, companyData] = await Promise.all([
       User.find({ _id: { $in: employeeIds }, company: req.company })
@@ -1506,6 +1520,8 @@ const releasePayrollDraftPayslips = async (req, res, next) => {
             incomeTax: summary.incomeTax,
             surcharge: summary.surcharge,
             cess: summary.cess,
+            scheduledWorkingDays: summary.scheduledWorkingDays,
+            paidDays: getPayrollDays(summary.scheduledWorkingDays, summary.lossOfPayDays).paidDays,
             lopDays: summary.lossOfPayDays,
             lopAmount: summary.lossOfPay,
             allowanceItems: summary.allowanceItems,

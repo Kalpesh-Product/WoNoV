@@ -39,7 +39,10 @@ const externalVisitSchema = new mongoose.Schema(
     },
     checkIn: {
       type: Date,
-      required: true,
+      default: null,
+      required: function () {
+        return !(this.visitorType === "Meeting" && this.meeting && this.scheduledStartTime);
+      },
     },
     checkOut: {
       type: Date,

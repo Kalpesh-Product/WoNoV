@@ -29,6 +29,7 @@ const AgTableComponent = React.memo(
     handleClick,
     buttonTitle,
     headerActions,
+    exportBeforeHeaderActions = false,
     searchRowActions,
     searchBottomContent,
     tableHeight = 400,
@@ -39,6 +40,7 @@ const AgTableComponent = React.memo(
     disabled,
     handleBatchAction,
     isRowSelectable,
+    showDisabledCheckboxes = false,
     batchButton,
     hideTitle,
     hideHeaderDivider,
@@ -315,11 +317,12 @@ const AgTableComponent = React.memo(
           field: "",
           headerCheckboxSelection: checkAll, // ✅ Only allow header checkbox when checkAll is true
           checkboxSelection: true,
+          showDisabledCheckboxes,
           width: 50,
         },
         ...stateSafeColumns,
       ];
-    }, [stateSafeColumns, enableCheckbox, checkAll]);
+    }, [stateSafeColumns, enableCheckbox, checkAll, showDisabledCheckboxes]);
 
     const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
@@ -361,8 +364,9 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
+              {hideFilter && exportBeforeHeaderActions ? renderExportButton() : null}
               {headerActions ? headerActions : ""}
-              {hideFilter ? renderExportButton() : ""}
+              {hideFilter && !exportBeforeHeaderActions ? renderExportButton() : null}
 
               {/* {buttonTitle ? (
                 <PrimaryButton

@@ -17,6 +17,7 @@ const {
   getTeamMemberTickets,
   updateOtherTicket,
   ticketsReports,
+  deleteTicket,
 } = require("../controllers/ticketsControllers/ticketsControllers");
 const { ticketUpload } = require("../config/ticketUploadConfig");
 
@@ -52,6 +53,7 @@ router.get("/get-tickets/:departmentId", getTickets);
 router.get("/get-all-tickets", getAllTickets);
 router.get("/get-depts-tickets", getAllDeptTickets);
 router.get("/my-tickets", filterMyTickets);
+router.delete("/:id", deleteTicket);
 router.get("/today", filterTodayTickets);
 router.get("/:id", getSingleUserTickets);
 router.post(

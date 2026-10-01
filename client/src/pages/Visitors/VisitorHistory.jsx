@@ -1,3 +1,5 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -491,14 +493,25 @@ const VisitorHistory = () => {
             title={isInternalHistory ? "Check Out By" : "Checkout By"}
             detail={selectedVisit?.checkedOutBy}
           />
+          {!isInternalHistory && isMeetingVisit(selectedVisit || {}) && (
+            <MeetingPaymentDetails revenue={selectedVisit?.meetingPaymentDetails} showFinanceDetails={false} />
+          )}
           {!isInternalHistory &&
-            selectedVisit?.purposeOfVisit !== "Meeting Room Booking" && (
+            !isMeetingVisit(selectedVisit || {}) && (
             <>
               <br />
               <div className="font-bold">Payment Details</div>
               <DetalisFormatted
+                title="Desk Amount"
+                detail={`INR ${inrFormat((selectedVisit?.amount) || 0)}`}
+              />
+              <DetalisFormatted
+                title="Discount"
+                detail={`INR ${inrFormat(selectedVisit?.discount || 0)}`}
+              />
+              <DetalisFormatted
                 title="Taxable Amount"
-                detail={`INR ${inrFormat(selectedVisit?.amount || 0)}`}
+                detail={`INR ${inrFormat(Math.max(Number(selectedVisit?.amount || 0) - Number(selectedVisit?.discount || 0), 0))}`}
               />
               <DetalisFormatted
                 title="GST Amount"
@@ -509,24 +522,20 @@ const VisitorHistory = () => {
                 detail={`INR ${inrFormat(selectedVisit?.rawTotalAmount || 0)}`}
               />
               <DetalisFormatted
-                title="Discount"
-                detail={`INR ${inrFormat(selectedVisit?.discount || 0)}`}
-              />
-              <DetalisFormatted
-                title="Mode"
-                detail={selectedVisit?.paymentMode || "N/A"}
-              />
-              <DetalisFormatted
                 title="Status"
                 detail={selectedVisit?.paymentStatus}
               />
               <DetalisFormatted
-                title="Verification"
-                detail={selectedVisit?.paymentVerification || "N/A"}
+                title="Payment Proof"
+                detail={renderPaymentProof(selectedVisit)}
               />
               <DetalisFormatted
-                title="Uploaded File"
-                detail={renderPaymentProof(selectedVisit)}
+                title="Payment Mode"
+                detail={selectedVisit?.paymentMode || "N/A"}
+              />
+              <DetalisFormatted
+                title="Payment Verification"
+                detail={selectedVisit?.paymentVerification || "N/A"}
               />
             </>
             )}

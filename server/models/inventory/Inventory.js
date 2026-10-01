@@ -76,6 +76,12 @@ const inventorySchema = new mongoose.Schema(
       required: true,
       default: 0,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
 
   {

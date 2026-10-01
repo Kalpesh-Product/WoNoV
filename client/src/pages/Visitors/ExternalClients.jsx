@@ -1,3 +1,7 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
+import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
+import { getDayPassPaymentDetails } from "../../utils/dayPassPaymentDetails";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -973,7 +977,9 @@ const ExternalClients = ({
       visitor.visitorType || visitor.purposeOfVisit,
     );
     if (!defaultAmount || defaultAmount === 0) {
-      if (normalizedVisitorType === "Full-Day Pass") defaultAmount = 850;
+      if (normalizedVisitorType === "Full-Day Pass") {
+        defaultAmount = visitor.buildingName === "Dempo Trade Centre" ? 750 : 850;
+      }
       else if (normalizedVisitorType === "Half-Day Pass") defaultAmount = 500;
     }
     // if (!defaultAmount || defaultAmount === 0) {
@@ -1161,6 +1167,9 @@ const ExternalClients = ({
                     : item.totalAmount
                       ? inrFormat(item.totalAmount)
                       : 0,
+                  isMeeting: isMeetingVisit(latestVisit || item),
+                  meetingPaymentDetails: (latestVisit || item).meetingPaymentDetails,
+                  paymentDetails: getDayPassPaymentDetails(latestVisit || item),
                   rawPaymentAmount: latestVisit?.amount ?? item.amount ?? 0,
                   gstAmount: latestVisit?.gstAmount ?? item.gstAmount ?? 0,
                   discountAmount: latestVisit?.discount ?? item.discount ?? 0,
@@ -1697,43 +1706,10 @@ const ExternalClients = ({
                     />
                     <br />
                     {/* payment details */}
-                    {selectedVisitor?.purposeOfVisit !==
-                      "Meeting Room Booking" && (
-                      <>
-                        <div className="font-bold">Payment Details</div>
-                        <DetalisFormatted
-                          title="Taxable Amount"
-                          detail={`INR ${selectedVisitor?.rawPaymentAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="GST Amount"
-                          detail={`INR ${selectedVisitor?.gstAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Total Amount"
-                          detail={`INR ${selectedVisitor?.finalAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Discount"
-                          detail={`INR ${selectedVisitor?.discountAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Mode"
-                          detail={selectedVisitor?.paymentMode}
-                        />
-                        <DetalisFormatted
-                          title="Status"
-                          detail={selectedVisitor?.paymentStatus}
-                        />
-                        <DetalisFormatted
-                          title="Verification"
-                          detail={selectedVisitor?.paymentVerification}
-                        />
-                        <DetalisFormatted
-                          title="Uploaded File"
-                          detail={renderFileLink(selectedVisitor?.paymentProof)}
-                        />
-                      </>
+                    {selectedVisitor.isMeeting ? (
+                      <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} showFinanceDetails={false} />
+                    ) : (
+                      <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} showFinanceDetails={false} />
                     )}
                   </>
                 )}

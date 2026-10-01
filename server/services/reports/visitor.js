@@ -1,3 +1,28 @@
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const { getMeetingPaymentDetails } = require("../../utils/meetingPaymentDetails");
+
+// Load revenue once per result batch, scoped to the current company and linked meetings.
+const attachMeetingPaymentDetails = async (records, company) => {
+  const linked = records.filter((record) => record.meeting?._id);
+  if (!linked.length || !company) return;
+  const ids = [...new Set(linked.map((record) => String(record.meeting._id)))];
+  const revenues = await MeetingRevenue.find({ company, meeting: { $in: ids } })
+    .select("meeting date paymentDate hoursBooked costPerHour taxable gst totalAmount remarks invoice invoiceUploadedAt invoiceUploadedBy financeStatus")
+    .sort({ date: -1, updatedAt: -1, createdAt: -1 })
+    .populate({ path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName" })
+    .lean();
+  const byMeeting = new Map();
+  for (const revenue of revenues) {
+    const id = String(revenue.meeting);
+    if (!byMeeting.has(id)) byMeeting.set(id, revenue);
+  }
+  for (const record of linked) {
+    record.meetingPaymentDetails = getMeetingPaymentDetails(
+      byMeeting.get(String(record.meeting._id)), record.meeting,
+    );
+  }
+};
+
 const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
@@ -165,7 +190,8 @@ const populateVisitorListFields = [
   {
     path: "meeting",
     select:
-      "subject agenda startDate endDate startTime endTime meetingType status",
+      "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
+    populate: { path: "bookedRoom", select: "perHourPrice" },
   },
   {
     path: "building",
@@ -178,6 +204,7 @@ const populateVisitorListFields = [
 ];
 
 const populateExternalVisitFields = [
+  { path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName name" },
   { path: "department", select: "name" },
   { path: "toMeet", select: "firstName lastName email" },
   {
@@ -190,7 +217,8 @@ const populateExternalVisitFields = [
   {
     path: "meeting",
     select:
-      "subject agenda startDate endDate startTime endTime meetingType status",
+      "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
+    populate: { path: "bookedRoom", select: "perHourPrice" },
   },
   {
     path: "unit",
@@ -429,12 +457,119 @@ const fetchFinanceDayPassVisits = async ({
     visitsQuery.exec(),
     shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
   ]);
+  await attachMeetingPaymentDetails(visits, companyId);
   const data = visits
     .filter((visit) => visit.visitorId)
     .map((visit) => {
       const { visitorId, ...visitData } = visit;
       return {
         ...visitorId,
+        externalVisits: [visitData],
+      };
+    });
+
+  if (!shouldPaginate) return data;
+
+  return {
+    data,
+    pagination: {
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+    },
+  };
+};
+
+const fetchVisitorReportVisits = async ({
+  companyId,
+  dateFilter,
+  search,
+  shouldPaginate,
+  parsedPage,
+  parsedLimit,
+  skip,
+}) => {
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const searchRegex = buildSearchRegex(normalizedSearch);
+  const visitFilter = {
+    company: companyId,
+    visitorId: { $ne: null },
+    ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
+  };
+
+  if (searchRegex) {
+    const visitorSearchConditions = await buildVisitorSearchConditions({
+      company: companyId,
+      search: normalizedSearch,
+    });
+    const matchingVisitorIds = await Visitor.find({
+      company: companyId,
+      $or: visitorSearchConditions,
+    }).distinct("_id");
+    const { users, members, clients } = await resolveReferenceIds(searchRegex, [
+      {
+        key: "users",
+        model: UserData,
+        fields: ["firstName", "lastName", "email"],
+        extraFilter: { company: companyId },
+      },
+      {
+        key: "members",
+        model: CoworkingMember,
+        fields: ["employeeName", "email"],
+        extraFilter: { company: companyId },
+      },
+      {
+        key: "clients",
+        model: CoworkingClient,
+        fields: ["clientName", "companyName", "name"],
+      },
+    ]);
+
+    visitFilter.$or = [
+      { purposeOfVisit: searchRegex },
+      { visitorType: searchRegex },
+      { visitorCompany: searchRegex },
+      { paymentMode: searchRegex },
+      { paymentVerification: searchRegex },
+      ...(matchingVisitorIds.length
+        ? [{ visitorId: { $in: matchingVisitorIds } }]
+        : []),
+      ...(users.length ? [{ toMeet: { $in: users } }] : []),
+      ...(users.length ? [{ checkedInBy: { $in: users } }] : []),
+      ...(users.length ? [{ checkedOutBy: { $in: users } }] : []),
+      ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
+      ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
+    ];
+  }
+
+  let visitsQuery = ExternalVisits.find(visitFilter)
+    .sort({ dateOfVisit: -1, checkIn: -1, _id: -1 })
+    .populate({
+      path: "visitorId",
+      select:
+        "firstName middleName lastName email gender phoneNumber city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorCompany visitorFlag visitorRoles",
+    })
+    .populate(populateExternalVisitFields)
+    .lean();
+
+  if (shouldPaginate) {
+    visitsQuery = visitsQuery.skip(skip).limit(parsedLimit);
+  }
+
+  const [visits, total] = await Promise.all([
+    visitsQuery.exec(),
+    shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
+  ]);
+  await attachMeetingPaymentDetails(visits, companyId);
+  const data = visits
+    .filter((visit) => visit.visitorId)
+    .map((visit) => {
+      const { visitorId, ...visitData } = visit;
+      return {
+        ...visitorId,
+        ...visitData,
         externalVisits: [visitData],
       };
     });
@@ -485,6 +620,18 @@ const fetchVisitorReportService = async ({
 
     if (searchContext === "finance-day-pass" && type === "day-pass") {
       return fetchFinanceDayPassVisits({
+        companyId,
+        dateFilter,
+        search: normalizedSearch,
+        shouldPaginate,
+        parsedPage,
+        parsedLimit,
+        skip,
+      });
+    }
+
+    if (searchContext === "visitor-reports") {
+      return fetchVisitorReportVisits({
         companyId,
         dateFilter,
         search: normalizedSearch,
@@ -981,6 +1128,11 @@ const fetchVisitorReportService = async ({
       visitors = await attachExternalVisits(visitors, companyId, dateFilter);
     }
 
+    await attachMeetingPaymentDetails(
+      visitors.flatMap((visitor) => [visitor, ...(visitor.externalVisits || [])]),
+      companyId,
+    );
+
     if (includeVisitCounts) {
       visitors = await attachVisitCounts(visitors, companyId);
     }
@@ -1234,6 +1386,7 @@ const fetchClientVisitorsReportService = async ({
 };
 
 module.exports = {
+  attachMeetingPaymentDetails,
   fetchVisitorReportService,
   fetchInternalVisitorsReportService,
   fetchClientVisitorsReportService,

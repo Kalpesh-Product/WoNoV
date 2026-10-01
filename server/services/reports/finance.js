@@ -25,8 +25,13 @@ const fetchBudgetVoucherService = async ({
   isReport,
   dashboardView = false,
   profitLossView = false,
+  includeDeleted = false,
 }) => {
   const query = { company };
+
+  if (!includeDeleted) {
+    query.isDeleted = { $ne: true };
+  }
 
   if (departmentId && !["payout", "landlord-payments"].includes(type)) {
     query.department = departmentId;
@@ -173,6 +178,9 @@ const fetchBudgetVoucherService = async ({
     ? [
         { path: "department", select: "name" },
         { path: "unit", select: "unitNo" },
+        ...(includeDeleted
+          ? [{ path: "deletedBy", select: "firstName lastName employeeName name email" }]
+          : []),
       ]
     : isFilteredBudget
     ? [
@@ -186,6 +194,9 @@ const fetchBudgetVoucherService = async ({
             model: "Building",
           },
         },
+        ...(includeDeleted
+          ? [{ path: "deletedBy", select: "firstName lastName employeeName name email" }]
+          : []),
       ]
     : [
         { path: "department", select: "name" },
@@ -196,6 +207,9 @@ const fetchBudgetVoucherService = async ({
             model: "Building",
           },
         },
+        ...(includeDeleted
+          ? [{ path: "deletedBy", select: "firstName lastName employeeName name email" }]
+          : []),
       ];
 
   const budgets = await budgetQuery.populate(populateOptions).lean().exec();
@@ -273,6 +287,7 @@ const fetchBudgetService = async ({
   isReport = false,
 }) => {
   const query = { expanseType: { $ne: "Reimbursement" }, company };
+  query.isDeleted = { $ne: true };
 
   if (dateFilter) query.dueDate = dateFilter.dueDate;
 
@@ -321,6 +336,7 @@ const fetchVoucherService = async ({
   type,
 }) => {
   const query = {
+    isDeleted: { $ne: true },
     $or: [
       { "finance.voucher.link": { $exists: true, $ne: "" } },
       { "voucher.link": { $exists: true, $ne: "" } },
@@ -772,6 +788,7 @@ const fetchPerSqFtExpenseService = async ({
   type = "",
 }) => {
   const query = { company };
+  query.isDeleted = { $ne: true };
 
   if (departmentId) {
     query.department = departmentId;

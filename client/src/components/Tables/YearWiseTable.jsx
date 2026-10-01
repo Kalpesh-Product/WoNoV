@@ -68,6 +68,7 @@ const YearWiseTable = ({
   serverSearch = false,
   searchValue = "",
   onSearchChange,
+  getRowStyle,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -638,6 +639,7 @@ const YearWiseTable = ({
             serverSearch={serverSearch}
             searchValue={searchValue}
             onSearchChange={onSearchChange}
+            getRowStyle={getRowStyle}
           />
         ) : (
           <div

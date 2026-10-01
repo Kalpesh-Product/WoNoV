@@ -856,22 +856,7 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
                     error={attendanceSaveAttempted && !workedDaysMatch}
                     fullWidth
                   />
-                  {attendanceSaveAttempted && !workedDaysMatch && (
-                    <div className="mt-2 text-sm">
-                      <p className="text-gray-500">
-                        Expected {attendanceSummary.expectedWorkedDays} day(s):{" "}
-                        {attendanceSummary.totalWorkingDays} scheduled working day(s)
-                        {" - "}
-                        {attendanceSummary.timeOff} leave day(s).
-                      </p>
-                      <p className="mt-1 text-red-600">
-                        {Math.abs(workedDaysDifference)} day(s){" "}
-                        {workedDaysDifference > 0
-                          ? "are not accounted for by attendance."
-                          : "exceed the expected attendance."}
-                      </p>
-                    </div>
-                  )}
+
                 </div>
                 {[
                   ["Time Off", attendanceSummary.timeOff],
@@ -889,6 +874,23 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
                     fullWidth
                   />
                 ))}
+              </div>
+            )}
+
+            {attendanceSaveAttempted && !workedDaysMatch && (
+              <div className="mt-2 text-sm">
+                <p className="text-gray-500">
+                  Expected {attendanceSummary.expectedWorkedDays} day(s):{" "}
+                  {attendanceSummary.totalWorkingDays} scheduled working day(s)
+                  {" - "}
+                  {attendanceSummary.timeOff} leave day(s).
+                </p>
+                <p className="mt-1 text-red-600">
+                  {Math.abs(workedDaysDifference)} day(s){" "}
+                  {workedDaysDifference > 0
+                    ? "are not accounted for by attendance."
+                    : "exceed the expected attendance."}
+                </p>
               </div>
             )}
 

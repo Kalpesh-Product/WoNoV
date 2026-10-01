@@ -126,6 +126,7 @@ const payslipSchema = new mongoose.Schema(
     totalTds: Number,
 
     // Attendance
+    scheduledWorkingDays: Number,
     paidDays: Number,
     lopDays: Number,
     lopAmount: Number,

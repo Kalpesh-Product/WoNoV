@@ -7,6 +7,7 @@ const {
 
 const populatePrintout = [
   { path: "takenBy", select: "firstName lastName" },
+  { path: "deletedBy", select: "firstName lastName employeeName name email" },
   { path: "location", select: "buildingName" },
   { path: "unit", select: "unitName unitNo" },
   { path: "client", select: "clientName companyName name" },
