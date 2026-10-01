@@ -1,14 +1,34 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAuth from "../../../../hooks/useAuth";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import humanDate from "../../../../utils/humanDateForamt";
+import { queryClient } from "../../../../main";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = (user) =>
+  (Array.isArray(user?.departments) ? user.departments : []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      String(department?.name || "").trim().toLowerCase() ===
+        "tech department",
+  );
 
 const BudgetHistory = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+  const canUseBulkBudgetActions = isTechDepartmentUser(auth?.user);
+  const pendingApprovalsPath =
+    "/app/dashboard/finance-dashboard/billing/budget-request/pending-approvals-budget";
 
   const { data: budgetHistory = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["budgetHistory"],
@@ -21,6 +41,67 @@ const BudgetHistory = () => {
         console.error("Error fetching budget history:", error);
         return [];
       }
+    },
+  });
+
+  const { mutate: unapproveBudget, isPending: isUnapprovePending } =
+    useMutation({
+      mutationKey: ["unapproveBudget"],
+      mutationFn: async (budgetId) => {
+        const response = await axios.patch(
+          `/api/budget/unapprove-budget/${budgetId}`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Budget returned to pending approvals");
+        queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+        navigate(pendingApprovalsPath);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to unapprove budget",
+        );
+      },
+    });
+
+  const {
+    mutate: unapproveSelectedBudgets,
+    isPending: isBulkUnapprovePending,
+  } = useMutation({
+    mutationKey: ["bulkUnapproveBudget"],
+    mutationFn: async (selectedRows) => {
+      const budgetIds = selectedRows.map((row) => row._id).filter(Boolean);
+
+      if (!budgetIds.length) {
+        throw new Error("Please select at least one approved budget");
+      }
+
+      const responses = await Promise.all(
+        budgetIds.map((budgetId) =>
+          axios.patch(`/api/budget/unapprove-budget/${budgetId}`),
+        ),
+      );
+
+      return responses.map((response) => response.data);
+    },
+    onSuccess: (_, selectedRows) => {
+      toast.success(`${selectedRows.length} budget(s) returned to pending`);
+      queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+      navigate(pendingApprovalsPath);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to unapprove selected budgets",
+      );
     },
   });
 
@@ -43,7 +124,7 @@ const BudgetHistory = () => {
       field: "status",
       headerName: "Approval Status",
       flex: 1,
-      pinned: "right",
+       pinned: "right",
       cellRenderer: (params) => {
         const status = String(params?.value || "-");
         const normalizedStatus = status.toLowerCase();
@@ -67,6 +148,33 @@ const BudgetHistory = () => {
               fontWeight: 500,
               textTransform: "capitalize",
             }}
+          />
+        );
+      },
+    },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      width: 110,
+      cellRenderer: (params) => {
+        const isApproved =
+          String(params.data?.status || "").toLowerCase() === "approved";
+
+        if (!isApproved) return null;
+
+        return (
+          <ThreeDotMenu
+            rowId={params.data?._id}
+            menuItems={[
+              {
+                label: isUnapprovePending ? "Returning..." : "Unapprove",
+                onClick: () => {
+                  if (isUnapprovePending) return;
+                  unapproveBudget(params.data._id);
+                },
+              },
+            ]}
           />
         );
       },
@@ -114,6 +222,23 @@ const BudgetHistory = () => {
         tableHeight={450}
         isLoading={isBudgetLoading}
         exportData
+        checkbox={canUseBulkBudgetActions}
+        checkAll={canUseBulkBudgetActions}
+        isRowSelectable={(node) =>
+          canUseBulkBudgetActions &&
+          String(node.data?.status || "").toLowerCase() === "approved"
+        }
+        batchButton={
+          canUseBulkBudgetActions
+            ? isBulkUnapprovePending
+              ? "Returning..."
+              : "Unapprove All"
+            : undefined
+        }
+        handleBatchAction={(selectedRows) => {
+          if (!canUseBulkBudgetActions || isBulkUnapprovePending) return;
+          unapproveSelectedBudgets(selectedRows);
+        }}
       />
     </PageFrame>
   );

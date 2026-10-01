@@ -406,19 +406,22 @@ const AgTableComponent = React.memo(
           }  items-center py-2`}
         >
           {search ? (
-            <TextField
-              label="Search"
-              variant="outlined"
-              size="small"
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search"
-              InputProps={{
-                startAdornment: (
-                  <IoIosSearch size={20} style={{ marginRight: 8 }} />
-                ),
-              }}
-            />
+            <div className="flex items-center gap-3">
+              <TextField
+                label="Search"
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={handleSearch}
+                placeholder="Search"
+                InputProps={{
+                  startAdornment: (
+                    <IoIosSearch size={20} style={{ marginRight: 8 }} />
+                  ),
+                }}
+              />
+              {searchRowActions ? searchRowActions : ""}
+            </div>
           ) : (
             <></>
           )}
@@ -428,7 +431,6 @@ const AgTableComponent = React.memo(
             ) : (
               <div className="flex flex-col items-end gap-2">
                 <div className="flex items-center gap-2">
-                  {searchRowActions ? searchRowActions : ""}
                   {renderExportButton()}
                 </div>
                 <div
@@ -528,6 +530,7 @@ const AgTableComponent = React.memo(
             rowSelection={
               enableCheckbox ? (checkAll ? "multiple" : "single") : rowSelection
             }
+            suppressRowClickSelection={enableCheckbox}
             onSelectionChanged={handleSelectionChanged}
             getRowStyle={getRowStyle}
             className="font-pregular"

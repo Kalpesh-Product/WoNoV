@@ -1159,6 +1159,67 @@ const rejectBudget = async (req, res, next) => {
   }
 };
 
+const unapproveBudget = async (req, res, next) => {
+  const logPath = "budget/BudgetLog";
+  const logAction = "Unapprove Budget";
+  const logSourceKey = "budget";
+
+  try {
+    const { budgetId } = req.params;
+    const { user, ip, company } = req;
+
+    const budget = await Budget.findById(budgetId);
+
+    if (!budget) {
+      throw new CustomError(
+        "Budget not found",
+        logPath,
+        logAction,
+        logSourceKey,
+        404,
+      );
+    }
+
+    if (budget.status !== "Approved") {
+      throw new CustomError(
+        "Only approved budgets can be unapproved",
+        logPath,
+        logAction,
+        logSourceKey,
+        400,
+      );
+    }
+
+    budget.status = "Pending";
+    budget.isPaid = "Unpaid";
+    budget.finance = budget.finance || {};
+    budget.finance.approvedAt = undefined;
+
+    await budget.save({ validateModifiedOnly: true });
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: "Budget returned to pending approvals",
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: budget._id,
+      changes: { status: "Pending", isPaid: "Unpaid" },
+    });
+
+    res.status(200).json({ message: "Budget returned to pending approvals" });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
 
 const uploadInvoice = async (req, res, next) => {
   const logPath = "budget/BudgetLog";
@@ -1607,4 +1668,5 @@ module.exports = {
   fetchPendingApprovals,
   fetchApprovedbudgets,
   approveFinanceBudget,
+  unapproveBudget,
 };

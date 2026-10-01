@@ -58,7 +58,7 @@ const DepartmentInvoiceBudget = () => {
     { headerName: "Due Date", field: "dueDate", flex: 1 },
     { headerName: "Invoice Name", field: "invoiceName", flex: 1, hide: true },
     { headerName: "Invoice Date", field: "invoiceDate", flex: 1, hide: true },
-    { headerName: "Approval Status", field: "status", flex: 1,   
+    { headerName: "Approval Status", field: "status", flex: 1, pinned: "right",  
       // cellRenderer: (params) => <StatusChip status={params.value || "-"} />,},
       cellRenderer: (params) => {
         const status = String(params?.value || "-");
