@@ -1,3 +1,4 @@
+const { bookExternalMeetingVisit } = require("../../services/bookExternalMeetingVisit");
 const { fetchMeetingReportService } = require("../../services/reports/meeting");
 const Meeting = require("../../models/meetings/Meetings");
 const User = require("../../models/hr/UserData");
@@ -643,7 +644,9 @@ const addMeetings = async (req, res, next) => {
       externalParticipants: externalParticipants || [],
     });
 
-    const savedMeeting = await meeting.save();
+    const savedMeeting = meetingType === "External"
+      ? await bookExternalMeetingVisit(meeting, roomAvailable)
+      : await meeting.save();
     meetingWasSaved = true;
     // await Promise.all([
     //   meeting.save(),
@@ -2493,16 +2496,17 @@ const updateMeeting = async (req, res, next) => {
       );
     }
 
+    const hasMeetingVisit = await ExternalVisits.exists({ company, meeting: updatedMeeting._id });
     await ExternalVisits.updateMany(
       {
         company,
-        $or: [
+        ...(hasMeetingVisit ? { meeting: updatedMeeting._id } : { $or: [
           { meeting: updatedMeeting._id },
           {
             visitorId: updatedVisitor._id,
             legacyVisitorEntryId: updatedVisitor._id,
           },
-        ],
+        ] }),
       },
       visitorPaymentDetails,
     );

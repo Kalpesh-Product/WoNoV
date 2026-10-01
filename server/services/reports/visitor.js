@@ -1,3 +1,28 @@
+const MeetingRevenue = require("../../models/sales/MeetingRevenue");
+const { getMeetingPaymentDetails } = require("../../utils/meetingPaymentDetails");
+
+// Load revenue once per result batch, scoped to the current company and linked meetings.
+const attachMeetingPaymentDetails = async (records, company) => {
+  const linked = records.filter((record) => record.meeting?._id);
+  if (!linked.length || !company) return;
+  const ids = [...new Set(linked.map((record) => String(record.meeting._id)))];
+  const revenues = await MeetingRevenue.find({ company, meeting: { $in: ids } })
+    .select("meeting date paymentDate hoursBooked costPerHour taxable gst totalAmount remarks invoice invoiceUploadedAt invoiceUploadedBy financeStatus")
+    .sort({ date: -1, updatedAt: -1, createdAt: -1 })
+    .populate({ path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName" })
+    .lean();
+  const byMeeting = new Map();
+  for (const revenue of revenues) {
+    const id = String(revenue.meeting);
+    if (!byMeeting.has(id)) byMeeting.set(id, revenue);
+  }
+  for (const record of linked) {
+    record.meetingPaymentDetails = getMeetingPaymentDetails(
+      byMeeting.get(String(record.meeting._id)), record.meeting,
+    );
+  }
+};
+
 const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
@@ -165,7 +190,8 @@ const populateVisitorListFields = [
   {
     path: "meeting",
     select:
-      "subject agenda startDate endDate startTime endTime meetingType status",
+      "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
+    populate: { path: "bookedRoom", select: "perHourPrice" },
   },
   {
     path: "building",
@@ -178,6 +204,7 @@ const populateVisitorListFields = [
 ];
 
 const populateExternalVisitFields = [
+  { path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName name" },
   { path: "department", select: "name" },
   { path: "toMeet", select: "firstName lastName email" },
   {
@@ -190,7 +217,8 @@ const populateExternalVisitFields = [
   {
     path: "meeting",
     select:
-      "subject agenda startDate endDate startTime endTime meetingType status",
+      "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
+    populate: { path: "bookedRoom", select: "perHourPrice" },
   },
   {
     path: "unit",
@@ -429,6 +457,7 @@ const fetchFinanceDayPassVisits = async ({
     visitsQuery.exec(),
     shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
   ]);
+  await attachMeetingPaymentDetails(visits, companyId);
   const data = visits
     .filter((visit) => visit.visitorId)
     .map((visit) => {
@@ -533,6 +562,7 @@ const fetchVisitorReportVisits = async ({
     visitsQuery.exec(),
     shouldPaginate ? ExternalVisits.countDocuments(visitFilter).exec() : null,
   ]);
+  await attachMeetingPaymentDetails(visits, companyId);
   const data = visits
     .filter((visit) => visit.visitorId)
     .map((visit) => {
@@ -1098,6 +1128,11 @@ const fetchVisitorReportService = async ({
       visitors = await attachExternalVisits(visitors, companyId, dateFilter);
     }
 
+    await attachMeetingPaymentDetails(
+      visitors.flatMap((visitor) => [visitor, ...(visitor.externalVisits || [])]),
+      companyId,
+    );
+
     if (includeVisitCounts) {
       visitors = await attachVisitCounts(visitors, companyId);
     }
@@ -1351,6 +1386,7 @@ const fetchClientVisitorsReportService = async ({
 };
 
 module.exports = {
+  attachMeetingPaymentDetails,
   fetchVisitorReportService,
   fetchInternalVisitorsReportService,
   fetchClientVisitorsReportService,

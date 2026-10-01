@@ -1,3 +1,4 @@
+const { getMeetingPaymentDetails } = require("../../utils/meetingPaymentDetails");
 const AlternateRevenue = require("../../models/sales/AlternateRevenue");
 const CoworkingRevenue = require("../../models/sales/CoworkingRevenue");
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
@@ -443,7 +444,7 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "meeting",
         select:
-          "meetingType subject agenda startTime endTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentProof",
+          "meetingType subject agenda startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof",
         populate: [
           {
             path: "bookedBy",
@@ -726,6 +727,9 @@ const fetchMeetingRevenueReportService = async ({
       //       : "Pending",
        financeStatus: getFinanceStatus(item),
       remarks: item.remarks || "",
+      ...(item.source !== "day-pass" && item.meeting
+        ? getMeetingPaymentDetails(item)
+        : {}),
     });
   });
 

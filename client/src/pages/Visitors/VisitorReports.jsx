@@ -1,3 +1,7 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
+import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
+import { getDayPassPaymentDetails } from "../../utils/dayPassPaymentDetails";
 import AgTable from "../../components/AgTable";
 import { Chip } from "@mui/material";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -5,7 +9,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
-import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -20,11 +23,6 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
-
-const formatPaymentAmount = (value) =>
-  value === "-" || value == null || !Number.isFinite(Number(value))
-    ? "-"
-    : `INR ${inrFormat(value)}`;
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "-";
@@ -417,11 +415,14 @@ const VisitorReports = () => {
       date: visitor.checkIn,
       // The report is queried and paginated by check-in, so show that same DB
       // value instead of a separately scheduled visit date.
-      dateOfVisit: formatDateValue(visitor.checkIn),
+      dateOfVisit: formatDateValue(visitor.dateOfVisit || visitor.checkIn),
       scheduledDate: formatDateValue(visitor.scheduledDate),
       gstFile: visitor?.gstFile?.link,
       otherFile: visitor?.otherFile?.link,
       panFile: visitor?.panFile?.link,
+      isMeeting: isMeetingVisit(paymentSource),
+      meetingPaymentDetails: paymentSource.meetingPaymentDetails,
+      paymentDetails: getDayPassPaymentDetails(paymentSource),
       paymentAmount:
         paymentSource?.amount ??
         paymentSource?.paymentAmount ??
@@ -668,67 +669,15 @@ const VisitorReports = () => {
               title="Scheduled Date"
               detail={selectedVisitor.scheduledDate}
             />
-            {(selectedVisitor.visitorFlag === "Client" ||
+            {(selectedVisitor.isMeeting || selectedVisitor.visitorFlag === "Client" ||
               ["Full-Day Pass", "Half-Day Pass", "Meeting"].includes(
                 selectedVisitor.visitorType,
               )) && (
-              <>
-                <div className="font-bold">Payment Details</div>
-                <DetalisFormatted
-                  title="Desk Amount"
-                  detail={formatPaymentAmount(selectedVisitor.deskAmount)}
-                />
-                <DetalisFormatted
-                  title="Discount"
-                  detail={formatPaymentAmount(selectedVisitor.discountAmount)}
-                />
-                <DetalisFormatted
-                  title="Taxable Amount"
-                  detail={formatPaymentAmount(selectedVisitor.taxableAmount)}
-                />
-                <DetalisFormatted
-                  title="GST Amount"
-                  detail={formatPaymentAmount(selectedVisitor.gstAmount)}
-                />
-                <DetalisFormatted
-                  title="Total Amount"
-                  detail={formatPaymentAmount(selectedVisitor.totalAmount)}
-                />
-                <DetalisFormatted
-                  title="Status"
-                  detail={["true", "paid"].includes(String(selectedVisitor.paymentStatus).toLowerCase())
-                      ? "Paid"
-                      : ["false", "unpaid"].includes(String(selectedVisitor.paymentStatus).toLowerCase())
-                        ? "Unpaid"
-                        : selectedVisitor.paymentStatus || "-"}
-                />
-                <DetalisFormatted
-                  title="Payment Proof"
-                  detail={
-                    selectedVisitor.paymentProofUrl &&
-                    selectedVisitor.paymentProofUrl !== "-" ? (
-                      <a
-                        href={selectedVisitor.paymentProofUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary underline"
-                      >
-                        View File
-                      </a>
-                    ) : (
-                      "-"
-                    )
-                  }
-                />
-                <DetalisFormatted
-                  title="Payment Mode"
-                  detail={selectedVisitor.paymentMode}
-                />
-                <DetalisFormatted
-                  title="Payment Verification"
-                  detail={selectedVisitor.paymentVerification}
-                />
-              </>
+              selectedVisitor.isMeeting ? (
+                <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} />
+              ) : (
+                <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} />
+              )
             )}
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">

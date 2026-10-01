@@ -9,6 +9,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import {
   DEFAULT_PAGE_SIZE,
@@ -20,6 +21,7 @@ const MonthlyAttendanceSummary = ({
   fixedMonth = "",
   payrollBatch = "",
   payrollView = false,
+  onApprovalStateChange,
 }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -34,6 +36,7 @@ const MonthlyAttendanceSummary = ({
   const [selectedRows, setSelectedRows] = useState([]);
   const [workingDays, setWorkingDays] = useState(0);
   const [saveAttempted, setSaveAttempted] = useState(false);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const tableRef = useRef(null);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ const MonthlyAttendanceSummary = ({
     setPagination((current) => ({ ...current, page: 1 }));
   }, [fixedMonth]);
 
-  const { data = {}, isLoading } = useQuery({
+  const { data = {}, isLoading, isFetching, isPlaceholderData } = useQuery({
     queryKey: [
       "monthly-attendance-summaries",
       month,
@@ -75,6 +78,22 @@ const MonthlyAttendanceSummary = ({
     }));
   }, [data?.pagination]);
 
+  useEffect(() => {
+    if (!onApprovalStateChange) return;
+    onApprovalStateChange({
+      isLoading: isLoading || isFetching || isPlaceholderData,
+      total: Number(data?.approval?.total) || 0,
+      approved: Number(data?.approval?.approved) || 0,
+      allApproved: data?.approval?.allApproved === true,
+    });
+  }, [
+    data?.approval,
+    isFetching,
+    isLoading,
+    isPlaceholderData,
+    onApprovalStateChange,
+  ]);
+
   const updateSummary = useMutation({
     mutationFn: async () => {
       const response = await axios.patch(
@@ -99,11 +118,13 @@ const MonthlyAttendanceSummary = ({
   });
 
   const updateSummaryStatus = useMutation({
-    mutationFn: async (status) => {
+    mutationFn: async ({ status, ids, undoAll = false }) => {
       const response = await axios.patch(
         "/api/attendance/monthly-summaries/status",
         {
-          ids: selectedRows.map((row) => row._id),
+          ...(undoAll
+            ? { undoAll: true, month, batch: payrollBatch }
+            : { ids: ids || selectedRows.filter((row) => row.status !== "Finalized").map((row) => row._id) }),
           status,
         },
       );
@@ -111,6 +132,7 @@ const MonthlyAttendanceSummary = ({
     },
     onSuccess: (response) => {
       toast.success(response.message);
+      setConfirmationAction(null);
       setSelectedRows([]);
       tableRef.current?.api?.deselectAll();
       queryClient.invalidateQueries({
@@ -258,8 +280,19 @@ const MonthlyAttendanceSummary = ({
       field: "status",
       headerName: "Action",
       minWidth: 125,
-      valueFormatter: (params) =>
-        params.value === "Finalized" ? "Approved" : "Pending",
+      cellRenderer: (params) => params.value === "Finalized" ? (
+        <div className="flex items-center gap-2">
+          <span>Approved</span>
+          <button
+            type="button"
+            className="text-primary underline disabled:opacity-50"
+            disabled={updateSummaryStatus.isPending}
+            onClick={() => updateSummaryStatus.mutate({ status: "Draft", ids: [params.data._id] })}
+          >
+            Undo
+          </button>
+        </div>
+      ) : "Pending",
     },
     {
       field: "lop",
@@ -340,6 +373,8 @@ const MonthlyAttendanceSummary = ({
             columns={payrollView ? payrollColumns : columns}
             enableCheckbox={payrollView}
             checkAll={payrollView}
+            isRowSelectable={payrollView ? (node) => Boolean(node.data) && node.data.status !== "Finalized" : undefined}
+            showDisabledCheckboxes={payrollView}
             onSelectionChange={payrollView ? setSelectedRows : undefined}
             headerActions={
               payrollView ? (
@@ -347,12 +382,12 @@ const MonthlyAttendanceSummary = ({
                   <PrimaryButton
                     title="Approve"
                     disabled={!selectedRows.length || updateSummaryStatus.isPending}
-                    handleSubmit={() => updateSummaryStatus.mutate("Finalized")}
+                    handleSubmit={() => setConfirmationAction("approve")}
                   />
                   <SecondaryButton
-                    title="Undo"
-                    disabled={!selectedRows.length || updateSummaryStatus.isPending}
-                    handleSubmit={() => updateSummaryStatus.mutate("Draft")}
+                    title="Undo All"
+                    disabled={isLoading || updateSummaryStatus.isPending}
+                    handleSubmit={() => setConfirmationAction("undoAll")}
                   />
                 </div>
               ) : null
@@ -412,20 +447,6 @@ const MonthlyAttendanceSummary = ({
               error={saveAttempted && !workingDaysAreValid}
               fullWidth
             />
-            {saveAttempted && !workingDaysAreValid && (
-              <div className="text-sm md:col-span-2">
-                <p className="text-gray-500">
-                  Expected {expectedWorkingDays} day(s): {selectedScheduledWorkingDays}{" "}
-                  scheduled working day(s) - {selectedSummary?.timeOff || 0} leave day(s).
-                </p>
-                <p className="mt-1 text-red-600">
-                  {Math.abs(unaccountedWorkingDays)} day(s){" "}
-                  {unaccountedWorkingDays >= 0
-                    ? "are not accounted for by attendance."
-                    : "exceed the expected attendance."}
-                </p>
-              </div>
-            )}
             {summaryFields.map(([label, value]) => (
               <TextField
                 key={label}
@@ -437,6 +458,20 @@ const MonthlyAttendanceSummary = ({
               />
             ))}
           </div>
+          {saveAttempted && !workingDaysAreValid && (
+            <div className="text-sm">
+              <p className="text-gray-500">
+                Expected {expectedWorkingDays} day(s): {selectedScheduledWorkingDays}{" "}
+                scheduled working day(s) - {selectedSummary?.timeOff || 0} leave day(s).
+              </p>
+              <p className="mt-1 text-red-600">
+                {Math.abs(unaccountedWorkingDays)} day(s){" "}
+                {unaccountedWorkingDays >= 0
+                  ? "are not accounted for by attendance."
+                  : "exceed the expected attendance."}
+              </p>
+            </div>
+          )}
           <div className="flex justify-end gap-3">
             <PrimaryButton
               title="Save"
@@ -454,6 +489,32 @@ const MonthlyAttendanceSummary = ({
           </div>
         </div>
       </MuiModal>
+
+      <ConfirmationModal
+        open={confirmationAction === "approve"}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={() =>
+          updateSummaryStatus.mutate({ status: "Finalized" })
+        }
+        title="Confirm Attendance Approval"
+        message={`Are you sure you want to approve the attendance summaries for ${selectedRows.length} selected employee${selectedRows.length === 1 ? "" : "s"}?`}
+        confirmText="Approve"
+        cancelText="Cancel"
+        isLoading={updateSummaryStatus.isPending}
+      />
+
+      <ConfirmationModal
+        open={confirmationAction === "undoAll"}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={() =>
+          updateSummaryStatus.mutate({ status: "Draft", undoAll: true })
+        }
+        title="Confirm Undo All"
+        message="Are you sure you want to undo all attendance approvals for the selected pay period and payroll batch?"
+        confirmText="Undo All"
+        cancelText="Cancel"
+        isLoading={updateSummaryStatus.isPending}
+      />
     </Wrapper>
   );
 };

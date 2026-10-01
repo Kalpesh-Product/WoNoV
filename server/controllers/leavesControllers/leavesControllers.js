@@ -382,6 +382,11 @@ const approveLeave = async (req, res, next) => {
   const { user, ip, company } = req;
   try {
     const leaveId = req.params.id;
+    const comment = req.body?.comment ?? "";
+    if (typeof comment !== "string" || comment.trim().length > 2000) {
+      return res.status(400).json({ message: "Comment must be text of at most 2000 characters" });
+    }
+
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
       throw new CustomError(
@@ -395,7 +400,7 @@ const approveLeave = async (req, res, next) => {
     const updatedLeave = await Leave.findOneAndUpdate(
       { _id: leaveId },
       {
-        $set: { status: "Approved", approvedBy: user },
+        $set: { status: "Approved", approvedBy: user, comment: comment.trim() },
         $unset: { rejectedBy: "" },
       },
       { new: true },
@@ -446,6 +451,11 @@ const rejectLeave = async (req, res, next) => {
 
   try {
     const leaveId = req.params.id;
+    const comment = req.body?.comment ?? "";
+    if (typeof comment !== "string" || comment.trim().length > 2000) {
+      return res.status(400).json({ message: "Comment must be text of at most 2000 characters" });
+    }
+
 
     if (!mongoose.Types.ObjectId.isValid(leaveId)) {
       throw new CustomError(
@@ -459,7 +469,7 @@ const rejectLeave = async (req, res, next) => {
     const updatedLeave = await Leave.findOneAndUpdate(
       { _id: leaveId },
       {
-        $set: { status: "Rejected", rejectedBy: user },
+        $set: { status: "Rejected", rejectedBy: user, comment: comment.trim() },
         $unset: { approvedBy: "" },
       },
       { new: true },

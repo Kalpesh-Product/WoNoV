@@ -56,6 +56,7 @@ const payrollDraftSchema = new mongoose.Schema(
             amount: { type: Number, min: 0, default: 0 },
           },
         ],
+        scheduledWorkingDays: { type: Number, min: 0 },
         lossOfPayDays: { type: Number, min: 0, default: 0 },
         lossOfPay: { type: Number, min: 0, default: 0 },
         payrollNotes: { type: String, trim: true, default: "" },

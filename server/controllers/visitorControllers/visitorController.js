@@ -1,4 +1,4 @@
-const { fetchVisitorReportService } = require("../../services/reports/visitor");
+const { fetchVisitorReportService, attachMeetingPaymentDetails } = require("../../services/reports/visitor");
 const mongoose = require("mongoose");
 const { Readable } = require("stream");
 const csvParser = require("csv-parser");
@@ -54,6 +54,7 @@ const findOpenVisit = (visitorId, company) =>
     visitorId,
     company,
     checkOut: null,
+    checkIn: { $ne: null },
     ...activeVisitFilter,
   })
     .select("_id visitorType checkIn checkOut")
@@ -99,13 +100,20 @@ const fetchVisitorHistory = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid visitor id provided" });
     }
 
+    const meetingPopulation = {
+      path: "meeting",
+      match: { company: req.company },
+      select: "startDate startTime endTime extendTime paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
+      populate: { path: "bookedRoom", select: "perHourPrice" },
+    };
     const visitor = await Visitor.findOne({
       _id: visitorId,
       company: req.company,
     })
       .select(
-        "firstName lastName email phoneNumber gender city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorFlag visitorRoles visitorType purposeOfVisit dateOfVisit checkIn checkOut checkedInBy checkedOutBy visitorCompany amount discount gstAmount totalAmount paymentStatus paymentVerification paymentMode createdAt",
+        "firstName lastName email phoneNumber gender city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorFlag visitorRoles visitorType purposeOfVisit dateOfVisit checkIn checkOut checkedInBy checkedOutBy visitorCompany amount discount gstAmount totalAmount paymentStatus paymentVerification paymentMode createdAt meeting",
       )
+      .populate(meetingPopulation)
       .populate("checkedInBy", "firstName lastName")
       .populate("checkedOutBy", "firstName lastName")
       .lean();
@@ -120,6 +128,7 @@ const fetchVisitorHistory = async (req, res, next) => {
     })
       .select("-__v")
       .sort({ checkIn: -1, dateOfVisit: -1, createdAt: -1 })
+      .populate(meetingPopulation)
       .populate("checkedInBy", "firstName lastName")
       .populate("checkedOutBy", "firstName lastName")
       .populate("toMeet", "firstName lastName")
@@ -156,10 +165,13 @@ const fetchVisitorHistory = async (req, res, next) => {
           paymentVerification: visitor.paymentVerification,
           paymentMode: visitor.paymentMode,
           createdAt: visitor.createdAt,
+          meeting: visitor.meeting,
           isLegacyRecord: true,
         },
       ];
     }
+
+    await attachMeetingPaymentDetails(visits, req.company);
 
     return res.status(200).json({ visitor, visits });
   } catch (error) {
@@ -853,7 +865,7 @@ const updateVisitor = async (req, res, next) => {
       );
     }
 
-    const visitor = await Visitor.findOne({ _id: visitorId }).lean();
+    const visitor = await Visitor.findOne({ _id: visitorId, company }).lean();
 
     if (!visitor) {
       return res.status(400).json({
@@ -875,11 +887,12 @@ const updateVisitor = async (req, res, next) => {
 
     if (hasCheckInUpdate) {
       const parsedCheckin = new Date(updateData.checkIn);
-      if (isNaN(parsedCheckin.getTime())) {
+      if (!updateData.checkIn || isNaN(parsedCheckin.getTime())) {
         return res.status(400).json({
           message: "Invalid checkin time",
         });
       }
+      if (!visitor.checkIn) updateData.checkedInBy = user;
     }
 
     if (hasCheckOutUpdate && updateData.checkOut) {
@@ -983,6 +996,7 @@ const updateVisitor = async (req, res, next) => {
 
       if (hasCheckInUpdate) {
         externalVisitUpdates.checkIn = updatedVisitor.checkIn;
+        externalVisitUpdates.checkedInBy = updatedVisitor.checkedInBy;
       }
 
       if (hasVisitDateUpdate || hasCheckInUpdate) {
@@ -999,11 +1013,11 @@ const updateVisitor = async (req, res, next) => {
 
       if (Object.keys(externalVisitUpdates).length > 0) {
         await ExternalVisits.findOneAndUpdate(
-          { visitorId },
+          { visitorId, company, ...(visitor.meeting ? { meeting: visitor.meeting } : {}) },
           {
             $set: externalVisitUpdates,
           },
-          { sort: { checkIn: -1 } },
+          { sort: { dateOfVisit: -1, createdAt: -1 } },
         );
       }
     }

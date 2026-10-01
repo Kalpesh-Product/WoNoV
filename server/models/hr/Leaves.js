@@ -45,6 +45,7 @@ const leaveSchema = new mongoose.Schema(
       type: String,
       default: "Pending",
     },
+    comment: { type: String, trim: true, maxlength: 2000, default: "" },
     approvedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

@@ -159,15 +159,35 @@ const updateMonthlyAttendanceSummaryStatus = async (req, res, next) => {
       : [];
     const status = String(req.body.status || "").trim();
 
-    if (!ids.length) {
+    const undoAll = req.body.undoAll === true;
+    if (!undoAll && !ids.length) {
       return res.status(400).json({ message: "Select at least one employee" });
     }
     if (!["Draft", "Finalized"].includes(status)) {
       return res.status(400).json({ message: "Invalid attendance summary status" });
     }
 
+    let filter = { _id: { $in: ids }, company };
+    if (undoAll) {
+      if (status !== "Draft" || !getMonthRange(req.body.month)) {
+        return res.status(400).json({ message: "Undo All requires a valid month and Draft status" });
+      }
+      const batch = String(req.body.batch || "").trim();
+      const employees = await UserData.find({
+        company,
+        isActive: true,
+        ...(batch && { "payrollInformation.payrollBatch": batch }),
+      }).select("_id").lean();
+      filter = {
+        company,
+        month: req.body.month,
+        status: "Finalized",
+        employee: { $in: employees.map(({ _id }) => _id) },
+      };
+    }
+
     const result = await MonthlyAttendanceSummary.updateMany(
-      { _id: { $in: ids }, company },
+      filter,
       {
         $set: {
           status,
@@ -181,7 +201,9 @@ const updateMonthlyAttendanceSummaryStatus = async (req, res, next) => {
       message:
         status === "Finalized"
           ? "Selected attendance summaries approved"
-          : "Selected attendance approvals undone",
+          : undoAll
+            ? "All attendance approvals for the selected month and batch undone"
+            : "Selected attendance approvals undone",
       updatedCount: result.modifiedCount,
     });
   } catch (error) {
@@ -319,9 +341,36 @@ const getMonthlyAttendanceSummaries = async (req, res, next) => {
     const order = new Map(employeeIds.map((id, index) => [String(id), index]));
     summaries.sort((a, b) => order.get(String(a.employee?._id)) - order.get(String(b.employee?._id)));
 
+    // Approval readiness must cover the entire payroll batch, not only the
+    // current page or the employees matching the table search.
+    const approvalEmployeeQuery = {
+      company,
+      isActive: true,
+      ...(payrollBatch && {
+        "payrollInformation.payrollBatch": payrollBatch,
+      }),
+    };
+    const approvalEmployeeIds = await UserData.find(approvalEmployeeQuery)
+      .distinct("_id");
+    const approvedCount = approvalEmployeeIds.length
+      ? await MonthlyAttendanceSummary.countDocuments({
+          company,
+          employee: { $in: approvalEmployeeIds },
+          month,
+          status: "Finalized",
+        })
+      : 0;
+
     return res.status(200).json({
       data: summaries,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+      approval: {
+        total: approvalEmployeeIds.length,
+        approved: approvedCount,
+        allApproved:
+          approvalEmployeeIds.length > 0 &&
+          approvedCount === approvalEmployeeIds.length,
+      },
     });
   } catch (error) {
     return next(error);

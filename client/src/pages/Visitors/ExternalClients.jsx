@@ -1,3 +1,7 @@
+import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
+import { isMeetingVisit } from "../../utils/isMeetingVisit";
+import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
+import { getDayPassPaymentDetails } from "../../utils/dayPassPaymentDetails";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AgTable from "../../components/AgTable";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -1163,6 +1167,9 @@ const ExternalClients = ({
                     : item.totalAmount
                       ? inrFormat(item.totalAmount)
                       : 0,
+                  isMeeting: isMeetingVisit(latestVisit || item),
+                  meetingPaymentDetails: (latestVisit || item).meetingPaymentDetails,
+                  paymentDetails: getDayPassPaymentDetails(latestVisit || item),
                   rawPaymentAmount: latestVisit?.amount ?? item.amount ?? 0,
                   gstAmount: latestVisit?.gstAmount ?? item.gstAmount ?? 0,
                   discountAmount: latestVisit?.discount ?? item.discount ?? 0,
@@ -1699,47 +1706,10 @@ const ExternalClients = ({
                     />
                     <br />
                     {/* payment details */}
-                    {selectedVisitor?.purposeOfVisit !==
-                      "Meeting Room Booking" && (
-                      <>
-                        <div className="font-bold">Payment Details</div>
-                        <DetalisFormatted
-                          title="Desk Amount"
-                          detail={`INR ${inrFormat((selectedVisitor?.rawPaymentAmount) || 0)}`}
-                        />
-                        <DetalisFormatted
-                          title="Discount"
-                          detail={`INR ${selectedVisitor?.discountAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Taxable Amount"
-                          detail={`INR ${inrFormat(Math.max(Number(selectedVisitor?.rawPaymentAmount || 0) - Number(selectedVisitor?.discountAmount || 0), 0))}`}
-                        />
-                        <DetalisFormatted
-                          title="GST Amount"
-                          detail={`INR ${selectedVisitor?.gstAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Total Amount"
-                          detail={`INR ${selectedVisitor?.finalAmount || 0}`}
-                        />
-                        <DetalisFormatted
-                          title="Status"
-                          detail={selectedVisitor?.paymentStatus}
-                        />
-                        <DetalisFormatted
-                          title="Payment Proof"
-                          detail={renderFileLink(selectedVisitor?.paymentProof)}
-                        />
-                        <DetalisFormatted
-                          title="Payment Mode"
-                          detail={selectedVisitor?.paymentMode}
-                        />
-                        <DetalisFormatted
-                          title="Payment Verification"
-                          detail={selectedVisitor?.paymentVerification}
-                        />
-                      </>
+                    {selectedVisitor.isMeeting ? (
+                      <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} showFinanceDetails={false} />
+                    ) : (
+                      <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} showFinanceDetails={false} />
                     )}
                   </>
                 )}
