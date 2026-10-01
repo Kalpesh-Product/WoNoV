@@ -7,6 +7,50 @@ const csvParser = require("csv-parser");
 const Department = require("../../models/Departments");
 const Role = require("../../models/roles/Roles");
 const { default: mongoose } = require("mongoose");
+const setAuditLogContext = require("../../utils/auditLogContext");
+
+const HOUSEKEEPING_DELETE_DEPARTMENTS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+  "top management",
+  "tech",
+  "tech department",
+  "air tech",
+  "air tech department",
+]);
+
+const normalizeAccessValue = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const canManageDeletedHousekeepingMembers = (context) => {
+  const roles = (Array.isArray(context?.roles) ? context.roles : []).map(
+    (role) => normalizeAccessValue(role?.roleTitle || role?._id || role),
+  );
+  const departments = (
+    Array.isArray(context?.departments) ? context.departments : []
+  ).map((department) =>
+    normalizeAccessValue(
+      department?.name ||
+        department?.departmentName ||
+        department?._id ||
+        department,
+    ),
+  );
+
+  return (
+    roles.some(
+      (role) =>
+        role.includes("top management") ||
+        role.includes("tech department") ||
+        role.includes("air tech"),
+    ) ||
+    departments.some((department) =>
+      HOUSEKEEPING_DELETE_DEPARTMENTS.has(department),
+    )
+  );
+};
 
 const addNewHouseKeepingMember = async (req, res, next) => {
   try {
@@ -132,7 +176,12 @@ const addNewHouseKeepingMember = async (req, res, next) => {
 
 const getHouseKeepingStaff = async (req, res, next) => {
   try {
-    const houseKeepingStaff = await HouseKeepingStaff.find()
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      canManageDeletedHousekeepingMembers(req);
+    const houseKeepingStaff = await HouseKeepingStaff.find(
+      includeDeleted ? {} : { isDeleted: { $ne: true } },
+    )
       .populate([
         { path: "manager", select: "roleTitle" },
         { path: "department", select: "name" },
@@ -195,19 +244,98 @@ const softDeleteHouseKeepingMember = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    const deleted = await HouseKeepingStaff.findOneAndUpdate(
-      { _id: id, isActive: true },
-      { $set: { isActive: false } },
-      { new: true }
-    );
+    const member = await HouseKeepingStaff.findById(id);
 
-    if (!deleted) {
+    if (!member) {
       return res
         .status(404)
         .json({ message: "Staff not found or already deleted." });
     }
 
-    res.status(200).json({ message: "Staff marked as inactive successfully." });
+    const memberName = [member.firstName, member.middleName, member.lastName]
+      .filter(Boolean)
+      .join(" ");
+
+    if (canManageDeletedHousekeepingMembers(req)) {
+      await member.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Housekeeping Member", {
+        memberId: String(member._id),
+        memberName,
+        deletionType: "permanent",
+      });
+
+      return res.status(200).json({
+        message: "Housekeeping member permanently deleted successfully.",
+        deletionType: "permanent",
+      });
+    }
+
+    if (member.isDeleted) {
+      return res.status(200).json({
+        message: "Housekeeping member already deleted.",
+        data: member,
+        deletionType: "soft",
+      });
+    }
+
+    member.isDeleted = true;
+    member.isActive = false;
+    member.deletedAt = new Date();
+    member.deletedBy = req.user || null;
+    await member.save();
+
+    setAuditLogContext(req, "Delete Housekeeping Member", {
+      memberId: String(member._id),
+      memberName,
+      deletionType: "soft",
+    });
+
+    return res.status(200).json({
+      message: "Housekeeping member deleted successfully.",
+      data: member,
+      deletionType: "soft",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreHouseKeepingMember = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!canManageDeletedHousekeepingMembers(req)) {
+      return res.status(403).json({
+        message: "Only Top Management or Tech Department can restore members.",
+      });
+    }
+
+    const member = await HouseKeepingStaff.findOneAndUpdate(
+      { _id: id, isDeleted: true },
+      {
+        $set: { isDeleted: false, isActive: true },
+        $unset: { deletedAt: 1, deletedBy: 1 },
+      },
+      { new: true },
+    );
+
+    if (!member) {
+      return res.status(404).json({ message: "Deleted member not found." });
+    }
+
+    const memberName = [member.firstName, member.middleName, member.lastName]
+      .filter(Boolean)
+      .join(" ");
+    setAuditLogContext(req, "Restore Housekeeping Member", {
+      memberId: String(member._id),
+      memberName,
+      deletionType: "restore",
+    });
+
+    return res.status(200).json({
+      message: "Housekeeping member restored successfully.",
+      data: member,
+    });
   } catch (error) {
     next(error);
   }
@@ -557,6 +685,7 @@ module.exports = {
   addNewHouseKeepingMember,
   updateHouseKeepingMember,
   softDeleteHouseKeepingMember,
+  restoreHouseKeepingMember,
   assignHouseKeepingMember,
   getHouseKeepingAssignments,
   bulkInsertHousekeepingMembers,

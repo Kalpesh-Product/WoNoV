@@ -12,6 +12,7 @@ const {
   fetchPerformanceTasksService,
   fetchDepartmentKpaDataService,
 } = require("../../services/reports/performance");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const REQUIRED_BULK_TASK_FIELDS = [
   "task",
@@ -408,15 +409,17 @@ const deleteTaskRecurrence = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid task ID provided" });
     }
 
-    const deletedTask = await kraKpaRole.findByIdAndUpdate(
-      taskId,
-      { isDeleted: true },
-      { new: true },
-    );
+    const deletedTask = await kraKpaRole.findByIdAndDelete(taskId);
 
     if (!deletedTask) {
       return res.status(404).json({ message: "Task not found" });
     }
+
+    setAuditLogContext(req, "Delete Performance Task Recurrence", {
+      performanceTaskId: String(deletedTask._id),
+      taskName: deletedTask.task,
+      deletionType: "permanent",
+    });
 
     return res.status(200).json({ message: "Task recurrence removed" });
   } catch (error) {

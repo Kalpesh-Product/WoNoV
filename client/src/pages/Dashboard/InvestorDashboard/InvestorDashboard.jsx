@@ -14,8 +14,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { PERMISSIONS } from "../../../constants/permissions";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
-import CheckAvailability from "../SalesDashboard/CoWorkingSeats/CheckAvailability";
 import InvestorOperationalCharts from "./InvestorOperationalCharts";
+import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import { useCurrency } from "../../../context/CurrencyContext";
 import investorBanner from "../../../assets/investor/banner-investor.png";
 import bizNestLogo from "../../../assets/biznest/biznest_logo.jpg";
@@ -46,6 +46,21 @@ const fiscalMonthIndex = (date) => {
 const APPRECIATION_BASE_VALUATION = 60_000_000;
 const APPRECIATION_MONTHLY_INCREMENT = 700_000;
 const APPRECIATION_PROJECTION_START_INDEX = 5;
+const INVESTOR_HARDCODED_DESKS = 750;
+const INVESTOR_INVENTORY_OCCUPANCY_DATA = [
+  { name: "Apr-26", occupied: 627, remaining: 123, total: 750, isUpcoming: false },
+  { name: "May-26", occupied: 634, remaining: 116, total: 750, isUpcoming: false },
+  { name: "Jun-26", occupied: 626, remaining: 124, total: 750, isUpcoming: false },
+  { name: "Jul-26", occupied: 624, remaining: 126, total: 750, isUpcoming: false },
+  { name: "Aug-26", occupied: 690, remaining: 60, total: 750, isUpcoming: false },
+  { name: "Sep-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Oct-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Nov-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Dec-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Jan-27", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Feb-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
+  { name: "Mar-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
+];
 const formatGraphAmount = (amount, currency, convert, options = {}) =>
   new Intl.NumberFormat("en-IN", {
     ...options,
@@ -747,15 +762,145 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
     hasPermission(PERMISSIONS.INVESTOR_INDIA_WISE_OCCUPANCY.value) && "india",
   ].filter(Boolean);
 
+  const averageOccupancyPercent = Math.round(
+    INVESTOR_INVENTORY_OCCUPANCY_DATA.filter(
+      (item) => !item.isUpcoming && item.total > 0,
+    ).reduce(
+      (sum, item, _index, completedMonths) =>
+        sum + (item.occupied / item.total) * 100 / completedMonths.length,
+      0,
+    ),
+  );
+
+  const inventorySeries = [
+    {
+      name: "Occupied",
+      data: INVESTOR_INVENTORY_OCCUPANCY_DATA.map((item) => item.occupied),
+    },
+    {
+      name: "Unoccupied",
+      data: INVESTOR_INVENTORY_OCCUPANCY_DATA.map((item) => item.remaining),
+    },
+  ];
+
+  const inventoryOptions = {
+    chart: {
+      type: "bar",
+      fontFamily: "Poppins-Regular",
+      stacked: true,
+      stackType: "100%",
+      toolbar: { show: false },
+    },
+    states: {
+      hover: { filter: { type: "none" } },
+      active: { filter: { type: "none" } },
+    },
+    xaxis: {
+      categories: INVESTOR_INVENTORY_OCCUPANCY_DATA.map((item) => item.name),
+      labels: { style: { colors: "#1E3D73" } },
+    },
+    yaxis: {
+      min: 0,
+      max: 100,
+      title: { text: "Inventory", style: { color: "#1E3D73" } },
+      labels: {
+        style: { colors: "#1E3D73" },
+        formatter: (value) => `${Math.round(value)}%`,
+      },
+    },
+    legend: {
+      position: "top",
+      labels: { colors: "#1E3D73" },
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "45%",
+        borderRadius: 2,
+        dataLabels: {
+          total: {
+            enabled: true,
+            formatter: (_value, options) =>
+              INVESTOR_INVENTORY_OCCUPANCY_DATA[options.dataPointIndex]
+                ?.total || "",
+            style: {
+              color: "#1E3D73",
+              fontSize: "12px",
+              fontWeight: 700,
+            },
+          },
+        },
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (_value, { dataPointIndex, seriesIndex }) => {
+        const item = INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex] || {};
+        return [item.occupied, item.remaining][seriesIndex] || "";
+      },
+      style: {
+        colors: ["#ffffff"],
+        fontSize: "12px",
+        fontWeight: 700,
+      },
+    },
+    colors: [
+      ({ dataPointIndex }) =>
+        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.isUpcoming
+          ? "#b4b4b4"
+          : "#3cb37180",
+      ({ dataPointIndex }) =>
+        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.isUpcoming
+          ? "#616161"
+          : "#ff000080",
+    ],
+    tooltip: {
+      custom: ({ dataPointIndex }) => {
+        const item = INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex] || {};
+        const prefix = item.isUpcoming ? "Projected " : "";
+        const occupiedColor = item.isUpcoming ? "#b4b4b4" : "#9bd8ba";
+        const unoccupiedColor = item.isUpcoming ? "#616161" : "#ff7f83";
+        return `
+          <div style="min-width:155px;font-family:Poppins-Regular,sans-serif;font-size:12px;line-height:1.4;">
+            <div class="apexcharts-tooltip-title" style="margin-bottom:8px;font-size:12px;font-weight:400;">${item.name || ""}</div>
+            <div style="padding:0 10px 10px;">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${occupiedColor};display:inline-block;"></span>
+                <div style="white-space:nowrap;">
+                  <span>${prefix}Occupied:</span>&nbsp;
+                  <strong style="font-weight:600;">${Number(item.occupied || 0).toLocaleString("en-IN")}</strong>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${unoccupiedColor};display:inline-block;"></span>
+                <div style="white-space:nowrap;">
+                  <span>${prefix}Unoccupied:</span>&nbsp;
+                  <strong style="font-weight:600;">${Number(item.remaining || 0).toLocaleString("en-IN")}</strong>
+                </div>
+              </div>
+              <hr style="margin:7px 0 0;border:0;border-top:1px solid #e5e7eb;" />
+              <div style="display:flex;align-items:center;gap:8px;margin-top:7px;">
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#1E3D73;display:inline-block;"></span>
+                <div style="white-space:nowrap;">
+                  <span>${prefix}Total:</span>&nbsp;
+                  <strong style="font-weight:600;">${Number(item.total || 0).toLocaleString("en-IN")}</strong>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      },
+    },
+  };
+
   return (
     <div className={className}>
-      <CheckAvailability
-        hideCheckInventory
-        graphHeight={390}
-        noOuterPadding
-        investorGraphStyle
-        hideSummaryCards
-        graphTitle={
+      {/* Live API-based CheckAvailability graph is temporarily disabled for the Investor Dashboard. */}
+      <WidgetSection
+        border
+        borderColor="#1E3D73"
+        bodyBorderColor="#9FB2CF"
+        normalCase
+        title={
           <span className="inline-flex items-center gap-2 text-[#1E3D73]">
             <img
               src={bizNestLogo}
@@ -765,22 +910,31 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
             <span>- INVENTORY VS OCCUPANCY</span>
           </span>
         }
-        monthlyView
-        middleContent={
-          <>
-            {visibleOccupancyGraphs.length > 0 && (
-              <InvestorOperationalCharts
-                visibleCharts={visibleOccupancyGraphs}
-                routes={occupancyGraphRoutes}
-                investorInventoryStyle
-              />
-            )}
-            {hasPermission(PERMISSIONS.INVESTOR_UNIQUE_CLIENTS_GRAPH.value) && (
-              <InvestorUniqueClientsGraph />
-            )}
-          </>
+        headerRightContent={
+          <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+            AVERAGE OCCUPANCY - {averageOccupancyPercent}%
+          </span>
         }
-      />
+      >
+        <div className="w-full min-w-0 overflow-hidden">
+          <NormalBarGraph
+            data={inventorySeries}
+            options={inventoryOptions}
+            height={390}
+          />
+        </div>
+      </WidgetSection>
+
+      {visibleOccupancyGraphs.length > 0 && (
+        <InvestorOperationalCharts
+          visibleCharts={visibleOccupancyGraphs}
+          routes={occupancyGraphRoutes}
+          investorInventoryStyle
+        />
+      )}
+      {hasPermission(PERMISSIONS.INVESTOR_UNIQUE_CLIENTS_GRAPH.value) && (
+        <InvestorUniqueClientsGraph />
+      )}
     </div>
   );
 };
@@ -2083,8 +2237,8 @@ const InvestorDashboard = () => {
     },
     [investorOccupancyClients, totalInventory],
   );
-  const inventoryOccupancyPercent = totalInventory
-    ? Math.round((occupiedInventory / totalInventory) * 100)
+  const inventoryOccupancyPercent = INVESTOR_HARDCODED_DESKS
+    ? Math.round((occupiedInventory / INVESTOR_HARDCODED_DESKS) * 100)
     : 0;
   const currentAppreciationMonthIndex = Math.max(
     0,
@@ -2307,7 +2461,7 @@ const InvestorDashboard = () => {
           }
           hasPermission={hasPermission}
           navigate={navigate}
-          totalInventory={totalInventory}
+          totalInventory={INVESTOR_HARDCODED_DESKS}
           occupiedInventory={occupiedInventory}
           inventoryOccupancyPercent={inventoryOccupancyPercent}
           assetValueOwned={assetValueOwned}
@@ -2328,7 +2482,7 @@ const InvestorDashboard = () => {
             assetValueOwned={assetValueOwned}
             projectedFinancials={projectedFinancials}
             snapshotAssetValueOwned={assetValueOwned}
-            totalInventory={totalInventory}
+            totalInventory={INVESTOR_HARDCODED_DESKS}
           />
         </div>
       )}

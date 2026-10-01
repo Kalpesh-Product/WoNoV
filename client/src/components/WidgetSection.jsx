@@ -29,6 +29,7 @@ const WidgetSection = ({
   normalCase,
   summaryChipVariant,
   greenChipClassName,
+  additionalSummaryChips = [],
   headerRightContent,
   headerCenterContent,
   headerCenterContentInline = false,
@@ -152,6 +153,17 @@ const WidgetSection = ({
                     </span>
                   ) : null}
                   <div className="flex gap-2 flex-wrap justify-end">
+                    {additionalSummaryChips.map((chip) => (
+                      <span
+                        key={chip.title}
+                        className="text-body text-slate-800 font-pmedium"
+                      >
+                        <div className={totalChipClasses} style={chip.style}>
+                          <div>{chip.title} : </div>
+                          <div>{chip.value}</div>
+                        </div>
+                      </span>
+                    ))}
                     {TitleAmountTotal !== undefined &&
                       TitleAmountTotal !== null && (
                         <span
@@ -181,7 +193,7 @@ const WidgetSection = ({
                           </div>
                         </span>
                       )}
-                   
+
                     {TitleAmountRed !== undefined && TitleAmountRed !== null && (
                       <span
                         className={`${

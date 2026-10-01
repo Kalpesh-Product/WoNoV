@@ -13,8 +13,17 @@ const {
   normalizeName,
 } = require("../../utils/dataSheetFormatters");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
-const DELETED_MEMBER_VIEW_ROLES = new Set(["master admin", "super admin"]);
+const DELETED_MEMBER_DEPARTMENTS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+  "top management",
+  "tech",
+  "tech department",
+  "air tech",
+  "air tech department",
+]);
 
 const normalizeRoleValue = (value) =>
   String(value || "")
@@ -23,14 +32,17 @@ const normalizeRoleValue = (value) =>
 
 const getUserRoleTitles = (context) =>
   (Array.isArray(context?.roles) ? context.roles : [])
-    .map((role) => normalizeRoleValue(role?.roleTitle || role))
+    .map((role) => normalizeRoleValue(role?.roleTitle || role?._id || role))
     .filter(Boolean);
 
 const getUserDepartmentNames = (context) =>
   (Array.isArray(context?.departments) ? context.departments : [])
     .map((department) =>
       normalizeRoleValue(
-        department?.name || department?.departmentName || department,
+        department?.name ||
+          department?.departmentName ||
+          department?._id ||
+          department,
       ),
     )
     .filter(Boolean);
@@ -39,22 +51,15 @@ const canViewDeletedMembers = (context) => {
   const roleTitles = getUserRoleTitles(context);
   const departmentNames = getUserDepartmentNames(context);
 
-  if (
-    roleTitles.some((roleTitle) => DELETED_MEMBER_VIEW_ROLES.has(roleTitle))
-  ) {
-    return true;
-  }
-
   return (
     roleTitles.some(
       (roleTitle) =>
-        roleTitle.includes("air tech department") ||
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department") ||
         roleTitle.includes("air tech"),
     ) ||
-    departmentNames.some(
-      (departmentName) =>
-        departmentName.includes("air tech department") ||
-        departmentName.includes("air tech"),
+    departmentNames.some((departmentName) =>
+      DELETED_MEMBER_DEPARTMENTS.has(departmentName),
     )
   );
 };
@@ -523,6 +528,19 @@ const softDeleteCoworkingMember = async (req, res) => {
       return res.status(404).json({ message: "Member not found" });
     }
 
+    if (canViewDeletedMembers(req)) {
+      await member.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Coworking Member", {
+        memberId: String(member._id),
+        memberName: member.employeeName,
+        deletionType: "permanent",
+      });
+      return res.status(200).json({
+        message: "Member permanently deleted successfully",
+        deletionType: "permanent",
+      });
+    }
+
     if (member.isDeleted) {
       return res.status(200).json({
         message: "Member already deleted",
@@ -534,12 +552,68 @@ const softDeleteCoworkingMember = async (req, res) => {
     member.isActive = false;
     member.biometricStatus = "Revoke";
     member.deletedAt = new Date();
-    member.deletedBy = user?._id || null;
+    member.deletedBy = user || null;
 
     await member.save();
+    setAuditLogContext(req, "Delete Coworking Member", {
+      memberId: String(member._id),
+      memberName: member.employeeName,
+      deletionType: "soft",
+    });
 
     return res.status(200).json({
       message: "Member deleted successfully",
+      data: member,
+      deletionType: "soft",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Something went wrong",
+      error: error.message,
+    });
+  }
+};
+
+const restoreCoworkingMember = async (req, res) => {
+  try {
+    const { memberId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(memberId)) {
+      return res.status(400).json({ message: "Invalid member ID" });
+    }
+
+    if (!canViewDeletedMembers(req)) {
+      return res.status(403).json({
+        message: "Only Top Management or Tech Department can restore members",
+      });
+    }
+
+    const member = await CoworkingMembers.findOneAndUpdate(
+      { _id: memberId, isDeleted: true },
+      {
+        $set: {
+          isDeleted: false,
+          isActive: true,
+          biometricStatus: "Pending",
+          deletedAt: null,
+          deletedBy: null,
+        },
+      },
+      { new: true },
+    );
+
+    if (!member) {
+      return res.status(404).json({ message: "Deleted member not found" });
+    }
+
+    setAuditLogContext(req, "Restore Coworking Member", {
+      memberId: String(member._id),
+      memberName: member.employeeName,
+      deletionType: "restore",
+    });
+
+    return res.status(200).json({
+      message: "Member restored successfully",
       data: member,
     });
   } catch (error) {
@@ -1501,4 +1575,5 @@ module.exports = {
   bulkUpdateCoworkingMembers,
   updateMemberStatus,
   softDeleteCoworkingMember,
+  restoreCoworkingMember,
 };

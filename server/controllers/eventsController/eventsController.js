@@ -5,6 +5,7 @@ const { default: mongoose } = require("mongoose");
 const {
   fetchHolidayAndEventsService,
 } = require("../../services/reports/holidayEvent");
+const setAuditLogContext = require("../../utils/auditLogContext");
 
 const createEvent = async (req, res, next) => {
   const { company } = req;
@@ -286,23 +287,36 @@ const deleteEvent = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    if (!id) {
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ message: "EventId is required" });
     }
 
-    const inActiveEvent = await Event.findOneAndUpdate(
-      { _id: id },
-      { active: false },
-      { new: true },
-    );
+    const deletedEvent = await Event.findOneAndDelete({
+      _id: id,
+      company: req.company,
+    });
 
-    if (!inActiveEvent) {
+    if (!deletedEvent) {
       return res.status(404).json({ message: "Event not found" });
     }
 
+    const eventType = deletedEvent.type?.trim().toLowerCase();
+    setAuditLogContext(
+      req,
+      eventType === "holiday"
+        ? "Permanently Delete Holiday"
+        : "Permanently Delete Event",
+      {
+        eventId: String(deletedEvent._id),
+        eventTitle: deletedEvent.title,
+        eventType,
+        deletionType: "permanent",
+      },
+    );
+
     return res.status(200).json({
-      message: "Event deleted successfully",
-      data: inActiveEvent,
+      message: `${eventType === "holiday" ? "Holiday" : "Event"} permanently deleted successfully`,
+      deletionType: "permanent",
     });
   } catch (error) {
     next(error);

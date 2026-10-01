@@ -185,6 +185,17 @@ const budgetSchema = new mongoose.Schema(
         type: Date,
       },
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
   { timestamps: true },
 );

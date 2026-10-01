@@ -16,12 +16,22 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { queryClient } from "../../../main";
-import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import PageFrame from "../../../components/Pages/PageFrame";
 import StatusChip from "../../../components/StatusChip";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { useSelector } from "react-redux";
 import { useEffect } from "react";
+import ConfirmationModal from "../../../components/ConfirmationModal";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
+
+const canManageDeletedCategories = (auth) =>
+  (auth?.user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) || ["Top Management", "Tech Department"].includes(department?.name),
+  );
 
 const AssetsSubCategories = () => {
   const axios = useAxiosPrivate();
@@ -29,7 +39,9 @@ const AssetsSubCategories = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState([]);
   const [modalMode, setModalMode] = useState("");
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const departmentId = useSelector((state) => state.assets.selectedDepartment);
+  const canManageDeleted = canManageDeletedCategories(auth);
 
   //--------------------FORMS------------------------------//
 
@@ -82,11 +94,11 @@ const AssetsSubCategories = () => {
 
   const { data: assetSubCategories = [], isPending: isSubCategoriesPending } =
     useQuery({
-      queryKey: ["assetSubCategories", departmentId],
+      queryKey: ["assetSubCategories", departmentId, canManageDeleted],
       queryFn: async () => {
         try {
           const response = await axios.get(
-            `/api/assets/get-subcategory?departmentId=${departmentId}`,
+            `/api/assets/get-subcategory?departmentId=${departmentId}&includeDeleted=${canManageDeleted}`,
           );
           return Array.isArray(response.data) ? response.data : [];
         } catch (error) {
@@ -130,6 +142,34 @@ const AssetsSubCategories = () => {
     },
   });
 
+  const { mutate: deleteSubCategory, isPending: pendingDelete } = useMutation({
+    mutationFn: async (subCategoryId) =>
+      (await axios.delete(`/api/assets/subcategory/${subCategoryId}`)).data,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetSubCategories"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) =>
+      toast.error(
+        error?.response?.data?.message || "Failed to delete sub-category",
+      ),
+  });
+
+  const { mutate: restoreSubCategory, isPending: pendingRestore } = useMutation({
+    mutationFn: async (subCategoryId) =>
+      (await axios.patch(`/api/assets/subcategory/${subCategoryId}/restore`)).data,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetSubCategories"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) =>
+      toast.error(
+        error?.response?.data?.message || "Failed to restore sub-category",
+      ),
+  });
+
   //--------------------API------------------------------//
 
   //--------------------Event handlers------------------------------//
@@ -146,8 +186,8 @@ const AssetsSubCategories = () => {
   };
 
   const getRowStyle = (params) => {
-    if (!params.data.isActive) {
-      return { backgroundColor: "#d3d3d3", color: "#666" }; // Gray out disabled rows
+    if (params.data.isDeleted) {
+      return { backgroundColor: "#d3d3d3", color: "#666" };
     }
     return null;
   };
@@ -201,19 +241,59 @@ const AssetsSubCategories = () => {
       flex: 0.7 ,
       cellRenderer: (params) => {
         return (
-          <ThreeDotMenu
-            rowId={params.data._id}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => handleEdit(params.data),
-              },
-              // {
-              //   label: "Delete",
-              //   onClick: () => handleDelete(params.data),
-              // },
-            ]}
-          />
+          <div className="flex items-center gap-1">
+            {params.data.isDeleted ? (
+              <button
+                type="button"
+                title="Restore"
+                className="h-8 w-8 flex items-center justify-center text-black hover:text-primary"
+                onClick={() =>
+                  setConfirmationAction({ type: "restore", row: params.data })
+                }
+              >
+                <MdOutlineRestore size={26} />
+              </button>
+            ) : (
+              <button
+                type="button"
+                title="Edit"
+                className="h-8 w-8 flex items-center justify-center text-black hover:text-primary"
+                onClick={() => handleEdit(params.data)}
+              >
+                <HiPencilSquare size={26} />
+              </button>
+            )}
+            {params.data.isActive && (
+              <button
+                type="button"
+                title={params.data.isDeleted ? "Delete permanently" : "Delete"}
+                className="h-8 w-8 flex items-center justify-center text-red-600 hover:text-red-700"
+                onClick={() => {
+                  const category = assetCategories.find(
+                    (item) =>
+                      String(item?._id) === String(params.data.category?._id),
+                  );
+                  const isCategoryActive =
+                    category?.isActive ?? params.data.category?.isActive;
+                  const isCategoryDeleted =
+                    category?.isDeleted ?? params.data.category?.isDeleted;
+
+                  if (
+                    !params.data.isDeleted &&
+                    (!isCategoryActive || isCategoryDeleted)
+                  ) {
+                    toast.error(
+                      "Please activate this sub-category's category before deleting the sub-category",
+                    );
+                    return;
+                  }
+                  setConfirmationAction({ type: "delete", row: params.data });
+                }}
+              >
+                <MdDeleteForever size={26} />
+              </button>
+            )}
+          </div>
         );
       },
     },
@@ -221,7 +301,11 @@ const AssetsSubCategories = () => {
   const tableData = isSubCategoriesPending || !Array.isArray(assetSubCategories)
     ? []
     : assetSubCategories.map((item, index) => {
-      const status = item.isActive ? "Active" : "Inactive";
+      const status = item.isDeleted
+        ? "Deleted"
+        : item.isActive
+          ? "Active"
+          : "Inactive";
       return {
         ...item,
         _id: item._id,
@@ -247,7 +331,7 @@ const AssetsSubCategories = () => {
         data={tableData}
         columns={categoriesColumn}
         tableHeight={350}
-      // getRowStyle={getRowStyle}
+        getRowStyle={getRowStyle}
       />
 
       <MuiModal
@@ -396,9 +480,41 @@ const AssetsSubCategories = () => {
               title={"No. of Assets"}
               detail={selectedAsset?.assetQuantity ?? 0}
             />
+            {selectedAsset?.isDeleted && (
+              <DetalisFormatted
+                title={"Deleted By"}
+                detail={
+                  `${selectedAsset?.deletedBy?.firstName || ""} ${selectedAsset?.deletedBy?.lastName || ""}`.trim() ||
+                  "N/A"
+                }
+              />
+            )}
           </div>
         )}
       </MuiModal>
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={() =>
+          confirmationAction?.type === "restore"
+            ? restoreSubCategory(confirmationAction.row._id)
+            : deleteSubCategory(confirmationAction?.row._id)
+        }
+        title={
+          confirmationAction?.type === "restore"
+            ? "Restore Sub-Category"
+            : "Delete Sub-Category"
+        }
+        message={
+          confirmationAction?.type === "restore"
+            ? "Are you sure you want to restore this sub-category?"
+            : canManageDeleted
+              ? "Are you sure you want to permanently delete this sub-category?"
+              : "Are you sure you want to delete this sub-category?"
+        }
+        confirmText={confirmationAction?.type === "restore" ? "Restore" : "Delete"}
+        isLoading={pendingDelete || pendingRestore}
+      />
     </PageFrame>
   );
 };

@@ -28,6 +28,19 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import formatDateTime from "../../../utils/formatDateTime";
 import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
+import ConfirmationModal from "../../../components/ConfirmationModal";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+
+const canManageDeletedCategories = (auth) =>
+  (auth?.user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) ||
+      ["top management", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
 
 const normalizeUnitNo = (value) =>
   String(value || "")
@@ -112,6 +125,7 @@ function getUnitInventorySummaryValues(rows = []) {
     () => auth?.user?.permissions?.permissions || [],
     [auth?.user?.permissions?.permissions],
   );
+  const canManageDeleted = canManageDeletedCategories(auth);
   //const userPermissions = auth?.user?.permissions?.permissions || [];
   const department = usePageDepartment();
 
@@ -124,7 +138,9 @@ function getUnitInventorySummaryValues(rows = []) {
   const [itemModalMode, setItemModalMode] = useState("add");
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [categoryAction, setCategoryAction] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [itemAction, setItemAction] = useState(null);
   const [selectedUnit, setSelectedUnit] = useState(null);
   const [selectedBuildingTab, setSelectedBuildingTab] = useState(
     forcedBuildingTab || "sunteck",
@@ -653,11 +669,11 @@ function getUnitInventorySummaryValues(rows = []) {
   ]);
 
   const { data: inventoryData, isPending: isInventoryLoading } = useQuery({
-    queryKey: ["maintainance-inventory", department?._id],
+    queryKey: ["maintainance-inventory", department?._id, "include-deleted"],
     enabled: Boolean(department?._id),
     queryFn: async () => {
       const response = await axios.get(
-        `/api/inventory/get-inventories?department=${department._id}`,
+        `/api/inventory/get-inventories?department=${department._id}&includeDeleted=true`,
       );
 
       return response.data.map((item) => {
@@ -792,13 +808,13 @@ function getUnitInventorySummaryValues(rows = []) {
   // }, [inventoryData]);
 
   const { data: inventoryCategories = [] } = useQuery({
-    queryKey: ["inventory-categories", department?._id],
+    queryKey: ["inventory-categories", department?._id, canManageDeleted],
     queryFn: async () => {
       if (!department?._id) {
         return [];
       }
       const response = await axios.get(
-        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory`,
+        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory&includeDeleted=${canManageDeleted}`,
       );
       return response.data;
     },
@@ -859,6 +875,7 @@ function getUnitInventorySummaryValues(rows = []) {
       (modalMode === "inventoryEdit"
         ? selectedCategoryForUpdate
         : selectedCategoryForAdd) || "",
+      canManageDeleted,
     ],
     enabled: Boolean(department?._id),
     queryFn: async () => {
@@ -876,6 +893,7 @@ function getUnitInventorySummaryValues(rows = []) {
       if (activeCategory && isMongoObjectId(activeCategory)) {
         searchParams.set("category", activeCategory);
       }
+      searchParams.set("includeDeleted", canManageDeleted);
 
       const query = searchParams.toString();
       const response = await axios.get(`/api/items${query ? `?${query}` : ""}`);
@@ -897,7 +915,7 @@ function getUnitInventorySummaryValues(rows = []) {
           ? String(item?.category?._id) === String(selectedCategoryForAdd)
           : true,
       )
-      .filter((item) => item?.isActive)
+      .filter((item) => item?.isActive && !item?.isDeleted)
       .forEach((item) => {
         const itemId = item?._id;
         const itemName = item?.name?.trim();
@@ -917,7 +935,7 @@ function getUnitInventorySummaryValues(rows = []) {
      const updateItemOptions = useMemo(
     () =>
       (inventoryItems || [])
-        .filter((item) => item?.isActive)
+        .filter((item) => item?.isActive && !item?.isDeleted)
         .map((item) => ({ id: item._id, name: item.name })),
     [inventoryItems],
   );
@@ -1206,6 +1224,9 @@ function getUnitInventorySummaryValues(rows = []) {
         queryClient.invalidateQueries({
           queryKey: ["inventory-categories", department?._id],
         });
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-items", department?._id],
+        });
         setIsCategoryModalOpen(false);
         setSelectedCategory(null);
       },
@@ -1217,6 +1238,36 @@ function getUnitInventorySummaryValues(rows = []) {
       },
     },
   );
+
+  const { mutate: deleteCategory, isPending: isDeletingCategory } = useMutation({
+    mutationFn: async (categoryId) =>
+      (await axios.delete(`/api/assets/category/${categoryId}`)).data,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Category deleted successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-categories", department?._id],
+      });
+      setCategoryAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to delete category.");
+    },
+  });
+
+  const { mutate: restoreCategory, isPending: isRestoringCategory } = useMutation({
+    mutationFn: async (categoryId) =>
+      (await axios.patch(`/api/assets/category/${categoryId}/restore`)).data,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Category restored successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-categories", department?._id],
+      });
+      setCategoryAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to restore category.");
+    },
+  });
 
   const { mutate: createItem, isPending: isCreatingItem } = useMutation({
     mutationFn: async (data) => {
@@ -1281,6 +1332,36 @@ function getUnitInventorySummaryValues(rows = []) {
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Failed to update item.");
       console.error(error);
+    },
+  });
+
+  const { mutate: deleteItem, isPending: isDeletingItem } = useMutation({
+    mutationFn: async (itemId) =>
+      (await axios.delete(`/api/items/${itemId}`)).data,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Item deleted successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-items", department?._id],
+      });
+      setItemAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to delete item.");
+    },
+  });
+
+  const { mutate: restoreItem, isPending: isRestoringItem } = useMutation({
+    mutationFn: async (itemId) =>
+      (await axios.patch(`/api/items/${itemId}/restore`)).data,
+    onSuccess: (data) => {
+      toast.success(data?.message || "Item restored successfully!");
+      queryClient.invalidateQueries({
+        queryKey: ["inventory-items", department?._id],
+      });
+      setItemAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to restore item.");
     },
   });
 
@@ -2374,15 +2455,47 @@ function getUnitInventorySummaryValues(rows = []) {
       pinned:"right",
       minWidth: 100,
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: "Edit",
-              onClick: () => handleCategoryEditOpen(params.data),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          {params.data.isDeleted && (
+            <button
+              type="button"
+              aria-label="Restore category"
+              title="Restore category"
+              disabled={isDeletingCategory || isRestoringCategory}
+              onClick={() =>
+                setCategoryAction({ type: "restore", row: params.data })
+              }
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              <MdOutlineRestore size={22} />
+            </button>
+          )}
+          {params.data.isActive && (
+            <button
+              type="button"
+              aria-label="Delete category"
+              title="Delete category"
+              disabled={isDeletingCategory || isRestoringCategory}
+              onClick={() =>
+                setCategoryAction({ type: "delete", row: params.data })
+              }
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              <MdDeleteForever size={22} />
+            </button>
+          )}
+          {!params.data.isDeleted && (
+            <ThreeDotMenu
+              rowId={params.data._id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => handleCategoryEditOpen(params.data),
+                },
+              ]}
+            />
+          )}
+        </div>
       ),
     },
   ];
@@ -2391,7 +2504,11 @@ function getUnitInventorySummaryValues(rows = []) {
     ...category,
     srNo: index + 1,
     categoryName: category?.categoryName || "-",
-    status: category?.isActive ? "Active" : "Inactive",
+    status: category?.isDeleted
+      ? "Deleted"
+      : category?.isActive
+        ? "Active"
+        : "Inactive",
     itemName:
       (category?.subCategories || [])
         .map((item) => item?.subCategoryName)
@@ -2428,15 +2545,62 @@ function getUnitInventorySummaryValues(rows = []) {
       pinned:"right",
       width: 130,
       cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: "Edit",
-              onClick: () => handleItemEditOpen(params.data),
-            },
-          ]}
-        />
+        <div className="flex items-center gap-1">
+          {params.data.isDeleted && (
+            <button
+              type="button"
+              aria-label="Restore item"
+              title="Restore item"
+              disabled={isDeletingItem || isRestoringItem}
+              onClick={() =>
+                setItemAction({ type: "restore", row: params.data })
+              }
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              <MdOutlineRestore size={22} />
+            </button>
+          )}
+          {params.data.isActive && (
+            <button
+              type="button"
+              aria-label="Delete item"
+              title="Delete item"
+              disabled={isDeletingItem || isRestoringItem}
+              onClick={() => {
+                const category = inventoryCategories.find(
+                  (item) =>
+                    String(item?._id) === String(params.data.category?._id),
+                );
+                const isCategoryActive =
+                  category?.isActive ?? params.data.category?.isActive;
+                const isCategoryDeleted =
+                  category?.isDeleted ?? params.data.category?.isDeleted;
+
+                if (!isCategoryActive || isCategoryDeleted) {
+                  toast.error(
+                    "Please activate this item's category before deleting the item",
+                  );
+                  return;
+                }
+                setItemAction({ type: "delete", row: params.data });
+              }}
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+            >
+              <MdDeleteForever size={22} />
+            </button>
+          )}
+          {!params.data.isDeleted && (
+            <ThreeDotMenu
+              rowId={params.data._id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => handleItemEditOpen(params.data),
+                },
+              ]}
+            />
+          )}
+        </div>
       ),
     },
   ];
@@ -2446,7 +2610,11 @@ function getUnitInventorySummaryValues(rows = []) {
     srNo: index + 1,
     itemName: item?.name || "-",
     categoryName: item?.category?.categoryName || item?.category?.name || "-",
-    status: item?.isActive ? "Active" : "Inactive",
+    status: item?.isDeleted
+      ? "Deleted"
+      : item?.isActive
+        ? "Active"
+        : "Inactive",
   }));
 
   return (
@@ -2490,6 +2658,15 @@ function getUnitInventorySummaryValues(rows = []) {
             handleClick={handleOpenCategoryModal}
             tableHeight={450}
             exportData
+            getRowStyle={({ data }) =>
+              data?.isDeleted
+                ? {
+                    backgroundColor: "#eef1f5",
+                    color: "#6b7280",
+                    opacity: 0.82,
+                  }
+                : undefined
+            }
           />
         </PageFrame>
       )}
@@ -2504,6 +2681,15 @@ function getUnitInventorySummaryValues(rows = []) {
             handleClick={handleOpenAddItemModal}
             tableHeight={450}
             exportData
+            getRowStyle={({ data }) =>
+              data?.isDeleted
+                ? {
+                    backgroundColor: "#eef1f5",
+                    color: "#6b7280",
+                    opacity: 0.82,
+                  }
+                : undefined
+            }
           />
         </PageFrame>
       )}
@@ -2569,6 +2755,15 @@ function getUnitInventorySummaryValues(rows = []) {
                   tableHeight={450}
                   dateColumn={"date"}
                   columns={unitInventoryColumns}
+                  getRowStyle={({ data }) =>
+                    data?.isDeleted
+                      ? {
+                          backgroundColor: "#eef1f5",
+                          color: "#6b7280",
+                          opacity: 0.82,
+                        }
+                      : undefined
+                  }
                   headerActions={
                     <div className="flex items-center gap-2 flex-wrap">
                       {selectedUnitInventorySummaryCards.map((card) => (
@@ -2664,6 +2859,18 @@ function getUnitInventorySummaryValues(rows = []) {
                 title="Status"
                 detail={selectedCategory?.isActive ? "Active" : "Inactive"}
               />
+              {selectedCategory?.isDeleted && (
+                <>
+                  <br />
+                  <DetalisFormatted
+                    title="Deleted By"
+                    detail={
+                      `${selectedCategory?.deletedBy?.firstName || ""} ${selectedCategory?.deletedBy?.lastName || ""}`.trim() ||
+                      "N/A"
+                    }
+                  />
+                </>
+              )}
             </div>
             {/* <div>
               <div className="font-semibold mb-2">Action</div>
@@ -2870,6 +3077,15 @@ function getUnitInventorySummaryValues(rows = []) {
                 title="Status"
                 detail={selectedItem?.isActive ? "Active" : "Inactive"}
               />
+              {selectedItem?.isDeleted && (
+                <DetalisFormatted
+                  title="Deleted By"
+                  detail={
+                    `${selectedItem?.deletedBy?.firstName || ""} ${selectedItem?.deletedBy?.lastName || ""}`.trim() ||
+                    "N/A"
+                  }
+                />
+              )}
             </div>
             {/* <div>
               <div className="font-semibold mb-2">Action</div>
@@ -3776,6 +3992,44 @@ function getUnitInventorySummaryValues(rows = []) {
           </div>
         )}
       </MuiModal>
+      <ConfirmationModal
+        open={Boolean(categoryAction)}
+        onClose={() => setCategoryAction(null)}
+        onConfirm={() =>
+          categoryAction?.type === "restore"
+            ? restoreCategory(categoryAction?.row?._id)
+            : deleteCategory(categoryAction?.row?._id)
+        }
+        title={categoryAction?.type === "restore" ? "Restore Category" : "Delete Category"}
+        message={
+          categoryAction?.type === "restore"
+            ? "Are you sure you want to restore this category?"
+            : canManageDeleted
+              ? "Are you sure you want to permanently delete this category?"
+              : "Are you sure you want to delete this category?"
+        }
+        confirmText={categoryAction?.type === "restore" ? "Restore" : "Delete"}
+        isLoading={isDeletingCategory || isRestoringCategory}
+      />
+      <ConfirmationModal
+        open={Boolean(itemAction)}
+        onClose={() => setItemAction(null)}
+        onConfirm={() =>
+          itemAction?.type === "restore"
+            ? restoreItem(itemAction?.row?._id)
+            : deleteItem(itemAction?.row?._id)
+        }
+        title={itemAction?.type === "restore" ? "Restore Item" : "Delete Item"}
+        message={
+          itemAction?.type === "restore"
+            ? "Are you sure you want to restore this item?"
+            : canManageDeleted
+              ? "Are you sure you want to permanently delete this item?"
+              : "Are you sure you want to delete this item?"
+        }
+        confirmText={itemAction?.type === "restore" ? "Restore" : "Delete"}
+        isLoading={isDeletingItem || isRestoringItem}
+      />
     </div>
   );
 };

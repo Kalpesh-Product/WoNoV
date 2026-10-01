@@ -15,8 +15,9 @@ import { TextField, MenuItem } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { Controller, useForm } from "react-hook-form";
 import { LuImageUp } from "react-icons/lu";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
+import ConfirmationModal from "../../components/ConfirmationModal";
 import { queryClient } from "../../main";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import humanTime from "../../utils/humanTime";
@@ -33,6 +34,7 @@ const RaiseTicket = () => {
   const [openModal, setOpenModal] = useState(false);
   const [viewTicketDetails, setViewTicketDetails] = useState({});
   const [viewDetails, setViewDetails] = useState();
+  const [ticketToDelete, setTicketToDelete] = useState(null);
   const axios = useAxiosPrivate();
   const imageRef = useRef();
 
@@ -180,6 +182,22 @@ const RaiseTicket = () => {
     setViewDetails(true);
   };
 
+  const { mutate: deleteTicket, isPending: isDeletingTicket } = useMutation({
+    mutationFn: async (ticketId) => {
+      const response = await axios.delete(`/api/tickets/${ticketId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message);
+      setTicketToDelete(null);
+      queryClient.invalidateQueries({ queryKey: ["my-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets"] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Unable to delete ticket");
+    },
+  });
+
   const recievedTicketsColumns = [
     { field: "srNo", headerName: "Sr No", width: 80, minWidth: 70, flex: 0.6 },
     {
@@ -286,13 +304,25 @@ const RaiseTicket = () => {
       width: 100,
       minWidth: 100,
       cellRenderer: (params) => (
-        <div className="p-2 mb-2 flex gap-2">
+        <div className="p-2 mb-2 flex items-center gap-2">
           <span
             className="text-subtitle cursor-pointer"
             onClick={() => handleViewTicketDetails(params.data)}
           >
             <MdOutlineRemoveRedEye />
           </span>
+          {params.data.status === "Open" ? (
+            <IconButton
+              size="small"
+              aria-label="Permanently delete ticket"
+              title="Delete ticket"
+              disabled={isDeletingTicket}
+              onClick={() => setTicketToDelete(params.data)}
+              className="!text-red-600 disabled:!text-gray-400"
+            >
+              <MdDeleteForever size={20} />
+            </IconButton>
+          ) : null}
         </div>
       ),
     },
@@ -639,6 +669,7 @@ const RaiseTicket = () => {
                 return {
                   raisedBy: ticket?.raisedBy?.firstName || "Unknown",
                   raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
+                  id: ticket?._id,
                   description: ticket?.description,
                   ticketTitle: ticket?.ticket,
                   status: ticket?.status,
@@ -762,6 +793,14 @@ const RaiseTicket = () => {
           />
         </div>
       </MuiModal>
+      <ConfirmationModal
+        open={Boolean(ticketToDelete)}
+        onClose={() => setTicketToDelete(null)}
+        onConfirm={() => deleteTicket(ticketToDelete?.id)}
+        title="Delete Ticket"
+        message="Are you sure you want to delete this ticket?"
+        isLoading={isDeletingTicket}
+      />
     </div>
   );
 };

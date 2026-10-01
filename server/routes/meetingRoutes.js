@@ -8,6 +8,7 @@ const {
   cancelMeeting,
   getAvaliableUsers,
   getMyMeetings,
+  deleteMyMeeting,
   getSingleRoomMeetings,
   extendMeeting,
   updateMeetingStatus,
@@ -41,6 +42,7 @@ router.get("/get-room/:roomName", getSingleRoom);
 router.get("/get-meetings", getMeetings);
 router.get("/get-room-meetings/:roomId", getSingleRoomMeetings);
 router.get("/my-meetings", getMyMeetings);
+router.delete("/my-meetings/:meetingId", deleteMyMeeting);
 router.get("/get-reviews", getReviews);
 router.get("/get-meetings-type", getMeetingsByTypes);
 router.patch("/update-room/:id", upload.single("room"), updateRoom);

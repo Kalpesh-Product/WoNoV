@@ -20,7 +20,6 @@ import { DateRange } from "@mui/icons-material";
 import humanDate from "../../../utils/humanDateForamt";
 import { queryClient } from "../../../main";
 import PageFrame from "../../../components/Pages/PageFrame";
-import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import {
   isAlphanumeric,
   isValidPhoneNumber,
@@ -31,9 +30,51 @@ import { DesktopDatePicker } from "@mui/x-date-pickers";
 import CountryStateCitySelector from "../../../components/CountryStateCitySelector";
 import dayjs from "dayjs";
 import DangerButton from "../../../components/DangerButton";
+import { HiPencilSquare } from "react-icons/hi2";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import useAuth from "../../../hooks/useAuth";
+
+const PRIVILEGED_DEPARTMENTS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+  "top management",
+  "tech",
+  "tech department",
+  "air tech",
+  "air tech department",
+]);
+const normalizeAccessValue = (value) =>
+  String(value || "").trim().toLowerCase();
+const canManageDeletedMembers = (user) => {
+  const roles = (Array.isArray(user?.role) ? user.role : []).map((role) =>
+    normalizeAccessValue(role?.roleTitle || role?._id || role),
+  );
+  const departments = (
+    Array.isArray(user?.departments) ? user.departments : []
+  ).map((department) =>
+    normalizeAccessValue(
+      department?.name ||
+        department?.departmentName ||
+        department?._id ||
+        department,
+    ),
+  );
+
+  return (
+    roles.some(
+      (role) =>
+        role.includes("top management") ||
+        role.includes("tech department") ||
+        role.includes("air tech"),
+    ) ||
+    departments.some((department) => PRIVILEGED_DEPARTMENTS.has(department))
+  );
+};
 
 const HouseKeepingMembersList = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const canManageDeleted = canManageDeletedMembers(auth?.user);
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState([]);
@@ -85,11 +126,17 @@ const HouseKeepingMembersList = () => {
 
   const { data: houseKeepingData, isPending: isHouseKeepingPending } = useQuery(
     {
-      queryKey: ["housekeeping-staff"],
+      queryKey: ["housekeeping-staff", "members-list", canManageDeleted],
       queryFn: async () => {
         try {
-          const response = await axios.get("/api/company/housekeeping-members");
-          return response.data.filter((m) => m.isActive);
+          const response = await axios.get(
+            `/api/company/housekeeping-members${
+              canManageDeleted ? "?includeDeleted=true" : ""
+            }`,
+          );
+          return response.data.filter(
+            (member) => member.isActive || (canManageDeleted && member.isDeleted),
+          );
         } catch (error) {
           toast.error(error.message);
         }
@@ -145,7 +192,28 @@ const HouseKeepingMembersList = () => {
       },
       onError: (error) => {
         console.error("Delete failed:", error);
-        toast.error("Failed to delete member.");
+        toast.error(
+          error?.response?.data?.message || "Failed to delete member."
+        );
+      },
+    });
+
+  const { mutate: restoreHousekeepingMember, isPending: isRestorePending } =
+    useMutation({
+      mutationFn: async (memberId) => {
+        const response = await axios.patch(
+          `/api/company/restore-housekeeping-member/${memberId}`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Member restored successfully!");
+        queryClient.invalidateQueries({ queryKey: ["housekeeping-staff"] });
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to restore member.",
+        );
       },
     });
 
@@ -160,17 +228,43 @@ const HouseKeepingMembersList = () => {
       field: "action",
       headerName: "Action",
       cellRenderer: (params) => (
-        <div>
-          <ThreeDotMenu
-            rowId={params.data._id}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => handleEditUser(params.data),
-              },
-              { label: "Delete", onClick: () => handleDeleteUser(params.data) },
-            ]}
-          />
+        <div className="flex h-full items-center gap-1">
+          {params.data.isDeleted ? (
+            <button
+              type="button"
+              title="Restore"
+              aria-label="Restore housekeeping member"
+              disabled={isRestorePending || isDeletePending}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:text-gray-400"
+              onClick={() => restoreHousekeepingMember(params.data._id)}
+            >
+              <MdOutlineRestore size={24} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              title="Edit"
+              aria-label="Edit housekeeping member"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => handleEditUser(params.data)}
+            >
+              <HiPencilSquare size={24} />
+            </button>
+          )}
+          <button
+            type="button"
+            title={params.data.isDeleted ? "Permanently Delete" : "Delete"}
+            aria-label={
+              params.data.isDeleted
+                ? "Permanently delete housekeeping member"
+                : "Delete housekeeping member"
+            }
+            disabled={isDeletePending || isRestorePending}
+            className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:text-gray-400"
+            onClick={() => handleDeleteUser(params.data)}
+          >
+            <MdDeleteForever size={24} />
+          </button>
         </div>
       ),
     },
@@ -207,6 +301,11 @@ const HouseKeepingMembersList = () => {
             // buttonTitle={"Assign Member"}
             data={transformedData}
             columns={memberColumns}
+            getRowStyle={(params) =>
+              params.data?.isDeleted
+                ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+                : undefined
+            }
             handleClick={handleAddUser}
             exportData
           />
@@ -497,8 +596,10 @@ const HouseKeepingMembersList = () => {
           <div className="flex flex-col justify-center items-center gap-4 w-full">
             <p className="text-content text-center">
               Are you sure you want to{" "}
-              <strong className="text-red-600">DELETE</strong> this housekeeping
-              member?
+              <strong className="text-red-600">
+                {canManageDeleted ? "PERMANENTLY DELETE" : "DELETE"}
+              </strong>{" "}
+              this housekeeping member?
             </p>
             <div className="flex gap-4">
               <SecondaryButton

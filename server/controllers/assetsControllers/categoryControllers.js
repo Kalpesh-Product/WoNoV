@@ -10,6 +10,184 @@ const csv = require("csv-parser");
 const { Readable } = require("stream");
 const SubCategory = require("../../models/category/SubCategories");
 const Asset = require("../../models/assets/Assets");
+const User = require("../../models/hr/UserData");
+const Item = require("../../models/Item");
+const setAuditLogContext = require("../../utils/auditLogContext");
+
+const canManageDeletedCategories = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) ||
+      ["Top Management", "Tech Department"].includes(department?.name),
+  );
+};
+
+const deleteCategory = async (req, res, next) => {
+  try {
+    const category = await AssetCategory.findOne({
+      _id: req.params.categoryId,
+      company: req.company,
+    });
+    if (!category) return res.status(404).json({ message: "Category not found" });
+    if (!category.isActive) {
+      return res.status(400).json({ message: "Only active categories can be deleted" });
+    }
+
+    const hasSubCategories = await AssetSubCategory.exists({
+      category: category._id,
+      isDeleted: { $ne: true },
+    });
+    if (hasSubCategories) {
+      return res.status(400).json({
+        message: "Please delete all sub-categories linked to this category before deleting the category.",
+      });
+    }
+
+    const hasItems = await Item.exists({
+      category: category._id,
+      isDeleted: { $ne: true },
+    });
+    if (hasItems) {
+      return res.status(400).json({
+        message: "Please delete all items linked to this category before deleting the category.",
+      });
+    }
+
+    if (await canManageDeletedCategories(req.user)) {
+      await category.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Category", {
+        categoryId: String(category._id),
+        categoryName: category.categoryName,
+        deletionType: "permanent",
+      });
+      return res.status(200).json({ message: "Category permanently deleted" });
+    }
+
+    category.isDeleted = true;
+    category.deletedAt = new Date();
+    category.deletedBy = req.user;
+    await category.save();
+    setAuditLogContext(req, "Delete Category", {
+      categoryId: String(category._id),
+      categoryName: category.categoryName,
+      deletionType: "soft",
+    });
+    return res.status(200).json({ message: "Category deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreCategory = async (req, res, next) => {
+  try {
+    if (!(await canManageDeletedCategories(req.user))) {
+      return res.status(403).json({ message: "You cannot restore this category" });
+    }
+    const category = await AssetCategory.findOneAndUpdate(
+      { _id: req.params.categoryId, company: req.company, isDeleted: true },
+      { $set: { isDeleted: false }, $unset: { deletedAt: 1, deletedBy: 1 } },
+    );
+    if (!category) return res.status(404).json({ message: "Category not found" });
+    setAuditLogContext(req, "Restore Category", {
+      categoryId: String(category._id),
+      categoryName: category.categoryName,
+      deletionType: "restore",
+    });
+    return res.status(200).json({ message: "Category restored successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteSubCategory = async (req, res, next) => {
+  try {
+    const subCategory = await AssetSubCategory.findById(req.params.subCategoryId)
+      .populate("category", "company isActive isDeleted");
+    if (!subCategory) {
+      return res.status(404).json({ message: "Sub-category not found" });
+    }
+    if (!subCategory.isActive) {
+      return res
+        .status(400)
+        .json({ message: "Only active sub-categories can be deleted" });
+    }
+    if (
+      !subCategory.isDeleted &&
+      subCategory.category &&
+      (!subCategory.category.isActive || subCategory.category.isDeleted)
+    ) {
+      return res.status(400).json({
+        message: "Please activate this sub-category's category before deleting the sub-category",
+      });
+    }
+
+    const categoryCompanyId =
+      subCategory.category?.company?._id || subCategory.category?.company;
+    const requestCompanyId = req.company?._id || req.company;
+    if (String(categoryCompanyId) !== String(requestCompanyId)) {
+      return res.status(404).json({ message: "Sub-category not found" });
+    }
+
+    if (await canManageDeletedCategories(req.user)) {
+      await subCategory.deleteOne();
+      setAuditLogContext(req, "Permanently Delete Sub-category", {
+        subCategoryId: String(subCategory._id),
+        subCategoryName: subCategory.subCategoryName,
+        deletionType: "permanent",
+      });
+      return res.status(200).json({ message: "Sub-category permanently deleted" });
+    }
+
+    subCategory.isDeleted = true;
+    subCategory.deletedAt = new Date();
+    subCategory.deletedBy = req.user;
+    await subCategory.save();
+    setAuditLogContext(req, "Delete Sub-category", {
+      subCategoryId: String(subCategory._id),
+      subCategoryName: subCategory.subCategoryName,
+      deletionType: "soft",
+    });
+    return res.status(200).json({ message: "Sub-category deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreSubCategory = async (req, res, next) => {
+  try {
+    if (!(await canManageDeletedCategories(req.user))) {
+      return res.status(403).json({ message: "You cannot restore this sub-category" });
+    }
+    const subCategory = await AssetSubCategory.findById(req.params.subCategoryId)
+      .populate("category", "company");
+    if (
+      !subCategory ||
+      String(subCategory.category?.company) !== String(req.company) ||
+      !subCategory.isDeleted
+    ) {
+      return res.status(404).json({ message: "Sub-category not found" });
+    }
+    subCategory.isDeleted = false;
+    subCategory.deletedAt = undefined;
+    subCategory.deletedBy = undefined;
+    await subCategory.save();
+    setAuditLogContext(req, "Restore Sub-category", {
+      subCategoryId: String(subCategory._id),
+      subCategoryName: subCategory.subCategoryName,
+      deletionType: "restore",
+    });
+    return res.status(200).json({ message: "Sub-category restored successfully" });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const addAssetCategory = async (req, res, next) => {
   const { assetCategoryName, departmentId, appliesTo = "asset" } = req.body;
@@ -283,21 +461,6 @@ const updateCategory = async (req, res, next) => {
       return res.status(400).json({ message: "Failed to update category" });
     }
 
-    if (typeof status === "boolean" && !status) {
-      const subCategory = await AssetSubCategory.updateMany(
-        { category: updatedCategory._id },
-        {
-          isActive: false,
-        },
-      );
-
-      if (!subCategory) {
-        return res
-          .status(400)
-          .json({ message: "Failed to update sub category" });
-      }
-    }
-
     return res.status(200).json({ message: "Category updated successfully" });
   } catch (error) {
     if (error instanceof CustomError) {
@@ -389,6 +552,9 @@ const getCategory = async (req, res, next) => {
   }
 
   try {
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await canManageDeletedCategories(req.user));
     let query = { company, appliesTo };
 
     if (departmentId) {
@@ -405,15 +571,17 @@ const getCategory = async (req, res, next) => {
       query = { ...query, department: { $in: deptIds } };
     }
 
-    const assetCategories = await AssetCategory.find(query).populate(
-      "department",
-      "_id name",
-    );
+    if (!includeDeleted) query.isDeleted = { $ne: true };
+
+    const assetCategories = await AssetCategory.find(query)
+      .populate("department", "_id name")
+      .populate("deletedBy", "firstName lastName");
 
     const categoryIds = assetCategories.map((cat) => cat._id);
 
     const assetSubCategories = await AssetSubCategory.find({
       category: { $in: categoryIds },
+      ...(!includeDeleted && { isDeleted: { $ne: true } }),
     }).select("_id subCategoryName category");
 
      const subCategoryIds = assetSubCategories.map((sub) => sub._id);
@@ -423,6 +591,7 @@ const getCategory = async (req, res, next) => {
             $match: {
               company: new mongoose.Types.ObjectId(company),
               subCategory: { $in: subCategoryIds },
+              isDeleted: { $ne: true },
             },
           },
           {
@@ -510,6 +679,9 @@ const getSubCategory = async (req, res, next) => {
   }
 
   try {
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await canManageDeletedCategories(req.user));
     let query = { company, appliesTo };
     if (departmentId) {
       if (!mongoose.Types.ObjectId.isValid(departmentId)) {
@@ -518,6 +690,8 @@ const getSubCategory = async (req, res, next) => {
 
       query = { ...query, department: departmentId };
     }
+
+    if (!includeDeleted) query.isDeleted = { $ne: true };
 
     if (!mongoose.Types.ObjectId.isValid(company)) {
       return res.status(400).json({ message: "Invalid company ID" });
@@ -529,12 +703,14 @@ const getSubCategory = async (req, res, next) => {
 
     const assetSubCategories = await AssetSubCategory.find({
       category: { $in: categoryIds },
+      ...(!includeDeleted && { isDeleted: { $ne: true } }),
     }).populate([
       {
         path: "category",
-        select: "categoryName",
+        select: "categoryName isActive isDeleted",
         populate: { path: "department", select: "name" },
       },
+      { path: "deletedBy", select: "firstName lastName" },
     ]);
    const subCategoryIds = assetSubCategories.map((subCategory) => subCategory._id);
     const assetQuantityCounts = subCategoryIds.length
@@ -543,6 +719,7 @@ const getSubCategory = async (req, res, next) => {
             $match: {
               company: new mongoose.Types.ObjectId(company),
               subCategory: { $in: subCategoryIds },
+              isDeleted: { $ne: true },
             },
           },
           {
@@ -858,4 +1035,8 @@ module.exports = {
   getCategory,
   getSubCategory,
   bulkUploadCategory,
+  deleteCategory,
+  restoreCategory,
+  deleteSubCategory,
+  restoreSubCategory,
 };

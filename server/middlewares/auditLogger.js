@@ -39,10 +39,12 @@ const auditLogger = (req, res, next) => {
         const { method, ip } = req;
         const url = req.originalUrl;
 
-        const { performedBy, company } = req.logContext || {
-          performedBy: req.user,
-          company: req.company,
-        };
+        const {
+          performedBy = req.user,
+          company = req.company,
+          action: customAction,
+          payload: customPayload = {},
+        } = req.logContext || {};
 
         const parseJSONFields = (obj) => {
           for (const key in obj) {
@@ -86,6 +88,7 @@ const auditLogger = (req, res, next) => {
           ...(req.body || {}),
           ...(req.params || {}),
           ...(req.query || {}),
+          ...customPayload,
         });
 
         // Mask sensitive fields before flattening
@@ -99,7 +102,7 @@ const auditLogger = (req, res, next) => {
           performedBy,
           ipAddress: ip,
           company,
-          action: lastSegment,
+          action: customAction || lastSegment,
           method,
           path: url,
           statusCode: status,

@@ -15,7 +15,11 @@ import {
   MenuItem,
   TextField,
 } from "@mui/material";
-import { MdOutlineRemoveRedEye } from "react-icons/md";
+import {
+  MdDeleteForever,
+  MdOutlineRemoveRedEye,
+  MdOutlineRestore,
+} from "react-icons/md";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -36,6 +40,15 @@ import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanDate from "../../../utils/humanDateForamt";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import StatusChip from "../../../components/StatusChip";
+import ConfirmationModal from "../../../components/ConfirmationModal";
+
+const canManageDeletedAssets = (auth) =>
+  (auth?.user?.departments || []).some(
+    (department) =>
+      ["67b2cf85b9b6ed5cedeb9a2e", "6798ba9de469e809084e2494"].includes(
+        String(department?._id || department),
+      ) || ["Top Management", "Tech Department"].includes(department?.name),
+  );
 
 const assetCardRouteConfig = {
   "total-assets": {
@@ -66,10 +79,12 @@ const assetCardRouteConfig = {
 const ListOfAssets = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
+  const canManageDeleted = canManageDeletedAssets(auth);
   const [modalMode, setModalMode] = useState("add");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState(null);
   const [selectedForEdit, setSelectedForEdit] = useState([]);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -234,6 +249,7 @@ const ListOfAssets = () => {
       pagination.page,
       pagination.limit,
       debouncedAssetSearch,
+      canManageDeleted,
     ],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -246,6 +262,7 @@ const ListOfAssets = () => {
             page: pagination.page,
             limit: pagination.limit,
             search: debouncedAssetSearch || undefined,
+            includeDeleted: canManageDeleted,
           },
         });
         const responsePagination = response.data.pagination;
@@ -264,6 +281,30 @@ const ListOfAssets = () => {
         throw new Error(error.response?.data?.message || error.message);
       }
     },
+  });
+
+  const { mutate: deleteAsset, isPending: pendingDelete } = useMutation({
+    mutationFn: async (assetId) =>
+      (await axios.delete(`/api/assets/asset/${assetId}`)).data,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) =>
+      toast.error(error?.response?.data?.message || "Failed to delete asset"),
+  });
+
+  const { mutate: restoreAsset, isPending: pendingRestore } = useMutation({
+    mutationFn: async (assetId) =>
+      (await axios.patch(`/api/assets/asset/${assetId}/restore`)).data,
+    onSuccess: (data) => {
+      toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["assetsList"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) =>
+      toast.error(error?.response?.data?.message || "Failed to restore asset"),
   });
 
   const { data: assetSubCategories = [], isPending: isSubCategoriesPending } =
@@ -706,24 +747,50 @@ const ListOfAssets = () => {
       headerName: "Actions",
       pinned: "right",
       cellRenderer: (params) => (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 h-full">
           <button
             type="button"
             title="View"
-            className="p-1 text-gray-600 hover:text-primary"
+            className="h-7 w-7 flex items-center justify-center text-gray-600 hover:text-primary"
             onClick={() => handleView(params.data)}
           >
             <MdOutlineRemoveRedEye size={20} />
           </button>
-          <ThreeDotMenu
-            rowId={params.data._id}
-            menuItems={[
-              {
-                label: "Edit",
-                onClick: () => handleEdit(params.data),
-              },
-            ]}
-          />
+          {params.data.isDeleted && (
+            <button
+              type="button"
+              title="Restore"
+              className="h-7 w-7 flex items-center justify-center text-black hover:text-primary"
+              onClick={() =>
+                setConfirmationAction({ type: "restore", row: params.data })
+              }
+            >
+              <MdOutlineRestore size={26} />
+            </button>
+          )}
+          {params.data.canDelete && (
+            <button
+              type="button"
+              title={params.data.isDeleted ? "Delete permanently" : "Delete"}
+              className="h-7 w-7 flex items-center justify-center text-red-600 hover:text-red-700"
+              onClick={() =>
+                setConfirmationAction({ type: "delete", row: params.data })
+              }
+            >
+              <MdDeleteForever size={26} />
+            </button>
+          )}
+          {!params.data.isDeleted && (
+            <ThreeDotMenu
+              rowId={params.data._id}
+              menuItems={[
+                {
+                  label: "Edit",
+                  onClick: () => handleEdit(params.data),
+                },
+              ]}
+            />
+          )}
         </div>
       ),
     },
@@ -762,6 +829,7 @@ const ListOfAssets = () => {
           .map((item, index) => {
             return {
               ...item,
+              status: item.isDeleted ? "Deleted" : item.status,
               srNo: (pagination.page - 1) * pagination.limit + index + 1,
               assetMongoId: item?.asset?._id,
               department: item?.department?.name || "N/A",
@@ -834,6 +902,11 @@ const ListOfAssets = () => {
         serverSearch
         searchValue={assetSearch}
         onSearchChange={handleAssetSearchChange}
+        getRowStyle={(params) =>
+          params.data.isDeleted
+            ? { backgroundColor: "#d3d3d3", color: "#666" }
+            : null
+        }
       />
 
       <MuiModal
@@ -1865,9 +1938,37 @@ const ListOfAssets = () => {
                 )
               }
             />
+            {selectedAsset?.isDeleted && (
+              <DetalisFormatted
+                title={"Deleted By"}
+                detail={
+                  `${selectedAsset?.deletedBy?.firstName || ""} ${selectedAsset?.deletedBy?.lastName || ""}`.trim() ||
+                  "N/A"
+                }
+              />
+            )}
           </div>
         )}
       </MuiModal>
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={() =>
+          confirmationAction?.type === "restore"
+            ? restoreAsset(confirmationAction.row._id)
+            : deleteAsset(confirmationAction?.row._id)
+        }
+        title={confirmationAction?.type === "restore" ? "Restore Asset" : "Delete Asset"}
+        message={
+          confirmationAction?.type === "restore"
+            ? "Are you sure you want to restore this asset?"
+            : canManageDeleted
+              ? "Are you sure you want to permanently delete this asset?"
+              : "Are you sure you want to delete this asset?"
+        }
+        confirmText={confirmationAction?.type === "restore" ? "Restore" : "Delete"}
+        isLoading={pendingDelete || pendingRestore}
+      />
     </PageFrame>
   );
 };

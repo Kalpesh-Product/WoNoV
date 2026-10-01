@@ -20,6 +20,12 @@ const subCategorySchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    isDeleted: { type: Boolean, default: false },
+    deletedAt: Date,
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
   },
   {
     timestamps: true,
