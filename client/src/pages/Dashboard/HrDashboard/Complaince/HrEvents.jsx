@@ -42,7 +42,8 @@ const HrEvents = ({ title }) => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "startDate", headerName: "Date", flex: 1 },
+    { field: "startDate", headerName: "Start Date", flex: 1 },
+    { field: "endDate", headerName: "End Date", flex: 1 },
     { field: "day", headerName: "Day", flex: 1 },
     {
       field: "action",
@@ -76,6 +77,7 @@ const HrEvents = ({ title }) => {
     const endDate = holiday.end ? dayjs(holiday.end) : null;
     return {
       _id: holiday._id,
+      srNo: index + 1,
       title: holiday.title,
       day: date.format("dddd"),
       startDate: date.format("DD-MM-YYYY"),
