@@ -152,33 +152,37 @@ const BudgetHistory = () => {
         );
       },
     },
-    {
-      field: "actions",
-      headerName: "Actions",
-      pinned: "right",
-      width: 110,
-      cellRenderer: (params) => {
-        const isApproved =
-          String(params.data?.status || "").toLowerCase() === "approved";
+    ...(canUseBulkBudgetActions
+      ? [
+          {
+            field: "actions",
+            headerName: "Actions",
+            pinned: "right",
+            width: 110,
+            cellRenderer: (params) => {
+              const isApproved =
+                String(params.data?.status || "").toLowerCase() === "approved";
 
-        if (!isApproved) return null;
+              if (!isApproved) return null;
 
-        return (
-          <ThreeDotMenu
-            rowId={params.data?._id}
-            menuItems={[
-              {
-                label: isUnapprovePending ? "Returning..." : "Unapprove",
-                onClick: () => {
-                  if (isUnapprovePending) return;
-                  unapproveBudget(params.data._id);
-                },
-              },
-            ]}
-          />
-        );
-      },
-    },
+              return (
+                <ThreeDotMenu
+                  rowId={params.data?._id}
+                  menuItems={[
+                    {
+                      label: isUnapprovePending ? "Returning..." : "Unapprove",
+                      onClick: () => {
+                        if (isUnapprovePending) return;
+                        unapproveBudget(params.data._id);
+                      },
+                    },
+                  ]}
+                />
+              );
+            },
+          },
+        ]
+      : []),
   ];
 
   const tableData = budgetHistory
