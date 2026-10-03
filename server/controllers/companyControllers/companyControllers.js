@@ -14,6 +14,23 @@ const buildHierarchy = require("../../utils/generateHierarchy");
 const UserData = require("../../models/hr/UserData");
 const Unit = require("../../models/locations/Unit");
 const buildDateFilter = require("../../utils/dateFilter");
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = async (userId) => {
+  const user = await UserData.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
+};
 const {
   getCompanyAttandancesService,
 } = require("../../services/companyAttendance");
@@ -275,9 +292,15 @@ const getCompanyData = async (req, res, next) => {
         path: "selectedDepartments.department",
         select: "name",
       },
-      employeeTypes: "", // No population
+      employeeTypes: {
+        path: "employeeTypes.deletedBy",
+        select: "firstName lastName employeeName name email",
+      },
       leaveTypes: "", // No population
-      shifts: "", // No population
+      shifts: {
+        path: "shifts.deletedBy",
+        select: "firstName lastName employeeName name email",
+      },
     };
 
     // Build the query
@@ -315,6 +338,28 @@ const getCompanyData = async (req, res, next) => {
       return res
         .status(200)
         .json({ selectedDepartments: departmentsWithManagers });
+    }
+
+    if (field === "employeeTypes") {
+      const includeDeleted =
+        req.query.includeDeleted === "true" &&
+        (await isTechDepartmentUser(req.user));
+      const employeeTypes = company.employeeTypes.filter(
+        (employeeType) => includeDeleted || !employeeType.isDeleted,
+      );
+
+      return res.status(200).json({ employeeTypes });
+    }
+
+    if (field === "shifts") {
+      const includeDeleted =
+        req.query.includeDeleted === "true" &&
+        (await isTechDepartmentUser(req.user));
+      const shifts = company.shifts.filter(
+        (shift) => includeDeleted || !shift.isDeleted,
+      );
+
+      return res.status(200).json({ shifts });
     }
 
     // Default return for other fields
@@ -495,6 +540,7 @@ const updateCompanySubItem = async (req, res) => {
       startTime,
       endTime,
       isDeleted,
+      action,
     } = req.body;
     if (!type || !itemId)
       return res.status(400).json({ message: "type, and itemId are required" });
@@ -525,6 +571,141 @@ const updateCompanySubItem = async (req, res) => {
     const key = typeMap[type];
 
     item = foundCompany[key].id(itemId);
+
+    if (item && type === "shifts" && action) {
+      if (!["delete", "restore", "permanent-delete"].includes(action)) {
+        return res.status(400).json({ message: "Invalid shift action" });
+      }
+
+      const isTechUser = await isTechDepartmentUser(user);
+      if (["restore", "permanent-delete"].includes(action) && !isTechUser) {
+        return res.status(403).json({
+          message:
+            "Only Tech Department users can restore or permanently delete shifts",
+        });
+      }
+
+      if (action === "delete") {
+        if (item.isDeleted) {
+          return res.status(400).json({ message: "Shift is already deleted" });
+        }
+        item.isDeleted = true;
+        item.isActive = false;
+        item.deletedAt = new Date();
+        item.deletedBy = user;
+      }
+
+      if (action === "restore") {
+        if (!item.isDeleted) {
+          return res.status(400).json({ message: "Shift is not deleted" });
+        }
+        item.isDeleted = false;
+        item.isActive = true;
+        item.deletedAt = undefined;
+        item.deletedBy = undefined;
+      }
+
+      if (action === "permanent-delete") {
+        if (!item.isDeleted) {
+          return res.status(400).json({
+            message: "Shift must be disabled before permanent deletion",
+          });
+        }
+        foundCompany.shifts.pull(itemId);
+      } else {
+        item.updatedAt = new Date();
+      }
+
+      await foundCompany.save({ validateBeforeSave: false });
+      return res.status(200).json({
+        message:
+          action === "restore"
+            ? "Shift restored successfully"
+            : action === "permanent-delete"
+              ? "Shift permanently deleted successfully"
+              : "Shift deleted successfully",
+      });
+    }
+
+    if (item && type === "shifts" && isDeleted !== undefined) {
+      return res.status(400).json({
+        message: "Use a shift delete or restore action",
+      });
+    }
+
+    if (item && type === "shifts" && item.isDeleted) {
+      return res.status(400).json({
+        message: "Restore the shift before editing it",
+      });
+    }
+
+    if (item && type === "employeeTypes" && action) {
+      if (!["delete", "restore", "permanent-delete"].includes(action)) {
+        return res.status(400).json({ message: "Invalid employee type action" });
+      }
+
+      const isTechUser = await isTechDepartmentUser(user);
+      if (["restore", "permanent-delete"].includes(action) && !isTechUser) {
+        return res.status(403).json({
+          message:
+            "Only Tech Department users can restore or permanently delete employee types",
+        });
+      }
+
+      if (action === "delete") {
+        if (item.isDeleted) {
+          return res.status(400).json({ message: "Employee type is already deleted" });
+        }
+        item.isDeleted = true;
+        item.isActive = false;
+        item.deletedAt = new Date();
+        item.deletedBy = user;
+      }
+
+      if (action === "restore") {
+        if (!item.isDeleted) {
+          return res.status(400).json({ message: "Employee type is not deleted" });
+        }
+        item.isDeleted = false;
+        item.isActive = true;
+        item.deletedAt = undefined;
+        item.deletedBy = undefined;
+      }
+
+      if (action === "permanent-delete") {
+        if (!item.isDeleted) {
+          return res.status(400).json({
+            message: "Employee type must be disabled before permanent deletion",
+          });
+        }
+        foundCompany.employeeTypes.pull(itemId);
+      } else {
+        item.updatedAt = new Date();
+      }
+
+      await foundCompany.save({ validateBeforeSave: false });
+      return res.status(200).json({
+        message:
+          action === "restore"
+            ? "Employee type restored successfully"
+            : action === "permanent-delete"
+              ? "Employee type permanently deleted successfully"
+              : "Employee type deleted successfully",
+      });
+    }
+
+    if (item && type === "employeeTypes" && isDeleted !== undefined) {
+      return res.status(400).json({
+        message: "Use an employee type delete or restore action",
+      });
+    }
+
+    if (item && type === "employeeTypes" && item.isDeleted) {
+      return res.status(400).json({
+        message: "Restore the employee type before editing it",
+      });
+    }
+
     if (item) {
       if (name !== undefined) item.name = name;
       if (policyType !== undefined && type === "policies") {

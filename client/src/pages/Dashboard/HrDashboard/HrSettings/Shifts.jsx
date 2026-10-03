@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, FormControl, MenuItem, Select, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -13,16 +13,31 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { useEffect } from "react";
 import humanTime from "../../../../utils/humanTime";
 import dayjs from "dayjs";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
+import { HiPencilSquare } from "react-icons/hi2";
+import { IoEyeOutline } from "react-icons/io5";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import useAuth from "../../../../hooks/useAuth";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const Shifts = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [modalMode, setModalMode] = useState("add");
   const [selectedItem, setSelectedItem] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
+  const isTechDepartment = auth?.user?.departments?.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
   const {
     handleSubmit: handleAddSubmit,
     control: addControl,
@@ -88,15 +103,15 @@ const Shifts = () => {
   };
 
   const handleDelete = (item) => {
-    const payload = {
-      type: "shifts",
-      itemId: item._id,
-      isDeleted: true,
-    };
-    setModalMode("delete");
-    setOpenModal(true);
-    setSelectedItem(item);
-    // updateMutation.mutate(payload);
+    setConfirmationAction({ type: "delete", item });
+  };
+
+  const handleRestore = (item) => {
+    setConfirmationAction({ type: "restore", item });
+  };
+
+  const handlePermanentDelete = (item) => {
+    setConfirmationAction({ type: "permanent-delete", item });
   };
 
   const updateMutation = useMutation({
@@ -107,15 +122,12 @@ const Shifts = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
-      if (modalMode === "delete") {
-        toast.success("Shift deleted");
-      } else {
-        toast.success("Shift updated");
-      }
+    onSuccess: (data) => {
+      toast.success(data?.message || "Shift updated");
 
       queryClient.invalidateQueries({ queryKey: ["shifts"] });
       setOpenModal(false);
+      setConfirmationAction(null);
       resetEditForm();
     },
     onError: (error) => {
@@ -126,7 +138,9 @@ const Shifts = () => {
   const fetchShifts = async () => {
     try {
       const response = await axios.get(
-        "/api/company/get-company-data/?field=shifts",
+        `/api/company/get-company-data/?field=shifts${
+          isTechDepartment ? "&includeDeleted=true" : ""
+        }`,
       );
       return response.data.shifts;
     } catch (error) {
@@ -135,7 +149,7 @@ const Shifts = () => {
   };
 
   const { data: shifts = [] } = useQuery({
-    queryKey: ["shifts"],
+    queryKey: ["shifts", Boolean(isTechDepartment)],
     queryFn: fetchShifts,
   });
 
@@ -175,10 +189,15 @@ const Shifts = () => {
       sort: "desc",
       flex: 1,
       cellRenderer: (params) => {
-        const status = params.value ? "Active" : "Inactive"; // Map boolean to string status
+        const status = params.data.isDeleted
+          ? "Disabled"
+          : params.value
+            ? "Active"
+            : "Inactive";
         const statusColorMap = {
           Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
         };
 
         const { backgroundColor, color } = statusColorMap[status] || {
@@ -214,39 +233,70 @@ const Shifts = () => {
     {
       field: "actions",
       headerName: "Actions",
-      cellRenderer: (params) => (
-        <>
-          <div className="p-2 mb-2 flex gap-2">
-            {/* <span className="text-content text-primary hover:underline cursor-pointer">
-                  Make Inactive
-                </span> */}
-            {/* <span
-              onClick={() => handleEdit(params.data)}
-              className="text-subtitle hover:bg-gray-300 rounded-full cursor-pointer p-1"
-            >
-              <HiOutlinePencilSquare />
-            </span> */}
+      width: 180,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => {
+        const isDeleted = params.data.isDeleted;
 
-            <ThreeDotMenu
-              rowId={params.data.id}
-              menuItems={[
-                {
-                  label: "View",
-                  onClick: () => handleView(params.data),
-                },
-                {
-                  label: "Edit",
-                  onClick: () => handleEdit(params.data),
-                },
-                {
-                  label: "Delete",
-                  onClick: () => handleDelete(params.data),
-                },
-              ]}
-            />
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="View shift"
+              aria-label="View shift"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => handleView(params.data)}
+            >
+              <IoEyeOutline size={24} />
+            </button>
+
+            {isDeleted ? (
+              <>
+                <button
+                  type="button"
+                  title="Restore shift"
+                  aria-label="Restore shift"
+                  className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+                  onClick={() => handleRestore(params.data)}
+                >
+                  <MdOutlineRestore size={24} />
+                </button>
+                <button
+                  type="button"
+                  title="Permanently delete shift"
+                  aria-label="Permanently delete shift"
+                  className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
+                  onClick={() => handlePermanentDelete(params.data)}
+                >
+                  <MdDeleteForever size={24} />
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  title="Edit shift"
+                  aria-label="Edit shift"
+                  className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+                  onClick={() => handleEdit(params.data)}
+                >
+                  <HiPencilSquare size={24} />
+                </button>
+                <button
+                  type="button"
+                  title="Delete shift"
+                  aria-label="Delete shift"
+                  className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
+                  onClick={() => handleDelete(params.data)}
+                >
+                  <MdDeleteForever size={24} />
+                </button>
+              </>
+            )}
           </div>
-        </>
-      ),
+        );
+      },
     },
   ];
 
@@ -259,18 +309,39 @@ const Shifts = () => {
     }
   }, [modalMode, selectedItem, setEditValue]);
 
-  const transformedData = isAddPending
-    ? []
-    : shifts.filter((data) => !data.isDeleted);
+  const transformedData = isAddPending ? [] : shifts;
 
-  const handleConfirmDelete = () => {
+  const handleConfirmAction = () => {
+    if (!confirmationAction?.item?._id) return;
+
     const payload = {
       type: "shifts",
-      itemId: selectedItem._id,
-      isDeleted: true,
+      itemId: confirmationAction.item._id,
+      action: confirmationAction.type,
     };
     updateMutation.mutate(payload);
   };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete Shift",
+      message: `Are you sure you want to delete ${
+        confirmationAction?.item?.shift || "this shift"
+      }?`,
+    },
+    restore: {
+      title: "Restore Shift",
+      message: `Are you sure you want to restore ${
+        confirmationAction?.item?.shift || "this shift"
+      }?`,
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Shift",
+      message: `Are you sure you want to permanently delete ${
+        confirmationAction?.item?.shift || "this shift"
+      }?`,
+    },
+  }[confirmationAction?.type];
 
   return (
     <PageFrame>
@@ -291,16 +362,37 @@ const Shifts = () => {
               status: shift.isActive,
               startTime: shift.startTime,
               endTime: shift.endTime,
+              isDeleted: Boolean(shift.isDeleted),
+              deletedByName: shift.deletedBy
+                ? [shift.deletedBy.firstName, shift.deletedBy.lastName]
+                    .filter(Boolean)
+                    .join(" ") ||
+                  shift.deletedBy.employeeName ||
+                  shift.deletedBy.name ||
+                  shift.deletedBy.email ||
+                  "N/A"
+                : "N/A",
               _id: shift._id,
             })),
           ]}
           columns={departmentsColumn}
+          getRowStyle={(params) =>
+            params.data?.isDeleted
+              ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+              : undefined
+          }
           exportData
         />
 
         <div>
           <MuiModal
-            title={modalMode === "add" ? "Add Shift" : "Update Shift"}
+            title={
+              modalMode === "add"
+                ? "Add Shift"
+                : modalMode === "edit"
+                  ? "Update Shift"
+                  : "Shift Details"
+            }
             open={openModal}
             onClose={() => setOpenModal(false)}
           >
@@ -476,60 +568,59 @@ const Shifts = () => {
               </form>
             )}
 
-            {modalMode === "delete" && (
-              <div className="space-y-4">
-                <p>
-                  Are you sure you want to delete <b>{selectedItem?.shift}</b>?
-                </p>
-                <div className="flex gap-4 justify-end">
-                  <PrimaryButton
-                    title="Cancel"
-                    handleSubmit={() => setOpenModal(false)}
-                  />
-                  <PrimaryButton
-                    title="Confirm Delete"
-                    handleSubmit={handleConfirmDelete}
-                    isLoading={updateMutation.isPending}
-                  />
-                </div>
-              </div>
-            )}
             {modalMode === "view" && (
-              <MuiModal
-                open={openModal}
-                onClose={() => setOpenModal(false)}
-                title={"Shift Details"}
-              >
-                <div className="grid grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
+              <div className="grid max-h-[70vh] grid-cols-1 gap-4 overflow-y-auto">
+                <DetalisFormatted
+                  title="Shift Name"
+                  detail={selectedItem?.shift || "N/A"}
+                />
+                <DetalisFormatted
+                  title="Status"
+                  detail={
+                    selectedItem?.isDeleted
+                      ? "Disabled"
+                      : selectedItem?.status
+                        ? "Active"
+                        : "Inactive"
+                  }
+                />
+                <DetalisFormatted
+                  title="Start Time"
+                  detail={
+                    selectedItem?.startTime
+                      ? humanTime(selectedItem.startTime)
+                      : "N/A"
+                  }
+                />
+                <DetalisFormatted
+                  title="End Time"
+                  detail={
+                    selectedItem?.endTime
+                      ? humanTime(selectedItem.endTime)
+                      : "N/A"
+                  }
+                />
+                {selectedItem?.isDeleted && (
                   <DetalisFormatted
-                    title="Shift Name"
-                    detail={selectedItem?.shift || "N/A"}
+                    title="Deleted By"
+                    detail={selectedItem.deletedByName || "N/A"}
                   />
-                  <DetalisFormatted
-                    title="Status"
-                    detail={selectedItem?.status ? "Active" : "Inactive"}
-                  />
-                  <DetalisFormatted
-                    title="Start Time"
-                    detail={
-                      selectedItem?.startTime
-                        ? humanTime(selectedItem.startTime)
-                        : "N/A"
-                    }
-                  />
-                  <DetalisFormatted
-                    title="End Time"
-                    detail={
-                      selectedItem?.endTime
-                        ? humanTime(selectedItem.endTime)
-                        : "N/A"
-                    }
-                  />
-                </div>
-              </MuiModal>
+                )}
+              </div>
             )}
           </MuiModal>
         </div>
+
+        <ConfirmationModal
+          open={Boolean(confirmationAction)}
+          title={confirmationContent?.title}
+          message={confirmationContent?.message}
+          confirmText="Yes"
+          cancelText="No"
+          isLoading={updateMutation.isPending}
+          onClose={() => setConfirmationAction(null)}
+          onConfirm={handleConfirmAction}
+        />
       </div>
     </PageFrame>
   );

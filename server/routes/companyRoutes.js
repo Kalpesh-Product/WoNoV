@@ -73,6 +73,8 @@ const {
   assignPrimaryUnit,
   updateUnit,
   editBuilding,
+  deleteBuilding,
+  restoreBuilding,
 } = require("../controllers/companyControllers/workLocationControllers");
 
 const {
@@ -113,6 +115,8 @@ router.post("/add-leave-type", addLeaveType);
 // Locations and units
 router.post("/add-building", addBuilding);
 router.patch("/edit-building/:buildingId", editBuilding);
+router.delete("/delete-building/:buildingId", deleteBuilding);
+router.patch("/restore-building/:buildingId", restoreBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
 router.get("/fetch-units", fetchUnits);

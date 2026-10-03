@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import { Chip, Skeleton, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
@@ -9,7 +9,9 @@ import { toast } from "sonner";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { FaRegCheckCircle } from "react-icons/fa";
+import { HiPencilSquare } from "react-icons/hi2";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
 
 const createDepartmentId = (name) => {
   const normalized = name
@@ -25,6 +27,9 @@ const HrSettingsDepartments = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const [openModal, setOpenModal] = useState(false);
+  const [modalType, setModalType] = useState("add");
+  const [selectedDepartment, setSelectedDepartment] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [statusUpdatingDepartmentId, setStatusUpdatingDepartmentId] =
     useState(null);
 
@@ -114,6 +119,7 @@ const HrSettingsDepartments = () => {
       toast.success(data?.message || "Department status updated");
       queryClient.invalidateQueries({ queryKey: ["departments"] });
       queryClient.invalidateQueries({ queryKey: ["selectedDepartments"] });
+      setConfirmationAction(null);
     },
     onError: (error) => {
       const message = error?.response?.data?.message || error.message;
@@ -124,13 +130,84 @@ const HrSettingsDepartments = () => {
     },
   });
 
-  const handleOpenModal = () => setOpenModal(true);
+  const { mutate: editDepartment, isPending: isEditingDepartment } =
+    useMutation({
+      mutationKey: ["edit-department"],
+      mutationFn: async ({ departmentId, deptName }) => {
+        const response = await axios.patch("/api/company/edit-department", {
+          departmentId,
+          name: deptName.trim(),
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data?.message || "Department updated");
+        queryClient.invalidateQueries({ queryKey: ["departments"] });
+        queryClient.invalidateQueries({ queryKey: ["selectedDepartments"] });
+        reset();
+        setSelectedDepartment(null);
+        setOpenModal(false);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message || "Failed to update department",
+        );
+      },
+    });
+
+  const handleOpenModal = () => {
+    setModalType("add");
+    setSelectedDepartment(null);
+    reset({ deptName: "" });
+    setOpenModal(true);
+  };
+
+  const handleOpenEdit = (department) => {
+    setModalType("edit");
+    setSelectedDepartment(department);
+    reset({ deptName: department.departmentName });
+    setOpenModal(true);
+  };
   const handleCloseModal = () => {
     reset();
     setOpenModal(false);
   };
 
-  const onSubmit = (data) => addDepartment(data);
+  const onSubmit = (data) => {
+    if (modalType === "edit") {
+      editDepartment({
+        departmentId: selectedDepartment.departmentId,
+        deptName: data.deptName,
+      });
+      return;
+    }
+    addDepartment(data);
+  };
+
+  const handleStatus = (department) => {
+    setConfirmationAction({ type: "status", department });
+  };
+
+  const confirmDepartmentAction = () => {
+    const department = confirmationAction?.department;
+    if (!department) return;
+
+    markDepartmentStatus({
+      departmentId: department.departmentId,
+      isActive: !department.status,
+    });
+  };
+
+  const confirmationContent = {
+    status: {
+      title: `Mark Department As ${
+        confirmationAction?.department?.status ? "Inactive" : "Active"
+      }`,
+      message: `Are you sure you want to mark this department as ${
+        confirmationAction?.department?.status ? "inactive" : "active"
+      }?`,
+    },
+  }[confirmationAction?.type];
 
   const departmentsColumn = [
     { field: "id", headerName: "Sr No" },
@@ -147,11 +224,12 @@ const HrSettingsDepartments = () => {
       },
       flex: 1,
     },
-    { field: "manager", headerName: "Manager" },
+    { field: "manager", headerName: "Manager",flex: 1, },
     {
       field: "status",
       headerName: "Status",
       sort: "desc",
+      pinned: "right",
       cellRenderer: (params) => {
         const status = params.value ? "Active" : "Inactive";
         const statusColorMap = {
@@ -177,27 +255,41 @@ const HrSettingsDepartments = () => {
       field: "actions",
       headerName: "Actions",
       width: 180,
+      pinned: "right",
+      sortable: false,
+      filter: false,
       cellRenderer: (params) => {
         const isActive = Boolean(params.data.status);
 
         return (
-          <ThreeDotMenu
-            rowId={params.data.id}
-            disabled={statusUpdatingDepartmentId === params.data.departmentId}
-            menuItems={[
-              {
-                label: isActive ? "Mark As Inactive" : "Mark As Active",
-                onClick: () =>
-                  markDepartmentStatus({
-                    departmentId: params.data.departmentId,
-                    isActive: !isActive,
-                  }),
-                disabled:
-                  isUpdatingDepartmentStatus &&
-                  statusUpdatingDepartmentId === params.data.departmentId,
-              },
-            ]}
-          />
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title={`Mark department as ${isActive ? "inactive" : "active"}`}
+              aria-label={`Mark department as ${isActive ? "inactive" : "active"}`}
+              className={`flex h-8 w-8 items-center justify-center disabled:text-gray-400 ${
+                isActive
+                  ? "text-red-600 hover:text-red-700"
+                  : "text-green-600 hover:text-green-700"
+              }`}
+              disabled={
+                isUpdatingDepartmentStatus &&
+                statusUpdatingDepartmentId === params.data.departmentId
+              }
+              onClick={() => handleStatus(params.data)}
+            >
+              <FaRegCheckCircle size={24} />
+            </button>
+            <button
+              type="button"
+              title="Edit department"
+              aria-label="Edit department"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => handleOpenEdit(params.data)}
+            >
+              <HiPencilSquare size={24} />
+            </button>
+          </div>
         );
       },
     },
@@ -246,7 +338,7 @@ const HrSettingsDepartments = () => {
       <MuiModal
         open={openModal}
         onClose={handleCloseModal}
-        title={"Add Department"}
+        title={modalType === "edit" ? "Edit Department" : "Add Department"}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <Controller
@@ -273,15 +365,27 @@ const HrSettingsDepartments = () => {
 
           <div className="flex justify-end">
             <PrimaryButton
-              title="Add Department"
+              title={modalType === "edit" ? "Update Department" : "Add Department"}
               type="submit"
-              handleSubmit={() => { }}
-              isLoading={isAddingDepartment}
+              handleSubmit={() => {}}
+              isLoading={isAddingDepartment || isEditingDepartment}
+              disabled={isAddingDepartment || isEditingDepartment}
               padding="px-4 py-2"
             />
           </div>
         </form>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={isUpdatingDepartmentStatus}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmDepartmentAction}
+      />
     </div>
   );
 };
