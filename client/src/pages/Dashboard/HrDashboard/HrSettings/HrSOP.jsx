@@ -307,6 +307,17 @@ const HrSOP = () => {
       },
       flex: 1,
     },
+    ...(sops.some((sop) => Boolean(sop.isDeleted))
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+            valueGetter: (params) =>
+              params.data?.isDeleted ? params.data.deletedByName : "",
+          },
+        ]
+      : []),
     {
       field: "actions",
       headerName: "Actions",
@@ -401,6 +412,15 @@ const HrSOP = () => {
           sopname: sop.name,
           isActive: sop.isActive,
           isDeleted: Boolean(sop.isDeleted),
+          deletedByName: sop.deletedBy
+            ? [sop.deletedBy.firstName, sop.deletedBy.lastName]
+                .filter(Boolean)
+                .join(" ") ||
+              sop.deletedBy.employeeName ||
+              sop.deletedBy.name ||
+              sop.deletedBy.email ||
+              "—"
+            : "—",
           sopLink: sop.documentLink,
           uploadedDate: humanDate(sop.createdAt),
           updatedDate: humanDate(sop.updatedAt),

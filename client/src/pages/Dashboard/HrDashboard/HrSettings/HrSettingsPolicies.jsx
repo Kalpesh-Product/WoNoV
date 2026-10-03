@@ -21,6 +21,7 @@ import { FaRegCheckCircle } from "react-icons/fa";
 import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
 import humanDate from "../../../../utils/humanDateForamt";
+import humanTime from "../../../../utils/humanTime";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 import useAuth from "../../../../hooks/useAuth";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
@@ -279,11 +280,6 @@ const HrSettingsPolicies = () => {
         ),
     },
     {
-      field: "uploadedDate",
-      headerName: "Uploaded Date",
-      width: 150,
-    },
-    {
       field: "policyType",
       headerName: "TYPE",
       width: 130,
@@ -291,6 +287,11 @@ const HrSettingsPolicies = () => {
     {
       field: "updatedDate",
       headerName: "Updated Date",
+      width: 150,
+    },
+    {
+      field: "updatedTime",
+      headerName: "Update Time",
       width: 150,
     },
     {
@@ -312,6 +313,17 @@ const HrSettingsPolicies = () => {
         return <Chip label={label} style={colors[label]} />;
       },
     },
+    ...(policies.some((policy) => Boolean(policy.isDeleted))
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+            valueGetter: (params) =>
+              params.data?.isDeleted ? params.data.deletedByName : "",
+          },
+        ]
+      : []),
     {
       field: "actions",
       headerName: "Actions",
@@ -421,8 +433,17 @@ const HrSettingsPolicies = () => {
           policyType: policy.policyType || "None",
           status: policy.isActive,
           isDeleted: Boolean(policy.isDeleted),
-          uploadedDate: humanDate(policy.createdAt),
+          deletedByName: policy.deletedBy
+            ? [policy.deletedBy.firstName, policy.deletedBy.lastName]
+                .filter(Boolean)
+                .join(" ") ||
+              policy.deletedBy.employeeName ||
+              policy.deletedBy.name ||
+              policy.deletedBy.email ||
+              "—"
+            : "—",
           updatedDate: humanDate(policy.updatedAt),
+          updatedTime: policy.updatedAt ? humanTime(policy.updatedAt) : "—",
         }))}
       />
 

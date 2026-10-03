@@ -380,6 +380,7 @@ const toggleCompanyDocumentStatus = async (req, res, next) => {
 
     targetDocument.isDeleted = true;
     targetDocument.isActive = false;
+    targetDocument.deletedBy = user;
     targetDocument.updatedAt = new Date();
     await company.save();
 
@@ -425,6 +426,7 @@ const restoreCompanyDocument = async (req, res, next) => {
 
     targetDocument.isDeleted = false;
     targetDocument.isActive = true;
+    targetDocument.deletedBy = undefined;
     targetDocument.updatedAt = new Date();
     await company.save();
 
@@ -443,9 +445,20 @@ const getCompanyDocuments = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid document type" });
     }
 
+    const companyPopulate = {
+      path: "company",
+      select: type,
+      ...(["policies", "sop"].includes(type) && {
+        populate: {
+          path: `${type}.deletedBy`,
+          select: "firstName lastName employeeName name email",
+        },
+      }),
+    };
+
     const foundUser = await User.findOne({ _id: user })
       .select("company")
-      .populate(`company`, type)
+      .populate(companyPopulate)
       .lean()
       .exec();
 

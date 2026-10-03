@@ -391,6 +391,11 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
       createdAt: {
         type: Date,
         default: Date.now,
@@ -422,6 +427,11 @@ const companySchema = new mongoose.Schema({
       isDeleted: {
         type: Boolean,
         default: false,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
       },
       createdAt: {
         type: Date,
