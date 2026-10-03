@@ -601,10 +601,20 @@ const uploadDepartmentDocument = async (req, res, next) => {
 };
 
 const updateDepartmentDocument = async (req, res, next) => {
-  const { newName, documentId } = req.body;
+  const { newName, documentId, isActive } = req.body;
   const userId = req.user;
 
   try {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({ message: "Invalid document ID" });
+    }
+
+    if (newName === undefined && typeof isActive !== "boolean") {
+      return res.status(400).json({
+        message: "Document name or active status is required",
+      });
+    }
+
     // 1) Fetch the user's company reference
     const foundUser = await User.findById(userId).select("company").lean();
     if (!foundUser?.company) {
@@ -617,41 +627,45 @@ const updateDepartmentDocument = async (req, res, next) => {
       return res.status(404).json({ message: "Company data missing" });
     }
 
-    let updated = false;
+    let targetDocument = null;
 
-    // 3) Loop through each department
     for (const dept of company.selectedDepartments) {
-      // Try to find a matching SOP
       const sopDoc = dept.sop?.find((doc) => doc._id.toString() === documentId);
       if (sopDoc) {
-        sopDoc.name = newName;
-        sopDoc.updatedAt = new Date();
-        updated = true;
+        targetDocument = sopDoc;
         break;
       }
 
-      // Try to find a matching Policy
       const policyDoc = dept.policies?.find(
         (doc) => doc._id.toString() === documentId,
       );
       if (policyDoc) {
-        policyDoc.name = newName;
-        policyDoc.updatedAt = new Date();
-        updated = true;
+        targetDocument = policyDoc;
         break;
       }
     }
 
-    // 4) If nothing was updated, return 404
-    if (!updated) {
+    if (!targetDocument) {
       return res.status(404).json({ message: "Document not found" });
     }
 
-    // 5) Save the company and respond
+    if (targetDocument.isDeleted) {
+      return res.status(400).json({
+        message: "Restore the document before editing it",
+      });
+    }
+
+    if (newName !== undefined) targetDocument.name = newName;
+    if (typeof isActive === "boolean") targetDocument.isActive = isActive;
+    targetDocument.updatedAt = new Date();
+
     await company.save({ validateBeforeSave: false });
-    return res
-      .status(200)
-      .json({ message: "Document name updated successfully" });
+    return res.status(200).json({
+      message:
+        typeof isActive === "boolean"
+          ? `Document marked as ${isActive ? "active" : "inactive"} successfully`
+          : "Document name updated successfully",
+    });
   } catch (error) {
     next(error);
   }
@@ -659,16 +673,26 @@ const updateDepartmentDocument = async (req, res, next) => {
 
 const deleteDepartmentDocument = async (req, res, next) => {
   const userId = req.user;
-  const { documentId } = req.body;
+  const { documentId, action = "mark-inactive" } = req.body;
 
   try {
-    // 1) Fetch the user's company reference
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({ message: "Invalid document ID" });
+    }
+
+    if (
+      !["mark-inactive", "delete", "restore", "permanent-delete"].includes(
+        action,
+      )
+    ) {
+      return res.status(400).json({ message: "Invalid document action" });
+    }
+
     const foundUser = await User.findById(userId).select("company").lean();
     if (!foundUser?.company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    // 2) Load the full Company document
     const company = await Company.findById(foundUser.company);
     if (!company || !company.selectedDepartments?.length) {
       return res
@@ -676,44 +700,80 @@ const deleteDepartmentDocument = async (req, res, next) => {
         .json({ message: "Company or departments not found" });
     }
 
-    let updated = false;
+    let targetDocument = null;
 
-    // 3) Loop through each department
     for (const dept of company.selectedDepartments) {
-      // Try to find and mark SOP doc as inactive
       const sopDoc = dept.sop?.find((doc) => doc._id.toString() === documentId);
       if (sopDoc) {
-        sopDoc.isActive = false;
-        sopDoc.updatedAt = new Date();
-        updated = true;
+        targetDocument = sopDoc;
         break;
       }
 
-      // Try to find and mark Policy doc as inactive
       const policyDoc = dept.policies?.find(
         (doc) => doc._id.toString() === documentId,
       );
       if (policyDoc) {
-        policyDoc.isActive = false;
-        policyDoc.updatedAt = new Date();
-        updated = true;
+        targetDocument = policyDoc;
         break;
       }
     }
 
-    // 4) If not updated, return error
-    if (!updated) {
+    if (!targetDocument) {
       return res
         .status(404)
         .json({ message: "Document not found in departments" });
     }
 
-    // 5) Save and return success
+    if (["restore", "permanent-delete"].includes(action)) {
+      if (!(await isTechDepartmentUser(userId))) {
+        return res.status(403).json({
+          message:
+            "Only Tech Department users can restore or permanently delete documents",
+        });
+      }
+    }
+
+    let message = "Document marked as inactive successfully";
+
+    if (action === "delete") {
+      if (targetDocument.isDeleted) {
+        return res.status(400).json({ message: "Document is already deleted" });
+      }
+      targetDocument.isDeleted = true;
+      targetDocument.isActive = false;
+      targetDocument.deletedAt = new Date();
+      targetDocument.deletedBy = userId;
+      targetDocument.updatedAt = new Date();
+      message = "Document deleted successfully";
+    } else if (action === "restore") {
+      if (!targetDocument.isDeleted) {
+        return res.status(400).json({ message: "Document is not deleted" });
+      }
+      targetDocument.isDeleted = false;
+      targetDocument.isActive = true;
+      targetDocument.deletedAt = undefined;
+      targetDocument.deletedBy = undefined;
+      targetDocument.updatedAt = new Date();
+      message = "Document restored successfully";
+    } else if (action === "permanent-delete") {
+      if (!targetDocument.isDeleted) {
+        return res.status(400).json({
+          message: "Document must be disabled before permanent deletion",
+        });
+      }
+      if (targetDocument.documentId) {
+        await handleDocumentDelete(targetDocument.documentId);
+      }
+      targetDocument.deleteOne();
+      message = "Document permanently deleted successfully";
+    } else {
+      targetDocument.isActive = false;
+      targetDocument.updatedAt = new Date();
+    }
+
     await company.save({ validateBeforeSave: false });
 
-    return res
-      .status(200)
-      .json({ message: "Document marked as inactive successfully" });
+    return res.status(200).json({ message });
   } catch (error) {
     next(error);
   }
@@ -724,12 +784,27 @@ const getDepartmentDocuments = async (req, res, next) => {
     const companyId = req.company;
     const { departmentId } = req.query;
     const { type } = req.query;
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
 
     if (!departmentId) {
       return res.status(400).json({ message: "Department ID is required" });
     }
 
-    const companyData = await Company.findOne({ _id: companyId }).lean().exec();
+    const companyData = await Company.findOne({ _id: companyId })
+      .populate([
+        {
+          path: "selectedDepartments.sop.deletedBy",
+          select: "firstName lastName employeeName name email",
+        },
+        {
+          path: "selectedDepartments.policies.deletedBy",
+          select: "firstName lastName employeeName name email",
+        },
+      ])
+      .lean()
+      .exec();
     const department = companyData?.selectedDepartments?.find(
       (dept) => dept.department.toString() === departmentId,
     );
@@ -738,9 +813,18 @@ const getDepartmentDocuments = async (req, res, next) => {
       return res.status(404).json({ message: "Department not found" });
     }
 
-    const hasSOP = Array.isArray(department.sop) && department.sop.length > 0;
-    const hasPolicies =
-      Array.isArray(department.policies) && department.policies.length > 0;
+    const sopDocuments = Array.isArray(department.sop)
+      ? department.sop.filter(
+          (document) => includeDeleted || !document.isDeleted,
+        )
+      : [];
+    const policyDocuments = Array.isArray(department.policies)
+      ? department.policies.filter(
+          (document) => includeDeleted || !document.isDeleted,
+        )
+      : [];
+    const hasSOP = sopDocuments.length > 0;
+    const hasPolicies = policyDocuments.length > 0;
 
     // Check based on 'type'
     if (type) {
@@ -752,7 +836,7 @@ const getDepartmentDocuments = async (req, res, next) => {
         }
         return res
           .status(200)
-          .json({ documents: { sopDocuments: department.sop } });
+          .json({ documents: { sopDocuments } });
       } else if (type === "policies") {
         if (!hasPolicies) {
           return res
@@ -761,7 +845,7 @@ const getDepartmentDocuments = async (req, res, next) => {
         }
         return res
           .status(200)
-          .json({ documents: { policyDocuments: department.policies } });
+          .json({ documents: { policyDocuments } });
       } else {
         return res.status(400).json({
           message: "Invalid document type. Must be 'sop' or 'policies'",
@@ -777,8 +861,8 @@ const getDepartmentDocuments = async (req, res, next) => {
     }
 
     const response = {};
-    if (hasSOP) response.sopDocuments = department.sop;
-    if (hasPolicies) response.policyDocuments = department.policies;
+    if (hasSOP) response.sopDocuments = sopDocuments;
+    if (hasPolicies) response.policyDocuments = policyDocuments;
 
     return res.status(200).json({ documents: response });
   } catch (error) {

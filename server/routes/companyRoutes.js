@@ -89,6 +89,8 @@ const {
   getJobApplications,
   updateJobApplication,
   archiveJobApplication,
+  restoreJobApplication,
+  permanentlyDeleteJobApplication,
 } = require("../controllers/companyControllers/jobApplicationsController");
 
 // Company basic info routes
@@ -167,6 +169,11 @@ router.patch(
   updateJobApplication,
 );
 router.patch("/archive-job-application/:id", archiveJobApplication);
+router.patch("/restore-job-application/:id", restoreJobApplication);
+router.delete(
+  "/delete-job-application/:id",
+  permanentlyDeleteJobApplication,
+);
 router.post(
   "/bulk-insert-job-applications",
   upload.single("job-applications"),

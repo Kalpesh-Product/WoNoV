@@ -5,6 +5,24 @@ const csvParser = require("csv-parser");
 const { Readable } = require("stream");
 const JobApplicationSchema = require("../../models/hr/JobApplications");
 const mongoose = require("mongoose");
+const User = require("../../models/hr/UserData");
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
+};
 
 const editableApplicationFields = [
   "jobPosition",
@@ -29,10 +47,14 @@ const editableApplicationFields = [
   "remarks",
 ];
 
-const applicationScope = (id, company) => ({
+const companyApplicationScope = (id, company) => ({
   _id: id,
-  isDeleted: { $ne: true },
   $or: [{ companyData: company }, { companyData: null }],
+});
+
+const applicationScope = (id, company) => ({
+  ...companyApplicationScope(id, company),
+  isDeleted: { $ne: true },
 });
 
 const bulkInsertJobApplications = async (req, res, next) => {
@@ -207,11 +229,18 @@ const createJobApplication = async (req, res, next) => {
 const getJobApplications = async (req, res, next) => {
   try {
     const companyId = req.company;
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
 
     const applications = await JobApplicationSchema.find({
-      isDeleted: { $ne: true },
       $or: [{ companyData: companyId }, { companyData: null }],
+      ...(!includeDeleted && { isDeleted: { $ne: true } }),
     })
+      .populate(
+        "deletedBy",
+        "firstName lastName employeeName name email",
+      )
       .sort({ createdAt: -1 })
       .exec();
 
@@ -276,7 +305,13 @@ const archiveJobApplication = async (req, res, next) => {
 
     const application = await JobApplications.findOneAndUpdate(
       applicationScope(id, req.company),
-      { $set: { isDeleted: true, deletedAt: new Date() } },
+      {
+        $set: {
+          isDeleted: true,
+          deletedAt: new Date(),
+          deletedBy: req.user,
+        },
+      },
       { new: true },
     );
 
@@ -292,6 +327,78 @@ const archiveJobApplication = async (req, res, next) => {
   }
 };
 
+const restoreJobApplication = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid job application ID." });
+    }
+
+    if (!(await isTechDepartmentUser(req.user))) {
+      return res.status(403).json({
+        message: "Only Tech Department users can restore job applications.",
+      });
+    }
+
+    const application = await JobApplications.findOneAndUpdate(
+      {
+        ...companyApplicationScope(id, req.company),
+        isDeleted: true,
+      },
+      {
+        $set: { isDeleted: false },
+        $unset: { deletedAt: 1, deletedBy: 1 },
+      },
+      { new: true },
+    );
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ message: "Deleted job application not found." });
+    }
+
+    return res.status(200).json({
+      message: "Job application restored successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const permanentlyDeleteJobApplication = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid job application ID." });
+    }
+
+    if (!(await isTechDepartmentUser(req.user))) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department users can permanently delete job applications.",
+      });
+    }
+
+    const application = await JobApplications.findOneAndDelete({
+      ...companyApplicationScope(id, req.company),
+      isDeleted: true,
+    });
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ message: "Disabled job application not found." });
+    }
+
+    return res.status(200).json({
+      message: "Job application permanently deleted successfully.",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = { getJobApplications };
 
 module.exports = {
@@ -300,4 +407,6 @@ module.exports = {
   getJobApplications,
   updateJobApplication,
   archiveJobApplication,
+  restoreJobApplication,
+  permanentlyDeleteJobApplication,
 };
