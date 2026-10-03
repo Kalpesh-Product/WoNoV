@@ -39,6 +39,7 @@ const {
   getComplianceDocuments,
   uploadComplianceDocument,
   toggleCompanyDocumentStatus,
+  restoreCompanyDocument,
   deleteDepartmentDocument,
   updateCompanyDocument,
   updateDepartmentDocument,
@@ -205,6 +206,7 @@ router.patch(
   updateCompanyDocument,
 );
 router.patch("/delete-company-document", toggleCompanyDocumentStatus);
+router.patch("/restore-company-document", restoreCompanyDocument);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
 // Department Documents

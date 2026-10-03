@@ -10,6 +10,7 @@ const path = require("path");
 const Department = require("../../models/Departments");
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 const CSV_MIME_TYPES = new Set([
   "text/csv",
   "application/csv",
@@ -17,6 +18,21 @@ const CSV_MIME_TYPES = new Set([
   "text/plain",
   "application/octet-stream",
 ]);
+
+const isTechDepartmentUser = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
+};
 
 const isCsvTemplateFile = (file) => {
   if (
@@ -309,9 +325,13 @@ const updateCompanyDocument = async (req, res, next) => {
 
 const toggleCompanyDocumentStatus = async (req, res, next) => {
   const user = req.user;
-  const { documentId } = req.body; // Use MongoDB _id
+  const { documentId } = req.body;
 
   try {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({ message: "Invalid document ID" });
+    }
+
     const foundUser = await User.findById(user)
       .select("company")
       .populate("company", "companyName")
@@ -324,46 +344,91 @@ const toggleCompanyDocumentStatus = async (req, res, next) => {
     const docFields = ["templates", "sop", "policies", "agreements"];
     const company = await Company.findById(foundUser.company._id);
 
-    let found = false;
-    let targetDocumentId = null;
-    let newStatus = null;
+    let targetDocument = null;
 
     for (const field of docFields) {
-      const docArray = company[field];
-
-      const doc = docArray.find((doc) => doc._id.toString() === documentId);
-      if (doc) {
-        doc.isActive = !doc.isActive; // Toggle status
-        found = true;
-        targetDocumentId = doc.documentId;
-        newStatus = doc.isActive;
+      const document = company[field].id(documentId);
+      if (document) {
+        targetDocument = document;
         break;
       }
     }
 
-    if (!found) {
+    if (!targetDocument) {
       return res
         .status(404)
         .json({ message: "Document not found in company records" });
     }
 
-    await company.save();
-
-    // If the document is being toggled *off*, delete it from Cloudinary
-    if (!newStatus && targetDocumentId) {
-      const cloudRes = await handleDocumentDelete(targetDocumentId);
-      if (cloudRes.result !== "ok") {
-        return res
-          .status(500)
-          .json({ message: "Failed to delete from cloud storage" });
+    const isTechUser = await isTechDepartmentUser(user);
+    if (isTechUser) {
+      if (targetDocument.documentId) {
+        await handleDocumentDelete(targetDocument.documentId);
       }
+      targetDocument.deleteOne();
+      await company.save();
+
+      return res.status(200).json({
+        message: "Document permanently deleted successfully",
+        deletionType: "permanent",
+      });
     }
 
+    if (targetDocument.isDeleted) {
+      return res.status(400).json({ message: "Document is already deleted" });
+    }
+
+    targetDocument.isDeleted = true;
+    targetDocument.isActive = false;
+    targetDocument.updatedAt = new Date();
+    await company.save();
+
     return res.status(200).json({
-      message: `Document ${
-        newStatus ? "activated" : "deactivated"
-      } successfully`,
+      message: "Document deleted successfully",
+      deletionType: "soft",
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreCompanyDocument = async (req, res, next) => {
+  const { documentId } = req.body;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({ message: "Invalid document ID" });
+    }
+
+    if (!(await isTechDepartmentUser(req.user))) {
+      return res.status(403).json({
+        message: "Only Tech Department users can restore documents",
+      });
+    }
+
+    const foundUser = await User.findById(req.user).select("company").lean();
+    const company = await Company.findById(foundUser?.company);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const docFields = ["templates", "sop", "policies", "agreements"];
+    let targetDocument = null;
+    for (const field of docFields) {
+      targetDocument = company[field].id(documentId);
+      if (targetDocument) break;
+    }
+
+    if (!targetDocument?.isDeleted) {
+      return res.status(404).json({ message: "Deleted document not found" });
+    }
+
+    targetDocument.isDeleted = false;
+    targetDocument.isActive = true;
+    targetDocument.updatedAt = new Date();
+    await company.save();
+
+    return res.status(200).json({ message: "Document restored successfully" });
   } catch (error) {
     next(error);
   }
@@ -388,7 +453,16 @@ const getCompanyDocuments = async (req, res, next) => {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    return res.status(200).json({ [type]: foundUser.company[type] || [] });
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(user));
+    const documents = foundUser.company[type] || [];
+
+    return res.status(200).json({
+      [type]: includeDeleted
+        ? documents
+        : documents.filter((document) => !document.isDeleted),
+    });
   } catch (error) {
     next(error);
   }
@@ -1616,6 +1690,7 @@ module.exports = {
   uploadComplianceDocument,
   updateCompanyDocument,
   toggleCompanyDocumentStatus,
+  restoreCompanyDocument,
   updateDepartmentDocument,
   deleteDepartmentDocument,
   handleDepartmentTemplateUpload,

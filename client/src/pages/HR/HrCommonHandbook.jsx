@@ -182,7 +182,10 @@ const HrCommonHandbook = () => {
       </div> */}
       <div className="flex">
         <div className="w-full h-full rounded-md">
-          <Access showDepartmentAccordion={false} />
+          <Access
+            showDepartmentAccordion={false}
+            containerClassName="p-0"
+          />
         </div>
       </div>
 
