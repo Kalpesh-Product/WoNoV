@@ -2319,13 +2319,6 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     route: "/app/dashboard/HR-dashboard/data/job-application-list",
   },
 
-  HR_PAYROLL_REPORTS: {
-    value: "hr_payroll_reports_tab",
-    title: "PAYROLL REPORTS",
-    type: "read",
-    route: "/app/dashboard/HR-dashboard/data/payroll-reports",
-  },
-
   HR_ASSET_LIST: {
     value: "hr_asset_list_tab",
     title: "ASSET LIST",

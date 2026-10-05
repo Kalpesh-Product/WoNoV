@@ -447,7 +447,6 @@ import DepartmentVoucherHistory from "../components/Pages/DepartmentVoucherHisto
 import DepartmentRejectedVoucher from "../components/Pages/DepartmentRejectedVoucher";
 import ItOfficesNew from "../pages/Dashboard/ItDashboard/ItOffices/ItOfficessNew";
 import AdminOfficesNew from "../pages/Dashboard/AdminDashboard/AdminOffices/AdminOfficesNew";
-import PayrollReports from "../pages/Dashboard/HrDashboard/Data/PayrollReports";
 import ComplianceData from "../pages/Dashboard/FinanceDashboard/MixBag/ComplianceData";
 import HrMixBag from "../pages/Dashboard/HrDashboard/HrMixBag";
 import AttendanceRequests from "../pages/Dashboard/HrDashboard/Mixbag/AttendanceRequests";
@@ -3211,10 +3210,6 @@ export const routes = createBrowserRouter([
                           {
                             path: "monthly-invoice-reports",
                             element: <MonthlyInvoiceCommon />,
-                          },
-                          {
-                            path: "payroll-reports",
-                            element: <PayrollReports />,
                           },
                         ],
                       },

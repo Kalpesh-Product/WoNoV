@@ -444,7 +444,7 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "meeting",
         select:
-          "meetingType subject agenda startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof",
+          "meetingType subject agenda startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof discountAmount",
         populate: [
           {
             path: "bookedBy",

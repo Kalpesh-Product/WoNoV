@@ -22,6 +22,7 @@ const getMeetingPaymentDetails = (revenue, meeting = revenue?.meeting) => {
     costPerHour: revenue?.costPerHour ?? meeting.bookedRoom?.perHourPrice ?? 0,
     taxable: revenue?.taxable ?? meeting.paymentBaseAmount ?? 0,
     gst: revenue?.gst ?? meeting.paymentGstAmount ?? 0,
+    discount: revenue?.discount ?? meeting.discountAmount ?? 0,
     totalAmount: revenue?.totalAmount ?? meeting.paymentAmount ?? 0,
     status: ["true", "paid"].includes(normalizedStatus) ? "Paid" : "Unpaid",
     paymentProofLink: meeting.paymentProof?.link || "",
