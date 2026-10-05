@@ -34,10 +34,13 @@ const {
   addCompanyKyc,
   createCompanyKycEntry,
   updateCompanyKycEntryName,
+  manageCompanyKycEntry,
   updateCompanyKycDocument,
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
+  updateComplianceDocument,
+  manageComplianceDocument,
   toggleCompanyDocumentStatus,
   restoreCompanyDocument,
   deleteDepartmentDocument,
@@ -146,6 +149,7 @@ router.post(
 // KYC & Compliance
 router.post("/create-kyc-entry", createCompanyKycEntry);
 router.patch("/update-kyc-entry-name", updateCompanyKycEntryName);
+router.patch("/manage-kyc-entry", manageCompanyKycEntry);
 router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
 router.patch(
   "/update-kyc-document",
@@ -159,6 +163,12 @@ router.post(
   upload.single("document"),
   uploadComplianceDocument,
 );
+router.patch(
+  "/update-compliance-document",
+  upload.single("document"),
+  updateComplianceDocument,
+);
+router.patch("/manage-compliance-document", manageComplianceDocument);
 
 // Job Applications
 router.post(

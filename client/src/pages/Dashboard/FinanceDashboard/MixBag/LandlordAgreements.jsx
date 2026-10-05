@@ -10,15 +10,29 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { HiPencilSquare } from "react-icons/hi2";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import useAuth from "../../../../hooks/useAuth";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const LandlordAgreements = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [editingLandlord, setEditingLandlord] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
+  const isTechDepartment = auth?.user?.departments?.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -34,11 +48,12 @@ const LandlordAgreements = () => {
   };
 
   const { data: landlordData = [], isLoading } = useQuery({
-    queryKey: ["landlord-agreements"],
+    queryKey: ["landlord-agreements", Boolean(isTechDepartment)],
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/finance/get-landlord-agreements"
+          "/api/finance/get-landlord-agreements",
+          { params: { includeDeleted: Boolean(isTechDepartment) } },
         );
         return response.data || [];
       } catch (error) {
@@ -94,6 +109,24 @@ const LandlordAgreements = () => {
     },
   });
 
+  const { mutate: manageLandlord, isPending: isManaging } = useMutation({
+    mutationFn: async ({ landlordId, action }) => {
+      const response = await axios.patch("/api/finance/landlord/action", {
+        landlordId,
+        action,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Landlord updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["landlord-agreements"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update landlord");
+    },
+  });
+
   const tableData = useMemo(
     () =>
       Array.isArray(landlordData)
@@ -108,6 +141,16 @@ const LandlordAgreements = () => {
               : 0,
             files: item?.documents || [],
             id: item?._id || "",
+            isDeleted: Boolean(item?.isDeleted),
+            deletedByName: item?.deletedBy
+              ? [item.deletedBy.firstName, item.deletedBy.lastName]
+                  .filter(Boolean)
+                  .join(" ") ||
+                item.deletedBy.employeeName ||
+                item.deletedBy.name ||
+                item.deletedBy.email ||
+                "N/A"
+              : "",
           }))
         : [],
     [landlordData]
@@ -121,8 +164,9 @@ const LandlordAgreements = () => {
       flex: 1,
       cellRenderer: (params) => (
         <span
-          role="button"
-          onClick={() =>
+          role={params.data.isDeleted ? undefined : "button"}
+          onClick={() => {
+            if (params.data.isDeleted) return;
             navigate(
               location.pathname.includes("mix-bag")
                 ? `/app/dashboard/finance-dashboard/mix-bag/landlord-agreements/${encodeURIComponent(params.data.name)}`
@@ -134,28 +178,127 @@ const LandlordAgreements = () => {
                   id: params.data.id,
                 },
               }
-            )
+            );
+          }}
+          className={
+            params.data.isDeleted
+              ? "text-gray-500 cursor-not-allowed"
+              : "text-primary underline cursor-pointer"
           }
-          className="text-primary underline cursor-pointer"
         >
           {params.value || "Unnamed"}
         </span>
       ),
     },
     { field: "documentCount", headerName: "No. of Documents", flex: 1 },
+    ...(tableData.some((item) => item.isDeleted)
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+          },
+        ]
+      : []),
     {
       field: "actions",
-      headerName: "Action",
-      width: 110,
+      headerName: "Actions",
+      width: 150,
       sortable: false,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.id}
-          menuItems={[{ label: "Edit", onClick: () => { setEditingLandlord(params.data); reset({ name: params.data.name }); setOpenModal(true); } }]}
-        />
-      ),
+      filter: false,
+      cellRenderer: ({ data }) =>
+        data.isDeleted ? (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Restore landlord"
+              aria-label="Restore landlord"
+              disabled={isManaging}
+              onClick={() => handleRestore(data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdOutlineRestore size={24} />
+            </button>
+            <button
+              type="button"
+              title="Permanently delete landlord"
+              aria-label="Permanently delete landlord"
+              disabled={isManaging}
+              onClick={() => handleDelete(data)}
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Edit landlord"
+              aria-label="Edit landlord"
+              onClick={() => {
+                setEditingLandlord(data);
+                reset({ name: data.name });
+                setOpenModal(true);
+              }}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+            >
+              <HiPencilSquare size={24} />
+            </button>
+            <button
+              type="button"
+              title={
+                isTechDepartment
+                  ? "Permanently delete landlord"
+                  : "Delete landlord"
+              }
+              aria-label="Delete landlord"
+              disabled={isManaging}
+              onClick={() => handleDelete(data)}
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        ),
     },
   ];
+
+  const handleDelete = (landlord) => {
+    setConfirmationAction({
+      type: isTechDepartment ? "permanent-delete" : "delete",
+      landlord,
+    });
+  };
+
+  const handleRestore = (landlord) => {
+    setConfirmationAction({ type: "restore", landlord });
+  };
+
+  const confirmLandlordAction = () => {
+    const landlord = confirmationAction?.landlord;
+    if (!landlord) return;
+
+    manageLandlord({
+      landlordId: landlord.id,
+      action: confirmationAction.type === "restore" ? "restore" : "delete",
+    });
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete Landlord",
+      message: "Are you sure you want to delete this landlord?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Landlord",
+      message: "Are you sure you want to permanently delete this landlord?",
+    },
+    restore: {
+      title: "Restore Landlord",
+      message: "Are you sure you want to restore this landlord?",
+    },
+  }[confirmationAction?.type];
 
   const onSubmit = ({ name }) => {
     const trimmedName = name.trim();
@@ -227,6 +370,17 @@ const LandlordAgreements = () => {
           />
         </form>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={isManaging}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmLandlordAction}
+      />
     </div>
   );
 };

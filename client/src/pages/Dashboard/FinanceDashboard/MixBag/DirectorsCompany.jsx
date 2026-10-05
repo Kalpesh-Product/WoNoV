@@ -10,16 +10,30 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { HiPencilSquare } from "react-icons/hi2";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import useAuth from "../../../../hooks/useAuth";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const DirectorsCompany = () => {
   const location = useLocation();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
   const [openModal, setOpenModal] = useState(false);
   const [createType, setCreateType] = useState("directorKyc");
   const [editTarget, setEditTarget] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
+  const isTechDepartment = auth?.user?.departments?.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
 
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     mode: "onChange",
@@ -50,9 +64,11 @@ const DirectorsCompany = () => {
   };
 
   const { data: kycDetails, isLoading } = useQuery({
-    queryKey: ["directorsCompany"],
+    queryKey: ["directorsCompany", Boolean(isTechDepartment)],
     queryFn: async () => {
-      const response = await axios.get("/api/company/get-kyc");
+      const response = await axios.get("/api/company/get-kyc", {
+        params: { includeDeleted: Boolean(isTechDepartment) },
+      });
       return response.data.data;
     },
   });
@@ -104,34 +120,105 @@ const DirectorsCompany = () => {
     },
   });
 
+  const { mutate: manageKycEntry, isPending: isManagingEntry } = useMutation({
+    mutationFn: async ({ row, action }) => {
+      const response = await axios.patch("/api/company/manage-kyc-entry", {
+        type: row.type,
+        entryId: row.type === "directorKyc" ? row.id : undefined,
+        action,
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "KYC entry updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["directorsCompany"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update KYC entry");
+    },
+  });
+
   const tableData = useMemo(() => {
     if (!kycDetails) return [];
 
     const result = [];
 
-    result.push({
-      id: "company",
-      srno: 1,
-      name: kycDetails.companyName || "Company",
-      routeName: "Company",
-      type: "companyKyc",
-      files: kycDetails.companyKyc || [],
-      documentCount: kycDetails.companyKyc?.length || 0,
-    });
-
-    kycDetails.directorKyc?.forEach((director, index) => {
+    if (kycDetails.companyKycEntry !== null) {
       result.push({
-        id: `director-${index}`,
-        srno: index + 2,
+        id: "company",
+        name: kycDetails.companyName || "Company",
+        routeName: "Company",
+        type: "companyKyc",
+        files: kycDetails.companyKyc || [],
+        documentCount: kycDetails.companyKyc?.length || 0,
+        isDeleted: Boolean(kycDetails.companyKycEntry?.isDeleted),
+        deletedBy: kycDetails.companyKycEntry?.deletedBy,
+      });
+    }
+
+    kycDetails.directorKyc?.forEach((director) => {
+      result.push({
+        id: director._id,
         name: director.nameOfDirector,
         routeName: director.nameOfDirector,
         type: "directorKyc",
         files: director.documents || [],
         documentCount: director.documents?.length || 0,
+        isDeleted: Boolean(director.isDeleted),
+        deletedBy: director.deletedBy,
       });
     });
-    return result;
+    return result.map((entry, index) => ({
+      ...entry,
+      srno: index + 1,
+      deletedByName: entry.deletedBy
+        ? [entry.deletedBy.firstName, entry.deletedBy.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          entry.deletedBy.employeeName ||
+          entry.deletedBy.name ||
+          entry.deletedBy.email ||
+          "N/A"
+        : "",
+    }));
   }, [kycDetails]);
+
+  const handleDelete = (row) => {
+    setConfirmationAction({
+      type: isTechDepartment ? "permanent-delete" : "delete",
+      row,
+    });
+  };
+
+  const handleRestore = (row) => {
+    setConfirmationAction({ type: "restore", row });
+  };
+
+  const confirmKycAction = () => {
+    const row = confirmationAction?.row;
+    if (!row) return;
+
+    manageKycEntry({
+      row,
+      action: confirmationAction.type === "restore" ? "restore" : "delete",
+    });
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete KYC Entry",
+      message: "Are you sure you want to delete this KYC entry?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete KYC Entry",
+      message: "Are you sure you want to permanently delete this KYC entry?",
+    },
+    restore: {
+      title: "Restore KYC Entry",
+      message: "Are you sure you want to restore this KYC entry?",
+    },
+  }[confirmationAction?.type];
 
   const columns = [
     { field: "srno", headerName: "Sr No", width: 100 },
@@ -141,8 +228,9 @@ const DirectorsCompany = () => {
       flex: 1,
       cellRenderer: (params) => (
         <span
-          role="button"
-          onClick={() =>
+          role={params.data.isDeleted ? undefined : "button"}
+          onClick={() => {
+            if (params.data.isDeleted) return;
             navigate(
               location.pathname.includes("mix-bag")
                 ? `/app/dashboard/finance-dashboard/mix-bag/directors-company-KYC/${encodeURIComponent(params.data.routeName)}`
@@ -153,25 +241,84 @@ const DirectorsCompany = () => {
                   name: params.data.routeName,
                 },
               }
-            )
-          }
-          className="text-primary underline cursor-pointer">
+            );
+          }}
+          className={
+            params.data.isDeleted
+              ? "text-gray-500 cursor-not-allowed"
+              : "text-primary underline cursor-pointer"
+          }>
           {params.value}
         </span>
       ),
     },
     { field: "documentCount", headerName: "No. of Documents", flex: 1 },
+    ...(tableData.some((entry) => entry.isDeleted)
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+          },
+        ]
+      : []),
     {
       field: "actions",
-      headerName: "Action",
-      width: 110,
+      headerName: "Actions",
+      width: 150,
       sortable: false,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.id}
-          menuItems={[{ label: "Edit", onClick: () => openEditModal(params.data) }]}
-        />
-      ),
+      filter: false,
+      cellRenderer: ({ data }) =>
+        data.isDeleted ? (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Restore KYC entry"
+              aria-label="Restore KYC entry"
+              disabled={isManagingEntry}
+              onClick={() => handleRestore(data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdOutlineRestore size={24} />
+            </button>
+            <button
+              type="button"
+              title="Permanently delete KYC entry"
+              aria-label="Permanently delete KYC entry"
+              disabled={isManagingEntry}
+              onClick={() => handleDelete(data)}
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        ) : (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Edit KYC entry"
+              aria-label="Edit KYC entry"
+              onClick={() => openEditModal(data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+            >
+              <HiPencilSquare size={24} />
+            </button>
+            <button
+              type="button"
+              title={
+                isTechDepartment
+                  ? "Permanently delete KYC entry"
+                  : "Delete KYC entry"
+              }
+              aria-label="Delete KYC entry"
+              disabled={isManagingEntry}
+              onClick={() => handleDelete(data)}
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        ),
     },
   ];
 
@@ -250,6 +397,17 @@ const DirectorsCompany = () => {
           />
         </form>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={isManagingEntry}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmKycAction}
+      />
     </div>
   );
 };

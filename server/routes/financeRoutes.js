@@ -11,6 +11,7 @@ const {
   createLandlord,
   updateLandlordDocument,
   updateLandlordName,
+  manageLandlord,
 } = require("../controllers/financeControllers/landlordControllers");
 const {
   getClientAgreements,
@@ -18,6 +19,7 @@ const {
   addClientAgreement,
   updateClientAgreement,
   updateClientAgreementClientName,
+  manageClientAgreementEntry,
 } = require("../controllers/financeControllers/clientAgreementControllers");
 const upload = require("../config/multerConfig");
 
@@ -31,6 +33,7 @@ router.post(
 );
 router.post("/create-landlord", createLandlord);
 router.patch("/landlord", updateLandlordName);
+router.patch("/landlord/action", manageLandlord);
 router.post(
   "/add-landlord-agreement",
   upload.single("agreement"),
@@ -45,6 +48,7 @@ router.patch(
 router.get("/client-agreements", getClientAgreements);
 router.post("/client-agreements/client", createClientAgreementClient);
 router.patch("/client-agreements/client", updateClientAgreementClientName);
+router.patch("/client-agreements/client/action", manageClientAgreementEntry);
 router.post(
   "/client-agreements/agreement",
   upload.single("agreement"),

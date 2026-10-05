@@ -1275,6 +1275,116 @@ const updateCompanyKycEntryName = async (req, res, next) => {
   }
 };
 
+const manageCompanyKycEntry = async (req, res, next) => {
+  try {
+    const { type, entryId, action = "delete" } = req.body;
+    const companyId = req.company;
+
+    if (!companyId || !["companyKyc", "directorKyc"].includes(type)) {
+      return res.status(400).json({
+        message: "companyId and a valid KYC entry type are required",
+      });
+    }
+
+    if (!["delete", "restore", "permanent-delete"].includes(action)) {
+      return res.status(400).json({ message: "Invalid KYC entry action" });
+    }
+
+    const isTechUser = await isTechDepartmentUser(req.user);
+    const entryAction =
+      action === "delete" && isTechUser ? "permanent-delete" : action;
+
+    if (["restore", "permanent-delete"].includes(entryAction) && !isTechUser) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department users can restore or permanently delete KYC entries",
+      });
+    }
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    let targetEntry;
+    let documents = [];
+
+    if (type === "directorKyc") {
+      if (!entryId || !mongoose.Types.ObjectId.isValid(entryId)) {
+        return res.status(400).json({ message: "Valid director entry ID is required" });
+      }
+
+      targetEntry = company.kycDetails.directorKyc.id(entryId);
+      if (!targetEntry) {
+        return res.status(404).json({ message: "Director KYC entry not found" });
+      }
+      documents = targetEntry.documents || [];
+    } else {
+      targetEntry = company.kycDetails.companyKycEntry;
+      documents = company.kycDetails.companyKyc || [];
+
+      if (targetEntry?.permanentlyDeleted) {
+        return res.status(404).json({ message: "Company KYC entry not found" });
+      }
+    }
+
+    if (entryAction === "delete") {
+      if (targetEntry?.isDeleted) {
+        return res.status(400).json({ message: "KYC entry is already deleted" });
+      }
+
+      targetEntry.isDeleted = true;
+      targetEntry.isActive = false;
+      targetEntry.deletedAt = new Date();
+      targetEntry.deletedBy = req.user;
+      await company.save({ validateBeforeSave: false });
+
+      return res.status(200).json({
+        message: "KYC entry deleted successfully",
+        deletionType: "soft",
+      });
+    }
+
+    if (entryAction === "restore") {
+      if (!targetEntry?.isDeleted) {
+        return res.status(400).json({ message: "KYC entry is not deleted" });
+      }
+
+      targetEntry.isDeleted = false;
+      targetEntry.isActive = true;
+      targetEntry.deletedAt = undefined;
+      targetEntry.deletedBy = undefined;
+      await company.save({ validateBeforeSave: false });
+
+      return res.status(200).json({ message: "KYC entry restored successfully" });
+    }
+
+    await Promise.all(
+      documents
+        .filter((document) => document.documentId)
+        .map((document) => handleDocumentDelete(document.documentId)),
+    );
+
+    if (type === "directorKyc") {
+      targetEntry.deleteOne();
+    } else {
+      company.kycDetails.companyKyc = [];
+      targetEntry.isDeleted = false;
+      targetEntry.permanentlyDeleted = true;
+      targetEntry.deletedAt = undefined;
+      targetEntry.deletedBy = undefined;
+    }
+
+    await company.save({ validateBeforeSave: false });
+    return res.status(200).json({
+      message: "KYC entry permanently deleted successfully",
+      deletionType: "permanent",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const getCompanyKyc = async (req, res, next) => {
   try {
     const companyId = req.company;
@@ -1283,9 +1393,22 @@ const getCompanyKyc = async (req, res, next) => {
       return res.status(400).json({ message: "companyId is required" });
     }
 
-    const company = await Company.findOne({ _id: companyId }).select(
-      "kycDetails companyName",
-    );
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
+    const company = await Company.findOne({ _id: companyId })
+      .select("kycDetails companyName")
+      .populate([
+        {
+          path: "kycDetails.companyKycEntry.deletedBy",
+          select: "firstName lastName employeeName name email",
+        },
+        {
+          path: "kycDetails.directorKyc.deletedBy",
+          select: "firstName lastName employeeName name email",
+        },
+      ])
+      .lean();
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
@@ -1299,10 +1422,20 @@ const getCompanyKyc = async (req, res, next) => {
       isActive: doc.isActive,
     }));
 
-    const directorKyc = (company.kycDetails.directorKyc || []).map(
-      (director) => ({
+    const companyKycEntry = company.kycDetails.companyKycEntry || {};
+    const showCompanyEntry =
+      !companyKycEntry.permanentlyDeleted &&
+      (includeDeleted || !companyKycEntry.isDeleted);
+
+    const directorKyc = (company.kycDetails.directorKyc || [])
+      .filter((director) => includeDeleted || !director.isDeleted)
+      .map((director) => ({
+        _id: director._id,
         nameOfDirector: director.nameOfDirector,
         isActive: director.isActive,
+        isDeleted: Boolean(director.isDeleted),
+        deletedAt: director.deletedAt,
+        deletedBy: director.deletedBy,
         documents: (director.documents || []).map((doc) => ({
           name: doc.name,
           documentLink: doc.documentLink,
@@ -1310,13 +1443,19 @@ const getCompanyKyc = async (req, res, next) => {
           createdDate: doc.createdDate,
           updatedDate: doc.updatedDate,
         })),
-      }),
-    );
+      }));
 
     res.status(200).json({
       data: {
         companyName: company.companyName,
         companyKyc,
+        companyKycEntry: showCompanyEntry
+          ? {
+              isDeleted: Boolean(companyKycEntry.isDeleted),
+              deletedAt: companyKycEntry.deletedAt,
+              deletedBy: companyKycEntry.deletedBy,
+            }
+          : null,
         directorKyc,
       },
     });
@@ -1333,14 +1472,26 @@ const getComplianceDocuments = async (req, res, next) => {
       return res.status(400).json({ message: "companyId is required" });
     }
 
-    const company = await Company.findById(companyId).select(
-      "complianceDocuments",
-    );
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
+    const company = await Company.findById(companyId)
+      .select("complianceDocuments")
+      .populate({
+        path: "complianceDocuments.deletedBy",
+        select: "firstName lastName employeeName name email",
+      })
+      .lean();
     if (!company) {
       return res.status(404).json({ message: "Company not found" });
     }
 
-    res.status(200).json({ data: company.complianceDocuments });
+    const documents = company.complianceDocuments || [];
+    res.status(200).json({
+      data: includeDeleted
+        ? documents
+        : documents.filter((document) => !document.isDeleted),
+    });
   } catch (error) {
     next(error);
   }
@@ -1373,10 +1524,18 @@ const uploadComplianceDocument = async (req, res, next) => {
     let docs = company.complianceDocuments || [];
 
     // Check if document with same name exists
-    const existingIndex = docs.findIndex((doc) => doc.name === documentName);
+    const existingIndex = docs.findIndex(
+      (doc) =>
+        doc.name?.trim().toLowerCase() === documentName.trim().toLowerCase(),
+    );
 
     if (existingIndex !== -1) {
       const oldDoc = docs[existingIndex];
+      if (oldDoc.isDeleted) {
+        return res.status(409).json({
+          message: "A deleted document with this name already exists",
+        });
+      }
       if (oldDoc.documentId) {
         await handleDocumentDelete(oldDoc.documentId);
       }
@@ -1411,6 +1570,150 @@ const uploadComplianceDocument = async (req, res, next) => {
     res.status(200).json({
       message: "Compliance document uploaded successfully",
       data: newDoc,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateComplianceDocument = async (req, res, next) => {
+  try {
+    const { documentId, documentName } = req.body;
+    const companyId = req.company;
+
+    if (
+      !companyId ||
+      !mongoose.Types.ObjectId.isValid(documentId) ||
+      !documentName?.trim()
+    ) {
+      return res.status(400).json({
+        message: "Valid document ID and document name are required",
+      });
+    }
+
+    const company = await Company.findById(companyId);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const document = company.complianceDocuments.id(documentId);
+    if (!document || document.isDeleted) {
+      return res.status(404).json({ message: "Active document not found" });
+    }
+
+    const trimmedName = documentName.trim();
+    const duplicate = company.complianceDocuments.some(
+      (item) =>
+        item._id.toString() !== documentId &&
+        item.name?.trim().toLowerCase() === trimmedName.toLowerCase(),
+    );
+    if (duplicate) {
+      return res.status(409).json({
+        message: "A compliance document with this name already exists",
+      });
+    }
+
+    if (req.file) {
+      const uploadResult = await handleDocumentUpload(
+        req.file.buffer,
+        `${company.companyName?.trim()}/compliance/${trimmedName}`,
+        req.file.originalname,
+      );
+
+      if (document.documentId) {
+        await handleDocumentDelete(document.documentId);
+      }
+      document.documentLink = uploadResult.secure_url;
+      document.documentId = uploadResult.public_id;
+    }
+
+    document.name = trimmedName;
+    document.updatedDate = new Date();
+    await company.save({ validateBeforeSave: false });
+
+    return res.status(200).json({
+      message: "Compliance document updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const manageComplianceDocument = async (req, res, next) => {
+  try {
+    const { documentId, action = "delete" } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(documentId)) {
+      return res.status(400).json({ message: "Valid document ID is required" });
+    }
+    if (!["delete", "restore", "permanent-delete"].includes(action)) {
+      return res.status(400).json({ message: "Invalid document action" });
+    }
+
+    const isTechUser = await isTechDepartmentUser(req.user);
+    const documentAction =
+      action === "delete" && isTechUser ? "permanent-delete" : action;
+
+    if (
+      ["restore", "permanent-delete"].includes(documentAction) &&
+      !isTechUser
+    ) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department users can restore or permanently delete compliance documents",
+      });
+    }
+
+    const company = await Company.findById(req.company);
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const document = company.complianceDocuments.id(documentId);
+    if (!document) {
+      return res.status(404).json({ message: "Compliance document not found" });
+    }
+
+    if (documentAction === "delete") {
+      if (document.isDeleted) {
+        return res.status(400).json({ message: "Document is already deleted" });
+      }
+      document.isDeleted = true;
+      document.isActive = false;
+      document.deletedAt = new Date();
+      document.deletedBy = req.user;
+      await company.save({ validateBeforeSave: false });
+
+      return res.status(200).json({
+        message: "Compliance document deleted successfully",
+        deletionType: "soft",
+      });
+    }
+
+    if (documentAction === "restore") {
+      if (!document.isDeleted) {
+        return res.status(400).json({ message: "Document is not deleted" });
+      }
+      document.isDeleted = false;
+      document.isActive = true;
+      document.deletedAt = undefined;
+      document.deletedBy = undefined;
+      await company.save({ validateBeforeSave: false });
+
+      return res.status(200).json({
+        message: "Compliance document restored successfully",
+      });
+    }
+
+    if (document.documentId) {
+      await handleDocumentDelete(document.documentId);
+    }
+    document.deleteOne();
+    await company.save({ validateBeforeSave: false });
+
+    return res.status(200).json({
+      message: "Compliance document permanently deleted successfully",
+      deletionType: "permanent",
     });
   } catch (error) {
     next(error);
@@ -1781,6 +2084,8 @@ module.exports = {
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
+  updateComplianceDocument,
+  manageComplianceDocument,
   updateCompanyDocument,
   toggleCompanyDocumentStatus,
   restoreCompanyDocument,
@@ -1790,6 +2095,7 @@ module.exports = {
   getDepartmentTemplates,
   deleteDepartmentTemplate,
   updateCompanyKycEntryName,
+  manageCompanyKycEntry,
   updateDepartmentTemplate,
   updateDepartmentTemplateLastModifiedAt,
 };

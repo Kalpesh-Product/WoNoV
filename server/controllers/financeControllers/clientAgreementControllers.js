@@ -1,9 +1,27 @@
 const CoworkingClient = require("../../models/sales/CoworkingClient");
 const Company = require("../../models/hr/Company");
+const User = require("../../models/hr/UserData");
 const {
     handleDocumentUpload,
     handleDocumentDelete,
 } = require("../../config/s3Config");
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = async (userId) => {
+    const user = await User.findById(userId)
+        .populate("departments", "name")
+        .select("departments")
+        .lean();
+
+    return (user?.departments || []).some(
+        (department) =>
+            String(department?._id || department) === TECH_DEPARTMENT_ID ||
+            ["tech", "tech department"].includes(
+                department?.name?.trim().toLowerCase(),
+            ),
+    );
+};
 
 const allowedMimeTypes = [
     "application/pdf",
@@ -19,8 +37,22 @@ const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 const getClientAgreements = async (req, res, next) => {
     try {
-        const clients = await CoworkingClient.find({ isActive: true })
-            .select("clientName documents isActive")
+        const includeDeleted =
+            req.query.includeDeleted === "true" &&
+            (await isTechDepartmentUser(req.user));
+        const query = {
+            isActive: true,
+            "clientAgreementStatus.permanentlyDeleted": { $ne: true },
+            ...(includeDeleted
+                ? {}
+                : { "clientAgreementStatus.isDeleted": { $ne: true } }),
+        };
+        const clients = await CoworkingClient.find(query)
+            .select("clientName documents isActive clientAgreementStatus")
+            .populate(
+                "clientAgreementStatus.deletedBy",
+                "firstName lastName employeeName name email",
+            )
             .sort({ clientName: 1 })
             .lean()
             .exec();
@@ -44,11 +76,21 @@ const createClientAgreementClient = async (req, res, next) => {
 
         const existingClient = await CoworkingClient.findOne({
             clientName: { $regex: `^${escapeRegex(trimmedName)}$`, $options: "i" },
-        })
-            .lean()
-            .exec();
+        }).exec();
 
         if (existingClient) {
+            if (existingClient.clientAgreementStatus?.permanentlyDeleted) {
+                existingClient.clientAgreementStatus.permanentlyDeleted = false;
+                existingClient.clientAgreementStatus.isDeleted = false;
+                existingClient.clientAgreementStatus.deletedAt = undefined;
+                existingClient.clientAgreementStatus.deletedBy = undefined;
+                await existingClient.save({ validateBeforeSave: false });
+
+                return res.status(201).json({
+                    message: "Client agreement entry created successfully",
+                    client: existingClient,
+                });
+            }
             return res.status(409).json({ message: "Client already exists" });
         }
 
@@ -89,7 +131,12 @@ const addClientAgreement = async (req, res, next) => {
             CoworkingClient.findById(clientId).lean().exec(),
         ]);
 
-        if (!company || !client) {
+        if (
+            !company ||
+            !client ||
+            client.clientAgreementStatus?.isDeleted ||
+            client.clientAgreementStatus?.permanentlyDeleted
+        ) {
             return res.status(404).json({ message: "Client not found" });
         }
 
@@ -150,7 +197,12 @@ const updateClientAgreement = async (req, res, next) => {
             CoworkingClient.findById(clientId).exec(),
         ]);
 
-        if (!company || !client) {
+        if (
+            !company ||
+            !client ||
+            client.clientAgreementStatus?.isDeleted ||
+            client.clientAgreementStatus?.permanentlyDeleted
+        ) {
             return res.status(404).json({ message: "Client not found" });
         }
 
@@ -211,7 +263,12 @@ const updateClientAgreementClientName = async (req, res, next) => {
         const trimmedName = name.trim();
         const client = await CoworkingClient.findById(clientId).exec();
 
-        if (!client || !client.isActive) {
+        if (
+            !client ||
+            !client.isActive ||
+            client.clientAgreementStatus?.isDeleted ||
+            client.clientAgreementStatus?.permanentlyDeleted
+        ) {
             return res.status(404).json({ message: "Client not found" });
         }
 
@@ -237,10 +294,93 @@ const updateClientAgreementClientName = async (req, res, next) => {
     }
 };
 
+const manageClientAgreementEntry = async (req, res, next) => {
+    try {
+        const { clientId, action = "delete" } = req.body;
+
+        if (!clientId) {
+            return res.status(400).json({ message: "Client id is required" });
+        }
+        if (!["delete", "restore", "permanent-delete"].includes(action)) {
+            return res.status(400).json({ message: "Invalid client action" });
+        }
+
+        const isTechUser = await isTechDepartmentUser(req.user);
+        const clientAction =
+            action === "delete" && isTechUser ? "permanent-delete" : action;
+
+        if (
+            ["restore", "permanent-delete"].includes(clientAction) &&
+            !isTechUser
+        ) {
+            return res.status(403).json({
+                message:
+                    "Only Tech Department users can restore or permanently delete client agreement entries",
+            });
+        }
+
+        const client = await CoworkingClient.findById(clientId);
+        if (!client || client.clientAgreementStatus?.permanentlyDeleted) {
+            return res.status(404).json({ message: "Client agreement entry not found" });
+        }
+
+        const status = client.clientAgreementStatus;
+
+        if (clientAction === "delete") {
+            if (status.isDeleted) {
+                return res.status(400).json({ message: "Client is already deleted" });
+            }
+            status.isDeleted = true;
+            status.deletedAt = new Date();
+            status.deletedBy = req.user;
+            await client.save({ validateBeforeSave: false });
+
+            return res.status(200).json({
+                message: "Client agreement entry deleted successfully",
+                deletionType: "soft",
+            });
+        }
+
+        if (clientAction === "restore") {
+            if (!status.isDeleted) {
+                return res.status(400).json({ message: "Client is not deleted" });
+            }
+            status.isDeleted = false;
+            status.deletedAt = undefined;
+            status.deletedBy = undefined;
+            await client.save({ validateBeforeSave: false });
+
+            return res.status(200).json({
+                message: "Client agreement entry restored successfully",
+            });
+        }
+
+        await Promise.all(
+            (client.documents || [])
+                .filter((document) => document.documentId)
+                .map((document) => handleDocumentDelete(document.documentId)),
+        );
+        client.documents = [];
+        status.isDeleted = false;
+        status.permanentlyDeleted = true;
+        status.deletedAt = undefined;
+        status.deletedBy = undefined;
+        await client.save({ validateBeforeSave: false });
+
+        return res.status(200).json({
+            message: "Client agreement entry permanently deleted successfully",
+            deletionType: "permanent",
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getClientAgreements,
     createClientAgreementClient,
     addClientAgreement,
     updateClientAgreement,
     updateClientAgreementClientName,
+    manageClientAgreementEntry,
 };
