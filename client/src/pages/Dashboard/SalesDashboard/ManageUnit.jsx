@@ -10,16 +10,29 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import { HiPencilSquare } from "react-icons/hi2";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
 import { MenuItem } from "@mui/material";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import { inrFormat } from "../../../utils/currencyFormat";
+import useAuth from "../../../hooks/useAuth";
+import ConfirmationModal from "../../../components/ConfirmationModal";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 export default function ManageUnit() {
   const [openEdit, setOpenEdit] = useState(false);
-  const [openAdd, setOpenAdd] = useState(false);
   const [modalMode, setModalMode] = useState("add");
+  const [confirmationAction, setConfirmationAction] = useState(null);
 
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const isTechDepartment = (auth?.user?.departments || []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
 
   const {
     register,
@@ -31,12 +44,16 @@ export default function ManageUnit() {
   } = useForm({ mode: "onChange", defaultValues: { buildingId: "" } });
 
   const { data: unitsData = [], isPending: isUnitsDataPending } = useQuery({
-    queryKey: ["units-data"],
+    queryKey: ["units-data", Boolean(isTechDepartment)],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/fetch-units");
+        const response = await axios.get("/api/company/fetch-units", {
+          params: { includeDeleted: isTechDepartment },
+        });
         const data = response.data
-          .filter((item) => item.isActive)
+          .filter(
+            (item) => item.isActive || (isTechDepartment && item.isDeleted),
+          )
           .filter((item) => !item.isOnlyBudget);
         return data;
       } catch (error) {
@@ -63,7 +80,7 @@ export default function ManageUnit() {
     onSuccess: (data) => {
       setOpenEdit(null);
       toast.success(data.message);
-      queryClient.invalidateQueries(["units-data"]);
+      queryClient.invalidateQueries({ queryKey: ["units-data"] });
     },
     onError: (error) => {
       toast.error(error.message);
@@ -79,10 +96,44 @@ export default function ManageUnit() {
     onSuccess: (data) => {
       setOpenEdit(false);
       toast.success(data.message);
-      queryClient.invalidateQueries(["units-data"]);
+      queryClient.invalidateQueries({ queryKey: ["units-data"] });
     },
     onError: (error) => {
       toast.error(error.message);
+    },
+  });
+
+  const { mutate: deleteUnit, isPending: isDeletePending } = useMutation({
+    mutationKey: ["delete-unit"],
+    mutationFn: async (unitId) => {
+      const response = await axios.delete(`/api/company/delete-unit/${unitId}`);
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Unit deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["units-data"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to delete unit");
+    },
+  });
+
+  const { mutate: restoreUnit, isPending: isRestorePending } = useMutation({
+    mutationKey: ["restore-unit"],
+    mutationFn: async (unitId) => {
+      const response = await axios.patch(
+        `/api/company/restore-unit/${unitId}`,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Unit restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["units-data"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to restore unit");
     },
   });
 
@@ -127,6 +178,33 @@ export default function ManageUnit() {
     }
   };
 
+  const confirmUnitAction = () => {
+    const unitId = confirmationAction?.unit?._id;
+    if (!unitId) return;
+
+    if (confirmationAction.type === "restore") {
+      restoreUnit(unitId);
+      return;
+    }
+
+    deleteUnit(unitId);
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Delete Unit",
+      message: "Are you sure you want to delete this unit?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Unit",
+      message: "Are you sure you want to permanently delete this unit?",
+    },
+    restore: {
+      title: "Restore Unit",
+      message: "Are you sure you want to restore this unit?",
+    },
+  }[confirmationAction?.type];
+
   const tableData = unitsData.map((item, index) => ({
     srNo: index + 1,
     unitId: item._id,
@@ -136,6 +214,16 @@ export default function ManageUnit() {
     openDesks: item.openDesks,
     cabinDesks: item.cabinDesks,
     buildingName: item.building?.buildingName || "-",
+    isDeleted: Boolean(item.isDeleted),
+    deletedByName: item.deletedBy
+      ? [item.deletedBy.firstName, item.deletedBy.lastName]
+          .filter(Boolean)
+          .join(" ") ||
+        item.deletedBy.employeeName ||
+        item.deletedBy.name ||
+        item.deletedBy.email ||
+        "—"
+      : "—",
     fullData: item, // store full unit for edit
   }));
 
@@ -152,19 +240,92 @@ export default function ManageUnit() {
     },
     { headerName: "Open Desks", field: "openDesks", flex: 1 },
     { headerName: "Cabin Desks", field: "cabinDesks", flex: 1 },
+    ...(isTechDepartment
+      ? [
+          ...(unitsData.some((unit) => Boolean(unit.isDeleted))
+            ? [
+                {
+                  headerName: "Deleted By",
+                  field: "deletedByName",
+                  flex: 1,
+                  valueGetter: (params) =>
+                    params.data?.isDeleted ? params.data.deletedByName : "",
+                },
+              ]
+            : []),
+        ]
+      : []),
     {
       headerName: "Actions",
       pinned: "right",
-      cellRenderer: (params) => (
-        <div
-          onClick={() => {
-            handleEditClick(params.data.fullData);
-          }}
-          className="flex justify-center items-center p-2 w-[50px] h-[50px] cursor-pointer"
-        >
-          <HiPencilSquare size={20} />
-        </div>
-      ),
+      width: 130,
+      cellRenderer: (params) => {
+        const unit = params.data.fullData;
+
+        if (unit.isDeleted) {
+          return (
+            <div className="flex h-full items-center gap-1">
+              <button
+                type="button"
+                aria-label="Restore unit"
+                title="Restore unit"
+                disabled={isDeletePending || isRestorePending}
+                onClick={() =>
+                  setConfirmationAction({ type: "restore", unit })
+                }
+                className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <MdOutlineRestore size={22} />
+              </button>
+              <button
+                type="button"
+                aria-label="Permanently delete unit"
+                title="Permanently delete unit"
+                disabled={isDeletePending || isRestorePending}
+                onClick={() =>
+                  setConfirmationAction({ type: "permanent-delete", unit })
+                }
+                className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+              >
+                <MdDeleteForever size={22} />
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex h-full items-center gap-1">
+            <button
+              type="button"
+              aria-label="Edit unit"
+              title="Edit unit"
+              onClick={() => handleEditClick(unit)}
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200"
+            >
+              <HiPencilSquare size={20} />
+            </button>
+            <button
+              type="button"
+              aria-label={
+                isTechDepartment ? "Permanently delete unit" : "Delete unit"
+              }
+              title={
+                isTechDepartment ? "Permanently delete unit" : "Delete unit"
+              }
+              disabled={isDeletePending || isRestorePending}
+              onClick={() =>
+                setConfirmationAction({
+                  type: isTechDepartment ? "permanent-delete" : "delete",
+                  unit,
+                })
+              }
+              className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+            >
+              <MdDeleteForever size={22} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -174,7 +335,7 @@ export default function ManageUnit() {
       unregister("unitNo");
       unregister("buildingId");
     }
-  }, [modalMode]);
+  }, [modalMode, unregister]);
 
   return (
     <div className="p-4 flex flex-col gap-4">
@@ -188,6 +349,11 @@ export default function ManageUnit() {
           buttonTitle="Add New Unit"
           handleClick={handleAddClick}
           exportData
+          getRowStyle={(params) =>
+            params.data?.isDeleted
+              ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+              : undefined
+          }
         />
       </PageFrame>
 
@@ -353,6 +519,17 @@ export default function ManageUnit() {
           />
         </form>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={isDeletePending || isRestorePending}
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmUnitAction}
+      />
     </div>
   );
 }

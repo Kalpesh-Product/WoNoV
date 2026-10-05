@@ -884,6 +884,7 @@ const UniqueLeads = () => {
             key="leads-table"
             hideHeaderDivider
             tableRef={leadsTableRef}
+            searchRowActionsPosition="aboveFilter"
             searchRowActions={
               <div className="flex items-center gap-2">
                 <PrimaryButton

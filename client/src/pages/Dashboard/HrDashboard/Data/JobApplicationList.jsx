@@ -10,9 +10,13 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import StatusChip from "../../../../components/StatusChip";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import { toast } from "sonner";
+import { HiPencilSquare } from "react-icons/hi2";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import useAuth from "../../../../hooks/useAuth";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const defaultApplicationValues = {
   jobPosition: "",
@@ -41,10 +45,18 @@ const defaultApplicationValues = {
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const { auth } = useAuth();
+  const isTechDepartment = auth?.user?.departments?.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
   const [openModal, setOpenModal] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
-  const [applicationToArchive, setApplicationToArchive] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [viewApplicationDetails, setViewApplicationDetails] = useState({});
   const {
     control,
@@ -56,9 +68,13 @@ const JobApplicationList = () => {
     data: jobApplications,
     isPending: isJobApplicationPending,
   } = useQuery({
-    queryKey: ["jobApplications"],
+    queryKey: ["jobApplications", Boolean(isTechDepartment)],
     queryFn: async function () {
-      const response = await axios.get("/api/company/get-job-applications");
+      const response = await axios.get(
+        `/api/company/get-job-applications${
+          isTechDepartment ? "?includeDeleted=true" : ""
+        }`,
+      );
       return response.data;
     },
   });
@@ -99,21 +115,32 @@ const JobApplicationList = () => {
     },
   });
 
-  const archiveApplicationMutation = useMutation({
-    mutationFn: async (applicationId) => {
-      const response = await axios.patch(
-        `/api/company/archive-job-application/${applicationId}`,
-      );
+  const applicationActionMutation = useMutation({
+    mutationFn: async ({ type, application }) => {
+      let response;
+      if (type === "restore") {
+        response = await axios.patch(
+          `/api/company/restore-job-application/${application._id}`,
+        );
+      } else if (type === "permanent-delete") {
+        response = await axios.delete(
+          `/api/company/delete-job-application/${application._id}`,
+        );
+      } else {
+        response = await axios.patch(
+          `/api/company/archive-job-application/${application._id}`,
+        );
+      }
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
-      toast.success("Job application deleted successfully");
-      setApplicationToArchive(null);
+      toast.success(data.message || "Job application updated successfully");
+      setConfirmationAction(null);
     },
     onError: (error) => {
       toast.error(
-        error?.response?.data?.message || "Failed to delete job application",
+        error?.response?.data?.message || "Failed to update job application",
       );
     },
   });
@@ -147,8 +174,34 @@ const JobApplicationList = () => {
   };
 
   const archiveApplication = (application) => {
-    setApplicationToArchive(application);
+    setConfirmationAction({ type: "delete", application });
   };
+
+  const restoreApplication = (application) => {
+    setConfirmationAction({ type: "restore", application });
+  };
+
+  const permanentlyDeleteApplication = (application) => {
+    setConfirmationAction({ type: "permanent-delete", application });
+  };
+
+  const confirmationContent = {
+    delete: {
+      title: "Confirm Delete",
+      message: `Are you sure you want to delete the job application from ${confirmationAction?.application?.name || "this applicant"}?`,
+      confirmText: "Delete",
+    },
+    restore: {
+      title: "Restore Job Application",
+      message: `Are you sure you want to restore the job application from ${confirmationAction?.application?.name || "this applicant"}?`,
+      confirmText: "Restore",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Job Application",
+      message: `Are you sure you want to permanently delete the job application from ${confirmationAction?.application?.name || "this applicant"}?`,
+      confirmText: "Delete Permanently",
+    },
+  }[confirmationAction?.type];
 
   const leavesColumn = [
     { field: "srNo", headerName: "SR No", width: 100 },
@@ -198,32 +251,83 @@ const JobApplicationList = () => {
     { field: "status",
       headerName: "Status",
       flex: 1,
-      cellRenderer: (params) => <StatusChip status={params.value} />
+      cellRenderer: (params) => (
+        <StatusChip
+          status={params.data?.isDeleted ? "Disabled" : params.value}
+        />
+      )
     },
+    ...(jobApplications?.some((application) => Boolean(application.isDeleted))
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+            valueGetter: (params) =>
+              params.data?.isDeleted ? params.data.deletedByName : "",
+          },
+        ]
+      : []),
     {
       field: "actions",
       headerName: "Action",
-      width: 100,
+      width: 140,
       pinned: "right",
       lockPinned: true,
       sortable: false,
       filter: false,
       suppressCsvExport: true,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id}
-          menuItems={[
-            {
-              label: "Edit",
-              onClick: () => openEditApplication(params.data),
-            },
-            {
-              label: "Delete",
-              onClick: () => archiveApplication(params.data),
-            },
-          ]}
-        />
-      ),
+      cellRenderer: (params) => {
+        if (params.data.isDeleted) {
+          return (
+            <div className="flex h-full items-center gap-2">
+              <button
+                type="button"
+                title="Restore job application"
+                aria-label="Restore job application"
+                className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={applicationActionMutation.isPending}
+                onClick={() => restoreApplication(params.data)}
+              >
+                <MdOutlineRestore size={24} />
+              </button>
+              <button
+                type="button"
+                title="Permanently delete job application"
+                aria-label="Permanently delete job application"
+                className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={applicationActionMutation.isPending}
+                onClick={() => permanentlyDeleteApplication(params.data)}
+              >
+                <MdDeleteForever size={24} />
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title="Edit job application"
+              aria-label="Edit job application"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => openEditApplication(params.data)}
+            >
+              <HiPencilSquare size={24} />
+            </button>
+            <button
+              type="button"
+              title="Delete job application"
+              aria-label="Delete job application"
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
+              onClick={() => archiveApplication(params.data)}
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -285,6 +389,15 @@ const JobApplicationList = () => {
                   count: 1,
                   finalSubmissionDate: job.finalSubmissionDate,
                   jobPosition: job.jobPosition == "" ? "-" : job.jobPosition,
+                  deletedByName: job.deletedBy
+                    ? [job.deletedBy.firstName, job.deletedBy.lastName]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      job.deletedBy.employeeName ||
+                      job.deletedBy.name ||
+                      job.deletedBy.email ||
+                      "—"
+                    : "—",
                 }))
         }
         columns={leavesColumn}
@@ -614,16 +727,16 @@ const JobApplicationList = () => {
         </form>
       </MuiModal>
       <ConfirmationModal
-        open={Boolean(applicationToArchive)}
-        onClose={() => setApplicationToArchive(null)}
+        open={Boolean(confirmationAction)}
+        onClose={() => setConfirmationAction(null)}
         onConfirm={() =>
-          archiveApplicationMutation.mutate(applicationToArchive?._id)
+          applicationActionMutation.mutate(confirmationAction)
         }
-        title="Confirm Delete"
-        message={`Are you sure you want to delete the job application from ${applicationToArchive?.name || "this applicant"}?`}
-        confirmText="Delete"
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText={confirmationContent?.confirmText}
         cancelText="Cancel"
-        isLoading={archiveApplicationMutation.isPending}
+        isLoading={applicationActionMutation.isPending}
       />
       <MuiModal
         open={openModal}

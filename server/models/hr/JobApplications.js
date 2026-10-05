@@ -77,6 +77,11 @@ const jobApplicationsSchema = new mongoose.Schema({
     type: Date,
     default: null,
   },
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserData",
+    default: null,
+  },
 });
 
 const JobApplicationSchema = mongoose.model(

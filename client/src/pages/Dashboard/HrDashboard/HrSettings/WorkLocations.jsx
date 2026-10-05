@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Country, State, City } from "country-state-city";
 import { Controller, useForm } from "react-hook-form";
@@ -12,15 +12,30 @@ import { queryClient } from "../../../../main";
 import Loader from "../../../Loading";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import { FaRegCheckCircle } from "react-icons/fa";
+import { HiPencilSquare } from "react-icons/hi2";
+import useAuth from "../../../../hooks/useAuth";
+import ConfirmationModal from "../../../../components/ConfirmationModal";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 
 const WorkLocations = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const [modalType, setModalType] = useState("add");
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [confirmationAction, setConfirmationAction] = useState(null);
   const [countries] = useState(Country.getAllCountries());
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const isTechDepartment = auth?.user?.departments?.some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
   useEffect(() => {
     setStates(State.getStatesOfCountry("IN"));
   }, []);
@@ -71,7 +86,7 @@ const WorkLocations = () => {
       onSuccess: (data) => {
         reset();
         toast.success(data.message || "Work Location Added");
-        queryClient.invalidateQueries(["workLocation"]);
+        queryClient.invalidateQueries({ queryKey: ["workLocation"] });
         reset();
         setOpenModal(false);
       },
@@ -95,8 +110,9 @@ const WorkLocations = () => {
       },
       onSuccess: (data) => {
         toast.success(data.message || "Work Location updated");
-        queryClient.invalidateQueries(["workLocation"]);
+        queryClient.invalidateQueries({ queryKey: ["workLocation"] });
         setOpenModal(false);
+        setConfirmationAction(null);
       },
       onError: (error) => {
         toast.error(
@@ -120,17 +136,18 @@ const WorkLocations = () => {
   };
 
   const handleMarkStatus = (row) => {
-    editWorkLocation({
-      buildingId: row.mongoId,
-      payload: { isActive: !row.status },
-    });
+    setConfirmationAction({ type: "status", location: row });
   };
 
   const { data: workLocations = [], isLoading } = useQuery({
-    queryKey: ["workLocation"],
+    queryKey: ["workLocation", Boolean(isTechDepartment)],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/buildings");
+        const response = await axios.get(
+          `/api/company/buildings${
+            isTechDepartment ? "?includeDeleted=true" : ""
+          }`,
+        );
         return response.data;
       } catch (error) {
         throw new Error(error.response.data.message);
@@ -138,8 +155,101 @@ const WorkLocations = () => {
     },
   });
 
+  const deleteLocationMutation = useMutation({
+    mutationFn: async (location) => {
+      const response = await axios.delete(
+        `/api/company/delete-building/${location.mongoId}`,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Work location deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["workLocation"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to delete work location",
+      );
+    },
+  });
+
+  const restoreLocationMutation = useMutation({
+    mutationFn: async (location) => {
+      const response = await axios.patch(
+        `/api/company/restore-building/${location.mongoId}`,
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      toast.success(data?.message || "Work location restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["workLocation"] });
+      setConfirmationAction(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Failed to restore work location",
+      );
+    },
+  });
+
+  const handleDelete = (location) => {
+    setConfirmationAction({
+      type: isTechDepartment ? "permanent-delete" : "delete",
+      location,
+    });
+  };
+
+  const handleRestore = (location) => {
+    setConfirmationAction({ type: "restore", location });
+  };
+
+  const confirmLocationAction = () => {
+    const location = confirmationAction?.location;
+    if (!location) return;
+
+    if (confirmationAction.type === "status") {
+      editWorkLocation({
+        buildingId: location.mongoId,
+        payload: { isActive: !location.status },
+      });
+      return;
+    }
+
+    if (confirmationAction.type === "restore") {
+      restoreLocationMutation.mutate(location);
+      return;
+    }
+
+    deleteLocationMutation.mutate(location);
+  };
+
+  const confirmationContent = {
+    status: {
+      title: `Mark Work Location As ${
+        confirmationAction?.location?.status ? "Inactive" : "Active"
+      }`,
+      message: `Are you sure you want to mark this work location as ${
+        confirmationAction?.location?.status ? "inactive" : "active"
+      }?`,
+    },
+    delete: {
+      title: "Delete Work Location",
+      message: "Are you sure you want to delete this work location?",
+    },
+    "permanent-delete": {
+      title: "Permanently Delete Work Location",
+      message:
+        "Are you sure you want to permanently delete this work location?",
+    },
+    restore: {
+      title: "Restore Work Location",
+      message: "Are you sure you want to restore this work location?",
+    },
+  }[confirmationAction?.type];
+
   const departmentsColumn = [
-    { field: "id", headerName: "Sr No" },
+    { field: "id", headerName: "Sr No",flex: 1, },
     {
       field: "name",
       headerName: "Work Location Name",
@@ -157,11 +267,17 @@ const WorkLocations = () => {
       headerName: "Status",
       sort: "desc",
       flex: 1,
+      pinned: "right",
       cellRenderer: (params) => {
-        const status = params.value ? "Active" : "Inactive"; // Map boolean to string status
+        const status = params.data.isDeleted
+          ? "Disabled"
+          : params.value
+            ? "Active"
+            : "Inactive";
         const statusColorMap = {
           Inactive: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
           Active: { backgroundColor: "#90EE90", color: "#006400" }, // Light green bg, dark green font
+          Disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
         };
 
         const { backgroundColor, color } = statusColorMap[status] || {
@@ -180,25 +296,106 @@ const WorkLocations = () => {
         );
       },
     },
+    ...(isTechDepartment &&
+    workLocations.some((location) => Boolean(location.isDeleted))
+      ? [
+          {
+            field: "deletedByName",
+            headerName: "Deleted By",
+            flex: 1,
+            valueGetter: (params) =>
+              params.data?.isDeleted ? params.data.deletedByName : "",
+          },
+        ]
+      : []),
     {
       field: "actions",
       headerName: "Actions",
-      width: 150,
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data.id}
-          menuItems={[
-            {
-              label: "Edit",
-              onClick: () => handleEdit(params.data),
-            },
-            {
-              label: params.data.status ? "Mark As Inactive" : "Mark As Active",
-              onClick: () => handleMarkStatus(params.data),
-            },
-          ]}
-        />
-      ),
+      pinned: "right",
+      width: 180,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => {
+        const isActive = params.data.status;
+        const isDeleted = params.data.isDeleted;
+
+        if (isDeleted) {
+          return (
+            <div className="flex h-full items-center gap-2">
+              <button
+                type="button"
+                title="Restore work location"
+                aria-label="Restore work location"
+                className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={
+                  restoreLocationMutation.isPending ||
+                  deleteLocationMutation.isPending
+                }
+                onClick={() => handleRestore(params.data)}
+              >
+                <MdOutlineRestore size={24} />
+              </button>
+              <button
+                type="button"
+                title="Permanently delete work location"
+                aria-label="Permanently delete work location"
+                className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
+                disabled={
+                  deleteLocationMutation.isPending ||
+                  restoreLocationMutation.isPending
+                }
+                onClick={() => handleDelete(params.data)}
+              >
+                <MdDeleteForever size={24} />
+              </button>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              title={`Mark work location as ${isActive ? "inactive" : "active"}`}
+              aria-label={`Mark work location as ${isActive ? "inactive" : "active"}`}
+              className={`flex h-8 w-8 items-center justify-center ${
+                isActive
+                  ? "text-red-600 hover:text-red-700"
+                  : "text-green-600 hover:text-green-700"
+              }`}
+              onClick={() => handleMarkStatus(params.data)}
+            >
+              <FaRegCheckCircle size={24} />
+            </button>
+            <button
+              type="button"
+              title="Edit work location"
+              aria-label="Edit work location"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => handleEdit(params.data)}
+            >
+              <HiPencilSquare size={24} />
+            </button>
+            <button
+              type="button"
+              title={
+                isTechDepartment
+                  ? "Permanently delete work location"
+                  : "Delete work location"
+              }
+              aria-label={
+                isTechDepartment
+                  ? "Permanently delete work location"
+                  : "Delete work location"
+              }
+              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
+              onClick={() => handleDelete(params.data)}
+            >
+              <MdDeleteForever size={24} />
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
@@ -244,8 +441,26 @@ const WorkLocations = () => {
                   name: location.buildingName,
                   mongoId: location._id,
                   status: location.isActive,
+                  isDeleted: Boolean(location.isDeleted),
+                  deletedByName: location.deletedBy
+                    ? [
+                        location.deletedBy.firstName,
+                        location.deletedBy.lastName,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      location.deletedBy.employeeName ||
+                      location.deletedBy.name ||
+                      location.deletedBy.email ||
+                      "—"
+                    : "—",
                 })),
               ]}
+              getRowStyle={(params) =>
+                params.data?.isDeleted
+                  ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
+                  : undefined
+              }
               exportData
             />
           </PageFrame>
@@ -439,6 +654,21 @@ const WorkLocations = () => {
           </form>
         </div>
       </MuiModal>
+
+      <ConfirmationModal
+        open={Boolean(confirmationAction)}
+        title={confirmationContent?.title}
+        message={confirmationContent?.message}
+        confirmText="Yes"
+        cancelText="No"
+        isLoading={
+          isEditWorkLocation ||
+          deleteLocationMutation.isPending ||
+          restoreLocationMutation.isPending
+        }
+        onClose={() => setConfirmationAction(null)}
+        onConfirm={confirmLocationAction}
+      />
     </>
   );
 };
