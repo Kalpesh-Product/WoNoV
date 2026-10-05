@@ -31,6 +31,7 @@ const AgTableComponent = React.memo(
     headerActions,
     exportBeforeHeaderActions = false,
     searchRowActions,
+    searchRowActionsPosition = "left",
     searchBottomContent,
     tableHeight = 400,
     fillAvailableHeight = false,
@@ -424,16 +425,24 @@ const AgTableComponent = React.memo(
                   ),
                 }}
               />
-              {searchRowActions ? searchRowActions : ""}
+              {searchRowActionsPosition === "left" && searchRowActions
+                ? searchRowActions
+                : ""}
             </div>
           ) : (
             <></>
           )}
           <div className="flex items-start gap-4">
+            {searchRowActionsPosition === "right" && searchRowActions
+              ? searchRowActions
+              : ""}
             {hideFilter ? (
               ""
             ) : (
               <div className="flex flex-col items-end gap-2">
+                {searchRowActionsPosition === "aboveFilter" && searchRowActions
+                  ? searchRowActions
+                  : ""}
                 <div className="flex items-center gap-2">
                   {renderExportButton()}
                 </div>

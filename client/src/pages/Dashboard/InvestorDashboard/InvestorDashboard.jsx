@@ -18,7 +18,6 @@ import InvestorOperationalCharts from "./InvestorOperationalCharts";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import { useCurrency } from "../../../context/CurrencyContext";
 import investorBanner from "../../../assets/investor/banner-investor.png";
-import bizNestLogo from "../../../assets/biznest/biznest_logo.jpg";
 import {
   MdBarChart,
   MdCalendarMonth,
@@ -47,36 +46,30 @@ const APPRECIATION_BASE_VALUATION = 60_000_000;
 const APPRECIATION_MONTHLY_INCREMENT = 700_000;
 const APPRECIATION_PROJECTION_START_INDEX = 5;
 const INVESTOR_HARDCODED_DESKS = 750;
-const INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA = [
+const INVESTOR_PROJECTED_INCOME_UPLIFT_BY_FISCAL_MONTH = {
+  10: 1_500_000,
+  11: 1_500_000,
+};
+const INVESTOR_PROJECTED_EXPENSE_UPLIFT_BY_FISCAL_MONTH = {
+  10: 750_000,
+  11: 750_000,
+};
+const getInvestorProjectedMonthValue = (
+  average,
+  monthIndex,
+  upliftByMonth,
+) => average + (upliftByMonth[monthIndex] || 0);
+const INVESTOR_INVENTORY_OCCUPANCY_DATA = [
   { name: "Apr-26", occupied: 627, remaining: 123, total: 750, isUpcoming: false },
   { name: "May-26", occupied: 634, remaining: 116, total: 750, isUpcoming: false },
   { name: "Jun-26", occupied: 626, remaining: 124, total: 750, isUpcoming: false },
   { name: "Jul-26", occupied: 624, remaining: 126, total: 750, isUpcoming: false },
   { name: "Aug-26", occupied: 690, remaining: 60, total: 750, isUpcoming: false },
-  { name: "Sep-26", occupied: 660, remaining: 90, total: 750, isUpcoming: false },
-];
-const INVESTOR_PROJECTED_INVENTORY_MONTHS = [
-  "Oct-26",
-  "Nov-26",
-  "Dec-26",
-  "Jan-27",
-];
-const averageInventoryValue = (field) =>
-  INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA.reduce(
-    (sum, item) => sum + Number(item[field] || 0),
-    0,
-  ) / INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA.length;
-const INVESTOR_PROJECTED_OCCUPIED = averageInventoryValue("occupied");
-const INVESTOR_PROJECTED_UNOCCUPIED = averageInventoryValue("remaining");
-const INVESTOR_INVENTORY_OCCUPANCY_DATA = [
-  ...INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA,
-  ...INVESTOR_PROJECTED_INVENTORY_MONTHS.map((name) => ({
-    name,
-    occupied: INVESTOR_PROJECTED_OCCUPIED,
-    remaining: INVESTOR_PROJECTED_UNOCCUPIED,
-    total: INVESTOR_HARDCODED_DESKS,
-    isUpcoming: true,
-  })),
+  { name: "Sep-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Oct-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Nov-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Dec-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Jan-27", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
   { name: "Feb-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
   { name: "Mar-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
 ];
@@ -119,6 +112,17 @@ const BizNestTitle = ({ children, prefix, monochrome = false }) => (
         {children}
       </span>
     ) : null}
+  </span>
+);
+
+const InvestorHeaderLogo = () => (
+  <span
+    aria-label="BIZ Nest"
+    className="inline-flex items-baseline whitespace-nowrap font-serif text-[1em] font-normal normal-case leading-none text-[#2a2525]"
+  >
+    <span>BI</span>
+    <span className="text-[#e33434]">Z</span>
+    <span>&nbsp;Nest</span>
   </span>
 );
 
@@ -513,13 +517,11 @@ const InvestorSnapshotSection = ({
       borderColor="#1E3D73"
       bodyBorderColor="#9FB2CF"
       title={
-        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
-          <img
-            src={bizNestLogo}
-            alt="BIZ Nest"
-            className="block h-5 w-auto object-contain"
-          />
-          <span className="leading-5">3 YEARS SNAPSHOT</span>
+        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+          <InvestorHeaderLogo />
+          <span className="inline-flex items-baseline leading-none">
+            3 YEARS SNAPSHOT
+          </span>
         </span>
       }
     >
@@ -681,7 +683,15 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     const fiscalStartYear = today.month() >= 3 ? today.year() : today.year() - 1;
     const fiscalStart = dayjs(`${fiscalStartYear}-04-01`).startOf("month");
     const fiscalEnd = fiscalStart.add(11, "month");
-    const projectionStart = today.startOf("month");
+    const delayedProjectionStart = today
+      .startOf("month")
+      .subtract(1, "month");
+    const projectionStart = delayedProjectionStart.isBefore(
+      fiscalStart,
+      "month",
+    )
+      ? fiscalStart
+      : delayedProjectionStart;
     const completedMonthCount = projectionStart.diff(fiscalStart, "month");
     const projectedVerticals = [
       "Co-Working",
@@ -750,13 +760,9 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       dateKey="date"
       valueKey="revenue"
       graphTitle={
-        <span className="inline-flex h-5 items-center gap-2 text-[#1E3D73]">
-          <img
-            src={bizNestLogo}
-            alt="BIZ Nest"
-            className="block h-5 w-auto object-contain"
-          />
-          <span className="leading-5">
+        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+          <InvestorHeaderLogo />
+          <span className="inline-flex items-baseline leading-none">
             {`Monthly Income Breakdown Distribution - ${fiscalYearLabel(dayjs())}`}
           </span>
         </span>
@@ -856,7 +862,9 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
       formatter: (_value, { dataPointIndex, seriesIndex }) => {
         const item = INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex] || {};
         const value = [item.occupied, item.remaining][seriesIndex];
-        return Number.isFinite(value) ? Math.round(value) : "";
+        return Number.isFinite(value) && item.total > 0
+          ? `${Math.round((value / item.total) * 100)}%`
+          : "";
       },
       style: {
         colors: ["#ffffff"],
@@ -921,13 +929,11 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
         bodyBorderColor="#9FB2CF"
         normalCase
         title={
-          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
-            <img
-              src={bizNestLogo}
-              alt="BIZ Nest"
-              className="h-[1em] w-auto object-contain"
-            />
-            <span>- INVENTORY VS OCCUPANCY</span>
+          <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+            <InvestorHeaderLogo />
+            <span className="inline-flex items-baseline leading-none">
+              - INVENTORY VS OCCUPANCY
+            </span>
           </span>
         }
         headerRightContent={
@@ -1235,14 +1241,14 @@ const InvestorAppreciationCenter = () => {
     >
       <YearlyGraph
         title={
-          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
-            <span>REAL ESTATE OWNED BY</span>
-            <img
-              src={bizNestLogo}
-              alt="BIZ Nest"
-              className="h-5 w-auto object-contain"
-            />
-            <span>{`- ${currentFiscalYear}`}</span>
+          <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+            <span className="inline-flex items-baseline leading-none">
+              REAL ESTATE OWNED BY
+            </span>
+            <InvestorHeaderLogo />
+            <span className="inline-flex items-baseline leading-none">
+              {`- ${currentFiscalYear}`}
+            </span>
           </span>
         }
         data={graphData}
@@ -1288,200 +1294,99 @@ const InvestorAppreciationCenter = () => {
 
 const InvestorUniqueClientsGraph = () => {
   const axios = useAxiosPrivate();
-  const { data: consolidatedClients = {} } = useQuery({
-    queryKey: ["investor-unique-clients"],
+  const { data: revenueInvoices = {} } = useQuery({
+    queryKey: ["simpleRevenue"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/consolidated-clients");
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
       return response.data && typeof response.data === "object"
         ? response.data
         : {};
     },
   });
-  const { data: coWorkingClients = [] } = useQuery({
-    queryKey: ["investor-unique-clients-coworking"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return Array.isArray(response.data) ? response.data : [];
-    },
-  });
 
   const clientsByMonth = useMemo(() => {
     const grouped = {};
-    const toTitleCase = (value) =>
-      value
-        .toLowerCase()
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join("-");
-    const serviceMapping = {
-      coworking: "Coworking",
-      virtualOffice: "Virtualoffice",
-      externalMeeting: "External Meetings",
-      openDesk: "Open Desk",
-      workation: "Workations",
-      coliving: "Co-Living",
+    const addInvoice = ({ invoice, typeOfClient, date, client }) => {
+      const invoiceDate = dayjs(date);
+      if (!invoiceDate.isValid()) return;
+
+      const normalizedInvoice = {
+        client: client || "Unknown",
+        typeOfClient,
+        date: invoiceDate.format("YYYY-MM-DD"),
+        invoiceId: invoice?._id || invoice?.id,
+      };
+      const month = invoiceDate.format("MMMM");
+      grouped[month] ||= [];
+      grouped[month].push(normalizedInvoice);
     };
 
-    const unifiedClients = Object.entries(consolidatedClients).flatMap(
-      ([key, clients]) =>
-        asArray(clients).map((client) => ({
-          ...client,
-          clientType: key.replace(/Clients$/, ""),
-        })),
-    );
+    asArray(revenueInvoices.coworkingRevenues).forEach((invoice) => {
+      addInvoice({
+        invoice,
+        typeOfClient: "Coworking",
+        date: invoice.rentDate,
+        client: invoice.clientName || invoice.clientInvoiceName,
+      });
+    });
 
-    unifiedClients.forEach((client) => {
-      let rawServiceName = client.clientType || "Unknown";
-
-      if (rawServiceName === "meeting") {
-        const purpose = String(client.purposeOfVisit || "").trim().toLowerCase();
-        if (purpose === "meeting room booking") {
-          rawServiceName = "externalMeeting";
-        } else if (purpose === "half-day pass" || purpose === "full-day pass") {
-          rawServiceName = "openDesk";
-        }
-      }
-
-      if (rawServiceName === "coworking" && client.service?.serviceName) {
-        const serviceName = client.service.serviceName.toLowerCase();
-        if (serviceName.includes("workation")) {
-          rawServiceName = "workation";
-        } else if (
-          serviceName.includes("living") ||
-          serviceName.includes("coliving")
-        ) {
-          rawServiceName = "coliving";
-        }
-      }
-
-      const typeOfClient =
-        serviceMapping[rawServiceName] || toTitleCase(rawServiceName);
-
-      let date = null;
-      if (rawServiceName === "coworking") {
-        date = client.startDate ? new Date(client.startDate) : null;
-      } else if (rawServiceName === "virtualOffice") {
-        date = client.termStartDate
-          ? new Date(client.termStartDate)
-          : client.rentDate
-            ? new Date(client.rentDate)
-            : null;
-      } else if (
-        rawServiceName === "externalMeeting" ||
-        rawServiceName === "openDesk"
-      ) {
-        date = client.dateOfVisit
-          ? new Date(client.dateOfVisit)
-          : client.scheduledDate
-            ? new Date(client.scheduledDate)
-            : null;
-      } else {
-        date =
-          client.startDate || client.dateOfVisit || client.termStartDate
-            ? new Date(
-                client.startDate || client.dateOfVisit || client.termStartDate,
-              )
-            : null;
-      }
-
-      if (!date || Number.isNaN(date.getTime())) return;
-
-      const transformedClient = {
+    asArray(revenueInvoices.virtualOfficeRevenues).forEach((invoice) => {
+      addInvoice({
+        invoice,
+        typeOfClient: "Virtualoffice",
+        date: invoice.rentDate,
         client:
-          client.clientName ||
-          [client.firstName, client.lastName].filter(Boolean).join(" ") ||
-          "Unknown",
-        typeOfClient,
-        date: date.toISOString().split("T")[0],
-      };
-      const month = date.toLocaleString("default", { month: "long" });
-      grouped[month] ||= [];
-      grouped[month].push(transformedClient);
+          invoice.client?.clientName ||
+          invoice.clientName ||
+          invoice.clientInvoiceName,
+      });
+    });
+
+    asArray(revenueInvoices.meetingRevenue).forEach((invoice) => {
+      const meetingType = String(
+        invoice.meetingType ||
+          invoice.particulars ||
+          invoice.visitorDetails?.purposeOfVisit ||
+          "",
+      )
+        .trim()
+        .toLowerCase();
+      const isDayPass =
+        invoice.source === "day-pass" ||
+        meetingType.includes("half-day") ||
+        meetingType.includes("half day") ||
+        meetingType.includes("full-day") ||
+        meetingType.includes("full day");
+
+      addInvoice({
+        invoice,
+        typeOfClient: isDayPass ? "Open Desk" : "External Meetings",
+        date: invoice.date,
+        client: invoice.clientName || invoice.client,
+      });
     });
 
     return Object.entries(grouped).map(([month, clients]) => ({
       month,
       clients,
     }));
-  }, [consolidatedClients]);
-
-  const clientSummaryCards = useMemo(() => {
-    const virtualOfficeClients = asArray(
-      consolidatedClients.virtualOfficeClients,
-    );
-    const meetingClients = asArray(consolidatedClients.meetingClients);
-    const externalVisitors = meetingClients.filter(
-      (client) =>
-        String(client?.visitorFlag || "").trim().toLowerCase() === "client",
-    );
-    const externalMeetings = externalVisitors.filter(
-      (client) =>
-        String(client?.purposeOfVisit || "").trim().toLowerCase() ===
-        "meeting room booking",
-    );
-    const openDesk = externalVisitors.filter((client) => {
-      const purpose = String(client?.purposeOfVisit || "")
-        .trim()
-        .toLowerCase();
-
-      return (
-        purpose === "half-day pass" ||
-        purpose === "full-day pass" ||
-        purpose === "half day pass" ||
-        purpose === "full day pass" ||
-        Boolean(client?.convertedFromInternal)
-      );
-    });
-
-    const buildSummary = (clients) => {
-      const active = clients.filter((client) =>
-        typeof client?.isActive === "boolean"
-          ? client.isActive
-          : Boolean(client?.clientStatus),
-      ).length;
-
-      return {
-        active,
-        inactive: Math.max(0, clients.length - active),
-      };
-    };
-
-    return [
-      {
-        id: "coworking",
-        name: "Co-Working",
-        clients: coWorkingClients,
-      },
-      {
-        id: "virtual-office",
-        name: "Virtual-Office",
-        clients: virtualOfficeClients,
-      },
-      {
-        id: "external-meetings",
-        name: "External Meetings",
-        clients: externalMeetings,
-      },
-      {
-        id: "open-desk",
-        name: "Open Desk",
-        clients: openDesk,
-      },
-    ].map((item) => ({
-      ...item,
-      statusSummary: buildSummary(item.clients),
-    }));
-  }, [coWorkingClients, consolidatedClients]);
+  }, [revenueInvoices]);
 
   const averageMonthlyUniqueClientTitle = ({ count, financialYear }) => {
-    const currentDate = dayjs();
+    const currentDate = dayjs().startOf("month");
     const currentFinancialYear =
       currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
     const elapsedMonths =
       financialYear === currentFinancialYear
-        ? currentDate.month() >= 3
-          ? currentDate.month() - 3
-          : currentDate.month() + 9
+        ? Array.from({ length: 12 }, (_, monthIndex) =>
+            dayjs()
+              .year(financialYear)
+              .month(3 + monthIndex)
+              .startOf("month"),
+          ).filter(
+            (monthDate) =>
+              !currentDate.isBefore(monthDate.add(2, "month"), "month"),
+          ).length
         : financialYear < currentFinancialYear
           ? 12
           : 1;
@@ -1496,13 +1401,11 @@ const InvestorUniqueClientsGraph = () => {
       data={clientsByMonth}
       hideAccordion
       title={
-        <span className="inline-flex items-center gap-2 text-[#1E3D73]">
-          <img
-            src={bizNestLogo}
-            alt="BIZ Nest"
-            className="h-[1em] w-auto object-contain"
-          />
-          <span>UNIQUE CLIENTS</span>
+        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+          <InvestorHeaderLogo />
+          <span className="inline-flex items-baseline leading-none">
+            UNIQUE CLIENTS
+          </span>
         </span>
       }
       titleAmount={averageMonthlyUniqueClientTitle}
@@ -1820,11 +1723,17 @@ const InvestorIncomeExpenseGraph = ({
     const projectedMonthsByYear = new Map();
     const projectionAveragesByYear = new Map();
     const currentFiscalMonthIndex = fiscalMonthIndex(dayjs());
+    const delayedProjectionMonthIndex = Math.max(
+      currentFiscalMonthIndex - 1,
+      0,
+    );
     const graphSeries = [...years].flatMap((group) => {
       const incomeValues = incomeByYear.get(group) || Array(12).fill(0);
       const expenseValues = expenseByYear.get(group) || Array(12).fill(0);
       const isCurrentYear = group === currentFiscalYear;
-      const completedMonthCount = isCurrentYear ? currentFiscalMonthIndex : 12;
+      const completedMonthCount = isCurrentYear
+        ? delayedProjectionMonthIndex
+        : 12;
       const averageIncome = completedMonthCount
         ? Math.round(
             incomeValues
@@ -1841,7 +1750,7 @@ const InvestorIncomeExpenseGraph = ({
         : 0;
       const projectedFlags = incomeValues.map(
         (_incomeAmount, monthIndex) =>
-          isCurrentYear && monthIndex >= currentFiscalMonthIndex,
+          isCurrentYear && monthIndex >= delayedProjectionMonthIndex,
       );
       projectedMonthsByYear.set(group, projectedFlags);
       projectionAveragesByYear.set(group, {
@@ -1849,10 +1758,22 @@ const InvestorIncomeExpenseGraph = ({
         expense: averageExpense,
       });
       const incomeGraphValues = incomeValues.map((incomeAmount, monthIndex) =>
-        projectedFlags[monthIndex] ? averageIncome : incomeAmount,
+        projectedFlags[monthIndex]
+          ? getInvestorProjectedMonthValue(
+              averageIncome,
+              monthIndex,
+              INVESTOR_PROJECTED_INCOME_UPLIFT_BY_FISCAL_MONTH,
+            )
+          : incomeAmount,
       );
       const expenseGraphValues = expenseValues.map((expenseAmount, monthIndex) =>
-        projectedFlags[monthIndex] ? averageExpense : expenseAmount,
+        projectedFlags[monthIndex]
+          ? getInvestorProjectedMonthValue(
+              averageExpense,
+              monthIndex,
+              INVESTOR_PROJECTED_EXPENSE_UPLIFT_BY_FISCAL_MONTH,
+            )
+          : expenseAmount,
       );
       return [
         { name: "Income", group, data: incomeGraphValues },
@@ -1877,7 +1798,11 @@ const InvestorIncomeExpenseGraph = ({
         (sum, isProjected, monthIndex) =>
           sum +
           (isProjected
-            ? selectedProjectionAverages.income
+            ? getInvestorProjectedMonthValue(
+                selectedProjectionAverages.income,
+                monthIndex,
+                INVESTOR_PROJECTED_INCOME_UPLIFT_BY_FISCAL_MONTH,
+              )
             : income[monthIndex] || 0),
         0,
       ),
@@ -1885,7 +1810,11 @@ const InvestorIncomeExpenseGraph = ({
         (sum, isProjected, monthIndex) =>
           sum +
           (isProjected
-            ? selectedProjectionAverages.expense
+            ? getInvestorProjectedMonthValue(
+                selectedProjectionAverages.expense,
+                monthIndex,
+                INVESTOR_PROJECTED_EXPENSE_UPLIFT_BY_FISCAL_MONTH,
+              )
             : expense[monthIndex] || 0),
         0,
       ),
@@ -2079,13 +2008,11 @@ const InvestorIncomeExpenseGraph = ({
         options={options}
         chartId="bargraph-investor-income-expense"
         title={
-          <span className="inline-flex items-center gap-2 text-[#1E3D73]">
-            <img
-              src={bizNestLogo}
-              alt="BIZ Nest"
-              className="h-[1em] w-auto object-contain"
-            />
-            <span>{`PROJECTIONS - ${selectedFiscalYear}`}</span>
+          <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+            <InvestorHeaderLogo />
+            <span className="inline-flex items-baseline leading-none">
+              {`PROJECTIONS - ${selectedFiscalYear}`}
+            </span>
           </span>
         }
         chartHeight={360}
@@ -2162,70 +2089,6 @@ const InvestorDashboard = () => {
     },
     enabled: showDashboardHome,
   });
-  const { data: dashboardUniqueClients = {} } = useQuery({
-    queryKey: ["investor-unique-clients"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/consolidated-clients");
-      return response.data && typeof response.data === "object"
-        ? response.data
-        : {};
-    },
-    enabled: showDashboardHome,
-  });
-  const averageUniqueClients = useMemo(() => {
-    const currentDate = dayjs();
-    const currentFiscalYear =
-      currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
-    const elapsedMonths =
-      currentDate.month() >= 3 ? currentDate.month() - 2 : 12;
-
-    const count = Object.entries(dashboardUniqueClients).reduce(
-      (total, [key, clients]) =>
-        total +
-        asArray(clients).filter((client) => {
-          let clientType = key.replace(/Clients$/, "");
-          if (clientType === "meeting") {
-            const purpose = String(client?.purposeOfVisit || "")
-              .trim()
-              .toLowerCase();
-            if (purpose === "meeting room booking") clientType = "externalMeeting";
-            else if (purpose === "half-day pass" || purpose === "full-day pass") {
-              clientType = "openDesk";
-            }
-          }
-          if (clientType === "coworking" && client?.service?.serviceName) {
-            const serviceName = client.service.serviceName.toLowerCase();
-            if (serviceName.includes("workation")) clientType = "workation";
-            else if (serviceName.includes("living")) clientType = "coliving";
-          }
-          if (
-            !["coworking", "virtualOffice", "externalMeeting", "openDesk"].includes(
-              clientType,
-            )
-          ) {
-            return false;
-          }
-
-          const rawDate =
-            clientType === "coworking"
-              ? client.startDate
-              : clientType === "virtualOffice"
-                ? client.termStartDate || client.rentDate
-                : client.dateOfVisit || client.scheduledDate;
-          if (!rawDate || !dayjs(rawDate).isValid()) return false;
-
-          const clientDate = dayjs(rawDate);
-          const clientFiscalYear =
-            clientDate.month() >= 3
-              ? clientDate.year()
-              : clientDate.year() - 1;
-          return clientFiscalYear === currentFiscalYear;
-        }).length,
-      0,
-    );
-
-    return count / elapsedMonths;
-  }, [dashboardUniqueClients]);
   const investorInventoryUnits = useMemo(
     () =>
       inventoryUnits.filter((unit) => {
@@ -2367,6 +2230,48 @@ const InvestorDashboard = () => {
     },
     enabled: showDashboardHome,
   });
+  const averageUniqueClients = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const fiscalStartYear =
+      currentMonth.month() >= 3
+        ? currentMonth.year()
+        : currentMonth.year() - 1;
+    const fiscalStart = dayjs()
+      .year(fiscalStartYear)
+      .month(3)
+      .startOf("month");
+    const delayedProjectionStart = currentMonth.subtract(1, "month");
+    const actualDataEnd = delayedProjectionStart.isBefore(
+      fiscalStart,
+      "month",
+    )
+      ? fiscalStart
+      : delayedProjectionStart;
+    const actualMonthCount = actualDataEnd.diff(fiscalStart, "month");
+    if (actualMonthCount <= 0) return 0;
+
+    const invoiceDates = [
+      ...asArray(investorSimpleRevenue.coworkingRevenues).map(
+        (item) => item.rentDate,
+      ),
+      ...asArray(investorSimpleRevenue.virtualOfficeRevenues).map(
+        (item) => item.rentDate,
+      ),
+      ...asArray(investorSimpleRevenue.meetingRevenue).map(
+        (item) => item.date,
+      ),
+    ];
+    const actualInvoiceCount = invoiceDates.filter((value) => {
+      const invoiceDate = dayjs(value);
+      return (
+        invoiceDate.isValid() &&
+        !invoiceDate.isBefore(fiscalStart, "month") &&
+        invoiceDate.isBefore(actualDataEnd, "month")
+      );
+    }).length;
+
+    return actualInvoiceCount / actualMonthCount;
+  }, [investorSimpleRevenue]);
   const { data: investorBudgetData = [] } = useQuery({
     queryKey: ["budgetData", "finance-dashboard"],
     queryFn: async () => {
@@ -2449,7 +2354,7 @@ const InvestorDashboard = () => {
       addAmount(expense, item?.dueDate, item?.actualAmount),
     );
 
-    const completedMonthCount = fiscalMonthIndex(dayjs());
+    const completedMonthCount = Math.max(fiscalMonthIndex(dayjs()) - 1, 0);
     const actualRevenue = income
       .slice(0, completedMonthCount)
       .reduce((sum, amount) => sum + amount, 0);
@@ -2462,10 +2367,29 @@ const InvestorDashboard = () => {
     const averageExpense = completedMonthCount
       ? Math.round(actualExpense / completedMonthCount)
       : 0;
-    const projectedMonthCount = Math.max(0, 12 - completedMonthCount);
     const totals = {
-      revenue: actualRevenue + averageRevenue * projectedMonthCount,
-      expense: actualExpense + averageExpense * projectedMonthCount,
+      revenue: Math.round(
+        Array.from({ length: 12 }, (_, monthIndex) =>
+          monthIndex < completedMonthCount
+            ? income[monthIndex] || 0
+            : getInvestorProjectedMonthValue(
+                averageRevenue,
+                monthIndex,
+                INVESTOR_PROJECTED_INCOME_UPLIFT_BY_FISCAL_MONTH,
+              ),
+        ).reduce((sum, amount) => sum + amount, 0),
+      ),
+      expense: Math.round(
+        Array.from({ length: 12 }, (_, monthIndex) =>
+          monthIndex < completedMonthCount
+            ? expense[monthIndex] || 0
+            : getInvestorProjectedMonthValue(
+                averageExpense,
+                monthIndex,
+                INVESTOR_PROJECTED_EXPENSE_UPLIFT_BY_FISCAL_MONTH,
+              ),
+        ).reduce((sum, amount) => sum + amount, 0),
+      ),
     };
     const profitLoss = totals.revenue - totals.expense;
 
@@ -2519,8 +2443,8 @@ const InvestorDashboard = () => {
               >
                 Indian Destination Workspace
               </p>
-              <p className="font-pregular text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
-                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-0.5 after:w-full after:bg-[#E64B4B] after:content-['']">
+              <p className="font-pbold text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
+                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-1 after:w-full after:-translate-y-1/2 after:bg-[#E64B4B] after:content-['']">
                   WORK TO LIVE.
                 </span>
                 <span className="ml-3 text-[#E64B4B]">LIVE TO WORK</span>
