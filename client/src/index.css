@@ -177,6 +177,15 @@
 .investor-unique-clients-chart .apexcharts-tooltip {
   z-index: 20 !important;
 }
+
+.investor-real-estate-chart .apexcharts-canvas {
+  overflow: visible !important;
+}
+
+.investor-real-estate-chart .apexcharts-tooltip {
+  z-index: 30 !important;
+  pointer-events: none;
+}
 @media (min-width: 1024px) {
   .login-buttons {
     display: block;

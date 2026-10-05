@@ -80,7 +80,10 @@ const EmployeeType = () => {
   };
 
   const handleDelete = (item) => {
-    setConfirmationAction({ type: "delete", item });
+    setConfirmationAction({
+      type: isTechDepartment ? "permanent-delete" : "delete",
+      item,
+    });
   };
 
   const handleRestore = (item) => {
@@ -274,8 +277,8 @@ const EmployeeType = () => {
                 </button>
                 <button
                   type="button"
-                  title="Delete employee type"
-                  aria-label="Delete employee type"
+                  title={isTechDepartment ? "Permanently delete employee type" : "Delete employee type"}
+                  aria-label={isTechDepartment ? "Permanently delete employee type" : "Delete employee type"}
                   className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
                   onClick={() => handleDelete(params.data)}
                 >

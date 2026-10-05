@@ -724,18 +724,19 @@ const deleteDepartmentDocument = async (req, res, next) => {
         .json({ message: "Document not found in departments" });
     }
 
-    if (["restore", "permanent-delete"].includes(action)) {
-      if (!(await isTechDepartmentUser(userId))) {
-        return res.status(403).json({
-          message:
-            "Only Tech Department users can restore or permanently delete documents",
-        });
-      }
+    const isTechUser = await isTechDepartmentUser(userId);
+    const documentAction =
+      action === "delete" && isTechUser ? "permanent-delete" : action;
+    if (["restore", "permanent-delete"].includes(documentAction) && !isTechUser) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department users can restore or permanently delete documents",
+      });
     }
 
     let message = "Document marked as inactive successfully";
 
-    if (action === "delete") {
+    if (documentAction === "delete") {
       if (targetDocument.isDeleted) {
         return res.status(400).json({ message: "Document is already deleted" });
       }
@@ -745,7 +746,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
       targetDocument.deletedBy = userId;
       targetDocument.updatedAt = new Date();
       message = "Document deleted successfully";
-    } else if (action === "restore") {
+    } else if (documentAction === "restore") {
       if (!targetDocument.isDeleted) {
         return res.status(400).json({ message: "Document is not deleted" });
       }
@@ -755,12 +756,7 @@ const deleteDepartmentDocument = async (req, res, next) => {
       targetDocument.deletedBy = undefined;
       targetDocument.updatedAt = new Date();
       message = "Document restored successfully";
-    } else if (action === "permanent-delete") {
-      if (!targetDocument.isDeleted) {
-        return res.status(400).json({
-          message: "Document must be disabled before permanent deletion",
-        });
-      }
+    } else if (documentAction === "permanent-delete") {
       if (targetDocument.documentId) {
         await handleDocumentDelete(targetDocument.documentId);
       }

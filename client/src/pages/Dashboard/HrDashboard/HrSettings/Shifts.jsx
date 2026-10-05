@@ -103,7 +103,10 @@ const Shifts = () => {
   };
 
   const handleDelete = (item) => {
-    setConfirmationAction({ type: "delete", item });
+    setConfirmationAction({
+      type: isTechDepartment ? "permanent-delete" : "delete",
+      item,
+    });
   };
 
   const handleRestore = (item) => {
@@ -285,8 +288,8 @@ const Shifts = () => {
                 </button>
                 <button
                   type="button"
-                  title="Delete shift"
-                  aria-label="Delete shift"
+                  title={isTechDepartment ? "Permanently delete shift" : "Delete shift"}
+                  aria-label={isTechDepartment ? "Permanently delete shift" : "Delete shift"}
                   className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
                   onClick={() => handleDelete(params.data)}
                 >

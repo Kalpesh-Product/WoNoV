@@ -72,6 +72,8 @@ const {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
+  deleteUnit,
+  restoreUnit,
   editBuilding,
   deleteBuilding,
   restoreBuilding,
@@ -123,6 +125,8 @@ router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
 router.get("/fetch-units", fetchUnits);
 router.get("/fetch-simple-units", fetchSimpleUnits);
+router.delete("/delete-unit/:unitId", deleteUnit);
+router.patch("/restore-unit/:unitId", restoreUnit);
 router.patch(
   "/update-unit",
   upload.fields([

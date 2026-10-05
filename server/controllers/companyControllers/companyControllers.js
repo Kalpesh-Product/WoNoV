@@ -578,6 +578,8 @@ const updateCompanySubItem = async (req, res) => {
       }
 
       const isTechUser = await isTechDepartmentUser(user);
+      const shiftAction =
+        action === "delete" && isTechUser ? "permanent-delete" : action;
       if (["restore", "permanent-delete"].includes(action) && !isTechUser) {
         return res.status(403).json({
           message:
@@ -585,7 +587,7 @@ const updateCompanySubItem = async (req, res) => {
         });
       }
 
-      if (action === "delete") {
+      if (shiftAction === "delete") {
         if (item.isDeleted) {
           return res.status(400).json({ message: "Shift is already deleted" });
         }
@@ -595,7 +597,7 @@ const updateCompanySubItem = async (req, res) => {
         item.deletedBy = user;
       }
 
-      if (action === "restore") {
+      if (shiftAction === "restore") {
         if (!item.isDeleted) {
           return res.status(400).json({ message: "Shift is not deleted" });
         }
@@ -605,12 +607,7 @@ const updateCompanySubItem = async (req, res) => {
         item.deletedBy = undefined;
       }
 
-      if (action === "permanent-delete") {
-        if (!item.isDeleted) {
-          return res.status(400).json({
-            message: "Shift must be disabled before permanent deletion",
-          });
-        }
+      if (shiftAction === "permanent-delete") {
         foundCompany.shifts.pull(itemId);
       } else {
         item.updatedAt = new Date();
@@ -619,9 +616,9 @@ const updateCompanySubItem = async (req, res) => {
       await foundCompany.save({ validateBeforeSave: false });
       return res.status(200).json({
         message:
-          action === "restore"
+          shiftAction === "restore"
             ? "Shift restored successfully"
-            : action === "permanent-delete"
+            : shiftAction === "permanent-delete"
               ? "Shift permanently deleted successfully"
               : "Shift deleted successfully",
       });
@@ -645,6 +642,8 @@ const updateCompanySubItem = async (req, res) => {
       }
 
       const isTechUser = await isTechDepartmentUser(user);
+      const employeeTypeAction =
+        action === "delete" && isTechUser ? "permanent-delete" : action;
       if (["restore", "permanent-delete"].includes(action) && !isTechUser) {
         return res.status(403).json({
           message:
@@ -652,7 +651,7 @@ const updateCompanySubItem = async (req, res) => {
         });
       }
 
-      if (action === "delete") {
+      if (employeeTypeAction === "delete") {
         if (item.isDeleted) {
           return res.status(400).json({ message: "Employee type is already deleted" });
         }
@@ -662,7 +661,7 @@ const updateCompanySubItem = async (req, res) => {
         item.deletedBy = user;
       }
 
-      if (action === "restore") {
+      if (employeeTypeAction === "restore") {
         if (!item.isDeleted) {
           return res.status(400).json({ message: "Employee type is not deleted" });
         }
@@ -672,12 +671,7 @@ const updateCompanySubItem = async (req, res) => {
         item.deletedBy = undefined;
       }
 
-      if (action === "permanent-delete") {
-        if (!item.isDeleted) {
-          return res.status(400).json({
-            message: "Employee type must be disabled before permanent deletion",
-          });
-        }
+      if (employeeTypeAction === "permanent-delete") {
         foundCompany.employeeTypes.pull(itemId);
       } else {
         item.updatedAt = new Date();
@@ -686,9 +680,9 @@ const updateCompanySubItem = async (req, res) => {
       await foundCompany.save({ validateBeforeSave: false });
       return res.status(200).json({
         message:
-          action === "restore"
+          employeeTypeAction === "restore"
             ? "Employee type restored successfully"
-            : action === "permanent-delete"
+            : employeeTypeAction === "permanent-delete"
               ? "Employee type permanently deleted successfully"
               : "Employee type deleted successfully",
       });

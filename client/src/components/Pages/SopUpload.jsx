@@ -335,11 +335,14 @@ const SopUpload = () => {
             </button>
             <button
               type="button"
-              title="Delete SOP"
-              aria-label="Delete SOP"
+              title={isTechDepartment ? "Permanently delete SOP" : "Delete SOP"}
+              aria-label={isTechDepartment ? "Permanently delete SOP" : "Delete SOP"}
               className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
               onClick={() =>
-                setConfirmationAction({ type: "delete", sop: params.data })
+                setConfirmationAction({
+                  type: isTechDepartment ? "permanent-delete" : "delete",
+                  sop: params.data,
+                })
               }
             >
               <MdDeleteForever size={24} />

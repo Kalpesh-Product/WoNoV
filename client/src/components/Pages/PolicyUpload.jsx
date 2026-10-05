@@ -343,11 +343,14 @@ const PolicyUpload = () => {
             </button>
             <button
               type="button"
-              title="Delete Policy"
-              aria-label="Delete Policy"
+              title={isTechDepartment ? "Permanently delete Policy" : "Delete Policy"}
+              aria-label={isTechDepartment ? "Permanently delete Policy" : "Delete Policy"}
               className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
               onClick={() =>
-                setConfirmationAction({ type: "delete", policy: params.data })
+                setConfirmationAction({
+                  type: isTechDepartment ? "permanent-delete" : "delete",
+                  policy: params.data,
+                })
               }
             >
               <MdDeleteForever size={24} />

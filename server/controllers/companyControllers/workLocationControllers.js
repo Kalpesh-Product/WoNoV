@@ -281,13 +281,20 @@ const updateUnit = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid or missing Unit ID" });
     }
 
-    const existingUnit = await Unit.findById(unitId).populate([
+    const existingUnit = await Unit.findOne({
+      _id: unitId,
+      company: req.company,
+    }).populate([
       { path: "building", select: "buildingName" },
       { path: "company", select: "companyName" },
     ]);
 
     if (!existingUnit) {
       return res.status(404).json({ message: "Unit not found" });
+    }
+
+    if (existingUnit.isDeleted) {
+      return res.status(400).json({ message: "Deleted unit cannot be edited" });
     }
 
     const forbiddenFields = ["company", "building", "unitId"];
@@ -437,10 +444,17 @@ const fetchUnits = async (req, res, next) => {
       return res.status(400).json({ message: "Company not found" });
     }
 
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
     let locations;
 
     if (unitId) {
-      locations = await Unit.findOne({ _id: unitId, company })
+      locations = await Unit.findOne({
+        _id: unitId,
+        company,
+        ...(!includeDeleted && { isDeleted: { $ne: true } }),
+      })
         .populate("building", "_id buildingName fullAddress")
         .lean()
         .exec();
@@ -484,8 +498,15 @@ const fetchUnits = async (req, res, next) => {
 
     locations = await Unit.find({
       company,
-      isActive: true,
       isOnlyBudget: false,
+      ...(includeDeleted
+        ? {
+            $or: [
+              { isActive: true, isDeleted: { $ne: true } },
+              { isDeleted: true },
+            ],
+          }
+        : { isActive: true, isDeleted: { $ne: true } }),
     })
       .populate([
         {
@@ -506,6 +527,10 @@ const fetchUnits = async (req, res, next) => {
           path: "itLead",
           select: "firstName middleName lastName departments",
           populate: { path: "departments", select: "name" },
+        },
+        {
+          path: "deletedBy",
+          select: "firstName lastName employeeName name email",
         },
       ])
       .lean()
@@ -557,10 +582,87 @@ const fetchUnits = async (req, res, next) => {
   }
 };
 
+const deleteUnit = async (req, res, next) => {
+  try {
+    const { unitId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(unitId)) {
+      return res.status(400).json({ message: "Invalid unit ID" });
+    }
+
+    const unit = await Unit.findOne({ _id: unitId, company: req.company });
+    if (!unit) {
+      return res.status(404).json({ message: "Unit not found" });
+    }
+
+    if (await isTechDepartmentUser(req.user)) {
+      await unit.deleteOne();
+      return res.status(200).json({
+        message: "Unit permanently deleted successfully",
+        deletionType: "permanent",
+      });
+    }
+
+    if (unit.isDeleted) {
+      return res.status(400).json({ message: "Unit is already deleted" });
+    }
+
+    unit.isDeleted = true;
+    unit.isActive = false;
+    unit.deletedAt = new Date();
+    unit.deletedBy = req.user;
+    await unit.save();
+
+    return res.status(200).json({
+      message: "Unit deleted successfully",
+      deletionType: "soft",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const restoreUnit = async (req, res, next) => {
+  try {
+    const { unitId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(unitId)) {
+      return res.status(400).json({ message: "Invalid unit ID" });
+    }
+
+    if (!(await isTechDepartmentUser(req.user))) {
+      return res.status(403).json({
+        message: "Only Tech Department users can restore units",
+      });
+    }
+
+    const unit = await Unit.findOneAndUpdate(
+      { _id: unitId, company: req.company, isDeleted: true },
+      {
+        $set: { isDeleted: false, isActive: true },
+        $unset: { deletedAt: 1, deletedBy: 1 },
+      },
+      { new: true },
+    );
+
+    if (!unit) {
+      return res.status(404).json({ message: "Deleted unit not found" });
+    }
+
+    return res.status(200).json({
+      message: "Unit restored successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const fetchSimpleUnits = async (req, res, next) => {
   try {
     const companyId = req.company;
-    const units = await Unit.find({ company: companyId, isActive: true })
+    const units = await Unit.find({
+      company: companyId,
+      isActive: true,
+      isDeleted: { $ne: true },
+    })
       //const units = await Unit.find({ company: companyId })
       .populate([{ path: "building", select: "buildingName" }])
       .lean()
@@ -861,6 +963,8 @@ module.exports = {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
+  deleteUnit,
+  restoreUnit,
   fetchSimpleUnits,
   editBuilding,
   deleteBuilding,

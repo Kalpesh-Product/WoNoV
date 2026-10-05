@@ -47,17 +47,36 @@ const APPRECIATION_BASE_VALUATION = 60_000_000;
 const APPRECIATION_MONTHLY_INCREMENT = 700_000;
 const APPRECIATION_PROJECTION_START_INDEX = 5;
 const INVESTOR_HARDCODED_DESKS = 750;
-const INVESTOR_INVENTORY_OCCUPANCY_DATA = [
+const INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA = [
   { name: "Apr-26", occupied: 627, remaining: 123, total: 750, isUpcoming: false },
   { name: "May-26", occupied: 634, remaining: 116, total: 750, isUpcoming: false },
   { name: "Jun-26", occupied: 626, remaining: 124, total: 750, isUpcoming: false },
   { name: "Jul-26", occupied: 624, remaining: 126, total: 750, isUpcoming: false },
   { name: "Aug-26", occupied: 690, remaining: 60, total: 750, isUpcoming: false },
-  { name: "Sep-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
-  { name: "Oct-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
-  { name: "Nov-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
-  { name: "Dec-26", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
-  { name: "Jan-27", occupied: 640, remaining: 110, total: 750, isUpcoming: true },
+  { name: "Sep-26", occupied: 660, remaining: 90, total: 750, isUpcoming: false },
+];
+const INVESTOR_PROJECTED_INVENTORY_MONTHS = [
+  "Oct-26",
+  "Nov-26",
+  "Dec-26",
+  "Jan-27",
+];
+const averageInventoryValue = (field) =>
+  INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA.reduce(
+    (sum, item) => sum + Number(item[field] || 0),
+    0,
+  ) / INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA.length;
+const INVESTOR_PROJECTED_OCCUPIED = averageInventoryValue("occupied");
+const INVESTOR_PROJECTED_UNOCCUPIED = averageInventoryValue("remaining");
+const INVESTOR_INVENTORY_OCCUPANCY_DATA = [
+  ...INVESTOR_ACTUAL_INVENTORY_OCCUPANCY_DATA,
+  ...INVESTOR_PROJECTED_INVENTORY_MONTHS.map((name) => ({
+    name,
+    occupied: INVESTOR_PROJECTED_OCCUPIED,
+    remaining: INVESTOR_PROJECTED_UNOCCUPIED,
+    total: INVESTOR_HARDCODED_DESKS,
+    isUpcoming: true,
+  })),
   { name: "Feb-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
   { name: "Mar-27", occupied: 900, remaining: 100, total: 1000, isUpcoming: true },
 ];
@@ -836,7 +855,8 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
       enabled: true,
       formatter: (_value, { dataPointIndex, seriesIndex }) => {
         const item = INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex] || {};
-        return [item.occupied, item.remaining][seriesIndex] || "";
+        const value = [item.occupied, item.remaining][seriesIndex];
+        return Number.isFinite(value) ? Math.round(value) : "";
       },
       style: {
         colors: ["#ffffff"],
@@ -868,14 +888,14 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${occupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
                   <span>${prefix}Occupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Number(item.occupied || 0).toLocaleString("en-IN")}</strong>
+                  <strong style="font-weight:600;">${Math.round(Number(item.occupied || 0)).toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${unoccupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
                   <span>${prefix}Unoccupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Number(item.remaining || 0).toLocaleString("en-IN")}</strong>
+                  <strong style="font-weight:600;">${Math.round(Number(item.remaining || 0)).toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <hr style="margin:7px 0 0;border:0;border-top:1px solid #e5e7eb;" />
@@ -893,7 +913,7 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
   };
 
   return (
-    <div className={className}>
+    <div className={`flex flex-col gap-4 ${className}`}>
       {/* Live API-based CheckAvailability graph is temporarily disabled for the Investor Dashboard. */}
       <WidgetSection
         border
@@ -1011,6 +1031,7 @@ const fiscalYearMonths = (fiscalYear) => {
 const InvestorAppreciationCenter = () => {
   const { currency, convert } = useCurrency();
   const [valuationAsOf, setValuationAsOf] = useState(() => dayjs());
+  const [valuationTooltip, setValuationTooltip] = useState(null);
   const currentFiscalYear = fiscalYearLabel(valuationAsOf);
 
   useEffect(() => {
@@ -1075,9 +1096,46 @@ const InvestorAppreciationCenter = () => {
   );
   const valuationScaleMaximum = valuationAxisStep * 4;
 
-  const options = {
+  const updateValuationTooltip = (event) => {
+    const container = event.currentTarget;
+    // Read the rendered bar bounds so hover remains accurate after scrolling,
+    // resizing, or currency changes, independently of ApexCharts' listeners.
+    const bar = Array.from(
+      container.querySelectorAll(".apexcharts-bar-area"),
+    ).find((element) => {
+      const bounds = element.getBoundingClientRect();
+      return (
+        event.clientX >= bounds.left &&
+        event.clientX <= bounds.right &&
+        event.clientY >= bounds.top &&
+        event.clientY <= bounds.bottom
+      );
+    });
+    const index = bar ? Number(bar.getAttribute("j")) : -1;
+    if (!valuationMonths[index]) {
+      setValuationTooltip(null);
+      return;
+    }
+
+    const bounds = container.getBoundingClientRect();
+    const tooltipWidth = Math.min(150, bounds.width);
+    const cursorX = event.clientX - bounds.left;
+    setValuationTooltip({
+      index,
+      left: Math.max(
+        0,
+        Math.min(cursorX + 12, bounds.width - tooltipWidth),
+      ),
+      top: Math.max(0, event.clientY - bounds.top - 90),
+    });
+  };
+  const hoveredValuation = valuationMonths[valuationTooltip?.index];
+
+  const options = useMemo(() => ({
     chart: {
       type: "bar",
+      id: "investor-real-estate-owned",
+      animations: { enabled: false },
       toolbar: { show: false },
       fontFamily: "Poppins-Regular",
     },
@@ -1158,23 +1216,23 @@ const InvestorAppreciationCenter = () => {
       },
     },
 
-    tooltip: {
-      custom: ({ dataPointIndex }) => {
-        const valuation = valuationMonths[dataPointIndex];
-        const month = valuation?.month;
-
-        return (
-          `<div style="min-width:160px;background:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 4px 14px rgba(15, 23, 42, 0.18);border:1px solid #e5e7eb;">` +
-          `<div style="background:#eef2f6;color:#1f2937;font-size:12px;padding:8px 12px;border-bottom:1px solid #dbe1e8;white-space:nowrap;">${month || ""}</div>` +
-          `<div style="display:flex;align-items:center;gap:8px;padding:10px 12px;font-size:12px;color:#111827;"><span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#0BDA51;"></span><span>Asset:&nbsp;&nbsp;<span style="font-weight:700;">${valuation ? formatGraphAmount(valuation.amount, currency, convert) : "-"}</span></span></div>` +
-          `</div>`
-        );
-      },
-    },
-  };
+    tooltip: { enabled: false },
+  }), [
+    convert,
+    currency,
+    valuationDisplayScale,
+    valuationMonths,
+    valuationScaleLabel,
+    valuationScaleMaximum,
+  ]);
 
   return (
-    <div>
+    <div
+      className="investor-real-estate-chart relative"
+      onPointerMoveCapture={updateValuationTooltip}
+      onPointerDownCapture={updateValuationTooltip}
+      onPointerLeave={() => setValuationTooltip(null)}
+    >
       <YearlyGraph
         title={
           <span className="inline-flex items-center gap-2 text-[#1E3D73]">
@@ -1207,6 +1265,23 @@ const InvestorAppreciationCenter = () => {
         sectionBorderColor="#1E3D73"
         sectionBodyBorderColor="#9FB2CF"
       />
+      {hoveredValuation && (
+        <div
+          role="tooltip"
+          className="pointer-events-none absolute z-50 w-[150px] max-w-full overflow-hidden rounded-lg border border-[#e5e7eb] bg-white text-xs text-[#111827] shadow-lg"
+          style={{ left: valuationTooltip.left, top: valuationTooltip.top }}
+        >
+          <div className="border-b border-[#dbe1e8] bg-[#eef2f6] px-3 py-2 text-[#1f2937]">
+            {hoveredValuation.month}
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2.5">
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0BDA51]" />
+            <span>
+              Asset: <strong>{formatGraphAmount(hoveredValuation.amount, currency, convert)}</strong>
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
