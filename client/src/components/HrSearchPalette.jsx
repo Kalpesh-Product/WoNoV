@@ -55,6 +55,41 @@ const PALETTE_CONFIG = {
   },
 };
 const ACRONYMS = new Set(["HR", "KPA", "KRA", "SOP", "SOPS"]);
+const RECENT_HISTORY_LIMIT = 3;
+const RECENT_HISTORY_KEY_PREFIX = "wono:dashboard-palette:recent:";
+
+const readRecentHistory = (storageKey) => {
+  if (!storageKey) return [];
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(storageKey) || "[]");
+    return Array.isArray(stored)
+      ? [...new Set(stored.filter((route) => typeof route === "string"))]
+        .slice(0, RECENT_HISTORY_LIMIT)
+      : [];
+  } catch {
+    return [];
+  }
+};
+
+const writeRecentHistory = (storageKey, routes) => {
+  if (!storageKey) return;
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(routes));
+  } catch {
+    // Search navigation still works if browser storage is unavailable.
+  }
+};
+
+const getMatchRank = (destination, query) => {
+  const title = destination.title.toLowerCase();
+  const directory = `${destination.dashboardLabel} ${destination.section}`.toLowerCase();
+  if (title === query) return 0;
+  if (title.startsWith(query)) return 1;
+  if (title.split(/\s+/).some((word) => word.startsWith(query))) return 2;
+  if (title.includes(query)) return 3;
+  if (directory.includes(query)) return 4;
+  return 5;
+};
 
 const formatTitle = (title) =>
   String(title || "")
@@ -114,8 +149,7 @@ const buildDestinations = (config) => {
       section,
       dashboardLabel: config.label,
       permissions: [permission.value],
-      searchText:
-        `${permission.title} ${config.label} ${section} ${route}`.toLowerCase(),
+      searchText: `${permission.title} ${config.label} ${section}`.toLowerCase(),
     });
   });
 
@@ -139,6 +173,10 @@ const HrSearchPalette = () => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
+  const [historyState, setHistoryState] = useState({ key: null, routes: [] });
+  const historyStorageKey = auth?.user?._id
+    ? `${RECENT_HISTORY_KEY_PREFIX}${auth.user._id}`
+    : null;
 
   const userPermissions = useMemo(
     () => new Set(auth?.user?.permissions?.permissions || []),
@@ -168,14 +206,43 @@ const HrSearchPalette = () => {
     [authorizedDestinationsByDashboard],
   );
 
+  useEffect(() => {
+    if (!historyStorageKey || !Array.isArray(auth?.user?.permissions?.permissions)) {
+      setHistoryState({ key: historyStorageKey, routes: [] });
+      return;
+    }
+
+    const authorizedRoutes = new Set(authorizedDestinations.map(({ route }) => route));
+    const storedRoutes = readRecentHistory(historyStorageKey);
+    const routes = storedRoutes.filter((route) => authorizedRoutes.has(route));
+    if (routes.length !== storedRoutes.length) writeRecentHistory(historyStorageKey, routes);
+    setHistoryState({ key: historyStorageKey, routes });
+  }, [auth?.user?.permissions?.permissions, authorizedDestinations, historyStorageKey]);
+
+  const recentDestinations = useMemo(() => {
+    if (historyState.key !== historyStorageKey) return [];
+    const destinationByRoute = new Map(
+      authorizedDestinations.map((destination) => [destination.route, destination]),
+    );
+    return historyState.routes
+      .map((route) => destinationByRoute.get(route))
+      .filter(Boolean);
+  }, [authorizedDestinations, historyState, historyStorageKey]);
+
   const filteredDestinations = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return authorizedDestinations;
+    if (!query) return recentDestinations;
     const terms = query.split(/\s+/).filter(Boolean);
-    return authorizedDestinations.filter((destination) =>
-      terms.every((term) => destination.searchText.includes(term)),
-    );
-  }, [authorizedDestinations, search]);
+    return authorizedDestinations
+      .filter((destination) =>
+        terms.every((term) => destination.searchText.includes(term)),
+      )
+      .sort((a, b) =>
+        getMatchRank(a, query) - getMatchRank(b, query) ||
+        a.title.localeCompare(b.title) ||
+        a.dashboardLabel.localeCompare(b.dashboardLabel),
+      );
+  }, [authorizedDestinations, recentDestinations, search]);
 
   const closePalette = () => {
     setOpen(false);
@@ -184,7 +251,16 @@ const HrSearchPalette = () => {
   };
 
   const openDestination = (destination) => {
-    if (!destination) return;
+    if (!destination || !authorizedDestinations.some(({ route }) => route === destination.route)) {
+      return;
+    }
+    if (historyStorageKey) {
+      const routes = [destination.route, ...readRecentHistory(historyStorageKey)
+        .filter((route) => route !== destination.route)]
+        .slice(0, RECENT_HISTORY_LIMIT);
+      writeRecentHistory(historyStorageKey, routes);
+      setHistoryState({ key: historyStorageKey, routes });
+    }
     closePalette();
     navigate(destination.route);
   };
@@ -293,6 +369,11 @@ const HrSearchPalette = () => {
           className="absolute left-0 right-0 top-full z-[1500] mt-2 overflow-hidden rounded-xl border border-borderGray bg-white shadow-xl"
         >
               <div className="max-h-[55vh] overflow-y-auto p-2">
+                {!search.trim() && (
+                  <div className="px-4 pb-1 pt-2 text-xs font-pmedium uppercase tracking-wide text-gray-500">
+                    Recent History
+                  </div>
+                )}
                 {filteredDestinations.length ? (
                   filteredDestinations.map((destination, index) => (
                     <button
@@ -323,7 +404,11 @@ const HrSearchPalette = () => {
                   ))
                 ) : (
                   <div className="px-4 py-12 text-center text-sm text-gray-400">
-                    No authorized pages match “{search}”.
+                    {search.trim() ? (
+                      `No authorized pages match "${search.trim()}".`
+                    ) : (
+                      "No recent pages yet. Open a page from search to see it here."
+                    )}
                   </div>
                 )}
               </div>
