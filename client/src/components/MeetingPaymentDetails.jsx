@@ -39,6 +39,10 @@ const MeetingPaymentDetails = ({ revenue, showFinanceDetails = true }) => {
       detail={`INR ${inrFormat(revenue.gst || 0)}`}
     />
     <DetalisFormatted
+      title="Discount"
+      detail={`INR ${inrFormat(Math.abs(Number(revenue.discount) || 0))}`}
+    />
+    <DetalisFormatted
       title="Total Amount"
       detail={`INR ${inrFormat(revenue.totalAmount || 0)}`}
     />

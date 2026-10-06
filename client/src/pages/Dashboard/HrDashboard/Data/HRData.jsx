@@ -13,11 +13,6 @@ const Data = () => {
       path: "job-application-list",
       permission: PERMISSIONS.HR_JOB_APPLICATION_LIST.value,
     },
-    // {
-    //   label: "Payroll Reports",
-    //   path: "payroll-reports",
-    //   permission: PERMISSIONS.HR_PAYROLL_REPORTS.value,
-    // },
     {
       label: "Asset List",
       path: "asset-list",

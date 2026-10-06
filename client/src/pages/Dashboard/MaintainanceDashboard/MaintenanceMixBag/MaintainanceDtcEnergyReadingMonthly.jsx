@@ -32,7 +32,10 @@ const formatDate = (value) => (value ? dayjs(value).format("DD-MM-YYYY") : "-");
 const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "-";
 const formatAmount = (value) =>
-  `INR ${Number(value || 0).toLocaleString("en-IN")}`;
+  `INR ${Math.round(Number(value || 0)).toLocaleString("en-IN")}`;
+
+const formatWholeNumber = (value) =>
+  Math.round(Number(value || 0)).toLocaleString("en-IN");
 
 const getTodayDateKey = () => dayjs().format("YYYY-MM-DD");
 const normalizeMonthlyRows = (rows = []) =>
@@ -397,7 +400,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
           colors: ["#111827", "#111827"],
         },
         formatter: (value) =>
-          Number(value || 0) > 0 ? Number(value).toLocaleString("en-IN") : "",
+          Number(value || 0) > 0 ? formatWholeNumber(value) : "",
       },
       stroke: {
         show: true,
@@ -476,12 +479,12 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
           text: "Consumption & Bill Amount",
         },
         labels: {
-          formatter: (value) => Number(value || 0).toLocaleString("en-IN"),
+          formatter: formatWholeNumber,
         },
       },
       tooltip: {
         y: {
-          formatter: (value) => Number(value || 0).toLocaleString("en-IN"),
+          formatter: formatWholeNumber,
         },
       },
       noData: {
@@ -813,15 +816,14 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
       headerName: "Total Consumption (KWH)",
       flex: 1,
       minWidth: 180,
-      valueFormatter: (params) => Number(params.value || 0).toLocaleString("en-IN"),
+      valueFormatter: (params) => formatWholeNumber(params.value),
     },
     {
       field: "totalBillAmount",
       headerName: "Total Bill Amount",
       flex: 1,
       minWidth: 170,
-      valueFormatter: (params) =>
-        Number(params.value || 0).toLocaleString("en-IN"),
+      valueFormatter: (params) => formatWholeNumber(params.value),
     },
     { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 150 },
     {
@@ -898,9 +900,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
           headerRightContent={
             <>
               <Chip
-                label={`CONSUMPTION : ${Number(totalConsumption).toLocaleString(
-                  "en-IN",
-                )}`}
+                label={`CONSUMPTION : ${formatWholeNumber(totalConsumption)}`}
                 sx={{
                   backgroundColor: "#dfe8ff",
                   color: "#1f3f7a",
@@ -1095,7 +1095,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
                         <TextField
                           size="small"
                           fullWidth
-                          value={row.totalConsumption}
+                          value={formatWholeNumber(row.totalConsumption)}
                           disabled
                           error={Boolean(billErrors[index]?.totalConsumption)}
                           helperText={billErrors[index]?.totalConsumption}
@@ -1205,7 +1205,12 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
                 size="small"
                 fullWidth
                 disabled
-                value={selectedRecord?.totalConsumption ?? "-"}
+                value={
+                  selectedRecord?.totalConsumption === null ||
+                  selectedRecord?.totalConsumption === undefined
+                    ? "-"
+                    : formatWholeNumber(selectedRecord.totalConsumption)
+                }
                 InputLabelProps={{ shrink: true }}
                 sx={editFieldSx}
               />
@@ -1256,7 +1261,12 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
               <DetalisFormatted title="Meter No" detail={selectedRecord.meterNo || "-"} />
               <DetalisFormatted
                 title="Total Consumption (KWH)"
-                detail={selectedRecord.totalConsumption ?? "-"}
+                detail={
+                  selectedRecord.totalConsumption === null ||
+                  selectedRecord.totalConsumption === undefined
+                    ? "-"
+                    : formatWholeNumber(selectedRecord.totalConsumption)
+                }
               />
               <DetalisFormatted
                 title="Total Bill Amount"

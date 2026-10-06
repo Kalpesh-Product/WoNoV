@@ -13,7 +13,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import humanTime from "../../../../utils/humanTime";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../../utils/validators";
 import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
-import { FaRegCheckCircle } from "react-icons/fa";
+import { FaRegCheckCircle, FaRegTimesCircle } from "react-icons/fa";
 import { HiPencilSquare } from "react-icons/hi2";
 import useAuth from "../../../../hooks/useAuth";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
@@ -367,12 +367,16 @@ const HrSOP = () => {
               aria-label={`Mark SOP as ${isActive ? "inactive" : "active"}`}
               className={`flex h-8 w-8 items-center justify-center ${
                 isActive
-                  ? "text-red-600 hover:text-red-700"
-                  : "text-green-600 hover:text-green-700"
+                  ? "text-green-600 hover:text-green-700"
+                  : "text-red-600 hover:text-red-700"
               }`}
               onClick={() => handleOpenInactive(params.data)}
             >
-              <FaRegCheckCircle size={24} />
+              {isActive ? (
+                <FaRegCheckCircle size={24} />
+              ) : (
+                <FaRegTimesCircle size={24} />
+              )}
             </button>
             <button
               type="button"

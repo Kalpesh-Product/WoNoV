@@ -80,6 +80,61 @@ const formatGraphAmount = (amount, currency, convert, options = {}) =>
     maximumFractionDigits: 0,
   }).format(Math.trunc(convert(amount)));
 
+const INVESTOR_CURRENCY_SYMBOLS = {
+  INR: "₹",
+  USD: "$",
+};
+
+const AED_TOOLTIP_SYMBOL = `<span role="img" aria-label="AED" style="position:relative;display:inline-block;width:1em;height:1em;flex:0 0 1em;align-self:center;">
+  <span style="position:absolute;left:0.2em;top:0.06em;width:0.7em;height:0.88em;border:0.13em solid currentColor;border-left-width:0.18em;border-radius:0 0.55em 0.55em 0;box-sizing:border-box;"></span>
+  <span style="position:absolute;left:0;top:0.34em;width:1em;height:0.12em;border-radius:0.12em;background:currentColor;"></span>
+  <span style="position:absolute;left:0;top:0.62em;width:1em;height:0.12em;border-radius:0.12em;background:currentColor;"></span>
+</span>`;
+
+const AedCurrencySymbol = () => (
+  <span
+    role="img"
+    aria-label="AED"
+    className="relative inline-block shrink-0 self-center"
+    style={{ width: "1em", height: "1em" }}
+  >
+    <span
+      className="absolute box-border"
+      style={{
+        left: "0.2em",
+        top: "0.06em",
+        width: "0.7em",
+        height: "0.88em",
+        border: "0.13em solid currentColor",
+        borderLeftWidth: "0.18em",
+        borderRadius: "0 0.55em 0.55em 0",
+      }}
+    />
+    <span
+      className="absolute left-0 rounded"
+      style={{ top: "0.34em", width: "1em", height: "0.12em", background: "currentColor" }}
+    />
+    <span
+      className="absolute left-0 rounded"
+      style={{ top: "0.62em", width: "1em", height: "0.12em", background: "currentColor" }}
+    />
+  </span>
+);
+
+const InvestorCurrencyAmount = ({ currency, value, suffix = "" }) => (
+  <span className="inline-flex items-center gap-[0.3em] whitespace-nowrap leading-none">
+    {currency === "AED" ? (
+      <AedCurrencySymbol />
+    ) : (
+      <span>{INVESTOR_CURRENCY_SYMBOLS[currency] || currency}</span>
+    )}
+    <span>
+      {value}
+      {suffix}
+    </span>
+  </span>
+);
+
 const formatGraphScaleAmount = (
   amount,
   convert,
@@ -205,7 +260,7 @@ const InvestorDashboardCards = ({
     {
       title: "Average Unique Clients",
       period: currentFiscalYear,
-      value: averageUniqueClients.toFixed(2),
+      value: Math.round(averageUniqueClients).toLocaleString("en-IN"),
       permission: PERMISSIONS.INVESTOR_AVERAGE_UNIQUE_CLIENTS_CARD.value,
       clickable: false,
       icon: MdGroups,
@@ -405,6 +460,7 @@ const InvestorDashboardCards = ({
 
 const InvestorSnapshotSection = ({
   format,
+  currency,
   hasPermission,
   perSqFtFinancialsByYear = {},
   currentAssetValueOwned = APPRECIATION_BASE_VALUATION,
@@ -415,23 +471,30 @@ const InvestorSnapshotSection = ({
   const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
   const [calendarValue, setCalendarValue] = useState(() => dayjs("2025-04-01"));
   const isCalendarOpen = Boolean(calendarAnchorEl);
+  const formatCurrency = (amount, suffix = "") => (
+    <InvestorCurrencyAmount
+      currency={currency}
+      value={format(amount)}
+      suffix={suffix}
+    />
+  );
   const getPerSqFtRows = (fiscalYear) => {
     const values = perSqFtFinancialsByYear[fiscalYear] || {};
 
     return [
       {
         label: "Per Sq. Ft. Income",
-        value: format(values.income || 0),
+        value: formatCurrency(values.income || 0),
         tone: "text-[#12a573]",
       },
       {
         label: "Per Sq. Ft. Expense",
-        value: format(values.expense || 0),
+        value: formatCurrency(values.expense || 0),
         tone: "text-[#f04a4a]",
       },
       {
         label: "Per Sq. Ft. Profit/Loss",
-        value: format(values.profitLoss || 0),
+        value: formatCurrency(values.profitLoss || 0),
         tone:
           (values.profitLoss || 0) >= 0
             ? "text-[#12a573]"
@@ -439,17 +502,23 @@ const InvestorSnapshotSection = ({
       },
     ];
   };
+  const getTotalSqFt = (fiscalYear) =>
+    Math.round(
+      Number(perSqFtFinancialsByYear[fiscalYear]?.totalSqFt) || 0,
+    ).toLocaleString("en-IN");
   const cards = [
     {
       title: "FY - 2026-27 - PROJECTIONS",
+      perSqFtTitle: "FY 2026-27 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2026-27"),
       icon: InvestorBarsIcon,
       tone: "text-[#12a573] bg-[#eafbf3]",
       rows: [
-        { label: "Revenues", value: format(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(currentProjectedFinancials.profitLoss || 0),
+          value: formatCurrency(currentProjectedFinancials.profitLoss || 0),
           tone:
             (currentProjectedFinancials.profitLoss || 0) >= 0
               ? "text-[#12a573]"
@@ -460,48 +529,52 @@ const InvestorSnapshotSection = ({
           value: `${Number(currentExitInventory).toLocaleString("en-IN")} Desks`,
           tone: "text-[#12a573]",
         },
-        { label: "Asset Owned", value: format(currentAssetValueOwned), tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(currentAssetValueOwned), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2026-27"),
     },
     {
       title: "FY - 2025-26 - PROJECTIONS",
+      perSqFtTitle: "FY 2025-26 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2025-26"),
       icon: MdCalendarMonth,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       hasCalendar: true,
       rows: [
-        { label: "Revenues", value: format(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
+          value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
           tone:
             (actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
         { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
-        { label: "Asset Owned", value: `${format(4_885_986)}+`, tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(4_885_986, "+"), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2025-26"),
     },
     {
       title: "FY - 2024-25 - PROJECTIONS",
+      perSqFtTitle: "FY 2024-25 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2024-25"),
       icon: InvestorBarsIcon,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       rows: [
-        { label: "Revenues", value: format(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
+          value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
           tone:
             (actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
         { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
-        { label: "Asset Owned", value: `${format(4_427_360)}+`, tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(4_427_360, "+"), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2024-25"),
     },
@@ -573,6 +646,10 @@ const InvestorSnapshotSection = ({
                 </div>
               </div>
               <div className="rounded-lg border border-[#e8ecf4] bg-white px-5 py-3 text-left shadow-sm">
+                <div className="mb-4 flex items-center justify-between gap-4 text-base font-pmedium text-[#1E3D73]">
+                  <span>{card.perSqFtTitle}</span>
+                  <span className="shrink-0">{card.perSqFtTotal}</span>
+                </div>
                 <div className="flex flex-col divide-y divide-[#edf1f6]">
                   {card.perSqFtRows.map((row) => (
                   <div
@@ -613,6 +690,17 @@ const InvestorSnapshotSection = ({
 
 const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   const axios = useAxiosPrivate();
+  const { currency, convert } = useCurrency();
+
+  const formatMixIncomeTooltipAmount = (amount) => {
+    const formattedValue = formatGraphAmount(amount, currency, convert);
+
+    if (currency === "AED") {
+      return `<span style="display:inline-flex;align-items:center;gap:0.3em;direction:ltr;white-space:nowrap;font-size:inherit;line-height:1;vertical-align:middle;">${AED_TOOLTIP_SYMBOL}<span style="display:inline-block;line-height:1;">${formattedValue}</span></span>`;
+    }
+
+    return `${INVESTOR_CURRENCY_SYMBOLS[currency] || currency} ${formattedValue}`;
+  };
 
   const { data: simpleRevenue = [], isLoading } = useQuery({
     queryKey: ["simpleRevenue"],
@@ -771,7 +859,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       hideYearNavigation
       investorVariant
       hideHeaderAmounts
-      hideTooltipCurrencySymbol
+      tooltipValueFormatter={formatMixIncomeTooltipAmount}
       showFiscalYearInTitle={false}
     />
   );
@@ -888,6 +976,12 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
         const prefix = item.isUpcoming ? "Projected " : "";
         const occupiedColor = item.isUpcoming ? "#b4b4b4" : "#9bd8ba";
         const unoccupiedColor = item.isUpcoming ? "#616161" : "#ff7f83";
+        const total = Number(item.total) || 0;
+        const occupied = Math.round(Number(item.occupied) || 0);
+        const unoccupied = Math.round(Number(item.remaining) || 0);
+        const occupiedPercentage =
+          total > 0 ? Math.round((occupied / total) * 100) : 0;
+        const unoccupiedPercentage = total > 0 ? 100 - occupiedPercentage : 0;
         return `
           <div style="min-width:155px;font-family:Poppins-Regular,sans-serif;font-size:12px;line-height:1.4;">
             <div class="apexcharts-tooltip-title" style="margin-bottom:8px;font-size:12px;font-weight:400;">${item.name || ""}</div>
@@ -895,23 +989,23 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${occupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Occupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Math.round(Number(item.occupied || 0)).toLocaleString("en-IN")}</strong>
+                  <span>${occupiedPercentage}% = ${prefix}Occupied =</span>&nbsp;
+                  <strong style="font-weight:600;">${occupied.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${unoccupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Unoccupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Math.round(Number(item.remaining || 0)).toLocaleString("en-IN")}</strong>
+                  <span>${unoccupiedPercentage}% = ${prefix}Unoccupied =</span>&nbsp;
+                  <strong style="font-weight:600;">${unoccupied.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <hr style="margin:7px 0 0;border:0;border-top:1px solid #e5e7eb;" />
               <div style="display:flex;align-items:center;gap:8px;margin-top:7px;">
-                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#1E3D73;display:inline-block;"></span>
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${item.isUpcoming ? "#778899" : "#1E3D73"};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Total:</span>&nbsp;
-                  <strong style="font-weight:600;">${Number(item.total || 0).toLocaleString("en-IN")}</strong>
+                  <span>100% = ${prefix}Overall Inventory =</span>&nbsp;
+                  <strong style="font-weight:600;">${total.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
             </div>
@@ -1124,7 +1218,7 @@ const InvestorAppreciationCenter = () => {
     }
 
     const bounds = container.getBoundingClientRect();
-    const tooltipWidth = Math.min(150, bounds.width);
+    const tooltipWidth = Math.min(175, bounds.width);
     const cursorX = event.clientX - bounds.left;
     setValuationTooltip({
       index,
@@ -1267,14 +1361,13 @@ const InvestorAppreciationCenter = () => {
         }
         hideYearNavigation
         chartHeight={360}
-        refreshOnDataChange
         sectionBorderColor="#1E3D73"
         sectionBodyBorderColor="#9FB2CF"
       />
       {hoveredValuation && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-50 w-[150px] max-w-full overflow-hidden rounded-lg border border-[#e5e7eb] bg-white text-xs text-[#111827] shadow-lg"
+          className="pointer-events-none absolute z-50 w-[175px] max-w-full overflow-hidden rounded-lg border border-[#e5e7eb] bg-white text-xs text-[#111827] shadow-lg"
           style={{ left: valuationTooltip.left, top: valuationTooltip.top }}
         >
           <div className="border-b border-[#dbe1e8] bg-[#eef2f6] px-3 py-2 text-[#1f2937]">
@@ -1282,8 +1375,18 @@ const InvestorAppreciationCenter = () => {
           </div>
           <div className="flex items-center gap-2 px-3 py-2.5">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0BDA51]" />
-            <span>
-              Asset: <strong>{formatGraphAmount(hoveredValuation.amount, currency, convert)}</strong>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <span>Asset:</span>
+              <strong className="pr-1">
+                <InvestorCurrencyAmount
+                  currency={currency}
+                  value={formatGraphAmount(
+                    hoveredValuation.amount,
+                    currency,
+                    convert,
+                  )}
+                />
+              </strong>
             </span>
           </div>
         </div>
@@ -1391,9 +1494,9 @@ const InvestorUniqueClientsGraph = () => {
           ? 12
           : 1;
 
-    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(
-      count / Math.max(elapsedMonths, 1)
-    ).toFixed(2)}`;
+    return `AVERAGE MONTHLY UNIQUE CLIENT : ${Math.round(
+      count / Math.max(elapsedMonths, 1),
+    ).toLocaleString("en-IN")}`;
   };
 
   return (
@@ -1674,6 +1777,7 @@ const InvestorIncomeExpenseGraph = ({
         return [
           fiscalYear,
           {
+            totalSqFt: fiscalYearSqft,
             income: fiscalYearSqft ? values.income / fiscalYearSqft : 0,
             expense: fiscalYearSqft ? values.expense / fiscalYearSqft : 0,
             profitLoss: fiscalYearSqft ? values.profitLoss / fiscalYearSqft : 0,
@@ -1683,6 +1787,7 @@ const InvestorIncomeExpenseGraph = ({
     );
 
     financialsByYear[currentFiscalYear] = {
+      totalSqFt: totalSqft,
       income: (Number(projectedFinancials?.revenue) || 0) / totalSqft,
       expense: (Number(projectedFinancials?.expense) || 0) / totalSqft,
       profitLoss: (Number(projectedFinancials?.profitLoss) || 0) / totalSqft,
@@ -1971,7 +2076,19 @@ const InvestorIncomeExpenseGraph = ({
     },
     tooltip: {
       y: {
-        formatter: (value) => formatGraphAmount(value, currency, convert),
+        formatter: (value) => {
+          const formattedValue = formatGraphAmount(
+            value,
+            currency,
+            convert,
+          );
+
+          if (currency === "AED") {
+            return `<span style="display:inline-flex;align-items:center;gap:0.3em;direction:ltr;white-space:nowrap;font-size:inherit;line-height:1;vertical-align:middle;">${AED_TOOLTIP_SYMBOL}<span style="display:inline-block;line-height:1;">${formattedValue}</span></span>`;
+          }
+
+          return `${INVESTOR_CURRENCY_SYMBOLS[currency] || currency} ${formattedValue}`;
+        },
       },
     },
   };
@@ -2035,6 +2152,7 @@ const InvestorIncomeExpenseGraph = ({
         format={(amount, options) =>
           formatGraphAmount(amount, currency, convert, options)
         }
+        currency={currency}
         hasPermission={hasPermission}
         perSqFtFinancialsByYear={perSqFtFinancialsByYear}
         currentAssetValueOwned={snapshotAssetValueOwned}

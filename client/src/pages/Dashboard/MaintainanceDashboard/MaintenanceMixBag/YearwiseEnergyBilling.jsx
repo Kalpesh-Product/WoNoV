@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Chip } from "@mui/material";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { toast } from "sonner";
@@ -27,7 +27,8 @@ const BUILDING_CONFIG = {
   },
 };
 
-const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
+const formatNumber = (value) =>
+  Math.round(Number(value || 0)).toLocaleString("en-IN");
 const SHOW_PAGE_HEADER = false;
 const Y_AXIS_PADDING_RATIO = 0.2;
 const Y_AXIS_MIN = 100;
@@ -69,8 +70,14 @@ const createFinancialYearMonths = (startYear) =>
     };
   });
 
-const YearwiseEnergyBilling = ({ building = "st" }) => {
+const YearwiseEnergyBilling = ({
+  building = "st",
+  overall = false,
+  embedded = false,
+  detailsRoute,
+}) => {
   const { unitNo = "" } = useParams();
+  const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
   const config = BUILDING_CONFIG[building] || BUILDING_CONFIG.st;
   const selectedUnit = decodeURIComponent(unitNo);
@@ -98,11 +105,27 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
 
         setMonthlyData(
           financialYearMonths.map((month, index) => {
-            const unitRecord = (responses[index].data?.data || []).find(
+            const records = responses[index].data?.data || [];
+            const unitRecord = records.find(
               (record) =>
                 String(record.unitNo || "").trim().toLowerCase() ===
                 selectedUnit.trim().toLowerCase(),
             );
+
+            if (overall) {
+              return records.reduce(
+                (totals, record) => ({
+                  ...totals,
+                  totalConsumption:
+                    totals.totalConsumption +
+                    Number(record?.totalConsumption || 0),
+                  totalBillAmount:
+                    totals.totalBillAmount +
+                    Number(record?.totalBillAmount || 0),
+                }),
+                { ...month },
+              );
+            }
 
             return {
               ...month,
@@ -115,7 +138,8 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
       .catch((error) => {
         if (active) {
           toast.error(
-            error.response?.data?.message || "Unable to load unit-wise energy bills",
+            error.response?.data?.message ||
+              `Unable to load ${overall ? "overall" : "unit-wise"} energy bills`,
           );
         }
       });
@@ -123,7 +147,13 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     return () => {
       active = false;
     };
-  }, [axiosPrivate, config.endpoint, financialYearMonths, selectedUnit]);
+  }, [
+    axiosPrivate,
+    config.endpoint,
+    financialYearMonths,
+    overall,
+    selectedUnit,
+  ]);
 
   const rows = monthlyData.length ? monthlyData : financialYearMonths;
   const selectedFYLabel = getFinancialYearLabel(selectedFYStartYear);
@@ -162,7 +192,15 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
   ];
 
   const chartOptions = {
-    chart: { toolbar: { show: false }, fontFamily: "inherit" },
+    chart: {
+      toolbar: { show: false },
+      fontFamily: "inherit",
+      events: detailsRoute
+        ? {
+            dataPointSelection: () => navigate(detailsRoute),
+          }
+        : {},
+    },
     colors: ["#355ae8", "#ef233c"],
     plotOptions: {
       bar: {
@@ -216,9 +254,13 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     },
   ];
 
+  const graphTitle = `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING${
+    overall ? "" : ` - ${selectedUnit}`
+  }`;
+
   return (
-    <div className="p-4">
-      {SHOW_PAGE_HEADER ? (
+    <div className={embedded ? "" : "p-4"}>
+      {SHOW_PAGE_HEADER && !embedded ? (
         <div className="mb-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
             {FINANCIAL_YEAR.label}
@@ -231,7 +273,7 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
 
       <div className="flex flex-col gap-4">
         <WidgetSection
-          title={`${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit}`}
+          title={graphTitle}
           border
           headerRightContent={
             <>
@@ -273,7 +315,14 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
             </>
           }
         >
-          <Chart options={chartOptions} series={series} type="bar" height={450} />
+          <div className={detailsRoute ? "cursor-pointer" : ""}>
+            <Chart
+              options={chartOptions}
+              series={series}
+              type="bar"
+              height={450}
+            />
+          </div>
 
           <div className="flex items-center justify-center gap-2 pb-1">
             <button
@@ -300,16 +349,18 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
           </div>
         </WidgetSection>
 
-        <PageFrame>
-          <YearWiseTable
-            data={rows}
-            columns={columns}
-            tableTitle={`${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit} - ${selectedFYLabel}`}
-            tableHeight={500}
-            hideFilter
-            exportData
-          />
-        </PageFrame>
+        {!embedded ? (
+          <PageFrame>
+            <YearWiseTable
+              data={rows}
+              columns={columns}
+              tableTitle={`${graphTitle} - ${selectedFYLabel}`}
+              tableHeight={500}
+              hideFilter
+              exportData
+            />
+          </PageFrame>
+        ) : null}
       </div>
     </div>
   );

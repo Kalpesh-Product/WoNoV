@@ -55,6 +55,9 @@ const PerformanceDepartmentWiseKra = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const modulePath = location.pathname.startsWith("/app/kra-kpa")
+    ? "/app/kra-kpa"
+    : "/app/performance";
    const clickedDate = location.state?.date;
   const [selectedDate, setSelectedDate] = useState(
     clickedDate || toLocalIsoDate(new Date()),
@@ -277,7 +280,7 @@ const PerformanceDepartmentWiseKra = () => {
     navigate(
            // `/app/performance/overall-department-KRA/member-wise-KRA-kpa/${departmentName}`,
      //  `/app/performance/department-wise/overall-department-KRA/member-wise-KRA`,
-       `/app/performance/department-KRA/member-wise-KRA`,
+       `${modulePath}/department-KRA/member-wise-KRA`,
       { state: { date: selectedDate } },
     );
   };

@@ -33,11 +33,6 @@ const HrFinance = () => {
       path: "voucher-history",
       permission: PERMISSIONS.HR_VOUCHER_HISTORY.value,
     },
-    {
-      label: "Payroll",
-      path: "payroll",
-      permission: PERMISSIONS.HR_PAYROLL.value,
-    },
   ];
 
   const hideTabsCondition = (pathname) => pathname.includes("budget/");

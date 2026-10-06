@@ -212,7 +212,9 @@ const AccessProfile = () => {
               }
             >
               <span className="text-subtitle font-pmedium">
-                {module.charAt(0).toUpperCase() + module.slice(1)}
+                {module === "KRAKPA"
+                  ? "KRA & KPA"
+                  : module.charAt(0).toUpperCase() + module.slice(1)}
               </span>
               <span className="text-content">
                 {permissions.length} permissions

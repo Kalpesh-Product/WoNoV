@@ -17,7 +17,6 @@ router.get(
 
 
 // // Delete Leave type
-// router.delete("/delete-leave-type/:id", leaveTypeController.deleteLeaveType);
 
 // // Soft Delete Employment Agreement
 router.put(

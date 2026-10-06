@@ -17,7 +17,7 @@ import {
   MdDeleteForever,
   MdOutlineRestore,
 } from "react-icons/md";
-import { FaRegCheckCircle } from "react-icons/fa";
+import { FaRegCheckCircle, FaRegTimesCircle } from "react-icons/fa";
 import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
 import humanDate from "../../../../utils/humanDateForamt";
@@ -375,12 +375,16 @@ const HrSettingsPolicies = () => {
               aria-label={`Mark policy as ${isActive ? "inactive" : "active"}`}
               className={`flex h-8 w-8 items-center justify-center ${
                 isActive
-                  ? "text-red-600 hover:text-red-700"
-                  : "text-green-600 hover:text-green-700"
+                  ? "text-green-600 hover:text-green-700"
+                  : "text-red-600 hover:text-red-700"
               }`}
               onClick={() => handleStatus(params.data)}
             >
-              <FaRegCheckCircle size={24} />
+              {isActive ? (
+                <FaRegCheckCircle size={24} />
+              ) : (
+                <FaRegTimesCircle size={24} />
+              )}
             </button>
             <button
               type="button"

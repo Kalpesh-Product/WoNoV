@@ -118,7 +118,7 @@ const MainLayout = () => {
   return (
     <CurrencyProvider>
     <div className="w-full flex flex-col justify-between h-screen overflow-y-auto">
-      <header className="flex w-full shadow-md items-center px-4">
+      <header className="sticky top-0 z-[1200] flex w-full items-center bg-white px-4 shadow-md">
         {isMobile && (
           <IconButton onClick={() => setMobileOpen(true)} edge="start">
             <MenuIcon />

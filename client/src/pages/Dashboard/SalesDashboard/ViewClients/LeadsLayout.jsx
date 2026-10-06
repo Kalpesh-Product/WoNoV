@@ -37,6 +37,41 @@ const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
 };
 
+const getWholePercentages = (values) => {
+  const normalizedValues = values.map((value) => Math.max(Number(value) || 0, 0));
+  const total = normalizedValues.reduce((sum, value) => sum + value, 0);
+  if (!total) return normalizedValues.map(() => 0);
+
+  const exactPercentages = normalizedValues.map((value) => (value / total) * 100);
+  const percentages = exactPercentages.map(Math.floor);
+  let remainder = 100 - percentages.reduce((sum, value) => sum + value, 0);
+
+  exactPercentages
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach(({ index }) => {
+      if (remainder <= 0) return;
+      percentages[index] += 1;
+      remainder -= 1;
+    });
+
+  normalizedValues.forEach((value, index) => {
+    if (value <= 0 || percentages[index] > 0) return;
+
+    const donorIndex = percentages.reduce(
+      (largestIndex, percentage, candidateIndex) =>
+        percentage > percentages[largestIndex] ? candidateIndex : largestIndex,
+      0,
+    );
+    if (percentages[donorIndex] > 1) {
+      percentages[donorIndex] -= 1;
+      percentages[index] = 1;
+    }
+  });
+
+  return percentages;
+};
+
 const LeadsLayout = ({
   hideAccordion,
   data,
@@ -439,13 +474,23 @@ const LeadsLayout = ({
           intersect: true,
           custom: ({ dataPointIndex, w }) => {
             const entries = investorRankedMonthEntries[dataPointIndex] || [];
-            const rows = entries.map((entry) => {
+            const isProjectedMonth = entries.some((entry) =>
+              entry.name.startsWith("Projected "),
+            );
+            const overallClientsCount = entries.reduce(
+              (total, entry) => total + (Number(entry.value) || 0),
+              0,
+            );
+            const percentages = getWholePercentages(
+              entries.map((entry) => entry.value),
+            );
+            const rows = entries.map((entry, entryIndex) => {
               const seriesLabel = entry.name;
               return `
                 <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;color:#222;white-space:nowrap;">
                   <span style="display:flex;align-items:center;gap:7px;">
                     <span style="width:9px;height:9px;border-radius:50%;background:${entry.color};display:inline-block;"></span>
-                    ${seriesLabel}:
+                    ${percentages[entryIndex]}% = ${seriesLabel} =
                   </span>
                   <strong>${entry.value} Clients</strong>
                 </div>
@@ -458,6 +503,14 @@ const LeadsLayout = ({
                   ${w.globals.labels[dataPointIndex]}
                 </div>
                 ${rows.join("")}
+                <hr style="margin:0 10px;border:0;border-top:1px solid #d9dce1;" />
+                <div style="display:flex;align-items:center;gap:7px;padding:9px 10px;color:#222;white-space:nowrap;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:${isProjectedMonth ? "#778899" : "#98FB98"};display:inline-block;"></span>
+                    100% = Overall Clients =
+                  </span>
+                  <strong>${overallClientsCount} Clients</strong>
+                </div>
               </div>
             `;
           },

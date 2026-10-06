@@ -208,20 +208,6 @@ const bulkInsertRoutes = [
         route: "/api/company/bulk-add-locations",
       },
       {
-        name: "AMC Records - IT & Maintainence",
-        aliases: [
-          "AMC Records",
-          "AMC Records - IT & Maintainence",
-          "AMC Records - IT & Maintenance",
-          "AMC Records - Maintenance",
-          "AMC Records - IT",
-          "AMC",
-        ],
-        fileKey: "amc-records",
-        sourceDepartmentId: "6798baa8e469e809084e2497",
-        route: "/api/amc/bulk-insert-amc-records/6798baa8e469e809084e2497",
-      },
-      {
         name: "Maintenance Weekly Shift Schedule",
         aliases: [
           "Maintenance Weekly Shift Schedule - Maintainence",
