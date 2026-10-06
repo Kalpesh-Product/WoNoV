@@ -260,7 +260,7 @@ const InvestorDashboardCards = ({
     {
       title: "Average Unique Clients",
       period: currentFiscalYear,
-      value: averageUniqueClients.toFixed(2),
+      value: Math.round(averageUniqueClients).toLocaleString("en-IN"),
       permission: PERMISSIONS.INVESTOR_AVERAGE_UNIQUE_CLIENTS_CARD.value,
       clickable: false,
       icon: MdGroups,
@@ -502,10 +502,15 @@ const InvestorSnapshotSection = ({
       },
     ];
   };
+  const getTotalSqFt = (fiscalYear) =>
+    Math.round(
+      Number(perSqFtFinancialsByYear[fiscalYear]?.totalSqFt) || 0,
+    ).toLocaleString("en-IN");
   const cards = [
     {
       title: "FY - 2026-27 - PROJECTIONS",
-      perSqFtTitle: "FY - 2026-27 - PER SQR FT MANAGED",
+      perSqFtTitle: "FY 2026-27 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2026-27"),
       icon: InvestorBarsIcon,
       tone: "text-[#12a573] bg-[#eafbf3]",
       rows: [
@@ -530,7 +535,8 @@ const InvestorSnapshotSection = ({
     },
     {
       title: "FY - 2025-26 - PROJECTIONS",
-      perSqFtTitle: "FY - 2025-26 - PER SQR FT MANAGED",
+      perSqFtTitle: "FY 2025-26 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2025-26"),
       icon: MdCalendarMonth,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       hasCalendar: true,
@@ -552,7 +558,8 @@ const InvestorSnapshotSection = ({
     },
     {
       title: "FY - 2024-25 - PROJECTIONS",
-      perSqFtTitle: "FY - 2024-25 - PER SQR FT MANAGED",
+      perSqFtTitle: "FY 2024-25 - TOTAL SQ FT",
+      perSqFtTotal: getTotalSqFt("FY 2024-25"),
       icon: InvestorBarsIcon,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       rows: [
@@ -639,15 +646,9 @@ const InvestorSnapshotSection = ({
                 </div>
               </div>
               <div className="rounded-lg border border-[#e8ecf4] bg-white px-5 py-3 text-left shadow-sm">
-                <div className="mb-4 flex items-center gap-4">
-                  <span
-                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
-                  >
-                    <Icon size={28} />
-                  </span>
-                  <span className="text-base font-pmedium text-[#1E3D73]">
-                    {card.perSqFtTitle}
-                  </span>
+                <div className="mb-4 flex items-center justify-between gap-4 text-base font-pmedium text-[#1E3D73]">
+                  <span>{card.perSqFtTitle}</span>
+                  <span className="shrink-0">{card.perSqFtTotal}</span>
                 </div>
                 <div className="flex flex-col divide-y divide-[#edf1f6]">
                   {card.perSqFtRows.map((row) => (
@@ -975,6 +976,12 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
         const prefix = item.isUpcoming ? "Projected " : "";
         const occupiedColor = item.isUpcoming ? "#b4b4b4" : "#9bd8ba";
         const unoccupiedColor = item.isUpcoming ? "#616161" : "#ff7f83";
+        const total = Number(item.total) || 0;
+        const occupied = Math.round(Number(item.occupied) || 0);
+        const unoccupied = Math.round(Number(item.remaining) || 0);
+        const occupiedPercentage =
+          total > 0 ? Math.round((occupied / total) * 100) : 0;
+        const unoccupiedPercentage = total > 0 ? 100 - occupiedPercentage : 0;
         return `
           <div style="min-width:155px;font-family:Poppins-Regular,sans-serif;font-size:12px;line-height:1.4;">
             <div class="apexcharts-tooltip-title" style="margin-bottom:8px;font-size:12px;font-weight:400;">${item.name || ""}</div>
@@ -982,23 +989,23 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${occupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Occupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Math.round(Number(item.occupied || 0)).toLocaleString("en-IN")}</strong>
+                  <span>${occupiedPercentage}% = ${prefix}Occupied =</span>&nbsp;
+                  <strong style="font-weight:600;">${occupied.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px;">
                 <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${unoccupiedColor};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Unoccupied:</span>&nbsp;
-                  <strong style="font-weight:600;">${Math.round(Number(item.remaining || 0)).toLocaleString("en-IN")}</strong>
+                  <span>${unoccupiedPercentage}% = ${prefix}Unoccupied =</span>&nbsp;
+                  <strong style="font-weight:600;">${unoccupied.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
               <hr style="margin:7px 0 0;border:0;border-top:1px solid #e5e7eb;" />
               <div style="display:flex;align-items:center;gap:8px;margin-top:7px;">
-                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:#1E3D73;display:inline-block;"></span>
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${item.isUpcoming ? "#778899" : "#1E3D73"};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
-                  <span>${prefix}Total:</span>&nbsp;
-                  <strong style="font-weight:600;">${Number(item.total || 0).toLocaleString("en-IN")}</strong>
+                  <span>100% = ${prefix}Overall Inventory =</span>&nbsp;
+                  <strong style="font-weight:600;">${total.toLocaleString("en-IN")}</strong>
                 </div>
               </div>
             </div>
@@ -1211,7 +1218,7 @@ const InvestorAppreciationCenter = () => {
     }
 
     const bounds = container.getBoundingClientRect();
-    const tooltipWidth = Math.min(150, bounds.width);
+    const tooltipWidth = Math.min(175, bounds.width);
     const cursorX = event.clientX - bounds.left;
     setValuationTooltip({
       index,
@@ -1360,7 +1367,7 @@ const InvestorAppreciationCenter = () => {
       {hoveredValuation && (
         <div
           role="tooltip"
-          className="pointer-events-none absolute z-50 w-[150px] max-w-full overflow-hidden rounded-lg border border-[#e5e7eb] bg-white text-xs text-[#111827] shadow-lg"
+          className="pointer-events-none absolute z-50 w-[175px] max-w-full overflow-hidden rounded-lg border border-[#e5e7eb] bg-white text-xs text-[#111827] shadow-lg"
           style={{ left: valuationTooltip.left, top: valuationTooltip.top }}
         >
           <div className="border-b border-[#dbe1e8] bg-[#eef2f6] px-3 py-2 text-[#1f2937]">
@@ -1370,7 +1377,7 @@ const InvestorAppreciationCenter = () => {
             <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0BDA51]" />
             <span className="inline-flex items-center gap-1 whitespace-nowrap">
               <span>Asset:</span>
-              <strong>
+              <strong className="pr-1">
                 <InvestorCurrencyAmount
                   currency={currency}
                   value={formatGraphAmount(
@@ -1487,9 +1494,9 @@ const InvestorUniqueClientsGraph = () => {
           ? 12
           : 1;
 
-    return `AVERAGE MONTHLY UNIQUE CLIENT : ${(
-      count / Math.max(elapsedMonths, 1)
-    ).toFixed(2)}`;
+    return `AVERAGE MONTHLY UNIQUE CLIENT : ${Math.round(
+      count / Math.max(elapsedMonths, 1),
+    ).toLocaleString("en-IN")}`;
   };
 
   return (
@@ -1770,6 +1777,7 @@ const InvestorIncomeExpenseGraph = ({
         return [
           fiscalYear,
           {
+            totalSqFt: fiscalYearSqft,
             income: fiscalYearSqft ? values.income / fiscalYearSqft : 0,
             expense: fiscalYearSqft ? values.expense / fiscalYearSqft : 0,
             profitLoss: fiscalYearSqft ? values.profitLoss / fiscalYearSqft : 0,
@@ -1779,6 +1787,7 @@ const InvestorIncomeExpenseGraph = ({
     );
 
     financialsByYear[currentFiscalYear] = {
+      totalSqFt: totalSqft,
       income: (Number(projectedFinancials?.revenue) || 0) / totalSqft,
       expense: (Number(projectedFinancials?.expense) || 0) / totalSqft,
       profitLoss: (Number(projectedFinancials?.profitLoss) || 0) / totalSqft,

@@ -598,7 +598,7 @@ const FyBarGraphPercentage = ({
                 <div style="padding:0 10px 10px;">
                   ${rowsHtml}
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
+                    <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:${hasProjectedValue ? "#778899" : "#98FB98"}; display:inline-block;"></span>
                     <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
                       <span>100% = Overall Revenues =</span>
                       <strong>${formatTooltipAmount(total)}</strong>

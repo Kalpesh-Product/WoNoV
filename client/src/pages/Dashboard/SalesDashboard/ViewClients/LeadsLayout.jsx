@@ -439,6 +439,13 @@ const LeadsLayout = ({
           intersect: true,
           custom: ({ dataPointIndex, w }) => {
             const entries = investorRankedMonthEntries[dataPointIndex] || [];
+            const isProjectedMonth = entries.some((entry) =>
+              entry.name.startsWith("Projected "),
+            );
+            const overallClientsCount = entries.reduce(
+              (total, entry) => total + (Number(entry.value) || 0),
+              0,
+            );
             const rows = entries.map((entry) => {
               const seriesLabel = entry.name;
               return `
@@ -458,6 +465,14 @@ const LeadsLayout = ({
                   ${w.globals.labels[dataPointIndex]}
                 </div>
                 ${rows.join("")}
+                <hr style="margin:0 10px;border:0;border-top:1px solid #d9dce1;" />
+                <div style="display:flex;align-items:center;gap:7px;padding:9px 10px;color:#222;white-space:nowrap;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:${isProjectedMonth ? "#778899" : "#98FB98"};display:inline-block;"></span>
+                    Overall Clients:
+                  </span>
+                  <strong>${overallClientsCount} Clients</strong>
+                </div>
               </div>
             `;
           },
