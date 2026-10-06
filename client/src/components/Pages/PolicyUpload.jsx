@@ -15,7 +15,7 @@ import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
 import ConfirmationModal from "../ConfirmationModal";
-import { FaRegCheckCircle } from "react-icons/fa";
+import { FaRegCheckCircle, FaRegTimesCircle } from "react-icons/fa";
 import { HiPencilSquare } from "react-icons/hi2";
 import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
 
@@ -323,14 +323,18 @@ const PolicyUpload = () => {
               aria-label={`Mark Policy as ${params.data.isActive ? "inactive" : "active"}`}
               className={`flex h-8 w-8 items-center justify-center ${
                 params.data.isActive
-                  ? "text-red-600 hover:text-red-700"
-                  : "text-green-600 hover:text-green-700"
+                  ? "text-green-600 hover:text-green-700"
+                  : "text-red-600 hover:text-red-700"
               }`}
               onClick={() =>
                 setConfirmationAction({ type: "status", policy: params.data })
               }
             >
-              <FaRegCheckCircle size={24} />
+              {params.data.isActive ? (
+                <FaRegCheckCircle size={24} />
+              ) : (
+                <FaRegTimesCircle size={24} />
+              )}
             </button>
             <button
               type="button"
