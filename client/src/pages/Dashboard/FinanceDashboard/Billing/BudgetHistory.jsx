@@ -1,8 +1,12 @@
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
@@ -26,6 +30,7 @@ const BudgetHistory = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const navigate = useNavigate();
+  const [viewDetails, setViewDetails] = useState(null);
   const canUseBulkBudgetActions = isTechDepartmentUser(auth?.user);
   const pendingApprovalsPath =
     "/app/dashboard/finance-dashboard/billing/budget-request/pending-approvals-budget";
@@ -152,37 +157,45 @@ const BudgetHistory = () => {
         );
       },
     },
-    ...(canUseBulkBudgetActions
-      ? [
-          {
-            field: "actions",
-            headerName: "Actions",
-            pinned: "right",
-            width: 110,
-            cellRenderer: (params) => {
-              const isApproved =
-                String(params.data?.status || "").toLowerCase() === "approved";
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      width: canUseBulkBudgetActions ? 110 : 90,
+      cellRenderer: (params) => {
+        const isApproved =
+          String(params.data?.status || "").toLowerCase() === "approved";
 
-              if (!isApproved) return null;
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              className="text-subtitle text-primary cursor-pointer"
+              title="View budget details"
+              aria-label="View budget details"
+              onClick={() => setViewDetails(params.data)}
+            >
+              <MdOutlineRemoveRedEye />
+            </button>
 
-              return (
-                <ThreeDotMenu
-                  rowId={params.data?._id}
-                  menuItems={[
-                    {
-                      label: isUnapprovePending ? "Returning..." : "Unapprove",
-                      onClick: () => {
-                        if (isUnapprovePending) return;
-                        unapproveBudget(params.data._id);
-                      },
+            {canUseBulkBudgetActions && isApproved && (
+              <ThreeDotMenu
+                rowId={params.data?._id}
+                menuItems={[
+                  {
+                    label: isUnapprovePending ? "Returning..." : "Unapprove",
+                    onClick: () => {
+                      if (isUnapprovePending) return;
+                      unapproveBudget(params.data._id);
                     },
-                  ]}
-                />
-              );
-            },
-          },
-        ]
-      : []),
+                  },
+                ]}
+              />
+            )}
+          </div>
+        );
+      },
+    },
   ];
 
   const tableData = budgetHistory
@@ -206,14 +219,65 @@ const BudgetHistory = () => {
         (isExtraBudget || isBulkBudget)
       );
     })
-    .map((item) => ({
-      ...item,
-      projectedAmount: inrFormat(item?.projectedAmount || 0),
-      actualAmount: inrFormat(item?.actualAmount || 0),
-      dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
-      dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
-      status: item?.status || "-",
-    }));
+    .map((item) => {
+      const invoice = item?.invoice || {};
+      const unit = item?.unit || {};
+
+      return {
+        ...item,
+        department: item?.department?.name || item?.department || "-",
+        unitName: unit?.unitName || "-",
+        unitNo: unit?.unitNo || "-",
+        buildingName: unit?.building?.buildingName || "-",
+        projectedAmountRaw: item?.projectedAmount || 0,
+        actualAmountRaw: item?.actualAmount || 0,
+        projectedAmount: inrFormat(item?.projectedAmount || 0),
+        actualAmount: inrFormat(item?.actualAmount || 0),
+        dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
+        dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
+        invoiceName: invoice?.name || "-",
+        invoiceDate: invoice?.date ? humanDate(invoice.date) : "-",
+        invoiceLink: invoice?.link || "-",
+        status: item?.status || "-",
+        isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
+      };
+    });
+
+  const invoiceFiles = viewDetails
+    ? (viewDetails?.invoices?.length
+        ? viewDetails.invoices
+        : viewDetails?.invoice?.link
+          ? [viewDetails.invoice]
+          : []
+      ).filter((file) => file?.link)
+    : [];
+
+  const invoiceChips = invoiceFiles.length ? (
+    <span className="flex max-w-full flex-wrap gap-2">
+      {invoiceFiles.map((file, index) => {
+        const name = file.name || `Invoice ${index + 1}`;
+
+        return (
+          <Chip
+            key={file.id || `${file.link}-${index}`}
+            component="a"
+            href={file.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            clickable
+            label={name}
+            title={name}
+            size="small"
+            variant="outlined"
+            color="primary"
+            sx={{ maxWidth: "100%" }}
+          />
+        );
+      })}
+    </span>
+  ) : (
+    "-"
+  );
 
   return (
     <PageFrame>
@@ -244,6 +308,69 @@ const BudgetHistory = () => {
           unapproveSelectedBudgets(selectedRows);
         }}
       />
+
+      {viewDetails && (
+        <MuiModal
+          open={Boolean(viewDetails)}
+          onClose={() => setViewDetails(null)}
+          title={
+            <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              Department-Invoice Approval Budget Summary
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            <DetalisFormatted
+              title="Department"
+              detail={viewDetails.department || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Name"
+              detail={viewDetails.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={viewDetails.expanseType || "-"}
+            />
+            <DetalisFormatted
+              title="Payment Type"
+              detail={viewDetails.paymentType || "-"}
+            />
+            <DetalisFormatted
+              title="Projected Amount"
+              detail={`INR ${Number(viewDetails.projectedAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="Actual Amount"
+              detail={`INR ${Number(viewDetails.actualAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted title="Unit" detail={viewDetails.unitName || "-"} />
+            <DetalisFormatted title="Unit No" detail={viewDetails.unitNo || "-"} />
+            <DetalisFormatted
+              title="Building"
+              detail={viewDetails.buildingName || "-"}
+            />
+            <DetalisFormatted title="Due Date" detail={viewDetails.dueDate || "-"} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={`${invoiceFiles.length} ${invoiceFiles.length === 1 ? "file" : "files"} uploaded`}
+            />
+            <DetalisFormatted
+              title="Invoice Date"
+              detail={viewDetails.invoiceDate || "-"}
+            />
+            <DetalisFormatted
+              title="Approval Status"
+              detail={viewDetails.status || "-"}
+            />
+            <DetalisFormatted
+              title="Paid Status"
+              detail={viewDetails.isPaid || "Unpaid"}
+            />
+            <DetalisFormatted title="Invoice File" detail={invoiceChips} />
+          </div>
+        </MuiModal>
+      )}
     </PageFrame>
   );
 };

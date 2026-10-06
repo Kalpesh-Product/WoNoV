@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
-  TextField,
   Avatar,
-  InputAdornment,
   Popover,
   List,
   ListItem,
@@ -16,7 +14,6 @@ import {
 } from "@mui/material";
 import {
   IoIosArrowForward,
-  IoIosSearch,
   IoMdNotificationsOutline,
 } from "react-icons/io";
 import { MdOutlineMailOutline } from "react-icons/md";
@@ -191,23 +188,6 @@ const Header = ({
                   </button>
                 </nav>
               )}
-              {/* <TextField
-                fullWidth
-                size="small"
-                type="search"
-                placeholder="Type here to search..."
-                variant="standard"
-                slotProps={{
-                  input: {
-                    disableUnderline: true,
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <IoIosSearch size={20} />
-                      </InputAdornment>
-                    ),
-                  },
-                }}
-              /> */}
             </div>
 
             <div className="flex w-full justify-end items-center gap-4">

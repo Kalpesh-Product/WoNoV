@@ -2773,6 +2773,20 @@ HR_DEPARTMENT_KRA_DEPARTMENT_WISE_OVERVIEW_TAB: {
     title: "DEPARTMENT EXPENSES",
     type: "read",
   },
+  MAINTENANCE_ST_OVERALL_ENERGY_CONSUMPTION_BILLING: {
+    value: "maintenance_st_overall_energy_consumption_billing_graph",
+    title: "SUNTECK BUILDING - OVERALL ENERGY CONSUMPTION & BILLING",
+    type: "read",
+    route:
+      "/app/dashboard/maintenance-dashboard/mix-bag/st-overall-energy-consumption-billing",
+  },
+  MAINTENANCE_DTC_OVERALL_ENERGY_CONSUMPTION_BILLING: {
+    value: "maintenance_dtc_overall_energy_consumption_billing_graph",
+    title: "DEMPO TRADE CENTRE - OVERALL ENERGY CONSUMPTION & BILLING",
+    type: "read",
+    route:
+      "/app/dashboard/maintenance-dashboard/mix-bag/dtc-overall-energy-consumption-billing",
+  },
 
   // 🟢 Maintenance Nav Cards
   MAINTENANCE_ANNUAL_EXPENSES: {

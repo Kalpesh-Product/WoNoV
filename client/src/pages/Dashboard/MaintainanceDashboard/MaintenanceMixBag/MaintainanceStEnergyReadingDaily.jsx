@@ -35,6 +35,11 @@ const emptyFormValues = {
 const formatDate = (value) => dayjs(value).format("DD-MM-YYYY");
 const formatDateTime = (value) =>
   value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : "";
+const formatWholeNumber = (value) => {
+  if (value === null || value === undefined || value === "") return "";
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? String(Math.round(numericValue)) : "";
+};
 // const isPreviousDate = (value) => dayjs(value).isBefore(dayjs(), "day");
 
 const modalFieldSx = {
@@ -405,18 +410,21 @@ const MaintainanceStEnergyReadingDaily = () => {
       headerName: "Last Reading",
       flex: 1,
       minWidth: 160,
+      valueFormatter: (params) => formatWholeNumber(params.value),
     },
     {
       field: "currentReading",
       headerName: "New Reading",
       flex: 1,
       minWidth: 160,
+      valueFormatter: (params) => formatWholeNumber(params.value),
     },
     {
       field: "consumption",
       headerName: "Consumption (KWH)",
       flex: 1,
       minWidth: 170,
+      valueFormatter: (params) => formatWholeNumber(params.value),
     },
     { field: "addedBy", headerName: "Added By", flex: 1, minWidth: 180 },
     { field: "dateDisplay", headerName: "Added At", flex: 1, minWidth: 180 },
@@ -491,7 +499,7 @@ const MaintainanceStEnergyReadingDaily = () => {
             headerActions={
               <div className="order-first">
                 <Chip
-                  label={`TOTAL CONSUMPTION : ${totalConsumption}`}
+                  label={`TOTAL CONSUMPTION : ${formatWholeNumber(totalConsumption)}`}
                   sx={{
                     backgroundColor: "#dfe8ff",
                     color: "#1f3f7a",
@@ -668,7 +676,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                         <TextField
                           size="small"
                           fullWidth
-                          value={row.previousReading}
+                          value={formatWholeNumber(row.previousReading)}
                           disabled
                           sx={modalFieldSx}
                         />
@@ -697,7 +705,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                         <TextField
                           size="small"
                           fullWidth
-                          value={row.consumption}
+                          value={formatWholeNumber(row.consumption)}
                           disabled
                           sx={modalFieldSx}
                         />
@@ -812,6 +820,7 @@ const MaintainanceStEnergyReadingDaily = () => {
                 render={({ field }) => (
                   <TextField
                     {...field}
+                    value={formatWholeNumber(field.value)}
                     label="Last Reading"
                     type="number"
                     fullWidth
@@ -841,7 +850,7 @@ const MaintainanceStEnergyReadingDaily = () => {
 
               <TextField
                 label="Consumption (KWH)"
-                value={editConsumption}
+                value={formatWholeNumber(editConsumption)}
                 fullWidth
                 size="small"
                 disabled
@@ -879,15 +888,15 @@ const MaintainanceStEnergyReadingDaily = () => {
               <DetalisFormatted title="Meter No" detail={selectedReading.meterNo || "-"} />
               <DetalisFormatted
                 title="Last Reading"
-                detail={selectedReading.previousReading ?? "-"}
+                detail={formatWholeNumber(selectedReading.previousReading) || "-"}
               />
               <DetalisFormatted
                 title="New Reading"
-                detail={selectedReading.currentReading ?? "-"}
+                detail={formatWholeNumber(selectedReading.currentReading) || "-"}
               />
               <DetalisFormatted
                 title="Consumption (KWH)"
-                detail={selectedReading.consumption ?? "-"}
+                detail={formatWholeNumber(selectedReading.consumption) || "-"}
               />
               <DetalisFormatted title="Added By" detail={selectedReading.addedBy || "-"} />
               <DetalisFormatted

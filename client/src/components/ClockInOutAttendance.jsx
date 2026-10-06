@@ -34,6 +34,13 @@ import { isAlphanumeric, noOnlyWhitespace } from "../utils/validators";
 import dayjs from "dayjs";
 import ConfirmationModal from "./ConfirmationModal";
 import AttendanceCameraModal from "./AttendanceCameraModal";
+import {
+  MdCoffee,
+  MdLogin,
+  MdLogout,
+  MdTimer,
+} from "react-icons/md";
+import { FiLogIn, FiLogOut } from "react-icons/fi";
 
 const ClockInOutAttendance = () => {
   const axios = useAxiosPrivate();
@@ -455,16 +462,6 @@ const ClockInOutAttendance = () => {
     return `${hrs}:${mins}:${secs}`;
   };
 
-  const formatDisplayDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   const formatTime = (seconds) => {
     const hrs = String(Math.floor(seconds / 3600)).padStart(2, "0");
     const mins = String(Math.floor((seconds % 3600) / 60)).padStart(2, "0");
@@ -590,121 +587,168 @@ const ClockInOutAttendance = () => {
   const timeStats = [
     {
       label: "Clock-in Time",
-      value: clockInTime && isToday ? humanTime(clockInTime) : "0h:0m:0s", // avoid clock-in time if clocking out for prev day
+      value: clockInTime && isToday ? humanTime(clockInTime) : "—",
+      icon: MdLogin,
+      iconClassName: "bg-[#e5f8ef] text-[#07965f]",
     },
     {
       label: "Work Hours",
-      value: isToday ? workHours : "0h:0m:0s",
+      value: isToday ? workHours : "00:00:00",
+      icon: MdTimer,
+      iconClassName: "bg-[#eaf0f8] text-[#3F6291]",
     },
     {
       label: "Break Hours",
-      value: isToday ? breakHours : "0h:0m:0s",
+      value: isToday ? breakHours : "00:00:00",
+      icon: MdCoffee,
+      iconClassName: "bg-[#fff0ec] text-[#ef6548]",
     },
     {
       label: "Clock-out Time",
       value:
         clockOutTime && isToday && clockInTime < clockOutTime
           ? humanTime(clockOutTime)
-          : "0h:0m:0s",
+          : "—",
+      icon: MdLogout,
+      iconClassName: "bg-[#fff0f0] text-[#ff0000]",
     },
   ];
 
-  // const isPrimaryDisabled =  isClockingIn || isClockingOut;
-  // const isBreakDisabled = isStartbreak || isEndBreak;
+  const attendanceStatus =
+    hasClockedIn && isToday
+      ? hasTakenBreak
+        ? "On Break"
+        : "Clocked In"
+      : clockOutTime && isToday
+        ? "Clocked Out"
+        : "Not Clocked In";
+  const attendanceStatusStyle = {
+    "Clocked In": {
+      badge: "bg-[#e5f8ef] text-[#07965f]",
+      dot: "bg-[#07965f]",
+    },
+    "On Break": {
+      badge: "bg-[#fff0ec] text-[#ef6548]",
+      dot: "bg-[#ef6548]",
+    },
+    "Clocked Out": {
+      badge: "bg-[#fff0f0] text-[#ff0000]",
+      dot: "bg-[#ff0000]",
+    },
+    "Not Clocked In": {
+      badge: "bg-[#eef2f7] text-[#1E3D73]",
+      dot: "bg-[#7d8ba2]",
+    },
+  }[attendanceStatus];
+  const displayedDuration =
+    hasClockedIn && isToday ? formatElapsedTime(elapsedTime) : "00:00:00";
+  const actionMessage = hasClockedIn
+    ? hasTakenBreak
+      ? "Your break is currently active."
+      : "Your workday is in progress."
+    : clockOutTime && isToday
+      ? "Your workday has ended for today. Please check in again tomorrow."
+      : "Start your workday by clocking in.";
 
-  //Temporarily disabled
-  const isPrimaryDisabled = false;
+  const handleClockOutClick = () => {
+    if (!hasClockedIn) return;
+    if (!isToday) {
+      setValue(
+        "targetedDay",
+        getCorrectionTargetDay().format("YYYY-MM-DD"),
+      );
+      setOpenModal(true);
+      return;
+    }
+    handleStop();
+  };
+
+  // Temporarily keep break controls available outside mutation loading states.
   const isBreakDisabled = false;
 
   return (
-    <div className="flex flex-col  gap-4 p-0 h-80">
-      <div className="grid grid-cols-1 gap-4">
-        <div className="col-span-2 flex  items-center flex-col h-80 ">
-          <div className="text-subtitle text-primary font-pmedium font-medium mb-4">
-            {formatDisplayDate(new Date())}
-          </div>
-
-          <div className="flex gap-12">
-            <button
-              onClick={() => {
-                if (hasClockedIn && !isToday) {
-                  setValue(
-                    "targetedDay",
-                    getCorrectionTargetDay().format("YYYY-MM-DD"),
-                  );
-                  setOpenModal(true);
-                } else {
-                  hasClockedIn
-                    ? isToday && handleStop()
-                    : isToday && handleStart();
-                }
-                // hasClockedIn ? handleStop() : handleStart()
-              }}
-              className={`h-40 w-40 rounded-full ${
-                hasClockedIn && !correctionPending
-                  ? "bg-[#EB5C45]"
-                  : "bg-wonoGreen  transition-all"
-              } text-white flex justify-center items-center ${
-                isPrimaryDisabled
-                  ? "cursor-not-allowed opacity-60"
-                  : "hover:scale-105"
-              }`}
-              // disabled={isPrimaryDisabled}
-            >
-              {hasClockedIn && !correctionPending
-                ? "Clock Out"
-                : isClockingIn
-                  ? "Starting..."
-                  : "Clock In"}
-            </button>
-
-            {hasClockedIn && (
-              <button
-                onClick={hasTakenBreak ? handleEnBreak : handleStartBreak}
-                className={`h-40 w-40 rounded-full ${
-                  hasTakenBreak
-                    ? "bg-[#FB923C]"
-                    : "bg-[#FACC15]  transition-all"
-                }   text-white flex justify-center items-center ${
-                  isBreakDisabled
-                    ? "cursor-not-allowed opacity-60"
-                    : "hover:scale-105"
-                }`}
-                // disabled={isBreakDisabled}
-              >
-                {hasTakenBreak
-                  ? "End Break"
-                  : isStartbreak
-                    ? "Starting..."
-                    : "Start Break"}
-              </button>
-            )}
-          </div>
-          <div className="text-subtitle text-primary font-pmedium font-medium mb-4 pt-4">
-            {hasClockedIn && isToday
-              ? `${formatElapsedTime(elapsedTime)}`
-              : clockOutTime && isToday
-                ? "Clocked Out"
-                : "Not Clocked In"}
-          </div>
-
-          <div className="flex gap-4">
-            {timeStats.map((stat, index) => (
-              <div
-                key={index}
-                className={`flex flex-col gap-2 justify-center text-center ${
-                  index !== timeStats.length - 1
-                    ? "border-r-[1px] border-borderGray pr-4"
-                    : ""
-                }`}
-              >
-                <span className="text-muted">{stat.label}</span>
-
-                <span className="font-medium text-content">{stat.value}</span>
-              </div>
-            ))}
-          </div>
+    <div className="flex min-h-[365px] flex-col px-4 pb-4 pt-3 sm:px-5">
+      <div className="flex flex-1 flex-col items-center justify-center py-2 text-center">
+        <div
+          className={`mb-2 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-pbold ${attendanceStatusStyle.badge}`}
+        >
+          <span
+            className={`h-2 w-2 rounded-full ${attendanceStatusStyle.dot}`}
+          />
+          {attendanceStatus}
         </div>
+
+        <div className="text-[42px] font-pbold leading-none tracking-[0.02em] text-[#1E3D73] sm:text-[48px]">
+          {displayedDuration}
+        </div>
+        <div className="mt-2 text-sm font-pmedium text-[#1E3D73]">
+          Work duration
+        </div>
+
+        <div className="mt-5 grid w-full max-w-[540px] grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={handleStart}
+            disabled={hasClockedIn || Boolean(clockOutTime && isToday) || isClockingIn}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1E3D73] text-sm font-pbold text-white shadow-[0_8px_18px_rgba(30,61,115,0.22)] transition-colors hover:bg-[#162f5b] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd] disabled:shadow-none"
+          >
+            <FiLogIn size={19} aria-hidden="true" />
+            {isClockingIn ? "Starting..." : "Clock In"}
+          </button>
+          <button
+            type="button"
+            onClick={handleClockOutClick}
+            disabled={!hasClockedIn || isClockingOut || correctionPending}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#ff000080] text-sm font-pbold text-white transition-colors hover:bg-[#ff000099] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
+          >
+            <FiLogOut size={18} aria-hidden="true" />
+            {isClockingOut ? "Stopping..." : "Clock Out"}
+          </button>
+          <button
+            type="button"
+            onClick={hasTakenBreak ? handleEnBreak : handleStartBreak}
+            disabled={!hasClockedIn || isBreakDisabled || isStartbreak || isEndBreak}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#fff0ec] text-sm font-pbold text-[#e85d42] transition-colors hover:bg-[#ffe3dc] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
+          >
+            <MdCoffee size={19} aria-hidden="true" />
+            {hasTakenBreak
+              ? isEndBreak
+                ? "Ending..."
+                : "End Break"
+              : isStartbreak
+                ? "Starting..."
+                : "Start Break"}
+          </button>
+        </div>
+        <div className="mt-3 text-xs font-pregular text-[#1E3D73]">
+          {actionMessage}
+        </div>
+      </div>
+
+      <div className="mt-3 grid grid-cols-1 gap-2.5 border-t border-[#e4eaf3] pt-4 sm:grid-cols-2 lg:grid-cols-4">
+        {timeStats.map((stat) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={stat.label}
+              className="flex min-w-0 items-center gap-3 rounded-xl bg-[#f8faff] px-3 py-3"
+            >
+              <span
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${stat.iconClassName}`}
+              >
+                <Icon size={21} aria-hidden="true" />
+              </span>
+              <div className="min-w-0 text-left">
+                <div className="truncate text-[10px] font-pmedium text-[#1E3D73]">
+                  {stat.label}
+                </div>
+                <div className="mt-1 truncate text-sm font-pbold text-[#1E3D73]">
+                  {stat.value}
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
       <MuiModal
         title={"Correction Request"}
