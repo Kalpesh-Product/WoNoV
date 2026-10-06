@@ -80,6 +80,61 @@ const formatGraphAmount = (amount, currency, convert, options = {}) =>
     maximumFractionDigits: 0,
   }).format(Math.trunc(convert(amount)));
 
+const INVESTOR_CURRENCY_SYMBOLS = {
+  INR: "₹",
+  USD: "$",
+};
+
+const AED_TOOLTIP_SYMBOL = `<span role="img" aria-label="AED" style="position:relative;display:inline-block;width:1em;height:1em;flex:0 0 1em;align-self:center;">
+  <span style="position:absolute;left:0.2em;top:0.06em;width:0.7em;height:0.88em;border:0.13em solid currentColor;border-left-width:0.18em;border-radius:0 0.55em 0.55em 0;box-sizing:border-box;"></span>
+  <span style="position:absolute;left:0;top:0.34em;width:1em;height:0.12em;border-radius:0.12em;background:currentColor;"></span>
+  <span style="position:absolute;left:0;top:0.62em;width:1em;height:0.12em;border-radius:0.12em;background:currentColor;"></span>
+</span>`;
+
+const AedCurrencySymbol = () => (
+  <span
+    role="img"
+    aria-label="AED"
+    className="relative inline-block shrink-0 self-center"
+    style={{ width: "1em", height: "1em" }}
+  >
+    <span
+      className="absolute box-border"
+      style={{
+        left: "0.2em",
+        top: "0.06em",
+        width: "0.7em",
+        height: "0.88em",
+        border: "0.13em solid currentColor",
+        borderLeftWidth: "0.18em",
+        borderRadius: "0 0.55em 0.55em 0",
+      }}
+    />
+    <span
+      className="absolute left-0 rounded"
+      style={{ top: "0.34em", width: "1em", height: "0.12em", background: "currentColor" }}
+    />
+    <span
+      className="absolute left-0 rounded"
+      style={{ top: "0.62em", width: "1em", height: "0.12em", background: "currentColor" }}
+    />
+  </span>
+);
+
+const InvestorCurrencyAmount = ({ currency, value, suffix = "" }) => (
+  <span className="inline-flex items-center gap-[0.3em] whitespace-nowrap leading-none">
+    {currency === "AED" ? (
+      <AedCurrencySymbol />
+    ) : (
+      <span>{INVESTOR_CURRENCY_SYMBOLS[currency] || currency}</span>
+    )}
+    <span>
+      {value}
+      {suffix}
+    </span>
+  </span>
+);
+
 const formatGraphScaleAmount = (
   amount,
   convert,
@@ -405,6 +460,7 @@ const InvestorDashboardCards = ({
 
 const InvestorSnapshotSection = ({
   format,
+  currency,
   hasPermission,
   perSqFtFinancialsByYear = {},
   currentAssetValueOwned = APPRECIATION_BASE_VALUATION,
@@ -415,23 +471,30 @@ const InvestorSnapshotSection = ({
   const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
   const [calendarValue, setCalendarValue] = useState(() => dayjs("2025-04-01"));
   const isCalendarOpen = Boolean(calendarAnchorEl);
+  const formatCurrency = (amount, suffix = "") => (
+    <InvestorCurrencyAmount
+      currency={currency}
+      value={format(amount)}
+      suffix={suffix}
+    />
+  );
   const getPerSqFtRows = (fiscalYear) => {
     const values = perSqFtFinancialsByYear[fiscalYear] || {};
 
     return [
       {
         label: "Per Sq. Ft. Income",
-        value: format(values.income || 0),
+        value: formatCurrency(values.income || 0),
         tone: "text-[#12a573]",
       },
       {
         label: "Per Sq. Ft. Expense",
-        value: format(values.expense || 0),
+        value: formatCurrency(values.expense || 0),
         tone: "text-[#f04a4a]",
       },
       {
         label: "Per Sq. Ft. Profit/Loss",
-        value: format(values.profitLoss || 0),
+        value: formatCurrency(values.profitLoss || 0),
         tone:
           (values.profitLoss || 0) >= 0
             ? "text-[#12a573]"
@@ -442,14 +505,15 @@ const InvestorSnapshotSection = ({
   const cards = [
     {
       title: "FY - 2026-27 - PROJECTIONS",
+      perSqFtTitle: "FY - 2026-27 - PER SQR FT MANAGED",
       icon: InvestorBarsIcon,
       tone: "text-[#12a573] bg-[#eafbf3]",
       rows: [
-        { label: "Revenues", value: format(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(currentProjectedFinancials.profitLoss || 0),
+          value: formatCurrency(currentProjectedFinancials.profitLoss || 0),
           tone:
             (currentProjectedFinancials.profitLoss || 0) >= 0
               ? "text-[#12a573]"
@@ -460,48 +524,50 @@ const InvestorSnapshotSection = ({
           value: `${Number(currentExitInventory).toLocaleString("en-IN")} Desks`,
           tone: "text-[#12a573]",
         },
-        { label: "Asset Owned", value: format(currentAssetValueOwned), tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(currentAssetValueOwned), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2026-27"),
     },
     {
       title: "FY - 2025-26 - PROJECTIONS",
+      perSqFtTitle: "FY - 2025-26 - PER SQR FT MANAGED",
       icon: MdCalendarMonth,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       hasCalendar: true,
       rows: [
-        { label: "Revenues", value: format(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
+          value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
           tone:
             (actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
         { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
-        { label: "Asset Owned", value: `${format(4_885_986)}+`, tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(4_885_986, "+"), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2025-26"),
     },
     {
       title: "FY - 2024-25 - PROJECTIONS",
+      perSqFtTitle: "FY - 2024-25 - PER SQR FT MANAGED",
       icon: InvestorBarsIcon,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       rows: [
-        { label: "Revenues", value: format(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: format(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: format(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
+          value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
           tone:
             (actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
         { label: "Exit Inventory", value: "580 Desks", tone: "text-[#12a573]" },
-        { label: "Asset Owned", value: `${format(4_427_360)}+`, tone: "text-[#12a573]" },
+        { label: "Asset Owned", value: formatCurrency(4_427_360, "+"), tone: "text-[#12a573]" },
       ],
       perSqFtRows: getPerSqFtRows("FY 2024-25"),
     },
@@ -573,6 +639,16 @@ const InvestorSnapshotSection = ({
                 </div>
               </div>
               <div className="rounded-lg border border-[#e8ecf4] bg-white px-5 py-3 text-left shadow-sm">
+                <div className="mb-4 flex items-center gap-4">
+                  <span
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${card.tone}`}
+                  >
+                    <Icon size={28} />
+                  </span>
+                  <span className="text-base font-pmedium text-[#1E3D73]">
+                    {card.perSqFtTitle}
+                  </span>
+                </div>
                 <div className="flex flex-col divide-y divide-[#edf1f6]">
                   {card.perSqFtRows.map((row) => (
                   <div
@@ -613,6 +689,17 @@ const InvestorSnapshotSection = ({
 
 const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   const axios = useAxiosPrivate();
+  const { currency, convert } = useCurrency();
+
+  const formatMixIncomeTooltipAmount = (amount) => {
+    const formattedValue = formatGraphAmount(amount, currency, convert);
+
+    if (currency === "AED") {
+      return `<span style="display:inline-flex;align-items:center;gap:0.3em;direction:ltr;white-space:nowrap;font-size:inherit;line-height:1;vertical-align:middle;">${AED_TOOLTIP_SYMBOL}<span style="display:inline-block;line-height:1;">${formattedValue}</span></span>`;
+    }
+
+    return `${INVESTOR_CURRENCY_SYMBOLS[currency] || currency} ${formattedValue}`;
+  };
 
   const { data: simpleRevenue = [], isLoading } = useQuery({
     queryKey: ["simpleRevenue"],
@@ -771,7 +858,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       hideYearNavigation
       investorVariant
       hideHeaderAmounts
-      hideTooltipCurrencySymbol
+      tooltipValueFormatter={formatMixIncomeTooltipAmount}
       showFiscalYearInTitle={false}
     />
   );
@@ -1267,7 +1354,6 @@ const InvestorAppreciationCenter = () => {
         }
         hideYearNavigation
         chartHeight={360}
-        refreshOnDataChange
         sectionBorderColor="#1E3D73"
         sectionBodyBorderColor="#9FB2CF"
       />
@@ -1282,8 +1368,18 @@ const InvestorAppreciationCenter = () => {
           </div>
           <div className="flex items-center gap-2 px-3 py-2.5">
             <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#0BDA51]" />
-            <span>
-              Asset: <strong>{formatGraphAmount(hoveredValuation.amount, currency, convert)}</strong>
+            <span className="inline-flex items-center gap-1 whitespace-nowrap">
+              <span>Asset:</span>
+              <strong>
+                <InvestorCurrencyAmount
+                  currency={currency}
+                  value={formatGraphAmount(
+                    hoveredValuation.amount,
+                    currency,
+                    convert,
+                  )}
+                />
+              </strong>
             </span>
           </div>
         </div>
@@ -1971,7 +2067,19 @@ const InvestorIncomeExpenseGraph = ({
     },
     tooltip: {
       y: {
-        formatter: (value) => formatGraphAmount(value, currency, convert),
+        formatter: (value) => {
+          const formattedValue = formatGraphAmount(
+            value,
+            currency,
+            convert,
+          );
+
+          if (currency === "AED") {
+            return `<span style="display:inline-flex;align-items:center;gap:0.3em;direction:ltr;white-space:nowrap;font-size:inherit;line-height:1;vertical-align:middle;">${AED_TOOLTIP_SYMBOL}<span style="display:inline-block;line-height:1;">${formattedValue}</span></span>`;
+          }
+
+          return `${INVESTOR_CURRENCY_SYMBOLS[currency] || currency} ${formattedValue}`;
+        },
       },
     },
   };
@@ -2035,6 +2143,7 @@ const InvestorIncomeExpenseGraph = ({
         format={(amount, options) =>
           formatGraphAmount(amount, currency, convert, options)
         }
+        currency={currency}
         hasPermission={hasPermission}
         perSqFtFinancialsByYear={perSqFtFinancialsByYear}
         currentAssetValueOwned={snapshotAssetValueOwned}

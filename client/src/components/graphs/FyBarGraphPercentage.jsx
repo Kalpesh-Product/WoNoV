@@ -180,18 +180,24 @@ const FyBarGraphPercentage = ({
   showSmallLabels = false,
   hideHeaderAmounts = false,
   hideTooltipCurrencySymbol = false,
+  tooltipValueFormatter,
   showFiscalYearInTitle = true,
 }) => {
   const { convert, format } = useCurrency();
   const formatTooltipAmount = useCallback(
-    (amount) =>
-      hideTooltipCurrencySymbol
+    (amount) => {
+      if (typeof tooltipValueFormatter === "function") {
+        return tooltipValueFormatter(amount);
+      }
+
+      return hideTooltipCurrencySymbol
         ? new Intl.NumberFormat("en-IN", {
             minimumFractionDigits: 0,
             maximumFractionDigits: 0,
           }).format(Math.trunc(convert(amount)))
-        : format(amount),
-    [convert, format, hideTooltipCurrencySymbol],
+        : format(amount);
+    },
+    [convert, format, hideTooltipCurrencySymbol, tooltipValueFormatter],
   );
   const currentFYStartYear = getCurrentFinancialYearStart();
   const fyOptions = useMemo(() => {
@@ -556,6 +562,13 @@ const FyBarGraphPercentage = ({
               return (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0) > 0;
             });
 
+            const total = INVESTOR_TOOLTIP_ROWS.reduce((sum, { vertical }) => {
+              const seriesName = hasProjectedValue
+                ? `${PROJECTED_SERIES_PREFIX}${vertical}`
+                : vertical;
+              return sum + (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0);
+            }, 0);
+
             const rowsHtml = INVESTOR_TOOLTIP_ROWS.map(({ vertical, label }) => {
               const seriesName = hasProjectedValue
                 ? `${PROJECTED_SERIES_PREFIX}${vertical}`
@@ -566,24 +579,18 @@ const FyBarGraphPercentage = ({
                 ? INVESTOR_PROJECTED_COLORS[projectedColorIndex] || "#787878"
                 : INVESTOR_ACTUAL_COLORS[vertical] || "#2f8edc";
               const rawVal = displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
+              const percentage = total > 0 ? Math.round((rawVal / total) * 100) : 0;
 
               return `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
                   <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:${color}; display:inline-block;"></span>
                   <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
-                    <span>${hasProjectedValue ? `Projected ${label}` : label}:</span>
+                    <span>${percentage}% = ${label} =</span>
                     <strong>${formatTooltipAmount(rawVal)}</strong>
                   </span>
                 </div>
                 ${vertical === "Alternate" ? '<hr style="margin:2px 0 8px; border:0; border-top:1px solid #e5e7eb;" />' : ""}`;
             }).join("");
-
-            const total = INVESTOR_TOOLTIP_ROWS.reduce((sum, { vertical }) => {
-              const seriesName = hasProjectedValue
-                ? `${PROJECTED_SERIES_PREFIX}${vertical}`
-                : vertical;
-              return sum + (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0);
-            }, 0);
 
             return `
               <div style="width:max-content; min-width:0; font-family:Poppins-Regular,sans-serif; font-size:12px; line-height:1.4;">
@@ -593,7 +600,7 @@ const FyBarGraphPercentage = ({
                   <div style="display:flex; align-items:center; gap:8px;">
                     <span style="width:10px; height:10px; flex:0 0 10px; border-radius:50%; background:#F59E0B; display:inline-block;"></span>
                     <span style="display:flex; align-items:center; gap:6px; color:#111827; white-space:nowrap;">
-                      <span>${hasProjectedValue ? "Projected Total" : "Total"}:</span>
+                      <span>100% = Overall Revenues =</span>
                       <strong>${formatTooltipAmount(total)}</strong>
                     </span>
                   </div>
