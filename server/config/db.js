@@ -25,6 +25,8 @@ const connectDb = async (url) => {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(url, {
+      autoCreate: false,
+      autoIndex: false,
       maxPoolSize: 10,
       minPoolSize: 0,
       maxIdleTimeMS: 60000,

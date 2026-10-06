@@ -58,6 +58,8 @@ require("./hr/Vendor");
 //Performance
 require("./performances/kraKpaRole");
 require("./performances/kraKpaTask");
+require("./performances/KraKpaIndividualMonthlyKpa");
+require("./performances/KraKpaSelfKra");
 
 //Events
 require("./events/Events");

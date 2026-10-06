@@ -67,6 +67,9 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
+  const detailsPath = location.pathname.startsWith("/app/kra-kpa")
+    ? memberDetailsBasePath.replace("/app/performance", "/app/kra-kpa")
+    : memberDetailsBasePath;
   const { department } = useParams();
   const { auth } = useAuth();
 
@@ -562,7 +565,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
           }
 
            //  navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
-                        navigate(`${memberDetailsBasePath}/${firstTab}`, {
+                        navigate(`${detailsPath}/${firstTab}`, {
              // state: { selectedMember: { memberId, memberName: params.value } },
               state: {
                 selectedMember: {

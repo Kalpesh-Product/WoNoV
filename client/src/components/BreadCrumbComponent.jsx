@@ -8,6 +8,10 @@ const BreadCrumbComponent = () => {
   const navigate = useNavigate();
 
   const formatLabel = (value) => {
+    if (value.toLowerCase() === "kra-kpa") {
+      return "KRA & KPA";
+    }
+
     const acronymMap = {
       amc: "AMC",
       biz: "BIZ",

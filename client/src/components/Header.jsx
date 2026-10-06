@@ -34,6 +34,7 @@ import { queryClient } from "../main";
 import relativeTime from "dayjs/plugin/relativeTime";
 import dayjs from "dayjs";
 import CurrencySelector from "./CurrencySelector";
+import HrSearchPalette from "./HrSearchPalette";
 
 const notificationRoutes = {
   meeting: "/app/meetings/calendar",
@@ -160,7 +161,9 @@ const Header = ({
           <>
             <div
               className={`flex w-full items-center ${
-                showCurrencySelector ? "pl-8" : "pl-20"
+                showCurrencySelector
+                  ? "justify-between pl-8"
+                  : "justify-center pl-12"
               }`}
             >
               {showCurrencySelector && (
@@ -188,9 +191,27 @@ const Header = ({
                   </button>
                 </nav>
               )}
+              <HrSearchPalette />
+              {/* <TextField
+                fullWidth
+                size="small"
+                type="search"
+                placeholder="Type here to search..."
+                variant="standard"
+                slotProps={{
+                  input: {
+                    disableUnderline: true,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <IoIosSearch size={20} />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              /> */}
             </div>
 
-            <div className="flex w-full justify-end items-center gap-4">
+            <div className="flex shrink-0 justify-end items-center gap-4">
               {showCurrencySelector && <CurrencySelector />}
 
               <button
@@ -219,7 +240,7 @@ const Header = ({
           </>
         )}
         {/* <div className="flex items-center gap-4 w-[40%]"> */}
-        <div className="flex items-center gap-4 md:w-[45%] w-fit">
+        <div className="flex w-fit shrink-0 items-center gap-4">
           <Avatar onClick={handleAvatarClick} className="cursor-pointer">
             {/* {auth.user.email === "abrar@biznest.co.in" ? ( */}
             {auth?.user?.profilePicture?.url ? (

@@ -6,6 +6,9 @@ import useAuth from "../../hooks/useAuth";
 
 const DepartmentPerformanceLayout = () => {
   const location = useLocation();
+  const modulePath = location.pathname.startsWith("/app/kra-kpa")
+    ? "/app/kra-kpa"
+    : "/app/performance";
   const { overallType, department, memberWiseType } = useParams();
   const { auth } = useAuth();
   const roleTitles =
@@ -16,14 +19,14 @@ const DepartmentPerformanceLayout = () => {
   const isMemberHierarchyRoute = Boolean(overallType && memberWiseType);
   const isAssignRoute = location.pathname.includes("/assign-KRA-KPA");
   const basePath = isDepartmentKraMemberWiseRoute
-       ? "/app/performance/department-KRA/member-wise-KRA"
+       ? `${modulePath}/department-KRA/member-wise-KRA`
     : isDepartmentKpaMemberWiseRoute
-      ? "/app/performance/department-KPA/member-wise-KPA"
+      ? `${modulePath}/department-KPA/member-wise-KPA`
     : isMemberHierarchyRoute
-    ? `/app/performance/department-wise/${overallType}/${memberWiseType}`
+    ? `${modulePath}/department-wise/${overallType}/${memberWiseType}`
     : isAssignRoute
-      ? "/app/performance/assign-KRA-KPA"
-    : `/app/performance/${department}`;
+      ? `${modulePath}/assign-KRA-KPA`
+    : `${modulePath}/${department}`;
 
 const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-wise-KPA");
   const isMemberWiseKraFlow = location.pathname.includes("/department-KRA/member-wise-KRA");
@@ -65,8 +68,16 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
     {
       label: "Individual Monthly KPA",
       path: "individual-Monthly-KPA",
-      permission: PERMISSIONS.PERFORMANCE_INDIVIDUAL_KPA.value,
+      permission:
+        modulePath === "/app/kra-kpa"
+          ? PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value
+          : PERMISSIONS.PERFORMANCE_INDIVIDUAL_KPA.value,
     },
+    ...(modulePath === "/app/kra-kpa" ? [{
+      label: "Self KRA",
+      path: "self-KRA",
+      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+    }] : []),
     {
       label: "Team Daily KRA",
       path: "team-Daily-KRA",
@@ -92,7 +103,11 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
 //     : isMemberWiseKraFlow
 //       ? "daily-KRA"
 //       : visibleTabs[0]?.path || "daily-KRA";
- const visibleTabs = isAssignRoute
+ const visibleTabs = modulePath === "/app/kra-kpa" && isMemberWiseKpaFlow
+    ? tabs.filter((tab) =>
+        tab.path === "individual-Monthly-KPA" || tab.path === "self-KRA"
+      )
+    : isAssignRoute
     ? tabs.filter(
         (tab) => tab.path === "team-Daily-KRA" || tab.path === "team-Monthly-KPA"
       )
@@ -110,7 +125,9 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
         ? tabs.filter((tab) => tab.path.toLowerCase().includes("kra"))
         : tabs;
 
-  const defaultTabPath = isAssignRoute
+  const defaultTabPath = modulePath === "/app/kra-kpa" && isMemberWiseKpaFlow
+    ? "individual-Monthly-KPA"
+    : isAssignRoute
     ? "team-Daily-KRA"
     //    : isMemberWiseKpaFlow && canManageTeam && selectedMemberId && !isManagerViewingOwnMemberRow
     //   ? "individual-Monthly-KPA"
