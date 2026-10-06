@@ -835,7 +835,7 @@ const ClockInOutAttendance = () => {
       />
        <AttendanceCameraModal
         open={Boolean(cameraAction)}
-        title={`Capture photo for ${cameraAction?.replace("-", " ") || "attendance"}`}
+        title={`${cameraAction?.replace("-", " ") || "attendance"} verification`}
         onClose={() => setCameraAction(null)}
         onCapture={handleCameraCapture}
         isLoading={isClockingIn || isClockingOut || isStartbreak || isEndBreak}
