@@ -97,6 +97,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "performance",
       permission: PERMISSIONS.SIDEBAR_PERFORMANCE.value,
     },
+    {
+      name: "KRA & KPA",
+      icon: <GrDocumentPerformance />,
+      route: "kra-kpa",
+      permission: PERMISSIONS.KRAKPA_MODULE_ACCESS.value,
+    },
 
     {
       name: "Visitors",

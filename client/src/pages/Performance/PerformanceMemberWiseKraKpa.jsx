@@ -15,6 +15,11 @@ import {
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
+import {
+    getCurrentFiscalYear,
+    getFiscalMonthKey,
+    toIndividualKpaTask,
+} from "./kraKpaIndividualKpaAdapter";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
@@ -72,6 +77,11 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
     const axios = useAxiosPrivate();
     const navigate = useNavigate();
     const location = useLocation();
+    const detailsPath = location.pathname.startsWith("/app/kra-kpa")
+        ? memberDetailsBasePath.replace("/app/performance", "/app/kra-kpa")
+        : memberDetailsBasePath;
+    const isKraKpaModule = location.pathname.startsWith("/app/kra-kpa");
+    const fiscalYear = location.state?.fiscalYear || getCurrentFiscalYear();
     const { department } = useParams();
     const { auth } = useAuth();
     const roleTitles = auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
@@ -83,6 +93,10 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
         .trim();
     const currentDepartmentId = auth.user?.departments?.[0]?._id;
     const currentDepartmentName = auth.user?.departments?.[0]?.name;
+    const loggedInUserDepartmentIds =
+        auth?.user?.departments
+            ?.map((item) => item?._id?.toString())
+            .filter(Boolean) || [];
     const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
     const selectedDepartmentName = useSelector(
         (state) => state.performance.selectedDepartmentName
@@ -180,6 +194,8 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
         // Added selectedMonth in queryKey so data refetches on month change
         queryKey: [
             "performanceMemberWiseKraKpa",
+            isKraKpaModule,
+            fiscalYear,
             activeDepartmentId,
             department,
             selectedMonth,
@@ -206,17 +222,33 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                 axios.get(
                     `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`
                 ),
-                axios.get(
-                    `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`
-                ),
+                isKraKpaModule
+                    ? axios.get("/api/kra-kpa/individual-monthly-kpa", {
+                        params: {
+                            department: departmentId,
+                            month: getFiscalMonthKey(selectedMonth, fiscalYear),
+                            status: "Pending",
+                        },
+                    })
+                    : axios.get(
+                        `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`
+                    ),
                 axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
                 axios.get(
                     `/api/performance/get-tasks?dept=${departmentId}&type=TEAMKPA&duration=Monthly`
                 ),
                  axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KPA`),
-                axios.get(
-                    `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKPA`
-                ),
+                isKraKpaModule
+                    ? axios.get("/api/kra-kpa/individual-monthly-kpa", {
+                        params: {
+                            department: departmentId,
+                            month: getFiscalMonthKey(selectedMonth, fiscalYear),
+                            status: "Completed",
+                        },
+                    })
+                    : axios.get(
+                        `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKPA`
+                    ),
                 axios.get(
                     `/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKPA`
                 ),
@@ -237,6 +269,10 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
 
             const getResponseData = (response) =>
                 response?.status === "fulfilled" ? response.value?.data || [] : [];
+            const getIndividualKpaData = (response) =>
+                isKraKpaModule
+                    ? getResponseData(response).map(toIndividualKpaTask)
+                    : getResponseData(response);
             
             const normalizeName = (value) =>
                 (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
@@ -289,6 +325,37 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                  memberIdByName.set(normalizeName(memberName), memberId);
             });
 
+            const loggedInUserBelongsToDepartment =
+                loggedInUserId &&
+                loggedInUserDepartmentIds.includes(departmentId.toString());
+            if (loggedInUserBelongsToDepartment) {
+                const loggedInMemberRole = roleTitles.some((role) =>
+                    role.includes("manager")
+                )
+                    ? "Manager"
+                    : roleTitles.includes("top management")
+                        ? "Top Management"
+                        : "Employee";
+
+                allowedMemberIds.add(loggedInUserId);
+                if (!map.has(loggedInUserId)) {
+                    map.set(loggedInUserId, {
+                        memberId: loggedInUserId,
+                        member: loggedInUserName || "You",
+                        memberRole: loggedInMemberRole,
+                        ...DEFAULT_COUNTS,
+                    });
+                } else if (loggedInMemberRole !== "Employee") {
+                    map.set(loggedInUserId, {
+                        ...map.get(loggedInUserId),
+                        memberRole: loggedInMemberRole,
+                    });
+                }
+                if (loggedInUserName) {
+                    memberIdByName.set(normalizeName(loggedInUserName), loggedInUserId);
+                }
+            }
+
             const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
             const normalizedLoggedInName = normalizeName(loggedInUserName);
             const managerRowId =
@@ -340,6 +407,9 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
             };
 
             const resolveCompletedMemberId = (task) => {
+                const directId = task?.assignToId?.toString?.();
+                if (isKraKpaModule && task?.taskType === "INDIVIDUALKPA" &&
+                    directId && allowedMemberIds.has(directId)) return directId;
                 const completedByName = (task?.completedBy || "")
                   .toString()
                   .replace(/\s+/g, " ")
@@ -467,7 +537,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
             getResponseData(individualKraResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
                 .forEach((task) => upsert(task, "individualDailyKra"));
-            getResponseData(individualKpaResponse)
+            getIndividualKpaData(individualKpaResponse)
                 .filter((task) => isTaskInSelectedMonth(task, selectedMonth))
                 .forEach((task) => upsert(task, "individualMonthlyKpa"));
             getResponseData(teamKraResponse)
@@ -513,7 +583,11 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
             };
 
             const incrementCompletedKpa = (task) => {
-                const fiscalMonth = getFiscalMonthFromDate(task?.completionDate);
+                const fiscalMonth = getFiscalMonthFromDate(
+                    isKraKpaModule && task?.taskType === "INDIVIDUALKPA"
+                        ? task?.assignedDate
+                        : task?.completionDate,
+                );
                 if (!fiscalMonth || fiscalMonth.toLowerCase() !== selectedMonth.toLowerCase()) {
                     return;
                 }
@@ -537,11 +611,11 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
             };
 
             getResponseData(completedKpaResponse).forEach(incrementCompletedKpa);
-            getResponseData(completedIndividualKpaResponse).forEach(incrementCompletedKpa);
+            getIndividualKpaData(completedIndividualKpaResponse).forEach(incrementCompletedKpa);
             getResponseData(completedTeamKpaResponse).forEach(incrementCompletedKpa);
 
             getResponseData(kpaResponse).forEach(incrementPendingKpa);
-            getResponseData(individualKpaResponse).forEach(incrementPendingKpa);
+            getIndividualKpaData(individualKpaResponse).forEach(incrementPendingKpa);
             getResponseData(teamKpaResponse).forEach(incrementPendingKpa);
 
             const mergedByMemberName = Array.from(map.values()).reduce((acc, item) => {
@@ -664,7 +738,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
  const firstTab = "individual-Monthly-KPA";
 
                         //navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
-                    navigate(`${memberDetailsBasePath}/${firstTab}`, {
+                    navigate(`${detailsPath}/${firstTab}`, {
                         // state: { selectedMember: { memberId, memberName: params.value } },
                                                 state: {
                 selectedMember: {
@@ -672,6 +746,10 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                   memberName: params.value,
                   memberRole: params?.data?.memberRole || "Employee",
                 },
+                selectedDepartment: targetDepartmentId,
+                selectedDepartmentName: targetDepartmentName,
+                fiscalYear,
+                month: selectedMonth,
               },
                     });
                 };

@@ -11,6 +11,7 @@ import Card from "../../components/Card";
 import { CgWebsite } from "react-icons/cg";
 import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
+import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
 
 const FISCAL_MONTHS = [
   "April",
@@ -55,9 +56,10 @@ const getCurrentDateInfo = () => {
   };
 };
 
-const PerformanceHome = () => {
+const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const modulePath = onlyFirstTwoCards ? "/app/kra-kpa" : "/app/performance";
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const roleTitles =
@@ -99,6 +101,7 @@ const PerformanceHome = () => {
 
   const { data: fetchedDepartments = [] } = useQuery({
       queryKey: ["performanceDepartments", currentDateInfo.monthName],
+    enabled: !onlyFirstTwoCards,
     refetchInterval: 5 * 60 * 1000,
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks", {
@@ -109,10 +112,26 @@ const PerformanceHome = () => {
   });
 
   const { data: kpaTasksRaw = [] } = useQuery({
-    queryKey: ["performanceKpaTasks"],
+    queryKey: [onlyFirstTwoCards ? "kraKpaKpaOverview" : "performanceKpaTasks"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-kpa-tasks");
-      return response.data || [];
+      const departmentTasks = response.data || [];
+      if (!onlyFirstTwoCards) return departmentTasks;
+
+      const individualResponse = await axios.get("/api/kra-kpa/individual-monthly-kpa");
+      const groups = new Map(departmentTasks.map((group) => [
+        group.department,
+        { ...group, tasks: [...(group.tasks || [])] },
+      ]));
+      (individualResponse.data || []).forEach((record) => {
+        const departmentName = record.department?.name;
+        if (!departmentName) return;
+        if (!groups.has(departmentName)) {
+          groups.set(departmentName, { department: departmentName, tasks: [] });
+        }
+        groups.get(departmentName).tasks.push(toIndividualKpaTask(record));
+      });
+      return [...groups.values()];
     },
   });
 
@@ -142,7 +161,7 @@ const PerformanceHome = () => {
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
       currentDateInfo.dateKey,
     ],
-    enabled: fetchedDepartments.length > 0,
+    enabled: !onlyFirstTwoCards && fetchedDepartments.length > 0,
     refetchInterval: 5 * 60 * 1000,
     queryFn: async () => {
       const departmentIds = fetchedDepartments
@@ -267,10 +286,13 @@ const PerformanceHome = () => {
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
-            navigate("/app/performance/department-KPA", {
+            navigate(`${modulePath}/department-KPA`, {
 
             //navigate("/app/performance/department-wise/overall-department-kpa", {
-            state: { month: clickedMonth },
+            state: {
+              month: clickedMonth,
+              ...(onlyFirstTwoCards && { fiscalYear: selectedFiscalYear }),
+            },
           });
         },
       },
@@ -440,7 +462,9 @@ const PerformanceHome = () => {
   });
 
   const canAccessDepartmentKpaCard =
-    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
+    onlyFirstTwoCards
+      ? hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA)
+      : hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
 
   const canAccessDepartmentKraCard =
     hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD);
@@ -448,59 +472,53 @@ const PerformanceHome = () => {
   const canAccessEmployeeKraKpaCard =
     hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
-   const performanceCards = [
+  const performanceCards = [
     {
        title: "DEPARTMENT MONTHLY KPA",
-      route: "/app/performance/department-KPA",
+      route: `${modulePath}/department-KPA`,
       hasAccess: canAccessDepartmentKpaCard,
     },
     {
       title: "DEPARTMENT DAILY KRA",
-      route: "/app/performance/department-KRA",
-      hasAccess: canAccessDepartmentKraCard,
+      route: `${modulePath}/department-KRA`,
+      hasAccess: !onlyFirstTwoCards && canAccessDepartmentKraCard,
     },
     {
       title: "EMPLOYEE KRA/KPA",
-      route: "/app/performance/employee-KRA-KPA",
+      route: `${modulePath}/employee-KRA-KPA`,
       hasAccess: canAccessEmployeeKraKpaCard,
     },
     {
       title: "ASSIGN KRA/KPA",
-      route: "/app/performance/assign-KRA-KPA",
-       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
+      route: `${modulePath}/assign-KRA-KPA`,
+      hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
     {
       title: "REPORT KRA/KPA",
-      route: "/app/performance/report-KRA-KPA",
-       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
+      route: `${modulePath}/report-KRA-KPA`,
+      hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
-  ].filter((card) => card.hasAccess);
+  ].filter((card, index) => card.hasAccess && (!onlyFirstTwoCards || index < 2));
 
-    const getCardGridClass = () => {
-    if (performanceCards.length >= 5) {
-      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-5";
-    }
-
-    if (performanceCards.length === 4) {
-
-      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-4";
-    }
-
-    if (performanceCards.length === 3) {
-      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
-    }
-
-    if (performanceCards.length === 2) {
-      return "grid-cols-1 md:grid-cols-2 xl:grid-cols-2";
-    }
-
-    return "grid-cols-1 md:grid-cols-1 xl:grid-cols-1";
-  };
-
+  const cardGridClass = onlyFirstTwoCards
+    ? performanceCards.length > 1
+      ? "grid-cols-1 md:grid-cols-2"
+      : "grid-cols-1"
+    : performanceCards.length >= 5
+      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-5"
+      : performanceCards.length === 4
+        ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
+        : performanceCards.length === 3
+          ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+          : performanceCards.length === 2
+            ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-2"
+            : "grid-cols-1";
 
   return (
     <div className="flex flex-col gap-4">
-      {hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS) && (
+      {(onlyFirstTwoCards
+        ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
+        : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) && (
         <YearlyGraph
           data={annualKpaGraphData}
           options={annualKpaChartOptions}
@@ -519,7 +537,7 @@ const PerformanceHome = () => {
         />
         )}
       {performanceCards.length > 0 && (
-        <div className={`grid ${getCardGridClass()} gap-4 auto-rows-fr`}>
+        <div className={`grid ${cardGridClass} gap-4 auto-rows-fr`}>
           {performanceCards.map((card) => (
             <div key={card.route} className="h-full">
               <Card
@@ -533,7 +551,8 @@ const PerformanceHome = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
+        {!onlyFirstTwoCards &&
+          hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
          <WidgetSection
             border
             title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
@@ -546,7 +565,9 @@ const PerformanceHome = () => {
           </WidgetSection>
         )}
 
-        {hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED) && (
+        {(onlyFirstTwoCards
+          ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
+          : hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED)) && (
            <WidgetSection
             border
             title={`KPA - Pending vs Completed - ${currentMonthLabel}`}

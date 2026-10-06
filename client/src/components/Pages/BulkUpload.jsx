@@ -128,19 +128,6 @@ const frontendSalesTemplateLabels = [
 const frontendItMaintenanceTemplateLabels = [
   {
     match: [
-      "amc records",
-      "amc record",
-      "it amc records",
-      "amc records it",
-      "amc records maintenance",
-      "amc records it and maintainence",
-      "amc records it and maintenance",
-    ],
-    label: "AMC Records - IT & Maintainence",
-    sourceDepartmentIds: [IT_DEPARTMENT_ID],
-  },
-  {
-    match: [
       "maintenance weekly shift schedule",
       "maintenance weekly shift schedule maintainence",
       "maintenance weekly shift schedule maintenance",

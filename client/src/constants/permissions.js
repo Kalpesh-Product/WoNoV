@@ -380,6 +380,44 @@ export const PERMISSIONS = {
     route: "employee-KRA-KPA/individual-Monthly-KPA",
   },
 
+  // KRA & KPA Module
+  KRAKPA_MODULE_ACCESS: {
+    value: "kra_kpa_module_access",
+    title: "KRA & KPA MODULE",
+    type: "read",
+    access: "page",
+  },
+  KRAKPA_DASHBOARD: {
+    value: "kra_kpa_dashboard",
+    title: "KRA & KPA DASHBOARD",
+    type: "read",
+    route: "/app/kra-kpa",
+  },
+  KRAKPA_DEPARTMENT_MONTHLY_KPA: {
+    value: "kra_kpa_department_monthly_kpa",
+    title: "DEPARTMENT MONTHLY KPA",
+    type: "read",
+    route: "/app/kra-kpa/department-KPA",
+  },
+  KRAKPA_MEMBER_WISE_KPA: {
+    value: "kra_kpa_member_wise_kpa",
+    title: "MEMBER WISE KPA",
+    type: "read",
+    route: "/app/kra-kpa/department-KPA/member-wise-KPA",
+  },
+  KRAKPA_INDIVIDUAL_MONTHLY_KPA: {
+    value: "kra_kpa_individual_monthly_kpa",
+    title: "INDIVIDUAL MONTHLY KPA",
+    type: "read",
+    route: "/app/kra-kpa/department-KPA/member-wise-KPA/individual-Monthly-KPA",
+  },
+  KRAKPA_SELF_KRA: {
+    value: "kra_kpa_self_kra",
+    title: "SELF KRA",
+    type: "read",
+    route: "/app/kra-kpa/department-KPA/member-wise-KPA/self-KRA",
+  },
+
   //Tasks Module
   TASKS_OVERALL_AVERAGE_COMPLETION: {
     value: "overall_average_task_completion",

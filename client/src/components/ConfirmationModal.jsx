@@ -10,24 +10,28 @@ const ConfirmationModal = ({
   confirmText = "Yes",
   cancelText = "No",
   isLoading = false,
+  children,
+  cancelFirst = false,
+  confirmDisabled = false,
 }) => {
   return (
     <MuiModal open={open} onClose={onClose} title={title}>
       <div className="flex flex-col gap-4">
         <p className="text-left text-content text-gray-700">{message}</p>
+        {children}
         <div className="flex justify-center gap-3">
           <PrimaryButton
             title={confirmText}
             handleSubmit={onConfirm}
             isLoading={isLoading}
-            disabled={isLoading}
+            disabled={isLoading || confirmDisabled}
             padding="px-5 py-1.5"
           />
           <PrimaryButton
             title={cancelText}
             handleSubmit={onClose}
             disabled={isLoading}
-            externalStyles="!bg-gray-500"
+            externalStyles={`!bg-gray-500 ${cancelFirst ? "order-first" : ""}`}
             padding="px-5 py-1.5"
           />
         </div>
