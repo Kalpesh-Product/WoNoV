@@ -1659,7 +1659,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
     ...(allowedMaintenanceEnergyGraphs.length
       ? [
           {
-            layout: 1,
+            layout: 2,
             widgets: allowedMaintenanceEnergyGraphs.map((config) => (
               <YearwiseEnergyBilling
                 key={config.key}

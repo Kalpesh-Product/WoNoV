@@ -170,14 +170,14 @@ const BizNestTitle = ({ children, prefix, monochrome = false }) => (
   </span>
 );
 
-const InvestorHeaderLogo = () => (
+const InvestorHeaderLogo = ({ compact = false }) => (
   <span
-    aria-label="BIZ Nest"
-    className="inline-flex items-baseline whitespace-nowrap font-serif text-[1em] font-normal normal-case leading-none text-[#2a2525]"
+    aria-label={compact ? "BIZNEST" : "BIZ NEST"}
+    className="inline-flex items-baseline whitespace-nowrap text-[1em] normal-case leading-none text-[#2a2525]"
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>&nbsp;Nest</span>
+    <span>{compact ? "NEST" : "\u00a0NEST"}</span>
   </span>
 );
 
@@ -350,7 +350,7 @@ const InvestorDashboardCards = ({
             {...(card.clickable === false
               ? {}
               : { type: "button", onClick: () => navigate(card.route) })}
-            className={`relative flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
+            className={`relative flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm ${
               card.suffix ? "gap-2" : "gap-4"
             }`}
           >
@@ -587,13 +587,14 @@ const InvestorSnapshotSection = ({
   return (
     <WidgetSection
       border
+      normalCase
       borderColor="#1E3D73"
       bodyBorderColor="#9FB2CF"
       title={
         <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
-          <InvestorHeaderLogo />
+          <InvestorHeaderLogo compact />
           <span className="inline-flex items-baseline leading-none">
-            3 YEARS SNAPSHOT
+            3 YEARS SNAPSHOT - FY 2024-25 To FY 2026-27
           </span>
         </span>
       }
@@ -1336,12 +1337,9 @@ const InvestorAppreciationCenter = () => {
       <YearlyGraph
         title={
           <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
-            <span className="inline-flex items-baseline leading-none">
-              REAL ESTATE OWNED BY
-            </span>
             <InvestorHeaderLogo />
             <span className="inline-flex items-baseline leading-none">
-              {`- ${currentFiscalYear}`}
+              {`REAL ESTATE OWNED — ${currentFiscalYear.replace("-", "–")}`}
             </span>
           </span>
         }
@@ -1507,7 +1505,7 @@ const InvestorUniqueClientsGraph = () => {
         <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
           <InvestorHeaderLogo />
           <span className="inline-flex items-baseline leading-none">
-            UNIQUE CLIENTS
+            ACTIVE UNIQUE CLIENTS
           </span>
         </span>
       }
@@ -2562,7 +2560,7 @@ const InvestorDashboard = () => {
                 Indian Destination Workspace
               </p>
               <p className="font-pbold text-xs uppercase text-[#3F6291] sm:text-lg md:whitespace-nowrap lg:text-xl min-[1800px]:text-2xl">
-                <span className="relative inline-block after:absolute after:left-0 after:top-1/2 after:h-1 after:w-full after:-translate-y-1/2 after:bg-[#E64B4B] after:content-['']">
+                <span className="relative inline-block font-pregular after:absolute after:left-0 after:top-1/2 after:h-1 after:w-full after:-translate-y-1/2 after:bg-[#E64B4B] after:content-['']">
                   WORK TO LIVE.
                 </span>
                 <span className="ml-3 text-[#E64B4B]">LIVE TO WORK</span>

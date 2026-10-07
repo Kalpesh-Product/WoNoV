@@ -19,10 +19,12 @@ const FINANCIAL_YEAR = {
 const BUILDING_CONFIG = {
   st: {
     name: "Sunteck Building",
+    overallTitle: "ST - OVERALL CONSUMPTION & BILLING",
     endpoint: "/api/maintenance/get-st-energy-monthly",
   },
   dtc: {
     name: "Dempo Trade Centre",
+    overallTitle: "DTC - OVERALL CONSUMPTION & BILLING",
     endpoint: "/api/maintenance/get-dtc-energy-monthly",
   },
 };
@@ -211,7 +213,7 @@ const YearwiseEnergyBilling = ({
       },
     },
     dataLabels: {
-      enabled: true,
+      enabled: !overall,
       offsetY: -22,
       formatter: (value) => (value === null || Number(value) === 0 ? "" : formatNumber(value)),
       style: { fontSize: "11px", fontWeight: 700, colors: ["#1f2937"] },
@@ -254,9 +256,10 @@ const YearwiseEnergyBilling = ({
     },
   ];
 
-  const graphTitle = `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING${
-    overall ? "" : ` - ${selectedUnit}`
-  }`;
+  const graphTitle = overall
+    ? config.overallTitle ||
+      `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING`
+    : `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit}`;
 
   return (
     <div className={embedded ? "" : "p-4"}>
@@ -274,9 +277,27 @@ const YearwiseEnergyBilling = ({
       <div className="flex flex-col gap-4">
         <WidgetSection
           title={graphTitle}
+          titleClassName={
+            embedded
+              ? "whitespace-nowrap text-left"
+              : ""
+          }
+          titleStyle={
+            embedded
+              ? {
+                  whiteSpace: "nowrap",
+                  fontSize: "14px",
+                  lineHeight: "20px",
+                  flexShrink: 0,
+                }
+              : undefined
+          }
+          headerContentClassName={
+            embedded ? "!flex-row !flex-nowrap !gap-2" : ""
+          }
           border
           headerRightContent={
-            <>
+            <div className="flex flex-nowrap items-center gap-2">
               <Chip
                 label={`CONSUMPTION : ${formatNumber(totalConsumption)}`}
                 sx={{
@@ -284,10 +305,10 @@ const YearwiseEnergyBilling = ({
                   color: "#1f3f7a",
                   border: "1px solid #b8cbff",
                   fontWeight: 800,
-                  fontSize: "0.84rem",
-                  height: "36px",
+                  fontSize: embedded ? "0.72rem" : "0.84rem",
+                  height: embedded ? "32px" : "36px",
                   borderRadius: "8px",
-                  px: 1.15,
+                  px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
                     fontWeight: 800,
@@ -302,17 +323,17 @@ const YearwiseEnergyBilling = ({
                   color: "#17693a",
                   border: "1px solid #c7e6d0",
                   fontWeight: 800,
-                  fontSize: "0.84rem",
-                  height: "36px",
+                  fontSize: embedded ? "0.72rem" : "0.84rem",
+                  height: embedded ? "32px" : "36px",
                   borderRadius: "8px",
-                  px: 1.15,
+                  px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
                     fontWeight: 800,
                   },
                 }}
               />
-            </>
+            </div>
           }
         >
           <div className={detailsRoute ? "cursor-pointer" : ""}>
@@ -320,7 +341,7 @@ const YearwiseEnergyBilling = ({
               options={chartOptions}
               series={series}
               type="bar"
-              height={450}
+              height={embedded ? 360 : 450}
             />
           </div>
 
