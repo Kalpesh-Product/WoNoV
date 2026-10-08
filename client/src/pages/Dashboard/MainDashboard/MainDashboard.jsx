@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import { MdAccessTime, MdFormatListBulleted } from "react-icons/md";
 import AttendanceTimeline from "../../../components/AttendanceTimeline";
@@ -6,6 +7,7 @@ import useAuth from "../../../hooks/useAuth";
 
 const MainDashboard = () => {
   const { auth } = useAuth();
+  const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -13,6 +15,12 @@ const MainDashboard = () => {
     [auth?.user?.firstName, auth?.user?.lastName].filter(Boolean).join(" ") ||
     auth?.user?.name ||
     "there";
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentDateTime(new Date()), 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
 
   const cardTitle = (Icon, title) => (
     <div className="flex items-center gap-3 rounded-t-xl border-2 border-b-0 border-[#1E3D73] bg-white px-4 py-3.5">
@@ -31,9 +39,12 @@ const MainDashboard = () => {
             {greeting}, {userName}
           </h1>
         </div>
-        <div className="text-left sm:text-right">
+        <div className="text-left sm:max-w-[55%] sm:text-right">
           <div className="text-sm font-pbold text-[#1E3D73]">
-            {dayjs().format("dddd, DD MMMM YYYY")}
+            {dayjs(currentDateTime).format(
+              "dddd, D MMMM YYYY | hh:mm:ss A",
+            )}{" "}
+            - Panaji, Goa, India
           </div>
           <div className="mt-2 ml-auto h-1 w-10 rounded-full bg-[#2f6fed]" />
         </div>

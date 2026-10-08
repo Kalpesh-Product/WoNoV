@@ -640,6 +640,8 @@ const ClockInOutAttendance = () => {
       dot: "bg-[#7d8ba2]",
     },
   }[attendanceStatus];
+  const showActiveIndicator =
+    attendanceStatus === "Clocked In" || attendanceStatus === "On Break";
   const displayedDuration =
     hasClockedIn && isToday ? formatElapsedTime(elapsedTime) : "00:00:00";
   const actionMessage = hasClockedIn
@@ -672,9 +674,21 @@ const ClockInOutAttendance = () => {
         <div
           className={`mb-2 inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-pbold ${attendanceStatusStyle.badge}`}
         >
-          <span
-            className={`h-2 w-2 rounded-full ${attendanceStatusStyle.dot}`}
-          />
+          {showActiveIndicator ? (
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span
+                className={`absolute inline-flex h-full w-full animate-ping rounded-full opacity-70 motion-reduce:animate-none ${attendanceStatusStyle.dot}`}
+              />
+              <span
+                className={`relative inline-flex h-2 w-2 rounded-full ${attendanceStatusStyle.dot}`}
+              />
+            </span>
+          ) : attendanceStatus === "Not Clocked In" ? (
+            <span
+              className={`h-2 w-2 rounded-full ${attendanceStatusStyle.dot}`}
+              aria-hidden="true"
+            />
+          ) : null}
           {attendanceStatus}
         </div>
 
