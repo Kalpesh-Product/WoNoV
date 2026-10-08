@@ -39,6 +39,12 @@ const roomSchema = new mongoose.Schema({
     },
     id: String,
   },
+  images: [
+    {
+      url: String,
+      id: String,
+    },
+  ],
   assignedAssets: [
     {
       type: mongoose.Schema.Types.ObjectId,
