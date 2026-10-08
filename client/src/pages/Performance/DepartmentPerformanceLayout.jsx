@@ -66,7 +66,10 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       permission: PERMISSIONS.PERFORMANCE_INDIVIDUAL_KRA.value,
     },
     {
-      label: "Individual Monthly KPA",
+      label:
+        modulePath === "/app/kra-kpa"
+          ? "Self KPA"
+          : "Individual Monthly KPA",
       path: "individual-Monthly-KPA",
       permission:
         modulePath === "/app/kra-kpa"

@@ -32,6 +32,12 @@ const selfKraSchema = new mongoose.Schema(
       required: true,
     },
     closingDate: { type: Date, default: null },
+    startsOn: {
+      type: String,
+      match: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
+      default: null,
+    },
+    isActive: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },

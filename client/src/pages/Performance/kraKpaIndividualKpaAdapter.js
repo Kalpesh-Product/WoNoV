@@ -11,6 +11,10 @@ export const toIndividualKpaTask = (record) => {
     assignedDate: `${record.month}-01T12:00:00.000Z`,
     dueDate: record.deadline,
     status: record.status,
+    finalClosure:
+      record.hrRating === null || record.hrRating === undefined
+        ? "Pending"
+        : "Closed",
     assignedTo: name,
     assignToId: employee._id,
     completedBy: name,

@@ -38,18 +38,62 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
     },
     closingDate: { type: Date, default: null },
     resourceComment: { type: String, trim: true, default: "" },
+    completionHistory: {
+      type: [
+        {
+          completedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UserData",
+            required: true,
+          },
+          completedAt: { type: Date, required: true },
+          resourceComment: { type: String, trim: true, default: "" },
+        },
+      ],
+      default: [],
+    },
     managerComments: { type: String, trim: true, default: "" },
     kpaRating: { type: Number, enum: [0, 1], default: null },
+    managerRatingDate: { type: Date, default: null },
+    hrComments: { type: String, trim: true, default: "" },
     hrRating: { type: Number, enum: [0, 1], default: null },
+    hrRatingDate: { type: Date, default: null },
     verification: {
       type: String,
-      enum: ["Pending", "Verified", "Changes Required", "Closed"],
+      enum: ["Pending", "Changes Required", "Closed"],
       default: "Pending",
     },
-    verificationDate: { type: Date, default: null },
-    changesRequiredDate: { type: Date, default: null },
     verificationClosedDate: { type: Date, default: null },
-    verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData", default: null },
+    managerReviewedAt: { type: Date, default: null },
+    managerReviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
+    managerReviewHistory: {
+      type: [
+        {
+          status: {
+            type: String,
+            enum: ["Changes Required", "Closed"],
+            required: true,
+          },
+          reviewedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UserData",
+            required: true,
+          },
+          reviewedAt: { type: Date, required: true },
+          managerComments: { type: String, trim: true, default: "" },
+        },
+      ],
+      default: [],
+    },
+    verifiedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
@@ -57,9 +101,11 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-individualMonthlyKpaSchema.index({ company: 1, department: 1, employee: 1, month: 1 });
+individualMonthlyKpaSchema.index({
+  company: 1,
+  department: 1,
+  employee: 1,
+  month: 1,
+});
 
-module.exports = mongoose.model(
-  "KraKpaIndividualMonthlyKpa",
-  individualMonthlyKpaSchema,
-);
+module.exports = mongoose.model("KraKpaSelfKpa", individualMonthlyKpaSchema);
