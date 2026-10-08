@@ -80,6 +80,15 @@ const companySchema = new mongoose.Schema({
             type: Boolean,
             default: false,
           },
+          deletedAt: {
+            type: Date,
+            default: null,
+          },
+          deletedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UserData",
+            default: null,
+          },
           createdAt: {
             type: Date,
             default: Date.now,
@@ -112,6 +121,15 @@ const companySchema = new mongoose.Schema({
             type: Boolean,
             default: false,
           },
+          deletedAt: {
+            type: Date,
+            default: null,
+          },
+          deletedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UserData",
+            default: null,
+          },
           createdAt: {
             type: Date,
             default: Date.now,
@@ -132,6 +150,25 @@ const companySchema = new mongoose.Schema({
   ],
 
   kycDetails: {
+    companyKycEntry: {
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      permanentlyDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
+    },
     companyKyc: [
       {
         name: String,
@@ -160,6 +197,19 @@ const companySchema = new mongoose.Schema({
         isActive: {
           type: Boolean,
           default: true,
+        },
+        isDeleted: {
+          type: Boolean,
+          default: false,
+        },
+        deletedAt: {
+          type: Date,
+          default: null,
+        },
+        deletedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "UserData",
+          default: null,
         },
       },
     ],
@@ -261,6 +311,15 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
       createdAt: {
         type: Date,
         default: Date.now,
@@ -320,6 +379,15 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
       createdAt: {
         type: Date,
         default: Date.now,
@@ -373,6 +441,11 @@ const companySchema = new mongoose.Schema({
         type: Boolean,
         default: false,
       },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
       createdAt: {
         type: Date,
         default: Date.now,
@@ -404,6 +477,11 @@ const companySchema = new mongoose.Schema({
       isDeleted: {
         type: Boolean,
         default: false,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
       },
       createdAt: {
         type: Date,
@@ -481,6 +559,19 @@ const companySchema = new mongoose.Schema({
       isActive: {
         type: Boolean,
         default: true,
+      },
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
       },
     },
   ],

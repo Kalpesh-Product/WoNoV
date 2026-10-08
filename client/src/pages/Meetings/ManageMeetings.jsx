@@ -194,13 +194,39 @@ const ManageMeetings = ({ financeView = false }) => {
         return response.data;
       },
     });
+
+  const selectedMeetingClientId = useMemo(() => {
+    if (selectedMeeting?.clientId) return selectedMeeting.clientId;
+
+    const meetingClientName = String(selectedMeeting?.client || "")
+      .trim()
+      .toLowerCase();
+
+    if (!meetingClientName) return null;
+
+    const matchingClient = clientDetails.find((client) =>
+      [client?.clientName, client?.clientInvoiceName, client?.brandName].some(
+        (name) => String(name || "").trim().toLowerCase() === meetingClientName,
+      ),
+    );
+
+    return matchingClient?._id || null;
+  }, [clientDetails, selectedMeeting?.client, selectedMeeting?.clientId]);
+
   // console.log("clientDetails", clientDetails);
   const { data: clientEmployees = [], isLoading: isClientEmployeesLoading } =
     useQuery({
-      queryKey: ["client-participants"],
+      queryKey: ["client-participants", selectedMeetingClientId],
+      enabled: Boolean(selectedMeetingClientId),
       queryFn: async () => {
-        const response = await axios.get("/api/sales/co-working-clients");
-        return response.data.flatMap((item) => item.members);
+        const response = await axios.get(
+          "/api/sales/co-working-client-members",
+          {
+            params: { clientId: selectedMeetingClientId, active: true },
+          },
+        );
+
+        return Array.isArray(response.data) ? response.data : [];
       },
     });
   //-------------------------------API-------------------------------//
@@ -1572,23 +1598,32 @@ const ManageMeetings = ({ financeView = false }) => {
                     control={editControl}
                     render={({ field }) => {
                       const selectedExternalIds =
-                        field.value?.map((p) => p._id) || [];
+                        field.value?.map((p) => String(p._id)) || [];
 
                       const bookedByEmployeeName =
                         selectedMeeting?.clientBookedBy?.employeeName;
 
                       // Find the booking employee from clientEmployees
                       const bookedByEmployee = clientEmployees.find(
-                        (emp) => emp.employeeName === bookedByEmployeeName,
+                        (emp) =>
+                          String(emp._id) ===
+                            String(selectedMeeting?.clientBookedBy?._id) ||
+                          emp.employeeName === bookedByEmployeeName,
                       );
-                      const bookedByCompanyId = bookedByEmployee?.client?._id;
+                      const bookedByCompanyId =
+                        selectedMeeting?.clientBookedBy?.client?._id ||
+                        bookedByEmployee?.clientId ||
+                        bookedByEmployee?.client?._id ||
+                        selectedMeetingClientId;
 
                       // Filter members of the same company, excluding the person who booked
                       const companyMembers = clientEmployees.filter(
                         (emp) =>
-                          emp.client?._id === bookedByCompanyId &&
-                          emp.employeeName !== bookedByEmployeeName &&
-                          !selectedExternalIds.includes(emp._id),
+                          String(emp.clientId || emp.client?._id) ===
+                            String(bookedByCompanyId) &&
+                          String(emp._id) !==
+                            String(selectedMeeting?.clientBookedBy?._id) &&
+                          !selectedExternalIds.includes(String(emp._id)),
                       );
                       const mergedExternalOptions = [
                         ...field.value,
@@ -1600,7 +1635,12 @@ const ManageMeetings = ({ financeView = false }) => {
                           {...field}
                           multiple
                           options={mergedExternalOptions}
-                          getOptionLabel={(option) => `${option.employeeName}`}
+                          getOptionLabel={(option) =>
+                            option?.employeeName ||
+                            option?.name ||
+                            option?.email ||
+                            ""
+                          }
                           value={field.value || []}
                           onChange={(_, newValue) => field.onChange(newValue)}
                           isOptionEqualToValue={(option, value) =>

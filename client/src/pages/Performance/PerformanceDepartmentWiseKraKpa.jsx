@@ -15,7 +15,11 @@ import NormalBarGraph from "../../components/graphs/NormalBarGraph";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useMemo, useState } from "react";
-import { PERMISSIONS } from "../../constants/permissions";
+import {
+  getCurrentFiscalYear,
+  getFiscalMonthKey,
+  toIndividualKpaTask,
+} from "./kraKpaIndividualKpaAdapter";
 
 const fiscalMonths = [
   "April",
@@ -37,13 +41,26 @@ const getCurrentFiscalMonth = () => {
   return fiscalMonths[(currentMonthIndex + 9) % 12];
 };
 
+const getTodayDateKey = () =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+
 const PerformanceDepartmentWiseKraKpa = () => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+  const modulePath = location.pathname.startsWith("/app/kra-kpa")
+    ? "/app/kra-kpa"
+    : "/app/performance";
   const clickedMonth = location.state?.month;
+  const fiscalYear = location.state?.fiscalYear || getCurrentFiscalYear();
+  const todayDateKey = getTodayDateKey();
   const [selectedMonth, setSelectedMonth] = useState(
     clickedMonth || getCurrentFiscalMonth(),
   );
@@ -53,15 +70,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
       .filter(Boolean) || [];
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
-  const isRoleEmployee = roleTitles.some((roleTitle) =>
-    roleTitle?.includes("employee"),
-  );    
-  const userPermissions = auth?.user?.permissions?.permissions || [];
-  const isEmployeeLevel =
-      isRoleEmployee ||
-    (!userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KRA.value) &&
-      !userPermissions.includes(PERMISSIONS.PERFORMANCE_TEAM_KPA.value));
-
+  const isHr = roleTitles.some((roleTitle) => /^hr(?:\s|$)/.test(roleTitle));
   const { isTop } = useTopDepartment({
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
@@ -102,7 +111,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
   //   (departmentData?.teamMonthlyKPA || 0);
 
   const visibleDepartments = fetchedDepartments.filter((item) => {
-    if (isTop) return true;
+    if (isTop || isHr) return true;
     return userDepartmentIds.includes(item?.department?._id?.toString());
   });
 
@@ -114,7 +123,10 @@ const PerformanceDepartmentWiseKraKpa = () => {
   const { data: departmentWiseDepartmentKpaStats = [] } = useQuery({
     queryKey: [
       "departmentWiseDepartmentKpaStats",
+      modulePath,
       selectedMonth,
+      fiscalYear,
+      todayDateKey,
       visibleDepartmentIds,
     ],
     enabled: visibleDepartmentIds.length > 0,
@@ -125,7 +137,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const departmentName = item?.department?.name;
           if (!departmentId || !departmentName) return null;
 
-  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse] =
+  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse, kraResponse] =
             await Promise.allSettled([
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`,
@@ -133,12 +145,29 @@ const PerformanceDepartmentWiseKraKpa = () => {
               axios.get(
                 `/api/performance/get-completed-tasks?dept=${departmentId}&type=KPA`,
               ),
-              axios.get(
-                `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`,
-              ),
+              modulePath === "/app/kra-kpa"
+                ? axios.get("/api/kra-kpa/individual-monthly-kpa", {
+                    params: {
+                      department: departmentId,
+                      month: getFiscalMonthKey(selectedMonth, fiscalYear),
+                    },
+                  })
+                : axios.get(
+                    `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKPA&duration=Monthly`,
+                  ),
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=TEAMKPA&duration=Monthly`,
               ),
+              modulePath === "/app/kra-kpa"
+                ? axios.get("/api/kra-kpa/self-kra", {
+                    params: {
+                      department: departmentId,
+                      date: todayDateKey,
+                    },
+                  })
+                : axios.get(
+                    `/api/performance/get-tasks?dept=${departmentId}&type=KRA`,
+                  ),
             ]);
 
           const assignedTasks =
@@ -151,12 +180,18 @@ const PerformanceDepartmentWiseKraKpa = () => {
               : [];
           const individualAssignedTasks =
             individualAssignedResponse?.status === "fulfilled"
-              ? individualAssignedResponse.value?.data || []
+              ? modulePath === "/app/kra-kpa"
+                ? (individualAssignedResponse.value?.data || []).map(toIndividualKpaTask)
+                : individualAssignedResponse.value?.data || []
               : [];
             const teamAssignedTasks =
             teamAssignedResponse?.status === "fulfilled"
               ? teamAssignedResponse.value?.data || []
               : [];    
+          const kraTasks =
+            kraResponse?.status === "fulfilled"
+              ? kraResponse.value?.data || []
+              : [];
 
           const monthlyAssignedCount = assignedTasks.filter((task) =>
             isSameSelectedMonth(task?.assignedDate),
@@ -177,17 +212,39 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const individualMonthlyPendingCount = individualAssignedTasks.filter(
             (task) =>
               isSameSelectedMonth(task?.assignedDate) &&
-              task?.status !== "Completed",
+              (modulePath === "/app/kra-kpa"
+                ? task?.finalClosure !== "Closed"
+                : task?.status !== "Completed"),
+          ).length;
+          const individualMonthlyCompletedCount = individualAssignedTasks.filter(
+            (task) =>
+              isSameSelectedMonth(task?.assignedDate) &&
+              (modulePath === "/app/kra-kpa"
+                ? task?.finalClosure === "Closed"
+                : task?.status === "Completed"),
+          ).length;
+          const pendingKraCount = kraTasks.filter(
+            (task) =>
+              task?.status !== "Completed" &&
+              (modulePath === "/app/kra-kpa" ||
+                isSameSelectedMonth(
+                  task?.assignedDate || task?.dueDate || task?.createdAt,
+                )),
           ).length;
 
           return {
             departmentId: departmentId?.toString(),
             departmentName,
             monthlyAssignedCount,
-            monthlyCompletedCount,
-            monthlyPendingCount,
+            monthlyCompletedCount: monthlyCompletedCount +
+              (modulePath === "/app/kra-kpa" ? individualMonthlyCompletedCount : 0),
+            monthlyPendingCount: monthlyPendingCount +
+              (modulePath === "/app/kra-kpa"
+                ? individualMonthlyPendingCount + teamMonthlyPendingCount
+                : 0),
             individualMonthlyPendingCount,
             teamMonthlyPendingCount,
+            pendingKraCount,
           };
         }),
       );
@@ -283,12 +340,13 @@ const PerformanceDepartmentWiseKraKpa = () => {
               setSelectedDepartmentName(departmentData.department?.name),
             );
             navigate(
- `/app/performance/department-KPA/member-wise-KPA`,
+ `${modulePath}/department-KPA/member-wise-KPA`,
              //  `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${departmentData.department?.name}`,
               {
                 state: {
                   month: selectedMonth,
+                  fiscalYear,
                   selectedDepartment: departmentData.department?._id,
                   selectedDepartmentName: departmentData.department?.name,
                 },
@@ -354,12 +412,13 @@ tooltip: {
             dispatch(setSelectedDepartment(params.data.mongoId));
             dispatch(setSelectedDepartmentName(params.data.department));
             navigate(
-                            `/app/performance/department-KPA/member-wise-KPA`,
+                            `${modulePath}/department-KPA/member-wise-KPA`,
                 // `/app/performance/department-wise/overall-department-KPA/member-wise-KPA`,
               // `/app/performance/overall-department-kpa/member-wise-kra-kpa/${params.value}`,
               {
                 state: {
                   month: selectedMonth,
+                  fiscalYear,
                   selectedDepartment: params.data.mongoId,
                   selectedDepartmentName: params.data.department,
                 },
@@ -372,33 +431,17 @@ tooltip: {
         </span>
       ),
     },
-    // { headerName: "Daily KRA", field: "dailyKra" },
     {
-      headerName: "Department Monthly KPA",
-      field: "monthlyKpa",
-      hide: isEmployeeLevel,
-      width: 300,
+      headerName: "Pending KPA",
+      field: "pendingKpa",
+      width: 220,
     },
-    // { headerName: "Individual Daily KRA", field: "individualDailyKra" },
     {
-      headerName: "Individual Monthly KPA",
-      field: "individualMonthlyKpa",
-      width: 300,
-    },
-    // { headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
-    {
-      headerName: "Team Monthly KPA",
-      field: "teamMonthlyKpa",
-     hide: isEmployeeLevel,
+      headerName: "Pending KRA",
+      field: "pendingKra",
+      width: 220,
     },
   ];
-  const visibleDepartmentColumns = departmentColumns.filter((column) => {
-    if (!isEmployeeLevel) return true;
-    return (
-      column.field !== "monthlyKpa" &&
-      column.field !== "teamMonthlyKpa"
-    );
-  });
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
@@ -459,22 +502,15 @@ tooltip: {
               srNo: index + 1,
               mongoId: item.department?._id,
               department: item.department?.name,
-              monthlyKpa:
+              pendingKpa:
                 departmentMonthlyStatsById[item.department?._id?.toString()]
                   ?.monthlyPendingCount || 0,
-              individualMonthlyKpa:
-                (departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.individualMonthlyPendingCount || 0) +
-                (departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.teamMonthlyPendingCount || 0),
-              
-              teamMonthlyKpa:
+              pendingKra:
                 departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.teamMonthlyPendingCount || 0,
-              //annualKpa: item.annualKPA,
+                  ?.pendingKraCount || 0,
             }))}
             columns={departmentColumns}
-            tableTitle="DEPARTMENT-WISE PENDING KPA"
+            tableTitle="DEPARTMENT-WISE PENDING KPA & KRA"
             hideFilter
           />
         </WidgetSection>

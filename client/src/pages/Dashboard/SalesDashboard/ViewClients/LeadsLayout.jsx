@@ -37,6 +37,41 @@ const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
 };
 
+const getWholePercentages = (values) => {
+  const normalizedValues = values.map((value) => Math.max(Number(value) || 0, 0));
+  const total = normalizedValues.reduce((sum, value) => sum + value, 0);
+  if (!total) return normalizedValues.map(() => 0);
+
+  const exactPercentages = normalizedValues.map((value) => (value / total) * 100);
+  const percentages = exactPercentages.map(Math.floor);
+  let remainder = 100 - percentages.reduce((sum, value) => sum + value, 0);
+
+  exactPercentages
+    .map((value, index) => ({ index, fraction: value - Math.floor(value) }))
+    .sort((a, b) => b.fraction - a.fraction)
+    .forEach(({ index }) => {
+      if (remainder <= 0) return;
+      percentages[index] += 1;
+      remainder -= 1;
+    });
+
+  normalizedValues.forEach((value, index) => {
+    if (value <= 0 || percentages[index] > 0) return;
+
+    const donorIndex = percentages.reduce(
+      (largestIndex, percentage, candidateIndex) =>
+        percentage > percentages[largestIndex] ? candidateIndex : largestIndex,
+      0,
+    );
+    if (percentages[donorIndex] > 1) {
+      percentages[donorIndex] -= 1;
+      percentages[index] = 1;
+    }
+  });
+
+  return percentages;
+};
+
 const LeadsLayout = ({
   hideAccordion,
   data,
@@ -152,13 +187,18 @@ const LeadsLayout = ({
         currentMonth.month() >= 3
           ? currentMonth.year()
           : currentMonth.year() - 1;
-      const completedMonthCount =
-        currentMonth.month() >= 3
-          ? currentMonth.month() - 3
-          : currentMonth.month() + 9;
       const countableData =
         investorBlueStyle && currentFinancialYear === currentFinancialYearStart
-          ? transformedData.slice(0, completedMonthCount)
+          ? transformedData.filter((_item, monthIndex) => {
+              const monthDate = dayjs()
+                .year(currentFinancialYear)
+                .month(3 + monthIndex)
+                .startOf("month");
+
+              return !currentMonth
+                .startOf("month")
+                .isBefore(monthDate.add(2, "month"), "month");
+            })
           : transformedData;
 
       return countableData.reduce(
@@ -185,15 +225,19 @@ const LeadsLayout = ({
   // ✅ Transform Data for ApexCharts
   const uniqueClientsData = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
-    const getActualValue = (item, monthIndex, key) => {
-      if (!investorBlueStyle) return item[key] || 0;
-
-      const monthDate = dayjs()
+    const getMonthDate = (monthIndex) =>
+      dayjs()
         .year(currentFinancialYear)
         .month(3 + monthIndex)
         .startOf("month");
+    const isActualMonthAvailable = (monthDate) =>
+      !currentMonth.isBefore(monthDate.add(2, "month"), "month");
+    const getActualValue = (item, monthIndex, key) => {
+      if (!investorBlueStyle) return item[key] || 0;
 
-      return monthDate.isBefore(currentMonth) ? item[key] || 0 : 0;
+      const monthDate = getMonthDate(monthIndex);
+
+      return isActualMonthAvailable(monthDate) ? item[key] || 0 : 0;
     };
     const actualSeries = [
       {
@@ -232,18 +276,11 @@ const LeadsLayout = ({
 
     if (!investorBlueStyle) return actualSeries;
 
-    const currentFinancialYearStart =
-      currentMonth.month() >= 3
-        ? currentMonth.year()
-        : currentMonth.year() - 1;
-    const elapsedMonths =
-      currentFinancialYear === currentFinancialYearStart
-        ? currentMonth.month() >= 3
-          ? currentMonth.month() - 3
-          : currentMonth.month() + 9
-        : currentFinancialYear < currentFinancialYearStart
-          ? 12
-          : 0;
+    const elapsedMonths = transformedData.reduce(
+      (count, _item, monthIndex) =>
+        count + (isActualMonthAvailable(getMonthDate(monthIndex)) ? 1 : 0),
+      0,
+    );
     const actualSeriesByName = new Map(
       actualSeries.map((series) => [series.name, series]),
     );
@@ -260,11 +297,8 @@ const LeadsLayout = ({
     const projectedSeries = PROJECTED_UNIQUE_CLIENT_SERIES.map((seriesName) => ({
       name: seriesName,
       data: transformedData.map((_, monthIndex) => {
-        const monthDate = dayjs()
-          .year(currentFinancialYear)
-          .month(3 + monthIndex)
-          .startOf("month");
-        if (monthDate.isBefore(currentMonth)) return 0;
+        const monthDate = getMonthDate(monthIndex);
+        if (isActualMonthAvailable(monthDate)) return 0;
 
         const actualSeriesName = seriesName.replace(/^Projected /, "");
         const actualValues = actualSeriesByName.get(actualSeriesName)?.data || [];
@@ -332,7 +366,7 @@ const LeadsLayout = ({
       (_, rankIndex) => ({
         name: `Rank ${rankIndex + 1}`,
         data: investorRankedMonthEntries.map((entries, monthIndex) => {
-          const entry = entries[entries.length - 1 - rankIndex];
+          const entry = entries[rankIndex];
           return {
             x: financialYearMonths[monthIndex],
             y: entry?.value || 0,
@@ -440,13 +474,23 @@ const LeadsLayout = ({
           intersect: true,
           custom: ({ dataPointIndex, w }) => {
             const entries = investorRankedMonthEntries[dataPointIndex] || [];
-            const rows = entries.map((entry) => {
+            const isProjectedMonth = entries.some((entry) =>
+              entry.name.startsWith("Projected "),
+            );
+            const overallClientsCount = entries.reduce(
+              (total, entry) => total + (Number(entry.value) || 0),
+              0,
+            );
+            const percentages = getWholePercentages(
+              entries.map((entry) => entry.value),
+            );
+            const rows = entries.map((entry, entryIndex) => {
               const seriesLabel = entry.name;
               return `
                 <div style="display:flex;align-items:center;gap:7px;padding:7px 10px;color:#222;white-space:nowrap;">
                   <span style="display:flex;align-items:center;gap:7px;">
                     <span style="width:9px;height:9px;border-radius:50%;background:${entry.color};display:inline-block;"></span>
-                    ${seriesLabel}:
+                    ${percentages[entryIndex]}% = ${seriesLabel} =
                   </span>
                   <strong>${entry.value} Clients</strong>
                 </div>
@@ -459,6 +503,14 @@ const LeadsLayout = ({
                   ${w.globals.labels[dataPointIndex]}
                 </div>
                 ${rows.join("")}
+                <hr style="margin:0 10px;border:0;border-top:1px solid #d9dce1;" />
+                <div style="display:flex;align-items:center;gap:7px;padding:9px 10px;color:#222;white-space:nowrap;">
+                  <span style="display:flex;align-items:center;gap:7px;">
+                    <span style="width:9px;height:9px;border-radius:50%;background:${isProjectedMonth ? "#778899" : "#98FB98"};display:inline-block;"></span>
+                    100% = Overall Clients =
+                  </span>
+                  <strong>${overallClientsCount} Clients</strong>
+                </div>
               </div>
             `;
           },

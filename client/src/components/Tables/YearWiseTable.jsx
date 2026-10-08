@@ -314,6 +314,7 @@ const YearWiseTable = ({
     }));
   }, [filteredData, dateColumn]);
 
+
   // const handleExportPass = () => {
   //   if (agGridRef.current) {
   //     agGridRef.current.api.exportDataAsCsv({
@@ -480,12 +481,6 @@ const YearWiseTable = ({
               className="shrink-0 whitespace-nowrap"
             />
           )}
-          {batchButton && selectedRows.length > 0 && (
-            <PrimaryButton
-              title={batchButton}
-              handleSubmit={() => handleBatchAction(selectedRows)}
-            />
-          )}
         </div>
       </div>
       {/* {dateRange.length > 0 && dateRange[0] && ( */}
@@ -623,6 +618,14 @@ const YearWiseTable = ({
             data={finalTableData}
             hideFilter={filteredData.length <= 9}
             search={search}
+            searchRowActions={
+              batchButton && selectedRows.length > 0 ? (
+                <PrimaryButton
+                  title={batchButton}
+                  handleSubmit={() => handleBatchAction(selectedRows)}
+                />
+              ) : null
+            }
             dateColumn={dateColumn}
             isRowSelectable={isRowSelectable}
             onSelectionChange={(rows) => setSelectedRows(rows)}

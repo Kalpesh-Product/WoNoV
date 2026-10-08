@@ -25,9 +25,9 @@ const roleRoutes = require("./routes/roleRoutes");
 const eventRoutes = require("./routes/eventsRoutes");
 const taskRoutes = require("./routes/tasksRoutes");
 const performanceRoutes = require("./routes/performanceRoutes");
+const kraKpaRoutes = require("./routes/kraKpaRoutes");
 const accessRoutes = require("./routes/accessRoutes");
 const attendanceRoutes = require("./routes/attendanceRoutes");
-const amcRoutes = require("./routes/amcRoutes");
 const vendorRoutes = require("./routes/vendorRoutes");
 const techRoutes = require("./routes/techRoutes");
 const budgetRoutes = require("./routes/budgetRoutes");
@@ -125,7 +125,6 @@ app.use("/api/items", verifyJwt, auditLogger, itemRoutes);
 app.use("/api/assets", verifyJwt, auditLogger, assetsRoutes);
 app.use("/api/meetings", verifyJwt, auditLogger, meetingsRoutes);
 app.use("/api/tickets", verifyJwt, auditLogger, ticketsRoutes);
-app.use("/api/amc", verifyJwt, auditLogger, amcRoutes);
 app.use("/api/leaves", verifyJwt, auditLogger, leaveRoutes);
 app.use(
   "/api/employee-agreements",
@@ -145,6 +144,7 @@ app.use("/api/payroll", verifyJwt, auditLogger, payrollRoutes);
 app.use("/api/payslip", verifyJwt, auditLogger, payslipRoutes);
 app.use("/api/tasks", verifyJwt, auditLogger, taskRoutes);
 app.use("/api/performance", verifyJwt, auditLogger, performanceRoutes);
+app.use("/api/kra-kpa", verifyJwt, auditLogger, kraKpaRoutes);
 app.use("/api/attendance", verifyJwt, auditLogger, attendanceRoutes);
 app.use("/api/sales", verifyJwt, auditLogger, salesRoutes);
 app.use("/api/visitors", verifyJwt, auditLogger, visitorRoutes);

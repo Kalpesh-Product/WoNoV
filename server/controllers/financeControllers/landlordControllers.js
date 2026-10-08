@@ -4,6 +4,24 @@ const {
 } = require("../../config/s3Config");
 const Landlord = require("../../models/finance/Landlord");
 const Company = require("../../models/hr/Company");
+const User = require("../../models/hr/UserData");
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .select("departments")
+    .lean();
+
+  return (user?.departments || []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      ["tech", "tech department"].includes(
+        department?.name?.trim().toLowerCase(),
+      ),
+  );
+};
 
 const escapeRegex = (value = "") => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -22,7 +40,7 @@ const addLandlordDocument = async (req, res, next) => {
       .lean()
       .exec();
 
-    if (!company || !foundLandlord) {
+    if (!company || !foundLandlord || foundLandlord.isDeleted) {
       return res.status(404).json({ message: "Landlord not found" });
     }
 
@@ -72,7 +90,7 @@ const updateLandlordDocument = async (req, res, next) => {
       Landlord.findById(landLordId).exec(),
     ]);
 
-    if (!company || !landlord) {
+    if (!company || !landlord || landlord.isDeleted) {
       return res.status(404).json({ message: "Landlord not found" });
     }
 
@@ -121,7 +139,16 @@ const updateLandlordDocument = async (req, res, next) => {
 
 const getLandlordDocuments = async (req, res, next) => {
   try {
-    const landlord = await Landlord.find();
+    const includeDeleted =
+      req.query.includeDeleted === "true" &&
+      (await isTechDepartmentUser(req.user));
+    const query = includeDeleted ? {} : { isDeleted: { $ne: true } };
+    const landlord = await Landlord.find(query)
+      .populate(
+        "deletedBy",
+        "firstName lastName employeeName name email",
+      )
+      .lean();
 
     if (!landlord) {
       return res.status(404).json({ message: "Landlord not found" });
@@ -177,7 +204,7 @@ const updateLandlordName = async (req, res, next) => {
     const trimmedName = name.trim();
     const landlord = await Landlord.findById(landlordId).exec();
 
-    if (!landlord) {
+    if (!landlord || landlord.isDeleted) {
       return res.status(404).json({ message: "Landlord not found" });
     }
 
@@ -202,10 +229,84 @@ const updateLandlordName = async (req, res, next) => {
   }
 };
 
+const manageLandlord = async (req, res, next) => {
+  try {
+    const { landlordId, action = "delete" } = req.body;
+
+    if (!landlordId) {
+      return res.status(400).json({ message: "Landlord id is required" });
+    }
+    if (!["delete", "restore", "permanent-delete"].includes(action)) {
+      return res.status(400).json({ message: "Invalid landlord action" });
+    }
+
+    const isTechUser = await isTechDepartmentUser(req.user);
+    const landlordAction =
+      action === "delete" && isTechUser ? "permanent-delete" : action;
+
+    if (
+      ["restore", "permanent-delete"].includes(landlordAction) &&
+      !isTechUser
+    ) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department users can restore or permanently delete landlords",
+      });
+    }
+
+    const landlord = await Landlord.findById(landlordId);
+    if (!landlord) {
+      return res.status(404).json({ message: "Landlord not found" });
+    }
+
+    if (landlordAction === "delete") {
+      if (landlord.isDeleted) {
+        return res.status(400).json({ message: "Landlord is already deleted" });
+      }
+      landlord.isDeleted = true;
+      landlord.deletedAt = new Date();
+      landlord.deletedBy = req.user;
+      await landlord.save();
+
+      return res.status(200).json({
+        message: "Landlord deleted successfully",
+        deletionType: "soft",
+      });
+    }
+
+    if (landlordAction === "restore") {
+      if (!landlord.isDeleted) {
+        return res.status(400).json({ message: "Landlord is not deleted" });
+      }
+      landlord.isDeleted = false;
+      landlord.deletedAt = undefined;
+      landlord.deletedBy = undefined;
+      await landlord.save();
+
+      return res.status(200).json({ message: "Landlord restored successfully" });
+    }
+
+    await Promise.all(
+      (landlord.documents || [])
+        .filter((document) => document.documentId)
+        .map((document) => handleDocumentDelete(document.documentId)),
+    );
+    await landlord.deleteOne();
+
+    return res.status(200).json({
+      message: "Landlord permanently deleted successfully",
+      deletionType: "permanent",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getLandlordDocuments,
   addLandlordDocument,
   createLandlord,
   updateLandlordDocument,
   updateLandlordName,
+  manageLandlord,
 };

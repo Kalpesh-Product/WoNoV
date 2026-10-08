@@ -8,6 +8,7 @@ import humanTime from "../utils/humanTime";
 import { BsCup, BsCupHot } from "react-icons/bs";
 import { IoEnterOutline, IoExitOutline } from "react-icons/io5";
 import { useSelector } from "react-redux";
+import { MdAccessTime, MdOutlinePendingActions } from "react-icons/md";
 
 const AttendanceTimeline = () => {
   const axios = useAxiosPrivate();
@@ -117,54 +118,77 @@ const AttendanceTimeline = () => {
   
 if (!todayAttendance) {
   return (
-    <div className="flex justify-center items-center h-80">
-      <span className="text-content text-gray-600">No Timeline</span>
+    <div className="flex min-h-[365px] flex-col items-center justify-center px-6 text-center">
+      <div className="relative flex h-32 w-32 items-center justify-center rounded-full bg-[#f1f6ff]">
+        <MdOutlinePendingActions
+          size={72}
+          className="text-[#b8d1fb]"
+          aria-hidden="true"
+        />
+        <span className="absolute bottom-2 right-2 flex h-12 w-12 items-center justify-center rounded-full bg-[#8eb7f8] text-white shadow-md">
+          <MdAccessTime size={27} aria-hidden="true" />
+        </span>
+      </div>
+      <h3 className="mt-5 text-lg font-pbold text-[#1E3D73]">No activity yet</h3>
+      <p className="mt-1 text-sm font-pregular text-[#1E3D73]">
+        Your attendance activity will appear here.
+      </p>
     </div>
   );
 }
 
 return (
-  <div className="flex flex-col gap-4 px-2 h-80">
-    <div className="flex justify-center">
-      <div className="flex flex-col gap-0 text-sm text-gray-700 overflow-y-scroll h-80 w-full px-4">
+  <div className="min-h-[365px] px-5 py-5">
+    <div className="mx-auto flex max-h-[340px] w-full flex-col overflow-y-auto pr-1 text-sm text-[#1E3D73]">
 
         {/* Clock-in */}
-        <div className="flex flex-col items-start gap-1">
-          <div className="flex justify-between items-center w-full">
-            <div className="flex gap-2 items-center">
-              <IoEnterOutline />
-              <span className="text-muted">Clock-in Time</span>
-            </div>
-            <span className="font-medium">
-              {todayAttendance?.inTime || "0h:0m:0s"}
+        <div className="relative flex items-center justify-between gap-4 pb-5">
+          <span className="absolute left-5 top-10 h-[calc(100%-28px)] w-px bg-[#dce5f1]" />
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#e5f8ef] text-[#07965f]">
+              <IoEnterOutline size={20} />
             </span>
+            <div>
+              <div className="font-pmedium text-[#1E3D73]">Clock-in Time</div>
+              <div className="mt-0.5 text-xs text-[#1E3D73]">Workday started</div>
+            </div>
           </div>
+          <span className="font-pbold text-[#1E3D73]">
+            {todayAttendance?.inTime || "--"}
+          </span>
         </div>
 
         {/* Breaks */}
         {todayAttendance?.breaks?.map((brk, index) => (
-          <div key={index} className="flex flex-col gap-1 items-start motion-preset-slide-up-sm">
-            <div className="w-[1px] h-4 bg-borderGray ml-1" />
-
-            <div className="flex justify-between items-center w-full">
-              <div className="flex gap-2 items-center">
-                <BsCupHot />
-                <span className="text-muted">Break Start</span>
+          <div key={index} className="motion-preset-slide-up-sm">
+            <div className="relative flex items-center justify-between gap-4 pb-5">
+              <span className="absolute left-5 top-10 h-[calc(100%-28px)] w-px bg-[#dce5f1]" />
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff0ec] text-[#ef6548]">
+                  <BsCupHot size={18} />
+                </span>
+                <div>
+                  <div className="font-pmedium text-[#1E3D73]">Break Start</div>
+                  <div className="mt-0.5 text-xs text-[#1E3D73]">Break activated</div>
+                </div>
               </div>
-              <span className="font-medium">{brk.startBreak}</span>
+              <span className="font-pbold text-[#1E3D73]">{brk.startBreak}</span>
             </div>
 
             {brk.endBreak && (
-              <>
-                <div className="w-[1px] h-4 bg-borderGray ml-1" />
-                <div className="flex justify-between items-center w-full motion-preset-slide-up-sm">
-                  <div className="flex gap-2 items-center">
-                    <BsCup />
-                    <span className="text-muted">Break End</span>
+              <div className="relative flex items-center justify-between gap-4 pb-5 motion-preset-slide-up-sm">
+                <span className="absolute left-5 top-10 h-[calc(100%-28px)] w-px bg-[#dce5f1]" />
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#2f6fed]">
+                    <BsCup size={18} />
+                  </span>
+                  <div>
+                    <div className="font-pmedium text-[#1E3D73]">Break End</div>
+                    <div className="mt-0.5 text-xs text-[#1E3D73]">Work resumed</div>
                   </div>
-                  <span className="font-medium">{brk.endBreak}</span>
                 </div>
-              </>
+                <span className="font-pbold text-[#1E3D73]">{brk.endBreak}</span>
+              </div>
             )}
           </div>
         ))}
@@ -172,20 +196,21 @@ return (
         {/* Clock-out */}
         {todayAttendance?.outTime &&
           todayAttendance.outTime !== "0h:0m:0s" && (
-            <div className="flex flex-col gap-1 items-start">
-              <div className="w-[1px] h-4 bg-borderGray ml-1" />
-              <div className="flex justify-between items-center w-full">
-                <div className="flex gap-2 items-center">
-                  <IoEnterOutline className="rotate-180" />
-                  <span className="text-muted">Clock-out Time</span>
-                </div>
-                <span className="font-medium">
-                  {todayAttendance.outTime}
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff0f0] text-[#ff0000]">
+                  <IoExitOutline size={20} />
                 </span>
+                <div>
+                  <div className="font-pmedium text-[#1E3D73]">Clock-out Time</div>
+                  <div className="mt-0.5 text-xs text-[#1E3D73]">Workday completed</div>
+                </div>
               </div>
+              <span className="font-pbold text-[#1E3D73]">
+                {todayAttendance.outTime}
+              </span>
             </div>
           )}
-      </div>
     </div>
   </div>
 );

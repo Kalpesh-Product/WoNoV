@@ -8,6 +8,8 @@ const WidgetSection = ({
   layout = 1,
   children,
   title,
+  titleClassName = "",
+  titleStyle,
   titleData,
   height,
   titleDataColor,
@@ -31,6 +33,7 @@ const WidgetSection = ({
   greenChipClassName,
   additionalSummaryChips = [],
   headerRightContent,
+  headerContentClassName = "",
   headerCenterContent,
   headerCenterContentInline = false,
   gridGap = "gap-4",
@@ -92,16 +95,17 @@ const WidgetSection = ({
             normalCase ? "" : "uppercase"
           }`}>
           <div
-            className={`flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between ${
+            className={`flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between ${headerContentClassName} ${
               headerCenterContentInline ? "lg:flex-wrap" : ""
             }`}>
             <div className="flex flex-col lg:flex-row justify-start lg:justify-start items-center gap-2">
               <span
+                style={titleStyle}
                 className={`${
                   titleFont
                     ? "text-mobileTitle lg:text-subtitle text-primary text-center w-full"
                     : "text-mobileTitle lg:text-widgetTitle text-primary font-pmedium text-center"
-                }`}>
+                } ${titleClassName}`}>
                 {title}
               </span>
 

@@ -15,7 +15,7 @@ import MuiAccordion from "../../components/MuiAccordion";
 import { PERMISSIONS } from "../../constants/permissions";
 import Permissions from "../../components/Permissions/Permissions";
 
-const Access = ({ showDepartmentAccordion = true }) => {
+const Access = ({ showDepartmentAccordion = true, containerClassName = "p-4" }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -51,7 +51,7 @@ const Access = ({ showDepartmentAccordion = true }) => {
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4">
+    <div className={`flex flex-col gap-4 ${containerClassName}`}>
       {/* <div>
         <AccessTree clickState={true} autoExpandFirst />
       </div> */}

@@ -158,7 +158,7 @@ const getUnpaidInvoiceRowsForMonth = (
   const currentMonth = dayjs().startOf("month");
   if (
     !targetMonth.isValid() ||
-    targetMonth.isBefore(currentMonth)
+    targetMonth.isBefore(dayjs("2026-09-01").startOf("month"))
   ) {
     return [];
   }
@@ -324,6 +324,10 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
       const formData = new FormData();
       if (editRow?._id) formData.append("revenueId", editRow._id);
       formData.append("isProjectedInvoice", String(Boolean(editRow.isProjectedInvoice)));
+      formData.append(
+        "removeInvoice",
+        String(Boolean(editRow?.invoice?.link) && !values.invoiceFile),
+      );
 
       [
         ["clients", values.clients],

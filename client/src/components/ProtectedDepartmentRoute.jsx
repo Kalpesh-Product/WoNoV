@@ -27,7 +27,9 @@ export default function ProtectedDepartmentRoute({
     roleTitle?.endsWith("admin"),
   );
   const isPerformanceRoute =
-    allowHrForPerformance && location.pathname.includes("/performance");
+    allowHrForPerformance &&
+    (location.pathname.includes("/performance") ||
+      location.pathname.includes("/kra-kpa"));
 
   if (
     isTop ||
