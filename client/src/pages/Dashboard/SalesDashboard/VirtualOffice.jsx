@@ -333,6 +333,10 @@ const getUserDisplayName = (user) => {
         "isProjectedInvoice",
         String(Boolean(editRow.isProjectedInvoice)),
       );
+      form.append(
+        "removeInvoice",
+        String(Boolean(editRow?.invoice?.link) && !values.invoiceFile),
+      );
       [
         "client",
         "clientName",
@@ -439,8 +443,23 @@ const getUserDisplayName = (user) => {
     };
  }, [selectedAddClient, selectedAddClientId, tableData]);
 
+  const addBillingMonth = dayjs(watchAdd("invoiceUploadedAt") || dayjs()).format("YYYY-MM");
+  const isAddMonthlyReceivedAmountLocked =
+    watchAdd("billingFrequency") === "Monthly" &&
+    showInvoiceProjections &&
+    Boolean(selectedAddClientId) &&
+    tableData.some((row) =>
+      String(row.client?._id || row.client) === String(selectedAddClientId) &&
+      dayjs(row.rentDate || row.invoiceUploadedAt || row.createdAt || null).format("YYYY-MM") === addBillingMonth &&
+      getNumericAmount(row.revenue) > 0 &&
+      getNumericAmount(row.totalReceivedAmount ?? row.receivedAmount) >= getNumericAmount(row.revenue),
+    );
+  const monthlyPaidMessage =
+    "This month is paid; the client will be available from next month to paid";
+
   const addNextIncrementDate = dayjs(addPaymentState.nextIncrementDate);
   const isAddReceivedAmountLocked =
+    watchAdd("billingFrequency") !== "Monthly" &&
     showInvoiceProjections &&
     addPaymentState.latestCycleCompleted &&
     (!addNextIncrementDate.isValid() ||
@@ -1145,6 +1164,10 @@ const getUserDisplayName = (user) => {
         >
           <form
             onSubmit={handleAddSubmit((values) => {
+              if (isAddMonthlyReceivedAmountLocked) {
+                toast.error(monthlyPaidMessage);
+                return;
+              }
               if (isAddReceivedAmountLocked && addNextIncrementDate.isValid()) {
                 toast.error(
                   "Client has already paid and will be available from the next increment date",
@@ -1298,10 +1321,14 @@ const getUserDisplayName = (user) => {
                     size="small"
                     inputProps={{ min: 0 }}
                     fullWidth
-                     disabled={isAddReceivedAmountLocked}
+                    disabled={isAddReceivedAmountLocked || isAddMonthlyReceivedAmountLocked}
                     helperText={
-                      isAddReceivedAmountLocked && addNextIncrementDate.isValid()
-                        ? `Available from ${addNextIncrementDate.format("DD-MM-YYYY")}`
+                      isAddMonthlyReceivedAmountLocked
+                        ? monthlyPaidMessage
+                        : isAddReceivedAmountLocked
+                        ? addNextIncrementDate.isValid()
+                          ? `Available From ${addNextIncrementDate.format("DD-MM-YYYY")}`
+                          : "Available From Next Increment Date"
                         : undefined
                     }
                     FormHelperTextProps={{
@@ -1367,6 +1394,7 @@ const getUserDisplayName = (user) => {
                   label="Billing Frequency"
                   size="small"
                   fullWidth
+                  disabled
                 >
                   <MenuItem value="Monthly">Monthly</MenuItem>
                   <MenuItem value="Yearly">Yearly</MenuItem>

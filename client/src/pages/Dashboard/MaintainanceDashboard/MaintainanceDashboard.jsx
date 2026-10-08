@@ -33,6 +33,7 @@ import {
   setSelectedDepartment,
   setSelectedDepartmentName,
 } from "../../../redux/slices/assetsSlice";
+import YearwiseEnergyBilling from "./MaintenanceMixBag/YearwiseEnergyBilling";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -1490,6 +1491,26 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
     userPermissions
   );
 
+  const maintenanceEnergyGraphsConfig = [
+    {
+      key: PERMISSIONS.MAINTENANCE_ST_OVERALL_ENERGY_CONSUMPTION_BILLING.value,
+      building: "st",
+      route:
+        "/app/dashboard/maintenance-dashboard/mix-bag/st-overall-energy-consumption-billing",
+    },
+    {
+      key: PERMISSIONS.MAINTENANCE_DTC_OVERALL_ENERGY_CONSUMPTION_BILLING.value,
+      building: "dtc",
+      route:
+        "/app/dashboard/maintenance-dashboard/mix-bag/dtc-overall-energy-consumption-billing",
+    },
+  ];
+
+  const allowedMaintenanceEnergyGraphs = filterPermissions(
+    maintenanceEnergyGraphsConfig,
+    userPermissions,
+  );
+
   // 5️⃣ MuiTables (same component config group)
   const maintenanceTablesConfig = [
     {
@@ -1634,6 +1655,23 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
         />
       )),
     },
+
+    ...(allowedMaintenanceEnergyGraphs.length
+      ? [
+          {
+            layout: 2,
+            widgets: allowedMaintenanceEnergyGraphs.map((config) => (
+              <YearwiseEnergyBilling
+                key={config.key}
+                building={config.building}
+                detailsRoute={config.route}
+                overall
+                embedded
+              />
+            )),
+          },
+        ]
+      : []),
 
     {
       layout: 2,

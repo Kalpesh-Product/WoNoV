@@ -263,8 +263,10 @@ const updateRevenueInvoice = async (req, res, next) => {
   let previousInvoiceId = null;
 
   try {
-    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const { revenueId, isProjectedInvoice, removeInvoice, ...updates } = req.body;
     const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const shouldRemoveInvoice =
+      String(removeInvoice).toLowerCase() === "true" && !req.file;
     const validRevenueId = mongoose.Types.ObjectId.isValid(revenueId)
       ? revenueId
       : null;
@@ -312,6 +314,12 @@ const updateRevenueInvoice = async (req, res, next) => {
 
     if (!payload.invoiceUploadedBy) {
       payload.invoiceUploadedBy = existingRevenue?.invoiceUploadedBy || req.user || null;
+    }
+
+    if (shouldRemoveInvoice) {
+      payload.invoice = null;
+      payload.invoiceUploadedAt = null;
+      payload.invoiceUploadedBy = null;
     }
 
     if (file) {
@@ -390,7 +398,11 @@ const updateRevenueInvoice = async (req, res, next) => {
       return res.status(404).json({ message: "Revenue not found" });
     }
 
-    if (previousInvoiceId && previousInvoiceId !== uploadedInvoiceId) {
+    if (
+      (uploadedInvoiceId || shouldRemoveInvoice) &&
+      previousInvoiceId &&
+      previousInvoiceId !== uploadedInvoiceId
+    ) {
       await handleFileDelete(previousInvoiceId).catch(() => null);
     }
 

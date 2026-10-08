@@ -14,6 +14,19 @@ const landlordSchema = new mongoose.Schema({
     required: true,
   },
   documents: [landlordDocumentSchema],
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  deletedAt: {
+    type: Date,
+    default: null,
+  },
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "UserData",
+    default: null,
+  },
 });
 
 const Landlord = mongoose.model("Landlord", landlordSchema);

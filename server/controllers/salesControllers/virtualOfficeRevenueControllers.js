@@ -165,8 +165,10 @@ const getVirtualOfficeRevenue = async (req, res, next) => {
 const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
   let uploadedInvoiceId = null;
   try {
-    const { revenueId, isProjectedInvoice, ...updates } = req.body;
+    const { revenueId, isProjectedInvoice, removeInvoice, ...updates } = req.body;
     const isProjected = String(isProjectedInvoice).toLowerCase() === "true";
+    const shouldRemoveInvoice =
+      String(removeInvoice).toLowerCase() === "true" && !req.file;
     const company = await Company.findById(req.company).lean();
     if (!company) return res.status(404).json({ message: "Company not found" });
 
@@ -213,6 +215,11 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
       payload.invoiceUploadedBy =
         existingRevenue?.invoiceUploadedBy || req.user || null;
     }
+    if (shouldRemoveInvoice) {
+      payload.invoice = null;
+      payload.invoiceUploadedAt = null;
+      payload.invoiceUploadedBy = null;
+    }
     if (req.file) {
       const allowedMimeTypes = [
         "application/pdf", "application/msword",
@@ -255,7 +262,7 @@ const updateVirtualOfficeRevenueInvoice = async (req, res, next) => {
       );
     }
     if (
-      uploadedInvoiceId &&
+      (uploadedInvoiceId || shouldRemoveInvoice) &&
       previousInvoiceId &&
       previousInvoiceId !== uploadedInvoiceId
     ) {

@@ -290,7 +290,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     .filter(Boolean);
 
   const handleMenuOpen = (item) => {
-    navigate(item.route);
+    navigate(item.route, { flushSync: true });
     if (onCloseDrawer) onCloseDrawer(); // 🔁 Close drawer on menu click
   };
 
@@ -329,7 +329,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                       }`}
                     onClick={() => {
                       if (module.hasModulePermission) {
-                        navigate(module.route);
+                        navigate(module.route, { flushSync: true });
                       } else if (module.submenus?.length) {
                         toggleModule(index);
                       }

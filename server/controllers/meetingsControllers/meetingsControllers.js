@@ -1318,6 +1318,7 @@ const getMyMeetings = async (req, res, next) => {
           : meeting.externalClient
             ? null
             : "BIZNest",
+        clientId: meeting.client?._id || null,
         externalClient: meeting.externalClient
           ? meeting.externalClient.companyName
           : null,

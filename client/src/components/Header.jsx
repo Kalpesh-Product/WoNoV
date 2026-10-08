@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
-  TextField,
   Avatar,
-  InputAdornment,
   Popover,
   List,
   ListItem,
@@ -16,7 +14,6 @@ import {
 } from "@mui/material";
 import {
   IoIosArrowForward,
-  IoIosSearch,
   IoMdNotificationsOutline,
 } from "react-icons/io";
 import { MdOutlineMailOutline } from "react-icons/md";

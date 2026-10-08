@@ -158,6 +158,25 @@ const clientSchema = new mongoose.Schema(
         { _id: false, timestamps: true },
       ),
     ],
+    clientAgreementStatus: {
+      isDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      permanentlyDeleted: {
+        type: Boolean,
+        default: false,
+      },
+      deletedAt: {
+        type: Date,
+        default: null,
+      },
+      deletedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "UserData",
+        default: null,
+      },
+    },
     // rentDate: { type: Date },
     // rentDate: { type: String },
     rentDate: {

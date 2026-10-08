@@ -1,7 +1,14 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { toast } from "sonner";
-import PrimaryButton from "./PrimaryButton";
-import SecondaryButton from "./SecondaryButton";
+import {
+  MdAccessTime,
+  MdArrowForward,
+  MdCalendarToday,
+  MdCameraAlt,
+  MdClose,
+  MdRefresh,
+} from "react-icons/md";
 
 const AttendanceCameraModal = ({
   open,
@@ -14,11 +21,14 @@ const AttendanceCameraModal = ({
   const streamRef = useRef(null);
   const onCloseRef = useRef(onClose);
   const [isReady, setIsReady] = useState(false);
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [capturedPhoto, setCapturedPhoto] = useState(null);
   onCloseRef.current = onClose;
 
   useEffect(() => {
     if (!open) return undefined;
 
+    setCapturedPhoto(null);
     let cancelled = false;
     navigator.mediaDevices
       ?.getUserMedia({ video: { facingMode: "user" }, audio: false })
@@ -46,6 +56,14 @@ const AttendanceCameraModal = ({
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+
+    setCurrentTime(new Date());
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, [open]);
+
   const capture = () => {
     const video = videoRef.current;
     if (!video?.videoWidth) return;
@@ -55,67 +73,195 @@ const AttendanceCameraModal = ({
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
     const context = canvas.getContext("2d");
+    context.save();
+    context.translate(canvas.width, 0);
+    context.scale(-1, 1);
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const label = capturedAt.toLocaleString();
-    const fontSize = Math.max(18, Math.round(canvas.width / 32));
-    context.font = `${fontSize}px sans-serif`;
-    const padding = Math.round(fontSize * 0.6);
-    const labelWidth = context.measureText(label).width;
-    context.fillStyle = "rgba(0, 0, 0, 0.65)";
-    context.fillRect(
-      canvas.width - labelWidth - padding * 2,
-      canvas.height - fontSize - padding * 2,
-      labelWidth + padding * 2,
-      fontSize + padding * 2,
-    );
-    context.fillStyle = "#fff";
-    context.fillText(
-      label,
-      canvas.width - labelWidth - padding,
-      canvas.height - padding,
-    );
+    context.restore();
 
     canvas.toBlob(
-      (blob) => blob && onCapture(blob, capturedAt.toISOString()),
+      (blob) => {
+        if (!blob) return;
+        setCapturedPhoto({
+          blob,
+          capturedAt: capturedAt.toISOString(),
+          previewUrl: canvas.toDataURL("image/jpeg", 0.9),
+        });
+      },
       "image/jpeg",
       0.9,
     );
   };
 
+  const retake = () => {
+    setCapturedPhoto(null);
+    setCurrentTime(new Date());
+  };
+
+  const proceed = () => {
+    if (!capturedPhoto) return;
+    onCapture(capturedPhoto.blob, capturedPhoto.capturedAt);
+  };
+
   if (!open) return null;
 
-  return (
-    <div className="fixed inset-0 z-[1400] flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-xl rounded-xl bg-white p-5 shadow-xl">
-        <h2 className="mb-4 text-lg font-semibold text-primary">{title}</h2>
-        <div className="relative overflow-hidden rounded-lg bg-black">
-          <video
-            ref={videoRef}
-            className="max-h-[60vh] w-full scale-x-[-1] object-cover"
-            playsInline
-            muted
-            onCanPlay={() => setIsReady(true)}
-          />
-          <span className="absolute bottom-3 right-3 rounded bg-black/60 px-2 py-1 text-xs text-white">
-            {new Date().toLocaleString()}
-          </span>
+  const displayedTime = capturedPhoto
+    ? new Date(capturedPhoto.capturedAt)
+    : currentTime;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[1400] flex items-start justify-center overflow-y-auto bg-[#172033]/80 p-4 backdrop-blur-[2px]">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="attendance-camera-title"
+        className="w-full max-w-[400px] shrink-0 overflow-hidden rounded-[26px] border border-white/70 bg-[#f8fafc] shadow-[0_28px_80px_rgba(2,6,23,0.38)]"
+      >
+        <div className="flex items-start justify-between border-b border-[#e5e9f1] bg-white px-5 py-4">
+          <div>
+            <div className="flex items-center gap-2 text-[#1E3D73]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#dbe8fb] bg-[#eaf2ff]">
+                <MdCameraAlt
+                  size={21}
+                  className="text-[#1E3D73]"
+                  aria-hidden="true"
+                />
+              </span>
+              <h2
+                id="attendance-camera-title"
+                className="text-xl font-pbold leading-none"
+              >
+                CAPTURE SELFIE
+              </h2>
+            </div>
+            <p className="mt-2 text-[10px] font-pbold uppercase tracking-[0.28em] text-[#9aa6bb]">
+              {title}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={isLoading}
+            aria-label="Close camera"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#e7ebf1] bg-[#f8fafc] text-[#ff000080] transition-colors hover:bg-[#edf1f7] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <MdClose size={21} />
+          </button>
         </div>
-        <p className="mt-3 text-sm text-gray-600">
-          Keep your face visible. The attendance time will be added to the
-          captured photo.
-        </p>
-        <div className="mt-4 flex justify-end gap-3">
-          <SecondaryButton title="Cancel" handleSubmit={onClose} />
-          <PrimaryButton
-            title={isLoading ? "Saving..." : "Capture & Save"}
-            handleSubmit={capture}
-            disabled={!isReady || isLoading}
-            isLoading={isLoading}
-          />
+
+        <div className="p-5">
+          <div className="overflow-hidden rounded-[24px] bg-[#020617] p-2.5 shadow-inner">
+            <div className="flex items-center justify-between px-1 pb-2.5 pt-0.5 text-[10px] font-pbold text-white/70">
+              <span className="uppercase tracking-[0.26em]">Selfie Preview</span>
+              <span>
+                {capturedPhoto
+                  ? "Photo captured"
+                  : isReady
+                    ? "Ready to capture"
+                    : "Preparing camera"}
+              </span>
+            </div>
+            <div
+              className="relative overflow-hidden rounded-[19px] bg-[#111827]"
+              style={{ aspectRatio: "4 / 4.2" }}
+            >
+              <video
+                ref={videoRef}
+                className={`h-full w-full scale-x-[-1] object-cover ${capturedPhoto ? "invisible" : ""}`}
+                playsInline
+                muted
+                onCanPlay={() => setIsReady(true)}
+              />
+              {capturedPhoto && (
+                <img
+                  src={capturedPhoto.previewUrl}
+                  alt="Captured attendance selfie"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            </div>
+          </div>
+
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-3 rounded-2xl border border-[#e2e7ef] bg-[#f1f3f6] px-3 py-3 shadow-[0_2px_8px_rgba(30,61,115,0.05)]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#dbe8fb] bg-[#eaf2ff] text-[#1E3D73]">
+                <MdCalendarToday
+                  size={17}
+                  className="text-[#1E3D73]"
+                  aria-hidden="true"
+                />
+              </span>
+              <div>
+                <div className="text-[10px] font-pbold uppercase tracking-wide text-[#7b879b]">
+                  Date
+                </div>
+                <div className="mt-1 text-sm font-pbold text-[#263750]">
+                  {displayedTime.toLocaleDateString("en-US", {
+                    month: "2-digit",
+                    day: "2-digit",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-[#e2e7ef] bg-[#f1f3f6] px-3 py-3 shadow-[0_2px_8px_rgba(30,61,115,0.05)]">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#dbe8fb] bg-[#eaf2ff] text-[#1E3D73]">
+                <MdAccessTime
+                  size={18}
+                  className="text-[#1E3D73]"
+                  aria-hidden="true"
+                />
+              </span>
+              <div>
+                <div className="text-[10px] font-pbold uppercase tracking-wide text-[#7b879b]">
+                  Time
+                </div>
+                <div className="mt-1 text-sm font-pbold text-[#263750]">
+                  {displayedTime.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3 border-t border-[#e5e9f1] bg-white px-5 py-4">
+          <button
+            type="button"
+            onClick={capturedPhoto ? retake : onClose}
+            disabled={isLoading}
+            className={`flex h-11 items-center justify-center gap-2 rounded-xl border text-xs font-pbold uppercase shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+              capturedPhoto
+                ? "border-[#3cb37180] bg-[#3cb37180] text-white hover:bg-[#3cb37199]"
+                : "border-[#ff000080] bg-[#ff000080] text-white hover:bg-[#ff000099]"
+            }`}
+          >
+            {capturedPhoto ? (
+              <MdRefresh size={17} aria-hidden="true" />
+            ) : (
+              <MdClose size={16} aria-hidden="true" />
+            )}
+            {capturedPhoto ? "Retake" : "Cancel"}
+          </button>
+          <button
+            type="button"
+            onClick={capturedPhoto ? proceed : capture}
+            disabled={(!capturedPhoto && !isReady) || isLoading}
+            className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1E3D73] text-xs font-pbold uppercase text-white shadow-[0_8px_20px_rgba(30,61,115,0.28)] transition-colors hover:bg-[#162f5b] disabled:cursor-not-allowed disabled:bg-[#9aa8bd] disabled:shadow-none"
+          >
+            {capturedPhoto ? (
+              <MdArrowForward size={17} aria-hidden="true" />
+            ) : (
+              <MdCameraAlt size={17} aria-hidden="true" />
+            )}
+            {isLoading ? "Saving..." : capturedPhoto ? "Proceed" : "Capture"}
+          </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
