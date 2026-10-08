@@ -2,6 +2,7 @@ const router = require("express").Router();
 const {
   listIndividualMonthlyKpa,
   getIndividualMonthlyKpaReviewAccess,
+  getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
   updateIndividualMonthlyKpa,
   completeIndividualMonthlyKpa,
@@ -18,6 +19,7 @@ const {
 
 router.get("/individual-monthly-kpa", listIndividualMonthlyKpa);
 router.get("/individual-monthly-kpa/review-access", getIndividualMonthlyKpaReviewAccess);
+router.get("/delete-access", getKraKpaDeleteAccess);
 router.post("/individual-monthly-kpa", createIndividualMonthlyKpa);
 router.patch("/individual-monthly-kpa/:id/complete", completeIndividualMonthlyKpa);
 router.patch("/individual-monthly-kpa/:id", updateIndividualMonthlyKpa);

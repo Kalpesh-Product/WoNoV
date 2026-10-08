@@ -397,6 +397,7 @@ import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKr
 import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
 import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
 import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMonthlyKpa";
+import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
@@ -4506,7 +4507,7 @@ export const routes = createBrowserRouter([
                             permissions={[
                               PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA,
                             ]}
-                            element={<PerformanceDepartmentWiseKraKpa />}
+                            element={<KraKpaDepartmentEntry />}
                           />
                         ),
                       },

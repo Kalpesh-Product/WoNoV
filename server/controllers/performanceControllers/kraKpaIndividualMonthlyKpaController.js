@@ -10,6 +10,10 @@ const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const DETAIL_POPULATION = [
   { path: "employee", select: "firstName middleName lastName" },
   { path: "department", select: "name" },
+  { path: "createdBy", select: "firstName middleName lastName" },
+  { path: "completionHistory.completedBy", select: "firstName middleName lastName" },
+  { path: "managerReviewedBy", select: "firstName middleName lastName" },
+  { path: "managerReviewHistory.reviewedBy", select: "firstName middleName lastName" },
   { path: "verifiedBy", select: "firstName middleName lastName" },
 ];
 
@@ -57,8 +61,7 @@ const getScopedFilter = (req, access) => ({
     ...(!access.canViewOthers && { employee: req.user }),
 });
 
-const canEditReview = async (req, departmentId, access) => {
-  if (access.isHr || access.isTopManagement) return true;
+const isDepartmentManager = async (req, departmentId, access) => {
   if (!access.departmentIds.includes(String(departmentId))) return false;
 
   const company = await Company.findById(req.company)
@@ -77,6 +80,9 @@ const canEditReview = async (req, departmentId, access) => {
   }));
 };
 
+const canDeleteKraKpa = async (req, departmentId, access) =>
+  access.isTopManagement || await isDepartmentManager(req, departmentId, access);
+
 const parseRating = (value) => {
   if (value === "" || value === null) return null;
   if (value === 0 || value === "0") return 0;
@@ -85,7 +91,14 @@ const parseRating = (value) => {
 };
 
 const validateReviewFields = (body) => {
-  const fields = ["managerComments", "kpaRating", "hrRating"];
+  const fields = [
+    "managerComments",
+    "kpaRating",
+    "managerRatingDate",
+    "hrComments",
+    "hrRating",
+    "hrRatingDate",
+  ];
   const hasReviewFields = fields.some((field) => Object.hasOwn(body, field));
   if (!hasReviewFields) return { value: null };
 
@@ -96,11 +109,25 @@ const validateReviewFields = (body) => {
     }
     value.managerComments = body.managerComments.trim();
   }
+  if (Object.hasOwn(body, "hrComments")) {
+    if (typeof body.hrComments !== "string" || body.hrComments.length > 5000) {
+      return { error: "HR Comments must be at most 5000 characters" };
+    }
+    value.hrComments = body.hrComments.trim();
+  }
   for (const field of ["kpaRating", "hrRating"]) {
     if (!Object.hasOwn(body, field)) continue;
     const rating = parseRating(body[field]);
     if (rating === undefined) return { error: `${field} must be 0 or 1` };
     value[field] = rating;
+  }
+  for (const field of ["managerRatingDate", "hrRatingDate"]) {
+    if (!Object.hasOwn(body, field)) continue;
+    const ratingDate = parseDate(body[field]);
+    if (ratingDate === undefined) {
+      return { error: `${field} must be a valid YYYY-MM-DD date` };
+    }
+    value[field] = ratingDate;
   }
   return { value };
 };
@@ -115,14 +142,16 @@ const validateVerificationFields = (body, record) => {
   if (Object.hasOwn(body, "verification") && verification === "Pending") {
     return { error: "Pending review status is set automatically" };
   }
-  if (!["Verified", "Changes Required", "Closed"].includes(verification)) {
-    return { error: "Review Status must be Verified, Changes Required, or Closed" };
+  if (!["Changes Required", "Closed"].includes(verification)) {
+    return { error: "Review Status must be Changes Required or Closed" };
   }
-  const verificationDate = body.verificationDate === undefined
-    ? record.verificationDate
-    : parseDate(body.verificationDate);
-  if (verificationDate === undefined) {
-    return { error: "Reviewed On must be a valid YYYY-MM-DD date" };
+  const verificationDate = verification === "Closed"
+    ? body.verificationDate === undefined
+      ? record.verificationClosedDate
+      : parseDate(body.verificationDate)
+    : null;
+  if (verification === "Closed" && verificationDate === undefined) {
+    return { error: "Closed On must be a valid YYYY-MM-DD date" };
   }
   return {
     value: {
@@ -147,6 +176,9 @@ const validateFields = (body, { create = false } = {}) => {
   }
   if (deadline === undefined) {
     return { error: "Deadline must be a valid YYYY-MM-DD date" };
+  }
+  if (create && deadline === null) {
+    return { error: "Deadline is required" };
   }
   if (create && (!mongoose.isValidObjectId(body.department) ||
     !mongoose.isValidObjectId(body.employee))) {
@@ -220,7 +252,31 @@ const getIndividualMonthlyKpaReviewAccess = async (req, res, next) => {
     if (!access.allDepartments && !access.departmentIds.includes(String(department))) {
       return res.status(403).json({ message: "Department access denied" });
     }
-    return res.json({ canEditReview: await canEditReview(req, department, access) });
+    const departmentManager = await isDepartmentManager(req, department, access);
+    const canEditManagerReview =
+      access.isTopManagement || access.isHr || departmentManager;
+    const canEditHrRating = access.isHr;
+    return res.json({
+      canEditReview: canEditManagerReview || canEditHrRating,
+      canEditManagerReview,
+      canEditHrRating,
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const getKraKpaDeleteAccess = async (req, res, next) => {
+  try {
+    const { department } = req.query;
+    if (!mongoose.isValidObjectId(department)) {
+      return res.status(400).json({ message: "Valid department ID is required" });
+    }
+    const access = await getAccess(req);
+    if (!access.allDepartments && !access.departmentIds.includes(String(department))) {
+      return res.status(403).json({ message: "Department access denied" });
+    }
+    return res.json({ canDelete: await canDeleteKraKpa(req, department, access) });
   } catch (error) {
     return next(error);
   }
@@ -284,6 +340,20 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     });
     if (!record) return res.status(404).json({ message: "KPA not found" });
     if (
+      Object.hasOwn(req.body, "month") &&
+      String(req.body.month) !== String(record.month)
+    ) {
+      return res.status(400).json({ message: "KPA month cannot be changed" });
+    }
+    const hasKpaDetailFields = ["month", "target", "deadline"].some((field) =>
+      Object.hasOwn(req.body, field),
+    );
+    if (hasKpaDetailFields && !access.canViewOthers) {
+      return res.status(403).json({
+        message: "Employees can only update the Resource Comment",
+      });
+    }
+    if (
       Object.hasOwn(req.body, "resourceComment") &&
       String(record.createdBy) !== String(req.user)
     ) {
@@ -296,10 +366,59 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     if (review.error) return res.status(400).json({ message: review.error });
     const verification = validateVerificationFields(req.body, record);
     if (verification.error) return res.status(400).json({ message: verification.error });
-    if ((review.value || verification.value) &&
-      !await canEditReview(req, record.department, access)) {
+    const departmentManager = await isDepartmentManager(req, record.department, access);
+    const canEditManagerReview =
+      access.isTopManagement || access.isHr || departmentManager;
+    const canEditHrRating = access.isHr;
+    const hasManagerReviewFields = [
+      "managerComments",
+      "kpaRating",
+      "managerRatingDate",
+      "verification",
+      "verificationDate",
+    ].some((field) => Object.hasOwn(req.body, field));
+    const hasHrReviewFields = ["hrComments", "hrRating", "hrRatingDate"].some((field) =>
+      Object.hasOwn(req.body, field),
+    );
+    if (hasManagerReviewFields && !canEditManagerReview) {
       return res.status(403).json({
-        message: "Only HR, Top Management, or this department's manager can edit review and verification fields",
+        message: "Only HR, Top Management, or this department's manager can edit manager review fields",
+      });
+    }
+    if (hasHrReviewFields && !canEditHrRating) {
+      return res.status(403).json({
+        message: "Only HR can edit HR rating fields",
+      });
+    }
+    const nextHrRating = review.value && Object.hasOwn(review.value, "hrRating")
+      ? review.value.hrRating
+      : record.hrRating;
+    const nextManagerRating = review.value && Object.hasOwn(review.value, "kpaRating")
+      ? review.value.kpaRating
+      : record.kpaRating;
+    const isSubmittingHrComments = Boolean(
+      review.value && Object.hasOwn(review.value, "hrComments"),
+    );
+    const nextVerification = verification.value?.verification || record.verification;
+    const isSubmittingRating =
+      (review.value &&
+        Object.hasOwn(review.value, "kpaRating") &&
+        review.value.kpaRating !== null) ||
+      (review.value &&
+        Object.hasOwn(review.value, "hrRating") &&
+        review.value.hrRating !== null);
+    if (isSubmittingRating && nextVerification !== "Closed") {
+      return res.status(409).json({
+        message: "Review Status must be Closed before adding ratings",
+      });
+    }
+    if (
+      (isSubmittingHrComments ||
+        (nextHrRating !== null && nextHrRating !== undefined)) &&
+      (nextManagerRating === null || nextManagerRating === undefined)
+    ) {
+      return res.status(409).json({
+        message: "Manager Rating is required before HR Comments or HR Rating can be added",
       });
     }
     if (verification.value && record.status !== "Completed") {
@@ -328,34 +447,56 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
       return res.status(400).json({ message: validation.error });
     }
 
-    const previousVerification = record.verification || "Pending";
-    if (
-      previousVerification === "Changes Required" &&
-      !record.changesRequiredDate &&
-      record.verificationDate
-    ) {
-      record.changesRequiredDate = record.verificationDate;
-    }
+    const previousManagerComments = record.managerComments || "";
+    const nextManagerComments =
+      review.value && Object.hasOwn(review.value, "managerComments")
+        ? review.value.managerComments
+        : previousManagerComments;
+    const managerCommentsChanged =
+      nextManagerComments !== previousManagerComments;
+
     Object.assign(record, validation.value, review.value || {}, {
       updatedBy: req.user,
     });
     if (verification.value) {
+      const reviewStatusChanged =
+        record.verification !== verification.value.verification;
+      const repeatedChangesRequired =
+        record.verification === "Changes Required" &&
+        verification.value.verification === "Changes Required" &&
+        record.status === "Completed";
       record.verification = verification.value.verification;
-      record.verifiedBy = req.user;
+      if (
+        reviewStatusChanged ||
+        repeatedChangesRequired ||
+        managerCommentsChanged
+      ) {
+        const reviewedAt = new Date();
+        record.managerReviewedBy = req.user;
+        record.managerReviewedAt = reviewedAt;
+        record.verifiedBy = req.user;
+        if (!Array.isArray(record.managerReviewHistory)) {
+          record.managerReviewHistory = [];
+        }
+        record.managerReviewHistory.push({
+          status: verification.value.verification,
+          reviewedBy: req.user,
+          reviewedAt,
+          managerComments: nextManagerComments,
+        });
+      }
       const reviewDate = verification.value.reviewDate || new Date();
 
       if (record.verification === "Changes Required") {
-        record.changesRequiredDate = reviewDate;
         record.status = "Pending";
         record.closingDate = null;
         record.verificationClosedDate = null;
         record.kpaRating = null;
+        record.managerRatingDate = null;
         record.hrRating = null;
+        record.hrRatingDate = null;
       } else if (record.verification === "Closed") {
         record.verificationClosedDate = reviewDate;
-      } else {
-        record.verificationDate = reviewDate;
-        record.verificationClosedDate = null;
       }
     }
     await record.save();
@@ -374,12 +515,13 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     const access = await getAccess(req);
     const scope = { _id: req.params.id, ...getScopedFilter(req, access) };
     const existing = await IndividualMonthlyKpa.findOne(scope)
-      .select("status createdBy")
+      .select("status createdBy employee")
       .lean();
     if (!existing) return res.status(404).json({ message: "KPA not found" });
-    if (String(existing.createdBy) !== String(req.user)) {
+    const canComplete = String(existing.createdBy) === String(req.user);
+    if (!canComplete) {
       return res.status(403).json({
-        message: "Only the KPA creator can add the Resource Comment and mark it as done",
+        message: "Only the KPA creator can mark it as done",
       });
     }
     if (existing.status !== "Pending") {
@@ -397,13 +539,27 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     if (resourceComment.length > 5000) {
       return res.status(400).json({ message: "Resource Comment is too long" });
     }
+    const completedAt = new Date();
     const record = await IndividualMonthlyKpa.findOneAndUpdate(
-      { ...scope, status: "Pending", createdBy: req.user },
       {
-        status: "Completed",
-        closingDate: new Date(),
-        resourceComment,
-        updatedBy: req.user,
+        ...scope,
+        status: "Pending",
+        createdBy: req.user,
+      },
+      {
+        $set: {
+          status: "Completed",
+          closingDate: completedAt,
+          resourceComment,
+          updatedBy: req.user,
+        },
+        $push: {
+          completionHistory: {
+            completedBy: req.user,
+            completedAt,
+            resourceComment,
+          },
+        },
       },
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
@@ -420,6 +576,16 @@ const deleteIndividualMonthlyKpa = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid KPA ID" });
     }
     const access = await getAccess(req);
+    const existing = await IndividualMonthlyKpa.findOne({
+      _id: req.params.id,
+      ...getScopedFilter(req, access),
+    }).select("department").lean();
+    if (!existing) return res.status(404).json({ message: "KPA not found" });
+    if (!await canDeleteKraKpa(req, existing.department, access)) {
+      return res.status(403).json({
+        message: "Only Top Management or this department's manager can delete a KPA",
+      });
+    }
     const record = await IndividualMonthlyKpa.findOneAndUpdate(
       { _id: req.params.id, ...getScopedFilter(req, access) },
       { isDeleted: true, updatedBy: req.user },
@@ -435,6 +601,7 @@ const deleteIndividualMonthlyKpa = async (req, res, next) => {
 module.exports = {
   listIndividualMonthlyKpa,
   getIndividualMonthlyKpaReviewAccess,
+  getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
   updateIndividualMonthlyKpa,
   completeIndividualMonthlyKpa,

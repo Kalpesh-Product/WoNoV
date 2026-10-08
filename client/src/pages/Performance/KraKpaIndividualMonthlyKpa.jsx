@@ -45,6 +45,30 @@ const monthRange = (month) => ({
 });
 const formatDate = (date) =>
   date && dayjs(date).isValid() ? dayjs(date).format("DD-MM-YYYY") : "-";
+const formatDateTime = (date) =>
+  date && dayjs(date).isValid()
+    ? dayjs(date).format("DD-MM-YYYY, hh:mm A")
+    : "-";
+const formatUserName = (user) =>
+  user && typeof user === "object"
+    ? [user.firstName, user.middleName, user.lastName]
+        .filter(Boolean)
+        .join(" ") || "-"
+    : "-";
+const getDelayCount = (closingDate, deadline) => {
+  if (
+    !closingDate ||
+    !deadline ||
+    !dayjs(closingDate).isValid() ||
+    !dayjs(deadline).isValid()
+  ) {
+    return 0;
+  }
+  return Math.max(
+    0,
+    dayjs(closingDate).startOf("day").diff(dayjs(deadline).startOf("day"), "day"),
+  );
+};
 const emptySelfKra = () => ({ title: "", description: "", lead: "" });
 const emptyForm = () => ({
   month: currentMonth(),
@@ -53,13 +77,25 @@ const emptyForm = () => ({
   resourceComment: "",
   managerComments: "",
   kpaRating: "",
+  managerRatingDate: "",
+  hrComments: "",
   hrRating: "",
+  hrRatingDate: "",
   verification: "Pending",
   verificationDate: "",
   selfKras: [emptySelfKra()],
 });
 
-const KpaActionCell = ({ data, node, onEdit, onAction, isPending }) => {
+const KpaActionCell = ({
+  data,
+  node,
+  onEdit,
+  onAction,
+  isPending,
+  canDelete,
+  canEditActions,
+  canComplete,
+}) => {
   const [selected, setSelected] = useState(() => Boolean(node.isSelected()));
 
   useEffect(() => {
@@ -73,7 +109,7 @@ const KpaActionCell = ({ data, node, onEdit, onAction, isPending }) => {
 
   return (
     <div className="flex h-full items-center gap-2">
-      {data.status !== "Completed" && (
+      {data.status !== "Completed" && canComplete && (
         <PrimaryButton
           type="button"
           title="Mark As Done"
@@ -82,26 +118,30 @@ const KpaActionCell = ({ data, node, onEdit, onAction, isPending }) => {
           className="!px-2 !py-1 !text-xs !h-7 whitespace-nowrap"
         />
       )}
-      <button
-        type="button"
-        title="Edit"
-        aria-label={`Edit ${data.target || data.title || "Self KRA"}`}
-        disabled={disabled}
-        onClick={() => onEdit(data)}
-        className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
-      >
-        <HiPencilSquare size={24} color={disabled ? "#9ca3af" : "#111827"} />
-      </button>
-      <button
-        type="button"
-        title="Delete"
-        aria-label={`Delete ${data.target || data.title || "Self KRA"}`}
-        disabled={disabled}
-        onClick={() => onAction("delete", data)}
-        className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
-      >
-        <MdDeleteForever size={26} color={disabled ? "#9ca3af" : "red"} />
-      </button>
+      {canEditActions && (
+        <button
+          type="button"
+          title="Edit"
+          aria-label={`Edit ${data.target || data.title || "Self KRA"}`}
+          disabled={disabled}
+          onClick={() => onEdit(data)}
+          className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
+        >
+          <HiPencilSquare size={24} color={disabled ? "#9ca3af" : "#111827"} />
+        </button>
+      )}
+      {canDelete && (
+        <button
+          type="button"
+          title="Delete"
+          aria-label={`Delete ${data.target || data.title || "Self KRA"}`}
+          disabled={disabled}
+          onClick={() => onAction("delete", data)}
+          className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
+        >
+          <MdDeleteForever size={26} color={disabled ? "#9ca3af" : "red"} />
+        </button>
+      )}
     </div>
   );
 };
@@ -157,6 +197,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [formErrors, setFormErrors] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
   const [viewRecord, setViewRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
@@ -170,6 +211,12 @@ const KraKpaIndividualMonthlyKpa = () => {
       (department) =>
         department?.name?.trim().toLowerCase() === "top management",
     );
+  const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
+  const isEmployeeUser =
+    roleTitles.some((role) => role.includes("employee")) &&
+    !isManager &&
+    !isTopManagement &&
+    !isHrUser;
   const canSelectSelfKraLead = isManager || isTopManagement;
   const canManageOthers = roleTitles.some(
     (role) =>
@@ -178,7 +225,9 @@ const KraKpaIndividualMonthlyKpa = () => {
       role === "hr employee",
   );
   const canEdit =
-    String(employeeId) === String(auth?.user?._id) || canManageOthers;
+    String(employeeId) === String(auth?.user?._id) ||
+    canManageOthers ||
+    isHrUser;
   const canAddKraKpa =
     String(employeeId) === String(auth?.user?._id) ||
     isManager ||
@@ -186,6 +235,19 @@ const KraKpaIndividualMonthlyKpa = () => {
   const isCreatedByLoggedInUser = (record) =>
     String(record?.createdBy?._id || record?.createdBy || "") ===
     String(auth?.user?._id || "");
+  const isAssignedToLoggedInUser = (record) =>
+    String(
+      isSelfKra
+        ? record?.lead?._id || record?.lead || ""
+        : record?.employee?._id || record?.employee || "",
+    ) ===
+    String(auth?.user?._id || "");
+  const isSelectedSelfKraToday = selectedSelfKraDate.isSame(dayjs(), "day");
+  const canCompleteRecord = (record) =>
+    isSelfKra
+      ? isAssignedToLoggedInUser(record) &&
+        isSelectedSelfKraToday
+      : isCreatedByLoggedInUser(record);
 
   const refreshKpaQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
@@ -204,6 +266,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       isSelfKra ? "kraKpaSelfKra" : "kraKpaIndividualMonthlyKpa",
       departmentId,
       employeeId,
+      ...(isSelfKra ? [selectedSelfKraDate.format("YYYY-MM-DD")] : []),
     ],
     enabled: Boolean(departmentId && employeeId),
     queryFn: async () => {
@@ -212,7 +275,13 @@ const KraKpaIndividualMonthlyKpa = () => {
           ? "/api/kra-kpa/self-kra"
           : "/api/kra-kpa/individual-monthly-kpa",
         {
-          params: { department: departmentId, employee: employeeId },
+          params: {
+            department: departmentId,
+            employee: employeeId,
+            ...(isSelfKra && {
+              date: selectedSelfKraDate.format("YYYY-MM-DD"),
+            }),
+          },
         },
       );
       return response.data || [];
@@ -251,6 +320,23 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
   });
   const canEditReview = Boolean(reviewAccess?.canEditReview);
+  const canEditManagerReview = Boolean(reviewAccess?.canEditManagerReview);
+  const canEditHrRating = Boolean(reviewAccess?.canEditHrRating);
+  const showEmployeeCommentOnly = Boolean(
+    editingRecord && isEmployeeUser,
+  );
+  const hideKpaCoreFields = showEmployeeCommentOnly;
+  const { data: deleteAccess } = useQuery({
+    queryKey: ["kraKpaDeleteAccess", departmentId],
+    enabled: Boolean(departmentId),
+    queryFn: async () => {
+      const response = await axios.get("/api/kra-kpa/delete-access", {
+        params: { department: departmentId },
+      });
+      return response.data;
+    },
+  });
+  const canDelete = Boolean(deleteAccess?.canDelete);
 
   const saveRecord = useMutation({
     mutationFn: async (payload) => {
@@ -273,11 +359,11 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onSuccess: (_, payload) => {
       refreshKpaQueries();
-      if (!isSelfKra) setDateRange(monthRange(payload.month));
+      if (!isSelfKra && payload.month) setDateRange(monthRange(payload.month));
       setModalOpen(false);
       setEditingRecord(null);
       toast.success(
-        isSelfKra ? "Self KRA saved" : "Individual Monthly KPA saved",
+        isSelfKra ? "Self KRA saved" : "Self KPA saved",
       );
     },
     onError: (error) => {
@@ -294,7 +380,9 @@ const KraKpaIndividualMonthlyKpa = () => {
       } else {
         await axios.patch(
           `/api/kra-kpa/${isSelfKra ? "self-kra" : "individual-monthly-kpa"}/${record._id}/complete`,
-          isSelfKra ? undefined : { resourceComment },
+          isSelfKra
+            ? { occurrenceDate: selectedSelfKraDate.format("YYYY-MM-DD") }
+            : { resourceComment },
         );
       }
     },
@@ -342,10 +430,12 @@ const KraKpaIndividualMonthlyKpa = () => {
   const openCreate = () => {
     setEditingRecord(null);
     setForm(emptyForm());
+    setFormErrors({});
     setModalOpen(true);
   };
   const openEdit = (record) => {
     setEditingRecord(record);
+    setFormErrors({});
     setForm({
       month: record.month,
       target: record.target,
@@ -358,25 +448,20 @@ const KraKpaIndividualMonthlyKpa = () => {
         record.kpaRating === null || record.kpaRating === undefined
           ? ""
           : String(record.kpaRating),
+      managerRatingDate: record.managerRatingDate
+        ? dayjs(record.managerRatingDate).format("YYYY-MM-DD")
+        : "",
+      hrComments: record.hrComments || "",
       hrRating:
         record.hrRating === null || record.hrRating === undefined
           ? ""
           : String(record.hrRating),
+      hrRatingDate: record.hrRatingDate
+        ? dayjs(record.hrRatingDate).format("YYYY-MM-DD")
+        : "",
       verification: record.verification || "Pending",
-      verificationDate: (
-        record.verification === "Changes Required"
-          ? record.changesRequiredDate || record.verificationDate
-          : record.verification === "Closed"
-            ? record.verificationClosedDate
-            : record.verificationDate
-      )
-        ? dayjs(
-            record.verification === "Changes Required"
-              ? record.changesRequiredDate || record.verificationDate
-              : record.verification === "Closed"
-                ? record.verificationClosedDate
-                : record.verificationDate,
-          ).format("YYYY-MM-DD")
+      verificationDate: record.verificationClosedDate
+        ? dayjs(record.verificationClosedDate).format("YYYY-MM-DD")
         : "",
       selfKras: [
         {
@@ -388,8 +473,12 @@ const KraKpaIndividualMonthlyKpa = () => {
     });
     setModalOpen(true);
   };
-  const updateForm = (field) => (event) =>
+  const clearFormError = (field) =>
+    setFormErrors((current) => ({ ...current, [field]: "" }));
+  const updateForm = (field) => (event) => {
     setForm((current) => ({ ...current, [field]: event.target.value }));
+    clearFormError(field);
+  };
   const updateSelfKra = (index, field) => (event) => {
     const value = event.target.value;
     setForm((current) => ({
@@ -398,58 +487,68 @@ const KraKpaIndividualMonthlyKpa = () => {
         kraIndex === index ? { ...kra, [field]: value } : kra,
       ),
     }));
+    clearFormError(field);
   };
   const handleSubmit = (event) => {
     event.preventDefault();
     const selfKra = form.selfKras[0];
-    const validSelfKra =
-      selfKra.title.trim() &&
-      selfKra.description.trim() &&
-      (!canSelectSelfKraLead || selfKra.lead);
-    if (
-      (!isSelfKra && (!form.month || !form.target.trim())) ||
-      (isSelfKra && !validSelfKra)
-    ) {
-      toast.error(
-        isSelfKra
-          ? canSelectSelfKraLead
-            ? "Every KRA requires a title, description, and lead"
-            : "Every KRA requires a title and description"
-          : "Month and KPA target are required",
-      );
-      return;
+    const nextErrors = {};
+    if (isSelfKra) {
+      if (!selfKra.title.trim()) nextErrors.title = "Title is required";
+      if (!selfKra.description.trim())
+        nextErrors.description = "Description is required";
+      if (canSelectSelfKraLead && !selfKra.lead)
+        nextErrors.lead = "Lead is required";
+    } else if (!hideKpaCoreFields) {
+      if (!form.month) nextErrors.month = "Month is required";
+      if (!form.target.trim()) nextErrors.target = "KPA Target is required";
+      if (!form.deadline) nextErrors.deadline = "Deadline is required";
     }
     if (
       !isSelfKra &&
-      canEditReview &&
+      canEditManagerReview &&
       editingRecord?.status === "Completed" &&
       form.verification === "Changes Required" &&
       !form.managerComments.trim()
     ) {
-      toast.error("Manager Comments are required when changes are requested");
-      return;
+      nextErrors.managerComments =
+        "Manager Comments are required when changes are requested";
     }
+    setFormErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
     const payload = isSelfKra
       ? {
           title: selfKra.title.trim(),
           description: selfKra.description.trim(),
           ...(canSelectSelfKraLead && { lead: selfKra.lead }),
-        }
-      : {
-          month: form.month,
-          target: form.target.trim(),
-          deadline: form.deadline,
           ...(editingRecord && {
-            ...(isCreatedByLoggedInUser(editingRecord) && {
-              resourceComment: form.resourceComment.trim(),
-            }),
+            occurrenceDate: selectedSelfKraDate.format("YYYY-MM-DD"),
           }),
-        };
+        }
+      : hideKpaCoreFields
+        ? {
+            ...(editingRecord &&
+              isCreatedByLoggedInUser(editingRecord) && {
+                resourceComment: form.resourceComment.trim(),
+              }),
+          }
+        : {
+            month: form.month,
+            target: form.target.trim(),
+            deadline: form.deadline,
+            ...(editingRecord && {
+              ...(isCreatedByLoggedInUser(editingRecord) && {
+                resourceComment: form.resourceComment.trim(),
+              }),
+            }),
+          };
     if (editingRecord && !isSelfKra) {
-      if (canEditReview) {
+      if (canEditManagerReview) {
         payload.managerComments = form.managerComments.trim();
-        payload.kpaRating = form.kpaRating;
-        payload.hrRating = form.hrRating;
+        if (form.verification === "Closed") {
+          payload.kpaRating = form.kpaRating;
+          payload.managerRatingDate = form.managerRatingDate;
+        }
         if (
           editingRecord.status === "Completed" &&
           form.verification !== "Pending"
@@ -458,31 +557,33 @@ const KraKpaIndividualMonthlyKpa = () => {
           payload.verificationDate = form.verificationDate;
         }
       }
+      if (canEditHrRating) {
+        if (form.kpaRating) {
+          payload.hrComments = form.hrComments.trim();
+        }
+        if (form.verification === "Closed") {
+          payload.hrRating = form.hrRating;
+          payload.hrRatingDate = form.hrRatingDate;
+        }
+      }
     }
     saveRecord.mutate(payload);
   };
 
-  const tableData = useMemo(
-    () =>
-      records
-        .filter((record) => {
-          if (isSelfKra) {
-            return dayjs(record.createdAt).isSame(selectedSelfKraDate, "day");
-          }
-          const recordStart = dayjs(`${record.month}-01`);
-          const recordEnd = recordStart.endOf("month");
-          return (
-            recordStart.isBefore(dayjs(dateRange.endDate).endOf("day")) &&
-            recordEnd.isAfter(dayjs(dateRange.startDate).startOf("day"))
-          );
-        })
-        .map((record, index) => ({
+  const { pendingTableData, completedTableData } = useMemo(() => {
+    const mapRecords = (items) =>
+      items.map((record, index) => ({
           ...record,
           srNo: index + 1,
           monthLabel: record.month
             ? dayjs(`${record.month}-01`).format("MMMM")
             : "-",
           deadlineLabel: formatDate(record.deadline),
+          reviewStatus: record.verification || "Pending",
+          finalClosure:
+            record.hrRating === null || record.hrRating === undefined
+              ? "Pending"
+              : "Closed",
           leadName:
             record.lead && typeof record.lead === "object"
               ? [
@@ -495,12 +596,57 @@ const KraKpaIndividualMonthlyKpa = () => {
                 record.lead.empId ||
                 "-"
               : record.lead || "-",
-        })),
-    [records, dateRange, isSelfKra, selectedSelfKraDate],
-  );
+          assignedByName:
+            record.createdBy && typeof record.createdBy === "object"
+              ? [
+                  record.createdBy.firstName,
+                  record.createdBy.middleName,
+                  record.createdBy.lastName,
+                ]
+                  .filter(Boolean)
+                  .join(" ") ||
+                record.createdBy.empId ||
+                "-"
+              : "-",
+        }));
+    const isInSelectedPeriod = (record) => {
+      if (isSelfKra) {
+        return true;
+      }
+      const recordStart = dayjs(`${record.month}-01`);
+      const recordEnd = recordStart.endOf("month");
+      return (
+        recordStart.isBefore(dayjs(dateRange.endDate).endOf("day")) &&
+        recordEnd.isAfter(dayjs(dateRange.startDate).startOf("day"))
+      );
+    };
+    const belongsInCompletedTable = (record) => {
+      if (isSelfKra) return record.status === "Completed";
+      return (
+        record.status === "Completed" &&
+        record.hrRating !== null &&
+        record.hrRating !== undefined
+      );
+    };
+
+    return {
+      pendingTableData: mapRecords(
+        records.filter(
+          (record) =>
+            !belongsInCompletedTable(record) && isInSelectedPeriod(record),
+        ),
+      ),
+      completedTableData: mapRecords(
+        records.filter(
+          (record) =>
+            belongsInCompletedTable(record) && isInSelectedPeriod(record),
+        ),
+      ),
+    };
+  }, [records, dateRange, isSelfKra]);
 
   const statusColumn = {
-    headerName: "Status",
+    headerName: isSelfKra ? "Status" : "KPA Status",
     field: "status",
     width: 140,
     cellRenderer: ({ value }) => (
@@ -515,13 +661,40 @@ const KraKpaIndividualMonthlyKpa = () => {
       />
     ),
   };
-  const actionColumns = canEdit
+  const workflowStatusRenderer = ({ value }) => (
+    <Chip
+      size="small"
+      label={value || "Pending"}
+      sx={
+        value === "Closed"
+          ? { backgroundColor: "#d8f0df", color: "#16784d" }
+          : value === "Changes Required"
+            ? { backgroundColor: "#fde2e2", color: "#b42318" }
+            : { backgroundColor: "#ffedc9", color: "#ad7000" }
+      }
+    />
+  );
+  const reviewStatusColumn = {
+    headerName: "Review Status",
+    field: "reviewStatus",
+    width: 180,
+    cellRenderer: workflowStatusRenderer,
+  };
+  const finalClosureColumn = {
+    headerName: "Final Closure",
+    field: "finalClosure",
+    width: 165,
+    cellRenderer: workflowStatusRenderer,
+  };
+  const showActionColumn =
+    (!isSelfKra || isSelectedSelfKraToday) && (canEdit || canDelete);
+  const actionColumns = showActionColumn
     ? [
         {
           headerName: "Actions",
           field: "actions",
           pinned: "right",
-          width: 230,
+          width: canDelete ? 230 : 190,
           sortable: false,
           filter: false,
           cellRenderer: ({ data, node }) => (
@@ -531,6 +704,11 @@ const KraKpaIndividualMonthlyKpa = () => {
               onEdit={openEdit}
               onAction={openRowAction}
               isPending={performRowAction.isPending}
+              canDelete={canDelete}
+              canEditActions={
+                canEdit && (!isSelfKra || isSelectedSelfKraToday)
+              }
+              canComplete={canCompleteRecord(data)}
             />
           ),
         },
@@ -555,6 +733,8 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
     statusColumn,
+    reviewStatusColumn,
+    finalClosureColumn,
     ...actionColumns,
   ];
   const selfKraColumns = [
@@ -576,29 +756,136 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     { headerName: "Description", field: "description", minWidth: 320, flex: 2 },
     { headerName: "Lead", field: "leadName", minWidth: 180, flex: 1 },
+    {
+      headerName: "Assigned By",
+      field: "assignedByName",
+      minWidth: 180,
+      flex: 1,
+    },
     statusColumn,
     ...actionColumns,
   ];
   const columns = isSelfKra ? selfKraColumns : individualKpaColumns;
+  const completedColumns = isSelfKra
+    ? [
+        { headerName: "Sr No", field: "srNo", width: 85 },
+        {
+          headerName: "KRA Title",
+          field: "title",
+          minWidth: 240,
+          flex: 1,
+          cellRenderer: ({ data, value }) => (
+            <button
+              type="button"
+              className="text-left text-primary hover:underline"
+              onClick={() => setViewRecord(data)}
+            >
+              {value}
+            </button>
+          ),
+        },
+        {
+          headerName: "Description",
+          field: "description",
+          minWidth: 320,
+          flex: 2,
+        },
+        { headerName: "Lead", field: "leadName", minWidth: 180, flex: 1 },
+        {
+          headerName: "Assigned By",
+          field: "assignedByName",
+          minWidth: 180,
+          flex: 1,
+        },
+        {
+          headerName: "Completed Date",
+          field: "closingDate",
+          width: 170,
+          valueFormatter: ({ value }) => formatDate(value),
+        },
+      ]
+    : [
+        { headerName: "Sr No", field: "srNo", width: 85 },
+        {
+          headerName: "KPA TARGET",
+          field: "target",
+          minWidth: 300,
+          flex: 2,
+          cellRenderer: ({ data, value }) => (
+            <button
+              type="button"
+              className="text-left text-primary hover:underline"
+              onClick={() => setViewRecord(data)}
+            >
+              {value}
+            </button>
+          ),
+        },
+        { headerName: "Deadline", field: "deadlineLabel", width: 165 },
+        {
+          headerName: "Completed Date",
+          field: "closingDate",
+          width: 170,
+          valueFormatter: ({ value }) => formatDate(value),
+        },
+        {
+          headerName: "Resource Comment",
+          field: "resourceComment",
+          minWidth: 240,
+          flex: 1,
+        },
+        statusColumn,
+        reviewStatusColumn,
+        finalClosureColumn,
+      ];
+  const managerReviewTimeline = (() => {
+    const history = Array.isArray(viewRecord?.managerReviewHistory)
+      ? viewRecord.managerReviewHistory
+      : [];
+    if (history.length > 0) return history;
+    if (!viewRecord?.managerReviewedAt) return [];
+    return [
+      {
+        status: viewRecord.verification || "Pending",
+        reviewedBy: viewRecord.managerReviewedBy || viewRecord.verifiedBy,
+        reviewedAt: viewRecord.managerReviewedAt,
+        managerComments: viewRecord.managerComments || "",
+      },
+    ];
+  })();
+  const completionTimeline = (() => {
+    const history = Array.isArray(viewRecord?.completionHistory)
+      ? viewRecord.completionHistory
+      : [];
+    if (history.length > 0) return history;
+    if (!viewRecord?.closingDate) return [];
+    return [
+      {
+        completedBy: viewRecord.createdBy,
+        completedAt: viewRecord.closingDate,
+        resourceComment: viewRecord.resourceComment || "",
+      },
+    ];
+  })();
 
   return (
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium text-primary uppercase">
           {departmentName ? `${departmentName} - ` : ""}
-          {isSelfKra ? "Self KRA" : "Individual Monthly KPA"} - {employeeName}
+          {isSelfKra ? "Self KRA" : "Self KPA"} - {employeeName}
         </h1>
         {canAddKraKpa && (
           <PrimaryButton
             type="button"
-            title={isSelfKra ? "Add Self KRA" : "Add Individual Monthly KPA"}
+            title={isSelfKra ? "Add Self KRA" : "Add Self KPA"}
             handleSubmit={openCreate}
           />
         )}
       </div>
       {!isSelfKra && (
         <>
-          <div className="mb-5 flex flex-wrap items-center justify-center gap-2 border-b border-borderGray pb-6">
+          <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
             <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
               {dayjs(dateRange.startDate).format("DD MMM YYYY")}
             </div>
@@ -632,7 +919,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       )}
       {isSelfKra && (
         <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <div className="mb-5 flex items-center justify-center gap-3 border-b border-borderGray pb-6">
+          <div className="mb-1 flex items-center justify-center gap-3">
             <button
               type="button"
               aria-label="Previous day"
@@ -698,7 +985,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         </div>
       ) : (
         <AgTable
-          data={tableData}
+          data={pendingTableData}
           columns={columns}
           hideTitle
           enableCheckbox
@@ -706,15 +993,34 @@ const KraKpaIndividualMonthlyKpa = () => {
           exportData
           hideFilter
           processExportCell={({ value }) => value ?? ""}
-          tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
+          tableHeight={Math.max(
+            300,
+            Math.min(650, pendingTableData.length * 58 + 90),
+          )}
         />
       )}
+
+      <div className="mt-6">
+        <AgTable
+          data={completedTableData}
+          columns={completedColumns}
+          tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
+          search
+          exportData
+          hideFilter
+          processExportCell={({ value }) => value ?? ""}
+          tableHeight={Math.max(
+            300,
+            Math.min(650, completedTableData.length * 58 + 90),
+          )}
+        />
+      </div>
 
       <MuiModal
         open={Boolean(viewRecord)}
         onClose={() => setViewRecord(null)}
         title={
-          isSelfKra ? "Self KRA Details" : "Individual Monthly KPA Details"
+          isSelfKra ? "Self KRA Details" : "Self KPA Details"
         }
         widthClass="w-[92vw] max-w-[680px]"
       >
@@ -731,6 +1037,10 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <DetalisFormatted
                   title="Lead"
                   detail={viewRecord.leadName || "-"}
+                />
+                <DetalisFormatted
+                  title="Assigned By"
+                  detail={viewRecord.assignedByName || "-"}
                 />
                 <DetalisFormatted title="Status" detail={viewRecord.status} />
                 <DetalisFormatted
@@ -759,18 +1069,46 @@ const KraKpaIndividualMonthlyKpa = () => {
                   detail={formatDate(viewRecord.closingDate)}
                 />
                 <DetalisFormatted
-                  title="Resource Comment"
-                  detail={viewRecord.resourceComment || "-"}
+                  title="Delayed Days"
+                  detail={getDelayCount(
+                    viewRecord.closingDate,
+                    viewRecord.deadline,
+                  )}
                 />
+                <div className="text-content flex w-full items-start">
+                  <span className="w-[50%]">Completion Timeline</span>
+                  <span>:</span>
+                  <div className="flex w-full flex-col items-start justify-start gap-2 pl-4">
+                    {completionTimeline.length > 0 ? (
+                      completionTimeline.map((completion, index) => (
+                        <div
+                          key={
+                            completion._id ||
+                            `${completion.completedAt}-${index}`
+                          }
+                        >
+                          <div className="text-borderGray">
+                            {formatDateTime(completion.completedAt)}
+                          </div>
+                          {completion.resourceComment && (
+                            <div className="text-gray-600">
+                              {completion.resourceComment}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-borderGray">
+                        No completion history
+                      </div>
+                    )}
+                  </div>
+                </div>
 
                 <br />
-                <div className="font-bold">Review Details</div>
+                <div className="font-bold">Manager Review</div>
                 <DetalisFormatted
-                  title="Manager Comments"
-                  detail={viewRecord.managerComments || "-"}
-                />
-                <DetalisFormatted
-                  title="KPA Rating"
+                  title="Manager Rating"
                   detail={
                     viewRecord.kpaRating === null ||
                     viewRecord.kpaRating === undefined
@@ -779,47 +1117,50 @@ const KraKpaIndividualMonthlyKpa = () => {
                   }
                 />
                 <DetalisFormatted
+                  title="Closed On"
+                  detail={formatDate(viewRecord.verificationClosedDate)}
+                />
+                <div className="text-content flex w-full items-start">
+                  <span className="w-[50%]">Review Status Timeline</span>
+                  <span>:</span>
+                  <div className="flex w-full flex-col items-start justify-start gap-2 pl-4">
+                    {managerReviewTimeline.length > 0 ? (
+                      managerReviewTimeline.map((review, index) => (
+                        <div
+                          key={review._id || `${review.status}-${review.reviewedAt}-${index}`}
+                        >
+                          <div className="font-medium">{review.status}</div>
+                          <div>{formatUserName(review.reviewedBy)}</div>
+                          <div className="text-borderGray">
+                            {formatDateTime(review.reviewedAt)}
+                          </div>
+                          {review.managerComments && (
+                            <div className="text-gray-600">
+                              {review.managerComments}
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-borderGray">
+                        No review status history
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <br />
+                <div className="font-bold">HR Review</div>
+                <DetalisFormatted
+                  title="HR Comments"
+                  detail={viewRecord.hrComments || "-"}
+                />
+                <DetalisFormatted
                   title="HR Rating"
                   detail={
                     viewRecord.hrRating === null ||
                     viewRecord.hrRating === undefined
                       ? "Not rated"
                       : String(viewRecord.hrRating)
-                  }
-                />
-                <DetalisFormatted
-                  title="Review Status"
-                  detail={viewRecord.verification || "Pending"}
-                />
-                <DetalisFormatted
-                  title="Verified On"
-                  detail={formatDate(viewRecord.verificationDate)}
-                />
-                <DetalisFormatted
-                  title="Changes Required On"
-                  detail={formatDate(
-                    viewRecord.changesRequiredDate ||
-                      (viewRecord.verification === "Changes Required"
-                        ? viewRecord.verificationDate
-                        : null),
-                  )}
-                />
-                <DetalisFormatted
-                  title="Closed On"
-                  detail={formatDate(viewRecord.verificationClosedDate)}
-                />
-                <DetalisFormatted
-                  title="Reviewed By"
-                  detail={
-                    viewRecord.verifiedBy
-                      ? [
-                          viewRecord.verifiedBy.firstName,
-                          viewRecord.verifiedBy.middleName,
-                          viewRecord.verifiedBy.lastName,
-                        ]
-                          .filter(Boolean)
-                          .join(" ") || "-"
-                      : "-"
                   }
                 />
               </>
@@ -849,8 +1190,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         cancelFirst={pendingAction?.type === "complete"}
         confirmDisabled={
           pendingAction?.type === "complete" &&
-          !isSelfKra &&
-          !isCreatedByLoggedInUser(pendingAction.record)
+          !canCompleteRecord(pendingAction.record)
         }
         isLoading={performRowAction.isPending}
       >
@@ -863,11 +1203,11 @@ const KraKpaIndividualMonthlyKpa = () => {
             value={completionComment}
             onChange={(event) => setCompletionComment(event.target.value)}
             required
-            disabled={!isCreatedByLoggedInUser(pendingAction.record)}
+            disabled={!canCompleteRecord(pendingAction.record)}
             helperText={
-              isCreatedByLoggedInUser(pendingAction.record)
+              canCompleteRecord(pendingAction.record)
                 ? ""
-                : "Only the KPA creator can add the Resource Comment"
+                : "Only the KPA creator can complete it"
             }
             inputProps={{ maxLength: 5000 }}
             fullWidth
@@ -877,15 +1217,18 @@ const KraKpaIndividualMonthlyKpa = () => {
 
       <MuiModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setFormErrors({});
+        }}
         title={
           editingRecord
             ? isSelfKra
               ? "Self KRA"
-              : "Individual Monthly KPA"
+              : "Self KPA"
             : isSelfKra
               ? "Add Self KRA"
-              : "Add Individual Monthly KPA"
+              : "Add Self KPA"
         }
         widthClass="w-[92vw] max-w-[680px]"
       >
@@ -893,31 +1236,34 @@ const KraKpaIndividualMonthlyKpa = () => {
           {isSelfKra ? (
             <>
               <TextField
-                label="Title"
+                label="Title *"
                 size="small"
                 value={form.selfKras[0].title}
                 onChange={updateSelfKra(0, "title")}
-                required
+                error={Boolean(formErrors.title)}
+                helperText={formErrors.title}
                 inputProps={{ maxLength: 300 }}
               />
               <TextField
-                label="Description"
+                label="Description *"
                 size="small"
                 multiline
                 minRows={3}
                 value={form.selfKras[0].description}
                 onChange={updateSelfKra(0, "description")}
-                required
+                error={Boolean(formErrors.description)}
+                helperText={formErrors.description}
                 inputProps={{ maxLength: 3000 }}
               />
               {canSelectSelfKraLead && (
                 <TextField
-                  label="Lead"
+                  label="Lead *"
                   select
                   size="small"
                   value={form.selfKras[0].lead}
                   onChange={updateSelfKra(0, "lead")}
-                  required
+                  error={Boolean(formErrors.lead)}
+                  helperText={formErrors.lead}
                   disabled={isLoadingLeads}
                 >
                   <MenuItem value="" disabled>
@@ -939,62 +1285,75 @@ const KraKpaIndividualMonthlyKpa = () => {
               )}
             </>
           ) : (
-            <section className="grid gap-4 rounded-md border border-borderGray p-4">
+            <section
+              className={
+                isEmployeeUser
+                  ? "grid gap-4"
+                  : "grid gap-4 rounded-md border border-borderGray p-4"
+              }
+            >
               {editingRecord && (
                 <h3 className="text-content font-pmedium uppercase text-primary">
                   KPA Details
                 </h3>
               )}
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="Month"
-                  views={["year", "month"]}
-                  format="MMMM YYYY"
-                  value={form.month ? dayjs(`${form.month}-01`) : null}
-                  onChange={(date) => {
-                    if (date?.isValid())
-                      setForm((current) => ({
-                        ...current,
-                        month: date.format("YYYY-MM"),
-                      }));
-                  }}
-                  disabled={!canEdit}
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      required: true,
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-              <TextField
-                label="KPA Target"
-                size="small"
-                multiline
-                minRows={2}
-                value={form.target}
-                onChange={updateForm("target")}
-                disabled={!canEdit}
-                required
-              />
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="Deadline"
-                  format="DD-MM-YYYY"
-                  value={form.deadline ? dayjs(form.deadline) : null}
-                  onChange={(date) =>
-                    setForm((current) => ({
-                      ...current,
-                      deadline: date?.isValid()
-                        ? date.format("YYYY-MM-DD")
-                        : "",
-                    }))
-                  }
-                  disabled={!canEdit}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
-                />
-              </LocalizationProvider>
+              {!showEmployeeCommentOnly && (
+                <>
+                  {editingRecord && (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        label="Month *"
+                        views={["year", "month"]}
+                        format="MMMM YYYY"
+                        value={form.month ? dayjs(`${form.month}-01`) : null}
+                        disabled
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  )}
+                  <TextField
+                    label="KPA Target *"
+                    size="small"
+                    multiline
+                    minRows={2}
+                    value={form.target}
+                    onChange={updateForm("target")}
+                    disabled={!canEdit}
+                    error={Boolean(formErrors.target)}
+                    helperText={formErrors.target}
+                  />
+                  <LocalizationProvider dateAdapter={AdapterDayjs}>
+                    <DatePicker
+                      label="Deadline *"
+                      format="DD-MM-YYYY"
+                      value={form.deadline ? dayjs(form.deadline) : null}
+                      onChange={(date) => {
+                        setForm((current) => ({
+                          ...current,
+                          deadline: date?.isValid()
+                            ? date.format("YYYY-MM-DD")
+                            : "",
+                        }));
+                        clearFormError("deadline");
+                      }}
+                      disabled={!canEdit}
+                      slotProps={{
+                        textField: {
+                          size: "small",
+                          fullWidth: true,
+                          error: Boolean(formErrors.deadline),
+                          helperText: formErrors.deadline,
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                </>
+              )}
               {editingRecord && (
                 <TextField
                   label="Resource Comment"
@@ -1009,106 +1368,185 @@ const KraKpaIndividualMonthlyKpa = () => {
             </section>
           )}
           {!isSelfKra && editingRecord && canEditReview && (
-            <section className="grid gap-4 rounded-md border border-borderGray p-4">
-              <h3 className="text-content font-pmedium uppercase text-primary">
-                Review Details
-              </h3>
-              <TextField
-                label="Manager Comments"
-                size="small"
-                multiline
-                minRows={3}
-                value={form.managerComments}
-                onChange={updateForm("managerComments")}
-                inputProps={{ maxLength: 5000 }}
-                disabled={!canEditReview}
-              />
-              <TextField
-                label="KPA Rating"
-                select
-                size="small"
-                value={form.kpaRating}
-                onChange={updateForm("kpaRating")}
-                disabled={!canEditReview}
-              >
-                <MenuItem value="">Not rated</MenuItem>
-                <MenuItem value="0">0</MenuItem>
-                <MenuItem value="1">1</MenuItem>
-              </TextField>
-              <TextField
-                label="HR Rating"
-                select
-                size="small"
-                value={form.hrRating}
-                onChange={updateForm("hrRating")}
-                disabled={!canEditReview}
-              >
-                <MenuItem value="">Not rated</MenuItem>
-                <MenuItem value="0">0</MenuItem>
-                <MenuItem value="1">1</MenuItem>
-              </TextField>
-              <TextField
-                label="Review Status"
-                select
-                size="small"
-                value={form.verification === "Pending" ? "" : form.verification}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    verification: event.target.value,
-                    verificationDate: "",
-                  }))
-                }
-                disabled={
-                  !canEditReview || editingRecord.status !== "Completed"
-                }
-                InputLabelProps={{ shrink: true }}
-                SelectProps={{
-                  displayEmpty: true,
-                  renderValue: (value) => value || "Pending",
-                }}
-              >
-                <MenuItem value="Verified">Verified</MenuItem>
-                <MenuItem value="Changes Required">Changes Required</MenuItem>
-                <MenuItem value="Closed">Closed</MenuItem>
-              </TextField>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="Reviewed On"
-                  format="DD-MM-YYYY"
-                  value={
-                    form.verificationDate ? dayjs(form.verificationDate) : null
-                  }
-                  onChange={(date) =>
-                    setForm((current) => ({
-                      ...current,
-                      verificationDate: date?.isValid()
-                        ? date.format("YYYY-MM-DD")
-                        : "",
-                    }))
-                  }
-                  disabled={
-                    !canEditReview ||
-                    editingRecord.status !== "Completed" ||
-                    form.verification === "Pending"
-                  }
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      fullWidth: true,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            </section>
+            <>
+              {canEditManagerReview && (
+                <section className="grid gap-4 rounded-md border border-borderGray p-4">
+                  <h3 className="text-content font-pmedium uppercase text-primary">
+                    Manager Review
+                  </h3>
+                  <TextField
+                    label="Manager Comments"
+                    size="small"
+                    multiline
+                    minRows={3}
+                    value={form.managerComments}
+                    onChange={updateForm("managerComments")}
+                    error={Boolean(formErrors.managerComments)}
+                    helperText={formErrors.managerComments}
+                    inputProps={{ maxLength: 5000 }}
+                  />
+                  <TextField
+                    label="Review Status"
+                    select
+                    size="small"
+                    value={
+                      form.verification === "Pending" ? "" : form.verification
+                    }
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        verification: event.target.value,
+                        verificationDate:
+                          event.target.value === "Closed"
+                            ? current.verificationDate ||
+                              dayjs().format("YYYY-MM-DD")
+                            : "",
+                      }))
+                    }
+                    disabled={editingRecord.status !== "Completed"}
+                    InputLabelProps={{ shrink: true }}
+                    SelectProps={{
+                      displayEmpty: true,
+                      renderValue: (value) => value || "Pending",
+                    }}
+                  >
+                    <MenuItem value="Changes Required">
+                      Changes Required
+                    </MenuItem>
+                    <MenuItem value="Closed">Closed</MenuItem>
+                  </TextField>
+                  {form.verification === "Closed" && (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <DatePicker
+                        label="Closed On"
+                        format="DD-MM-YYYY"
+                        value={
+                          form.verificationDate
+                            ? dayjs(form.verificationDate)
+                            : null
+                        }
+                        onChange={(date) =>
+                          setForm((current) => ({
+                            ...current,
+                            verificationDate: date?.isValid()
+                              ? date.format("YYYY-MM-DD")
+                              : "",
+                          }))
+                        }
+                        disabled={editingRecord.status !== "Completed"}
+                        slotProps={{
+                          textField: {
+                            size: "small",
+                            fullWidth: true,
+                          },
+                        }}
+                      />
+                    </LocalizationProvider>
+                  )}
+                  <TextField
+                    label="Manager Rating"
+                    select
+                    size="small"
+                    value={form.kpaRating}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        kpaRating: event.target.value,
+                        managerRatingDate: event.target.value
+                          ? current.managerRatingDate ||
+                            dayjs().format("YYYY-MM-DD")
+                          : "",
+                      }))
+                    }
+                    disabled={
+                      editingRecord.status !== "Completed" ||
+                      form.verification !== "Closed"
+                    }
+                  >
+                    <MenuItem value="">Not rated</MenuItem>
+                    <MenuItem value="0">0</MenuItem>
+                    <MenuItem value="1">1</MenuItem>
+                  </TextField>
+                </section>
+              )}
+              {canEditHrRating && (
+                <section className="grid gap-4 rounded-md border border-borderGray p-4">
+                  <h3 className="text-content font-pmedium uppercase text-primary">
+                    HR Review
+                  </h3>
+                  <TextField
+                    label="HR Comments"
+                    size="small"
+                    multiline
+                    minRows={3}
+                    value={form.hrComments}
+                    onChange={updateForm("hrComments")}
+                    disabled={!form.kpaRating}
+                    inputProps={{ maxLength: 5000 }}
+                  />
+                  <TextField
+                    label="HR Rating"
+                    select
+                    size="small"
+                    value={form.hrRating}
+                    onChange={(event) =>
+                      setForm((current) => ({
+                        ...current,
+                        hrRating: event.target.value,
+                        hrRatingDate: event.target.value
+                          ? current.hrRatingDate || dayjs().format("YYYY-MM-DD")
+                          : "",
+                      }))
+                    }
+                    disabled={
+                      form.verification !== "Closed" || !form.kpaRating
+                    }
+                  >
+                    <MenuItem value="">Not rated</MenuItem>
+                    <MenuItem value="0">0</MenuItem>
+                    <MenuItem value="1">1</MenuItem>
+                  </TextField>
+                </section>
+              )}
+            </>
           )}
+          {!isSelfKra &&
+            editingRecord &&
+            canEditManagerReview &&
+            editingRecord.status !== "Completed" && (
+              <p className="text-sm text-amber-700">
+                Complete the KPA to enable review.
+              </p>
+            )}
+          {!isSelfKra &&
+            editingRecord &&
+            canEditReview &&
+            editingRecord.status === "Completed" &&
+            form.verification !== "Closed" && (
+              <p className="text-sm text-amber-700">
+                Close the review to enable ratings.
+              </p>
+            )}
+          {!isSelfKra &&
+            editingRecord &&
+            canEditHrRating &&
+            !form.kpaRating &&
+            form.verification === "Closed" &&
+            !(canEditManagerReview && editingRecord.status !== "Completed") && (
+              <p className="text-sm text-amber-700">
+                Manager rating is required to enable HR rating.
+              </p>
+            )}
           <div className="flex justify-end gap-3">
             <SecondaryButton
               type="button"
               title="Close"
-              handleSubmit={() => setModalOpen(false)}
+              handleSubmit={() => {
+                setModalOpen(false);
+                setFormErrors({});
+              }}
             />
-            {canEdit && (
+            {(canEdit || canEditReview) && (
               <PrimaryButton
                 type="submit"
                 title="Save"
