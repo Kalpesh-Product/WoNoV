@@ -17,6 +17,54 @@ const parseOptionalNumber = (value) => {
   return Number.isFinite(parsedValue) ? parsedValue : undefined;
 };
 
+const MAX_ROOM_IMAGES = 5;
+const MAX_ROOM_IMAGE_SIZE = 5 * 1024 * 1024;
+const ROOM_IMAGE_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
+
+const getRoomUploadFiles = (req) => [
+  ...(req.files?.room || []),
+  ...(req.files?.rooms || []),
+];
+
+const validateRoomImages = (files) => {
+  if (files.length > MAX_ROOM_IMAGES) {
+    throw new Error(`A maximum of ${MAX_ROOM_IMAGES} room images is allowed`);
+  }
+
+  files.forEach((file) => {
+    if (!ROOM_IMAGE_TYPES.has(file.mimetype)) {
+      throw new Error("Only JPG, PNG, and WEBP room images are allowed");
+    }
+    if (file.size > MAX_ROOM_IMAGE_SIZE) {
+      throw new Error("Each room image must be 5 MB or smaller");
+    }
+  });
+};
+
+const uploadRoomImages = async (files, companyName) =>
+  Promise.all(
+    files.map(async (file) => {
+      const buffer = await sharp(file.buffer)
+        .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+      const base64Image = `data:image/webp;base64,${buffer.toString("base64")}`;
+      const uploadResult = await handleFileUpload(
+        base64Image,
+        `${companyName}/rooms`,
+      );
+
+      return {
+        id: uploadResult.public_id,
+        url: uploadResult.secure_url,
+      };
+    }),
+  );
+
 const addRoom = async (req, res, next) => {
   const { user, ip, company } = req;
   const logPath = "meetings/MeetingLog";
@@ -35,6 +83,7 @@ const addRoom = async (req, res, next) => {
       monthlyHours,
       perSeatPrice,
       perHourGstPrice,
+      isActive,
     } = req.body;
 
     if (!name || !seats || !description || !location) {
@@ -80,24 +129,12 @@ const addRoom = async (req, res, next) => {
 
     const roomId = idGenerator("R");
 
-    let imageId;
-    let imageUrl;
-
-    if (req.file) {
-      const file = req.file;
-      const buffer = await sharp(file.buffer).webp({ quality: 80 }).toBuffer();
-
-      const base64Image = `data:irmage/webp;base64,${buffer.toString(
-        "base64",
-      )}`;
-      const uploadResult = await handleFileUpload(
-        base64Image,
-        `${foundUser.company.companyName}/rooms`,
-      );
-
-      imageId = uploadResult.public_id;
-      imageUrl = uploadResult.secure_url;
-    }
+    const roomImageFiles = getRoomUploadFiles(req);
+    validateRoomImages(roomImageFiles);
+    const uploadedImages = await uploadRoomImages(
+      roomImageFiles,
+      foundUser.company.companyName,
+    );
 
     const parsedPerHourCredit = parseOptionalNumber(perHourCredit);
     const parsedPerHourPrice = parseOptionalNumber(perHourPrice);
@@ -118,12 +155,15 @@ const addRoom = async (req, res, next) => {
       monthlyHours: parsedMonthlyHours,
       perSeatPrice: parsedPerSeatPrice,
       perHourGstPrice: parsedPerHourGstPrice,
+      isActive:
+        isActive === undefined
+          ? true
+          : isActive === true || isActive === "true",
       assignedAssets: [],
       company: company._id,
-      image: {
-        id: imageId,
-        url: imageUrl,
-      },
+      ...(uploadedImages.length > 0
+        ? { image: uploadedImages[0], images: uploadedImages }
+        : {}),
     });
 
     const savedRoom = await room.save();
@@ -339,28 +379,60 @@ const updateRoom = async (req, res, next) => {
       .lean()
       .exec();
 
-    // Handle image update
-    if (req.file) {
-      const file = req.file;
-      const buffer = await sharp(file.buffer)
-        .resize(800, 800, { fit: "cover" })
-        .webp({ quality: 80 })
-        .toBuffer();
+    // Keep selected saved images, remove deselected ones, and append new uploads.
+    const roomImageFiles = getRoomUploadFiles(req);
+    validateRoomImages(roomImageFiles);
+    const hasRetainedImages = Object.hasOwn(req.body, "retainedRoomImages");
 
-      const base64Image = `data:image/webp;base64,${buffer.toString("base64")}`;
+    if (hasRetainedImages || roomImageFiles.length > 0) {
+      const currentImages =
+        Array.isArray(room.images) && room.images.length > 0
+          ? room.images.map((image) => ({ id: image.id, url: image.url }))
+          : room.image?.url
+            ? [{ id: room.image.id, url: room.image.url }]
+            : [];
+      let requestedImages = currentImages;
 
-      if (room.image?.id) {
-        await handleFileDelete(room.image.id);
+      if (hasRetainedImages) {
+        try {
+          const parsedImages = JSON.parse(req.body.retainedRoomImages || "[]");
+          requestedImages = Array.isArray(parsedImages) ? parsedImages : [];
+        } catch {
+          throw new Error("Invalid retained room images payload");
+        }
       }
 
-      const uploadResult = await handleFileUpload(
-        base64Image,
-        `${foundUser.company.companyName}/rooms`,
+      const retainedImages = currentImages.filter((currentImage) =>
+        requestedImages.some(
+          (requestedImage) =>
+            (currentImage.id && requestedImage.id === currentImage.id) ||
+            requestedImage.url === currentImage.url,
+        ),
       );
-      updatedFields.image = {
-        id: uploadResult.public_id,
-        url: uploadResult.secure_url,
-      };
+      const retainedKeys = new Set(
+        retainedImages.map((image) => image.id || image.url),
+      );
+      const removedImages = currentImages.filter(
+        (image) => !retainedKeys.has(image.id || image.url),
+      );
+      if (retainedImages.length + roomImageFiles.length > MAX_ROOM_IMAGES) {
+        throw new Error(`A maximum of ${MAX_ROOM_IMAGES} room images is allowed`);
+      }
+
+      const uploadedImages = await uploadRoomImages(
+        roomImageFiles,
+        foundUser.company.companyName,
+      );
+      const nextImages = [...retainedImages, ...uploadedImages];
+
+      await Promise.all(
+        removedImages
+          .filter((image) => image.id)
+          .map((image) => handleFileDelete(image.id)),
+      );
+
+      updatedFields.images = nextImages;
+      updatedFields.image = nextImages[0] || { id: null, url: null };
     }
 
     // Update only if there are changes
