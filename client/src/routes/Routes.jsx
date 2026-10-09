@@ -397,6 +397,8 @@ import PerformanceKra from "../pages/Performance/DepartmentDetails/PerformanceKr
 import PerformanceIndividualKra from "../pages/Performance/DepartmentDetails/PerformanceIndividualKra";
 import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/PerformanceIndividualKpa";
 import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMonthlyKpa";
+import KraKpaDueTask from "../pages/Performance/KraKpaDueTask";
+import KraKpaDailyLogs from "../pages/Performance/KraKpaDailyLogs";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
@@ -4540,6 +4542,24 @@ export const routes = createBrowserRouter([
                                   <PerformancePermissionRoute
                                     permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
                                     element={<KraKpaIndividualMonthlyKpa />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "due-task",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDueTask />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDailyLogs />}
                                   />
                                 ),
                               },

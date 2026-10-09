@@ -80,6 +80,14 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       label: "Self KRA",
       path: "self-KRA",
       permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+    }, {
+      label: "Due Task",
+      path: "due-task",
+      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+    }, {
+      label: "Daily Logs",
+      path: "daily-logs",
+      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
     }] : []),
     {
       label: "Team Daily KRA",
@@ -108,7 +116,10 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
 //       : visibleTabs[0]?.path || "daily-KRA";
  const visibleTabs = modulePath === "/app/kra-kpa" && isMemberWiseKpaFlow
     ? tabs.filter((tab) =>
-        tab.path === "individual-Monthly-KPA" || tab.path === "self-KRA"
+        tab.path === "individual-Monthly-KPA" ||
+        tab.path === "self-KRA" ||
+        tab.path === "due-task" ||
+        tab.path === "daily-logs"
       )
     : isAssignRoute
     ? tabs.filter(

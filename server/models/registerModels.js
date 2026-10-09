@@ -60,6 +60,8 @@ require("./performances/kraKpaRole");
 require("./performances/kraKpaTask");
 require("./performances/KraKpaIndividualMonthlyKpa");
 require("./performances/KraKpaSelfKra");
+require("./performances/KraKpaDueTask");
+require("./performances/KraKpaDailyLog");
 
 //Events
 require("./events/Events");
