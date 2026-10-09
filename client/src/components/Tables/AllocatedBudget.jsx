@@ -511,9 +511,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   );
 
   const [dateRange, setDateRange] = useState([]);
+  const hasInitializedDateRangeRef = useRef(false);
 
   useEffect(() => {
-    if (!financialData?.length) return;
+    if (hasInitializedDateRangeRef.current || !financialData?.length) return;
 
     const currentMonthStart = dayjs().startOf("month").toDate();
     const currentMonthEnd = dayjs().endOf("month").toDate();
@@ -524,6 +525,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     });
 
     if (currentMonthHasData) {
+      hasInitializedDateRangeRef.current = true;
       setDateRange([
         {
           startDate: currentMonthStart,
@@ -538,6 +540,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         .sort((a, b) => b - a);
       if (sortedMonths.length > 0) {
         const latest = sortedMonths[0];
+        hasInitializedDateRangeRef.current = true;
         setDateRange([
           {
             startDate: dayjs(latest).startOf("month").toDate(),

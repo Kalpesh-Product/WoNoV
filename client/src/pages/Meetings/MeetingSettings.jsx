@@ -479,7 +479,7 @@ const MeetingSettings = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Credit"
+                      label="Per Hour Credit"
                       variant="outlined"
                       type="number"
                       size="small"
@@ -706,7 +706,7 @@ const MeetingSettings = () => {
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Credit"
+                      label="Per Hour Credit"
                       variant="outlined"
                       size="small"
                       type="number"
