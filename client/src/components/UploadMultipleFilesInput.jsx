@@ -1,7 +1,15 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { TextField, IconButton, Avatar, Box, Chip } from "@mui/material";
+import {
+  TextField,
+  IconButton,
+  Avatar,
+  Box,
+  Chip,
+  FormHelperText,
+} from "@mui/material";
 import { LuImageUp } from "react-icons/lu";
 import { MdDelete } from "react-icons/md";
+import { toast } from "sonner";
 import MuiModal from "./MuiModal";
 
 const UploadMultipleFilesInput = ({
@@ -13,7 +21,12 @@ const UploadMultipleFilesInput = ({
   previewType = "auto",      // "image", "pdf", "none", or "auto"
   name,                      // optional: set to include in FormData (e.g., "heroImages")
   id,                        // input id for htmlFor
-  maxFiles = 5
+  maxFiles = 5,
+  maxSizeMb = 5,
+  helperText = "",
+  showPreviews = true,
+  showClearAll = true,
+  showMaxInLabel = true,
 }) => {
   const fileInputRef = useRef(null);
   const [openModal, setOpenModal] = useState(false);
@@ -27,20 +40,40 @@ const UploadMultipleFilesInput = ({
 
   const isPDF = (ext) => ext === "pdf";
 
+  const getFileName = (file) =>
+    file?.name ||
+    file?.url?.split("/").pop()?.split("?")[0] ||
+    "saved-file";
+
+  const getChipLabel = (file) => {
+    const fileName = getFileName(file);
+    if (fileName.length <= 28) return fileName;
+
+    const extensionIndex = fileName.lastIndexOf(".");
+    const extension = extensionIndex > 0 ? fileName.slice(extensionIndex) : "";
+    return `${fileName.slice(0, 20)}...${extension}`;
+  };
+
   // Create/revoke object URLs for previews
   const previews = useMemo(
     () =>
-      (value || []).map((f) => ({
-        file: f,
-        url: URL.createObjectURL(f),
-        ext: getExtension(f.name),
-      })),
+      (value || []).map((f) => {
+        const isLocalFile = f instanceof File;
+        return {
+          file: f,
+          url: isLocalFile ? URL.createObjectURL(f) : f?.url,
+          ext: getExtension(getFileName(f)),
+          isLocalFile,
+        };
+      }),
     [value]
   );
 
   useEffect(() => {
     return () => {
-      previews.forEach((p) => URL.revokeObjectURL(p.url));
+      previews.forEach((p) => {
+        if (p.isLocalFile && p.url) URL.revokeObjectURL(p.url);
+      });
     };
   }, [previews]);
 
@@ -50,7 +83,10 @@ const UploadMultipleFilesInput = ({
     const seen = new Set();
     const out = [];
     for (const f of filesArr) {
-      const key = `${f.name}-${f.size}-${f.lastModified}`;
+      const key =
+        f instanceof File
+          ? `${f.name}-${f.size}-${f.lastModified}`
+          : `${f?.id || ""}-${f?.url || getFileName(f)}`;
       if (!seen.has(key)) {
         seen.add(key);
         out.push(f);
@@ -63,20 +99,32 @@ const UploadMultipleFilesInput = ({
     const chosen = Array.from(e.target.files || []);
     if (!chosen.length) return;
 
+    const existingFiles = value || [];
+    const availableSlots = Math.max(maxFiles - existingFiles.length, 0);
+    const filesWithinLimit = chosen.slice(0, availableSlots);
+
+    if (chosen.length > availableSlots) {
+      toast.error("You can attach a maximum of 5 files");
+    }
+
     // filter by allowed extensions
-    const filtered = chosen.filter((f) =>
-      allowedExtensions.includes(getExtension(f.name))
+    const extensionFiltered = filesWithinLimit.filter((f) =>
+      allowedExtensions.includes(getExtension(f.name)),
     );
-    const rejected = chosen.length - filtered.length;
+    const filtered = extensionFiltered.filter((file) => {
+      if (file.size > maxSizeMb * 1024 * 1024) {
+        toast.error(`${file.name} exceeds the ${maxSizeMb} MB limit`);
+        return false;
+      }
+      return true;
+    });
+    const rejected = filesWithinLimit.length - extensionFiltered.length;
     if (rejected > 0) {
-      alert(`Only ${allowedExtensions.join(", ")} files are allowed.`);
+      toast.error(`Only ${allowedExtensions.join(", ")} files are allowed.`);
     }
 
     // merge with existing, dedupe, then enforce max
     const merged = dedupe([...(value || []), ...filtered]);
-    if (merged.length > maxFiles) {
-      alert(`You can upload up to ${maxFiles} files.`);
-    }
     const limited = merged.slice(0, maxFiles);
 
     onChange?.(limited);
@@ -110,7 +158,7 @@ const UploadMultipleFilesInput = ({
       return (
         <Avatar
           src={p.url}
-          alt={p.file.name}
+          alt={getFileName(p.file)}
           sx={{ width: "100%", height: "auto", borderRadius: 2 }}
           variant="square"
         />
@@ -121,7 +169,7 @@ const UploadMultipleFilesInput = ({
       return (
         <iframe
           src={p.url}
-          title={p.file.name}
+          title={getFileName(p.file)}
           style={{ width: "100%", height: "65vh", borderRadius: "8px" }}
         />
       );
@@ -129,7 +177,7 @@ const UploadMultipleFilesInput = ({
 
     return (
       <div className="text-sm text-gray-500">
-        Preview not available for “{p.file.name}”
+        Preview not available for “{getFileName(p.file)}”
       </div>
     );
   };
@@ -139,7 +187,7 @@ const UploadMultipleFilesInput = ({
     (value?.length || 0) === 0
       ? ""
       : value.length === 1
-      ? value[0].name
+        ? getFileName(value[0])
       : `${value.length} files selected`;
 
   const reachedLimit = (value?.length || 0) >= maxFiles;
@@ -164,7 +212,7 @@ const UploadMultipleFilesInput = ({
         size="small"
         variant="outlined"
         fullWidth
-        label={`${label} (max ${maxFiles})`}
+        label={showMaxInLabel ? `${label} (max ${maxFiles})` : label}
         disabled={disabled}
         value={displayValue}
         placeholder={`Choose up to ${maxFiles} files...`}
@@ -175,8 +223,14 @@ const UploadMultipleFilesInput = ({
               component="label"
               htmlFor={id ?? "multiple-file-upload"}
               color="primary"
-              disabled={disabled || reachedLimit}
-              title={reachedLimit ? `Limit ${maxFiles} files` : "Select files"}
+              disabled={disabled}
+              title="Select files"
+              onClick={(event) => {
+                if (reachedLimit) {
+                  event.preventDefault();
+                  toast.error("You can attach a maximum of 5 files");
+                }
+              }}
             >
               <LuImageUp />
             </IconButton>
@@ -184,28 +238,42 @@ const UploadMultipleFilesInput = ({
         }}
       />
 
+      {helperText && (
+        <FormHelperText sx={{ marginLeft: 0 }}>{helperText}</FormHelperText>
+      )}
+
       {/* Chips list */}
       {value?.length > 0 && (
         <div className="flex flex-wrap gap-1">
           {value.map((f, i) => (
             <Chip
-              key={`${f.name}-${f.size}-${f.lastModified}-${i}`}
-              label={f.name}
-              onDelete={() => handleRemoveAt(i)}
-              deleteIcon={<MdDelete />}
+              key={`${getFileName(f)}-${f?.size || f?.id || f?.url}-${i}`}
+              label={getChipLabel(f)}
+              title={getFileName(f)}
+              clickable
+              onClick={() => {
+                setModalIndex(i);
+                setOpenModal(true);
+              }}
+              onDelete={(event) => {
+                event.stopPropagation();
+                handleRemoveAt(i);
+              }}
               variant="outlined"
               size="small"
+              color="primary"
+              sx={{ maxWidth: 230 }}
             />
           ))}
         </div>
       )}
 
       {/* Preview thumbnails grid */}
-      {previews.length > 0 && (
+      {showPreviews && previews.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {previews.map((p, i) => (
             <div
-              key={`${p.file.name}-${i}`}
+              key={`${getFileName(p.file)}-${i}`}
               className="border rounded-md p-2 flex flex-col gap-2"
             >
               <div
@@ -219,7 +287,7 @@ const UploadMultipleFilesInput = ({
                 {isImage(p.ext) ? (
                   <img
                     src={p.url}
-                    alt={p.file.name}
+                    alt={getFileName(p.file)}
                     className="w-full h-32 object-cover rounded"
                   />
                 ) : isPDF(p.ext) ? (
@@ -234,8 +302,8 @@ const UploadMultipleFilesInput = ({
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-xs truncate" title={p.file.name}>
-                  {p.file.name}
+                <span className="text-xs truncate" title={getFileName(p.file)}>
+                  {getFileName(p.file)}
                 </span>
                 <IconButton
                   color="error"
@@ -252,7 +320,7 @@ const UploadMultipleFilesInput = ({
       )}
 
       {/* Clear all */}
-      {value?.length > 0 && (
+      {showClearAll && value?.length > 0 && (
         <div className="flex justify-end">
           <button
             type="button"
@@ -268,7 +336,11 @@ const UploadMultipleFilesInput = ({
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={previews[modalIndex]?.file?.name || "File Preview"}
+        title={
+          previews[modalIndex]
+            ? getFileName(previews[modalIndex].file)
+            : "File Preview"
+        }
       >
         <div className="flex flex-col gap-2">
           <div className="p-2 border border-gray-300 rounded-md">

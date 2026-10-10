@@ -31,6 +31,7 @@ const AgTableComponent = React.memo(
     headerActions,
     exportBeforeHeaderActions = false,
     searchRowActions,
+    searchRowActionsPosition = "left",
     searchBottomContent,
     tableHeight = 400,
     fillAvailableHeight = false,
@@ -410,29 +411,39 @@ const AgTableComponent = React.memo(
           }  items-center py-2`}
         >
           {search ? (
-            <TextField
-              label="Search"
-              variant="outlined"
-              size="small"
-              value={searchQuery}
-              onChange={handleSearch}
-              placeholder="Search"
-              InputProps={{
-                startAdornment: (
-                  <IoIosSearch size={20} style={{ marginRight: 8 }} />
-                ),
-              }}
-            />
+            <div className="flex items-center gap-3">
+              <TextField
+                label="Search"
+                variant="outlined"
+                size="small"
+                value={searchQuery}
+                onChange={handleSearch}
+                placeholder="Search"
+                InputProps={{
+                  startAdornment: (
+                    <IoIosSearch size={20} style={{ marginRight: 8 }} />
+                  ),
+                }}
+              />
+              {searchRowActionsPosition === "left" && searchRowActions
+                ? searchRowActions
+                : ""}
+            </div>
           ) : (
             <></>
           )}
           <div className="flex items-start gap-4">
+            {searchRowActionsPosition === "right" && searchRowActions
+              ? searchRowActions
+              : ""}
             {hideFilter ? (
               ""
             ) : (
               <div className="flex flex-col items-end gap-2">
+                {searchRowActionsPosition === "aboveFilter" && searchRowActions
+                  ? searchRowActions
+                  : ""}
                 <div className="flex items-center gap-2">
-                  {searchRowActions ? searchRowActions : ""}
                   {renderExportButton()}
                 </div>
                 <div
@@ -532,6 +543,7 @@ const AgTableComponent = React.memo(
             rowSelection={
               enableCheckbox ? (checkAll ? "multiple" : "single") : rowSelection
             }
+            suppressRowClickSelection={enableCheckbox}
             onSelectionChanged={handleSelectionChanged}
             getRowStyle={getRowStyle}
             className="font-pregular"

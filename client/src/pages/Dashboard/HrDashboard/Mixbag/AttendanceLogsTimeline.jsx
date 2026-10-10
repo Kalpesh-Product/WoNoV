@@ -12,7 +12,12 @@ import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { BsCup, BsCupHot } from "react-icons/bs";
 import { IoEnterOutline, IoExitOutline } from "react-icons/io5";
-import { MdChevronLeft, MdChevronRight, MdClose } from "react-icons/md";
+import {
+  MdChevronLeft,
+  MdChevronRight,
+  MdClose,
+  MdOutlinePhotoCamera,
+} from "react-icons/md";
 import AgTable from "../../../../components/AgTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 
@@ -21,6 +26,29 @@ const eventTypes = {
   "break-in": { label: "Start Break", icon: <BsCupHot /> },
   "break-out": { label: "End Break", icon: <BsCup /> },
   "clock-out": { label: "OUT", icon: <IoExitOutline /> },
+};
+
+const photoEventStyles = {
+  "clock-in": {
+    label: "Clock In",
+    chip: "border-[#ccebdd] bg-[#e5f8ef] text-[#07965f]",
+    dot: "bg-[#07965f]",
+  },
+  "break-in": {
+    label: "Start Break",
+    chip: "border-[#ffd7cc] bg-[#fff0ec] text-[#ef6548]",
+    dot: "bg-[#ef6548]",
+  },
+  "break-out": {
+    label: "End Break",
+    chip: "border-[#ffd7cc] bg-[#fff0ec] text-[#ef6548]",
+    dot: "bg-[#ef6548]",
+  },
+  "clock-out": {
+    label: "Clock Out",
+    chip: "border-[#ffd6d6] bg-[#fff0f0] text-[#ff0000]",
+    dot: "bg-[#ff0000]",
+  },
 };
 
 const isSameDate = (firstDate, secondDate) =>
@@ -97,7 +125,7 @@ const AttendanceLogsTimeline = () => {
   const axios = useAxiosPrivate();
   const [employeeId, setEmployeeId] = useState("all");
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedPhoto, setSelectedPhoto] = useState(null);
 
   const { data = [], isLoading } = useQuery({
     queryKey: ["attendance-logs"],
@@ -318,13 +346,24 @@ const AttendanceLogsTimeline = () => {
         flex: 1,
         minWidth: 140,
         sortable: false,
-        cellRenderer: ({ value }) =>
+        cellRenderer: ({ value, data }) =>
           value ? (
             <button
-              className="font-medium text-blue-600 hover:underline"
-              onClick={() => setSelectedImage(value)}
+              type="button"
+              className="inline-flex items-center gap-1.5 rounded-md border border-[#b8c3d5] bg-[#f2f5f9] px-2.5 py-1 text-xs font-semibold text-[#1E3D73] transition-colors hover:border-[#1E3D73] hover:bg-[#e8eef6]"
+              onClick={() =>
+                setSelectedPhoto({
+                  url: value,
+                  employeeName: data.employeeName,
+                  type: data.type,
+                  typeLabel: data.typeLabel,
+                  date: data.date,
+                  timeLabel: data.timeLabel,
+                })
+              }
             >
-              View
+              <MdOutlinePhotoCamera className="text-base" />
+              View Photo
             </button>
           ) : (
             <span className="text-gray-400">-</span>
@@ -526,48 +565,104 @@ const AttendanceLogsTimeline = () => {
       </div>
 
       <Dialog
-        open={Boolean(selectedImage)}
-        onClose={() => setSelectedImage(null)}
+        open={Boolean(selectedPhoto)}
+        onClose={() => setSelectedPhoto(null)}
+        fullWidth
         maxWidth="md"
+        slotProps={{
+          backdrop: {
+            sx: {
+              backgroundColor: "rgba(15, 23, 42, 0.72)",
+              backdropFilter: "blur(5px)",
+            },
+          },
+        }}
+        PaperProps={{
+          sx: {
+            borderRadius: { xs: 2, sm: 3 },
+            backgroundColor: "#f8fafc",
+            backgroundImage: "none",
+            boxShadow: "0 28px 70px rgba(15, 23, 42, 0.32)",
+            m: { xs: 1.5, sm: 3 },
+            overflow: "hidden",
+          },
+        }}
       >
         <DialogTitle
           sx={{
             alignItems: "center",
-            color: "primary.main",
+            backgroundColor: "common.white",
+            borderBottom: "1px solid #e2e8f0",
             display: "flex",
             justifyContent: "space-between",
-            fontWeight: 600,
-            fontSize: "1rem",
-            pr: 1,
-            pl: 3,
-            py: 1.5,
-            textAlign: "left",
-            textTransform: "uppercase",
+            px: { xs: 2, sm: 3 },
+            py: 2,
           }}
         >
-          <span>Attendance photo</span>
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl text-primary">
+              <MdOutlinePhotoCamera />
+            </span>
+            <span className="text-base font-semibold text-[#1E3D73] sm:text-lg">
+              ATTENDANCE PHOTO
+            </span>
+          </div>
           <IconButton
             aria-label="Close attendance photo"
-            onClick={() => setSelectedImage(null)}
+            onClick={() => setSelectedPhoto(null)}
             size="small"
             sx={{
-              backgroundColor: "error.main",
-              color: "common.white",
+              backgroundColor: "#f1f5f9",
+              color: "#dc2626",
+              height: 36,
+              width: 36,
               "&:hover": {
-                backgroundColor: "error.dark",
+                backgroundColor: "#f1f5f9",
+                color: "#dc2626",
               },
             }}
           >
             <MdClose />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
-          {selectedImage && (
-            <img
-              src={selectedImage}
-              alt="Attendance capture"
-              className="max-h-[75vh] w-full object-contain"
-            />
+        <DialogContent
+          sx={{
+            p: { xs: 1.5, sm: 2.5 },
+            "&:last-child": { pb: { xs: 1.5, sm: 2.5 } },
+          }}
+        >
+          {selectedPhoto && (
+            <div className="space-y-3 pt-2 sm:pt-3">
+              <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <span className="inline-flex min-h-8 items-center rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-[#1E3D73]">
+                  {selectedPhoto.employeeName}
+                </span>
+                <span
+                  className={`inline-flex min-h-8 items-center gap-1.5 rounded-md border px-2.5 py-1 font-semibold ${photoEventStyles[selectedPhoto.type]?.chip ||
+                    "border-blue-200 bg-blue-50 text-[#1E3D73]"
+                    }`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className={`h-1.5 w-1.5 rounded-full ${photoEventStyles[selectedPhoto.type]?.dot || "bg-[#1E3D73]"
+                      }`}
+                  />
+                  {photoEventStyles[selectedPhoto.type]?.label ||
+                    selectedPhoto.typeLabel}
+                </span>
+                <span className="inline-flex min-h-8 items-center rounded-md border border-blue-200 bg-blue-50 px-2.5 py-1 font-semibold text-[#1E3D73]">
+                  {selectedPhoto.date} · {selectedPhoto.timeLabel}
+                </span>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 p-1.5 shadow-[0_18px_45px_rgba(15,23,42,0.2)]">
+                <img
+                  src={selectedPhoto.url}
+                  alt={`Attendance capture for ${selectedPhoto.employeeName}`}
+                  className="max-h-[68vh] w-full rounded-xl object-contain"
+                />
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>

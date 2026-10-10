@@ -32,7 +32,14 @@ const {
 const router = require("express").Router();
 
 router.post("/create-meeting", addMeetings);
-router.post("/create-room", upload.single("room"), addRoom);
+router.post(
+  "/create-room",
+  upload.fields([
+    { name: "room", maxCount: 1 },
+    { name: "rooms", maxCount: 5 },
+  ]),
+  addRoom,
+);
 router.post("/create-review", addReview);
 router.post("/create-reply", replyReview);
 router.patch("/extend-meeting", extendMeeting);
@@ -45,7 +52,14 @@ router.get("/my-meetings", getMyMeetings);
 router.delete("/my-meetings/:meetingId", deleteMyMeeting);
 router.get("/get-reviews", getReviews);
 router.get("/get-meetings-type", getMeetingsByTypes);
-router.patch("/update-room/:id", upload.single("room"), updateRoom);
+router.patch(
+  "/update-room/:id",
+  upload.fields([
+    { name: "room", maxCount: 1 },
+    { name: "rooms", maxCount: 5 },
+  ]),
+  updateRoom,
+);
 router.patch("/create-housekeeping-tasks", addHousekeepingTask);
 router.delete("/delete-housekeeping-tasks", deleteHousekeepingTask);
 router.patch("/cancel-meeting/:meetingId", cancelMeeting);

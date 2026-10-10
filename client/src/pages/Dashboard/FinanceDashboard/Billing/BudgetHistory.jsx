@@ -1,14 +1,39 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { Chip } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
+import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useAuth from "../../../../hooks/useAuth";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import humanDate from "../../../../utils/humanDateForamt";
+import { queryClient } from "../../../../main";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+
+const isTechDepartmentUser = (user) =>
+  (Array.isArray(user?.departments) ? user.departments : []).some(
+    (department) =>
+      String(department?._id || department) === TECH_DEPARTMENT_ID ||
+      String(department?.name || "").trim().toLowerCase() ===
+        "tech department",
+  );
 
 const BudgetHistory = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
+  const navigate = useNavigate();
+  const [viewDetails, setViewDetails] = useState(null);
+  const canUseBulkBudgetActions = isTechDepartmentUser(auth?.user);
+  const pendingApprovalsPath =
+    "/app/dashboard/finance-dashboard/billing/budget-request/pending-approvals-budget";
 
   const { data: budgetHistory = [], isPending: isBudgetLoading } = useQuery({
     queryKey: ["budgetHistory"],
@@ -21,6 +46,67 @@ const BudgetHistory = () => {
         console.error("Error fetching budget history:", error);
         return [];
       }
+    },
+  });
+
+  const { mutate: unapproveBudget, isPending: isUnapprovePending } =
+    useMutation({
+      mutationKey: ["unapproveBudget"],
+      mutationFn: async (budgetId) => {
+        const response = await axios.patch(
+          `/api/budget/unapprove-budget/${budgetId}`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        toast.success(data.message || "Budget returned to pending approvals");
+        queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+        navigate(pendingApprovalsPath);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to unapprove budget",
+        );
+      },
+    });
+
+  const {
+    mutate: unapproveSelectedBudgets,
+    isPending: isBulkUnapprovePending,
+  } = useMutation({
+    mutationKey: ["bulkUnapproveBudget"],
+    mutationFn: async (selectedRows) => {
+      const budgetIds = selectedRows.map((row) => row._id).filter(Boolean);
+
+      if (!budgetIds.length) {
+        throw new Error("Please select at least one approved budget");
+      }
+
+      const responses = await Promise.all(
+        budgetIds.map((budgetId) =>
+          axios.patch(`/api/budget/unapprove-budget/${budgetId}`),
+        ),
+      );
+
+      return responses.map((response) => response.data);
+    },
+    onSuccess: (_, selectedRows) => {
+      toast.success(`${selectedRows.length} budget(s) returned to pending`);
+      queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+      queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+      navigate(pendingApprovalsPath);
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to unapprove selected budgets",
+      );
     },
   });
 
@@ -43,7 +129,7 @@ const BudgetHistory = () => {
       field: "status",
       headerName: "Approval Status",
       flex: 1,
-      pinned: "right",
+       pinned: "right",
       cellRenderer: (params) => {
         const status = String(params?.value || "-");
         const normalizedStatus = status.toLowerCase();
@@ -71,6 +157,45 @@ const BudgetHistory = () => {
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      width: canUseBulkBudgetActions ? 110 : 90,
+      cellRenderer: (params) => {
+        const isApproved =
+          String(params.data?.status || "").toLowerCase() === "approved";
+
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              className="text-subtitle text-primary cursor-pointer"
+              title="View budget details"
+              aria-label="View budget details"
+              onClick={() => setViewDetails(params.data)}
+            >
+              <MdOutlineRemoveRedEye />
+            </button>
+
+            {canUseBulkBudgetActions && isApproved && (
+              <ThreeDotMenu
+                rowId={params.data?._id}
+                menuItems={[
+                  {
+                    label: isUnapprovePending ? "Returning..." : "Unapprove",
+                    onClick: () => {
+                      if (isUnapprovePending) return;
+                      unapproveBudget(params.data._id);
+                    },
+                  },
+                ]}
+              />
+            )}
+          </div>
+        );
+      },
+    },
   ];
 
   const tableData = budgetHistory
@@ -94,14 +219,65 @@ const BudgetHistory = () => {
         (isExtraBudget || isBulkBudget)
       );
     })
-    .map((item) => ({
-      ...item,
-      projectedAmount: inrFormat(item?.projectedAmount || 0),
-      actualAmount: inrFormat(item?.actualAmount || 0),
-      dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
-      dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
-      status: item?.status || "-",
-    }));
+    .map((item) => {
+      const invoice = item?.invoice || {};
+      const unit = item?.unit || {};
+
+      return {
+        ...item,
+        department: item?.department?.name || item?.department || "-",
+        unitName: unit?.unitName || "-",
+        unitNo: unit?.unitNo || "-",
+        buildingName: unit?.building?.buildingName || "-",
+        projectedAmountRaw: item?.projectedAmount || 0,
+        actualAmountRaw: item?.actualAmount || 0,
+        projectedAmount: inrFormat(item?.projectedAmount || 0),
+        actualAmount: inrFormat(item?.actualAmount || 0),
+        dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
+        dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
+        invoiceName: invoice?.name || "-",
+        invoiceDate: invoice?.date ? humanDate(invoice.date) : "-",
+        invoiceLink: invoice?.link || "-",
+        status: item?.status || "-",
+        isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
+      };
+    });
+
+  const invoiceFiles = viewDetails
+    ? (viewDetails?.invoices?.length
+        ? viewDetails.invoices
+        : viewDetails?.invoice?.link
+          ? [viewDetails.invoice]
+          : []
+      ).filter((file) => file?.link)
+    : [];
+
+  const invoiceChips = invoiceFiles.length ? (
+    <span className="flex max-w-full flex-wrap gap-2">
+      {invoiceFiles.map((file, index) => {
+        const name = file.name || `Invoice ${index + 1}`;
+
+        return (
+          <Chip
+            key={file.id || `${file.link}-${index}`}
+            component="a"
+            href={file.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            clickable
+            label={name}
+            title={name}
+            size="small"
+            variant="outlined"
+            color="primary"
+            sx={{ maxWidth: "100%" }}
+          />
+        );
+      })}
+    </span>
+  ) : (
+    "-"
+  );
 
   return (
     <PageFrame>
@@ -114,7 +290,87 @@ const BudgetHistory = () => {
         tableHeight={450}
         isLoading={isBudgetLoading}
         exportData
+        checkbox={canUseBulkBudgetActions}
+        checkAll={canUseBulkBudgetActions}
+        isRowSelectable={(node) =>
+          canUseBulkBudgetActions &&
+          String(node.data?.status || "").toLowerCase() === "approved"
+        }
+        batchButton={
+          canUseBulkBudgetActions
+            ? isBulkUnapprovePending
+              ? "Returning..."
+              : "Unapprove All"
+            : undefined
+        }
+        handleBatchAction={(selectedRows) => {
+          if (!canUseBulkBudgetActions || isBulkUnapprovePending) return;
+          unapproveSelectedBudgets(selectedRows);
+        }}
       />
+
+      {viewDetails && (
+        <MuiModal
+          open={Boolean(viewDetails)}
+          onClose={() => setViewDetails(null)}
+          title={
+            <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              Department-Invoice Approval Budget Summary
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            <DetalisFormatted
+              title="Department"
+              detail={viewDetails.department || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Name"
+              detail={viewDetails.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Expense Type"
+              detail={viewDetails.expanseType || "-"}
+            />
+            <DetalisFormatted
+              title="Payment Type"
+              detail={viewDetails.paymentType || "-"}
+            />
+            <DetalisFormatted
+              title="Projected Amount"
+              detail={`INR ${Number(viewDetails.projectedAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted
+              title="Actual Amount"
+              detail={`INR ${Number(viewDetails.actualAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <DetalisFormatted title="Unit" detail={viewDetails.unitName || "-"} />
+            <DetalisFormatted title="Unit No" detail={viewDetails.unitNo || "-"} />
+            <DetalisFormatted
+              title="Building"
+              detail={viewDetails.buildingName || "-"}
+            />
+            <DetalisFormatted title="Due Date" detail={viewDetails.dueDate || "-"} />
+            <DetalisFormatted
+              title="Invoice Name"
+              detail={`${invoiceFiles.length} ${invoiceFiles.length === 1 ? "file" : "files"} uploaded`}
+            />
+            <DetalisFormatted
+              title="Invoice Date"
+              detail={viewDetails.invoiceDate || "-"}
+            />
+            <DetalisFormatted
+              title="Approval Status"
+              detail={viewDetails.status || "-"}
+            />
+            <DetalisFormatted
+              title="Paid Status"
+              detail={viewDetails.isPaid || "Unpaid"}
+            />
+            <DetalisFormatted title="Invoice File" detail={invoiceChips} />
+          </div>
+        </MuiModal>
+      )}
     </PageFrame>
   );
 };

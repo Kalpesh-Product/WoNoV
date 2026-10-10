@@ -34,11 +34,15 @@ const {
   addCompanyKyc,
   createCompanyKycEntry,
   updateCompanyKycEntryName,
+  manageCompanyKycEntry,
   updateCompanyKycDocument,
   getCompanyKyc,
   getComplianceDocuments,
   uploadComplianceDocument,
+  updateComplianceDocument,
+  manageComplianceDocument,
   toggleCompanyDocumentStatus,
+  restoreCompanyDocument,
   deleteDepartmentDocument,
   updateCompanyDocument,
   updateDepartmentDocument,
@@ -71,7 +75,11 @@ const {
   fetchBuildings,
   assignPrimaryUnit,
   updateUnit,
+  deleteUnit,
+  restoreUnit,
   editBuilding,
+  deleteBuilding,
+  restoreBuilding,
 } = require("../controllers/companyControllers/workLocationControllers");
 
 const {
@@ -86,6 +94,8 @@ const {
   getJobApplications,
   updateJobApplication,
   archiveJobApplication,
+  restoreJobApplication,
+  permanentlyDeleteJobApplication,
 } = require("../controllers/companyControllers/jobApplicationsController");
 
 // Company basic info routes
@@ -112,10 +122,14 @@ router.post("/add-leave-type", addLeaveType);
 // Locations and units
 router.post("/add-building", addBuilding);
 router.patch("/edit-building/:buildingId", editBuilding);
+router.delete("/delete-building/:buildingId", deleteBuilding);
+router.patch("/restore-building/:buildingId", restoreBuilding);
 router.get("/buildings", fetchBuildings);
 router.post("/add-unit", addUnit);
 router.get("/fetch-units", fetchUnits);
 router.get("/fetch-simple-units", fetchSimpleUnits);
+router.delete("/delete-unit/:unitId", deleteUnit);
+router.patch("/restore-unit/:unitId", restoreUnit);
 router.patch(
   "/update-unit",
   upload.fields([
@@ -135,6 +149,7 @@ router.post(
 // KYC & Compliance
 router.post("/create-kyc-entry", createCompanyKycEntry);
 router.patch("/update-kyc-entry-name", updateCompanyKycEntryName);
+router.patch("/manage-kyc-entry", manageCompanyKycEntry);
 router.post("/add-kyc-document", upload.single("kyc"), addCompanyKyc);
 router.patch(
   "/update-kyc-document",
@@ -148,6 +163,12 @@ router.post(
   upload.single("document"),
   uploadComplianceDocument,
 );
+router.patch(
+  "/update-compliance-document",
+  upload.single("document"),
+  updateComplianceDocument,
+);
+router.patch("/manage-compliance-document", manageComplianceDocument);
 
 // Job Applications
 router.post(
@@ -162,6 +183,11 @@ router.patch(
   updateJobApplication,
 );
 router.patch("/archive-job-application/:id", archiveJobApplication);
+router.patch("/restore-job-application/:id", restoreJobApplication);
+router.delete(
+  "/delete-job-application/:id",
+  permanentlyDeleteJobApplication,
+);
 router.post(
   "/bulk-insert-job-applications",
   upload.single("job-applications"),
@@ -205,6 +231,7 @@ router.patch(
   updateCompanyDocument,
 );
 router.patch("/delete-company-document", toggleCompanyDocumentStatus);
+router.patch("/restore-company-document", restoreCompanyDocument);
 router.get("/get-company-documents/:type", getCompanyDocuments);
 
 // Department Documents

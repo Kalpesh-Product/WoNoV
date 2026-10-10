@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
@@ -17,16 +17,33 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import StatusChip from "../../../../components/StatusChip";
+import useAuth from "../../../../hooks/useAuth";
+
+const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const FINANCE_DEPARTMENT_ID = "6798bab0e469e809084e249a";
+
+const canUseBulkApprove = (user) =>
+  (Array.isArray(user?.departments) ? user.departments : []).some(
+    (department) =>
+      [TECH_DEPARTMENT_ID, FINANCE_DEPARTMENT_ID].includes(
+        String(department?._id || department),
+      ) ||
+      ["tech department", "finance department"].includes(
+        String(department?.name || "").trim().toLowerCase(),
+      ),
+  );
 
 const PendingApprovalsBudget = () => {
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const canUseBulkBudgetActions = canUseBulkApprove(auth?.user);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [selectedBudget, setSelectedBudget] = useState([]);
   const axios = useAxiosPrivate();
   const cellClasses = "border border-black p-2 text-xs align-top";
   const tableClasses = "w-full border border-black border-collapse mb-5";
-  const { data: pendingApprovals = [], isPending: isPendingLoading } = useQuery(
+  const { data: pendingApprovals = [] } = useQuery(
     {
       queryKey: ["pendingApprovalsBudget"],
       queryFn: async () => {
@@ -81,7 +98,7 @@ const PendingApprovalsBudget = () => {
     },
   });
 
-  const { mutate: submitRequest, isPending: isSubmitRequest } = useMutation({
+  const { mutate: submitRequest } = useMutation({
     mutationKey: ["approve"],
     mutationFn: async (formData) => {
       const response = await axios.patch(`/api/budget/approve-budget`, {
@@ -90,23 +107,50 @@ const PendingApprovalsBudget = () => {
       return response.data;
     },
     onSuccess: (data) => {
-      toast.success(data.message);
+      toast.success(
+        "Selected budget approved successfully. You can view the approval details in the Budget History tab.",
+      );
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
       queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
       reset();
-      navigate(
-        "/app/dashboard/finance-dashboard/billing/budget-request/budget-history"
-      );
     },
     onError: (error) => {
       toast.error(error.message);
     },
   });
 
-  useEffect(() => {
-    console.log("selected budget : ", selectedBudget);
-  }, [selectedBudget]);
+  const { mutate: approveSelectedRequests, isPending: isBulkApprovePending } =
+    useMutation({
+      mutationKey: ["bulkApproveBudget"],
+      mutationFn: async (selectedRows) => {
+        const budgetIds = selectedRows.map((row) => row._id).filter(Boolean);
+
+        if (!budgetIds.length) {
+          throw new Error("Please select at least one budget request");
+        }
+
+        const responses = await Promise.all(
+          budgetIds.map((budgetId) =>
+            axios.patch(`/api/budget/approve-budget`, { budgetId }),
+          ),
+        );
+
+        return responses.map((response) => response.data);
+      },
+      onSuccess: (_, selectedRows) => {
+        toast.success(
+          "Selected budget approved successfully. You can view the approval details in the Budget History tab.",
+        );
+        queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
+        queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+        reset();
+      },
+      onError: (error) => {
+        toast.error(error.message || "FAILED TO APPROVE SELECTED REQUESTS");
+      },
+    });
 
   const kraColumn = [
     {
@@ -135,7 +179,7 @@ const PendingApprovalsBudget = () => {
       headerName: "Due Date",
       valueFormatter: (params) => humanDate(params.value),
     },
-    { field: "status", headerName: "Approval Status", width: 150, cellRenderer: (params) => <StatusChip status={params.value} />},
+    { field: "status", headerName: "Approval Status", pinned: "right", width: 150, cellRenderer: (params) => <StatusChip status={params.value} />},
     {
       field: "actions",
       headerName: "Actions",
@@ -199,6 +243,19 @@ const PendingApprovalsBudget = () => {
             };
           })}
           columns={kraColumn}
+          checkbox={canUseBulkBudgetActions}
+          checkAll={canUseBulkBudgetActions}
+          batchButton={
+            canUseBulkBudgetActions
+              ? isBulkApprovePending
+                ? "Approving..."
+                : "Approve All"
+              : undefined
+          }
+          handleBatchAction={(selectedRows) => {
+            if (!canUseBulkBudgetActions || isBulkApprovePending) return;
+            approveSelectedRequests(selectedRows);
+          }}
         />
       </PageFrame>
       <div>

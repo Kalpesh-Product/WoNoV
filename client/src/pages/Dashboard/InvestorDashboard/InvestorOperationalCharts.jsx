@@ -59,6 +59,17 @@ const nonClickableOccupancyCharts = new Set([
   "age",
 ]);
 
+const InvestorHeaderLogo = () => (
+  <span
+    aria-label="BIZ NEST"
+    className="inline-flex items-baseline whitespace-nowrap text-[1em] normal-case leading-none text-[#2a2525]"
+  >
+    <span>BI</span>
+    <span className="text-[#e33434]">Z</span>
+    <span>&nbsp;NEST</span>
+  </span>
+);
+
 const legendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`;
 
@@ -447,8 +458,13 @@ const InvestorOperationalCharts = ({
         bodyBorderColor={useInvestorBorder ? "#9FB2CF" : undefined}
         title={
           useBlueText ? (
-            <span className={useNavyText ? "text-[#1E3D73]" : "text-[#1234c9]"}>
-              {chart.title}
+            <span
+              className={`inline-flex items-baseline gap-2 ${
+                useNavyText ? "text-[#1E3D73]" : "text-[#1234c9]"
+              }`}
+            >
+              {useNavyText ? <InvestorHeaderLogo /> : null}
+              <span>{chart.title}</span>
             </span>
           ) : (
             chart.title

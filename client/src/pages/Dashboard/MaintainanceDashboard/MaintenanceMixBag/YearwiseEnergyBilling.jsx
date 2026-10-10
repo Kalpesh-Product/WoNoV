@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Chart from "react-apexcharts";
 import dayjs from "dayjs";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Chip } from "@mui/material";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { toast } from "sonner";
@@ -19,15 +19,18 @@ const FINANCIAL_YEAR = {
 const BUILDING_CONFIG = {
   st: {
     name: "Sunteck Building",
+    overallTitle: "ST - OVERALL CONSUMPTION & BILLING",
     endpoint: "/api/maintenance/get-st-energy-monthly",
   },
   dtc: {
     name: "Dempo Trade Centre",
+    overallTitle: "DTC - OVERALL CONSUMPTION & BILLING",
     endpoint: "/api/maintenance/get-dtc-energy-monthly",
   },
 };
 
-const formatNumber = (value) => Number(value || 0).toLocaleString("en-IN");
+const formatNumber = (value) =>
+  Math.round(Number(value || 0)).toLocaleString("en-IN");
 const SHOW_PAGE_HEADER = false;
 const Y_AXIS_PADDING_RATIO = 0.2;
 const Y_AXIS_MIN = 100;
@@ -69,8 +72,14 @@ const createFinancialYearMonths = (startYear) =>
     };
   });
 
-const YearwiseEnergyBilling = ({ building = "st" }) => {
+const YearwiseEnergyBilling = ({
+  building = "st",
+  overall = false,
+  embedded = false,
+  detailsRoute,
+}) => {
   const { unitNo = "" } = useParams();
+  const navigate = useNavigate();
   const axiosPrivate = useAxiosPrivate();
   const config = BUILDING_CONFIG[building] || BUILDING_CONFIG.st;
   const selectedUnit = decodeURIComponent(unitNo);
@@ -98,11 +107,27 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
 
         setMonthlyData(
           financialYearMonths.map((month, index) => {
-            const unitRecord = (responses[index].data?.data || []).find(
+            const records = responses[index].data?.data || [];
+            const unitRecord = records.find(
               (record) =>
                 String(record.unitNo || "").trim().toLowerCase() ===
                 selectedUnit.trim().toLowerCase(),
             );
+
+            if (overall) {
+              return records.reduce(
+                (totals, record) => ({
+                  ...totals,
+                  totalConsumption:
+                    totals.totalConsumption +
+                    Number(record?.totalConsumption || 0),
+                  totalBillAmount:
+                    totals.totalBillAmount +
+                    Number(record?.totalBillAmount || 0),
+                }),
+                { ...month },
+              );
+            }
 
             return {
               ...month,
@@ -115,7 +140,8 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
       .catch((error) => {
         if (active) {
           toast.error(
-            error.response?.data?.message || "Unable to load unit-wise energy bills",
+            error.response?.data?.message ||
+              `Unable to load ${overall ? "overall" : "unit-wise"} energy bills`,
           );
         }
       });
@@ -123,7 +149,13 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     return () => {
       active = false;
     };
-  }, [axiosPrivate, config.endpoint, financialYearMonths, selectedUnit]);
+  }, [
+    axiosPrivate,
+    config.endpoint,
+    financialYearMonths,
+    overall,
+    selectedUnit,
+  ]);
 
   const rows = monthlyData.length ? monthlyData : financialYearMonths;
   const selectedFYLabel = getFinancialYearLabel(selectedFYStartYear);
@@ -162,7 +194,15 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
   ];
 
   const chartOptions = {
-    chart: { toolbar: { show: false }, fontFamily: "inherit" },
+    chart: {
+      toolbar: { show: false },
+      fontFamily: "inherit",
+      events: detailsRoute
+        ? {
+            dataPointSelection: () => navigate(detailsRoute),
+          }
+        : {},
+    },
     colors: ["#355ae8", "#ef233c"],
     plotOptions: {
       bar: {
@@ -173,7 +213,7 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
       },
     },
     dataLabels: {
-      enabled: true,
+      enabled: !overall,
       offsetY: -22,
       formatter: (value) => (value === null || Number(value) === 0 ? "" : formatNumber(value)),
       style: { fontSize: "11px", fontWeight: 700, colors: ["#1f2937"] },
@@ -216,9 +256,14 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
     },
   ];
 
+  const graphTitle = overall
+    ? config.overallTitle ||
+      `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING`
+    : `${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit}`;
+
   return (
-    <div className="p-4">
-      {SHOW_PAGE_HEADER ? (
+    <div className={embedded ? "" : "p-4"}>
+      {SHOW_PAGE_HEADER && !embedded ? (
         <div className="mb-4 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
             {FINANCIAL_YEAR.label}
@@ -231,10 +276,28 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
 
       <div className="flex flex-col gap-4">
         <WidgetSection
-          title={`${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit}`}
+          title={graphTitle}
+          titleClassName={
+            embedded
+              ? "whitespace-nowrap text-left"
+              : ""
+          }
+          titleStyle={
+            embedded
+              ? {
+                  whiteSpace: "nowrap",
+                  fontSize: "14px",
+                  lineHeight: "20px",
+                  flexShrink: 0,
+                }
+              : undefined
+          }
+          headerContentClassName={
+            embedded ? "!flex-row !flex-nowrap !gap-2" : ""
+          }
           border
           headerRightContent={
-            <>
+            <div className="flex flex-nowrap items-center gap-2">
               <Chip
                 label={`CONSUMPTION : ${formatNumber(totalConsumption)}`}
                 sx={{
@@ -242,10 +305,10 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
                   color: "#1f3f7a",
                   border: "1px solid #b8cbff",
                   fontWeight: 800,
-                  fontSize: "0.84rem",
-                  height: "36px",
+                  fontSize: embedded ? "0.72rem" : "0.84rem",
+                  height: embedded ? "32px" : "36px",
                   borderRadius: "8px",
-                  px: 1.15,
+                  px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
                     fontWeight: 800,
@@ -260,20 +323,27 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
                   color: "#17693a",
                   border: "1px solid #c7e6d0",
                   fontWeight: 800,
-                  fontSize: "0.84rem",
-                  height: "36px",
+                  fontSize: embedded ? "0.72rem" : "0.84rem",
+                  height: embedded ? "32px" : "36px",
                   borderRadius: "8px",
-                  px: 1.15,
+                  px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
                     fontWeight: 800,
                   },
                 }}
               />
-            </>
+            </div>
           }
         >
-          <Chart options={chartOptions} series={series} type="bar" height={450} />
+          <div className={detailsRoute ? "cursor-pointer" : ""}>
+            <Chart
+              options={chartOptions}
+              series={series}
+              type="bar"
+              height={embedded ? 360 : 450}
+            />
+          </div>
 
           <div className="flex items-center justify-center gap-2 pb-1">
             <button
@@ -300,16 +370,18 @@ const YearwiseEnergyBilling = ({ building = "st" }) => {
           </div>
         </WidgetSection>
 
-        <PageFrame>
-          <YearWiseTable
-            data={rows}
-            columns={columns}
-            tableTitle={`${config.name.toUpperCase()} - OVERALL ENERGY CONSUMPTION & BILLING - ${selectedUnit} - ${selectedFYLabel}`}
-            tableHeight={500}
-            hideFilter
-            exportData
-          />
-        </PageFrame>
+        {!embedded ? (
+          <PageFrame>
+            <YearWiseTable
+              data={rows}
+              columns={columns}
+              tableTitle={`${graphTitle} - ${selectedFYLabel}`}
+              tableHeight={500}
+              hideFilter
+              exportData
+            />
+          </PageFrame>
+        ) : null}
       </div>
     </div>
   );

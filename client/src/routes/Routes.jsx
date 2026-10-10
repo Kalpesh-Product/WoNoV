@@ -1699,12 +1699,24 @@ export const routes = createBrowserRouter([
                         element: <YearwiseEnergyBilling building="st" />,
                       },
                       {
+                        path: "mix-bag/st-overall-energy-consumption-billing",
+                        element: (
+                          <YearwiseEnergyBilling building="st" overall />
+                        ),
+                      },
+                      {
                         path: "mix-bag/dtc-energy-monthly-reading",
                         element: <MaintainanceDtcEnergyReadingMonthly />,
                       },
                       {
                         path: "mix-bag/dtc-energy-monthly-reading/:unitNo",
                         element: <YearwiseEnergyBilling building="dtc" />,
+                      },
+                      {
+                        path: "mix-bag/dtc-overall-energy-consumption-billing",
+                        element: (
+                          <YearwiseEnergyBilling building="dtc" overall />
+                        ),
                       },
                       {
                         path: "team-members-schedule",
