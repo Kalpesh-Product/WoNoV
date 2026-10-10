@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
-  Button,
   Card,
   CardContent,
   CardMedia,
@@ -13,6 +12,7 @@ import {
   TextField,
 } from "@mui/material";
 import { FiMonitor, FiSun, FiWifi } from "react-icons/fi";
+import { MdChevronLeft, MdChevronRight } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -20,8 +20,88 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import useAuth from "../../hooks/useAuth";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
-import UploadFileInput from "../../components/UploadFileInput";
+import UploadMultipleFilesInput from "../../components/UploadMultipleFilesInput";
 import WidgetSection from "../../components/WidgetSection";
+
+const calculateGstBreakdown = (price) => {
+  if (price === "" || price === null || price === undefined) {
+    return { gstAmount: "", totalWithGst: "" };
+  }
+
+  const basePrice = Number(price);
+  if (!Number.isFinite(basePrice)) {
+    return { gstAmount: "", totalWithGst: "" };
+  }
+
+  const gstAmount = Number((basePrice * 0.18).toFixed(2));
+  const totalWithGst = Number((basePrice + gstAmount).toFixed(2));
+
+  return { gstAmount, totalWithGst };
+};
+
+const getExistingRoomImages = (room) => {
+  if (Array.isArray(room?.images) && room.images.length > 0) {
+    return room.images;
+  }
+  return room?.image?.url ? [room.image] : [];
+};
+
+const ROOM_IMAGE_PLACEHOLDER = "https://via.placeholder.com/350";
+
+const RoomImageCarousel = ({ room }) => {
+  const images = getExistingRoomImages(room).filter((image) => image?.url);
+  const [activeImage, setActiveImage] = useState(0);
+
+  useEffect(() => {
+    if (activeImage >= images.length) setActiveImage(0);
+  }, [activeImage, images.length]);
+
+  const showPreviousImage = () => {
+    setActiveImage((current) =>
+      current === 0 ? images.length - 1 : current - 1,
+    );
+  };
+
+  const showNextImage = () => {
+    setActiveImage((current) => (current + 1) % images.length);
+  };
+
+  return (
+    <div className="group relative">
+      <CardMedia
+        component="img"
+        sx={{ height: "270px" }}
+        image={images[activeImage]?.url || ROOM_IMAGE_PLACEHOLDER}
+        alt={`${room.name} - image ${activeImage + 1}`}
+        className="object-cover"
+      />
+
+      {images.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={showPreviousImage}
+            aria-label={`Show previous image for ${room.name}`}
+            className="absolute left-0 top-1/2 flex h-10 w-8 -translate-y-1/2 items-center justify-center text-3xl text-black transition hover:scale-110"
+          >
+            <MdChevronLeft />
+          </button>
+          <button
+            type="button"
+            onClick={showNextImage}
+            aria-label={`Show next image for ${room.name}`}
+            className="absolute right-0 top-1/2 flex h-10 w-8 -translate-y-1/2 items-center justify-center text-3xl text-black transition hover:scale-110"
+          >
+            <MdChevronRight />
+          </button>
+          <span className="absolute bottom-3 right-3 rounded-full bg-slate-900/70 px-2.5 py-1 text-xs font-semibold text-white">
+            {activeImage + 1}/{images.length}
+          </span>
+        </>
+      )}
+    </div>
+  );
+};
 
 const MeetingSettings = () => {
   const axios = useAxiosPrivate();
@@ -42,15 +122,16 @@ const MeetingSettings = () => {
       description: "",
       location: "",
       unit: "",
+      isActive: "true",
+      roomImages: [],
       perHourPrice: "",
       perHourGstPrice: "",
     },
   });
   const watchLocation = watch("location"); // 👈 Add this
-
-  const [selectedFile, setSelectedFile] = useState(null);
+  const perHourPrice = watch("perHourPrice");
+  const gstBreakdown = calculateGstBreakdown(perHourPrice);
   const { auth } = useAuth();
-  const inputRef = useRef();
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const {
@@ -68,14 +149,15 @@ const MeetingSettings = () => {
       description: "",
       location: selectedRoom?.location?.building?._id,
       unit: "",
-      isActive: true,
-      roomImage: null,
+      isActive: "true",
+      roomImages: [],
       perHourPrice: "",
       perHourGstPrice: "",
     },
   });
-  const [editFile, setEditFile] = useState(null);
   const editLocation = editWatch("location");
+  const editPerHourPrice = editWatch("perHourPrice");
+  const editGstBreakdown = calculateGstBreakdown(editPerHourPrice);
 
   useEffect(() => {
     if (selectedRoom) {
@@ -86,8 +168,8 @@ const MeetingSettings = () => {
         description: selectedRoom.description ?? "",
         location: selectedRoom.location?.building?._id ?? "",
         unit: selectedRoom.location?._id ?? "",
-        isActive: selectedRoom.isActive ?? "",
-        roomImage: selectedRoom.image?.url ?? null,
+        isActive: String(selectedRoom.isActive ?? true),
+        roomImages: getExistingRoomImages(selectedRoom),
         perHourPrice: selectedRoom.perHourPrice ?? "",
         perHourGstPrice: selectedRoom.perHourGstPrice ?? "",
       });
@@ -103,11 +185,11 @@ const MeetingSettings = () => {
       description: room.description,
       location: room.location,
       unit: room.location?._id ?? "",
-      roomImage: room.image?.url ?? null,
+      roomImages: getExistingRoomImages(room),
+      isActive: String(room.isActive ?? true),
       perHourPrice: room.perHourPrice ?? "",
       perHourGstPrice: room.perHourGstPrice ?? "",
     });
-    setEditFile(null);
     setOpenEditModal(true);
   };
 
@@ -115,7 +197,6 @@ const MeetingSettings = () => {
     setOpenEditModal(false);
     setSelectedRoom(null);
     resetEditForm();
-    setEditFile(null);
   };
 
   const editRoomMutation = useMutation({
@@ -140,6 +221,7 @@ const MeetingSettings = () => {
   });
 
   const onEditSubmit = async (data) => {
+    const { totalWithGst } = calculateGstBreakdown(data.perHourPrice);
     const formData = new FormData();
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
@@ -147,11 +229,16 @@ const MeetingSettings = () => {
     formData.append("description", data.description);
     formData.append("location", data.unit);
     formData.append("perHourPrice", data.perHourPrice);
-    formData.append("perHourGstPrice", data.perHourGstPrice);
-    formData.append("isActive", data.isActive === "false" ? false : true);
-    if (data.roomImage instanceof File) {
-      formData.append("room", data.roomImage);
-    }
+    formData.append("perHourGstPrice", totalWithGst);
+    formData.append("isActive", data.isActive === "true");
+    const roomImages = Array.isArray(data.roomImages) ? data.roomImages : [];
+    const retainedRoomImages = roomImages.filter(
+      (image) => !(image instanceof File),
+    );
+    formData.append("retainedRoomImages", JSON.stringify(retainedRoomImages));
+    roomImages
+      .filter((image) => image instanceof File)
+      .forEach((image) => formData.append("rooms", image));
 
     editRoomMutation.mutate({ id: selectedRoom._id, formData });
   };
@@ -182,12 +269,6 @@ const MeetingSettings = () => {
     },
   });
 
-  const handleFileChange = (event, field) => {
-    const file = event.target.files[0];
-    setSelectedFile(file);
-    field.onChange(file); // Update React Hook Form state
-  };
-
   // Mutation for creating a room
   const createRoomMutation = useMutation({
     mutationFn: async (formData) => {
@@ -200,13 +281,13 @@ const MeetingSettings = () => {
       queryClient.invalidateQueries(["meetingRooms"]); // Refresh the room list
       handleCloseModal();
       reset(); // Reset form fields
-      inputRef.current.value = null;
     },
   });
 
   // Handle form submission
   // Handle form submission
   const onSubmit = async (data) => {
+    const { totalWithGst } = calculateGstBreakdown(data.perHourPrice);
     const formData = new FormData();
     formData.append("name", data.roomName);
     formData.append("seats", data.seats);
@@ -214,11 +295,11 @@ const MeetingSettings = () => {
     formData.append("description", data.description);
     formData.append("location", data.unit); // ✅ Use unit as location like Edit form
     formData.append("perHourPrice", data.perHourPrice);
-    formData.append("perHourGstPrice", data.perHourGstPrice);
-
-    if (selectedFile) {
-      formData.append("room", selectedFile);
-    }
+    formData.append("perHourGstPrice", totalWithGst);
+    formData.append("isActive", data.isActive === "true");
+    (data.roomImages || []).forEach((image) =>
+      formData.append("rooms", image),
+    );
 
     createRoomMutation.mutate(formData);
   };
@@ -229,8 +310,6 @@ const MeetingSettings = () => {
 
   const handleCloseModal = () => {
     setOpenModal(false);
-    // inputRef.current.value = "";
-    setSelectedFile("");
     reset();
   };
 
@@ -250,13 +329,7 @@ const MeetingSettings = () => {
                 key={room._id}
                 className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
               >
-                <CardMedia
-                  component="img"
-                  sx={{ height: "270px" }}
-                  image={room.image?.url || "https://via.placeholder.com/350"} // Fallback Image
-                  alt={room.name}
-                  className="object-cover"
-                />
+                <RoomImageCarousel room={room} />
                 <CardContent>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-content">{room.name}</span>
@@ -305,94 +378,34 @@ const MeetingSettings = () => {
         <div className="flex flex-col gap-4">
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="flex flex-col gap-4">
-              <Controller
-                name="roomName"
-                control={control}
-                rules={{
-                  required: "Room Name is Required",
-                  validate: {
-                    noOnlyWhitespace,
-                    isAlphanumeric,
-                  },
-                }}
-                defaultValue=""
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Room Name"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    error={!!errors.roomName}
-                    helperText={errors?.roomName?.message}
-                  />
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
-                  name="seats"
+                  name="roomName"
                   control={control}
-                  rules={{ required: "Seats are required" }}
+                  rules={{
+                    required: "Room Name is required",
+                    validate: { noOnlyWhitespace, isAlphanumeric },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Seats"
+                      label="Room Name"
                       variant="outlined"
-                      type="number"
                       size="small"
                       fullWidth
-                      error={!!errors.seats}
-                      helperText={errors?.seats?.message}
+                      error={!!errors.roomName}
+                      helperText={errors.roomName?.message}
                     />
                   )}
                 />
-                <Controller
-                  name="perHourCredit"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Credit"
-                      variant="outlined"
-                      type="number"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
-                />
-              </div>
-              <Controller
-                name="description"
-                control={control}
-                rules={{
-                  required: "Description is Required",
-                  validate: {
-                    noOnlyWhitespace,
-                    isAlphanumeric,
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Description"
-                    multiline
-                    rows={5}
-                    variant="outlined"
-                    error={!!errors.description}
-                    helperText={errors?.description?.message}
-                    fullWidth
-                  />
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Controller
                   name="location"
                   control={control}
                   rules={{ required: "Location is required" }}
                   render={({ field }) => (
-                    <FormControl size="small" fullWidth>
+                    <FormControl size="small" fullWidth error={!!errors.location}>
                       <InputLabel>Location</InputLabel>
-                      <Select {...field} label="Work Location">
+                      <Select {...field} label="Location">
                         <MenuItem value="">Select Location</MenuItem>
                         {auth.user.company.workLocations.length > 0 ? (
                           auth.user.company.workLocations.map((loc) => (
@@ -407,7 +420,6 @@ const MeetingSettings = () => {
                     </FormControl>
                   )}
                 />
-
                 <Controller
                   name="unit"
                   control={control}
@@ -418,7 +430,9 @@ const MeetingSettings = () => {
                       select
                       size="small"
                       label="Select Unit"
-                      placeholder="ST 701 A"
+                      fullWidth
+                      error={!!errors.unit}
+                      helperText={errors.unit?.message}
                     >
                       <MenuItem value="" disabled>
                         Select Unit
@@ -440,7 +454,52 @@ const MeetingSettings = () => {
                   )}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="seats"
+                  control={control}
+                  rules={{ required: "Seats are required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Seats"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                      error={!!errors.seats}
+                      helperText={errors.seats?.message}
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourCredit"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Per Hour Credit"
+                      variant="outlined"
+                      type="number"
+                      size="small"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="isActive"
+                  control={control}
+                  render={({ field }) => (
+                    <TextField {...field} select fullWidth size="small" label="Status">
+                      <MenuItem value="true">Active</MenuItem>
+                      <MenuItem value="false">Inactive</MenuItem>
+                    </TextField>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="perHourPrice"
                   control={control}
@@ -455,59 +514,86 @@ const MeetingSettings = () => {
                     />
                   )}
                 />
-                <Controller
-                  name="perHourGstPrice"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="GST"
-                      variant="outlined"
-                      type="number"
-                      size="small"
-                      fullWidth
-                    />
-                  )}
+                <TextField
+                  select
+                  label="GST (%)"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  disabled
+                  value={18}
+                  helperText={`GST: INR ${gstBreakdown.gstAmount === "" ? 0 : gstBreakdown.gstAmount}`}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: "#16a34a",
+                      fontWeight: 500,
+                      marginLeft: 0,
+                      "&.Mui-disabled": { color: "#16a34a" },
+                    },
+                  }}
+                >
+                  <MenuItem value={18}>18%</MenuItem>
+                </TextField>
+                <TextField
+                  label="Total Amount"
+                  variant="outlined"
+                  type="number"
+                  size="small"
+                  fullWidth
+                  disabled
+                  value={gstBreakdown.totalWithGst}
                 />
               </div>
 
               <Controller
-                name="roomImage"
+                name="description"
                 control={control}
-                defaultValue={null}
+                rules={{
+                  required: "Description is required",
+                  validate: { noOnlyWhitespace, isAlphanumeric },
+                }}
                 render={({ field }) => (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-content">Upload Room Image</span>
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        style={{ display: "none" }}
-                        id="upload-file"
-                        onChange={(event) => handleFileChange(event, field)}
-                      />
-                      <label htmlFor="upload-file">
-                        <Button
-                          sx={{
-                            backgroundColor: "#ebf5ff",
-                            color: "#4b5d87",
-                            fontFamily: "Poppins-Bold",
-                          }}
-                          variant="contained"
-                          component="span"
-                        >
-                          Choose File
-                        </Button>
-                      </label>
-                      <span className="text-content">
-                        {selectedFile ? selectedFile.name : "No file chosen"}
-                      </span>
-                    </div>
-                  </div>
+                  <TextField
+                    {...field}
+                    label="Description"
+                    multiline
+                    rows={5}
+                    variant="outlined"
+                    error={!!errors.description}
+                    helperText={errors.description?.message}
+                    fullWidth
+                  />
+                )}
+              />
+
+              <Controller
+                name="roomImages"
+                control={control}
+                defaultValue={[]}
+                render={({ field }) => (
+                  <UploadMultipleFilesInput
+                    value={field.value || []}
+                    onChange={field.onChange}
+                    label="Upload Images"
+                    allowedExtensions={["jpg", "jpeg", "png", "webp"]}
+                    previewType="image"
+                    maxFiles={5}
+                    maxSizeMb={5}
+                    helperText="Maximum 5 files, 5 MB each. JPG, JPEG, PNG, and WEBP images."
+                    showPreviews={false}
+                    showClearAll={false}
+                    showMaxInLabel={false}
+                    id="new-meeting-room-images"
+                  />
                 )}
               />
               <div className="flex justify-center">
-                <PrimaryButton title={"Submit"} type={"submit"} />
+                <PrimaryButton
+                  title={"Submit"}
+                  type={"submit"}
+                  disabled={createRoomMutation.isPending}
+                  isLoading={createRoomMutation.isPending}
+                />
               </div>
             </div>
           </form>
@@ -522,88 +608,36 @@ const MeetingSettings = () => {
         <div className="flex flex-col gap-4">
           <form onSubmit={handleEditSubmit(onEditSubmit)}>
             <div className="flex flex-col gap-4">
-              <Controller
-                name="roomName"
-                control={editControl}
-                rules={{
-                  required: "Room Name is required",
-                  validate: {
-                    noOnlyWhitespace,
-                    isAlphanumeric,
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Room Name"
-                    variant="outlined"
-                    size="small"
-                    fullWidth
-                    error={!!editErrors?.roomName}
-                    helperText={editErrors?.roomName?.message}
-                  />
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
-                  name="seats"
+                  name="roomName"
                   control={editControl}
-                  rules={{ required: "Seats are required" }}
+                  rules={{
+                    required: "Room Name is required",
+                    validate: {
+                      noOnlyWhitespace,
+                      isAlphanumeric,
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Seats"
+                      label="Room Name"
                       variant="outlined"
                       size="small"
-                      type="number"
                       fullWidth
+                      error={!!editErrors?.roomName}
+                      helperText={editErrors?.roomName?.message}
                     />
                   )}
                 />
-                <Controller
-                  name="perHourCredit"
-                  control={editControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="Credit"
-                      variant="outlined"
-                      size="small"
-                      type="number"
-                      fullWidth
-                    />
-                  )}
-                />
-              </div>
-              <Controller
-                name="description"
-                control={editControl}
-                rules={{
-                  validate: {
-                    noOnlyWhitespace,
-                  },
-                }}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Description"
-                    multiline
-                    rows={5}
-                    variant="outlined"
-                    fullWidth
-                    error={!!editErrors?.description}
-                    helperText={errors?.description?.message}
-                  />
-                )}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Controller
                   name="location"
                   control={editControl}
                   render={({ field }) => (
                     <FormControl size="small" fullWidth>
                       <InputLabel>Location</InputLabel>
-                      <Select {...field} label="Work Location">
+                      <Select {...field} label="Location">
                         <MenuItem value="">Select Location</MenuItem>
                         {auth.user.company.workLocations.length > 0 ? (
                           auth.user.company.workLocations.map((loc) => (
@@ -633,9 +667,9 @@ const MeetingSettings = () => {
                         Select Unit
                       </MenuItem>
                       {isUnitsPending ? (
-                        <>
-                          <CircularProgress />
-                        </>
+                        <MenuItem disabled>
+                          <CircularProgress size={20} />
+                        </MenuItem>
                       ) : (
                         unitsData
                           .filter((item) => item.building?._id === editLocation)
@@ -649,7 +683,61 @@ const MeetingSettings = () => {
                   )}
                 />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <Controller
+                  name="seats"
+                  control={editControl}
+                  rules={{ required: "Seats are required" }}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Seats"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="perHourCredit"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Per Hour Credit"
+                      variant="outlined"
+                      size="small"
+                      type="number"
+                      fullWidth
+                    />
+                  )}
+                />
+                <Controller
+                  name="isActive"
+                  control={editControl}
+                  render={({ field }) => (
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      size="small"
+                      label="Status"
+                      error={!!editErrors?.isActive}
+                      helperText={editErrors?.isActive?.message}
+                    >
+                      <MenuItem value="" disabled>
+                        Select a status
+                      </MenuItem>
+                      <MenuItem value="true">Active</MenuItem>
+                      <MenuItem value="false">Inactive</MenuItem>
+                    </TextField>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Controller
                   name="perHourPrice"
                   control={editControl}
@@ -664,65 +752,84 @@ const MeetingSettings = () => {
                     />
                   )}
                 />
-                <Controller
-                  name="perHourGstPrice"
-                  control={editControl}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      label="GST"
-                      variant="outlined"
-                      size="small"
-                      type="number"
-                      fullWidth
-                    />
-                  )}
+                <TextField
+                  select
+                  label="GST (%)"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  disabled
+                  value={18}
+                  helperText={`GST: INR ${
+                    editGstBreakdown.gstAmount === ""
+                      ? 0
+                      : editGstBreakdown.gstAmount
+                  }`}
+                  FormHelperTextProps={{
+                    sx: {
+                      color: "#16a34a",
+                      fontWeight: 500,
+                      marginLeft: 0,
+                      "&.Mui-disabled": { color: "#16a34a" },
+                    },
+                  }}
+                >
+                  <MenuItem value={18}>18%</MenuItem>
+                </TextField>
+                <TextField
+                  label="Total Amount"
+                  variant="outlined"
+                  size="small"
+                  type="number"
+                  fullWidth
+                  disabled
+                  value={editGstBreakdown.totalWithGst}
                 />
               </div>
-              <Controller
-                name="roomImage"
-                control={editControl}
-                defaultValue={null}
-                render={({ field }) => {
-                  // const previewUrl =
-                  //   field.value instanceof File
-                  //     ? URL.createObjectURL(field.value)
-                  //     : field.value;
 
-                  return (
-                    <UploadFileInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      allowedExtensions={["jpg", "jpeg", "png", "webp"]}
-                      // previewType="auto"
-                      // previewUrl={previewUrl}
-                       previewType="image"
-                    />
-                  );
-                }}
-              />
               <Controller
-                name="isActive"
+                name="description"
                 control={editControl}
+                rules={{
+                  validate: {
+                    noOnlyWhitespace,
+                  },
+                }}
                 render={({ field }) => (
                   <TextField
-                    select
                     {...field}
+                    label="Description"
+                    multiline
+                    rows={5}
+                    variant="outlined"
                     fullWidth
-                    size="small"
-                    label="Status"
-                    error={!!editErrors?.isActive}
-                    helperText={editErrors?.isActive?.message}
-                  >
-                    <MenuItem value="" disabled>
-                      Select a status
-                    </MenuItem>
-                    <MenuItem value="true">Active</MenuItem>
-                    <MenuItem value="false">Inactive</MenuItem>
-                  </TextField>
+                    error={!!editErrors?.description}
+                    helperText={editErrors?.description?.message}
+                  />
                 )}
               />
 
+              <Controller
+                name="roomImages"
+                control={editControl}
+                defaultValue={[]}
+                render={({ field }) => (
+                  <UploadMultipleFilesInput
+                    value={field.value || []}
+                    onChange={field.onChange}
+                    label="Upload Images"
+                    allowedExtensions={["jpg", "jpeg", "png", "webp"]}
+                    previewType="image"
+                    maxFiles={5}
+                    maxSizeMb={5}
+                    helperText="Maximum 5 files, 5 MB each. JPG, JPEG, PNG, and WEBP images."
+                    showPreviews={false}
+                    showClearAll={false}
+                    showMaxInLabel={false}
+                    id="meeting-room-images"
+                  />
+                )}
+              />
               <div className="flex justify-center">
                 <PrimaryButton
                   title={"Save Changes"}

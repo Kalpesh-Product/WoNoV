@@ -1226,6 +1226,13 @@ const uploadInvoice = async (req, res, next) => {
   const logAction = "Upload Invoice";
   const logSourceKey = "budget";
   const { departmentName } = req.body;
+  let retainedInvoices = [];
+  try {
+    retainedInvoices = JSON.parse(req.body.retainedInvoices || "[]");
+    if (!Array.isArray(retainedInvoices)) retainedInvoices = [];
+  } catch {
+    retainedInvoices = [];
+  }
   const files = req.files || [];
   const { user, ip, company } = req;
   const { budgetId } = req.params;
@@ -1249,10 +1256,6 @@ const uploadInvoice = async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(budgetId)) {
       throw new CustomError("Invalid budget Id provided", logPath, logAction, logSourceKey);
     }
-    if (!files.length) {
-      throw new CustomError("Invoice file was not provided", logPath, logAction, logSourceKey);
-    }
-
     const invalidFile = files.find((file) =>
       !allowedMimeTypes.includes(file.mimetype) &&
       !(file.originalname.toLowerCase().endsWith(".csv") &&
@@ -1284,8 +1287,46 @@ const uploadInvoice = async (req, res, next) => {
         logSourceKey,
       );
     }
-    if (foundBudget.invoiceAttached) {
-      throw new CustomError("Invoice has already been uploaded", logPath, logAction, logSourceKey);
+    // Previous one-time upload restriction retained for reference. Re-uploading
+    // now replaces the saved invoice files through the existing $set below.
+    // if (foundBudget.invoiceAttached) {
+    //   throw new CustomError(
+    //     "Invoice has already been uploaded",
+    //     logPath,
+    //     logAction,
+    //     logSourceKey,
+    //   );
+    // }
+
+    const savedInvoices = foundBudget.invoices?.length
+      ? foundBudget.invoices.map((invoice) =>
+          typeof invoice.toObject === "function" ? invoice.toObject() : invoice,
+        )
+      : foundBudget.invoice?.link
+        ? [
+            typeof foundBudget.invoice.toObject === "function"
+              ? foundBudget.invoice.toObject()
+              : foundBudget.invoice,
+          ]
+        : [];
+    const retainedKeys = new Set(
+      retainedInvoices.flatMap((invoice) =>
+        [invoice?.id, invoice?.link].filter(Boolean).map(String),
+      ),
+    );
+    const verifiedRetainedInvoices = savedInvoices.filter(
+      (invoice) =>
+        retainedKeys.has(String(invoice.id)) ||
+        retainedKeys.has(String(invoice.link)),
+    );
+
+    if (verifiedRetainedInvoices.length + files.length > 5) {
+      throw new CustomError(
+        "You can attach a maximum of 5 files",
+        logPath,
+        logAction,
+        logSourceKey,
+      );
     }
 
     const uploadedInvoices = await Promise.all(
@@ -1310,15 +1351,17 @@ const uploadInvoice = async (req, res, next) => {
         };
       }),
     );
+    const nextInvoices = [...verifiedRetainedInvoices, ...uploadedInvoices];
 
     const updatedBudget = await Budget.findByIdAndUpdate(
       budgetId,
       {
-        $set: {
-          invoice: uploadedInvoices[0],
-          invoices: uploadedInvoices,
-          invoiceAttached: true,
-        },
+        ...(nextInvoices.length > 0
+          ? { $set: { invoices: nextInvoices, invoice: nextInvoices[0], invoiceAttached: true } }
+          : {
+              $set: { invoices: [], invoiceAttached: false },
+              $unset: { invoice: 1 },
+            }),
       },
       { new: true },
     ).exec();
@@ -1329,18 +1372,18 @@ const uploadInvoice = async (req, res, next) => {
     await createLog({
       path: logPath,
       action: logAction,
-      remarks: `${uploadedInvoices.length} invoice(s) uploaded successfully for ${departmentName} department`,
+      remarks: `${nextInvoices.length} invoice(s) saved successfully for ${departmentName} department`,
       status: "Success",
       user,
       ip,
       company,
       sourceKey: logSourceKey,
       sourceId: updatedBudget._id,
-      changes: { invoices: uploadedInvoices },
+      changes: { invoices: nextInvoices },
     });
 
     return res.status(200).json({
-      message: `${uploadedInvoices.length} invoice(s) uploaded successfully`,
+      message: `${nextInvoices.length} invoice(s) saved successfully`,
     });
   } catch (error) {
     next(

@@ -310,7 +310,7 @@ const Header = ({
               <ListItemIcon>
                 <FaUserTie className="text-gray-500" />
               </ListItemIcon>
-              <ListItemText primary="Profile" />
+              <ListItemText primary="Account Profile" />
             </ListItem>
 
             <Divider />

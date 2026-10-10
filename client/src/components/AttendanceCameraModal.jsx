@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { toast } from "sonner";
 import {
   MdAccessTime,
   MdArrowForward,
@@ -19,19 +18,31 @@ const AttendanceCameraModal = ({
 }) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
-  const onCloseRef = useRef(onClose);
   const [isReady, setIsReady] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
   const [capturedPhoto, setCapturedPhoto] = useState(null);
-  onCloseRef.current = onClose;
-
+  const [cameraError, setCameraError] = useState("");
+  const [cameraRetryKey, setCameraRetryKey] = useState(0);
   useEffect(() => {
     if (!open) return undefined;
 
     setCapturedPhoto(null);
+    setCameraError("");
+    setIsReady(false);
     let cancelled = false;
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraError(
+        "Camera is unavailable here. Open the app on HTTPS or localhost and try again.",
+      );
+      return undefined;
+    }
+
     navigator.mediaDevices
-      ?.getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .getUserMedia({
+        video: { facingMode: { ideal: "user" } },
+        audio: false,
+      })
       .then((stream) => {
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
@@ -43,9 +54,24 @@ const AttendanceCameraModal = ({
           videoRef.current.play();
         }
       })
-      .catch(() => {
-        toast.error("Camera access is required to record attendance");
-        onCloseRef.current();
+      .catch((error) => {
+        if (cancelled) return;
+
+        if (error?.name === "NotAllowedError") {
+          setCameraError(
+            "Camera permission is blocked. Allow camera access in the browser, then click Retry Camera.",
+          );
+        } else if (error?.name === "NotFoundError") {
+          setCameraError("No camera was found on this device.");
+        } else if (error?.name === "NotReadableError") {
+          setCameraError(
+            "The camera is being used by another app. Close it there, then click Retry Camera.",
+          );
+        } else {
+          setCameraError(
+            "Camera could not be started. Check browser permission and try again.",
+          );
+        }
       });
 
     return () => {
@@ -54,7 +80,7 @@ const AttendanceCameraModal = ({
       streamRef.current = null;
       setIsReady(false);
     };
-  }, [open]);
+  }, [cameraRetryKey, open]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -172,6 +198,18 @@ const AttendanceCameraModal = ({
                 muted
                 onCanPlay={() => setIsReady(true)}
               />
+              {cameraError && !capturedPhoto && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#111827] px-6 text-center text-white">
+                  <MdCameraAlt
+                    size={34}
+                    className="text-white/70"
+                    aria-hidden="true"
+                  />
+                  <p className="text-sm font-pmedium leading-6">
+                    {cameraError}
+                  </p>
+                </div>
+              )}
               {capturedPhoto && (
                 <img
                   src={capturedPhoto.previewUrl}
@@ -247,16 +285,30 @@ const AttendanceCameraModal = ({
           </button>
           <button
             type="button"
-            onClick={capturedPhoto ? proceed : capture}
-            disabled={(!capturedPhoto && !isReady) || isLoading}
+            onClick={
+              cameraError
+                ? () => setCameraRetryKey((current) => current + 1)
+                : capturedPhoto
+                  ? proceed
+                  : capture
+            }
+            disabled={(!cameraError && !capturedPhoto && !isReady) || isLoading}
             className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#1E3D73] text-xs font-pbold uppercase text-white shadow-[0_8px_20px_rgba(30,61,115,0.28)] transition-colors hover:bg-[#162f5b] disabled:cursor-not-allowed disabled:bg-[#9aa8bd] disabled:shadow-none"
           >
-            {capturedPhoto ? (
+            {cameraError ? (
+              <MdRefresh size={17} aria-hidden="true" />
+            ) : capturedPhoto ? (
               <MdArrowForward size={17} aria-hidden="true" />
             ) : (
               <MdCameraAlt size={17} aria-hidden="true" />
             )}
-            {isLoading ? "Saving..." : capturedPhoto ? "Proceed" : "Capture"}
+            {isLoading
+              ? "Saving..."
+              : cameraError
+                ? "Retry Camera"
+                : capturedPhoto
+                  ? "Proceed"
+                  : "Capture"}
           </button>
         </div>
       </div>

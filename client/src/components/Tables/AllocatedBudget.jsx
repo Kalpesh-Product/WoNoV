@@ -69,12 +69,43 @@ const getUserName = (user) =>
   user?.email ||
   "-";
 
+const getBudgetInvoiceFiles = (budget) => {
+  if (!budget) return [];
+  const files = budget.invoices?.length
+    ? budget.invoices
+    : budget.invoiceLinks?.length
+      ? budget.invoiceLinks.map((link) => ({
+          link,
+          name: link === budget.invoice?.link ? budget.invoice.name : "",
+        }))
+      : budget.invoice?.link || budget.invoiceLink
+        ? [{ ...budget.invoice, link: budget.invoice?.link || budget.invoiceLink }]
+        : [];
+
+  return files
+    .filter((file) => file?.link)
+    .map((file, index) => ({
+      ...file,
+      name: file.name || `Invoice ${index + 1}`,
+    }));
+};
+
 const InvoiceFilesInput = ({ value = [], onChange, id }) => {
-  const files = Array.isArray(value) ? value : [];
-  const fileUrls = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
+  const files = useMemo(() => (Array.isArray(value) ? value : []), [value]);
+  const fileUrls = useMemo(
+    () =>
+      files.map((file) =>
+        file instanceof File
+          ? { url: URL.createObjectURL(file), shouldRevoke: true }
+          : { url: file.link || file.url || "", shouldRevoke: false },
+      ),
+    [files],
+  );
 
   useEffect(() => () => {
-    fileUrls.forEach((url) => URL.revokeObjectURL(url));
+    fileUrls.forEach(({ url, shouldRevoke }) => {
+      if (shouldRevoke) URL.revokeObjectURL(url);
+    });
   }, [fileUrls]);
 
   const selectFiles = (event) => {
@@ -123,21 +154,28 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
       />
       <FormHelperText>Maximum 5 files, 5 MB each. Images, PDF, Word, Excel, and CSV.</FormHelperText>
       <div className="flex flex-wrap gap-2">
-        {files.map((file, index) => (
-          <Chip
-            key={`${file.name}-${file.lastModified}-${index}`}
-            label={file.name.length > 28
-              ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
-              : file.name}
-            title={file.name}
-            size="small"
-            variant="outlined"
-            color="primary"
-            onClick={() => window.open(fileUrls[index], "_blank", "noopener,noreferrer")}
-            onDelete={() => onChange(files.filter((_, i) => i !== index))}
-            sx={{ maxWidth: "100%" }}
-          />
-        ))}
+        {files.map((file, index) => {
+          const fileName = file.name || `Invoice ${index + 1}`;
+          return (
+            <Chip
+              key={file.id || `${fileName}-${file.lastModified || index}`}
+              label={fileName.length > 28
+                ? `${fileName.slice(0, 20)}...${fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : ""}`
+                : fileName}
+              title={fileName}
+              size="small"
+              variant="outlined"
+              color="primary"
+              onClick={() => {
+                if (fileUrls[index]?.url) {
+                  window.open(fileUrls[index].url, "_blank", "noopener,noreferrer");
+                }
+              }}
+              onDelete={() => onChange(files.filter((_, i) => i !== index))}
+              sx={{ maxWidth: "100%" }}
+            />
+          );
+        })}
       </div>
     </div>
   );
@@ -223,6 +261,10 @@ const AllocatedBudget = ({
   });
 
   const department = usePageDepartment();
+  // Previous Tech-only exception retained for reference:
+  // const isTechDepartment =
+  //   String(department?._id || department) === TECH_DEPARTMENT_ID ||
+  //   String(department?.name || "").trim().toLowerCase().includes("tech");
   const { data: units = [] } = useQuery({
     queryKey: ["units"],
     queryFn: async () => {
@@ -267,13 +309,25 @@ const AllocatedBudget = ({
   // };
 
   const onUpload = (data, row) => {
-    const files = Array.isArray(data.invoiceImage) ? data.invoiceImage : [];
-    if (!files.length || !row?.id) {
-      toast.error("Missing file or selected row.");
+    const invoiceImages = Array.isArray(data.invoiceImage)
+      ? data.invoiceImage
+      : [];
+    if (!row?.id) {
+      toast.error("Missing selected row.");
       return;
     }
     const formData = new FormData();
-    files.forEach((file) => formData.append("invoice", file));
+    invoiceImages
+      .filter((file) => file instanceof File)
+      .forEach((file) => formData.append("invoice", file));
+    formData.append(
+      "retainedInvoices",
+      JSON.stringify(
+        invoiceImages
+          .filter((file) => !(file instanceof File))
+          .map(({ id, link, name, date }) => ({ id, link, name, date })),
+      ),
+    );
     formData.append("rowId", row.id);
     formData.append("departmentName", department?.name || "");
     uploadInvoiceMutation(formData);
@@ -316,9 +370,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         );
         return response.data;
       },
-      onSuccess: (data, { invoiceImage, row }) => {
+      onSuccess: (data, { invoiceImage, row, syncInvoices }) => {
         toast.success(data.message || "Budget updated successfully");
-         if (invoiceImage?.length) {
+         if (syncInvoices) {
           onUpload({ invoiceImage }, row);
         } else {
           setEditModalOpen(false);
@@ -412,7 +466,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
       dueDate: row.dueDateRaw || row.dueDate || "",
       actualAmount: row.actualAmountRaw ?? "",
-       invoiceImage: [],
+      invoiceImage: getBudgetInvoiceFiles(row),
     });
     setSelectedRow(row);
     setEditModalOpen(true);
@@ -424,6 +478,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       budgetId: selectedRow.id,
       invoiceImage: data.invoiceImage,
       row: selectedRow,
+      syncInvoices: isSelectedBudgetApproved,
       payload: {
         expanseName: data.expanseName,
         expanseType: data.expanseType,
@@ -456,9 +511,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   );
 
   const [dateRange, setDateRange] = useState([]);
+  const hasInitializedDateRangeRef = useRef(false);
 
   useEffect(() => {
-    if (!financialData?.length) return;
+    if (hasInitializedDateRangeRef.current || !financialData?.length) return;
 
     const currentMonthStart = dayjs().startOf("month").toDate();
     const currentMonthEnd = dayjs().endOf("month").toDate();
@@ -469,6 +525,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     });
 
     if (currentMonthHasData) {
+      hasInitializedDateRangeRef.current = true;
       setDateRange([
         {
           startDate: currentMonthStart,
@@ -483,6 +540,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         .sort((a, b) => b - a);
       if (sortedMonths.length > 0) {
         const latest = sortedMonths[0];
+        hasInitializedDateRangeRef.current = true;
         setDateRange([
           {
             startDate: dayjs(latest).startOf("month").toDate(),
@@ -664,11 +722,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   </button>
                 )}
                 {!params.data.isDeleted && (
+                  // Previous disable logic retained for reference:
+                  // disabled={
+                  //   !isTechDepartment &&
+                  //   (params.data.invoiceAttached === true ||
+                  //     params.data.invoiceAttached === "true")
+                  // }
                   <IconButton
-                    disabled={
-                      params.data.invoiceAttached === true ||
-                      params.data.invoiceAttached === "true"
-                    }
+                    disabled={false}
                     onClick={(event) => handleOpenActionMenu(event, params.data)}
                   >
                     <HiOutlineDotsHorizontal />
@@ -716,6 +777,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     financialData,
     isDeletePending,
     isRestorePending,
+    // isTechDepartment,
     noInvoice,
   ]);
 
@@ -1325,8 +1387,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             />
           )}
 
-          {isSelectedBudgetApproved &&
-          !selectedRow?.invoiceAttached && (
+          {isSelectedBudgetApproved && (
               <Controller
                 name="invoiceImage"
                 control={editControl}

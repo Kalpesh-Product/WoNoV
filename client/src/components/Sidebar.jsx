@@ -33,7 +33,9 @@ import { GrDocumentPerformance } from "react-icons/gr";
 import { FaClipboardUser } from "react-icons/fa6";
 import { IoPrintOutline } from "react-icons/io5";
 import { RiStockLine } from "react-icons/ri";
+import { FiLogOut } from "react-icons/fi";
 import useAuth from "../hooks/useAuth";
+import useLogout from "../hooks/useLogout";
 import { PERMISSIONS } from "../constants/permissions";
 
 const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
@@ -43,6 +45,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
   const { auth } = useAuth();
+  const logout = useLogout();
 
   // const allowedVisitorDeptIds = [
   //   "6798bae6e469e809084e24a4",
@@ -150,8 +153,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
       route: "notifications",
       permission: PERMISSIONS.SIDEBAR_NOTIFICATIONS.value,
     },
+  ].filter((item) => canAccessSidebarItem(item.permission));
+
+  const accountItems = [
     {
-      name: "Profile",
+      name: "Account Profile",
       icon: <FaUserTie />,
       route: "profile",
       permission: PERMISSIONS.SIDEBAR_PROFILE.value,
@@ -292,6 +298,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const handleMenuOpen = (item) => {
     navigate(item.route, { flushSync: true });
     if (onCloseDrawer) onCloseDrawer(); // 🔁 Close drawer on menu click
+  };
+
+  const handleSignOut = async () => {
+    if (onCloseDrawer) onCloseDrawer();
+    await logout();
   };
 
   const toggleModule = (index) => {
@@ -490,6 +501,46 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                 ))}
               </div>
             )}
+            {/* account */}
+            <div className="pt-2 flex flex-col gap-2 w-full">
+              <SeperatorUnderline title={"Account"} />
+              {accountItems.map((item, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleMenuOpen(item)}
+                  className={`cursor-pointer hover:text-primary transition-all duration-100 ${isAppsActive(item.route)
+                    ? "text-primary bg-gray-200 rounded-md"
+                    : "text-gray-500"
+                    } flex ${isSidebarOpen ? "" : "justify-center"
+                    } items-center py-0`}
+                >
+                  <div
+                    className={`flex justify-center items-center w-9 h-9 ${isAppsActive(item.route)
+                      ? "bg-primary text-white rounded-md"
+                      : ""
+                      } text-sm`}
+                  >
+                    {item.icon}
+                  </div>
+                  {isSidebarOpen && (
+                    <span className="pl-5 text-sm">{item.name}</span>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className={`flex items-center py-0 text-red-500 hover:text-red-600 transition-all duration-100 ${isSidebarOpen ? "" : "justify-center"
+                  }`}
+              >
+                <span className="flex justify-center items-center w-9 h-9 text-sm">
+                  <FiLogOut />
+                </span>
+                {isSidebarOpen && (
+                  <span className="pl-5 text-sm">Sign Out</span>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

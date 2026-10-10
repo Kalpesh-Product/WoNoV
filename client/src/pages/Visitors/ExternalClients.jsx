@@ -1038,13 +1038,15 @@ const ExternalClients = ({
           initialDateRange={initialClientDateRange}
           onDateFilterChange={handleClientDateFilterChange}
           data={[
-            ...Array.from(
-              new Map(
-                visitorsData
-                  .filter((visitor) => hasRole(visitor, "Client"))
-                  .map((visitor) => [String(visitor._id), visitor]),
-              ).values(),
-            )
+            ...(financeView
+              ? visitorsData.filter((visitor) => hasRole(visitor, "Client"))
+              : Array.from(
+                  new Map(
+                    visitorsData
+                      .filter((visitor) => hasRole(visitor, "Client"))
+                      .map((visitor) => [String(visitor._id), visitor]),
+                  ).values(),
+                ))
               .map((item, index) => {
                 const latestVisit =
                   Array.isArray(item?.externalVisits) &&

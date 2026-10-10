@@ -164,7 +164,7 @@ return (
             <div className="relative flex items-center justify-between gap-4 pb-5">
               <span className="absolute left-5 top-10 h-[calc(100%-28px)] w-px bg-[#dce5f1]" />
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff0ec] text-[#ef6548]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff8e1] text-[#a66b00]">
                   <BsCupHot size={18} />
                 </span>
                 <div>
@@ -179,7 +179,7 @@ return (
               <div className="relative flex items-center justify-between gap-4 pb-5 motion-preset-slide-up-sm">
                 <span className="absolute left-5 top-10 h-[calc(100%-28px)] w-px bg-[#dce5f1]" />
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#eaf2ff] text-[#2f6fed]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff8e1] text-[#a66b00]">
                     <BsCup size={18} />
                   </span>
                   <div>
@@ -198,7 +198,7 @@ return (
           todayAttendance.outTime !== "0h:0m:0s" && (
             <div className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff0f0] text-[#ff0000]">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff0f0] text-[#ff0000b3]">
                   <IoExitOutline size={20} />
                 </span>
                 <div>
