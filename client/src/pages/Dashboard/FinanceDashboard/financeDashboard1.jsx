@@ -8,7 +8,7 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import { useCurrency } from "../../../context/CurrencyContext";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { Menu, MenuItem } from "@mui/material";
 import FinanceDashboard1Summary from "./FinanceDashboard1Summary";
 import { MdSettings, MdCalendarMonth, MdChevronRight } from "react-icons/md";
@@ -2710,15 +2710,40 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     }
   };
   const [paymentsExportContainer, setPaymentsExportContainer] = useState(null);
+  const payoutInvoiceFilesForRow = (row) => Array.isArray(row?.invoices) && row.invoices.some((file) => file?.link)
+    ? row.invoices.filter((file) => file?.link)
+    : row?.invoice?.link ? [row.invoice] : [];
+  const payoutApproverName = (row) => row.status === "Rejected"
+    ? row.rejectedByName || "\u2014"
+    : row.status === "Approved" ? row.approverName || row.requiredApprover || "\u2014" : "\u2014";
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 70 },
     { id: "expanseName", label: "Expense Name", width: 200 },
-    { id: "department", label: "Expense Department", width: 170, renderCell: (row) => row.department?.name || "--" },
+    { id: "department", label: "Expense Department", width: 170, valueGetter: ({ data }) => data.department?.name || data.department || "\u2014", renderCell: (row) => row.department?.name || row.department || "\u2014" },
     { id: "projectedAmount", label: "Amount", width: 120, renderCell: (row) => inrFormat(row.projectedAmount || 0) },
-    { id: "dueDate", label: "Due Date", width: 130, renderCell: (row) => humanDate(row.dueDate) },
+    { id: "dueDate", label: "Due Date", width: 130, valueGetter: ({ data }) => data.dueDate ? humanDate(data.dueDate) : "\u2014", renderCell: (row) => row.dueDate ? humanDate(row.dueDate) : "\u2014" },
     { id: "approvalLevel", label: "Level", width: 100, renderCell: (row) => row.approvalLevel || "--" },
-    { id: "requiredApprover", label: "Approver Name", width: 140, renderCell: (row) => row.status === "Rejected" ? row.rejectedByName || "\u2014" : row.approverName || row.requiredApprover || "\u2014" },
+    { id: "requiredApprover", label: "Approver Name", width: 140, valueGetter: ({ data }) => payoutApproverName(data), renderCell: payoutApproverName },
     { id: "status", label: "Status", width: 120, renderCell: (row) => <StatusChip status={row.status} /> },
+    { id: "expanseType", label: "Expense Type", hide: true },
+    { id: "paymentType", label: "Payment Type", hide: true },
+    { id: "actualAmount", label: "Actual Amount", hide: true },
+    { id: "unitName", label: "Unit", hide: true, valueGetter: ({ data }) => data.unit?.unitName || "\u2014" },
+    { id: "unitNo", label: "Unit No", hide: true, valueGetter: ({ data }) => data.unit?.unitNo || "\u2014" },
+    { id: "buildingName", label: "Building", hide: true, valueGetter: ({ data }) => data.unit?.building?.buildingName || "\u2014" },
+    { id: "invoiceName", label: "Invoice Name", hide: true, valueGetter: ({ data }) => {
+      const files = payoutInvoiceFilesForRow(data);
+      return `${files.length} ${files.length === 1 ? "file" : "files"} uploaded`;
+    } },
+    { id: "invoiceDate", label: "Invoice Date", hide: true, valueGetter: ({ data }) => {
+      const files = payoutInvoiceFilesForRow(data);
+      const date = data.invoice?.date || data.invoiceDate || files[0]?.date;
+      return date ? humanDate(date) : "\u2014";
+    } },
+    { id: "isPaid", label: "Paid Status", hide: true },
+    { id: "invoiceFile", label: "Invoice File", hide: true, valueGetter: ({ data }) => payoutInvoiceFilesForRow(data).map((file) => file.link).join(", ") || "\u2014" },
+    { id: "rejectedByName", label: "Rejected By", hide: true },
+    { id: "category", label: "Category", hide: true },
     { id: "actions", label: "Action", width: 115, renderCell: (row) => (
       <div className="flex items-center gap-2">
         <button type="button" aria-label="View payment" onClick={() => viewPayout(row)} className="rounded-lg bg-[#eaf4ff] p-2 text-[#1E3D73]"><MdOutlineRemoveRedEye size={18} /></button>
@@ -3125,6 +3150,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
 
     {
       layout: 1,
+      compactTop: true,
       widgets: userPermissions.includes(PERMISSIONS.FINANCE1_CASHFLOW_YEARLY_GRAPH.value) ? [
         <FinanceCashflow key="finance1-cashflow" financialSeries={[...incomeData, ...expenseData]} now={projectionMonth} />,
       ] : [],
@@ -3288,11 +3314,16 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           exportData
           exportButtonContainer={paymentsExportContainer}
           tableTitle={`BIZNEST PAYMENTS - ${dayjs().format("MMMM YYYY").toUpperCase()}`}
+          processExportCell={(params) => ["dueDate", "invoiceDate"].includes(params?.column?.getColDef?.()?.field)
+            ? String(params.value ?? "")
+            : undefined}
           data={item.rows}
-          columns={item.columns.map(({ id, label, width, renderCell }) => ({
+          columns={item.columns.map(({ id, label, width, hide, valueGetter, renderCell }) => ({
             field: id,
             headerName: label,
             width,
+            hide,
+            valueGetter,
             minWidth: id === "actions" ? 115 : 80,
             flex: id === "srNo" ? undefined : 1,
             cellStyle: { color: "#1E3D73" },
@@ -3335,14 +3366,33 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
   }
   return (
     <div className="flex flex-col gap-4">
-      <MuiModal title="Reject Budget" widthClass="w-[94vw] max-w-[520px]" open={Boolean(payoutRejectRow)} onClose={() => { if (!isPayoutApprovalPending) setPayoutRejectRow(null); }}>
-        <form className="space-y-4 p-5" onSubmit={(event) => {
+      <MuiModal
+        title={
+          <span className="text-subtitle font-pmedium text-primary uppercase">
+            Pending Approvals Budget Summary
+          </span>
+        }
+        widthClass="w-[94vw] max-w-[768px]"
+        open={Boolean(payoutRejectRow)}
+        onClose={() => { if (!isPayoutApprovalPending) setPayoutRejectRow(null); }}
+      >
+        <form className="flex flex-col gap-4" onSubmit={(event) => {
           event.preventDefault();
           if (payoutRejectReason.trim() && !isPayoutApprovalPending) updatePayoutApproval({ row: payoutRejectRow, action: "reject", reason: payoutRejectReason.trim() });
         }}>
-          <label htmlFor="payout-reject-reason" className="block text-sm text-[#1E3D73]">Reason for rejection</label>
-          <textarea id="payout-reject-reason" required value={payoutRejectReason} onChange={(event) => setPayoutRejectReason(event.target.value)} className="min-h-24 w-full rounded-lg border border-gray-300 p-3" disabled={isPayoutApprovalPending} />
-          <button type="submit" disabled={isPayoutApprovalPending || !payoutRejectReason.trim()} className="rounded-lg bg-[#1E3D73] px-4 py-2 text-white disabled:opacity-50">{isPayoutApprovalPending ? "Rejecting..." : "Reject"}</button>
+          <TextField
+            id="payout-reject-reason"
+            label="Reason"
+            placeholder="Enter the reason"
+            multiline
+            fullWidth
+            rows={4}
+            required
+            value={payoutRejectReason}
+            onChange={(event) => setPayoutRejectReason(event.target.value)}
+            disabled={isPayoutApprovalPending}
+          />
+          <button type="submit" disabled={isPayoutApprovalPending || !payoutRejectReason.trim()} className="w-full rounded-md bg-[#1E3D73] px-4 py-2 text-white">{isPayoutApprovalPending ? "Submitting..." : "Submit"}</button>
         </form>
       </MuiModal>
       <MuiModal
