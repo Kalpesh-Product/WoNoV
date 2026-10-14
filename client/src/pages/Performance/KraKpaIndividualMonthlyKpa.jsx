@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -18,6 +18,7 @@ import {
   MdChevronRight,
   MdClose,
   MdDeleteForever,
+  MdHistory,
 } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
@@ -56,6 +57,24 @@ const formatUserName = (user) =>
         .filter(Boolean)
         .join(" ") || "-"
     : "-";
+const formatHistoryValue = (field, value) => {
+  if (value === null || value === undefined || value === "") return "-";
+  if (
+    [
+      "deadline",
+      "managerRatingDate",
+      "hrRatingDate",
+      "verificationClosedDate",
+    ].includes(field) &&
+    dayjs(value).isValid()
+  ) {
+    return dayjs(value).format("DD-MM-YYYY");
+  }
+  if (field === "closingDate" && dayjs(value).isValid()) {
+    return formatDateTime(value);
+  }
+  return String(value);
+};
 const emptySelfKra = () => ({
   category: "",
   title: "",
@@ -81,11 +100,13 @@ const KpaActionCell = ({
   data,
   node,
   onEdit,
+  onHistory,
   onAction,
   isPending,
   canDelete,
   canEditActions,
   canComplete,
+  showHistory,
 }) => {
   const [selected, setSelected] = useState(() => Boolean(node.isSelected()));
 
@@ -110,6 +131,17 @@ const KpaActionCell = ({
           disabled={disabled}
           className="!px-2 !py-1 !text-xs !h-7 whitespace-nowrap"
         />
+      )}
+      {showHistory && (
+        <button
+          type="button"
+          title="View Edit History"
+          aria-label={`View edit history for ${data.target || "KPA"}`}
+          onClick={() => onHistory(data)}
+          className="flex h-8 w-8 items-center justify-center"
+        >
+          <MdHistory size={25} color="#111827" />
+        </button>
       )}
       {canEditActions && (
         <button
@@ -205,6 +237,8 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
   const [dailyLogDateError, setDailyLogDateError] = useState("");
   const [viewRecord, setViewRecord] = useState(null);
+  const [historyRecord, setHistoryRecord] = useState(null);
+  const [expandedHistoryKey, setExpandedHistoryKey] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [completionComment, setCompletionComment] = useState("");
   const roleTitles =
@@ -232,6 +266,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const canEdit =
     String(employeeId) === String(auth?.user?._id) ||
     canManageOthers ||
+    isTopManagement ||
     isHrUser;
   const canAddKraKpa =
     String(employeeId) === String(auth?.user?._id) ||
@@ -564,6 +599,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     addKraCategory.mutate();
   };
   const openEdit = (record) => {
+    if (!isSelfKra && isEmployeeUser) return;
     setEditingRecord(record);
     setFormErrors({});
     setForm({
@@ -602,6 +638,10 @@ const KraKpaIndividualMonthlyKpa = () => {
       ],
     });
     setModalOpen(true);
+  };
+  const openEditHistory = (record) => {
+    setHistoryRecord(record);
+    setExpandedHistoryKey(null);
   };
   const clearFormError = (field) =>
     setFormErrors((current) => ({ ...current, [field]: "" }));
@@ -840,13 +880,16 @@ const KraKpaIndividualMonthlyKpa = () => {
               data={data}
               node={node}
               onEdit={openEdit}
+              onHistory={openEditHistory}
               onAction={openRowAction}
               isPending={performRowAction.isPending}
               canDelete={canDelete}
               canEditActions={
-                canEdit && (!isSelfKra || isSelectedSelfKraToday)
+                canEdit &&
+                (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser)
               }
               canComplete={canCompleteRecord(data)}
+              showHistory={!isSelfKra}
             />
           ),
         },
@@ -1004,13 +1047,23 @@ const KraKpaIndividualMonthlyKpa = () => {
       },
     ];
   })();
+  const editHistoryEntries = (historyRecord?.editHistory || [])
+    .slice()
+    .sort((first, second) =>
+      dayjs(second.editedAt).valueOf() - dayjs(first.editedAt).valueOf(),
+    )
+    .map((entry, index) => ({
+      ...entry,
+      srNo: index + 1,
+      historyKey: String(entry._id || `${entry.editedAt}-${index}`),
+    }));
 
   return (
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}
-          {isSelfKra ? "Self KRA" : "Self KPA"} - {employeeName}
+          {employeeName}
         </h1>
         {(canAddKraKpa || canAddKraCategory) && (
           <div className="flex flex-wrap items-center justify-end gap-3">
@@ -1479,6 +1532,115 @@ const KraKpaIndividualMonthlyKpa = () => {
             )}
           </div>
         )}
+      </MuiModal>
+
+      <MuiModal
+        open={Boolean(historyRecord)}
+        onClose={() => {
+          setHistoryRecord(null);
+          setExpandedHistoryKey(null);
+        }}
+        title="KPA Edit History"
+        widthClass="w-[calc(100vw-2rem)] max-w-[960px]"
+      >
+        <div className="max-h-[65vh] overflow-auto rounded-md border border-borderGray">
+          <table className="w-full min-w-[760px] border-collapse text-left text-sm">
+            <thead className="sticky top-0 bg-gray-50 text-primary">
+              <tr>
+                <th className="border-b px-4 py-3">Sr No</th>
+                <th className="border-b px-4 py-3">Edited On</th>
+                <th className="border-b px-4 py-3">Edited By</th>
+                <th className="border-b px-4 py-3">Changes</th>
+                <th className="w-[150px] border-b px-4 py-3 text-left">
+                  Action
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {editHistoryEntries.length > 0 ? (
+                editHistoryEntries.map((entry) => {
+                  const isExpanded = expandedHistoryKey === entry.historyKey;
+                  const changes = entry.changes || [];
+                  return (
+                    <Fragment key={entry.historyKey}>
+                      <tr>
+                        <td className="border-b px-4 py-3">{entry.srNo}</td>
+                        <td className="whitespace-nowrap border-b px-4 py-3">
+                          {formatDateTime(entry.editedAt)}
+                        </td>
+                        <td className="border-b px-4 py-3">
+                          {formatUserName(entry.editedBy)}
+                        </td>
+                        <td className="border-b px-4 py-3">
+                          {changes.length} {changes.length === 1 ? "field" : "fields"} changed
+                        </td>
+                        <td className="border-b px-4 py-3 text-left">
+                          <button
+                            type="button"
+                            className="font-medium text-primary hover:underline"
+                            onClick={() =>
+                              setExpandedHistoryKey((current) =>
+                                current === entry.historyKey
+                                  ? null
+                                  : entry.historyKey,
+                              )
+                            }
+                          >
+                            {isExpanded ? "Hide Changes" : "View Changes"}
+                          </button>
+                        </td>
+                      </tr>
+                      {isExpanded && (
+                        <tr>
+                          <td colSpan={5} className="border-b bg-gray-50 p-4">
+                            <div className="overflow-hidden rounded-md border border-borderGray bg-white">
+                              <div className="grid grid-cols-[minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(220px,1fr)] bg-gray-50 font-medium text-primary">
+                                <div className="px-4 py-2">Field</div>
+                                <div className="px-4 py-2">Previous Value</div>
+                                <div className="px-4 py-2">New Value</div>
+                              </div>
+                              {changes.map((change, changeIndex) => (
+                                <div
+                                  key={`${entry.historyKey}-${change.field}-${changeIndex}`}
+                                  className="grid grid-cols-[minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(220px,1fr)] border-t border-borderGray"
+                                >
+                                  <div className="px-4 py-3 font-medium">
+                                    {change.label}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words px-4 py-3">
+                                    {formatHistoryValue(
+                                      change.field,
+                                      change.oldValue,
+                                    )}
+                                  </div>
+                                  <div className="whitespace-pre-wrap break-words px-4 py-3">
+                                    {formatHistoryValue(
+                                      change.field,
+                                      change.newValue,
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-10 text-center text-borderGray"
+                  >
+                    No edit history available
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </MuiModal>
 
       <ConfirmationModal

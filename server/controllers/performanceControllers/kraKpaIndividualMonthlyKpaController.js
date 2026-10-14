@@ -19,8 +19,46 @@ const DETAIL_POPULATION = [
   { path: "completionHistory.completedBy", select: "firstName middleName lastName" },
   { path: "managerReviewedBy", select: "firstName middleName lastName" },
   { path: "managerReviewHistory.reviewedBy", select: "firstName middleName lastName" },
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "verifiedBy", select: "firstName middleName lastName" },
 ];
+const EDIT_HISTORY_FIELDS = {
+  target: "KPA",
+  deadline: "Deadline",
+  status: "KPA Status",
+  closingDate: "Closing Date",
+  managerComments: "Manager Comments",
+  kpaRating: "Manager Rating",
+  managerRatingDate: "Manager Rating Date",
+  hrComments: "HR Comments",
+  hrRating: "HR Rating",
+  hrRatingDate: "HR Rating Date",
+  verification: "Review Status",
+  verificationClosedDate: "Closed On",
+};
+
+const serializeHistoryValue = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+  if (value instanceof Date) return value.toISOString();
+  return value;
+};
+
+const getEditHistorySnapshot = (record) =>
+  Object.fromEntries(
+    Object.keys(EDIT_HISTORY_FIELDS).map((field) => [
+      field,
+      serializeHistoryValue(record[field]),
+    ]),
+  );
+
+const getEditHistoryChanges = (before, record) =>
+  Object.entries(EDIT_HISTORY_FIELDS).flatMap(([field, label]) => {
+    const oldValue = before[field];
+    const newValue = serializeHistoryValue(record[field]);
+    return JSON.stringify(oldValue) === JSON.stringify(newValue)
+      ? []
+      : [{ field, label, oldValue, newValue }];
+  });
 const getFiscalYear = (month) => {
   const [year, calendarMonth] = month.split("-").map(Number);
   const startYear = calendarMonth >= 4 ? year : year - 1;
@@ -548,6 +586,7 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     if (validation.error) {
       return res.status(400).json({ message: validation.error });
     }
+    const editHistoryBefore = getEditHistorySnapshot(record);
 
     const previousManagerComments = record.managerComments || "";
     const nextManagerComments =
@@ -600,6 +639,15 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
       } else if (record.verification === "Closed") {
         record.verificationClosedDate = reviewDate;
       }
+    }
+    const editHistoryChanges = getEditHistoryChanges(editHistoryBefore, record);
+    if (editHistoryChanges.length > 0) {
+      if (!Array.isArray(record.editHistory)) record.editHistory = [];
+      record.editHistory.push({
+        editedBy: req.user,
+        editedAt: new Date(),
+        changes: editHistoryChanges,
+      });
     }
     await record.save();
     await record.populate(DETAIL_POPULATION);

@@ -101,6 +101,30 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
       ],
       default: [],
     },
+    editHistory: {
+      type: [
+        {
+          editedBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "UserData",
+            required: true,
+          },
+          editedAt: { type: Date, required: true },
+          changes: {
+            type: [
+              {
+                field: { type: String, required: true },
+                label: { type: String, required: true },
+                oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
+                newValue: { type: mongoose.Schema.Types.Mixed, default: null },
+              },
+            ],
+            default: [],
+          },
+        },
+      ],
+      default: [],
+    },
     verifiedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
