@@ -401,6 +401,7 @@ import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMon
 import KraKpaDueTask from "../pages/Performance/KraKpaDueTask";
 import KraKpaDailyLogs from "../pages/Performance/KraKpaDailyLogs";
 import KraKpaPendingApprovals from "../pages/Performance/KraKpaPendingApprovals";
+import KraKpaRating from "../pages/Performance/KraKpaRating";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
@@ -5107,6 +5108,26 @@ export const routes = createBrowserRouter([
                                       PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "kpa-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaRating type="kpa" />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaRating type="daily-logs" />}
                                   />
                                 ),
                               },
