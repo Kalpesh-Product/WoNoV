@@ -173,7 +173,11 @@ const getUserDisplayName = (user) => {
 
 // const VirtualOffice = () => {
   //const VirtualOffice = ({ showChart = true }) => {
-  const VirtualOffice = ({ showChart = true, showInvoiceProjections = false }) => {
+  const VirtualOffice = ({
+    showChart = true,
+    showInvoiceProjections = false,
+    useTaxableAmountForGraph = false,
+  }) => {
   const axios = useAxiosPrivate();
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
@@ -666,7 +670,9 @@ const getUserDisplayName = (user) => {
               ...item,
               revenue: getNumericAmount(item.revenue),
               receivedAmount: getNumericAmount(item.receivedAmount),
-              reportingAmount: getReportingAmount(item),
+              reportingAmount: useTaxableAmountForGraph
+                ? getNumericAmount(item.taxableAmount)
+                : getReportingAmount(item),
               graphDate:
                 item.rentDate ||
                 item.invoiceUploadedAt ||
@@ -674,7 +680,7 @@ const getUserDisplayName = (user) => {
                 item.createdAt,
               vertical: "Virtual Office",
             })),
-    [isLoadingVirtualOfficeRevenue, tableData],
+    [isLoadingVirtualOfficeRevenue, tableData, useTaxableAmountForGraph],
   );
 
   const selectedFiscalYearRevenue = useMemo(
@@ -1083,7 +1089,11 @@ const getUserDisplayName = (user) => {
       {/* {!isLoadingVirtualOfficeRevenue ? ( */}
       {showChart && (!isLoadingVirtualOfficeRevenue ? (
         <FyBarGraph
-          graphTitle="ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
+          graphTitle={
+            useTaxableAmountForGraph
+              ? "ANNUAL MONTHLY VIRTUAL OFFICE TAXABLE AMOUNT"
+              : "ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
+          }
           data={graphData}
           dateKey="graphDate"
           valueKey="reportingAmount"

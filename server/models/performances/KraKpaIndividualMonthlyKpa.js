@@ -30,6 +30,18 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
     },
     target: { type: String, required: true, trim: true },
     deadline: { type: Date, default: null },
+    approvalStatus: {
+      type: String,
+      enum: ["Pending Approval", "Approved"],
+      default: "Approved",
+      required: true,
+    },
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
+    approvedAt: { type: Date, default: null },
     status: {
       type: String,
       enum: ["Pending", "Completed"],
@@ -106,6 +118,12 @@ individualMonthlyKpaSchema.index({
   department: 1,
   employee: 1,
   month: 1,
+});
+individualMonthlyKpaSchema.index({
+  company: 1,
+  department: 1,
+  approvalStatus: 1,
+  createdAt: 1,
 });
 
 module.exports = mongoose.model("KraKpaSelfKpa", individualMonthlyKpaSchema);

@@ -19,7 +19,12 @@ const selfKraSchema = new mongoose.Schema(
       required: true,
     },
     title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    description: { type: String, trim: true, default: "" },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraCategory",
+      default: null,
+    },
     lead: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

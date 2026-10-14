@@ -399,6 +399,7 @@ import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/Per
 import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMonthlyKpa";
 import KraKpaDueTask from "../pages/Performance/KraKpaDueTask";
 import KraKpaDailyLogs from "../pages/Performance/KraKpaDailyLogs";
+import KraKpaPendingApprovals from "../pages/Performance/KraKpaPendingApprovals";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
@@ -749,7 +750,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "virtual-office",
-                            element: <VirtualOffice />,
+                            element: <VirtualOffice useTaxableAmountForGraph />,
                           },
                           {
                             path: "workation",
@@ -4572,6 +4573,17 @@ export const routes = createBrowserRouter([
                                   <PerformancePermissionRoute
                                     permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
                                     element={<KraKpaDailyLogs />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "pending-approvals",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaPendingApprovals />}
                                   />
                                 ),
                               },

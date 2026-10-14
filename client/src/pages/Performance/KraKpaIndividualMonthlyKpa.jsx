@@ -16,6 +16,7 @@ import {
   MdCalendarToday,
   MdChevronLeft,
   MdChevronRight,
+  MdClose,
   MdDeleteForever,
 } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -55,26 +56,16 @@ const formatUserName = (user) =>
         .filter(Boolean)
         .join(" ") || "-"
     : "-";
-const getDelayCount = (closingDate, deadline) => {
-  if (
-    !closingDate ||
-    !deadline ||
-    !dayjs(closingDate).isValid() ||
-    !dayjs(deadline).isValid()
-  ) {
-    return 0;
-  }
-  return Math.max(
-    0,
-    dayjs(closingDate).startOf("day").diff(dayjs(deadline).startOf("day"), "day"),
-  );
-};
-const emptySelfKra = () => ({ title: "", description: "", lead: "" });
+const emptySelfKra = () => ({
+  category: "",
+  title: "",
+  lead: "",
+  isActive: true,
+});
 const emptyForm = () => ({
   month: currentMonth(),
   target: "",
   deadline: "",
-  resourceComment: "",
   managerComments: "",
   kpaRating: "",
   managerRatingDate: "",
@@ -105,7 +96,9 @@ const KpaActionCell = ({
     return () => node.removeEventListener("rowSelected", syncSelection);
   }, [node]);
 
-  const disabled = !selected || isPending;
+  const isInactive = data.isActive === false;
+  const disabled = !selected || isPending || isInactive;
+  const editDisabled = isPending || (!selected && !isInactive);
 
   return (
     <div className="flex h-full items-center gap-2">
@@ -123,11 +116,14 @@ const KpaActionCell = ({
           type="button"
           title="Edit"
           aria-label={`Edit ${data.target || data.title || "Self KRA"}`}
-          disabled={disabled}
+          disabled={editDisabled}
           onClick={() => onEdit(data)}
           className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
         >
-          <HiPencilSquare size={24} color={disabled ? "#9ca3af" : "#111827"} />
+          <HiPencilSquare
+            size={24}
+            color={editDisabled ? "#9ca3af" : "#111827"}
+          />
         </button>
       )}
       {canDelete && (
@@ -199,6 +195,15 @@ const KraKpaIndividualMonthlyKpa = () => {
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
+  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryError, setCategoryError] = useState("");
+  const [selectedSelfKras, setSelectedSelfKras] = useState([]);
+  const [dailyLogTargets, setDailyLogTargets] = useState([]);
+  const [dailyLogDate, setDailyLogDate] = useState(
+    dayjs().format("YYYY-MM-DD"),
+  );
+  const [dailyLogDateError, setDailyLogDateError] = useState("");
   const [viewRecord, setViewRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [completionComment, setCompletionComment] = useState("");
@@ -231,27 +236,23 @@ const KraKpaIndividualMonthlyKpa = () => {
   const canAddKraKpa =
     String(employeeId) === String(auth?.user?._id) ||
     isManager ||
-    isTopManagement;
-  const isCreatedByLoggedInUser = (record) =>
-    String(record?.createdBy?._id || record?.createdBy || "") ===
-    String(auth?.user?._id || "");
+    isTopManagement ||
+    (isHrUser && !isSelfKra);
+  const canAddKraCategory =
+    isSelfKra && (isManager || isTopManagement || isHrUser);
   const isAssignedToLoggedInUser = (record) =>
-    String(
-      isSelfKra
-        ? record?.lead?._id || record?.lead || ""
-        : record?.employee?._id || record?.employee || "",
-    ) ===
+    String(record?.employee?._id || record?.employee || "") ===
     String(auth?.user?._id || "");
   const isSelectedSelfKraToday = selectedSelfKraDate.isSame(dayjs(), "day");
   const canCompleteRecord = (record) =>
-    isSelfKra
-      ? isAssignedToLoggedInUser(record) &&
-        isSelectedSelfKraToday
-      : isCreatedByLoggedInUser(record);
+    !isSelfKra &&
+    record?.approvalStatus !== "Pending Approval" &&
+    isAssignedToLoggedInUser(record);
 
   const refreshKpaQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaSelfKra"] });
+    queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaKpaOverview"] });
     queryClient.invalidateQueries({
       queryKey: ["departmentWiseDepartmentKpaStats"],
@@ -306,6 +307,49 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
   });
 
+  const { data: kraCategories = [], isLoading: isLoadingKraCategories } =
+    useQuery({
+      queryKey: ["kraCategories", departmentId],
+      enabled: Boolean(isSelfKra && departmentId),
+      queryFn: async () => {
+        const response = await axios.get("/api/kra-kpa/self-kra-categories", {
+          params: { department: departmentId },
+        });
+        return response.data || [];
+      },
+    });
+
+  const addKraCategory = useMutation({
+    mutationFn: async () => {
+      const response = await axios.post("/api/kra-kpa/self-kra-categories", {
+        department: departmentId,
+        categoryName: categoryName.trim(),
+      });
+      return response.data;
+    },
+    onSuccess: (category) => {
+      queryClient.invalidateQueries({
+        queryKey: ["kraCategories", departmentId],
+      });
+      setForm((current) => ({
+        ...current,
+        selfKras: current.selfKras.map((kra, index) =>
+          index === 0 ? { ...kra, category: category._id } : kra,
+        ),
+      }));
+      setCategoryModalOpen(false);
+      setCategoryName("");
+      setCategoryError("");
+      toast.success("KRA category added");
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message || "Unable to add KRA category";
+      setCategoryError(message);
+      toast.error(message);
+    },
+  });
+
   const { data: reviewAccess } = useQuery({
     queryKey: ["kraKpaIndividualMonthlyKpaReviewAccess", departmentId],
     enabled: Boolean(departmentId && !isSelfKra),
@@ -357,13 +401,17 @@ const KraKpaIndividualMonthlyKpa = () => {
       );
       return response.data;
     },
-    onSuccess: (_, payload) => {
+    onSuccess: (savedRecord, payload) => {
       refreshKpaQueries();
       if (!isSelfKra && payload.month) setDateRange(monthRange(payload.month));
       setModalOpen(false);
       setEditingRecord(null);
       toast.success(
-        isSelfKra ? "Self KRA saved" : "Self KPA saved",
+        isSelfKra
+          ? "Self KRA saved"
+          : savedRecord?.approvalStatus === "Pending Approval"
+            ? "Self KPA submitted for approval"
+            : "Self KPA saved",
       );
     },
     onError: (error) => {
@@ -402,6 +450,32 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
   });
 
+  const addSelfKrasToDailyLogs = useMutation({
+    mutationFn: async ({ records: selectedRecords, date }) => {
+      const response = await axios.post("/api/kra-kpa/self-kra/daily-log", {
+        selfKraIds: selectedRecords.map((record) => record._id),
+        date,
+      });
+      return response.data;
+    },
+    onSuccess: (createdLogs) => {
+      queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
+      setSelectedSelfKras([]);
+      setDailyLogTargets([]);
+      setDailyLogDate(dayjs().format("YYYY-MM-DD"));
+      setDailyLogDateError("");
+      toast.success(
+        `${createdLogs.length} Self KRA${createdLogs.length === 1 ? "" : "s"} added to Daily Logs`,
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message ||
+          "Unable to add Self KRAs to Daily Logs",
+      );
+    },
+  });
+
   const openRowAction = (type, record) => {
     setCompletionComment("");
     setPendingAction({ type, record });
@@ -412,15 +486,58 @@ const KraKpaIndividualMonthlyKpa = () => {
     setCompletionComment("");
   };
 
-  const confirmRowAction = () => {
-    if (
-      pendingAction?.type === "complete" &&
-      !isSelfKra &&
-      !completionComment.trim()
-    ) {
-      toast.error("Resource Comment is required to mark the KPA as done");
+  const canScheduleSelfKra = (record) =>
+    record?.isActive !== false &&
+    String(record?.lead?._id || record?.lead || "") ===
+      String(auth?.user?._id || "");
+  const canScheduleSelectedSelfKras =
+    selectedSelfKras.length > 0 &&
+    selectedSelfKras.every(canScheduleSelfKra);
+  const dailyLogMinDate = dailyLogTargets.reduce((latest, record) => {
+    const startsOn = record.startsOn || record.createdAt;
+    if (!startsOn || !dayjs(startsOn).isValid()) return latest;
+    const date = dayjs(startsOn).startOf("day");
+    return !latest || date.isAfter(latest) ? date : latest;
+  }, null);
+  const openAddSelfKrasToDailyLogs = () => {
+    if (!canScheduleSelectedSelfKras) return;
+    const latestStartsOn = selectedSelfKras.reduce((latest, record) => {
+      const startsOn = record.startsOn || record.createdAt;
+      if (!startsOn || !dayjs(startsOn).isValid()) return latest;
+      const date = dayjs(startsOn).startOf("day");
+      return !latest || date.isAfter(latest) ? date : latest;
+    }, null);
+    const today = dayjs().startOf("day");
+    setDailyLogDate(
+      latestStartsOn && today.isBefore(latestStartsOn)
+        ? latestStartsOn.format("YYYY-MM-DD")
+        : today.format("YYYY-MM-DD"),
+    );
+    setDailyLogDateError("");
+    setDailyLogTargets(selectedSelfKras);
+  };
+  const submitSelfKrasToDailyLogs = (event) => {
+    event.preventDefault();
+    if (!dailyLogDate) {
+      setDailyLogDateError("Schedule Date is required");
       return;
     }
+    if (
+      dailyLogMinDate &&
+      dayjs(dailyLogDate).isBefore(dailyLogMinDate, "day")
+    ) {
+      setDailyLogDateError("Schedule Date cannot be before the KRA start date");
+      return;
+    }
+    if (dailyLogTargets.length === 0) return;
+    addSelfKrasToDailyLogs.mutate({
+      records: dailyLogTargets,
+      date: dailyLogDate,
+    });
+  };
+
+  const confirmRowAction = () => {
+    if (!pendingAction) return;
     performRowAction.mutate({
       ...pendingAction,
       resourceComment: completionComment.trim(),
@@ -433,6 +550,19 @@ const KraKpaIndividualMonthlyKpa = () => {
     setFormErrors({});
     setModalOpen(true);
   };
+  const openCategoryModal = () => {
+    setCategoryName("");
+    setCategoryError("");
+    setCategoryModalOpen(true);
+  };
+  const handleCategorySubmit = (event) => {
+    event.preventDefault();
+    if (!categoryName.trim()) {
+      setCategoryError("Category name is required");
+      return;
+    }
+    addKraCategory.mutate();
+  };
   const openEdit = (record) => {
     setEditingRecord(record);
     setFormErrors({});
@@ -442,7 +572,6 @@ const KraKpaIndividualMonthlyKpa = () => {
       deadline: record.deadline
         ? dayjs(record.deadline).format("YYYY-MM-DD")
         : "",
-      resourceComment: record.resourceComment || "",
       managerComments: record.managerComments || "",
       kpaRating:
         record.kpaRating === null || record.kpaRating === undefined
@@ -465,9 +594,10 @@ const KraKpaIndividualMonthlyKpa = () => {
         : "",
       selfKras: [
         {
+          category: record.category?._id || record.category || "",
           title: record.title || "",
-          description: record.description || "",
           lead: record.lead?._id || record.lead || "",
+          isActive: record.isActive !== false,
         },
       ],
     });
@@ -494,14 +624,13 @@ const KraKpaIndividualMonthlyKpa = () => {
     const selfKra = form.selfKras[0];
     const nextErrors = {};
     if (isSelfKra) {
+      if (!selfKra.category) nextErrors.category = "Category is required";
       if (!selfKra.title.trim()) nextErrors.title = "Title is required";
-      if (!selfKra.description.trim())
-        nextErrors.description = "Description is required";
       if (canSelectSelfKraLead && !selfKra.lead)
         nextErrors.lead = "Lead is required";
     } else if (!hideKpaCoreFields) {
       if (!form.month) nextErrors.month = "Month is required";
-      if (!form.target.trim()) nextErrors.target = "KPA Target is required";
+      if (!form.target.trim()) nextErrors.target = "KPA is required";
       if (!form.deadline) nextErrors.deadline = "Deadline is required";
     }
     if (
@@ -518,29 +647,20 @@ const KraKpaIndividualMonthlyKpa = () => {
     if (Object.keys(nextErrors).length > 0) return;
     const payload = isSelfKra
       ? {
+          category: selfKra.category,
           title: selfKra.title.trim(),
-          description: selfKra.description.trim(),
+          ...(editingRecord && { isActive: selfKra.isActive }),
           ...(canSelectSelfKraLead && { lead: selfKra.lead }),
           ...(editingRecord && {
             occurrenceDate: selectedSelfKraDate.format("YYYY-MM-DD"),
           }),
         }
       : hideKpaCoreFields
-        ? {
-            ...(editingRecord &&
-              isCreatedByLoggedInUser(editingRecord) && {
-                resourceComment: form.resourceComment.trim(),
-              }),
-          }
+        ? {}
         : {
             month: form.month,
             target: form.target.trim(),
             deadline: form.deadline,
-            ...(editingRecord && {
-              ...(isCreatedByLoggedInUser(editingRecord) && {
-                resourceComment: form.resourceComment.trim(),
-              }),
-            }),
           };
     if (editingRecord && !isSelfKra) {
       if (canEditManagerReview) {
@@ -584,6 +704,12 @@ const KraKpaIndividualMonthlyKpa = () => {
             record.hrRating === null || record.hrRating === undefined
               ? "Pending"
               : "Closed",
+          approvalStatus: record.approvalStatus || "Approved",
+          categoryName:
+            record.category && typeof record.category === "object"
+              ? record.category.categoryName || "-"
+              : "-",
+          activeStatus: record.isActive === false ? "Inactive" : "Active",
           leadName:
             record.lead && typeof record.lead === "object"
               ? [
@@ -628,18 +754,30 @@ const KraKpaIndividualMonthlyKpa = () => {
         record.hrRating !== undefined
       );
     };
+    const sortInactiveLast = (items) =>
+      isSelfKra
+        ? [...items].sort(
+            (first, second) =>
+              Number(first.isActive === false) -
+              Number(second.isActive === false),
+          )
+        : items;
 
     return {
       pendingTableData: mapRecords(
-        records.filter(
-          (record) =>
-            !belongsInCompletedTable(record) && isInSelectedPeriod(record),
+        sortInactiveLast(
+          records.filter(
+            (record) =>
+              !belongsInCompletedTable(record) && isInSelectedPeriod(record),
+          ),
         ),
       ),
       completedTableData: mapRecords(
-        records.filter(
-          (record) =>
-            belongsInCompletedTable(record) && isInSelectedPeriod(record),
+        sortInactiveLast(
+          records.filter(
+            (record) =>
+              belongsInCompletedTable(record) && isInSelectedPeriod(record),
+          ),
         ),
       ),
     };
@@ -717,7 +855,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const individualKpaColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
     {
-      headerName: "KPA TARGET",
+      headerName: "KPA",
       field: "target",
       flex: 3,
       minWidth: 300,
@@ -732,6 +870,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       ),
     },
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
+    { headerName: "Approved", field: "approvalStatus", width: 180 },
     statusColumn,
     reviewStatusColumn,
     finalClosureColumn,
@@ -754,7 +893,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         </button>
       ),
     },
-    { headerName: "Description", field: "description", minWidth: 320, flex: 2 },
+    { headerName: "Category", field: "categoryName", minWidth: 170, flex: 1 },
     { headerName: "Lead", field: "leadName", minWidth: 180, flex: 1 },
     {
       headerName: "Assigned By",
@@ -762,6 +901,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       minWidth: 180,
       flex: 1,
     },
+    { headerName: "Active Status", field: "activeStatus", width: 150 },
     statusColumn,
     ...actionColumns,
   ];
@@ -784,12 +924,7 @@ const KraKpaIndividualMonthlyKpa = () => {
             </button>
           ),
         },
-        {
-          headerName: "Description",
-          field: "description",
-          minWidth: 320,
-          flex: 2,
-        },
+        { headerName: "Category", field: "categoryName", minWidth: 170, flex: 1 },
         { headerName: "Lead", field: "leadName", minWidth: 180, flex: 1 },
         {
           headerName: "Assigned By",
@@ -797,17 +932,18 @@ const KraKpaIndividualMonthlyKpa = () => {
           minWidth: 180,
           flex: 1,
         },
+        { headerName: "Active Status", field: "activeStatus", width: 150 },
         {
           headerName: "Completed Date",
           field: "closingDate",
-          width: 170,
-          valueFormatter: ({ value }) => formatDate(value),
+          width: 220,
+          valueFormatter: ({ value }) => formatDateTime(value),
         },
       ]
     : [
         { headerName: "Sr No", field: "srNo", width: 85 },
         {
-          headerName: "KPA TARGET",
+          headerName: "KPA",
           field: "target",
           minWidth: 300,
           flex: 2,
@@ -822,11 +958,12 @@ const KraKpaIndividualMonthlyKpa = () => {
           ),
         },
         { headerName: "Deadline", field: "deadlineLabel", width: 165 },
+        { headerName: "Approved", field: "approvalStatus", width: 180 },
         {
           headerName: "Completed Date",
           field: "closingDate",
-          width: 170,
-          valueFormatter: ({ value }) => formatDate(value),
+          width: 220,
+          valueFormatter: ({ value }) => formatDateTime(value),
         },
         {
           headerName: "Resource Comment",
@@ -871,16 +1008,27 @@ const KraKpaIndividualMonthlyKpa = () => {
   return (
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title font-pmedium text-primary uppercase">
+        <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}
           {isSelfKra ? "Self KRA" : "Self KPA"} - {employeeName}
         </h1>
-        {canAddKraKpa && (
-          <PrimaryButton
-            type="button"
-            title={isSelfKra ? "Add Self KRA" : "Add Self KPA"}
-            handleSubmit={openCreate}
-          />
+        {(canAddKraKpa || canAddKraCategory) && (
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {canAddKraCategory && (
+              <PrimaryButton
+                type="button"
+                title="Add Category"
+                handleSubmit={openCategoryModal}
+              />
+            )}
+            {canAddKraKpa && (
+              <PrimaryButton
+                type="button"
+                title={isSelfKra ? "Add Self KRA" : "Add Self KPA"}
+                handleSubmit={openCreate}
+              />
+            )}
+          </div>
         )}
       </div>
       {!isSelfKra && (
@@ -989,7 +1137,32 @@ const KraKpaIndividualMonthlyKpa = () => {
           columns={columns}
           hideTitle
           enableCheckbox
+          checkAll={isSelfKra}
+          isRowSelectable={(node) =>
+            !isSelfKra || node.data?.isActive !== false
+          }
+          showDisabledCheckboxes={isSelfKra}
+          getRowStyle={({ data }) =>
+            isSelfKra && data?.isActive === false
+              ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+              : undefined
+          }
           search
+          onSelectionChange={isSelfKra ? setSelectedSelfKras : undefined}
+          searchRowActions={
+            isSelfKra ? (
+              <PrimaryButton
+                type="button"
+                title={`Add to Daily Logs (${selectedSelfKras.length})`}
+                handleSubmit={openAddSelfKrasToDailyLogs}
+                disabled={
+                  !canScheduleSelectedSelfKras ||
+                  addSelfKrasToDailyLogs.isPending
+                }
+                className="!w-[230px]"
+              />
+            ) : null
+          }
           exportData
           hideFilter
           processExportCell={({ value }) => value ?? ""}
@@ -1008,6 +1181,11 @@ const KraKpaIndividualMonthlyKpa = () => {
           search
           exportData
           hideFilter
+          getRowStyle={({ data }) =>
+            isSelfKra && data?.isActive === false
+              ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+              : undefined
+          }
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(
             300,
@@ -1015,6 +1193,99 @@ const KraKpaIndividualMonthlyKpa = () => {
           )}
         />
       </div>
+
+      <MuiModal
+        open={dailyLogTargets.length > 0}
+        onClose={() => {
+          setDailyLogTargets([]);
+          setDailyLogDateError("");
+        }}
+        title="Add to Daily Logs"
+        widthClass="w-[92vw] max-w-[680px]"
+      >
+        <form
+          className="grid gap-4"
+          onSubmit={submitSelfKrasToDailyLogs}
+          noValidate
+        >
+          <div>
+            <div className="mb-2 text-sm font-medium text-primary">
+              Selected KRAs ({dailyLogTargets.length})
+            </div>
+            <div className="max-h-52 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+              {dailyLogTargets.map((record, index) => (
+                <div
+                  key={record._id}
+                  className="flex items-start justify-between gap-3 rounded-md bg-white px-3 py-2"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-medium text-primary">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-gray-800">
+                      {record.title}
+                    </div>
+                    <div className="mt-0.5 text-xs text-gray-500">
+                      {record.categoryName || "Self KRA"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    title="Remove Self KRA"
+                    aria-label={`Remove ${record.title}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() =>
+                      setDailyLogTargets((current) =>
+                        current.filter((item) => item._id !== record._id),
+                      )
+                    }
+                  >
+                    <MdClose size={20} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="Schedule Date *"
+              format="DD-MM-YYYY"
+              value={dailyLogDate ? dayjs(dailyLogDate) : null}
+              minDate={dailyLogMinDate || undefined}
+              onChange={(date) => {
+                setDailyLogDate(
+                  date?.isValid() ? date.format("YYYY-MM-DD") : "",
+                );
+                setDailyLogDateError("");
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  fullWidth: true,
+                  error: Boolean(dailyLogDateError),
+                  helperText: dailyLogDateError,
+                },
+              }}
+            />
+          </LocalizationProvider>
+          <div className="flex justify-end gap-3">
+            <SecondaryButton
+              type="button"
+              title="Cancel"
+              handleSubmit={() => {
+                setDailyLogTargets([]);
+                setDailyLogDateError("");
+              }}
+            />
+            <PrimaryButton
+              type="submit"
+              title="Add Daily Logs"
+              isLoading={addSelfKrasToDailyLogs.isPending}
+              disabled={addSelfKrasToDailyLogs.isPending}
+            />
+          </div>
+        </form>
+      </MuiModal>
 
       <MuiModal
         open={Boolean(viewRecord)}
@@ -1031,8 +1302,8 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <div className="font-bold">KRA Details</div>
                 <DetalisFormatted title="KRA Title" detail={viewRecord.title} />
                 <DetalisFormatted
-                  title="Description"
-                  detail={viewRecord.description}
+                  title="Category"
+                  detail={viewRecord.categoryName || "-"}
                 />
                 <DetalisFormatted
                   title="Lead"
@@ -1042,11 +1313,35 @@ const KraKpaIndividualMonthlyKpa = () => {
                   title="Assigned By"
                   detail={viewRecord.assignedByName || "-"}
                 />
+                <DetalisFormatted
+                  title="Active Status"
+                  detail={viewRecord.activeStatus}
+                />
                 <DetalisFormatted title="Status" detail={viewRecord.status} />
                 <DetalisFormatted
                   title="Closing Date"
-                  detail={formatDate(viewRecord.closingDate)}
+                  detail={formatDateTime(viewRecord.closingDate)}
                 />
+                {viewRecord.status === "Completed" && (
+                  <>
+                    <DetalisFormatted
+                      title="Start Time"
+                      detail={
+                        viewRecord.startTime
+                          ? dayjs(viewRecord.startTime).format("hh:mm A")
+                          : "-"
+                      }
+                    />
+                    <DetalisFormatted
+                      title="End Time"
+                      detail={
+                        viewRecord.endTime
+                          ? dayjs(viewRecord.endTime).format("hh:mm A")
+                          : "-"
+                      }
+                    />
+                  </>
+                )}
               </>
             ) : (
               <>
@@ -1056,24 +1351,41 @@ const KraKpaIndividualMonthlyKpa = () => {
                   detail={dayjs(`${viewRecord.month}-01`).format("MMMM YYYY")}
                 />
                 <DetalisFormatted
-                  title="KPA Target"
+                  title="KPA"
                   detail={viewRecord.target}
+                />
+                <DetalisFormatted
+                  title="Assigned By"
+                  detail={viewRecord.assignedByName || "-"}
+                />
+                <DetalisFormatted
+                  title="Assigned On"
+                  detail={formatDateTime(viewRecord.createdAt)}
                 />
                 <DetalisFormatted
                   title="Deadline"
                   detail={formatDate(viewRecord.deadline)}
                 />
+                <DetalisFormatted
+                  title="Approval"
+                  detail={viewRecord.approvalStatus || "Approved"}
+                />
+                <DetalisFormatted
+                  title="Approved By"
+                  detail={formatUserName(viewRecord.approvedBy)}
+                />
+                <DetalisFormatted
+                  title="Approved On"
+                  detail={formatDateTime(viewRecord.approvedAt)}
+                />
                 <DetalisFormatted title="Status" detail={viewRecord.status} />
                 <DetalisFormatted
                   title="Closing Date"
-                  detail={formatDate(viewRecord.closingDate)}
+                  detail={formatDateTime(viewRecord.closingDate)}
                 />
                 <DetalisFormatted
                   title="Delayed Days"
-                  detail={getDelayCount(
-                    viewRecord.closingDate,
-                    viewRecord.deadline,
-                  )}
+                  detail={viewRecord.delayedDays || 0}
                 />
                 <div className="text-content flex w-full items-start">
                   <span className="w-[50%]">Completion Timeline</span>
@@ -1108,15 +1420,6 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <br />
                 <div className="font-bold">Manager Review</div>
                 <DetalisFormatted
-                  title="Manager Rating"
-                  detail={
-                    viewRecord.kpaRating === null ||
-                    viewRecord.kpaRating === undefined
-                      ? "Not rated"
-                      : String(viewRecord.kpaRating)
-                  }
-                />
-                <DetalisFormatted
                   title="Closed On"
                   detail={formatDate(viewRecord.verificationClosedDate)}
                 />
@@ -1148,6 +1451,15 @@ const KraKpaIndividualMonthlyKpa = () => {
                     )}
                   </div>
                 </div>
+                <DetalisFormatted
+                  title="Manager Rating"
+                  detail={
+                    viewRecord.kpaRating === null ||
+                    viewRecord.kpaRating === undefined
+                      ? "Not rated"
+                      : String(viewRecord.kpaRating)
+                  }
+                />
                 <br />
                 <div className="font-bold">HR Review</div>
                 <DetalisFormatted
@@ -1196,24 +1508,67 @@ const KraKpaIndividualMonthlyKpa = () => {
       >
         {pendingAction?.type === "complete" && !isSelfKra && (
           <TextField
-            label="Resource Comment"
+            label="Resource Comment (Optional)"
             size="small"
             multiline
             minRows={3}
             value={completionComment}
             onChange={(event) => setCompletionComment(event.target.value)}
-            required
             disabled={!canCompleteRecord(pendingAction.record)}
             helperText={
               canCompleteRecord(pendingAction.record)
                 ? ""
-                : "Only the KPA creator can complete it"
+                : "Only the assigned employee can complete it"
             }
             inputProps={{ maxLength: 5000 }}
             fullWidth
           />
         )}
       </ConfirmationModal>
+
+      <MuiModal
+        open={categoryModalOpen}
+        onClose={() => {
+          setCategoryModalOpen(false);
+          setCategoryName("");
+          setCategoryError("");
+        }}
+        title="Add KRA Category"
+        widthClass="w-[92vw] max-w-[430px]"
+      >
+        <form onSubmit={handleCategorySubmit} className="grid gap-4">
+          <TextField
+            label="Category Name *"
+            size="small"
+            value={categoryName}
+            onChange={(event) => {
+              setCategoryName(event.target.value);
+              setCategoryError("");
+            }}
+            error={Boolean(categoryError)}
+            helperText={categoryError}
+            inputProps={{ maxLength: 200 }}
+            autoFocus
+          />
+          <div className="flex justify-end gap-3">
+            <SecondaryButton
+              type="button"
+              title="Close"
+              handleSubmit={() => {
+                setCategoryModalOpen(false);
+                setCategoryName("");
+                setCategoryError("");
+              }}
+            />
+            <PrimaryButton
+              type="submit"
+              title="Save"
+              isLoading={addKraCategory.isPending}
+              disabled={addKraCategory.isPending}
+            />
+          </div>
+        </form>
+      </MuiModal>
 
       <MuiModal
         open={modalOpen}
@@ -1236,6 +1591,33 @@ const KraKpaIndividualMonthlyKpa = () => {
           {isSelfKra ? (
             <>
               <TextField
+                label="Category *"
+                select
+                size="small"
+                value={form.selfKras[0].category}
+                onChange={updateSelfKra(0, "category")}
+                error={Boolean(formErrors.category)}
+                helperText={formErrors.category}
+                disabled={isLoadingKraCategories}
+              >
+                <MenuItem value="" disabled>
+                  {isLoadingKraCategories
+                    ? "Loading categories..."
+                    : "Select Category"}
+                </MenuItem>
+                {kraCategories.length ? (
+                  kraCategories.map((category) => (
+                    <MenuItem key={category._id} value={category._id}>
+                      {category.categoryName}
+                    </MenuItem>
+                  ))
+                ) : (
+                  <MenuItem value="no-categories" disabled>
+                    No categories found
+                  </MenuItem>
+                )}
+              </TextField>
+              <TextField
                 label="Title *"
                 size="small"
                 value={form.selfKras[0].title}
@@ -1244,17 +1626,27 @@ const KraKpaIndividualMonthlyKpa = () => {
                 helperText={formErrors.title}
                 inputProps={{ maxLength: 300 }}
               />
-              <TextField
-                label="Description *"
-                size="small"
-                multiline
-                minRows={3}
-                value={form.selfKras[0].description}
-                onChange={updateSelfKra(0, "description")}
-                error={Boolean(formErrors.description)}
-                helperText={formErrors.description}
-                inputProps={{ maxLength: 3000 }}
-              />
+              {editingRecord && (
+                <TextField
+                  label="Active Status *"
+                  select
+                  size="small"
+                  value={form.selfKras[0].isActive ? "active" : "inactive"}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      selfKras: current.selfKras.map((kra, index) =>
+                        index === 0
+                          ? { ...kra, isActive: event.target.value === "active" }
+                          : kra,
+                      ),
+                    }))
+                  }
+                >
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </TextField>
+              )}
               {canSelectSelfKraLead && (
                 <TextField
                   label="Lead *"
@@ -1317,7 +1709,7 @@ const KraKpaIndividualMonthlyKpa = () => {
                     </LocalizationProvider>
                   )}
                   <TextField
-                    label="KPA Target *"
+                    label="KPA *"
                     size="small"
                     multiline
                     minRows={2}
@@ -1354,17 +1746,6 @@ const KraKpaIndividualMonthlyKpa = () => {
                   </LocalizationProvider>
                 </>
               )}
-              {editingRecord && (
-                <TextField
-                  label="Resource Comment"
-                  size="small"
-                  multiline
-                  minRows={3}
-                  value={form.resourceComment}
-                  onChange={updateForm("resourceComment")}
-                  disabled={!canEdit || !isCreatedByLoggedInUser(editingRecord)}
-                />
-              )}
             </section>
           )}
           {!isSelfKra && editingRecord && canEditReview && (
@@ -1374,17 +1755,6 @@ const KraKpaIndividualMonthlyKpa = () => {
                   <h3 className="text-content font-pmedium uppercase text-primary">
                     Manager Review
                   </h3>
-                  <TextField
-                    label="Manager Comments"
-                    size="small"
-                    multiline
-                    minRows={3}
-                    value={form.managerComments}
-                    onChange={updateForm("managerComments")}
-                    error={Boolean(formErrors.managerComments)}
-                    helperText={formErrors.managerComments}
-                    inputProps={{ maxLength: 5000 }}
-                  />
                   <TextField
                     label="Review Status"
                     select
@@ -1443,6 +1813,17 @@ const KraKpaIndividualMonthlyKpa = () => {
                       />
                     </LocalizationProvider>
                   )}
+                  <TextField
+                    label="Manager Comments"
+                    size="small"
+                    multiline
+                    minRows={3}
+                    value={form.managerComments}
+                    onChange={updateForm("managerComments")}
+                    error={Boolean(formErrors.managerComments)}
+                    helperText={formErrors.managerComments}
+                    inputProps={{ maxLength: 5000 }}
+                  />
                   <TextField
                     label="Manager Rating"
                     select
