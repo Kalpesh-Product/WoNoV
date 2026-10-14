@@ -13,6 +13,12 @@ const DepartmentPerformanceLayout = () => {
   const { auth } = useAuth();
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const isManager = roleTitles.some((role) => role.includes("manager"));
+  const isTopManagement =
+    roleTitles.includes("top management") ||
+    auth?.user?.departments?.some(
+      (item) => item?.name?.trim().toLowerCase() === "top management",
+    );
   const selectedMember = useSelector((state) => state.performance.selectedMember);
    const isDepartmentKraMemberWiseRoute = location.pathname.includes("/department-KRA/member-wise-KRA");
   const isDepartmentKpaMemberWiseRoute = location.pathname.includes("/department-KPA/member-wise-KPA");
@@ -88,7 +94,12 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       label: "Daily Logs",
       path: "daily-logs",
       permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+    }, ...(isManager || isTopManagement ? [{
+      label: "Pending Approvals",
+      path: "pending-approvals",
+      permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
     }] : []),
+    ] : []),
     {
       label: "Team Daily KRA",
       path: "team-Daily-KRA",
@@ -119,7 +130,8 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
         tab.path === "individual-Monthly-KPA" ||
         tab.path === "self-KRA" ||
         tab.path === "due-task" ||
-        tab.path === "daily-logs"
+        tab.path === "daily-logs" ||
+        tab.path === "pending-approvals"
       )
     : isAssignRoute
     ? tabs.filter(

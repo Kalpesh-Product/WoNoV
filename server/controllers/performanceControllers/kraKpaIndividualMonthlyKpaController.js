@@ -3,6 +3,10 @@ const Company = require("../../models/hr/Company");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
+const Event = require("../../models/events/Events");
+const {
+  calculateDelayedWorkingDays,
+} = require("../../utils/kraKpaDelayedDays");
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 const FISCAL_YEAR_PATTERN = /^\d{4}-\d{2}$/;
@@ -11,12 +15,12 @@ const DETAIL_POPULATION = [
   { path: "employee", select: "firstName middleName lastName" },
   { path: "department", select: "name" },
   { path: "createdBy", select: "firstName middleName lastName" },
+  { path: "approvedBy", select: "firstName middleName lastName" },
   { path: "completionHistory.completedBy", select: "firstName middleName lastName" },
   { path: "managerReviewedBy", select: "firstName middleName lastName" },
   { path: "managerReviewHistory.reviewedBy", select: "firstName middleName lastName" },
   { path: "verifiedBy", select: "firstName middleName lastName" },
 ];
-
 const getFiscalYear = (month) => {
   const [year, calendarMonth] = month.split("-").map(Number);
   const startYear = calendarMonth >= 4 ? year : year - 1;
@@ -38,6 +42,7 @@ const getAccess = async (req) => {
     .map((department) => String(department?._id || department))
     .filter((id) => mongoose.isValidObjectId(id));
   const isHr = roles.some((role) => /^hr(?:\s|$)/.test(role));
+  const isManager = roles.some((role) => role.includes("manager"));
   const isTopManagement = roles.includes("top management") || Boolean(
     departmentIds.length && await Department.exists({
       _id: { $in: departmentIds },
@@ -51,7 +56,14 @@ const getAccess = async (req) => {
     role.includes("manager") || role.endsWith("admin"),
   );
 
-  return { allDepartments, canViewOthers, departmentIds, isHr, isTopManagement };
+  return {
+    allDepartments,
+    canViewOthers,
+    departmentIds,
+    isHr,
+    isManager,
+    isTopManagement,
+  };
 };
 
 const getScopedFilter = (req, access) => ({
@@ -236,7 +248,24 @@ const listIndividualMonthlyKpa = async (req, res, next) => {
       .populate(DETAIL_POPULATION)
       .lean();
 
-    return res.json(records);
+    const holidays = await Event.find({
+      company: req.company,
+      type: { $regex: /^holidays?$/i },
+      active: { $ne: false },
+    })
+      .select("start end")
+      .lean();
+
+    return res.json(
+      records.map((record) => ({
+        ...record,
+        delayedDays: calculateDelayedWorkingDays(
+          record.deadline,
+          record.closingDate,
+          holidays,
+        ),
+      })),
+    );
   } catch (error) {
     return next(error);
   }
@@ -261,6 +290,75 @@ const getIndividualMonthlyKpaReviewAccess = async (req, res, next) => {
       canEditManagerReview,
       canEditHrRating,
     });
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const listPendingKpaApprovals = async (req, res, next) => {
+  try {
+    const { department, employee } = req.query;
+    if (!mongoose.isValidObjectId(department)) {
+      return res.status(400).json({ message: "Valid department ID is required" });
+    }
+    if (!mongoose.isValidObjectId(employee)) {
+      return res.status(400).json({ message: "Valid employee ID is required" });
+    }
+    const access = await getAccess(req);
+    const departmentManager = await isDepartmentManager(req, department, access);
+    if (!access.isTopManagement && !departmentManager) {
+      return res.status(403).json({
+        message: "Only the department manager or Top Management can view pending approvals",
+      });
+    }
+    const records = await IndividualMonthlyKpa.find({
+      company: req.company,
+      department,
+      employee,
+      approvalStatus: "Pending Approval",
+      isDeleted: { $ne: true },
+    })
+      .sort({ createdAt: 1, deadline: 1 })
+      .populate(DETAIL_POPULATION)
+      .lean();
+    return res.json(records);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const approveIndividualMonthlyKpa = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid KPA ID" });
+    }
+    const access = await getAccess(req);
+    const existing = await IndividualMonthlyKpa.findOne({
+      _id: req.params.id,
+      company: req.company,
+      isDeleted: { $ne: true },
+    }).select("department approvalStatus");
+    if (!existing) return res.status(404).json({ message: "KPA not found" });
+    const departmentManager = await isDepartmentManager(
+      req,
+      existing.department,
+      access,
+    );
+    if (!access.isTopManagement && !departmentManager) {
+      return res.status(403).json({
+        message: "Only the department manager or Top Management can approve this KPA",
+      });
+    }
+    if (existing.approvalStatus === "Approved") {
+      return res.status(409).json({ message: "KPA is already approved" });
+    }
+    existing.approvalStatus = "Approved";
+    existing.approvedBy = req.user;
+    existing.approvedAt = new Date();
+    existing.updatedBy = req.user;
+    await existing.save();
+    await existing.populate(DETAIL_POPULATION);
+    return res.json(existing);
   } catch (error) {
     return next(error);
   }
@@ -315,6 +413,14 @@ const createIndividualMonthlyKpa = async (req, res, next) => {
       company: req.company,
       department,
       employee,
+      approvalStatus:
+        access.isManager || access.isTopManagement || access.isHr
+          ? "Approved"
+          : "Pending Approval",
+      ...((access.isManager || access.isTopManagement || access.isHr) && {
+        approvedBy: req.user,
+        approvedAt: new Date(),
+      }),
       createdBy: req.user,
       updatedBy: req.user,
     });
@@ -350,18 +456,14 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     );
     if (hasKpaDetailFields && !access.canViewOthers) {
       return res.status(403).json({
-        message: "Employees can only update the Resource Comment",
+        message: "Employees can only update KPA completion details",
       });
     }
-    if (
-      Object.hasOwn(req.body, "resourceComment") &&
-      String(record.createdBy) !== String(req.user)
-    ) {
-      return res.status(403).json({
-        message: "Only the KPA creator can update the Resource Comment",
+    if (Object.hasOwn(req.body, "resourceComment")) {
+      return res.status(400).json({
+        message: "Resource Comment can only be added when marking the KPA as done",
       });
     }
-
     const review = validateReviewFields(req.body);
     if (review.error) return res.status(400).json({ message: review.error });
     const verification = validateVerificationFields(req.body, record);
@@ -515,13 +617,18 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     const access = await getAccess(req);
     const scope = { _id: req.params.id, ...getScopedFilter(req, access) };
     const existing = await IndividualMonthlyKpa.findOne(scope)
-      .select("status createdBy employee")
+      .select("status createdBy employee verification approvalStatus")
       .lean();
     if (!existing) return res.status(404).json({ message: "KPA not found" });
-    const canComplete = String(existing.createdBy) === String(req.user);
+    if (existing.approvalStatus === "Pending Approval") {
+      return res.status(409).json({
+        message: "KPA must be approved before it can be marked as done",
+      });
+    }
+    const canComplete = String(existing.employee) === String(req.user);
     if (!canComplete) {
       return res.status(403).json({
-        message: "Only the KPA creator can mark it as done",
+        message: "Only the assigned employee can mark the KPA as done",
       });
     }
     if (existing.status !== "Pending") {
@@ -531,11 +638,6 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     const resourceComment = typeof req.body?.resourceComment === "string"
       ? req.body.resourceComment.trim()
       : "";
-    if (!resourceComment) {
-      return res.status(400).json({
-        message: "Resource Comment is required to mark the KPA as done",
-      });
-    }
     if (resourceComment.length > 5000) {
       return res.status(400).json({ message: "Resource Comment is too long" });
     }
@@ -544,13 +646,16 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
       {
         ...scope,
         status: "Pending",
-        createdBy: req.user,
+        employee: req.user,
       },
       {
         $set: {
           status: "Completed",
           closingDate: completedAt,
           resourceComment,
+          ...(existing.verification === "Changes Required" && {
+            verification: "Pending",
+          }),
           updatedBy: req.user,
         },
         $push: {
@@ -600,9 +705,11 @@ const deleteIndividualMonthlyKpa = async (req, res, next) => {
 
 module.exports = {
   listIndividualMonthlyKpa,
+  listPendingKpaApprovals,
   getIndividualMonthlyKpaReviewAccess,
   getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
+  approveIndividualMonthlyKpa,
   updateIndividualMonthlyKpa,
   completeIndividualMonthlyKpa,
   deleteIndividualMonthlyKpa,

@@ -587,9 +587,9 @@ const ClockInOutAttendance = () => {
   const timeStats = [
     {
       label: "Clock-in Time",
-      value: clockInTime && isToday ? humanTime(clockInTime) : "—",
+      value: clockInTime && isToday ? humanTime(clockInTime) : "\u2014",
       icon: MdLogin,
-      iconClassName: "bg-[#e5f8ef] text-[#07965f]",
+      iconClassName: "bg-[#e5f8ef] text-[#69ad2f]",
     },
     {
       label: "Work Hours",
@@ -601,16 +601,16 @@ const ClockInOutAttendance = () => {
       label: "Break Hours",
       value: isToday ? breakHours : "00:00:00",
       icon: MdCoffee,
-      iconClassName: "bg-[#fff8e1] text-[#a66b00]",
+      iconClassName: "bg-[#fff8e1] text-[#ffc400]",
     },
     {
       label: "Clock-out Time",
       value:
         clockOutTime && isToday && clockInTime < clockOutTime
           ? humanTime(clockOutTime)
-          : "—",
+          : "\u2014",
       icon: MdLogout,
-      iconClassName: "bg-[#fff0f0] text-[#ff0000b3]",
+      iconClassName: "bg-[#fff0f0] text-[#ef3e5c]",
     },
   ];
 
@@ -624,16 +624,16 @@ const ClockInOutAttendance = () => {
         : "Not Clocked In";
   const attendanceStatusStyle = {
     "Clocked In": {
-      badge: "bg-[#e5f8ef] text-[#07965f]",
-      dot: "bg-[#07965f]",
+      badge: "bg-[#e5f8ef] text-[#69ad2f]",
+      dot: "bg-[#69ad2f]",
     },
     "On Break": {
-      badge: "bg-[#fff8e1] text-[#a66b00]",
-      dot: "bg-[#a66b00]",
+      badge: "bg-[#fff8e1] text-[#ffc400]",
+      dot: "bg-[#ffc400]",
     },
     "Clocked Out": {
-      badge: "bg-[#fff0f0] text-[#ff0000]",
-      dot: "bg-[#ff0000]",
+      badge: "bg-[#fff0f0] text-[#ef3e5c]",
+      dot: "bg-[#ef3e5c]",
     },
     "Not Clocked In": {
       badge: "bg-[#eef2f7] text-[#1E3D73]",
@@ -708,18 +708,9 @@ const ClockInOutAttendance = () => {
             <>
               <button
                 type="button"
-                onClick={handleClockOutClick}
-                disabled={isClockingOut || correctionPending}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#ff000080] text-sm font-pbold text-white transition-colors hover:bg-[#ff000099] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
-              >
-                <FiLogOut size={18} aria-hidden="true" />
-                {isClockingOut ? "Stopping..." : "Clock Out"}
-              </button>
-              <button
-                type="button"
                 onClick={hasTakenBreak ? handleEnBreak : handleStartBreak}
                 disabled={isBreakDisabled || isStartbreak || isEndBreak}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#fff4cc] text-sm font-pbold text-[#a66b00] transition-colors hover:bg-[#ffeaa3] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#ffc400] text-sm font-pbold text-white transition-colors hover:bg-[#ffc400] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
               >
                 <MdCoffee size={19} aria-hidden="true" />
                 {hasTakenBreak
@@ -730,13 +721,22 @@ const ClockInOutAttendance = () => {
                     ? "Starting..."
                     : "Start Break"}
               </button>
+              <button
+                type="button"
+                onClick={handleClockOutClick}
+                disabled={isClockingOut || correctionPending}
+                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#ef3e5c] text-sm font-pbold text-white transition-colors hover:bg-[#ef3e5c] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd]"
+              >
+                <FiLogOut size={18} aria-hidden="true" />
+                {isClockingOut ? "Stopping..." : "Clock Out"}
+              </button>
             </>
           ) : (
             <button
               type="button"
               onClick={handleStart}
               disabled={Boolean(clockOutTime && isToday) || isClockingIn}
-              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#3cb37199] text-sm font-pbold text-white shadow-[0_8px_18px_rgba(60,179,113,0.24)] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd] disabled:shadow-none"
+              className="flex h-11 items-center justify-center gap-2 rounded-xl bg-[#69ad2f] text-sm font-pbold text-white shadow-[0_8px_18px_rgba(105,173,47,0.24)] transition-colors hover:bg-[#69ad2f] disabled:cursor-not-allowed disabled:bg-[#e8ecf2] disabled:text-[#a6afbd] disabled:shadow-none"
             >
               <FiLogIn size={19} aria-hidden="true" />
               {isClockingIn ? "Starting..." : "Clock In"}
@@ -863,7 +863,7 @@ const ClockInOutAttendance = () => {
                   label="Reason"
                   fullWidth
                   multiline
-                  rows={3} // ← Change this number to increase/decrease height
+                  rows={3} // â† Change this number to increase/decrease height
                   error={!!errors?.reason}
                   helperText={errors?.reason?.message}
                 />

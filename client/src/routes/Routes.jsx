@@ -175,6 +175,7 @@ import ExternalClientLayout from "../pages/Dashboard/SalesDashboard/ExternalClie
 import ExternalCompanyMeetings from "../pages/Dashboard/SalesDashboard/ExternalCompanyMeetings";
 import EarningsLayout from "../pages/Dashboard/SalesDashboard/EarningsLayout";
 import FinanceDashboard from "../pages/Dashboard/FinanceDashboard/FinanceDashboard";
+import FinanceDashboard1 from "../pages/Dashboard/FinanceDashboard/financeDashboard1";
 
 import InvestorDashboard from "../pages/Dashboard/InvestorDashboard/InvestorDashboard";
 import AdminstartionLayout from "../pages/Dashboard/AdminDashboard/AdminstartionLayout";
@@ -399,6 +400,7 @@ import PerformanceIndividualKpa from "../pages/Performance/DepartmentDetails/Per
 import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMonthlyKpa";
 import KraKpaDueTask from "../pages/Performance/KraKpaDueTask";
 import KraKpaDailyLogs from "../pages/Performance/KraKpaDailyLogs";
+import KraKpaPendingApprovals from "../pages/Performance/KraKpaPendingApprovals";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
@@ -703,7 +705,529 @@ export const routes = createBrowserRouter([
                     path: `investor-dashboard/${path}`,
                     element: <InvestorDashboard />,
                   })),
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
+                  
                   {
+                    path: "finance-dashboard1",
+                    element: <FinanceLayout />,
+                    children: [
+{
+                    path: "finance-3-years-snapshot",
+                    element: <FinanceDashboard1 />,
+                  },
+{
+                    path: "biznest-3-years-snapshot",
+                    element: <FinanceDashboard1 />,
+                  },
+{
+                    path: "monthly-income-breakdown",
+                    element: <FinanceDashboard1 />,
+                  },
+{
+                    path: "inventory-vs-occupancy",
+                    element: <FinanceDashboard1 />,
+                  },
+{
+                    path: "active-unique-clients",
+                    element: <FinanceDashboard1 />,
+                  },
+{
+                    path: "real-estate-owned",
+                    element: <FinanceDashboard1 />,
+                  },
+
+                      {
+                        path: "",
+                        element: <FinanceDashboard1 />,
+                      },
+                      {
+                        path: "monthly-P&L",
+                        element: <MonthlyPnl />,
+                      },
+                      {
+                        path: "annual-average-P&L",
+                        element: <AnnualAveragePnl />,
+                      },
+                      {
+                        path: "overall-P&L",
+                        element: <OverallPnl />,
+                      },
+                      {
+                        path: "monthly-per-sq-ft-P&L",
+                        element: <MonthlyPerSqFtPnl />,
+                      },
+                      {
+                        path: "mix-bag",
+                        element: <MixBag />,
+                      },
+                      {
+                        path: "mix-bag/revenue",
+                        element: <TotalRevenueLayout />,
+                        children: [
+                          {
+                            path: "total-revenue",
+                            element: <TotalRevenue />,
+                          },
+                          {
+                            path: "co-working",
+                            element: <CoWorking />,
+                          },
+                          {
+                            path: "meetings",
+                            element: <MeetingRevenue />,
+                          },
+                          {
+                            path: "virtual-office",
+                            element: <VirtualOffice />,
+                          },
+                          {
+                            path: "workation",
+                            element: <Workations />,
+                          },
+                          {
+                            path: "alt-revenue",
+                            element: <AltRevenues />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/manage-meetings",
+                        element: <ManageMeetingsFinanceLayout />,
+                        children: [
+                          {
+                            path: "internal-meetings",
+                            element: <ManageMeetings financeView />,
+                          },
+                          {
+                            path: "external-clients",
+                            element: <ExternalMeetingClients financeView />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: (
+                              <ExternalClients
+                                tableTitle="Day Pass"
+                                filterToDayPass={true}
+                                financeStatusMenu={true}
+                                financeView={true}
+                              />
+                            ),
+                          },
+                        ],
+                      },
+                      {
+                        path: "mix-bag/directors-company-KYC",
+                        element: <DirectorsCompany />,
+                      },
+                      {
+                        path: "mix-bag/compliance-documents",
+                        // element: <ComplianceDocuments />,
+                        element: <ComplianceData />,
+                      },
+                      {
+                        path: "mix-bag/compliance-documents/:name",
+                        element: <ComplianceData />,
+                      },
+                      {
+                        path: "mix-bag/landlord-agreements",
+                        element: <LandlordAgreements />,
+                      },
+                      {
+                        path: "mix-bag/landlord-agreements/:name",
+                        element: <LandlordAgreementData />,
+                      },
+                      {
+                        path: "mix-bag/client-agreements",
+                        element: <ClientAgreements />,
+                      },
+                      {
+                        path: "mix-bag/client-agreements/:name",
+                        element: <ClientAgreementData />,
+                      },
+                      {
+                        path: "directors-company-KYC",
+                        element: <DirectorsCompany />,
+                      },
+                      {
+                        path: "mix-bag/directors-company-KYC/:name",
+                        element: <DirectorData />,
+                      },
+                      {
+                        path: "directors-company-KYC/:name",
+                        element: <DirectorData />,
+                      },
+                      {
+                        path: "mix-bag/department-wise-budget",
+                        element: <DeptWiseBudget />,
+                      },
+                      {
+                        path: "mix-bag/department-wise-budget/:department",
+                        element: <DeptWiseBudgetDetails />,
+                      },
+                      {
+                        path: "finance/dept-wise-budget",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/finance-dashboard1/mix-bag/department-wise-budget"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "mix-bag/collection-payments",
+                        element: <CollectionPaymentsFinanceLayout />,
+                        children: [
+                          {
+                            path: "collection",
+                            element: <Collections />,
+                          },
+                          {
+                            path: "collection/paid",
+                            element: <CollectionsLayout />,
+                          },
+                          {
+                            path: "statutory-payments",
+                            element: <StatutoryPayments />,
+                          },
+                          {
+                            path: "landlord-payments",
+                            element: <LandlordPayments />,
+                          },
+                          {
+                            path: "landlord-payments-unit",
+                            element: <LandlordPaymentLocation />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "cashflow",
+                        element: <Cashflow />,
+                        children: [
+                          {
+                            path: "projections",
+                            element: <Projections />,
+                          },
+                          {
+                            path: "historical-P&L",
+                            element: <HistoricalPnl />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "data",
+                        element: <FinanceData />,
+                        children: [
+                          {
+                            path: "vendor",
+                            element: <VendorTable />,
+                          },
+                          {
+                            path: "vendor/vendor-onboard",
+                            element: <Vendor />,
+                          },
+                          {
+                            path: "vendor/:id",
+                            element: <ViewVendor />,
+                          },
+                          {
+                            path: "asset-list",
+                            element: <DepartmentAssetCommon />,
+                          },
+                          {
+                            path: "monthly-budget-report",
+                            element: <MonthlyBudgetCommon />,
+                          },
+                          {
+                            path: "monthly-invoice-reports",
+                            element: <MonthlyInvoiceCommon />,
+                          },
+                          {
+                            path: "finance-monthly-invoices",
+                            element: <FinanceMonthlyInvoices />,
+                          },
+                          {
+                            path: "finance-monthly-vouchers",
+                            element: <FinanceMonthlyVouchers />,
+                          },
+                          {
+                            path: "finance-monthly-vouchers/:id",
+                            element: <FinanceViewVoucher />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "settings",
+                        element: <FinanceSettings />,
+                        children: [
+                          {
+                            path: "bulk-upload",
+                            element: <DepartmentWiseBulkUpload />,
+                          },
+                          {
+                            path: "sops",
+                            element: <SopUpload />,
+                          },
+                          {
+                            path: "policies",
+                            element: <PolicyUpload />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "monthly-profit-loss",
+                        element: <MonthlyProfitLoss />,
+                      },
+                      {
+                        path: "monthly-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+                      {
+                        path: "annual-average-profit-loss",
+                        element: <AverageProfitLoss />,
+                      },
+                      {
+                        path: "annual-average-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+                      {
+                        path: "overall-profit-loss",
+                        element: <OverallProfitLoss />,
+                      },
+                      {
+                        path: "overall-profit-loss/income-details",
+                        element: <IncomeDetails />,
+                      },
+
+                      {
+                        path: "sqft-wise-data",
+                        element: <SqWiseData />,
+                      },
+                      {
+                        path: "sqft-wise-data/income-details",
+                        element: <IncomeDetails />,
+                      },
+                      {
+                        path: "billing",
+                        element: <BillingsLayout />,
+                        children: [
+                          {
+                            path: "client-invoicing",
+                            // element: <InvoiceCreation />,
+                             element: <ClientInvoicingLayout />,
+                            children: [
+                              {
+                                path: "co-working-revenue-invoicing",
+                                // element: <CoWorking showChart={false} />,
+                                 element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
+                    
+                              },
+                              {
+                                path: "meeting-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} />,
+                              },
+                              {
+                                path: "virtual-office-revenue-invoicing",
+                               // element: <VirtualOffice showChart={false} />,
+                                 element: (
+                                  <VirtualOffice
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
+                         
+                              },
+                              {
+                                path: "workation-revenue-invoicing",
+                                element: (
+                                  <Workations
+                                    showChart={false}
+                                    showInvoiceProjections
+                                  />
+                                ),
+                          
+                              },
+                              {
+                                path: "alternate-revenue-invoicing",
+                                element: <AltRevenues showChart={false} />,
+                              },
+                            ],
+                          },
+                          {
+                            path: "voucher-request",
+                            element: <VoucherRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-voucher",
+                                element: <DepartmentInvoice />,
+                              },
+                              {
+                                path: "pending-approvals-voucher",
+                                element: <PendingApprovals />,
+                              },
+                              {
+                                path: "reject-voucher",
+                                element: <RejectedVoucher />,
+                              },
+                              {
+                                path: "voucher-history",
+                                element: <VoucherCreation />,
+                              },
+                              {
+                                path: "pending-approvals-voucher/review-request",
+                                element: <ReviewRequest />,
+                              },
+                            ],
+                          },
+                          {
+                            path: "budget-request",
+                            element: <BudgetRequest />,
+                            children: [
+                              {
+                                path: "department-invoice-budget",
+                                element: <DepartmentInvoiceBudget />,
+                              },
+                              {
+                                path: "pending-approvals-budget",
+                                element: <PendingApprovalsBudget />,
+                              },
+                              {
+                                path: "budget-history",
+                                element: <BudgetHistory />,
+                              },
+                              {
+                                path: "pending-approvals-budget/review-request",
+                                element: <ReviewRequest />,
+                              },
+                              {
+                                path: "voucher-history-budget",
+                                element: (
+                                  <Navigate to="../budget-history" replace />
+                                ),
+                              },
+                            ],
+                          },
+                          // Legacy billing routes (temporary redirects)
+                          {
+                            path: "client-invoice",
+                            element: (
+                              <Navigate to="../client-invoicing" replace />
+                            ),
+                          },
+                          {
+                            path: "department-invoice",
+                            element: (
+                              <Navigate
+                                to="../voucher-request/department-invoice-voucher"
+                                replace
+                              />
+                            ),
+                          },
+                          {
+                            path: "voucher-history",
+                            element: (
+                              <Navigate
+                                to="../voucher-request/voucher-history"
+                                replace
+                              />
+                            ),
+                          },
+                          {
+                            path: "pending-approvals",
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher"
+                                replace
+                              />
+                            ),
+                          },
+                          {
+                            path: "pending-approvals/review-request",
+                            element: (
+                              <Navigate
+                                to="../voucher-request/pending-approvals-voucher/review-request"
+                                replace
+                              />
+                            ),
+                          },
+                        ],
+                      },
+                      {
+                        path: "finance",
+                        element: <FinanceBudgetLayout />,
+                        children: [
+                          {
+                            path: "budget",
+                            element: <BudgetPage />,
+                          },
+                          {
+                            path: "budget-history",
+                            element: <DepartmentBudgetHistory />,
+                          },
+                          {
+                            path: "voucher",
+                            element: <Reimbursement />,
+                          },
+                          {
+                            path: "reject-voucher",
+                            element: <DepartmentRejectedVoucher />,
+                          },
+                          {
+                            path: "voucher-history",
+                            element: <DepartmentVoucherHistory />,
+                          },
+
+                          // {
+                          //   path: "dept-wise-budget",
+                          //   element: <DeptWiseBudget />,
+                          // },
+                          // {
+                          //   path: "dept-wise-budget/:department",
+                          //   element: <DeptWiseBudgetDetails />,
+                          // },
+                          {
+                            path: "payment-schedule",
+                            element: <PaymentScheduleCommon />,
+                          },
+                          // {
+                          //   path: "collections",
+                          //   element: <Collections />,
+                          // },
+                          // {
+                          //   path: "collections/paid",
+                          //   element: <CollectionsLayout />,
+                          // },
+                          // {
+                          //   path: "statutory-payments",
+                          //   element: <StatutoryPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments",
+                          //   element: <LandlordPayments />,
+                          // },
+                          // {
+                          //   path: "landlord-payments-unit",
+                          //   element: <LandlordPaymentLocation />,
+                          // },
+                        ],
+                      },
+                    ],
+                  },
+{
                     path: "finance-dashboard",
                     element: <FinanceLayout />,
                     children: [
@@ -749,7 +1273,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "virtual-office",
-                            element: <VirtualOffice />,
+                            element: <VirtualOffice useTaxableAmountForGraph />,
                           },
                           {
                             path: "workation",
@@ -4572,6 +5096,17 @@ export const routes = createBrowserRouter([
                                   <PerformancePermissionRoute
                                     permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
                                     element={<KraKpaDailyLogs />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "pending-approvals",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaPendingApprovals />}
                                   />
                                 ),
                               },

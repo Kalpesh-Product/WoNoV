@@ -84,6 +84,7 @@ const LeadsLayout = ({
   investorBlueStyle = false,
   investorTitleAmountChip = false,
   hideFinancialYearControls = false,
+  actualMonthLag = 2,
 }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -197,7 +198,7 @@ const LeadsLayout = ({
 
               return !currentMonth
                 .startOf("month")
-                .isBefore(monthDate.add(2, "month"), "month");
+                .isBefore(monthDate.add(actualMonthLag, "month"), "month");
             })
           : transformedData;
 
@@ -211,7 +212,7 @@ const LeadsLayout = ({
         0,
       );
     },
-    [currentFinancialYear, investorBlueStyle, transformedData],
+    [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag],
   );
 
   const resolvedTitleAmount =
@@ -231,7 +232,7 @@ const LeadsLayout = ({
         .month(3 + monthIndex)
         .startOf("month");
     const isActualMonthAvailable = (monthDate) =>
-      !currentMonth.isBefore(monthDate.add(2, "month"), "month");
+      !currentMonth.isBefore(monthDate.add(actualMonthLag, "month"), "month");
     const getActualValue = (item, monthIndex, key) => {
       if (!investorBlueStyle) return item[key] || 0;
 
@@ -318,7 +319,7 @@ const LeadsLayout = ({
     );
 
     return [...investorActualSeries, ...projectedSeries];
-  }, [currentFinancialYear, investorBlueStyle, transformedData]);
+  }, [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag]);
   const displayedUniqueClientsData = useMemo(
     () =>
       uniqueClientsData.map((series) => {

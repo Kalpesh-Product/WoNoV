@@ -23,11 +23,27 @@ const dailyLogSchema = new mongoose.Schema(
       ref: "KraKpaDueTask",
       default: null,
     },
+    sourceSelfKra: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraKpaSelfKra",
+      default: null,
+    },
+    sourceSelfKpa: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraKpaSelfKpa",
+      default: null,
+    },
+    carriedFromDailyLog: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraKpaDailyLog",
+      default: null,
+    },
     date: { type: Date, required: true },
+    deadline: { type: Date, default: null },
     dayTaskName: { type: String, required: true, trim: true },
     type: {
       type: String,
-      enum: ["KRA", "KPA"],
+      enum: ["KRA", "KPA", "GENERAL"],
       required: true,
     },
     kpaSlot: {
@@ -46,6 +62,8 @@ const dailyLogSchema = new mongoose.Schema(
     managerComments: { type: String, trim: true, default: "" },
     hrComments: { type: String, trim: true, default: "" },
     reviewerComments: { type: String, trim: true, default: "" },
+    startTime: { type: Date, default: null },
+    endTime: { type: Date, default: null },
     completedAt: { type: Date, default: null },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
@@ -61,6 +79,36 @@ dailyLogSchema.index(
     unique: true,
     partialFilterExpression: {
       sourceDueTask: { $type: "objectId" },
+      isDeleted: false,
+    },
+  },
+);
+dailyLogSchema.index(
+  { company: 1, sourceSelfKra: 1, date: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sourceSelfKra: { $type: "objectId" },
+      isDeleted: false,
+    },
+  },
+);
+dailyLogSchema.index(
+  { company: 1, sourceSelfKpa: 1, date: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      sourceSelfKpa: { $type: "objectId" },
+      isDeleted: false,
+    },
+  },
+);
+dailyLogSchema.index(
+  { company: 1, carriedFromDailyLog: 1, date: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      carriedFromDailyLog: { $type: "objectId" },
       isDeleted: false,
     },
   },

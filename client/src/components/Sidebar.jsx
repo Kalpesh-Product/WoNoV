@@ -204,6 +204,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD.value,
         },
         {
+          id: 12,
+          title: "Finance Dashboard1",
+          codeName: "Finance1",
+          route: "/app/dashboard/finance-dashboard1",
+          icon: <TbCashRegister />,
+          permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD1.value,
+        },
+        {
           id: 5,
           title: "Sales Dashboard",
           codeName: "Sales",
@@ -309,7 +317,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     setExpandedModule((prev) => (prev === index ? null : index));
   };
 
-  const isActive = (path) => location.pathname.startsWith(`${path}`);
+  const isActive = (path) => (location.pathname === path || location.pathname.startsWith(`${path}/`));
   const isAppsActive = (path) => location.pathname.startsWith(`/app/${path}`);
 
   return (

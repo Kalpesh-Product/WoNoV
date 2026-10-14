@@ -2,11 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chip, CircularProgress, MenuItem, Popover, TextField } from "@mui/material";
+import {
+  Chip,
+  CircularProgress,
+  MenuItem,
+  Popover,
+  TextField,
+} from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday, MdDeleteForever } from "react-icons/md";
+import { MdCalendarToday, MdClose, MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -23,13 +29,13 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
 
-const KPA_SLOTS = ["11:00 AM - 12:30 PM", "03:00 PM - 04:30 PM"];
-
 const formatUserName = (user) =>
   user && typeof user === "object"
     ? [user.firstName, user.middleName, user.lastName]
         .filter(Boolean)
-        .join(" ") || user.empId || "-"
+        .join(" ") ||
+      user.empId ||
+      "-"
     : "-";
 
 const initialDateRange = () => ({
@@ -40,6 +46,7 @@ const initialDateRange = () => ({
 
 const emptyForm = () => ({
   dueTaskName: "",
+  parentKpa: "",
   identificationDate: dayjs().format("YYYY-MM-DD"),
   taskIdentifier: "",
   deadline: "",
@@ -51,11 +58,8 @@ const DueTaskActionCell = ({
   node,
   onEdit,
   onAction,
-  onAddToDailyLogs,
   canEdit,
   canDelete,
-  canClose,
-  canAddToDailyLogs,
   isPending,
 }) => {
   const [selected, setSelected] = useState(() => Boolean(node.isSelected()));
@@ -71,26 +75,6 @@ const DueTaskActionCell = ({
 
   return (
     <div className="flex h-full items-center gap-2">
-      {data.status !== "Closed" &&
-        !data.isAddedToDailyLogs &&
-        canAddToDailyLogs && (
-        <PrimaryButton
-          type="button"
-          title="Add Daily Logs"
-          handleSubmit={() => onAddToDailyLogs(data)}
-          disabled={disabled}
-          className="!h-7 whitespace-nowrap !px-2 !py-1 !text-xs"
-        />
-      )}
-      {data.status !== "Closed" && canClose && (
-        <PrimaryButton
-          type="button"
-          title="Mark As Done"
-          handleSubmit={() => onAction("close", data)}
-          disabled={disabled}
-          className="!h-7 whitespace-nowrap !px-2 !py-1 !text-xs"
-        />
-      )}
       {data.status !== "Closed" && canEdit && (
         <button
           type="button"
@@ -167,15 +151,20 @@ const KraKpaDueTask = () => {
   const [editingRecord, setEditingRecord] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
-  const [dailyLogTarget, setDailyLogTarget] = useState(null);
+  const [selectedDueTasks, setSelectedDueTasks] = useState([]);
+  const [dailyLogTargets, setDailyLogTargets] = useState([]);
   const [dailyLogForm, setDailyLogForm] = useState({
     date: dayjs().format("YYYY-MM-DD"),
-    type: "",
-    kpaSlot: "",
   });
   const [dailyLogErrors, setDailyLogErrors] = useState({});
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
+  const selectedKpaMonth = form.identificationDate
+    ? dayjs(form.identificationDate).format("YYYY-MM")
+    : "";
+  const selectedKpaMonthLabel = form.identificationDate
+    ? dayjs(form.identificationDate).format("MMMM")
+    : "Month";
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["kraKpaDueTask", departmentId, employeeId],
@@ -201,6 +190,58 @@ const KraKpaDueTask = () => {
       }));
     },
   });
+
+  const { data: parentKpaOptions = [], isLoading: isLoadingParentKpas } =
+    useQuery({
+      queryKey: [
+        "kraKpaDueTaskParentKpas",
+        departmentId,
+        employeeId,
+        selectedKpaMonth,
+      ],
+      enabled: Boolean(
+        modalOpen && departmentId && employeeId && selectedKpaMonth,
+      ),
+      queryFn: async () => {
+        const response = await axios.get(
+          "/api/kra-kpa/individual-monthly-kpa",
+          {
+            params: {
+              department: departmentId,
+              employee: employeeId,
+              month: selectedKpaMonth,
+            },
+          },
+        );
+        return [...(response.data || [])]
+          .filter((kpa) => kpa.approvalStatus !== "Pending Approval")
+          .sort((first, second) => {
+            const firstDeadline = first.deadline
+              ? dayjs(first.deadline).valueOf()
+              : Number.MAX_SAFE_INTEGER;
+            const secondDeadline = second.deadline
+              ? dayjs(second.deadline).valueOf()
+              : Number.MAX_SAFE_INTEGER;
+            return firstDeadline - secondDeadline;
+          });
+      },
+    });
+
+  const selectedParentKpa = parentKpaOptions.find(
+    (kpa) => kpa._id === form.parentKpa,
+  );
+  const selectedParentDeadline = selectedParentKpa?.deadline
+    ? dayjs(selectedParentKpa.deadline).startOf("day")
+    : null;
+  const taskDeadline = form.deadline
+    ? dayjs(form.deadline).startOf("day")
+    : null;
+  const identificationMaxDate =
+    selectedParentDeadline && taskDeadline
+      ? taskDeadline.isBefore(selectedParentDeadline)
+        ? taskDeadline
+        : selectedParentDeadline
+      : selectedParentDeadline || taskDeadline;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaDueTask"] });
@@ -234,43 +275,42 @@ const KraKpaDueTask = () => {
   });
 
   const rowAction = useMutation({
-    mutationFn: async ({ type, record }) => {
-      if (type === "delete") {
-        await axios.delete(`/api/kra-kpa/due-task/${record._id}`);
-      } else {
-        await axios.patch(`/api/kra-kpa/due-task/${record._id}/close`);
-      }
+    mutationFn: async ({ record }) => {
+      await axios.delete(`/api/kra-kpa/due-task/${record._id}`);
     },
-    onSuccess: (_, { type }) => {
+    onSuccess: () => {
       refresh();
       setPendingAction(null);
       setViewRecord(null);
-      toast.success(type === "delete" ? "Due Task deleted" : "Due Task closed");
+      toast.success("Due Task deleted");
     },
     onError: (error) => {
-      toast.error(error?.response?.data?.message || "Unable to update Due Task");
+      toast.error(
+        error?.response?.data?.message || "Unable to update Due Task",
+      );
     },
   });
 
   const addToDailyLogs = useMutation({
-    mutationFn: async ({ record, date, type, kpaSlot }) => {
-      const response = await axios.post(
-        `/api/kra-kpa/due-task/${record._id}/daily-log`,
-        { date, type, kpaSlot },
-      );
+    mutationFn: async ({ records: selectedRecords, date }) => {
+      const response = await axios.post("/api/kra-kpa/due-task/daily-log", {
+        dueTaskIds: selectedRecords.map((record) => record._id),
+        date,
+      });
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (createdLogs) => {
       queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
       refresh();
-      setDailyLogTarget(null);
+      setDailyLogTargets([]);
+      setSelectedDueTasks([]);
       setDailyLogForm({
         date: dayjs().format("YYYY-MM-DD"),
-        type: "",
-        kpaSlot: "",
       });
       setDailyLogErrors({});
-      toast.success("Due Task added to Daily Logs");
+      toast.success(
+        `${createdLogs.length} Due Task${createdLogs.length === 1 ? "" : "s"} added to Daily Logs`,
+      );
     },
     onError: (error) => {
       toast.error(
@@ -290,11 +330,11 @@ const KraKpaDueTask = () => {
     setEditingRecord(record);
     setForm({
       dueTaskName: record.dueTaskName || "",
+      parentKpa: record.parentKpa?._id || record.parentKpa || "",
       identificationDate: record.identificationDate
         ? dayjs(record.identificationDate).format("YYYY-MM-DD")
         : "",
-      taskIdentifier:
-        record.taskIdentifier?._id || record.taskIdentifier || "",
+      taskIdentifier: record.taskIdentifier?._id || record.taskIdentifier || "",
       deadline: record.deadline
         ? dayjs(record.deadline).format("YYYY-MM-DD")
         : "",
@@ -312,7 +352,8 @@ const KraKpaDueTask = () => {
   const handleSubmit = (event) => {
     event.preventDefault();
     const errors = {};
-    if (!form.dueTaskName.trim()) errors.dueTaskName = "Due Task Name is required";
+    if (!form.dueTaskName.trim()) errors.dueTaskName = "KPA Task is required";
+    if (!form.parentKpa) errors.parentKpa = "Main KPA is required";
     if (!form.identificationDate) {
       errors.identificationDate = "Identification Date is required";
     }
@@ -320,6 +361,34 @@ const KraKpaDueTask = () => {
       errors.taskIdentifier = "Task Identifier is required";
     }
     if (!form.deadline) errors.deadline = "Deadline is required";
+    const identificationDate = form.identificationDate
+      ? dayjs(form.identificationDate).startOf("day")
+      : null;
+    const kpaTaskDeadline = form.deadline
+      ? dayjs(form.deadline).startOf("day")
+      : null;
+    if (
+      kpaTaskDeadline &&
+      selectedParentDeadline &&
+      kpaTaskDeadline.isAfter(selectedParentDeadline)
+    ) {
+      errors.deadline = "KPA Task deadline cannot be after the KPA deadline";
+    }
+    if (
+      identificationDate &&
+      kpaTaskDeadline &&
+      identificationDate.isAfter(kpaTaskDeadline)
+    ) {
+      errors.identificationDate =
+        "Identification Date cannot be after the KPA Task deadline";
+    } else if (
+      identificationDate &&
+      selectedParentDeadline &&
+      identificationDate.isAfter(selectedParentDeadline)
+    ) {
+      errors.identificationDate =
+        "Identification Date cannot be after the KPA deadline";
+    }
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
     saveTask.mutate({
@@ -333,13 +402,13 @@ const KraKpaDueTask = () => {
     () =>
       records
         .filter((record) => {
+          if (record.isAddedToDailyLogs) return false;
           const date = dayjs(record.identificationDate);
           return (
-            date.isAfter(dayjs(dateRange.startDate).startOf("day")) ||
-            date.isSame(dayjs(dateRange.startDate), "day")
-          ) && (
-            date.isBefore(dayjs(dateRange.endDate).endOf("day")) ||
-            date.isSame(dayjs(dateRange.endDate), "day")
+            (date.isAfter(dayjs(dateRange.startDate).startOf("day")) ||
+              date.isSame(dayjs(dateRange.startDate), "day")) &&
+            (date.isBefore(dayjs(dateRange.endDate).endOf("day")) ||
+              date.isSame(dayjs(dateRange.endDate), "day"))
           );
         })
         .map((record, index) => ({
@@ -348,14 +417,18 @@ const KraKpaDueTask = () => {
           leadName: formatUserName(record.lead),
           assignedByName: formatUserName(record.assignedBy || record.createdBy),
           identifierName: formatUserName(record.taskIdentifier),
+          parentKpaName: record.parentKpa?.target || "-",
+          parentKpaDeadline: record.parentKpa?.deadline || null,
         })),
     [records, dateRange],
   );
 
   const canEditRecord = (record) =>
     canManageOthers ||
-    String(record.employee?._id || record.employee) === String(auth?.user?._id) ||
-    String(record.createdBy?._id || record.createdBy) === String(auth?.user?._id);
+    String(record.employee?._id || record.employee) ===
+      String(auth?.user?._id) ||
+    String(record.createdBy?._id || record.createdBy) ===
+      String(auth?.user?._id);
   const isTaskEmployee = (record) =>
     String(record?.employee?._id || record?.employee) ===
     String(auth?.user?._id);
@@ -365,14 +438,34 @@ const KraKpaDueTask = () => {
     String(record.lead?._id || record.lead) === String(auth?.user?._id);
   const canAddToDailyLogsRecord = (record) =>
     !record.isAddedToDailyLogs &&
+    record.status !== "Closed" &&
     (isTaskEmployee(record) || canCloseRecord(record));
 
-  const openAddToDailyLogs = (record) => {
-    setDailyLogTarget(record);
+  const canAddSelectedTasks =
+    selectedDueTasks.length > 0 &&
+    selectedDueTasks.every(canAddToDailyLogsRecord);
+
+  const dailyLogMaxDate = dailyLogTargets.reduce((earliest, record) => {
+    if (!record.deadline || !dayjs(record.deadline).isValid()) return earliest;
+    const deadline = dayjs(record.deadline).startOf("day");
+    return !earliest || deadline.isBefore(earliest) ? deadline : earliest;
+  }, null);
+
+  const openAddToDailyLogs = () => {
+    if (!canAddSelectedTasks) return;
+    setDailyLogTargets(selectedDueTasks);
+    const earliestDeadline = selectedDueTasks.reduce((earliest, record) => {
+      if (!record.deadline || !dayjs(record.deadline).isValid())
+        return earliest;
+      const deadline = dayjs(record.deadline).startOf("day");
+      return !earliest || deadline.isBefore(earliest) ? deadline : earliest;
+    }, null);
+    const today = dayjs().startOf("day");
     setDailyLogForm({
-      date: dayjs().format("YYYY-MM-DD"),
-      type: "",
-      kpaSlot: "",
+      date:
+        earliestDeadline && today.isAfter(earliestDeadline)
+          ? earliestDeadline.format("YYYY-MM-DD")
+          : today.format("YYYY-MM-DD"),
     });
     setDailyLogErrors({});
   };
@@ -381,24 +474,40 @@ const KraKpaDueTask = () => {
     event.preventDefault();
     const errors = {};
     if (!dailyLogForm.date) errors.date = "Date is required";
-    if (!dailyLogForm.type) errors.type = "Type is required";
-    if (dailyLogForm.type === "KPA" && !dailyLogForm.kpaSlot) {
-      errors.kpaSlot = "KPA Slot is required";
+    if (
+      dailyLogForm.date &&
+      dailyLogMaxDate &&
+      dayjs(dailyLogForm.date).isAfter(dailyLogMaxDate, "day")
+    ) {
+      errors.date = "Date cannot be after the selected task deadline";
     }
     setDailyLogErrors(errors);
-    if (Object.keys(errors).length > 0 || !dailyLogTarget) return;
+    if (Object.keys(errors).length > 0 || dailyLogTargets.length === 0) return;
     addToDailyLogs.mutate({
-      record: dailyLogTarget,
+      records: dailyLogTargets,
       date: dailyLogForm.date,
-      type: dailyLogForm.type,
-      kpaSlot: dailyLogForm.type === "KPA" ? dailyLogForm.kpaSlot : "",
     });
   };
+
+  const actionsColumnWidth = Math.max(
+    92,
+    ...tableData.map((record) => {
+      const controlWidths = [
+        record.status !== "Closed" && canEditRecord(record) ? 32 : 0,
+        canDeleteRecord(record) ? 32 : 0,
+      ].filter(Boolean);
+      return (
+        24 +
+        controlWidths.reduce((total, width) => total + width, 0) +
+        Math.max(0, controlWidths.length - 1) * 8
+      );
+    }),
+  );
 
   const columns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
     {
-      headerName: "Due Task Name",
+      headerName: "KPA Task",
       field: "dueTaskName",
       minWidth: 280,
       flex: 2,
@@ -411,6 +520,24 @@ const KraKpaDueTask = () => {
           {value}
         </button>
       ),
+    },
+    {
+      headerName: "KPA Task Deadline",
+      field: "deadline",
+      width: 190,
+      valueFormatter: ({ value }) => formatDate(value),
+    },
+    {
+      headerName: "Main KPA",
+      field: "parentKpaName",
+      minWidth: 240,
+      flex: 2,
+    },
+    {
+      headerName: "Main KPA Deadline",
+      field: "parentKpaDeadline",
+      width: 170,
+      valueFormatter: ({ value }) => formatDate(value),
     },
     { headerName: "Lead", field: "leadName", minWidth: 160, flex: 1 },
     {
@@ -430,12 +557,6 @@ const KraKpaDueTask = () => {
       field: "identifierName",
       minWidth: 180,
       flex: 1,
-    },
-    {
-      headerName: "Deadline",
-      field: "deadline",
-      width: 150,
-      valueFormatter: ({ value }) => formatDate(value),
     },
     {
       headerName: "Status",
@@ -465,7 +586,7 @@ const KraKpaDueTask = () => {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
-      width: 365,
+      width: actionsColumnWidth,
       sortable: false,
       filter: false,
       cellRenderer: ({ data, node }) => (
@@ -474,11 +595,8 @@ const KraKpaDueTask = () => {
           node={node}
           onEdit={openEdit}
           onAction={(type, record) => setPendingAction({ type, record })}
-          onAddToDailyLogs={openAddToDailyLogs}
           canEdit={canEditRecord(data)}
           canDelete={canDeleteRecord(data)}
-          canClose={canCloseRecord(data)}
-          canAddToDailyLogs={canAddToDailyLogsRecord(data)}
           isPending={rowAction.isPending || addToDailyLogs.isPending}
         />
       ),
@@ -499,7 +617,6 @@ const KraKpaDueTask = () => {
           />
         )}
       </div>
-
       <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
         <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
           {dayjs(dateRange.startDate).format("DD MMM YYYY")}
@@ -541,7 +658,18 @@ const KraKpaDueTask = () => {
           columns={columns}
           hideTitle
           enableCheckbox
+          checkAll
           search
+          onSelectionChange={setSelectedDueTasks}
+          searchRowActions={
+            <PrimaryButton
+              type="button"
+              title={`Add to Daily Logs (${selectedDueTasks.length})`}
+              handleSubmit={openAddToDailyLogs}
+              disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
+              className="!w-[230px]"
+            />
+          }
           exportData
           hideFilter
           processExportCell={({ value }) => value ?? ""}
@@ -557,11 +685,27 @@ const KraKpaDueTask = () => {
       >
         {viewRecord && (
           <div className="space-y-2 py-2">
-            <DetalisFormatted title="Due Task Name" detail={viewRecord.dueTaskName} />
-            <DetalisFormatted title="Lead" detail={formatUserName(viewRecord.lead)} />
+            <DetalisFormatted
+              title="KPA Task"
+              detail={viewRecord.dueTaskName}
+            />
+            <DetalisFormatted
+              title="Main KPA"
+              detail={viewRecord.parentKpa?.target || "-"}
+            />
+            <DetalisFormatted
+              title="Main KPA Deadline"
+              detail={formatDate(viewRecord.parentKpa?.deadline)}
+            />
+            <DetalisFormatted
+              title="Lead"
+              detail={formatUserName(viewRecord.lead)}
+            />
             <DetalisFormatted
               title="Assigned By"
-              detail={formatUserName(viewRecord.assignedBy || viewRecord.createdBy)}
+              detail={formatUserName(
+                viewRecord.assignedBy || viewRecord.createdBy,
+              )}
             />
             <DetalisFormatted
               title="Identification Date"
@@ -571,14 +715,23 @@ const KraKpaDueTask = () => {
               title="Task Identifier"
               detail={formatUserName(viewRecord.taskIdentifier)}
             />
-            <DetalisFormatted title="Deadline" detail={formatDate(viewRecord.deadline)} />
+            <DetalisFormatted
+              title="Deadline"
+              detail={formatDate(viewRecord.deadline)}
+            />
             <DetalisFormatted title="Status" detail={viewRecord.status} />
             <DetalisFormatted
               title="Closure Date"
               detail={formatDate(viewRecord.closureDate)}
             />
-            <DetalisFormatted title="Delayed Days" detail={viewRecord.delayedDays || 0} />
-            <DetalisFormatted title="Comments" detail={viewRecord.comments || "-"} />
+            <DetalisFormatted
+              title="Delayed Days"
+              detail={viewRecord.delayedDays || 0}
+            />
+            <DetalisFormatted
+              title="Comments"
+              detail={viewRecord.comments || "-"}
+            />
           </div>
         )}
       </MuiModal>
@@ -587,36 +740,65 @@ const KraKpaDueTask = () => {
         open={Boolean(pendingAction)}
         onClose={() => setPendingAction(null)}
         onConfirm={() => pendingAction && rowAction.mutate(pendingAction)}
-        title={pendingAction?.type === "delete" ? "Delete Due Task" : "Close Due Task"}
-        message={
-          pendingAction?.type === "delete"
-            ? "Are you sure you want to delete this Due Task?"
-            : "Mark this Due Task as closed?"
-        }
-        confirmText={pendingAction?.type === "delete" ? "Delete" : "Mark As Done"}
+        title="Delete Due Task"
+        message="Are you sure you want to delete this Due Task?"
+        confirmText="Delete"
         cancelText="Cancel"
         cancelFirst
         isLoading={rowAction.isPending}
       />
 
       <MuiModal
-        open={Boolean(dailyLogTarget)}
-        onClose={() => setDailyLogTarget(null)}
+        open={dailyLogTargets.length > 0}
+        onClose={() => setDailyLogTargets([])}
         title="Add to Daily Logs"
-        widthClass="w-[92vw] max-w-[560px]"
+        widthClass="w-[92vw] max-w-[680px]"
       >
         <form className="grid gap-4" onSubmit={submitDailyLog} noValidate>
-          <TextField
-            label="Due Task"
-            size="small"
-            value={dailyLogTarget?.dueTaskName || ""}
-            disabled
-          />
+          <div>
+            <div className="mb-2 text-sm font-medium text-primary">
+              Selected KPAs ({dailyLogTargets.length})
+            </div>
+            <div className="max-h-52 space-y-2 overflow-y-auto rounded-lg border border-gray-200 bg-gray-50 p-3">
+              {dailyLogTargets.map((record, index) => (
+                <div
+                  key={record._id}
+                  className="flex items-start justify-between gap-3 rounded-md bg-white px-3 py-2"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-xs font-medium text-primary">
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium text-gray-800">
+                      {record.dueTaskName}
+                    </div>
+                    <div className="mt-0.5 text-xs text-gray-500">
+                      {record.parentKpa?.target || "KPA"}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    title="Remove KPA Task"
+                    aria-label={`Remove ${record.dueTaskName}`}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={() =>
+                      setDailyLogTargets((current) =>
+                        current.filter((item) => item._id !== record._id),
+                      )
+                    }
+                  >
+                    <MdClose size={20} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DatePicker
-              label="Date *"
+              label="Schedule Date *"
               format="DD-MM-YYYY"
               value={dailyLogForm.date ? dayjs(dailyLogForm.date) : null}
+              maxDate={dailyLogMaxDate || undefined}
               onChange={(date) => {
                 setDailyLogForm((current) => ({
                   ...current,
@@ -634,61 +816,11 @@ const KraKpaDueTask = () => {
               }}
             />
           </LocalizationProvider>
-          <TextField
-            label="Type *"
-            select
-            size="small"
-            value={dailyLogForm.type}
-            onChange={(event) => {
-              const type = event.target.value;
-              setDailyLogForm((current) => ({
-                ...current,
-                type,
-                ...(type !== "KPA" && { kpaSlot: "" }),
-              }));
-              setDailyLogErrors((current) => ({
-                ...current,
-                type: "",
-                ...(type !== "KPA" && { kpaSlot: "" }),
-              }));
-            }}
-            error={Boolean(dailyLogErrors.type)}
-            helperText={dailyLogErrors.type}
-          >
-            <MenuItem value="" disabled>Select Type</MenuItem>
-            <MenuItem value="KRA">KRA</MenuItem>
-            <MenuItem value="KPA">KPA</MenuItem>
-          </TextField>
-          {dailyLogForm.type === "KPA" && (
-            <TextField
-              label="KPA Slot *"
-              select
-              size="small"
-              value={dailyLogForm.kpaSlot}
-              onChange={(event) => {
-                setDailyLogForm((current) => ({
-                  ...current,
-                  kpaSlot: event.target.value,
-                }));
-                setDailyLogErrors((current) => ({
-                  ...current,
-                  kpaSlot: "",
-                }));
-              }}
-              error={Boolean(dailyLogErrors.kpaSlot)}
-              helperText={dailyLogErrors.kpaSlot}
-            >
-              <MenuItem value="" disabled>Select KPA Slot</MenuItem>
-              {KPA_SLOTS.map((slot) => (
-                <MenuItem key={slot} value={slot}>{slot}</MenuItem>
-              ))}
-            </TextField>
-          )}
           <div className="flex justify-end gap-3">
             <SecondaryButton
               type="button"
-              title="Close"
-              handleSubmit={() => setDailyLogTarget(null)}
+              title="Cancel"
+              handleSubmit={() => setDailyLogTargets([])}
             />
             <PrimaryButton
               type="submit"
@@ -706,15 +838,90 @@ const KraKpaDueTask = () => {
         widthClass="w-[92vw] max-w-[820px]"
       >
         <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
-          <TextField
-            label="Due Task Name *"
-            size="small"
-            value={form.dueTaskName}
-            onChange={updateForm("dueTaskName")}
-            error={Boolean(formErrors.dueTaskName)}
-            helperText={formErrors.dueTaskName}
-            inputProps={{ maxLength: 500 }}
-          />
+          <div className="grid gap-4 md:grid-cols-2">
+            <TextField
+              label={`${selectedKpaMonthLabel} KPA *`}
+              select
+              size="small"
+              value={form.parentKpa}
+              onChange={updateForm("parentKpa")}
+              error={Boolean(formErrors.parentKpa)}
+              helperText={formErrors.parentKpa}
+              disabled={!selectedKpaMonth || isLoadingParentKpas}
+              SelectProps={{
+                renderValue: (selected) => {
+                  const selectedKpa = parentKpaOptions.find(
+                    (kpa) => kpa._id === selected,
+                  );
+                  if (!selectedKpa) return "Select KPA";
+                  return (
+                    <div className="flex min-w-0 items-center justify-between gap-3">
+                      <span className="truncate font-medium text-primary">
+                        {selectedKpa.target}
+                      </span>
+                      <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-primary">
+                        {formatDate(selectedKpa.deadline)}
+                      </span>
+                    </div>
+                  );
+                },
+                MenuProps: {
+                  PaperProps: {
+                    sx: {
+                      maxHeight: 340,
+                      mt: 1,
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "10px",
+                      boxShadow: "0 10px 30px rgba(15, 23, 42, 0.14)",
+                    },
+                  },
+                },
+              }}
+            >
+              <MenuItem value="" disabled>
+                {isLoadingParentKpas
+                  ? "Loading KPAs..."
+                  : parentKpaOptions.length
+                    ? `Select ${selectedKpaMonthLabel} KPA`
+                    : `No KPAs available for ${selectedKpaMonthLabel}`}
+              </MenuItem>
+              {parentKpaOptions.map((kpa) => (
+                <MenuItem
+                  key={kpa._id}
+                  value={kpa._id}
+                  sx={{
+                    alignItems: "flex-start",
+                    mx: 0.75,
+                    my: 0.5,
+                    borderRadius: "8px",
+                    py: 1.1,
+                    whiteSpace: "normal",
+                    "&.Mui-selected": { backgroundColor: "#edf4ff" },
+                    "&.Mui-selected:hover": { backgroundColor: "#e3edfc" },
+                  }}
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium leading-5 text-primary">
+                      {kpa.target}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">
+                      Deadline: {formatDate(kpa.deadline)}
+                    </div>
+                  </div>
+                </MenuItem>
+              ))}
+            </TextField>
+            <TextField
+              label="KPA Task *"
+              size="small"
+              value={form.dueTaskName}
+              onChange={updateForm("dueTaskName")}
+              error={Boolean(formErrors.dueTaskName)}
+              helperText={formErrors.dueTaskName}
+              disabled={!form.parentKpa}
+              inputProps={{ maxLength: 500 }}
+            />
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             <TextField
               label="Task Identifier *"
@@ -744,19 +951,28 @@ const KraKpaDueTask = () => {
               <DatePicker
                 label="Identification Date *"
                 format="DD-MM-YYYY"
+                maxDate={identificationMaxDate || undefined}
                 value={
-                  form.identificationDate ? dayjs(form.identificationDate) : null
+                  form.identificationDate
+                    ? dayjs(form.identificationDate)
+                    : null
                 }
                 onChange={(date) => {
+                  const nextIdentificationDate = date?.isValid()
+                    ? date.format("YYYY-MM-DD")
+                    : "";
                   setForm((current) => ({
                     ...current,
-                    identificationDate: date?.isValid()
-                      ? date.format("YYYY-MM-DD")
-                      : "",
+                    identificationDate: nextIdentificationDate,
+                    ...(dayjs(current.identificationDate).format("YYYY-MM") !==
+                      dayjs(nextIdentificationDate).format("YYYY-MM") && {
+                      parentKpa: "",
+                    }),
                   }));
                   setFormErrors((current) => ({
                     ...current,
                     identificationDate: "",
+                    parentKpa: "",
                   }));
                 }}
                 slotProps={{
@@ -771,6 +987,12 @@ const KraKpaDueTask = () => {
               <DatePicker
                 label="Deadline *"
                 format="DD-MM-YYYY"
+                minDate={
+                  form.identificationDate
+                    ? dayjs(form.identificationDate)
+                    : undefined
+                }
+                maxDate={selectedParentDeadline || undefined}
                 value={form.deadline ? dayjs(form.deadline) : null}
                 onChange={(date) => {
                   setForm((current) => ({
@@ -782,7 +1004,9 @@ const KraKpaDueTask = () => {
                     deadline: "",
                   }));
                 }}
-                disabled={Boolean(editingRecord && isTaskEmployee(editingRecord))}
+                disabled={Boolean(
+                  editingRecord && isTaskEmployee(editingRecord),
+                )}
                 slotProps={{
                   textField: {
                     size: "small",
@@ -794,15 +1018,6 @@ const KraKpaDueTask = () => {
               />
             </div>
           </LocalizationProvider>
-          <TextField
-            label="Comments"
-            size="small"
-            multiline
-            minRows={3}
-            value={form.comments}
-            onChange={updateForm("comments")}
-            inputProps={{ maxLength: 5000 }}
-          />
           <div className="flex justify-end gap-3">
             <SecondaryButton
               type="button"

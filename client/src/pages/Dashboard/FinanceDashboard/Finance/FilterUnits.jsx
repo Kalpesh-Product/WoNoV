@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useEffect, useMemo, useRef } from "react";
 import {
   FormControl,
@@ -8,7 +9,7 @@ import {
 } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 

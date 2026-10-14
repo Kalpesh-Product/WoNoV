@@ -29,7 +29,12 @@ const selfKraCompletionSchema = new mongoose.Schema(
       match: /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
     },
     title: { type: String, required: true, trim: true },
-    description: { type: String, required: true, trim: true },
+    description: { type: String, trim: true, default: "" },
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraCategory",
+      default: null,
+    },
     lead: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",
@@ -46,6 +51,8 @@ const selfKraCompletionSchema = new mongoose.Schema(
       default: "Completed",
       required: true,
     },
+    startTime: { type: Date, default: null },
+    endTime: { type: Date, default: null },
     completedAt: { type: Date, required: true, default: Date.now },
     completedBy: {
       type: mongoose.Schema.Types.ObjectId,

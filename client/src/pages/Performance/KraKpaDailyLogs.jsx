@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { Autocomplete, Chip, CircularProgress, TextField } from "@mui/material";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MdChevronLeft, MdChevronRight, MdDeleteForever } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -21,15 +21,23 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
+const formatTime = (value) =>
+  value && dayjs(value).isValid() ? dayjs(value).format("hh:mm A") : "-";
 
-const KPA_SLOTS = ["11:00 AM - 12:30 PM", "03:00 PM - 04:30 PM"];
+const TYPE_CHIP_STYLES = {
+  KRA: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
+  KPA: { backgroundColor: "#ffe2dc", color: "#b42318" },
+  GENERAL: { backgroundColor: "#dcfce7", color: "#15803d" },
+};
+
+const DEFAULT_TYPE_CHIP_STYLE = {
+  backgroundColor: "#f3f4f6",
+  color: "#4b5563",
+};
 
 const emptyForm = () => ({
   dayTaskName: "",
   type: "",
-  kpaSlot: "",
-  reasonForCarryForward: "",
-  resourceComment: "",
   managerComments: "",
   hrComments: "",
 });
@@ -136,29 +144,61 @@ const KraKpaDailyLogs = () => {
   );
   const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
   const isOwnPage = String(employeeId) === String(auth?.user?._id);
-  const canEditManagerComments = canManageOthers;
+  const canEditManagerComments = canManageOthers && !isOwnPage;
   const canEditHrComments = isHrUser;
+  const canAddDailyLog = isOwnPage || canManageOthers;
   const [selectedDate, setSelectedDate] = useState(() => dayjs().startOf("day"));
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
+  const [completionTimes, setCompletionTimes] = useState({
+    startTime: null,
+    endTime: null,
+    reasonForCarryForward: "",
+    resourceComment: "",
+  });
+  const [completionTimeErrors, setCompletionTimeErrors] = useState({});
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
+  const [dailyLogInputValue, setDailyLogInputValue] = useState("");
 
   const { data: records = [], isLoading } = useQuery({
-    queryKey: ["kraKpaDailyLogs", departmentId, employeeId],
+    queryKey: [
+      "kraKpaDailyLogs",
+      departmentId,
+      employeeId,
+      selectedDate.format("YYYY-MM-DD"),
+    ],
     enabled: Boolean(departmentId && employeeId),
     queryFn: async () => {
       const response = await axios.get("/api/kra-kpa/daily-log", {
-        params: { department: departmentId, employee: employeeId },
+        params: {
+          department: departmentId,
+          employee: employeeId,
+          date: selectedDate.format("YYYY-MM-DD"),
+        },
       });
       return response.data || [];
     },
   });
+  const { data: dailyLogOptionConfig } = useQuery({
+    queryKey: ["kraKpaDailyLogOptions", departmentId, employeeId],
+    enabled: Boolean(departmentId && employeeId),
+    queryFn: async () => {
+      const response = await axios.get("/api/kra-kpa/daily-log/options", {
+        params: { department: departmentId, employee: employeeId },
+      });
+      return response.data;
+    },
+  });
+  const canCreateGeneralTask = Boolean(
+    dailyLogOptionConfig?.canCreateGeneralTask,
+  );
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
+    queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogOptions"] });
   };
 
   const saveLog = useMutation({
@@ -189,16 +229,39 @@ const KraKpaDailyLogs = () => {
   });
 
   const rowAction = useMutation({
-    mutationFn: async ({ type, record }) => {
+    mutationFn: async ({
+      type,
+      record,
+      startTime,
+      endTime,
+      reasonForCarryForward,
+      resourceComment,
+    }) => {
       if (type === "delete") {
         await axios.delete(`/api/kra-kpa/daily-log/${record._id}`);
       } else {
-        await axios.patch(`/api/kra-kpa/daily-log/${record._id}/complete`);
+        await axios.patch(`/api/kra-kpa/daily-log/${record._id}/complete`, {
+          startTime,
+          endTime,
+          reasonForCarryForward,
+          resourceComment,
+        });
       }
     },
     onSuccess: (_, { type }) => {
       refresh();
+      if (type === "complete") {
+        queryClient.invalidateQueries({ queryKey: ["kraKpaSelfKra"] });
+        queryClient.invalidateQueries({ queryKey: ["kraKpaDueTask"] });
+      }
       setPendingAction(null);
+      setCompletionTimes({
+        startTime: null,
+        endTime: null,
+        reasonForCarryForward: "",
+        resourceComment: "",
+      });
+      setCompletionTimeErrors({});
       setViewRecord(null);
       toast.success(type === "delete" ? "Daily Log deleted" : "Daily Log completed");
     },
@@ -207,18 +270,94 @@ const KraKpaDailyLogs = () => {
     },
   });
 
+  const openRowAction = (type, record) => {
+    setPendingAction({ type, record });
+    setCompletionTimes({
+      startTime: null,
+      endTime: null,
+      reasonForCarryForward: "",
+      resourceComment: "",
+    });
+    setCompletionTimeErrors({});
+  };
+
+  const closeRowAction = () => {
+    setPendingAction(null);
+    setCompletionTimes({
+      startTime: null,
+      endTime: null,
+      reasonForCarryForward: "",
+      resourceComment: "",
+    });
+    setCompletionTimeErrors({});
+  };
+
+  const confirmRowAction = () => {
+    if (pendingAction?.type !== "complete") {
+      if (pendingAction) rowAction.mutate(pendingAction);
+      return;
+    }
+    const errors = {};
+    if (!completionTimes.startTime?.isValid()) {
+      errors.startTime = "Start Time is required";
+    }
+    if (!completionTimes.endTime?.isValid()) {
+      errors.endTime = "End Time is required";
+    }
+    if (
+      completionTimes.startTime?.isValid() &&
+      completionTimes.endTime?.isValid() &&
+      !completionTimes.endTime.isAfter(completionTimes.startTime)
+    ) {
+      errors.endTime = "End Time must be after Start Time";
+    }
+    if (
+      pendingAction.record.carriedFromDailyLog &&
+      !completionTimes.reasonForCarryForward.trim()
+    ) {
+      errors.reasonForCarryForward = "Reason for Carry Forward is required";
+    }
+    if (!completionTimes.resourceComment.trim()) {
+      errors.resourceComment = "Resource Comment is required";
+    }
+    setCompletionTimeErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
+    const logDate = dayjs(pendingAction.record.date).startOf("day");
+    const toLogDateTime = (time) =>
+      logDate
+        .hour(time.hour())
+        .minute(time.minute())
+        .second(0)
+        .millisecond(0)
+        .toISOString();
+    rowAction.mutate({
+      ...pendingAction,
+      startTime: toLogDateTime(completionTimes.startTime),
+      endTime: toLogDateTime(completionTimes.endTime),
+      reasonForCarryForward: completionTimes.reasonForCarryForward.trim(),
+      resourceComment: completionTimes.resourceComment.trim(),
+    });
+  };
+
   const openEdit = (record) => {
+    if (!canManageOthers) return;
     setEditingRecord(record);
     setForm({
       dayTaskName: record.dayTaskName || "",
       type: record.type || "",
-      kpaSlot: record.kpaSlot || "",
-      reasonForCarryForward: record.reasonForCarryForward || "",
-      resourceComment: record.resourceComment || "",
       managerComments: record.managerComments || record.reviewerComments || "",
       hrComments: record.hrComments || "",
     });
     setFormErrors({});
+    setModalOpen(true);
+  };
+
+  const openCreate = () => {
+    setEditingRecord(null);
+    setForm(emptyForm());
+    setFormErrors({});
+    setDailyLogInputValue("");
     setModalOpen(true);
   };
 
@@ -233,10 +372,7 @@ const KraKpaDailyLogs = () => {
     if (!form.dayTaskName.trim()) {
       errors.dayTaskName = "Day Task Name is required";
     }
-    if (!form.type) errors.type = "Type is required";
-    if (form.type === "KPA" && !form.kpaSlot) {
-      errors.kpaSlot = "KPA Slot is required";
-    }
+    if (editingRecord && !form.type) errors.type = "Type is required";
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
     saveLog.mutate({
@@ -244,12 +380,7 @@ const KraKpaDailyLogs = () => {
         ? dayjs(editingRecord.date).format("YYYY-MM-DD")
         : selectedDate.format("YYYY-MM-DD"),
       dayTaskName: form.dayTaskName.trim(),
-      type: form.type,
-      kpaSlot: form.type === "KPA" ? form.kpaSlot : "",
-      ...(editingRecord && {
-        reasonForCarryForward: form.reasonForCarryForward.trim(),
-        resourceComment: form.resourceComment.trim(),
-      }),
+      type: editingRecord ? form.type : "GENERAL",
       ...(editingRecord && canEditManagerComments && {
         managerComments: form.managerComments.trim(),
       }),
@@ -264,6 +395,7 @@ const KraKpaDailyLogs = () => {
       records.filter((record) => dayjs(record.date).isSame(selectedDate, "day")),
     [records, selectedDate],
   );
+  const dailyLogOptions = dailyLogOptionConfig?.options || [];
 
   const mapRows = (items) =>
     items.map((record, index) => ({ ...record, srNo: index + 1 }));
@@ -273,6 +405,23 @@ const KraKpaDailyLogs = () => {
   const completedRows = mapRows(
     filteredRecords.filter((record) => record.status === "Done"),
   );
+  const summaryCounts = {
+    total: filteredRecords.length,
+    due: dueRows.length,
+    carryForward: filteredRecords.filter(
+      (record) => Boolean(record.carriedFromDailyLog),
+    ).length,
+  };
+  const canCompleteRecord = (record) =>
+    record.sourceSelfKpa
+      ? false
+      : record.sourceSelfKra
+      ? dayjs(record.date).isSame(dayjs(), "day") &&
+        String(record.sourceSelfKra?.lead?._id || record.sourceSelfKra?.lead) ===
+          String(auth?.user?._id)
+      : record.type === "KPA"
+        ? isOwnPage && dayjs(record.date).isSame(dayjs(), "day")
+        : isOwnPage;
 
   const baseColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
@@ -298,27 +447,35 @@ const KraKpaDailyLogs = () => {
     {
       headerName: "Type",
       field: "type",
-      width: 110,
-      cellRenderer: ({ value }) => (
+      width: 125,
+      cellRenderer: ({ data, value }) => (
         <Chip
           size="small"
-          label={value}
-          sx={{ backgroundColor: "#ffd8cf", color: "#b42318" }}
+          label={
+            value === "KPA"
+              ? data.sourceSelfKpa
+                ? "KPA"
+                : "KPA Task"
+              : value
+          }
+          sx={TYPE_CHIP_STYLES[value] || DEFAULT_TYPE_CHIP_STYLE}
         />
       ),
     },
     {
-      headerName: "Status",
-      field: "status",
-      width: 120,
+      headerName: "Task Source",
+      field: "taskSource",
+      width: 155,
+      valueGetter: ({ data }) =>
+        data.carriedFromDailyLog ? "Carry Forward" : "New Task",
       cellRenderer: ({ value }) => (
         <Chip
           size="small"
           label={value}
           sx={
-            value === "Done"
-              ? { backgroundColor: "#d8f0df", color: "#16784d" }
-              : { backgroundColor: "#eadcf8", color: "#6b3fa0" }
+            value === "Carry Forward"
+              ? { backgroundColor: "#ede9fe", color: "#6d28d9" }
+              : { backgroundColor: "#dbeafe", color: "#1d4ed8" }
           }
         />
       ),
@@ -373,9 +530,9 @@ const KraKpaDailyLogs = () => {
           data={data}
           node={node}
           onEdit={openEdit}
-          onAction={(type, record) => setPendingAction({ type, record })}
-          canComplete={isOwnPage}
-          canEdit
+          onAction={openRowAction}
+          canComplete={canCompleteRecord(data)}
+          canEdit={canManageOthers}
           canDelete={canManageOthers && !isOwnPage}
           isPending={rowAction.isPending}
         />
@@ -383,29 +540,7 @@ const KraKpaDailyLogs = () => {
     },
   ];
 
-  const completedColumns = [
-    ...baseColumns,
-    {
-      headerName: "Actions",
-      field: "actions",
-      pinned: "right",
-      width: 100,
-      sortable: false,
-      filter: false,
-      cellRenderer: ({ data, node }) => (
-        <DailyLogActionCell
-          data={data}
-          node={node}
-          onEdit={openEdit}
-          onAction={(type, record) => setPendingAction({ type, record })}
-          canComplete={false}
-          canEdit
-          canDelete={false}
-          isPending={rowAction.isPending}
-        />
-      ),
-    },
-  ];
+  const completedColumns = baseColumns;
 
   return (
     <PageFrame>
@@ -413,8 +548,14 @@ const KraKpaDailyLogs = () => {
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}Daily Logs - {employeeName}
         </h1>
+        {canAddDailyLog && (
+          <PrimaryButton
+            type="button"
+            title="Add Daily Log"
+            handleSubmit={openCreate}
+          />
+        )}
       </div>
-
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <div className="mb-1 flex items-center justify-center gap-3">
           <button
@@ -481,6 +622,23 @@ const KraKpaDailyLogs = () => {
             hideTitle
             enableCheckbox
             search
+            searchRowActions={
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Chip
+                  label={`Total: ${summaryCounts.total}`}
+                  sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}
+                />
+                <Chip
+                  label={`Due: ${summaryCounts.due}`}
+                  sx={{ backgroundColor: "#fef3c7", color: "#b45309" }}
+                />
+                <Chip
+                  label={`Carry Forward: ${summaryCounts.carryForward}`}
+                  sx={{ backgroundColor: "#ede9fe", color: "#6d28d9" }}
+                />
+              </div>
+            }
+            searchRowActionsPosition="right"
             exportData
             hideFilter
             processExportCell={({ value }) => value ?? ""}
@@ -491,7 +649,6 @@ const KraKpaDailyLogs = () => {
               data={completedRows}
               columns={completedColumns}
               tableTitle="COMPLETED DAILY LOGS"
-              enableCheckbox
               search
               exportData
               hideFilter
@@ -515,11 +672,34 @@ const KraKpaDailyLogs = () => {
           <div className="space-y-2 py-2">
             <DetalisFormatted title="Date" detail={formatDate(viewRecord.date)} />
             <DetalisFormatted title="Day Task Name" detail={viewRecord.dayTaskName} />
-            <DetalisFormatted title="Type" detail={viewRecord.type} />
-            {viewRecord.type === "KPA" && (
+            <DetalisFormatted
+              title="Type"
+              detail={
+                viewRecord.type === "KPA"
+                  ? viewRecord.sourceSelfKpa
+                    ? "KPA"
+                    : "KPA Task"
+                  : viewRecord.type
+              }
+            />
+            {(viewRecord.sourceDueTask?.deadline ||
+              viewRecord.deadline ||
+              viewRecord.type === "GENERAL") && (
+              <DetalisFormatted
+                title="Deadline"
+                detail={formatDate(
+                  viewRecord.sourceDueTask?.deadline ||
+                    viewRecord.deadline ||
+                    viewRecord.date,
+                )}
+              />
+            )}
+            {viewRecord.type === "KPA" && !viewRecord.sourceSelfKpa && (
               <DetalisFormatted title="KPA Slot" detail={viewRecord.kpaSlot || "-"} />
             )}
             <DetalisFormatted title="Status" detail={viewRecord.status} />
+            <DetalisFormatted title="Start Time" detail={formatTime(viewRecord.startTime)} />
+            <DetalisFormatted title="End Time" detail={formatTime(viewRecord.endTime)} />
             <DetalisFormatted
               title="Reason for Carry Forward"
               detail={viewRecord.reasonForCarryForward || "-"}
@@ -550,8 +730,8 @@ const KraKpaDailyLogs = () => {
 
       <ConfirmationModal
         open={Boolean(pendingAction)}
-        onClose={() => setPendingAction(null)}
-        onConfirm={() => pendingAction && rowAction.mutate(pendingAction)}
+        onClose={closeRowAction}
+        onConfirm={confirmRowAction}
         title={pendingAction?.type === "delete" ? "Delete Daily Log" : "Complete Daily Log"}
         message={
           pendingAction?.type === "delete"
@@ -562,86 +742,154 @@ const KraKpaDailyLogs = () => {
         cancelText="Cancel"
         cancelFirst
         isLoading={rowAction.isPending}
-      />
+      >
+        {pendingAction?.type === "complete" && (
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <TimePicker
+                label="Start Time *"
+                value={completionTimes.startTime}
+                onChange={(value) => {
+                  setCompletionTimes((current) => ({ ...current, startTime: value }));
+                  setCompletionTimeErrors((current) => ({ ...current, startTime: "" }));
+                }}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    error: Boolean(completionTimeErrors.startTime),
+                    helperText: completionTimeErrors.startTime,
+                  },
+                }}
+              />
+              <TimePicker
+                label="End Time *"
+                value={completionTimes.endTime}
+                onChange={(value) => {
+                  setCompletionTimes((current) => ({ ...current, endTime: value }));
+                  setCompletionTimeErrors((current) => ({ ...current, endTime: "" }));
+                }}
+                slotProps={{
+                  textField: {
+                    size: "small",
+                    error: Boolean(completionTimeErrors.endTime),
+                    helperText: completionTimeErrors.endTime,
+                  },
+                }}
+              />
+            </div>
+            {pendingAction.record.carriedFromDailyLog && (
+              <TextField
+                label="Reason for Carry Forward *"
+                size="small"
+                multiline
+                minRows={2}
+                value={completionTimes.reasonForCarryForward}
+                onChange={(event) => {
+                  setCompletionTimes((current) => ({
+                    ...current,
+                    reasonForCarryForward: event.target.value,
+                  }));
+                  setCompletionTimeErrors((current) => ({
+                    ...current,
+                    reasonForCarryForward: "",
+                  }));
+                }}
+                error={Boolean(completionTimeErrors.reasonForCarryForward)}
+                helperText={completionTimeErrors.reasonForCarryForward}
+                inputProps={{ maxLength: 5000 }}
+                fullWidth
+              />
+            )}
+            <TextField
+              label="Resource Comment *"
+              size="small"
+              multiline
+              minRows={3}
+              value={completionTimes.resourceComment}
+              onChange={(event) => {
+                setCompletionTimes((current) => ({
+                  ...current,
+                  resourceComment: event.target.value,
+                }));
+                setCompletionTimeErrors((current) => ({
+                  ...current,
+                  resourceComment: "",
+                }));
+              }}
+              error={Boolean(completionTimeErrors.resourceComment)}
+              helperText={completionTimeErrors.resourceComment}
+              inputProps={{ maxLength: 5000 }}
+              fullWidth
+            />
+          </LocalizationProvider>
+        )}
+      </ConfirmationModal>
 
       <MuiModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         title={editingRecord ? "Edit Daily Log" : "Add Daily Log"}
-        widthClass="w-[92vw] max-w-[820px]"
+        widthClass="w-[92vw] max-w-[410px]"
       >
         <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
-          <TextField
-            label="Day Task Name *"
-            size="small"
-            multiline
-            minRows={2}
-            value={form.dayTaskName}
-            onChange={updateForm("dayTaskName")}
-            error={Boolean(formErrors.dayTaskName)}
-            helperText={formErrors.dayTaskName}
-            inputProps={{ maxLength: 1000 }}
-          />
-          <TextField
-            label="Type *"
-            select
-            size="small"
-            value={form.type}
-            onChange={(event) => {
-              const type = event.target.value;
-              setForm((current) => ({
-                ...current,
-                type,
-                ...(type !== "KPA" && { kpaSlot: "" }),
-              }));
-              setFormErrors((current) => ({
-                ...current,
-                type: "",
-                ...(type !== "KPA" && { kpaSlot: "" }),
-              }));
-            }}
-            error={Boolean(formErrors.type)}
-            helperText={formErrors.type}
-          >
-            <MenuItem value="" disabled>Select Type</MenuItem>
-            <MenuItem value="KRA">KRA</MenuItem>
-            <MenuItem value="KPA">KPA</MenuItem>
-          </TextField>
-          {form.type === "KPA" && (
-            <TextField
-              label="KPA Slot *"
-              select
-              size="small"
-              value={form.kpaSlot}
-              onChange={updateForm("kpaSlot")}
-              error={Boolean(formErrors.kpaSlot)}
-              helperText={formErrors.kpaSlot}
-            >
-              <MenuItem value="" disabled>Select KPA Slot</MenuItem>
-              {KPA_SLOTS.map((slot) => (
-                <MenuItem key={slot} value={slot}>{slot}</MenuItem>
-              ))}
-            </TextField>
-          )}
-          {editingRecord && (
+          {!editingRecord ? (
+            <Autocomplete
+              fullWidth
+              freeSolo={canCreateGeneralTask}
+              autoSelect
+              selectOnFocus
+              options={dailyLogOptions}
+              value={form.dayTaskName || null}
+              inputValue={dailyLogInputValue}
+              noOptionsText={
+                canCreateGeneralTask
+                  ? "No options — type to add"
+                  : "No options available"
+              }
+              onInputChange={(_, value) => {
+                setDailyLogInputValue(value);
+                if (canCreateGeneralTask) {
+                  setForm((current) => ({ ...current, dayTaskName: value }));
+                }
+                setFormErrors((current) => ({
+                  ...current,
+                  dayTaskName: "",
+                }));
+              }}
+              onChange={(_, value) => {
+                setForm((current) => ({
+                  ...current,
+                  dayTaskName: value || "",
+                }));
+                setDailyLogInputValue(value || "");
+                setFormErrors((current) => ({
+                  ...current,
+                  dayTaskName: "",
+                }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Daily Log *"
+                  size="small"
+                  error={Boolean(formErrors.dayTaskName)}
+                  helperText={formErrors.dayTaskName}
+                  inputProps={{ ...params.inputProps, maxLength: 1000 }}
+                />
+              )}
+            />
+          ) : (
             <>
               <TextField
-                label="Reason for Carry Forward"
+                label="Day Task Name *"
                 size="small"
                 multiline
                 minRows={2}
-                value={form.reasonForCarryForward}
-                onChange={updateForm("reasonForCarryForward")}
-                inputProps={{ maxLength: 5000 }}
-              />
-              <TextField
-                label="Resource Comment"
-                size="small"
-                multiline
-                minRows={2}
-                value={form.resourceComment}
-                onChange={updateForm("resourceComment")}
-                inputProps={{ maxLength: 5000 }}
+                value={form.dayTaskName}
+                disabled
+                error={Boolean(formErrors.dayTaskName)}
+                helperText={formErrors.dayTaskName}
+                inputProps={{ maxLength: 1000 }}
               />
             </>
           )}

@@ -18,6 +18,12 @@ const dueTaskSchema = new mongoose.Schema(
       ref: "UserData",
       required: true,
     },
+    parentKpa: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KraKpaSelfKpa",
+      default: null,
+      index: true,
+    },
     dueTaskName: { type: String, required: true, trim: true },
     lead: {
       type: mongoose.Schema.Types.ObjectId,

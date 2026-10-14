@@ -4,6 +4,8 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const SelfKra = require("../../models/performances/KraKpaSelfKra");
 const SelfKraCompletion = require("../../models/performances/KraKpaSelfKraCompletion");
+const KraCategory = require("../../models/performances/KraCategory");
+const DailyLog = require("../../models/performances/KraKpaDailyLog");
 
 const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const toOccurrenceDate = (value = new Date()) =>
@@ -22,12 +24,14 @@ const isValidOccurrenceDate = (value) => {
 const DETAIL_POPULATION = [
   { path: "employee", select: "firstName middleName lastName" },
   { path: "department", select: "name" },
+  { path: "category", select: "categoryName" },
   { path: "lead", select: "firstName middleName lastName empId" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
 ];
 const COMPLETION_POPULATION = [
   { path: "employee", select: "firstName middleName lastName" },
   { path: "department", select: "name" },
+  { path: "category", select: "categoryName" },
   { path: "lead", select: "firstName middleName lastName empId" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
   { path: "completedBy", select: "firstName middleName lastName empId" },
@@ -88,21 +92,28 @@ const getScopedFilter = (req, access) => ({
 
 const validateKra = (kra) => {
   const title = typeof kra?.title === "string" ? kra.title.trim() : "";
-  const description = typeof kra?.description === "string"
-    ? kra.description.trim()
-    : "";
-  if (!title || !description) {
-    return { error: "Every KRA requires a title and description" };
-  }
+  const category = kra?.category;
+  if (!title) return { error: "Every KRA requires a title" };
   if (title.length > 300) return { error: "KRA title is too long" };
-  if (description.length > 3000) return { error: "KRA description is too long" };
+  if (!mongoose.isValidObjectId(category)) {
+    return { error: "Select a valid KRA category" };
+  }
   return {
     value: {
       title,
-      description,
+      category,
     },
   };
 };
+
+const isActiveDepartmentCategory = (req, category, department) =>
+  KraCategory.exists({
+    _id: category,
+    company: req.company,
+    department,
+    isActive: true,
+    isDeleted: { $ne: true },
+  });
 
 const validateSelectedLead = (lead) => {
   if (!lead || !mongoose.isValidObjectId(lead)) {
@@ -169,7 +180,6 @@ const listSelfKra = async (req, res, next) => {
     const templates = await SelfKra.find({
       ...templateScope,
       title: { $exists: true },
-      isActive: { $ne: false },
     })
       .sort({ createdAt: -1 })
       .populate(DETAIL_POPULATION)
@@ -198,6 +208,7 @@ const listSelfKra = async (req, res, next) => {
         rows.push({
           ...completion,
           _id: template._id,
+          isActive: template.isActive,
           completionId: completion._id,
           closingDate: completion.completedAt,
         });
@@ -263,6 +274,15 @@ const createSelfKra = async (req, res, next) => {
     if (scope.message) return res.status(scope.status).json({ message: scope.message });
     const validation = validateKra(req.body);
     if (validation.error) return res.status(400).json({ message: validation.error });
+    if (!await isActiveDepartmentCategory(
+      req,
+      validation.value.category,
+      req.body.department,
+    )) {
+      return res.status(400).json({
+        message: "Category must be active and belong to this department",
+      });
+    }
 
     let lead = req.user;
     if (scope.access.canSelectLead) {
@@ -294,6 +314,109 @@ const createSelfKra = async (req, res, next) => {
   }
 };
 
+const addSelfKrasToDailyLogs = async (req, res, next) => {
+  try {
+    const selfKraIds = Array.isArray(req.body?.selfKraIds)
+      ? [...new Set(req.body.selfKraIds.map(String))]
+      : [];
+    const scheduleDate = req.body?.date;
+    if (selfKraIds.length === 0 || selfKraIds.length > 100) {
+      return res.status(400).json({
+        message: "Select between 1 and 100 Self KRAs",
+      });
+    }
+    if (selfKraIds.some((id) => !mongoose.isValidObjectId(id))) {
+      return res.status(400).json({ message: "Invalid Self KRA selection" });
+    }
+    if (!isValidOccurrenceDate(scheduleDate)) {
+      return res.status(400).json({
+        message: "A valid Schedule Date is required",
+      });
+    }
+
+    const access = await getAccess(req);
+    const records = await SelfKra.find({
+      _id: { $in: selfKraIds },
+      ...getScopedFilter(req, access),
+      isActive: { $ne: false },
+    })
+      .select("company department employee title lead startsOn createdAt createdBy")
+      .lean();
+    if (records.length !== selfKraIds.length) {
+      return res.status(404).json({
+        message: "One or more selected Self KRAs are unavailable",
+      });
+    }
+    if (records.some((record) => String(record.lead) !== String(req.user))) {
+      return res.status(403).json({
+        message: "Only the assigned lead can add a Self KRA to Daily Logs",
+      });
+    }
+    const startsAfterSchedule = records.find((record) => {
+      const startsOn = record.startsOn || toOccurrenceDate(record.createdAt);
+      return startsOn > scheduleDate;
+    });
+    if (startsAfterSchedule) {
+      return res.status(400).json({
+        message: `Schedule Date cannot be before ${startsAfterSchedule.title} starts`,
+      });
+    }
+
+    const date = new Date(`${scheduleDate}T00:00:00.000Z`);
+    const existing = await DailyLog.find({
+      company: req.company,
+      sourceSelfKra: { $in: records.map((record) => record._id) },
+      date,
+      isDeleted: false,
+    })
+      .select("sourceSelfKra")
+      .lean();
+    if (existing.length > 0) {
+      const existingIds = new Set(
+        existing.map((record) => String(record.sourceSelfKra)),
+      );
+      const duplicateNames = records
+        .filter((record) => existingIds.has(String(record._id)))
+        .map((record) => record.title)
+        .join(", ");
+      return res.status(409).json({
+        message: `${duplicateNames} already scheduled for this date`,
+      });
+    }
+
+    const createdLogs = await DailyLog.insertMany(
+      records.map((record) => ({
+        company: record.company,
+        department: record.department,
+        employee: record.employee,
+        sourceSelfKra: record._id,
+        date,
+        dayTaskName: record.title,
+        type: "KRA",
+        kpaSlot: "",
+        status: "Due",
+        createdBy: req.user,
+        updatedBy: req.user,
+      })),
+    );
+    await DailyLog.populate(createdLogs, [
+      { path: "department", select: "name" },
+      { path: "employee", select: "firstName middleName lastName empId" },
+      { path: "sourceSelfKra", select: "title description category lead startsOn" },
+      { path: "createdBy", select: "firstName middleName lastName empId" },
+      { path: "updatedBy", select: "firstName middleName lastName empId" },
+    ]);
+    return res.status(201).json(createdLogs);
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "One or more selected Self KRAs are already scheduled for this date",
+      });
+    }
+    return next(error);
+  }
+};
+
 const updateSelfKra = async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -314,8 +437,25 @@ const updateSelfKra = async (req, res, next) => {
     const filter = { _id: req.params.id, ...getScopedFilter(req, access) };
     const existing = await SelfKra.findOne(filter).select("department").lean();
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
+    if (!await isActiveDepartmentCategory(
+      req,
+      validation.value.category,
+      existing.department,
+    )) {
+      return res.status(400).json({
+        message: "Category must be active and belong to this department",
+      });
+    }
 
     const changes = { ...validation.value, updatedBy: req.user };
+    if (Object.hasOwn(req.body, "isActive")) {
+      if (typeof req.body.isActive !== "boolean") {
+        return res.status(400).json({
+          message: "Active Status must be Active or Inactive",
+        });
+      }
+      changes.isActive = req.body.isActive;
+    }
     if (access.canSelectLead) {
       const leadValidation = validateSelectedLead(req.body.lead);
       if (leadValidation.error) {
@@ -332,6 +472,32 @@ const updateSelfKra = async (req, res, next) => {
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
     if (!record) return res.status(404).json({ message: "Self KRA not found" });
+    await DailyLog.updateMany(
+      {
+        company: req.company,
+        sourceSelfKra: record._id,
+        status: "Due",
+        isDeleted: { $ne: true },
+      },
+      {
+        $set: {
+          dayTaskName: record.title,
+          updatedBy: req.user,
+        },
+      },
+    );
+    if (changes.isActive === false) {
+      await DailyLog.updateMany(
+        {
+          company: req.company,
+          sourceSelfKra: record._id,
+          status: "Due",
+          date: { $gte: new Date(`${toOccurrenceDate()}T00:00:00.000Z`) },
+          isDeleted: { $ne: true },
+        },
+        { $set: { isDeleted: true, updatedBy: req.user } },
+      );
+    }
     return res.json(record);
   } catch (error) {
     return next(error);
@@ -355,7 +521,7 @@ const completeSelfKra = async (req, res, next) => {
       });
     }
     const existing = await SelfKra.findOne(scope)
-      .select("company department employee title description lead createdBy startsOn createdAt isActive")
+      .select("company department employee title description category lead createdBy startsOn createdAt isActive")
       .lean();
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
     if (existing.isActive === false) {
@@ -379,6 +545,7 @@ const completeSelfKra = async (req, res, next) => {
       occurrenceDate,
       title: existing.title,
       description: existing.description,
+      category: existing.category || null,
       lead: existing.lead,
       createdBy: existing.createdBy || existing.employee,
       completedAt: new Date(),
@@ -426,6 +593,7 @@ module.exports = {
   listSelfKra,
   listSelfKraLeadOptions,
   createSelfKra,
+  addSelfKrasToDailyLogs,
   updateSelfKra,
   completeSelfKra,
   deleteSelfKra,

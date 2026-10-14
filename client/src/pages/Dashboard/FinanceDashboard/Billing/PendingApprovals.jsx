@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useEffect, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -13,7 +14,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
+
 import { useDispatch } from "react-redux";
 import { setVoucherDetails } from "../../../../redux/slices/financeSlice";
 import PageFrame from "../../../../components/Pages/PageFrame";

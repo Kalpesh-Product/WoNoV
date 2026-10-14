@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useState } from "react";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
@@ -12,7 +13,7 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
-import { useNavigate } from "react-router-dom";
+
 import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -33,10 +34,19 @@ const canUseBulkApprove = (user) =>
       ),
   );
 
+const BudgetViewDetail = ({ detail, ...props }) => {
+  const isMissing = detail == null ||
+    (typeof detail === "string" && ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
+  return <DetalisFormatted {...props} detail={isMissing ? "\u2014" : detail} />;
+};
+
 const PendingApprovalsBudget = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const canUseBulkBudgetActions = canUseBulkApprove(auth?.user);
+  const isApprovalAdmin = (auth?.user?.role || []).some((role) =>
+    ["master admin", "super admin"].includes(String(role?.roleTitle || role).trim().toLowerCase()),
+  );
+  const canUseBulkBudgetActions = canUseBulkApprove(auth?.user) || isApprovalAdmin;
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [selectedBudget, setSelectedBudget] = useState([]);
@@ -88,13 +98,14 @@ const PendingApprovalsBudget = () => {
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
       queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
       reset();
       navigate(
         "/app/dashboard/finance-dashboard/billing/budget-request/budget-history"
       );
     },
     onError: (error) => {
-      toast.error(error.message || "FAILED TO REJECT REQUEST");
+      toast.error(error.response?.data?.message || error.message || "FAILED TO REJECT REQUEST");
     },
   });
 
@@ -113,10 +124,11 @@ const PendingApprovalsBudget = () => {
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
       queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
       reset();
     },
     onError: (error) => {
-      toast.error(error.message);
+      toast.error(error.response?.data?.message || error.message);
     },
   });
 
@@ -124,6 +136,7 @@ const PendingApprovalsBudget = () => {
     useMutation({
       mutationKey: ["bulkApproveBudget"],
       mutationFn: async (selectedRows) => {
+        if (selectedRows.some((row) => !row.canApproveBudget)) throw new Error("Selection contains budgets requiring another approval level" );
         const budgetIds = selectedRows.map((row) => row._id).filter(Boolean);
 
         if (!budgetIds.length) {
@@ -145,10 +158,11 @@ const PendingApprovalsBudget = () => {
         queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
         queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
         queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
+      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
         reset();
       },
       onError: (error) => {
-        toast.error(error.message || "FAILED TO APPROVE SELECTED REQUESTS");
+        toast.error(error.response?.data?.message || error.message || "FAILED TO APPROVE SELECTED REQUESTS");
       },
     });
 
@@ -183,6 +197,7 @@ const PendingApprovalsBudget = () => {
     {
       field: "actions",
       headerName: "Actions",
+      width: 220,
       pinned: "right",
       cellRenderer: (params) => {
         return (
@@ -196,12 +211,13 @@ const PendingApprovalsBudget = () => {
                 <MdOutlineRemoveRedEye
                   className="cursor-pointer text-lg"
                   onClick={() => {
-                    setSelectedBudget(params.data);
+                    setSelectedBudget({ ...params.data, srNo: params.node?.rowIndex == null ? params.data.srNo : params.node.rowIndex + 1 });
                     setModalType("view");
                     setModalOpen(true);
                   }}
                 />
                 <ThreeDotMenu
+                  disabled={!params.data.canApproveBudget}
                   rowId={params.data.id}
                   menuItems={[
                     {
@@ -220,6 +236,7 @@ const PendingApprovalsBudget = () => {
                     },
                   ]}
                 />
+                <span className="text-xs font-semibold text-[#1E3D73]">{params.data.approvalLevel}</span>
               </div>
             )}
           </>
@@ -243,6 +260,7 @@ const PendingApprovalsBudget = () => {
             };
           })}
           columns={kraColumn}
+          isRowSelectable={(node) => Boolean(node.data?.canApproveBudget)}
           checkbox={canUseBulkBudgetActions}
           checkAll={canUseBulkBudgetActions}
           batchButton={
@@ -300,67 +318,67 @@ const PendingApprovalsBudget = () => {
                 Pending Approvals Budget Summary
               </span> */}
               {/* <div className="font-bold">Pending Approvals Budget Summary</div> */}
-              {/* <DetalisFormatted title="Sr No" detail={selectedBudget.srNo} /> */}
-              <DetalisFormatted
+              <BudgetViewDetail title="Sr No" detail={selectedBudget.srNo} />
+              <BudgetViewDetail
                 title="Department"
                 detail={selectedBudget.department}
               />
-              <DetalisFormatted
+              <BudgetViewDetail
                 title="Expense Name"
                 detail={selectedBudget.expanseName}
               />
-              <DetalisFormatted
+              <BudgetViewDetail
                 title="Expense Type"
                 detail={selectedBudget.expanseType}
               />
-              <DetalisFormatted
+              <BudgetViewDetail
               title="Payment Type"
               detail={selectedBudget.paymentType || "-"}
             />
-              <DetalisFormatted
+              <BudgetViewDetail
                 title="ProjectedAmount"
                 detail={`INR ${inrFormat(selectedBudget.projectedAmount)}`}
               />
-              <DetalisFormatted
+              <BudgetViewDetail
                 title="Actual Amount"
                 detail={`INR ${inrFormat(selectedBudget.actualAmount)}`}
                 // detail={selectedBudget.actualAmount?.toLocaleString()}
               />
-              {/* <DetalisFormatted title="GSTIN" detail={selectedBudget.gstIn} /> */}
-              <DetalisFormatted title="Approval Status" detail={selectedBudget.status} />
-              <DetalisFormatted
+              {/* <BudgetViewDetail title="GSTIN" detail={selectedBudget.gstIn} /> */}
+              <BudgetViewDetail title="Approval Status" detail={selectedBudget.status} />
+              <BudgetViewDetail
                 title="Paid Status"
                 detail={selectedBudget.isPaid}
               />
-              {/* <DetalisFormatted
+              {/* <BudgetViewDetail
                     title="Extra Budget"
                     detail={selectedBudget.isExtraBudget ? "Yes" : "No"}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Pre-Approved"
                     detail={selectedBudget.preApproved}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Emergency Approval"
                     detail={selectedBudget.emergencyApproval}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Budget Approval"
                     detail={selectedBudget.budgetApproval}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="L1 Approval"
                     detail={selectedBudget.l1Approval}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Invoice Attached"
                     detail={selectedBudget.invoiceAttached ? "Yes" : "No"}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Invoice Name"
                     detail={selectedBudget.invoice?.name}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Invoice Link"
                     detail={
                       <a
@@ -373,15 +391,15 @@ const PendingApprovalsBudget = () => {
                       </a>
                     }
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Invoice Date"
                     detail={humanDate(selectedBudget.invoiceDate)}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Voucher Name"
                     detail={selectedBudget.voucher?.name}
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Voucher Link"
                     detail={
                       <a
@@ -394,14 +412,15 @@ const PendingApprovalsBudget = () => {
                       </a>
                     }
                   />
-                  <DetalisFormatted
+                  <BudgetViewDetail
                     title="Reimbursement Date"
                     detail={selectedBudget.reimbursementDate}
                   /> */}
-              <DetalisFormatted
+              <BudgetViewDetail
                 title="Due Date"
                 detail={humanDate(selectedBudget.dueDate)}
               />
+              <BudgetViewDetail title="Level" detail={selectedBudget.approvalLevel} />
             </div>
           )}
           {modalType === "review" && (
@@ -617,7 +636,7 @@ export default PendingApprovalsBudget;
 // import { toast } from "sonner";
 // import { queryClient } from "../../../../main";
 // import { IoCloseCircleOutline } from "react-icons/io5";
-// import { useNavigate } from "react-router-dom";
+// 
 // import { useDispatch } from "react-redux";
 // import { setVoucherDetails } from "../../../../redux/slices/financeSlice";
 // import PageFrame from "../../../../components/Pages/PageFrame";
@@ -676,7 +695,7 @@ export default PendingApprovalsBudget;
 //       reset();
 //     },
 //     onError: (error) => {
-//       toast.error(error.message || "FAILED TO REJECT REQUEST");
+//       toast.error(error.response?.data?.message || error.message || "FAILED TO REJECT REQUEST");
 //     },
 //   });
 
@@ -694,7 +713,7 @@ export default PendingApprovalsBudget;
 //       navigate("/app/dashboard/finance-dashboard/billing/voucher-request/pending-approvals-voucher");
 //     },
 //     onError: (error) => {
-//       toast.error(error.message);
+//       toast.error(error.response?.data?.message || error.message);
 //     },
 //   });
 
@@ -725,6 +744,7 @@ export default PendingApprovalsBudget;
 //     {
 //       field: "actions",
 //       headerName: "Actions",
+//      width: 220,
 //       cellRenderer: (params) => {
 //         return (
 //           <>

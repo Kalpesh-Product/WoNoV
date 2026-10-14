@@ -166,7 +166,7 @@ const fetchBudgetVoucherService = async ({
 
   if (dashboardView) {
     budgetQuery = budgetQuery.select(
-      "department unit expanseName expanseType actualAmount projectedAmount dueDate status isPaid",
+      "department unit expanseName expanseType actualAmount projectedAmount dueDate status isPaid finance.approvedBy rejectedBy",
     );
   }
 

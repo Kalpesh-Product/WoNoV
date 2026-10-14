@@ -13,7 +13,7 @@ const handleRefreshToken = async (req, res, next) => {
 
     const userExists = await User.findOne({ refreshToken })
       .select(
-        "firstName lastName clockInDetails role email empId password designation company departments permissions profilePicture phone"
+        "firstName lastName gender clockInDetails role email empId password designation company departments permissions profilePicture phone"
       )
       .populate([
         {

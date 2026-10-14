@@ -971,6 +971,205 @@ export const PERMISSIONS = {
     type: "read",
   },
 
+  FINANCE1_MONTHLY_INCOME_BREAKDOWN: {
+    value: "finance1_monthly_income_breakdown",
+    title: "MONTHLY INCOME BREAKDOWN DISTRIBUTION",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/monthly-income-breakdown",
+  },
+  FINANCE1_INVENTORY_VS_OCCUPANCY: {
+    value: "finance1_inventory_vs_occupancy",
+    title: "INVENTORY VS OCCUPANCY",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/inventory-vs-occupancy",
+  },
+  FINANCE1_ACTIVE_UNIQUE_CLIENTS: {
+    value: "finance1_active_unique_clients",
+    title: "ACTIVE UNIQUE CLIENTS",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/active-unique-clients",
+  },
+  FINANCE1_REAL_ESTATE_OWNED: {
+    value: "finance1_real_estate_owned",
+    title: "REAL ESTATE OWNED",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/real-estate-owned",
+  },
+  FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT: {
+    value: "finance1_three_years_snapshot",
+    title: "BIZNEST FINANCE 3 YEARS SNAPSHOT",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/finance-3-years-snapshot",
+  },
+  FINANCE1_BIZNEST_THREE_YEARS_SNAPSHOT: {
+    value: "finance1_biznest_three_years_snapshot",
+    title: "BIZNEST 3 YEARS SNAPSHOT",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1/biznest-3-years-snapshot",
+  },
+  // Finance Dashboard1 widgets (independent from the original dashboard).
+  FINANCE1_INCOME_SUMMARY_CARD: {
+    value: "finance1_income_summary_card",
+    title: "Income Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_EXPENSE_SUMMARY_CARD: {
+    value: "finance1_expense_summary_card",
+    title: "Expense Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_PROFIT_LOSS_SUMMARY_CARD: {
+    value: "finance1_profit_loss_summary_card",
+    title: "Profit-Loss Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_AVERAGE_UNIQUE_CLIENTS_SUMMARY_CARD: {
+    value: "finance1_average_unique_clients_summary_card",
+    title: "Average Unique Clients Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_TOTAL_INVENTORY_SUMMARY_CARD: {
+    value: "finance1_total_inventory_summary_card",
+    title: "Total Inventory Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_OCCUPIED_INVENTORY_SUMMARY_CARD: {
+    value: "finance1_occupied_inventory_summary_card",
+    title: "Occupied Inventory Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_PER_SQ_FT_SUMMARY_CARD: {
+    value: "finance1_per_sq_ft_summary_card",
+    title: "Per Sq. Ft. Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_ASSET_VALUE_OWNED_SUMMARY_CARD: {
+    value: "finance1_asset_value_owned_summary_card",
+    title: "Asset Value Owned Summary Card",
+    type: "read",
+    access: "widget",
+  },
+  FINANCE1_BILLING: {
+    value: "finance1_billing_card",
+    title: "BILLING",
+    type: "read",
+  },
+  FINANCE1_CASHFLOW: {
+    value: "finance1_cashflow_card",
+    title: "CASHFLOW",
+    type: "read",
+  },
+  FINANCE1_CATEGORY_WISE_TICKETS: {
+    value: "finance1_category_wise_tickets_chart",
+    title: "CATEGORY WISE TICKETS",
+    type: "read",
+  },
+  FINANCE1_CUSTOMER_COLLECTIONS: {
+    value: "finance1_customer_collections_pie_chart",
+    title: "FINANCE CUSTOMER COLLECTIONS PIE CHART",
+    type: "read",
+  },
+  FINANCE1_DATA: {
+    value: "finance1_data_card",
+    title: "FINANCE DATA",
+    type: "read",
+  },
+  FINANCE1_DUE_TICKETS: {
+    value: "finance1_due_tickets_chart",
+    title: "DUE TICKETS",
+    type: "read",
+  },
+  FINANCE1_EXECUTIVE_WISE_DUE_TASKS: {
+    value: "finance1_executive_wise_due_tasks_chart",
+    title: "EXECUTIVE WISE DUE TASKS",
+    type: "read",
+  },
+  FINANCE1_EXPENSE_DATA_CARD: {
+    value: "finance1_expense_data_card",
+    title: "FINANCE EXPENSE DATA CARD",
+    type: "read",
+  },
+  FINANCE1_FINANCE: {
+    value: "finance1_finance_card",
+    title: "FINANCE FINANCE",
+    type: "read",
+  },
+  FINANCE1_INCOME_DATA_CARD: {
+    value: "finance1_income_data_card",
+    title: "FINANCE INCOME DATA CARD",
+    type: "read",
+  },
+  FINANCE1_CASHFLOW_YEARLY_GRAPH: {
+    value: "finance1_cashflow_yearly_graph",
+    title: "FINANCE CASHFLOW YEARLY GRAPH",
+    type: "read",
+  },
+  FINANCE1_INCOME_EXPENSE_YEARLY_GRAPH: {
+    value: "finance1_income_expense_yearly_graph",
+    title: "FINANCE INCOME EXPENSE YEARLY GRAPH",
+    type: "read",
+  },
+  FINANCE1_MIX_BAG: {
+    value: "finance1_mix_bag_card",
+    title: "FINANCE MIX BAG",
+    type: "read",
+  },
+  FINANCE1_PAYOUTS: {
+    value: "finance1_payouts_pie_chart",
+    title: "FINANCE PAYOUTS PIE CHART",
+    type: "read",
+  },
+  FINANCE1_PAYOUTS_MUI_TABLE: {
+    value: "finance1_payouts_table",
+    title: "FINANCE PAYOUTS TABLE",
+    type: "read",
+  },
+  FINANCE1_PL_DATA_CARD: {
+    value: "finance1_pl_data_card",
+    title: "FINANCE PL DATA CARD",
+    type: "read",
+  },
+  FINANCE1_RENTAL_PAYMENTS_DONUT: {
+    value: "finance1_rental_payments_donut_chart",
+    title: "FINANCE RENTAL PAYMENTS DONUT CHART",
+    type: "read",
+  },
+  FINANCE1_SETTINGS: {
+    value: "finance1_settings_card",
+    title: "FINANCE SETTINGS",
+    type: "read",
+  },
+  FINANCE1_STATUTORY_PAYMENTS_DONUT: {
+    value: "finance1_statutory_payments_donut_chart",
+    title: "FINANCE STATUTORY PAYMENTS DONUT CHART",
+    type: "read",
+  },
+  FINANCE1_UNIT_WISE_DUE_TASKS: {
+    value: "finance1_unit_wise_due_tasks_chart",
+    title: "UNIT WISE DUE TASKS",
+    type: "read",
+  },
+  SIDEBAR_FINANCE_DASHBOARD1: {
+    value: "sidebar_finance_dashboard1",
+    title: "FINANCE DASHBOARD1",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/finance-dashboard1",
+  },
+
   // Finance Module
   FINANCE_CASHFLOW: {
     value: "finance_cashflow_card",

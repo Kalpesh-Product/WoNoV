@@ -1,8 +1,9 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { CircularProgress } from "@mui/material";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
@@ -94,7 +95,7 @@ const getRevenueSummaryForDateRange = (data, dateRange) => {
   );
 };
 
-const IncomeDetails = () => {
+const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
 
@@ -179,7 +180,7 @@ const IncomeDetails = () => {
     const targetPath = VERTICAL_ROUTE_MAP[vertical];
     if (!targetPath) return;
 
-    navigate(`${FINANCE_REVENUE_BASE_PATH}/${targetPath}`, {
+    navigate(`${revenueBasePath}/${targetPath}`, {
       state: { selectedVertical: vertical },
     });
   };

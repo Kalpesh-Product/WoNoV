@@ -3,18 +3,18 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const DueTask = require("../../models/performances/KraKpaDueTask");
 const DailyLog = require("../../models/performances/KraKpaDailyLog");
+const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
+const Event = require("../../models/events/Events");
+const {
+  calculateDelayedWorkingDays,
+  toCalendarKey,
+} = require("../../utils/kraKpaDelayedDays");
 
 const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-const toCalendarDate = (value = new Date()) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(value);
 const POPULATION = [
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
+  { path: "parentKpa", select: "target deadline month status" },
   { path: "lead", select: "firstName middleName lastName empId" },
   { path: "taskIdentifier", select: "firstName middleName lastName empId" },
   { path: "assignedBy", select: "firstName middleName lastName empId" },
@@ -95,6 +95,51 @@ const validateUserSelection = async (req, userId, department, field) => {
   return exists ? null : `${field} must be an active user in this department`;
 };
 
+const validateParentKpa = async ({
+  req,
+  parentKpa,
+  department,
+  employee,
+  identificationDate,
+}) => {
+  if (!mongoose.isValidObjectId(parentKpa)) {
+    return { error: "Main KPA is required" };
+  }
+  const month = identificationDate.toISOString().slice(0, 7);
+  const record = await IndividualMonthlyKpa.findOne({
+    _id: parentKpa,
+    company: req.company,
+    department,
+    employee,
+    month,
+    isDeleted: { $ne: true },
+    $or: [
+      { approvalStatus: "Approved" },
+      { approvalStatus: { $exists: false } },
+    ],
+  }).select("_id deadline");
+  if (!record) {
+    return { error: "Select a valid KPA for the selected month" };
+  }
+  if (!record.deadline) {
+    return { error: "The selected KPA must have a deadline" };
+  }
+  return { value: record._id, deadline: record.deadline };
+};
+
+const validateTaskDates = (task, parentKpaDeadline) => {
+  if (task.deadline > parentKpaDeadline) {
+    return "KPA Task deadline cannot be after the KPA deadline";
+  }
+  if (task.identificationDate > task.deadline) {
+    return "Identification Date cannot be after the KPA Task deadline";
+  }
+  if (task.identificationDate > parentKpaDeadline) {
+    return "Identification Date cannot be after the KPA deadline";
+  }
+  return null;
+};
+
 const validateTask = (body) => {
   const dueTaskName = typeof body.dueTaskName === "string"
     ? body.dueTaskName.trim()
@@ -102,8 +147,8 @@ const validateTask = (body) => {
   const comments = typeof body.comments === "string" ? body.comments.trim() : "";
   const identificationDate = parseDate(body.identificationDate);
   const deadline = parseDate(body.deadline);
-  if (!dueTaskName) return { error: "Due Task Name is required" };
-  if (dueTaskName.length > 500) return { error: "Due Task Name is too long" };
+  if (!dueTaskName) return { error: "KPA Task is required" };
+  if (dueTaskName.length > 500) return { error: "KPA Task is too long" };
   if (!identificationDate) return { error: "Identification Date is required" };
   if (!deadline) return { error: "Deadline is required" };
   if (comments.length > 5000) return { error: "Comments are too long" };
@@ -152,15 +197,48 @@ const listDueTasks = async (req, res, next) => {
       .sort({ identificationDate: -1, createdAt: -1 })
       .populate(POPULATION)
       .lean();
-    const linkedDueTaskIds = await DailyLog.distinct("sourceDueTask", {
+    const holidays = await Event.find({
       company: req.company,
-      sourceDueTask: { $in: records.map((record) => record._id) },
-    });
-    const linkedDueTaskSet = new Set(linkedDueTaskIds.map(String));
+      type: { $regex: /^holidays?$/i },
+      active: { $ne: false },
+    })
+      .select("start end")
+      .lean();
+    const dailyLogSchedules = records.length
+      ? await DailyLog.aggregate([
+          {
+            $match: {
+              company: records[0].company,
+              sourceDueTask: { $in: records.map((record) => record._id) },
+            },
+          },
+          {
+            $group: {
+              _id: "$sourceDueTask",
+              scheduledDate: { $min: "$date" },
+            },
+          },
+        ])
+      : [];
+    const scheduleByDueTask = new Map(
+      dailyLogSchedules.map((schedule) => [
+        String(schedule._id),
+        schedule.scheduledDate,
+      ]),
+    );
     return res.json(
       records.map((record) => ({
         ...record,
-        isAddedToDailyLogs: linkedDueTaskSet.has(String(record._id)),
+        delayedDays:
+          record.status === "Closed"
+            ? calculateDelayedWorkingDays(
+                record.deadline,
+                record.closureDate,
+                holidays,
+              )
+            : 0,
+        scheduledDate: scheduleByDueTask.get(String(record._id)) || null,
+        isAddedToDailyLogs: scheduleByDueTask.has(String(record._id)),
       })),
     );
   } catch (error) {
@@ -174,6 +252,21 @@ const createDueTask = async (req, res, next) => {
     if (scope.message) return res.status(scope.status).json({ message: scope.message });
     const validation = validateTask(req.body);
     if (validation.error) return res.status(400).json({ message: validation.error });
+    const parentKpaValidation = await validateParentKpa({
+      req,
+      parentKpa: req.body.parentKpa,
+      department: req.body.department,
+      employee: req.body.employee,
+      identificationDate: validation.value.identificationDate,
+    });
+    if (parentKpaValidation.error) {
+      return res.status(400).json({ message: parentKpaValidation.error });
+    }
+    const dateError = validateTaskDates(
+      validation.value,
+      parentKpaValidation.deadline,
+    );
+    if (dateError) return res.status(400).json({ message: dateError });
     const identifierError = await validateUserSelection(
       req,
       req.body.taskIdentifier,
@@ -186,6 +279,7 @@ const createDueTask = async (req, res, next) => {
       company: req.company,
       department: req.body.department,
       employee: req.body.employee,
+      parentKpa: parentKpaValidation.value,
       lead: req.body.employee,
       taskIdentifier: req.body.taskIdentifier,
       status: "Pending",
@@ -232,6 +326,21 @@ const updateDueTask = async (req, res, next) => {
     ) {
       return res.status(403).json({ message: "Due Task edit access denied" });
     }
+    const parentKpaValidation = await validateParentKpa({
+      req,
+      parentKpa: req.body.parentKpa,
+      department: record.department,
+      employee: record.employee,
+      identificationDate: validation.value.identificationDate,
+    });
+    if (parentKpaValidation.error) {
+      return res.status(400).json({ message: parentKpaValidation.error });
+    }
+    const dateError = validateTaskDates(
+      validation.value,
+      parentKpaValidation.deadline,
+    );
+    if (dateError) return res.status(400).json({ message: dateError });
     const identifierError = await validateUserSelection(
       req,
       req.body.taskIdentifier,
@@ -240,6 +349,7 @@ const updateDueTask = async (req, res, next) => {
     );
     if (identifierError) return res.status(400).json({ message: identifierError });
     Object.assign(record, validation.value, {
+      parentKpa: parentKpaValidation.value,
       lead: record.employee,
       taskIdentifier: req.body.taskIdentifier,
       updatedBy: req.user,
@@ -250,6 +360,7 @@ const updateDueTask = async (req, res, next) => {
       {
         $set: {
           dayTaskName: record.dueTaskName,
+          deadline: record.deadline,
           updatedBy: req.user,
         },
       },
@@ -317,6 +428,7 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
       employee: record.employee,
       sourceDueTask: record._id,
       date,
+      deadline: record.deadline,
       dayTaskName: record.dueTaskName,
       type,
       kpaSlot: type === "KPA" ? kpaSlot : "",
@@ -335,6 +447,105 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
     if (error?.code === 11000) {
       return res.status(409).json({
         message: "This Due Task is already in Daily Logs for the selected date",
+      });
+    }
+    return next(error);
+  }
+};
+
+const addDueTasksToDailyLogs = async (req, res, next) => {
+  try {
+    const dueTaskIds = Array.isArray(req.body?.dueTaskIds)
+      ? [...new Set(req.body.dueTaskIds.map(String))]
+      : [];
+    if (
+      dueTaskIds.length === 0 ||
+      dueTaskIds.length > 100 ||
+      dueTaskIds.some((id) => !mongoose.isValidObjectId(id))
+    ) {
+      return res.status(400).json({
+        message: "Select between 1 and 100 valid Due Tasks",
+      });
+    }
+
+    const date = parseDate(req.body?.date);
+    if (!date) return res.status(400).json({ message: "Date is required" });
+
+    const access = await getAccess(req);
+    const records = await DueTask.find({
+      _id: { $in: dueTaskIds },
+      ...getScopedFilter(req, access),
+    }).lean();
+    if (records.length !== dueTaskIds.length) {
+      return res.status(404).json({
+        message: "One or more selected Due Tasks were not found",
+      });
+    }
+    if (
+      records.some(
+        (record) =>
+          String(record.employee) !== String(req.user) &&
+          String(record.lead) !== String(req.user),
+      )
+    ) {
+      return res.status(403).json({
+        message: "You cannot add one or more selected tasks to Daily Logs",
+      });
+    }
+    if (records.some((record) => record.status === "Closed")) {
+      return res.status(409).json({
+        message: "Closed Due Tasks cannot be added to Daily Logs",
+      });
+    }
+    const selectedDate = date.toISOString().slice(0, 10);
+    if (
+      records.some(
+        (record) =>
+          !record.deadline || selectedDate > toCalendarKey(record.deadline),
+      )
+    ) {
+      return res.status(400).json({
+        message: "Daily Log date cannot be after a selected task deadline",
+      });
+    }
+
+    const existingLinks = await DailyLog.distinct("sourceDueTask", {
+      company: req.company,
+      sourceDueTask: { $in: dueTaskIds },
+    });
+    if (existingLinks.length > 0) {
+      return res.status(409).json({
+        message: "One or more selected Due Tasks are already in Daily Logs",
+      });
+    }
+
+    const dailyLogs = await DailyLog.insertMany(
+      records.map((record) => ({
+        company: record.company,
+        department: record.department,
+        employee: record.employee,
+        sourceDueTask: record._id,
+        date,
+        deadline: record.deadline,
+        dayTaskName: record.dueTaskName,
+        type: "KPA",
+        kpaSlot: "",
+        status: "Due",
+        createdBy: req.user,
+        updatedBy: req.user,
+      })),
+    );
+    await DailyLog.populate(dailyLogs, [
+      { path: "employee", select: "firstName middleName lastName empId" },
+      { path: "department", select: "name" },
+      { path: "createdBy", select: "firstName middleName lastName empId" },
+      { path: "sourceDueTask", select: "dueTaskName" },
+    ]);
+    return res.status(201).json(dailyLogs);
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(409).json({
+        message: "A selected Due Task is already in Daily Logs for this date",
       });
     }
     return next(error);
@@ -361,11 +572,17 @@ const closeDueTask = async (req, res, next) => {
       return res.status(409).json({ message: "Due Task is already closed" });
     }
     const closureDate = new Date();
-    const closureDay = new Date(`${toCalendarDate(closureDate)}T00:00:00.000Z`);
-    const deadlineDay = new Date(`${toCalendarDate(record.deadline)}T00:00:00.000Z`);
-    const delayedDays = Math.max(
-      0,
-      Math.floor((closureDay.getTime() - deadlineDay.getTime()) / 86400000),
+    const holidays = await Event.find({
+      company: req.company,
+      type: { $regex: /^holidays?$/i },
+      active: { $ne: false },
+    })
+      .select("start end")
+      .lean();
+    const delayedDays = calculateDelayedWorkingDays(
+      record.deadline,
+      closureDate,
+      holidays,
     );
     record.status = "Closed";
     record.closureDate = closureDate;
@@ -410,6 +627,7 @@ module.exports = {
   createDueTask,
   updateDueTask,
   addDueTaskToDailyLogs,
+  addDueTasksToDailyLogs,
   closeDueTask,
   deleteDueTask,
 };

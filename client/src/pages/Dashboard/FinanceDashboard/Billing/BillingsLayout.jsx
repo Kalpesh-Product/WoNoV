@@ -9,6 +9,9 @@ const BILLING_BASE_PATH = "/app/dashboard/finance-dashboard/billing";
 
 const BillingsLayout = () => {
   const location = useLocation();
+  const billingBasePath = location.pathname.startsWith("/app/dashboard/finance-dashboard1/")
+    ? "/app/dashboard/finance-dashboard1/billing"
+    : BILLING_BASE_PATH;
   const { auth } = useAuth();
 
   const userPermissions = useMemo(
@@ -20,12 +23,12 @@ const BillingsLayout = () => {
     () => [
       {
         title: "Client Invoicing",
-        route: `${BILLING_BASE_PATH}/client-invoicing`,
+        route: `${billingBasePath}/client-invoicing`,
         permission: PERMISSIONS.FINANCE_BILLING_CLIENT_INVOICE.value,
       },
       {
         title: "Voucher Request",
-        route: `${BILLING_BASE_PATH}/voucher-request`,
+        route: `${billingBasePath}/voucher-request`,
         permission: [
            PERMISSIONS.FINANCE_BILLING_VOUCHER_REQUEST.value,
           // PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
@@ -35,7 +38,7 @@ const BillingsLayout = () => {
       },
       {
         title: "Budget Request",
-        route: `${BILLING_BASE_PATH}/budget-request`,
+        route: `${billingBasePath}/budget-request`,
         permission: [
           PERMISSIONS.FINANCE_BILLING_BUDGET_REQUEST.value,
           // PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
@@ -44,7 +47,7 @@ const BillingsLayout = () => {
         ],
       },
     ],
-    []
+    [billingBasePath]
   );
 
   const allowedCards = cards.filter((card) => {
@@ -55,7 +58,7 @@ const BillingsLayout = () => {
     return requiredPermissions.some((permission) => userPermissions.includes(permission));
   });
 
-  if (location.pathname !== BILLING_BASE_PATH) {
+  if (location.pathname.replace(/\/+$/, "") !== billingBasePath) {
     return <Outlet />;
   }
 

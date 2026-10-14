@@ -3,7 +3,7 @@ import useAuth from "./useAuth";
 import useAxiosPrivate from "./useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 
-const usePageDepartment = () => {
+const usePageDepartment = (sectionOverride) => {
   const { auth } = useAuth();
   const location = useLocation();
   const axios = useAxiosPrivate();
@@ -30,10 +30,10 @@ const usePageDepartment = () => {
 
   const pathSegments = location?.pathname?.split("/")?.filter(Boolean) || [];
   const dashboardSegment = pathSegments.find((segment) =>
-    segment?.endsWith("-dashboard")
+    /-dashboard(?:\d+)?$/.test(segment || "")
   );
 
-  let section = dashboardSegment?.split("-")?.[0]?.toLowerCase?.() || "";
+  let section = sectionOverride || dashboardSegment?.split("-")?.[0]?.toLowerCase?.() || "";
 
   // Fallback for undefined section
   if (!section) {

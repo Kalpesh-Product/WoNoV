@@ -117,9 +117,6 @@ const YearlyGraph = ({
     }));
   }
 
-  const seriesKey = filteredData
-    .map((series) => `${series.name}:${(series.data || []).join(",")}`)
-    .join("|");
 
   const updatedOptions = {
     ...options,
@@ -171,7 +168,7 @@ const YearlyGraph = ({
         <div className="flex flex-col gap-4">
           {chartTopContent}
           <BarGraph
-            key={refreshOnDataChange ? `${selectedYear}-${seriesKey}` : selectedYear}
+            key={refreshOnDataChange ? (chartId || "yearly-graph") : selectedYear}
             data={filteredData}
             options={updatedOptions}
             chartId={chartId || ""}

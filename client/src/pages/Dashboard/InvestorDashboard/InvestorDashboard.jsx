@@ -467,7 +467,10 @@ const InvestorSnapshotSection = ({
   currentExitInventory = 0,
   currentProjectedFinancials = {},
   actualFinancialsByYear = {},
+  snapshotFinancialsByYear,
+  snapshotRoute,
 }) => {
+  const snapshotNavigate = useNavigate();
   const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
   const [calendarValue, setCalendarValue] = useState(() => dayjs("2025-04-01"));
   const isCalendarOpen = Boolean(calendarAnchorEl);
@@ -479,22 +482,30 @@ const InvestorSnapshotSection = ({
     />
   );
   const getPerSqFtRows = (fiscalYear) => {
-    const values = perSqFtFinancialsByYear[fiscalYear] || {};
+    const totalSqFt = Number(perSqFtFinancialsByYear[fiscalYear]?.totalSqFt) || 0;
+    const financials = financialsForYear(fiscalYear);
+    const income = Number(financials.income) || 0;
+    const expense = Number(financials.expense) || 0;
+    const values = {
+      income: totalSqFt > 0 ? income / totalSqFt : 0,
+      expense: totalSqFt > 0 ? expense / totalSqFt : 0,
+      profitLoss: totalSqFt > 0 ? (income - expense) / totalSqFt : 0,
+    };
 
     return [
       {
         label: "Per Sq. Ft. Income",
-        value: formatCurrency(values.income || 0),
+        value: formatCurrency(Math.round(values.income || 0)),
         tone: "text-[#12a573]",
       },
       {
         label: "Per Sq. Ft. Expense",
-        value: formatCurrency(values.expense || 0),
+        value: formatCurrency(Math.round(values.expense || 0)),
         tone: "text-[#f04a4a]",
       },
       {
         label: "Per Sq. Ft. Profit/Loss",
-        value: formatCurrency(values.profitLoss || 0),
+        value: formatCurrency(Math.round(values.profitLoss || 0)),
         tone:
           (values.profitLoss || 0) >= 0
             ? "text-[#12a573]"
@@ -506,6 +517,12 @@ const InvestorSnapshotSection = ({
     Math.round(
       Number(perSqFtFinancialsByYear[fiscalYear]?.totalSqFt) || 0,
     ).toLocaleString("en-IN");
+  const financialsForYear = (year) => snapshotFinancialsByYear?.[year] ||
+    (year === "FY 2026-27" ? {
+      income: currentProjectedFinancials.revenue || 0,
+      expense: currentProjectedFinancials.expense || 0,
+      profitLoss: currentProjectedFinancials.profitLoss || 0,
+    } : actualFinancialsByYear[year] || {});
   const cards = [
     {
       title: "FY - 2026-27 - PROJECTIONS",
@@ -514,13 +531,13 @@ const InvestorSnapshotSection = ({
       icon: InvestorBarsIcon,
       tone: "text-[#12a573] bg-[#eafbf3]",
       rows: [
-        { label: "Revenues", value: formatCurrency(currentProjectedFinancials.revenue || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: formatCurrency(currentProjectedFinancials.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Income", value: formatCurrency(financialsForYear("FY 2026-27").income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(financialsForYear("FY 2026-27").expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: formatCurrency(currentProjectedFinancials.profitLoss || 0),
+          value: formatCurrency(financialsForYear("FY 2026-27").profitLoss || 0),
           tone:
-            (currentProjectedFinancials.profitLoss || 0) >= 0
+            (financialsForYear("FY 2026-27").profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
@@ -541,13 +558,13 @@ const InvestorSnapshotSection = ({
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       hasCalendar: true,
       rows: [
-        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Income", value: formatCurrency(financialsForYear("FY 2025-26")?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(financialsForYear("FY 2025-26")?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: formatCurrency(actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0),
+          value: formatCurrency(financialsForYear("FY 2025-26")?.profitLoss || 0),
           tone:
-            (actualFinancialsByYear["FY 2025-26"]?.profitLoss || 0) >= 0
+            (financialsForYear("FY 2025-26")?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
@@ -563,13 +580,13 @@ const InvestorSnapshotSection = ({
       icon: InvestorBarsIcon,
       tone: "text-[#3F6291] bg-[#eaf0f8]",
       rows: [
-        { label: "Revenues", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.income || 0), tone: "text-[#12a573]" },
-        { label: "Expenses", value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.expense || 0), tone: "text-[#f04a4a]" },
+        { label: "Income", value: formatCurrency(financialsForYear("FY 2024-25")?.income || 0), tone: "text-[#12a573]" },
+        { label: "Expenses", value: formatCurrency(financialsForYear("FY 2024-25")?.expense || 0), tone: "text-[#f04a4a]" },
         {
           label: "Profit/Loss",
-          value: formatCurrency(actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0),
+          value: formatCurrency(financialsForYear("FY 2024-25")?.profitLoss || 0),
           tone:
-            (actualFinancialsByYear["FY 2024-25"]?.profitLoss || 0) >= 0
+            (financialsForYear("FY 2024-25")?.profitLoss || 0) >= 0
               ? "text-[#12a573]"
               : "text-[#f04a4a]",
         },
@@ -591,12 +608,12 @@ const InvestorSnapshotSection = ({
       borderColor="#1E3D73"
       bodyBorderColor="#9FB2CF"
       title={
-        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+        <button type="button" onClick={() => snapshotRoute && snapshotNavigate(snapshotRoute)} className="inline-flex items-baseline gap-2 text-left leading-none text-[#1E3D73]">
           <InvestorHeaderLogo compact />
           <span className="inline-flex items-baseline leading-none">
-            3 YEARS SNAPSHOT - FY 2024-25 To FY 2026-27
+            3 YEARS SNAPSHOT - FY 2024-25 TO FY 2026-27
           </span>
-        </span>
+        </button>
       }
     >
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -860,6 +877,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       hideYearNavigation
       investorVariant
       hideHeaderAmounts
+      balanceTooltipPercentages
       tooltipValueFormatter={formatMixIncomeTooltipAmount}
       showFiscalYearInTitle={false}
     />
@@ -1556,12 +1574,16 @@ const InvestorIncomeExpenseGraph = ({
   assetValueOwned,
   projectedFinancials,
   snapshotAssetValueOwned = assetValueOwned,
+  snapshotOnly = false,
+  snapshotFinancialsByYear,
+  snapshotRoute,
   totalInventory,
 }) => {
   const { currency, convert, format } = useCurrency();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
-  const { hasPermission } = useUserPermissions();
+  const { hasPermission: userHasPermission } = useUserPermissions();
+  const hasPermission = snapshotOnly ? () => true : userHasPermission;
   const currentFiscalYear = fiscalYearLabel(dayjs());
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(currentFiscalYear);
   const [hiddenProjectionLegendItems, setHiddenProjectionLegendItems] = useState([]);
@@ -2116,6 +2138,16 @@ const InvestorIncomeExpenseGraph = ({
     </div>
   );
 
+  if (snapshotOnly) {
+    return <InvestorSnapshotSection
+      format={(amount, options) => formatGraphAmount(amount, currency, convert, options)}
+      currency={currency} hasPermission={hasPermission}
+      perSqFtFinancialsByYear={perSqFtFinancialsByYear}
+      currentAssetValueOwned={snapshotAssetValueOwned} currentExitInventory={totalInventory}
+      currentProjectedFinancials={projectedFinancials} actualFinancialsByYear={actualFinancialsByYear}
+      snapshotFinancialsByYear={snapshotFinancialsByYear} snapshotRoute={snapshotRoute}
+    />;
+  }
   return (
    <div className="flex flex-col gap-4">
       <YearlyGraph
@@ -2164,7 +2196,7 @@ const InvestorIncomeExpenseGraph = ({
   );
 };
 
-const InvestorDashboard = () => {
+const InvestorDashboard = ({ snapshotOnly = false, snapshotRoute, snapshotFinancialsByYear }) => {
   const { currency, convert } = useCurrency();
   const axios = useAxiosPrivate();
   const location = useLocation();
@@ -2203,7 +2235,7 @@ const InvestorDashboard = () => {
       const response = await axios.get("/api/company/fetch-units");
       return Array.isArray(response.data) ? response.data : [];
     },
-    enabled: showDashboardHome,
+    enabled: showDashboardHome || snapshotOnly,
   });
   const investorInventoryUnits = useMemo(
     () =>
@@ -2227,7 +2259,7 @@ const InvestorDashboard = () => {
       const response = await axios.get("/api/sales/co-working-clients");
       return Array.isArray(response.data) ? response.data : [];
     },
-    enabled: showDashboardHome,
+    enabled: showDashboardHome || snapshotOnly,
   });
   const totalInventory = useMemo(
     () =>
@@ -2336,7 +2368,7 @@ const InvestorDashboard = () => {
       const response = await axios.get("/api/finance/income-expense");
       return Array.isArray(response.data?.response) ? response.data.response : [];
     },
-     enabled: showDashboardHome,
+     enabled: showDashboardHome || snapshotOnly,
   });
   const { data: investorSimpleRevenue = {} } = useQuery({
     queryKey: ["finance-dashboard-simpleRevenue"],
@@ -2344,7 +2376,7 @@ const InvestorDashboard = () => {
       const response = await axios.get("/api/sales/simple-consolidated-revenue");
       return response.data || {};
     },
-    enabled: showDashboardHome,
+    enabled: showDashboardHome || snapshotOnly,
   });
   const averageUniqueClients = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
@@ -2398,7 +2430,7 @@ const InvestorDashboard = () => {
         ? response.data.allBudgets
         : [];
     },
-    enabled: showDashboardHome,
+    enabled: showDashboardHome || snapshotOnly,
   });
   const totalSqft = useMemo(
     () =>
@@ -2527,6 +2559,11 @@ const InvestorDashboard = () => {
     };
   }, [projectedFinancials, totalSqft]);
 
+if (snapshotOnly) {
+    return <InvestorIncomeExpenseGraph snapshotOnly snapshotFinancialsByYear={snapshotFinancialsByYear} snapshotRoute={snapshotRoute}
+      assetValueOwned={assetValueOwned} snapshotAssetValueOwned={assetValueOwned}
+      projectedFinancials={projectedFinancials} totalInventory={INVESTOR_HARDCODED_DESKS} />;
+  }
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
       {showDashboardHome && (
@@ -2650,7 +2687,7 @@ const InvestorDashboard = () => {
 export default InvestorDashboard;
 
 
-// const InvestorDashboard = () => {
+// const InvestorDashboard = ({ snapshotOnly = false, snapshotRoute, snapshotFinancialsByYear }) => {
 //   return (
 //     <section className="rounded-lg bg-white p-6 shadow-sm">
 //       <h1 className="text-2xl font-semibold text-gray-800">
