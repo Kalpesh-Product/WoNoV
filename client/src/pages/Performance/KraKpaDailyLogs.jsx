@@ -546,7 +546,7 @@ const KraKpaDailyLogs = () => {
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}Daily Logs - {employeeName}
+          {departmentName ? `${departmentName} - ` : ""}{employeeName}
         </h1>
         {canAddDailyLog && (
           <PrimaryButton

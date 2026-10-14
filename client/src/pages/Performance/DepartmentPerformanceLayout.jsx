@@ -99,6 +99,16 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       path: "pending-approvals",
       permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
     }] : []),
+    {
+      label: "KPA Rating",
+      path: "kpa-rating",
+      permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
+    },
+    {
+      label: "Daily Logs Rating",
+      path: "daily-logs-rating",
+      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+    },
     ] : []),
     {
       label: "Team Daily KRA",
@@ -131,7 +141,9 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
         tab.path === "self-KRA" ||
         tab.path === "due-task" ||
         tab.path === "daily-logs" ||
-        tab.path === "pending-approvals"
+        tab.path === "pending-approvals" ||
+        tab.path === "kpa-rating" ||
+        tab.path === "daily-logs-rating"
       )
     : isAssignRoute
     ? tabs.filter(
@@ -173,6 +185,7 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       basePath={basePath}
       defaultTabPath={defaultTabPath}
       tabs={visibleTabs}
+      fitTabLabels={modulePath === "/app/kra-kpa"}
       hideTabsCondition={(pathname) =>
         pathname.includes("vendor/") || pathname.endsWith("/assign-KRA-KPA")
       }
