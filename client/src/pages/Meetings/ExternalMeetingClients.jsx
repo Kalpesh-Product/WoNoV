@@ -1,5 +1,6 @@
+import { useFinanceNavigate as useNavigate } from "../Dashboard/FinanceDashboard/financeDashboard1";
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Delete } from "@mui/icons-material";

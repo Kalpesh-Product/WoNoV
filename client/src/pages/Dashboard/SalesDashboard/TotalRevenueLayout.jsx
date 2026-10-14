@@ -5,7 +5,8 @@ import TabLayout from "../../../components/Tabs/TabLayout";
 
 const TotalRevenueLayout = () => {
   const location = useLocation();
-   const isFinanceRoute = location.pathname.includes("/finance-dashboard/");
+   const isFinance1Route = location.pathname.includes("/finance-dashboard1/");
+   const isFinanceRoute = isFinance1Route || location.pathname.includes("/finance-dashboard/");
   const isMixBagRoute = location.pathname.includes("/mix-bag/");
   // const basePath = isMixBagRoute
   //   ? "/app/dashboard/sales-dashboard/mix-bag/revenue"
@@ -45,7 +46,9 @@ const TotalRevenueLayout = () => {
   //   },
   // ];
 
-  const basePath = isFinanceRoute
+  const basePath = isFinance1Route
+    ? "/app/dashboard/finance-dashboard1/mix-bag/revenue"
+    : isFinanceRoute
     ? "/app/dashboard/finance-dashboard/mix-bag/revenue"
     : isMixBagRoute
       ? "/app/dashboard/sales-dashboard/mix-bag/revenue"

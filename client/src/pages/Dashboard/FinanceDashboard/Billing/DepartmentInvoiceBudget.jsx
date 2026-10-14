@@ -12,6 +12,12 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import StatusChip from "../../../../components/StatusChip";
 
+const BudgetViewDetail = ({ detail, ...props }) => {
+  const isMissing = detail == null ||
+    (typeof detail === "string" && ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
+  return <DetalisFormatted {...props} detail={isMissing ? "\u2014" : detail} />;
+};
+
 const DepartmentInvoiceBudget = () => {
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
@@ -224,47 +230,48 @@ const DepartmentInvoiceBudget = () => {
           }
         >
           <div className="space-y-3">
+            <BudgetViewDetail title="Sr No" detail={viewDetails.srNo} />
             {/* <div className="font-bold">Department Invoice Budget Summary</div> */}
               {/* <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
                 Department-Invoice Budget Summary
               </span> */}
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Department"
               detail={viewDetails.department || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Expense Type"
               detail={viewDetails.expanseType || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Payment Type"
               detail={viewDetails.paymentType || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Projected Amount"
               detail={`INR ${(viewDetails.projectedAmount || 0).toLocaleString()}`}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Actual Amount"
               detail={`INR ${(viewDetails.actualAmount || 0).toLocaleString()}`}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Unit"
               detail={viewDetails.unitName || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Unit No"
               detail={viewDetails.unitNo || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Building"
               detail={viewDetails.buildingName || "-"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Due Date"
               detail={
                 viewDetails.dueDate
@@ -276,12 +283,12 @@ const DepartmentInvoiceBudget = () => {
                   : "-"
               }
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Invoice Name"
               detail={`${invoiceFiles.length} ${invoiceFiles.length === 1 ? "file" : "files"} uploaded`}
             />
-            {/* <DetalisFormatted title="GSTIN" detail={viewDetails.gstIn || "-"} /> */}
-            <DetalisFormatted
+            {/* <BudgetViewDetail title="GSTIN" detail={viewDetails.gstIn || "-"} /> */}
+            <BudgetViewDetail
               title="Invoice Date"
               detail={
                 viewDetails.invoiceDate
@@ -296,15 +303,19 @@ const DepartmentInvoiceBudget = () => {
                   : "-"
               }
             />
-            <DetalisFormatted title="Approval Status" detail={viewDetails.status} />
-            <DetalisFormatted
+            <BudgetViewDetail title="Approval Status" detail={viewDetails.status} />
+            {viewDetails.status === "Approved" && (
+              <BudgetViewDetail title="Approver Name" detail={viewDetails.approverName || viewDetails.requiredApprover || "\u2014"} />
+            )}
+            <BudgetViewDetail
               title="Paid Status"
               detail={viewDetails.isPaid || "Unpaid"}
             />
-            <DetalisFormatted
+            <BudgetViewDetail
               title="Invoice File"
               detail={invoiceChips}
             />
+            <BudgetViewDetail title="Level" detail={viewDetails.approvalLevel || "\u2014"} />
 
             {/* Finance details fields are intentionally commented out for Department-Invoice Budget popup. */}
           </div>

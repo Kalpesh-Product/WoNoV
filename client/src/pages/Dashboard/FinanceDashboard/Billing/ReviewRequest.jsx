@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 // import { jsPDF } from "jspdf";
@@ -15,7 +16,7 @@ import { useSelector } from "react-redux";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
-import { useNavigate } from "react-router-dom";
+
 import html2pdf from "html2pdf.js";
 import PageFrame from "../../../../components/Pages/PageFrame";
 

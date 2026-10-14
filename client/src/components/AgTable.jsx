@@ -6,6 +6,7 @@ import React, {
   useEffect,
 } from "react";
 import { AgGridReact } from "ag-grid-react";
+import { createPortal } from "react-dom";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import { TextField, MenuItem, Chip, Pagination } from "@mui/material";
@@ -22,6 +23,7 @@ const AgTableComponent = React.memo(
     dropdownColumns = [],
     paginationPageSize,
     exportData,
+    exportButtonContainer,
     hideFilter,
     rowSelection,
     search,
@@ -34,6 +36,7 @@ const AgTableComponent = React.memo(
     searchRowActionsPosition = "left",
     searchBottomContent,
     tableHeight = 400,
+    gridHeight = 440,
     fillAvailableHeight = false,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
@@ -365,9 +368,9 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
-              {hideFilter && exportBeforeHeaderActions ? renderExportButton() : null}
+              {hideFilter && !exportButtonContainer && exportBeforeHeaderActions ? renderExportButton() : null}
               {headerActions ? headerActions : ""}
-              {hideFilter && !exportBeforeHeaderActions ? renderExportButton() : null}
+              {hideFilter && !exportButtonContainer && !exportBeforeHeaderActions ? renderExportButton() : null}
 
               {/* {buttonTitle ? (
                 <PrimaryButton
@@ -394,6 +397,8 @@ const AgTableComponent = React.memo(
             </div>
           </div>
         </div>
+
+        {exportButtonContainer && createPortal(renderExportButton(), exportButtonContainer)}
 
           {/* Custom content below title/actions */}
         {headerBottomContent && (
@@ -444,7 +449,7 @@ const AgTableComponent = React.memo(
                   ? searchRowActions
                   : ""}
                 <div className="flex items-center gap-2">
-                  {renderExportButton()}
+                  {!exportButtonContainer && renderExportButton()}
                 </div>
                 <div
                   className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
@@ -526,7 +531,7 @@ const AgTableComponent = React.memo(
           className={`ag-theme-quartz border-none w-full font-pregular ${
             fillAvailableHeight ? "flex-1 min-h-0" : ""
           }`}
-          style={fillAvailableHeight ? undefined : { height: 440 }}
+          style={fillAvailableHeight ? undefined : { height: gridHeight }}
         >
           <AgGridReact
             ref={gridRef}

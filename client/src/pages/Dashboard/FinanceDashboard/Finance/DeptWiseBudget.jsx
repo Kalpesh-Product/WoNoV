@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -5,14 +6,14 @@ import DataCard from "../../../../components/DataCard";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
-import { useNavigate } from "react-router-dom";
+
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import { parseAmount } from "../../../../utils/parseAmount";
 import { CircularProgress } from "@mui/material";
 
-const DeptWiseBudget = () => {
+const DeptWiseBudget = ({ routeBase = "/app/dashboard/finance-dashboard" }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const getFiscalYearStart = (date = dayjs()) => {
@@ -73,7 +74,7 @@ const [hiddenDepartmentExpenseSeries, setHiddenDepartmentExpenseSeries] =
                 const handleClick = () => {
                   navigate(
                     // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`
-                   `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`
+                   `${routeBase}/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`
                   );
                 };
                 return (
@@ -154,7 +155,7 @@ const [hiddenDepartmentExpenseSeries, setHiddenDepartmentExpenseSeries] =
             const handleClick = () => {
               navigate(
                 // `/app/dashboard/finance-dashboard/finance/dept-wise-budget/${params.value}`,
-                `/app/dashboard/finance-dashboard/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`,
+                `${routeBase}/mix-bag/department-wise-budget/${encodeURIComponent(params.value)}`,
                 {
                   state: {
                     deptId: params.data?.deptId,

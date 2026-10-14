@@ -46,6 +46,7 @@ const budgetSchema = new mongoose.Schema(
       default: "Pending",
       enum: ["Pending", "Approved", "Rejected"],
     },
+    rejectedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
     isPaid: {
       type: String,
       default: "Unpaid",
@@ -146,6 +147,7 @@ const budgetSchema = new mongoose.Schema(
     ],
     //Finance dept approving budget
     finance: {
+      approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
       fSrNo: {
         type: String,
       },

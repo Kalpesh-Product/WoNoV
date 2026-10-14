@@ -1,4 +1,5 @@
-import { useNavigate } from "react-router-dom";
+import { useFinanceNavigate as useNavigate } from "../pages/Dashboard/FinanceDashboard/financeDashboard1";
+
 import { motion } from "framer-motion";
 import { FaArrowRight } from "react-icons/fa";
 

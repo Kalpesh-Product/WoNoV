@@ -3,7 +3,7 @@ import { useState } from "react";
 // import { PiDotsThreeVerticalBold } from "react-icons/pi";
 import { MdMoreHoriz } from "react-icons/md";
 
-const ThreeDotMenu = ({ rowId, menuItems, isLoading, disabled = false }) => {
+const ThreeDotMenu = ({ rowId, menuItems, isLoading, disabled = false, buttonSx }) => {
   const [anchorEl, setAnchorEl] = useState(null);
 
   const handleOpen = (event) => {
@@ -19,7 +19,7 @@ const ThreeDotMenu = ({ rowId, menuItems, isLoading, disabled = false }) => {
   return (
     <div>
       {/* Three-dot menu button */}
-      <IconButton onClick={handleOpen} disabled={disabled}>
+      <IconButton onClick={handleOpen} disabled={disabled} sx={buttonSx}>
         <MdMoreHoriz />
       </IconButton>
 

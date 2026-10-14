@@ -1,5 +1,6 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import { useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
