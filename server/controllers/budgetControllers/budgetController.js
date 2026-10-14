@@ -19,6 +19,29 @@ const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const getBudgetApprovalAccess = (budget, user) => {
+  const amount = budget.particulars?.length
+    ? budget.particulars.reduce((sum, item) => sum + Number(item.particularAmount || 0), 0)
+    : Number(budget.projectedAmount);
+  const level = amount <= 10000 ? "Level 3" : amount <= 500000 ? "Level 2" : "Level 1";
+  const departments = user?.departments || [];
+  const roles = (user?.role || []).map((role) => String(role.roleTitle || role).trim().toLowerCase());
+  const inDepartment = (name) => departments.some((department) => String(department.name || "").trim().toLowerCase() === name);
+  const name = String(user?.firstName || "").trim().toLowerCase();
+  const finance = departments.some((department) => String(department._id || department) === "6798bab0e469e809084e249a") || inDepartment("finance department") || inDepartment("finance");
+  const topManagement = inDepartment("top management");
+  const kashif = name === "kashif" && topManagement && roles.includes("super admin");
+  const abrar = name === "abrar" && topManagement && roles.some((role) => ["master admin", "super admin"].includes(role));
+  // Retain existing tech bulk approval access within the Level 3 limit.
+  const tech = departments.some((department) => String(department._id || department) === TECH_DEPARTMENT_ID) || inDepartment("tech department");
+  return {
+    approvalLevel: level,
+    approvalDepartment: level === "Level 3" ? "Finance" : "Top Management",
+    requiredApprover: level === "Level 3" ? "Finance" : level === "Level 2" ? "Kashif" : "Abrar",
+    canApproveBudget: Number.isFinite(amount) && amount >= 0 && (tech || (level === "Level 3" ? finance || kashif || abrar : level === "Level 2" ? kashif || abrar : abrar)),
+  };
+};
+const fetchBudgetApprover = (userId) => User.findById(userId).select("firstName role departments").populate([{ path: "role", select: "roleTitle" }, { path: "departments", select: "name" }]).lean();
 const PERMANENT_DELETE_DEPARTMENTS = new Set([
   "top management",
   "tech department",
@@ -622,6 +645,15 @@ const fetchBudget = async (req, res, next) => {
       includeDeleted: canViewDeleted,
     });
 
+    const approver = await fetchBudgetApprover(req.user);
+    const approverIds = (result.allBudgets || []).flatMap((budget) => [budget.finance?.approvedBy, budget.rejectedBy]).filter(Boolean);
+    const recordedApprovers = await User.find({ _id: { $in: approverIds }, company }).select("firstName lastName").lean();
+    const approverNames = new Map(recordedApprovers.map((person) => [String(person._id), [person.firstName, person.lastName].filter(Boolean).join(" ")]));
+    result.allBudgets = (result.allBudgets || []).map((budget) => {
+      const access = getBudgetApprovalAccess(budget, approver);
+      const recordedName = approverNames.get(String(budget.finance?.approvedBy));
+      return { ...budget, ...access, approverName: recordedName || (access.approvalLevel === "Level 3" ? "--" : access.requiredApprover), rejectedByName: approverNames.get(String(budget.rejectedBy)) || "" };
+    });
     return res.status(200).json(result);
   } catch (error) {
     if (error.statusCode) {
@@ -745,6 +777,7 @@ const restoreBudget = async (req, res, next) => {
 const fetchPendingApprovals = async (req, res, next) => {
   try {
     const { company } = req;
+    const approver = await fetchBudgetApprover(req.user);
 
     const budgets = await Budget.find({
       company,
@@ -767,11 +800,13 @@ const fetchPendingApprovals = async (req, res, next) => {
         );
         return {
           ...budget,
+          ...getBudgetApprovalAccess(budget, approver),
           projectedAmount: particularsTotalAmount,
         };
       }
       return {
         ...budget,
+        ...getBudgetApprovalAccess(budget, approver),
       };
     });
 
@@ -974,8 +1009,14 @@ const approveFinanceBudget = async (req, res, next) => {
     }
 
     if (budget.expanseType !== "Reimbursement") {
+      if (String(budget.company) !== String(company) || budget.isDeleted) return res.status(404).json({ message: "Budget not found" });
+      const approver = await fetchBudgetApprover(user);
+      const access = getBudgetApprovalAccess(budget, approver);
+      if (!access.canApproveBudget) return res.status(403).json({ message: `${access.approvalLevel} approval required from ${access.requiredApprover}` });
+      if (budget.status !== "Pending") return res.status(409).json({ message: "Only pending budgets can be approved" });
       budget.status = "Approved";
         budget.finance.approvedAt = new Date();
+      budget.finance.approvedBy = user;
       await budget.save({ validateModifiedOnly: true });
       return res.status(200).json({ message: "Approved" });
     }
@@ -1121,9 +1162,16 @@ const rejectBudget = async (req, res, next) => {
     const { budgetId } = req.params;
     const { user, ip, company } = req;
 
+    const requestedBudget = await Budget.findOne({ _id: budgetId, company, isDeleted: { $ne: true } });
+    if (!requestedBudget) return res.status(404).json({ message: "Budget not found" });
+    if (requestedBudget.expanseType !== "Reimbursement") {
+      const access = getBudgetApprovalAccess(requestedBudget, await fetchBudgetApprover(user));
+      if (!access.canApproveBudget) return res.status(403).json({ message: `${access.approvalLevel} approval required from ${access.requiredApprover}` });
+      if (requestedBudget.status !== "Pending") return res.status(409).json({ message: "Only pending budgets can be rejected" });
+    }
     const rejectedBudget = await Budget.findByIdAndUpdate(
       { _id: budgetId },
-      { status: "Rejected" },
+      { status: "Rejected", rejectedBy: user },
       { new: true },
     );
 
@@ -1194,6 +1242,7 @@ const unapproveBudget = async (req, res, next) => {
     budget.isPaid = "Unpaid";
     budget.finance = budget.finance || {};
     budget.finance.approvedAt = undefined;
+    budget.finance.approvedBy = undefined;
 
     await budget.save({ validateModifiedOnly: true });
 

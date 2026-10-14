@@ -1,7 +1,8 @@
+import { useFinanceNavigate as useNavigate } from "../FinanceDashboard/financeDashboard1";
 import MeetingPaymentDetails from "../../../components/MeetingPaymentDetails";
 import DayPassPaymentDetails from "../../../components/DayPassPaymentDetails";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";

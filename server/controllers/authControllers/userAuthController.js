@@ -20,7 +20,7 @@ const login = async (req, res, next) => {
 
     const userExists = await User.findOne({ email })
       .select(
-        "firstName lastName clockInDetails role email empId password designation company departments permissions profilePicture phone"
+        "firstName lastName gender clockInDetails role email empId password designation company departments permissions profilePicture phone"
       )
       .populate([
         {

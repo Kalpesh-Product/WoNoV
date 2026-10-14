@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import { useMemo, useState } from "react";
 import AgTable from "../../../../components/AgTable";
 import BarGraph from "../../../../components/graphs/BarGraph";
@@ -11,7 +12,7 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
-import { useNavigate } from "react-router-dom";
+
 
 const getNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();

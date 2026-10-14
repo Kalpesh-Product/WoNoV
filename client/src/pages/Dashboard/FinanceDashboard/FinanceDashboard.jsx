@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "./financeDashboard1";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -9,7 +10,7 @@ import FinanceCard from "../../../components/FinanceCard";
 import PieChartMui from "../../../components/graphs/PieChartMui";
 import DonutChart from "../../../components/graphs/DonutChart";
 import MuiTable from "../../../components/Tables/MuiTable";
-import { useNavigate } from "react-router-dom";
+
 import { useSidebar } from "../../../context/SideBarContext";
 import { useEffect, useMemo, useState } from "react";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";

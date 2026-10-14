@@ -1,3 +1,4 @@
+import { useFinanceNavigate as useNavigate } from "../Dashboard/FinanceDashboard/financeDashboard1";
 import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
 import { isMeetingVisit } from "../../utils/isMeetingVisit";
 import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
@@ -32,7 +33,7 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 const getStateName = (stateValue) => {
   if (!stateValue) return "N/A";

@@ -17,7 +17,9 @@ const TabLayout = ({
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile(768);
-  const normalizedBasePath = basePath.replace(/\/+$/, "");
+  const normalizedBasePath = (location.pathname.startsWith("/app/dashboard/finance-dashboard1")
+    ? basePath.replace(/^\/app\/dashboard\/finance-dashboard(?=\/|$)/, "/app/dashboard/finance-dashboard1")
+    : basePath).replace(/\/+$/, "");
   const { auth } = useAuth(); // 🆕 get user
   const userPermissions = auth?.user?.permissions?.permissions || []; // 🆕
 

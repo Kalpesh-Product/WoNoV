@@ -182,6 +182,8 @@ const FyBarGraphPercentage = ({
   hideTooltipCurrencySymbol = false,
   tooltipValueFormatter,
   showFiscalYearInTitle = true,
+  balanceTooltipPercentages = false,
+  includeWorkation = false,
 }) => {
   const { convert, format } = useCurrency();
   const formatTooltipAmount = useCallback(
@@ -378,7 +380,7 @@ const FyBarGraphPercentage = ({
         return;
       }
 
-      const seriesName = INVESTOR_LEGEND_TO_SERIES[label];
+      const seriesName = label === "Workation" ? "Workation" : INVESTOR_LEGEND_TO_SERIES[label];
       if (seriesName) hiddenSeries.add(seriesName);
     });
 
@@ -557,19 +559,42 @@ const FyBarGraphPercentage = ({
           }
 
           if (investorVariant) {
-            const hasProjectedValue = INVESTOR_TOOLTIP_ROWS.some(({ vertical }) => {
+            const workationValue = displayedRawDataMap?.Workation?.[dataPointIndex] ?? 0;
+            const tooltipRows = includeWorkation && workationValue > 0
+              ? [...INVESTOR_TOOLTIP_ROWS, { vertical: "Workation", label: "Workation" }]
+              : INVESTOR_TOOLTIP_ROWS;
+            const hasProjectedValue = tooltipRows.some(({ vertical }) => {
               const seriesName = `${PROJECTED_SERIES_PREFIX}${vertical}`;
               return (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0) > 0;
             });
 
-            const total = INVESTOR_TOOLTIP_ROWS.reduce((sum, { vertical }) => {
+            const total = tooltipRows.reduce((sum, { vertical }) => {
               const seriesName = hasProjectedValue
                 ? `${PROJECTED_SERIES_PREFIX}${vertical}`
                 : vertical;
               return sum + (displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0);
             }, 0);
 
-            const rowsHtml = INVESTOR_TOOLTIP_ROWS.map(({ vertical, label }) => {
+            const shares = tooltipRows.map(({ vertical }) => {
+              const name = hasProjectedValue ? `${PROJECTED_SERIES_PREFIX}${vertical}` : vertical;
+              const value = displayedRawDataMap?.[name]?.[dataPointIndex] ?? 0;
+              const exact = total > 0 ? (value / total) * 100 : 0;
+              return { exact, percentage: value > 0 ? Math.max(1, Math.floor(exact)) : 0 };
+            });
+            if (balanceTooltipPercentages && total > 0) {
+              let remainder = 100 - shares.reduce((sum, share) => sum + share.percentage, 0);
+              while (remainder !== 0) {
+                const candidates = shares.filter((share) => share.exact > 0 && (remainder > 0 || share.percentage > 1));
+                if (!candidates.length) break;
+                candidates.sort((a, b) => remainder > 0
+                  ? (b.exact - b.percentage) - (a.exact - a.percentage)
+                  : (b.percentage - b.exact) - (a.percentage - a.exact));
+                const adjustment = remainder > 0 ? 1 : -1;
+                candidates[0].percentage += adjustment;
+                remainder -= adjustment;
+              }
+            }
+            const rowsHtml = tooltipRows.map(({ vertical, label }, rowIndex) => {
               const seriesName = hasProjectedValue
                 ? `${PROJECTED_SERIES_PREFIX}${vertical}`
                 : vertical;
@@ -579,7 +604,7 @@ const FyBarGraphPercentage = ({
                 ? INVESTOR_PROJECTED_COLORS[projectedColorIndex] || "#787878"
                 : INVESTOR_ACTUAL_COLORS[vertical] || "#2f8edc";
               const rawVal = displayedRawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
-              const percentage = total > 0 ? Math.round((rawVal / total) * 100) : 0;
+              const percentage = balanceTooltipPercentages ? shares[rowIndex].percentage : total > 0 ? Math.round((rawVal / total) * 100) : 0;
 
               return `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:7px;">
@@ -589,7 +614,7 @@ const FyBarGraphPercentage = ({
                     <strong>${formatTooltipAmount(rawVal)}</strong>
                   </span>
                 </div>
-                ${vertical === "Alternate" ? '<hr style="margin:2px 0 8px; border:0; border-top:1px solid #e5e7eb;" />' : ""}`;
+                ${rowIndex === tooltipRows.length - 1 ? '<hr style="margin:2px 0 8px; border:0; border-top:1px solid #e5e7eb;" />' : ""}`;
             }).join("");
 
             return `
@@ -671,6 +696,8 @@ const FyBarGraphPercentage = ({
     tooltipBuilder,
     investorVariant,
     formatTooltipAmount,
+    balanceTooltipPercentages,
+    includeWorkation,
     seriesColors,
     legendItems.length,
     showSmallLabels,
@@ -733,7 +760,9 @@ const FyBarGraphPercentage = ({
       <div className="flex flex-col gap-4 rounded-md">
         {investorVariant && (
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 pt-3 text-xs text-[#1E3D73]">
-            {INVESTOR_LEGEND_ITEMS.map((item) => (
+            {(includeWorkation && (rawDataMap.Workation || []).some((value) => value > 0)
+              ? [...INVESTOR_LEGEND_ITEMS.slice(0, -1), { label: "Workation", color: INVESTOR_ACTUAL_COLORS.Workation }, INVESTOR_LEGEND_ITEMS.at(-1)]
+              : INVESTOR_LEGEND_ITEMS).map((item) => (
               <button
                 key={item.label}
                 type="button"

@@ -282,23 +282,6 @@ const clockOut = async (req, res, next) => {
         .json({ message: "Check-out cannot be before check-in" });
     }
 
-    const snapshotWindow = getSnapshotShiftWindow(
-      attendance.shiftSnapshot,
-      attendance.inTime,
-    );
-    const shiftWindow = !snapshotWindow
-      ? await getEmployeeShiftWindow(user, company, attendance.inTime)
-      : {
-          latestCheckOut: new Date(
-            snapshotWindow.shiftEnd.getTime() + 60 * 60 * 1000,
-          ),
-        };
-    if (clockOutTime > shiftWindow.latestCheckOut) {
-      return res.status(400).json({
-        message: "Check-out is allowed up to 1 hour after the shift ends",
-      });
-    }
-
     // ✅ Auto-end the last break if it's open
     const lastBreak = attendance.breaks?.[attendance.breaks.length - 1];
     if (lastBreak && lastBreak.startBreak && !lastBreak.endBreak) {

@@ -26,7 +26,7 @@ const CollectionPaymentsFinanceLayout = () => {
       defaultTabPath="collection"
       tabs={tabs}
       hideTabsOnPaths={[
-        "/app/dashboard/finance-dashboard/mix-bag/collection-payments/landlord-payments-unit",
+        "/collection-payments/landlord-payments-unit",
       ]}
     />
   );
