@@ -2,9 +2,11 @@
 export const noOnlyWhitespace = (value) =>
   value.trim().length > 0 || "Field cannot be only whitespace";
 
-// Alphanumeric with space, underscore, hyphen
+// Unicode alphanumeric with whitespace, underscore, and hyphen.
+// `\s` also accepts textarea line breaks and non-standard spaces that can look
+// identical to a regular space in the UI.
 export const isAlphanumeric = (value) =>
-  /^[a-zA-Z0-9 _-]+$/.test(value) ||
+  /^[\p{L}\p{M}\p{N}\s_-]+$/u.test(value) ||
   "Only alphanumeric characters, spaces, underscores, and hyphens are allowed.";
 
 // Valid email
