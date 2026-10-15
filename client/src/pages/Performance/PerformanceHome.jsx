@@ -5,10 +5,11 @@ import WidgetSection from "../../components/WidgetSection";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import PieChartMui from "../../components/graphs/PieChartMui";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useNavigate } from "react-router-dom";
-//import { useDispatch } from "react-redux";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Card from "../../components/Card";
 import { CgWebsite } from "react-icons/cg";
+import { FaChartLine, FaUser } from "react-icons/fa";
 import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
@@ -56,14 +57,36 @@ const getCurrentDateInfo = () => {
   };
 };
 
-const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
+const PerformanceHome = ({
+  onlyFirstTwoCards = false,
+  employeeDashboard = false,
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const location = useLocation();
   const modulePath = onlyFirstTwoCards ? "/app/kra-kpa" : "/app/performance";
   const { auth } = useAuth();
+  const storedSelectedMember = useSelector(
+    (state) => state.performance.selectedMember,
+  );
+  const selectedMember =
+    location.state?.selectedMember || storedSelectedMember;
+  const selectedEmployeeId = employeeDashboard
+    ? selectedMember?.memberId?.toString()
+    : null;
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+  const isHr = roleTitles.some((roleTitle) => /^hr(?:\s|$)/.test(roleTitle));
+  const isManager = roleTitles.some((roleTitle) =>
+    roleTitle.includes("manager"),
+  );
+  const isTopManagement =
+    roleTitles.includes("top management") ||
+    (auth?.user?.departments || []).some(
+      (department) =>
+        department?.name?.trim().toLowerCase() === "top management",
+    );
   const hasOverallPerformanceAccess = roleTitles.some((roleTitle) =>
     ["master admin", "super admin"].includes(roleTitle),
   );
@@ -139,20 +162,37 @@ const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
   const visibleKpaTasksRaw = useMemo(() => {
-    if (hasOverallPerformanceAccess) return kpaTasksRaw;
-
     const allowedDepartmentNames = new Set(
       (auth?.user?.departments || [])
         .map((dept) => normalizeName(dept?.name))
         .filter(Boolean),
     );
 
-    if (allowedDepartmentNames.size === 0) return [];
+    const departmentTasks = hasOverallPerformanceAccess
+      ? kpaTasksRaw || []
+      : allowedDepartmentNames.size === 0
+        ? []
+        : (kpaTasksRaw || []).filter((item) =>
+            allowedDepartmentNames.has(normalizeName(item?.department)),
+          );
 
-    return (kpaTasksRaw || []).filter((departmentTasks) =>
-      allowedDepartmentNames.has(normalizeName(departmentTasks?.department)),
-    );
-  }, [auth?.user?.departments, hasOverallPerformanceAccess, kpaTasksRaw]);
+    if (!employeeDashboard || !selectedEmployeeId) return departmentTasks;
+
+    return departmentTasks
+      .map((item) => ({
+        ...item,
+        tasks: (item.tasks || []).filter(
+          (task) => task?.assignToId?.toString() === selectedEmployeeId,
+        ),
+      }))
+      .filter((item) => item.tasks.length > 0);
+  }, [
+    auth?.user?.departments,
+    employeeDashboard,
+    hasOverallPerformanceAccess,
+    kpaTasksRaw,
+    selectedEmployeeId,
+  ]);
 
 
   const { data: departmentDailyKraStats = [] } = useQuery({
@@ -472,9 +512,9 @@ const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
   const canAccessEmployeeKraKpaCard =
     hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
-  const performanceCards = [
+  const standardPerformanceCards = [
     {
-       title: "DEPARTMENT MONTHLY KPA",
+      title: "DEPARTMENT MONTHLY KPA",
       route: `${modulePath}/department-KPA`,
       hasAccess: canAccessDepartmentKpaCard,
     },
@@ -498,12 +538,45 @@ const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
       route: `${modulePath}/report-KRA-KPA`,
       hasAccess: hasPermission(PERMISSIONS.PERFORMANCE_REPORT_KRA_KPA),
     },
-  ].filter((card, index) => card.hasAccess && (!onlyFirstTwoCards || index < 2));
+  ];
+
+  const kraKpaDashboardCards = [
+    {
+      title: "INDIVIDUAL",
+      route: employeeDashboard
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
+        : `${modulePath}/individual/kra-kpa/individual-Monthly-KPA`,
+      icon: <FaUser />,
+      hasAccess: true,
+    },
+    {
+      title: "DAILY SCORE",
+      route: employeeDashboard
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/daily-score/kpa-rating`
+        : `${modulePath}/individual/daily-score/kpa-rating`,
+      icon: <FaChartLine />,
+      hasAccess: true,
+    },
+    {
+      title: "DEPARTMENT MONTHLY KPA",
+      route: `${modulePath}/department-KPA`,
+      icon: <CgWebsite />,
+      hasAccess:
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement),
+    },
+  ];
+
+  const performanceCards = (
+    onlyFirstTwoCards ? kraKpaDashboardCards : standardPerformanceCards
+  ).filter((card) => card.hasAccess);
 
   const cardGridClass = onlyFirstTwoCards
-    ? performanceCards.length > 1
-      ? "grid-cols-1 md:grid-cols-2"
-      : "grid-cols-1"
+    ? performanceCards.length >= 3
+      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
+      : performanceCards.length === 2
+        ? "grid-cols-1 md:grid-cols-2"
+        : "grid-cols-1"
     : performanceCards.length >= 5
       ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-5"
       : performanceCards.length === 4
@@ -541,9 +614,10 @@ const PerformanceHome = ({ onlyFirstTwoCards = false }) => {
           {performanceCards.map((card) => (
             <div key={card.route} className="h-full">
               <Card
-                icon={<CgWebsite />}
+                icon={card.icon || <CgWebsite />}
                 title={card.title}
                 route={card.route}
+                navigationState={employeeDashboard ? location.state : undefined}
               />
             </div>
           ))}

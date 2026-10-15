@@ -795,10 +795,13 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
               memberRole: params?.data?.memberRole || "Employee",
             }),
           );
- const firstTab = "individual-Monthly-KPA";
+                    const destination = location.pathname.startsWith(
+                      "/app/kra-kpa",
+                    )
+                      ? `${detailsPath}/employee-dashboard`
+                      : `${detailsPath}/individual-Monthly-KPA`;
 
-                        //navigate(`/app/performance/department-KPA/member-wise-KPA/${firstTab}`, {
-                    navigate(`${detailsPath}/${firstTab}`, {
+                    navigate(destination, {
                         // state: { selectedMember: { memberId, memberName: params.value } },
                                                 state: {
                 selectedMember: {
