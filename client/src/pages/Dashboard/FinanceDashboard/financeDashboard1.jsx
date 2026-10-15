@@ -2210,13 +2210,17 @@ const FinanceDashboard1 = () => {
   );
   const displayedIncomeSeries = incomeExpenseData.find((series) => series.name === "Income" && series.group === selectedFiscalYear);
   const displayedExpenseSeries = incomeExpenseData.find((series) => series.name === "Expense" && series.group === selectedFiscalYear);
-  const projectedIncomeTotal = (displayedIncomeSeries?.data || []).reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
+  const projectedIncomeTotal = Math.round(
+    (displayedIncomeSeries?.data || []).reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    ),
   );
-  const projectedExpenseTotal = (displayedExpenseSeries?.data || []).reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
+  const projectedExpenseTotal = Math.round(
+    (displayedExpenseSeries?.data || []).reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    ),
   );
   const projectedProfitLoss = projectedIncomeTotal - projectedExpenseTotal;
   const projectedSnapshotFinancialsByYear = {

@@ -42,7 +42,7 @@ const FinanceDashboard1Summary = ({ income, expense, profitLoss, incomeGrowth = 
   };
   const cards = [
     { key: "FINANCE1_INCOME_SUMMARY_CARD", title: "Projected Revenue", percentage: incomeGrowth, value: formatCurrency(income), period: fiscalYear, icon: FinanceBarsIcon, tone: "bg-[#eaf4ff] text-[#1d7ed0]" },
-    { key: "FINANCE1_EXPENSE_SUMMARY_CARD", title: "Projected Expense", value: formatCurrency(expense), period: fiscalYear, icon: MdReceiptLong, tone: "bg-red-50 text-[#f04a4a]" },
+    { key: "FINANCE1_EXPENSE_SUMMARY_CARD", title: "Projected Expense", value: formatCurrency(expense), period: fiscalYear, icon: MdReceiptLong, tone: "bg-red-50 text-[#f04a4a]", valueTone: "text-[#f04a4a]" },
     { key: "FINANCE1_PROFIT_LOSS_SUMMARY_CARD", title: "Projected Profit/Loss", value: formatCurrency(profitLoss ?? income - expense), period: fiscalYear, icon: FinanceBarsIcon, tone: "bg-[#eafbf3] text-[#12a573]" },
     { key: "FINANCE1_AVERAGE_UNIQUE_CLIENTS_SUMMARY_CARD", title: "Average Unique Clients", value: uniqueClientsSummary.value, period: uniqueClientsSummary.period, icon: MdGroups, tone: "bg-sky-50 text-[#13a9e8]" },
     { key: "FINANCE1_TOTAL_INVENTORY_SUMMARY_CARD", title: "Total Inventory", value: totalInventory, icon: BsFillDatabaseFill, tone: "bg-blue-50 text-[#1E3D73]" },
@@ -53,7 +53,7 @@ const FinanceDashboard1Summary = ({ income, expense, profitLoss, incomeGrowth = 
   if (!cards.length) return null;
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {cards.map(({ key, title, value, period, icon: Icon, tone, perSqft, percentage }) => (
+      {cards.map(({ key, title, value, period, icon: Icon, tone, valueTone = "text-[#1E3D73]", perSqft, percentage }) => (
         <div key={key} className="flex min-h-[92px] items-center gap-4 rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 shadow-sm">
           <span className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${tone}`}><Icon size={34} /></span>
           <div className="min-w-0 flex-1">
@@ -67,7 +67,7 @@ const FinanceDashboard1Summary = ({ income, expense, profitLoss, incomeGrowth = 
               )}
             </div>
             {period && <p className="mb-2 text-xs font-semibold text-[#58709A]">{period}</p>}
-            {perSqft ? <p className="mt-2 flex flex-wrap gap-x-3 text-sm font-semibold"><span className="text-[#12a573]">Revenue - {formatCurrency(totalSqft ? income / totalSqft : 0)}</span><span className="text-[#f04a4a]">Expense - {formatCurrency(totalSqft ? expense / totalSqft : 0)}</span></p> : <p className="mt-1 font-pmedium text-lg text-[#1E3D73]">{value}</p>}
+            {perSqft ? <p className="mt-2 flex flex-wrap gap-x-3 text-sm font-semibold"><span className="text-[#12a573]">Revenue - {formatCurrency(Math.round(totalSqft ? income / totalSqft : 0))}</span><span className="text-[#f04a4a]">Expense - {formatCurrency(Math.round(totalSqft ? expense / totalSqft : 0))}</span></p> : <p className={`mt-1 font-pmedium text-lg ${valueTone}`}>{value}</p>}
           </div>
         </div>
       ))}
