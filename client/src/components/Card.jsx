@@ -12,6 +12,7 @@ const Card = ({
   titleColor,
   fullHeight,
   route,
+  navigationState,
 }) => {
   const navigate = useNavigate();
 
@@ -28,7 +29,7 @@ const Card = ({
       variants={cardVariants}
       initial="rest"
       whileHover="hover"
-      onClick={() => navigate(route)}
+      onClick={() => navigate(route, { state: navigationState })}
       className={`group flex items-center justify-center  relative w-full p-6 ${
         fullHeight ? "h-60" : ""
       }  bg-white rounded-2xl shadow-md hover:border-[0.2px] hover:border-primary hover:shadow-xl cursor-pointer flex flex-col items-center text-center transition-all`}
