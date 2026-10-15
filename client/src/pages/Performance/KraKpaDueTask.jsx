@@ -117,23 +117,30 @@ const KraKpaDueTask = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const member = location.state?.selectedMember || selectedMember;
-  const departmentId =
-    location.state?.selectedDepartment ||
-    selectedDepartment ||
-    auth?.user?.departments?.[0]?._id;
+  const isIndividualRoute = location.pathname.includes(
+    "/kra-kpa/individual/",
+  );
+  const member = isIndividualRoute
+    ? null
+    : location.state?.selectedMember || selectedMember;
+  const departmentId = isIndividualRoute
+    ? auth?.user?.departments?.[0]?._id
+    : location.state?.selectedDepartment ||
+      selectedDepartment ||
+      auth?.user?.departments?.[0]?._id;
   const employeeId = member?.memberId || auth?.user?._id;
   const employeeName =
     member?.memberName ||
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
       .filter(Boolean)
       .join(" ");
-  const departmentName =
-    location.state?.selectedDepartmentName ||
-    selectedDepartmentName ||
-    auth?.user?.departments?.find(
-      (department) => String(department?._id) === String(departmentId),
-    )?.name;
+  const departmentName = isIndividualRoute
+    ? auth?.user?.departments?.[0]?.name
+    : location.state?.selectedDepartmentName ||
+      selectedDepartmentName ||
+      auth?.user?.departments?.find(
+        (department) => String(department?._id) === String(departmentId),
+      )?.name;
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const canManageOthers = roleTitles.some(

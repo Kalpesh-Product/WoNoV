@@ -189,11 +189,14 @@ const KraKpaIndividualMonthlyKpa = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
+  const isIndividualRoute = location.pathname.includes(
+    "/kra-kpa/individual/",
+  );
   const isEmployeeRoute = location.pathname.includes("/employee-KRA-KPA");
-  const member = isEmployeeRoute
+  const member = isEmployeeRoute || isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
-  const departmentId = isEmployeeRoute
+  const departmentId = isEmployeeRoute || isIndividualRoute
     ? auth?.user?.departments?.[0]?._id
     : location.state?.selectedDepartment ||
       selectedDepartment ||
@@ -206,7 +209,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
       .filter(Boolean)
       .join(" ");
-  const departmentName = isEmployeeRoute
+  const departmentName = isEmployeeRoute || isIndividualRoute
     ? auth?.user?.departments?.[0]?.name
     : location.state?.selectedDepartmentName ||
       selectedDepartmentName ||
