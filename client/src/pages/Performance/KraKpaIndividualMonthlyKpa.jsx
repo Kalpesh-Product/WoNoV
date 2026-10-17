@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Autocomplete,
   Chip,
   CircularProgress,
   MenuItem,
@@ -123,15 +124,6 @@ const KpaActionCell = ({
 
   return (
     <div className="flex h-full items-center gap-2">
-      {data.status !== "Completed" && canComplete && (
-        <PrimaryButton
-          type="button"
-          title="Mark As Done"
-          handleSubmit={() => onAction("complete", data)}
-          disabled={disabled}
-          className="!px-2 !py-1 !text-xs !h-7 whitespace-nowrap"
-        />
-      )}
       {showHistory && (
         <button
           type="button"
@@ -142,6 +134,15 @@ const KpaActionCell = ({
         >
           <MdHistory size={25} color="#111827" />
         </button>
+      )}
+      {data.status !== "Completed" && canComplete && (
+        <PrimaryButton
+          type="button"
+          title="Mark As Done"
+          handleSubmit={() => onAction("complete", data)}
+          disabled={disabled}
+          className="!px-2 !py-1 !text-xs !h-7 whitespace-nowrap"
+        />
       )}
       {canEditActions && (
         <button
@@ -276,8 +277,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     isManager ||
     isTopManagement ||
     (isHrUser && !isSelfKra);
-  const canAddKraCategory =
-    isSelfKra && (isManager || isTopManagement || isHrUser);
+  const canAddKraCategory = isSelfKra;
   const isAssignedToLoggedInUser = (record) =>
     String(record?.employee?._id || record?.employee || "") ===
     String(auth?.user?._id || "");
@@ -358,10 +358,10 @@ const KraKpaIndividualMonthlyKpa = () => {
     });
 
   const addKraCategory = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (categoryToCreate) => {
       const response = await axios.post("/api/kra-kpa/self-kra-categories", {
         department: departmentId,
-        categoryName: categoryName.trim(),
+        categoryName: categoryToCreate,
       });
       return response.data;
     },
@@ -595,11 +595,21 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const handleCategorySubmit = (event) => {
     event.preventDefault();
-    if (!categoryName.trim()) {
+    const normalizedCategoryName = categoryName.trim().toLowerCase();
+    if (!normalizedCategoryName) {
       setCategoryError("Category name is required");
       return;
     }
-    addKraCategory.mutate();
+    if (
+      kraCategories.some(
+        (category) =>
+          category.categoryName.trim().toLowerCase() === normalizedCategoryName,
+      )
+    ) {
+      setCategoryError("This category already exists");
+      return;
+    }
+    addKraCategory.mutate(categoryName.trim());
   };
   const openEdit = (record) => {
     if (!isSelfKra && isEmployeeUser) return;
@@ -1020,6 +1030,27 @@ const KraKpaIndividualMonthlyKpa = () => {
         statusColumn,
         reviewStatusColumn,
         finalClosureColumn,
+        {
+          headerName: "Actions",
+          field: "completedActions",
+          pinned: "right",
+          width: 100,
+          sortable: false,
+          filter: false,
+          cellRenderer: ({ data }) => (
+            <div className="flex h-full items-center">
+              <button
+                type="button"
+                title="View Edit History"
+                aria-label={`View edit history for ${data.target || "KPA"}`}
+                onClick={() => openEditHistory(data)}
+                className="flex h-8 w-8 items-center justify-center"
+              >
+                <MdHistory size={25} color="#111827" />
+              </button>
+            </div>
+          ),
+        },
       ];
   const managerReviewTimeline = (() => {
     const history = Array.isArray(viewRecord?.managerReviewHistory)
@@ -1702,18 +1733,39 @@ const KraKpaIndividualMonthlyKpa = () => {
         widthClass="w-[92vw] max-w-[430px]"
       >
         <form onSubmit={handleCategorySubmit} className="grid gap-4">
-          <TextField
-            label="Category Name *"
-            size="small"
-            value={categoryName}
-            onChange={(event) => {
-              setCategoryName(event.target.value);
+          <Autocomplete
+            fullWidth
+            freeSolo
+            autoSelect
+            selectOnFocus
+            options={kraCategories.map((category) => category.categoryName)}
+            value={categoryName || null}
+            inputValue={categoryName}
+            loading={isLoadingKraCategories}
+            disabled={isLoadingKraCategories || addKraCategory.isPending}
+            noOptionsText="No categories — type to add"
+            onChange={(_, selectedValue) => {
+              setCategoryName(selectedValue || "");
               setCategoryError("");
             }}
-            error={Boolean(categoryError)}
-            helperText={categoryError}
-            inputProps={{ maxLength: 200 }}
-            autoFocus
+            onInputChange={(_, inputValue) => {
+              setCategoryName(inputValue);
+              setCategoryError("");
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Category Name *"
+                size="small"
+                error={Boolean(categoryError)}
+                helperText={
+                  categoryError ||
+                  "Select an existing category or type a new one"
+                }
+                inputProps={{ ...params.inputProps, maxLength: 200 }}
+                autoFocus
+              />
+            )}
           />
           <div className="flex justify-end gap-3">
             <SecondaryButton

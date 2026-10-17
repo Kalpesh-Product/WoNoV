@@ -13,6 +13,9 @@ import { FaChartLine, FaUser } from "react-icons/fa";
 import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
+import KraKpaDepartmentWidgets from "./KraKpaDepartmentWidgets";
+
+const SHOW_DEPARTMENT_PERFORMANCE_WIDGETS = false;
 
 const FISCAL_MONTHS = [
   "April",
@@ -623,6 +626,17 @@ const PerformanceHome = ({
           ))}
         </div>
       )}
+
+      {SHOW_DEPARTMENT_PERFORMANCE_WIDGETS &&
+        onlyFirstTwoCards &&
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement) && (
+          <KraKpaDepartmentWidgets
+            fiscalYear={selectedFiscalYear}
+            canViewAllDepartments={isHr || isTopManagement}
+            userDepartments={auth?.user?.departments || []}
+          />
+        )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {!onlyFirstTwoCards &&
