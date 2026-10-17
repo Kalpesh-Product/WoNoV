@@ -401,7 +401,10 @@ import KraKpaIndividualMonthlyKpa from "../pages/Performance/KraKpaIndividualMon
 import KraKpaDueTask from "../pages/Performance/KraKpaDueTask";
 import KraKpaDailyLogs from "../pages/Performance/KraKpaDailyLogs";
 import KraKpaPendingApprovals from "../pages/Performance/KraKpaPendingApprovals";
+import KraKpaRating from "../pages/Performance/KraKpaRating";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
+import KraKpaIndividualLayout from "../pages/Performance/KraKpaIndividualLayout";
+import KraKpaEmployeeDashboard from "../pages/Performance/KraKpaEmployeeDashboard";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
@@ -5027,6 +5030,126 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
+                        path: "individual",
+                        children: [
+                          {
+                            index: true,
+                            element: (
+                              <Navigate
+                                to="kra-kpa/individual-Monthly-KPA"
+                                replace
+                              />
+                            ),
+                          },
+                          {
+                            path: "kra-kpa",
+                            element: (
+                              <PerformancePermissionRoute
+                                permissions={[
+                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                ]}
+                                mode="any"
+                                element={
+                                  <KraKpaIndividualLayout
+                                    section="kra-kpa"
+                                    showPendingApprovals
+                                  />
+                                }
+                              />
+                            ),
+                            children: [
+                              {
+                                path: "individual-Monthly-KPA",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaIndividualMonthlyKpa />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "self-KRA",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaIndividualMonthlyKpa />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "due-task",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDueTask />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDailyLogs />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "pending-approvals",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaPendingApprovals />}
+                                  />
+                                ),
+                              },
+                            ],
+                          },
+                          {
+                            path: "daily-score",
+                            element: (
+                              <PerformancePermissionRoute
+                                permissions={[
+                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                ]}
+                                mode="any"
+                                element={
+                                  <KraKpaIndividualLayout section="daily-score" />
+                                }
+                              />
+                            ),
+                            children: [
+                              {
+                                path: "kpa-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaRating type="kpa" />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaRating type="daily-logs" />}
+                                  />
+                                ),
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      {
                         path: "department-KPA",
                         element: (
                           <PerformancePermissionRoute
@@ -5048,6 +5171,108 @@ export const routes = createBrowserRouter([
                                 element={<PerformanceMemberWiseKraKpa />}
                               />
                             ),
+                          },
+                          {
+                            path: "employee-dashboard",
+                            element: <KraKpaEmployeeDashboard />,
+                          },
+                          {
+                            path: "employee-dashboard/kra-kpa",
+                            element: (
+                              <PerformancePermissionRoute
+                                permissions={[
+                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                ]}
+                                mode="any"
+                                element={
+                                  <KraKpaIndividualLayout
+                                    section="kra-kpa"
+                                    basePath="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa"
+                                  />
+                                }
+                              />
+                            ),
+                            children: [
+                              {
+                                path: "individual-Monthly-KPA",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaIndividualMonthlyKpa />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "self-KRA",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaIndividualMonthlyKpa />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "due-task",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDueTask />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaDailyLogs />}
+                                  />
+                                ),
+                              },
+                            ],
+                          },
+                          {
+                            path: "employee-dashboard/daily-score",
+                            element: (
+                              <PerformancePermissionRoute
+                                permissions={[
+                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                ]}
+                                mode="any"
+                                element={
+                                  <KraKpaIndividualLayout
+                                    section="daily-score"
+                                    basePath="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard/daily-score"
+                                  />
+                                }
+                              />
+                            ),
+                            children: [
+                              {
+                                path: "kpa-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaRating type="kpa" />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaRating type="daily-logs" />}
+                                  />
+                                ),
+                              },
+                            ],
                           },
                           {
                             element: (
@@ -5107,6 +5332,26 @@ export const routes = createBrowserRouter([
                                       PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "kpa-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                    ]}
+                                    element={<KraKpaRating type="kpa" />}
+                                  />
+                                ),
+                              },
+                              {
+                                path: "daily-logs-rating",
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    element={<KraKpaRating type="daily-logs" />}
                                   />
                                 ),
                               },

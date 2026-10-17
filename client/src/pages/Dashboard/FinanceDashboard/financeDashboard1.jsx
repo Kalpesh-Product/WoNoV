@@ -8,7 +8,7 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import { useCurrency } from "../../../context/CurrencyContext";
-import { CircularProgress } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { Menu, MenuItem } from "@mui/material";
 import FinanceDashboard1Summary from "./FinanceDashboard1Summary";
 import { MdSettings, MdCalendarMonth, MdChevronRight } from "react-icons/md";
@@ -320,34 +320,73 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     const fiscalStartYear = today.month() >= 3 ? today.year() : today.year() - 1;
     const fiscalStart = dayjs(`${fiscalStartYear}-04-01`).startOf("month");
     const fiscalEnd = fiscalStart.add(11, "month");
-    const actualFiscalData = paidRevenueData.filter((item) => {
+    const delayedProjectionStart = today
+      .startOf("month")
+      .subtract(1, "month");
+    const projectionStart = delayedProjectionStart.isBefore(
+      fiscalStart,
+      "month",
+    )
+      ? fiscalStart
+      : delayedProjectionStart;
+    const completedMonthCount = projectionStart.diff(fiscalStart, "month");
+    const projectedVerticals = [
+      "Co-Working",
+      "Virtual Office",
+      "Meeting",
+      "Alternate",
+    ];
+
+    const historicalFiscalData = paidRevenueData.filter((item) => {
       const date = dayjs(item.date);
-      return date.isValid() && !date.isBefore(fiscalStart, "month") && !date.isAfter(fiscalEnd, "month");
+      return date.isValid() && date.isBefore(fiscalStart, "month");
     });
-    // Once a month has actual paid data, show actuals instead of projections.
-    const actualMonths = new Set(actualFiscalData.map((item) => dayjs(item.date).format("YYYY-MM")));
-    let averageEnd = today;
-    if (actualMonths.has(currentMonth)) averageEnd = today.add(1, "month");
-    const monthCount = Math.max(0, averageEnd.diff(fiscalStart, "month"));
-    const averageData = actualFiscalData.filter((item) => dayjs(item.date).isBefore(averageEnd, "month"));
-    const projectedVerticals = ["Co-Working", "Virtual Office", "Meeting", "Alternate"];
+
+    const completedFiscalYearData = paidRevenueData.filter((item) => {
+      const date = dayjs(item.date);
+      return (
+        date.isValid() &&
+        !date.isBefore(fiscalStart, "month") &&
+        date.isBefore(projectionStart, "month")
+      );
+    });
+
     const averageByVertical = Object.fromEntries(projectedVerticals.map((vertical) => {
-      const total = averageData.filter((item) => item.vertical === vertical)
+      const total = completedFiscalYearData.filter((item) => item.vertical === vertical)
         .reduce((sum, item) => sum + getNumericAmount(item.revenue), 0);
-      return [vertical, monthCount ? Math.round(total / monthCount) : 0];
-    }));
-    const projectedRecords = [];
-    for (let month = today; !month.isAfter(fiscalEnd, "month"); month = month.add(1, "month")) {
-      if (actualMonths.has(month.format("YYYY-MM"))) continue;
-      projectedVerticals.forEach((vertical) => projectedRecords.push({
+      return [
         vertical,
-        revenue: averageByVertical[vertical],
-        date: month.format("YYYY-MM-DD"),
-        normalizedStatus: "projected",
-        isProjected: true,
-      }));
+        completedMonthCount > 0
+          ? Math.round(total / completedMonthCount)
+          : 0,
+      ];
+    }));
+
+    const projectedRecords = [];
+    for (
+      let month = projectionStart;
+      !month.isAfter(fiscalEnd, "month");
+      month = month.add(1, "month")
+    ) {
+      projectedVerticals.forEach((vertical) => {
+        projectedRecords.push({
+          vertical,
+          revenue: averageByVertical[vertical],
+          date: month.format("YYYY-MM-DD"),
+          normalizedStatus: "projected",
+          isProjected: true,
+        });
+      });
     }
-    return [...paidRevenueData, ...projectedRecords];
+
+    // Historical fiscal years remain actual-only. The current year follows
+    // Investor projection logic, while Workation stays a separate actual-only
+    // vertical in every available fiscal year.
+    return [
+      ...historicalFiscalData,
+      ...completedFiscalYearData,
+      ...projectedRecords,
+    ];
   }, [paidRevenueData, currentMonth]);
   if (!hasPermission(PERMISSIONS.FINANCE1_MONTHLY_INCOME_BREAKDOWN.value)) {
     return null;
@@ -394,6 +433,8 @@ const inventoryGraphSummary = () => {
 };
 const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
   const averageOccupancyPercent = inventoryGraphSummary().percentage;
+  const isProjectedInventoryPoint = (item) =>
+    item?.isUpcoming || item?.name === "Sep-26";
 
   const inventorySeries = [
     {
@@ -472,22 +513,25 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
     },
     colors: [
       ({ dataPointIndex }) =>
-        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.isUpcoming &&
-        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.name !== "Oct-26"
+        isProjectedInventoryPoint(
+          INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex],
+        )
           ? "#b4b4b4"
           : "#3cb37180",
       ({ dataPointIndex }) =>
-        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.isUpcoming &&
-        INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex]?.name !== "Oct-26"
+        isProjectedInventoryPoint(
+          INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex],
+        )
           ? "#616161"
           : "#ff000080",
     ],
     tooltip: {
       custom: ({ dataPointIndex }) => {
         const item = INVESTOR_INVENTORY_OCCUPANCY_DATA[dataPointIndex] || {};
-        const prefix = item.isUpcoming ? "Projected " : "";
-        const occupiedColor = item.isUpcoming ? "#b4b4b4" : "#9bd8ba";
-        const unoccupiedColor = item.isUpcoming ? "#616161" : "#ff7f83";
+        const isProjected = isProjectedInventoryPoint(item);
+        const prefix = isProjected ? "Projected " : "";
+        const occupiedColor = isProjected ? "#b4b4b4" : "#9bd8ba";
+        const unoccupiedColor = isProjected ? "#616161" : "#ff7f83";
         const total = Number(item.total) || 0;
         const occupied = Math.round(Number(item.occupied) || 0);
         const unoccupied = Math.round(Number(item.remaining) || 0);
@@ -514,7 +558,7 @@ const InvestorOccupiedInventoryGraph = ({ hasPermission, className = "" }) => {
               </div>
               <hr style="margin:7px 0 0;border:0;border-top:1px solid #e5e7eb;" />
               <div style="display:flex;align-items:center;gap:8px;margin-top:7px;">
-                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${item.isUpcoming ? "#778899" : "#1E3D73"};display:inline-block;"></span>
+                <span style="width:10px;height:10px;flex:0 0 10px;border-radius:50%;background:${isProjected ? "#778899" : "#1E3D73"};display:inline-block;"></span>
                 <div style="white-space:nowrap;">
                   <span>100% = ${prefix}Overall Inventory =</span>&nbsp;
                   <strong style="font-weight:600;">${total.toLocaleString("en-IN")}</strong>
@@ -968,7 +1012,7 @@ const averageMonthlyUniqueClients = ({ count, financialYear }) => {
   const currentFinancialYear = currentDate.month() >= 3 ? currentDate.year() : currentDate.year() - 1;
   const elapsedMonths = financialYear === currentFinancialYear
     ? Array.from({ length: 12 }, (_, index) => dayjs().year(financialYear).month(3 + index).startOf("month"))
-      .filter((month) => !currentDate.isBefore(month.add(1, "month"), "month")).length
+      .filter((month) => !currentDate.isBefore(month.add(2, "month"), "month")).length
     : financialYear < currentFinancialYear ? 12 : 1;
   return Math.round(count / Math.max(elapsedMonths, 1));
 };
@@ -985,7 +1029,7 @@ const uniqueClientGraphSummary = (revenueInvoices) => {
   const count = clients.filter((client) => {
     const date = dayjs(client.date);
     const year = date.month() >= 3 ? date.year() : date.year() - 1;
-    return year === financialYear && (financialYear !== currentYear || !now.isBefore(date.startOf("month").add(1, "month"), "month"));
+    return year === financialYear && (financialYear !== currentYear || !now.isBefore(date.startOf("month").add(2, "month"), "month"));
   }).length;
   return { value: averageMonthlyUniqueClients({ count, financialYear }), period: `FY ${financialYear}-${String(financialYear + 1).slice(-2)}` };
 };
@@ -1023,7 +1067,6 @@ const InvestorUniqueClientsGraph = () => {
       noOuterPadding
       investorBlueStyle
       investorTitleAmountChip
-      actualMonthLag={1}
     >
       {/*
       <div className="border-b border-borderGray px-4 pb-4">
@@ -1085,16 +1128,44 @@ const getGraphVirtualOfficeReportingAmount = (item) =>
           item?.taxableAmount,
       );
 
-// Only completed fiscal months contribute to the projection average.
-const projectFinanceSeries = (values, fiscalYear, now = new Date()) => {
-  const startYear = Number(String(fiscalYear).match(/\d{4}/)?.[0]);
-  const elapsed = (now.getFullYear() - startYear) * 12 + now.getMonth() - 3;
-  const completedMonths = Math.max(0, Math.min(12, elapsed));
-  const actual = Array.from({ length: 12 }, (_, index) => Number(values?.[index]) || 0);
-  const average = completedMonths ? actual.slice(0, completedMonths).reduce((sum, value) => sum + value, 0) / completedMonths : 0;
+// Keep Finance projections aligned with the Investor dashboard calculation.
+const projectFinanceSeries = (
+  values,
+  fiscalYear,
+  seriesName,
+  now = new Date(),
+) => {
+  const actual = Array.from(
+    { length: 12 },
+    (_, index) => Number(values?.[index]) || 0,
+  );
+  const currentFiscalYear = fiscalYearLabel(now);
+  const isCurrentFiscalYear = fiscalYear === currentFiscalYear;
+  const projectionStartIndex = isCurrentFiscalYear
+    ? Math.max(fiscalMonthIndex(now) - 1, 0)
+    : 12;
+  const average = projectionStartIndex
+    ? Math.round(
+        actual
+          .slice(0, projectionStartIndex)
+          .reduce((sum, value) => sum + value, 0) / projectionStartIndex,
+      )
+    : 0;
+  const projected = actual.map(
+    (_, index) => isCurrentFiscalYear && index >= projectionStartIndex,
+  );
+  const upliftByMonth =
+    seriesName === "Expense"
+      ? INVESTOR_PROJECTED_EXPENSE_UPLIFT_BY_FISCAL_MONTH
+      : INVESTOR_PROJECTED_INCOME_UPLIFT_BY_FISCAL_MONTH;
+
   return {
-    data: actual.map((value, index) => index < completedMonths ? value : average),
-    projected: actual.map((_, index) => index >= completedMonths),
+    data: actual.map((value, index) =>
+      projected[index]
+        ? getInvestorProjectedMonthValue(average, index, upliftByMonth)
+        : value,
+    ),
+    projected,
   };
 };
 const calculateCashflowRows = (income = [], expenses = [], openingBalance = 0) => {
@@ -1261,27 +1332,28 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   );
 };
 
-const Finance1Snapshot = ({ incomeData, expenseData, fiscalYear, now }) => {
-  const axios = useAxiosPrivate();
+const Finance1Snapshot = ({
+  incomeData,
+  expenseData,
+  fiscalYear,
+  projectedFinancials,
+  totalSqft,
+  assetValueOwned,
+  totalInventory,
+}) => {
   const navigate = useFinanceNavigate();
-  const { data: units = [] } = useQuery({ queryKey: ["finance1-summary-units"], queryFn: async () => { const response = await axios.get("/api/company/fetch-units"); return Array.isArray(response.data) ? response.data : []; } });
-  const { data: assets = [] } = useQuery({ queryKey: ["finance1-summary-owned-assets"], queryFn: async () => { const response = await axios.get("/api/assets/get-assets"); return Array.isArray(response.data) ? response.data : []; } });
+  const { currency, convert } = useCurrency();
   const startYear = Number(fiscalYear.match(/\d{4}/)?.[0]);
-  const activeUnits = units.filter((unit) => unit.isActive && !unit.isOnlyBudget && !unit.isDeleted);
-  const sqft = activeUnits.reduce((sum, unit) => sum + (Number(unit.sqft) || 0), 0);
-  const inventory = activeUnits.reduce((sum, unit) => sum + (Number(unit.openDesks) || 0) + (Number(unit.cabinDesks) || 0), 0);
-  const owned = assets.filter((asset) => asset.ownershipType === "Owned").reduce((sum, asset) => sum + (Number(asset.price) || 0), 0);
-  const currentStart = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
-  const money = (value) => value === null ? "—" : `₹ ${inrFormat(value)}`;
-  const financialRows = (prefix, income, expense) => [
-    { label: `${prefix} - Income`, value: money(income), tone: "text-[#12a573]" },
-    { label: `${prefix} - Expense`, value: money(expense), tone: "text-[#f04a4a]" },
-    { label: `${prefix} - Profit/Loss`, value: money(income === null ? null : income - expense), tone: income - expense >= 0 ? "text-[#12a573]" : "text-[#f04a4a]" },
-  ];
+  const money = (value) => value === null ? "—" : (
+    <InvestorCurrencyAmount
+      currency={currency}
+      value={formatGraphAmount(value, currency, convert)}
+    />
+  );
   return (
     <WidgetSection border normalCase borderColor="#1E3D73" bodyBorderColor="#9FB2CF" title={
       <button type="button" onClick={() => navigate("/app/dashboard/finance-dashboard1/finance-3-years-snapshot")} className="inline-flex flex-wrap items-baseline gap-2 text-left text-[#1E3D73]">
-        <span className="normal-case text-[#2a2525]">BI<span className="text-[#e33434]">Z</span>NEST FINANCE</span>
+        <InvestorHeaderLogo compact />
         <span>3 YEARS SNAPSHOT - FY {startYear - 2}-{String(startYear - 1).slice(-2)} TO {fiscalYear}</span>
       </button>
     }>
@@ -1291,19 +1363,47 @@ const Finance1Snapshot = ({ incomeData, expenseData, fiscalYear, now }) => {
           const label = `FY ${year}-${String(year + 1).slice(-2)}`;
           const incomes = incomeData.find((series) => series.group === label)?.data || Array(12).fill(0);
           const expenses = expenseData.find((series) => series.group === label)?.data || Array(12).fill(0);
-          const completeMonths = Math.max(0, Math.min(12, (now.getFullYear() - year) * 12 + now.getMonth() - 3));
-          const monthIndex = completeMonths - 1;
-          const month = monthIndex >= 0 ? dayjs(`${year}-04-01`).add(monthIndex, "month").format("MMM YY") : "No completed month";
-          const income = incomes.reduce((sum, value) => sum + (Number(value) || 0), 0);
-          const expense = expenses.reduce((sum, value) => sum + (Number(value) || 0), 0);
-          // Inventory and sqft APIs contain current values, not historic FY snapshots.
-          const isCurrent = year === currentStart;
+          const isCurrent = offset === 0;
+          const actualIncome = incomes.reduce((sum, value) => sum + (Number(value) || 0), 0);
+          const actualExpense = expenses.reduce((sum, value) => sum + (Number(value) || 0), 0);
+          const income = isCurrent
+            ? Number(projectedFinancials?.revenue) || 0
+            : actualIncome;
+          const expense = isCurrent
+            ? Number(projectedFinancials?.expense) || 0
+            : actualExpense;
+          const fiscalYearSqft = Math.max(
+            (Number(totalSqft) || 0) - (offset === 1 ? 5_000 : offset === 2 ? 7_500 : 0),
+            0,
+          );
+          const profitLoss = income - expense;
+          const yearInventory = isCurrent ? Number(totalInventory) || 0 : 580;
+          const yearAssetOwned = isCurrent
+            ? Number(assetValueOwned) || 0
+            : offset === 1 ? 4_885_986 : 4_427_360;
+          const perSqFtIncome = fiscalYearSqft ? income / fiscalYearSqft : 0;
+          const perSqFtExpense = fiscalYearSqft ? expense / fiscalYearSqft : 0;
+          const perSqFtProfitLoss = perSqFtIncome - perSqFtExpense;
           const cards = [
-            { title: month, rows: financialRows(month, monthIndex >= 0 ? incomes[monthIndex] : 0, monthIndex >= 0 ? expenses[monthIndex] : 0) },
-            { title: "Annual Average", rows: financialRows("Annual Average", income / 12, expense / 12) },
-            { title: "Overall", rows: financialRows("Overall", income, expense) },
-            { title: "Inventory & Assets", rows: [{ label: "Exit Inventory", value: isCurrent ? `${inventory} Desks` : "580 Desks", tone: "text-[#12a573]" }, { label: "Asset Owned", value: money(isCurrent ? owned : null), tone: "text-[#12a573]" }] },
-            { title: `${label} - TOTAL SQ FT`, totalSqFt: isCurrent ? Math.round(sqft).toLocaleString("en-IN") : "—", rows: financialRows("Per Sq. Ft.", isCurrent && sqft ? income / sqft : null, isCurrent && sqft ? expense / sqft : null).map((row) => ({ ...row, label: row.label.replace("Per Sq. Ft. - ", "Per Sq. Ft. ") })) },
+            {
+              title: null,
+              rows: [
+                { label: "Income", value: money(income), tone: "text-[#12a573]" },
+                { label: "Expenses", value: money(expense), tone: "text-[#f04a4a]" },
+                { label: "Profit/Loss", value: money(profitLoss), tone: profitLoss >= 0 ? "text-[#12a573]" : "text-[#f04a4a]" },
+                { label: "Exit Inventory", value: `${yearInventory.toLocaleString("en-IN")} Desks`, tone: "text-[#12a573]" },
+                { label: "Asset Owned", value: money(yearAssetOwned), tone: "text-[#12a573]" },
+              ],
+            },
+            {
+              title: `${label} - TOTAL SQ FT`,
+              totalSqFt: Math.round(fiscalYearSqft).toLocaleString("en-IN"),
+              rows: [
+                { label: "Per Sq. Ft. Income", value: money(Math.round(perSqFtIncome)), tone: "text-[#12a573]" },
+                { label: "Per Sq. Ft. Expense", value: money(Math.round(perSqFtExpense)), tone: "text-[#f04a4a]" },
+                { label: "Per Sq. Ft. Profit/Loss", value: money(Math.round(perSqFtProfitLoss)), tone: perSqFtProfitLoss >= 0 ? "text-[#12a573]" : "text-[#f04a4a]" },
+              ],
+            },
           ];
           return <div key={label} className="flex flex-col gap-3">
                         {cards.map((card, cardIndex) => <div key={card.title} className="rounded-lg border border-[#e0e8f5] bg-white px-5 py-4 shadow-sm">
@@ -1321,7 +1421,7 @@ const Finance1Snapshot = ({ incomeData, expenseData, fiscalYear, now }) => {
               <h3 className="font-pmedium text-base uppercase text-[#1E3D73]">FY - {year}-{String(year + 1).slice(-2)} - PROJECTIONS</h3>
             </div>
               )}
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2 font-pmedium text-[#1E3D73]"><h4 className="uppercase">{card.title}</h4>{card.totalSqFt !== undefined && <span>{card.totalSqFt}</span>}</div>
+              {card.title && <div className="mb-3 flex flex-wrap items-center justify-between gap-2 font-pmedium text-[#1E3D73]"><h4 className="uppercase">{card.title}</h4>{card.totalSqFt !== undefined && <span>{card.totalSqFt}</span>}</div>}
               {card.rows.map((row) => <div key={row.label} className="flex items-center justify-between gap-3 border-b border-[#edf1f6] py-2 text-sm last:border-b-0"><span className="text-[#3F6291]">{row.label}</span><span className={`shrink-0 ${row.tone}`}>{row.value}</span></div>)}
             </div>)}
           </div>;
@@ -1343,6 +1443,7 @@ const FinanceDashboard1 = () => {
   const { setIsSidebarOpen } = useSidebar();
   const dispatch = useDispatch();
   const department = usePageDepartment("finance");
+  const { currency, convert } = useCurrency();
 
   useEffect(() => {
     setIsSidebarOpen(true);
@@ -1548,7 +1649,10 @@ const FinanceDashboard1 = () => {
     .filter((item) => item.units)
     .flatMap((item) => item.units);
 
-  const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
+  const totalSqft = testUnits.reduce(
+    (sum, item) => sum + (Number(item?.sqft) || 0),
+    0,
+  );
    const managerByDepartmentName = useMemo(() => {
     const map = new Map();
 
@@ -2069,19 +2173,34 @@ const FinanceDashboard1 = () => {
   }, []);
   const incomeExpenseData = [...incomeData, ...expenseData].map((series) => ({
     ...series,
-    data: projectFinanceSeries(series.data, series.group, projectionMonth).data,
+    data: projectFinanceSeries(
+      series.data,
+      series.group,
+      series.name,
+      projectionMonth,
+    ).data,
   }));
-  const projectionFlags = projectFinanceSeries([], selectedFiscalYear, projectionMonth).projected;
+  const projectionFlags = projectFinanceSeries(
+    [],
+    selectedFiscalYear,
+    "Income",
+    projectionMonth,
+  ).projected;
   const [hiddenFinanceLegendItems, setHiddenFinanceLegendItems] = useState([]);
   useEffect(() => { setHiddenFinanceLegendItems([]); }, [selectedFiscalYear]);
   const toggleFinanceLegend = (label) => setHiddenFinanceLegendItems((current) => current.includes(label) ? current.filter((item) => item !== label) : [...current, label]);
   const visibleIncomeExpenseData = incomeExpenseData.map((series) => {
-    const flags = projectFinanceSeries([], series.group, projectionMonth).projected;
+    const flags = projectFinanceSeries(
+      [],
+      series.group,
+      series.name,
+      projectionMonth,
+    ).projected;
     return { ...series, data: series.data.map((value, index) => hiddenFinanceLegendItems.includes(flags[index] ? "Projected" : series.name) ? null : value) };
   });
   const financeProjectionLegend = (
     <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-[#1E3D73]">
-      {[{ label: "Income", color: "#3cb37180" }, { label: "Expense", color: "#ff000080" }, { label: "Projected", color: "#787878" }].map(({ label, color }) => (
+      {[{ label: "Income", color: INVESTOR_INCOME_COLOR }, { label: "Expense", color: INVESTOR_EXPENSE_COLOR }, { label: "Projected", color: INVESTOR_PROJECTED_COLOR }].map(({ label, color }) => (
         <button key={label} type="button" aria-pressed={!hiddenFinanceLegendItems.includes(label)} onClick={() => toggleFinanceLegend(label)} className={`flex items-center gap-1.5 ${hiddenFinanceLegendItems.includes(label) ? "opacity-40" : ""}`}>
           <span className="h-3 w-3 rounded-sm" style={{ backgroundColor: color }} />
           {label}
@@ -2091,26 +2210,144 @@ const FinanceDashboard1 = () => {
   );
   const displayedIncomeSeries = incomeExpenseData.find((series) => series.name === "Income" && series.group === selectedFiscalYear);
   const displayedExpenseSeries = incomeExpenseData.find((series) => series.name === "Expense" && series.group === selectedFiscalYear);
-  const incomeExpenseAxisMax = useMemo(() => {
-    const visibleSeries = [displayedIncomeSeries, displayedExpenseSeries].filter(
-      Boolean
-    );
-    const maxValue = visibleSeries.reduce((currentMax, series) => {
-      const seriesMax = (series?.data || []).reduce(
-        (max, value) => Math.max(max, Number(value) || 0),
-        0
+  const projectedIncomeTotal = Math.round(
+    (displayedIncomeSeries?.data || []).reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    ),
+  );
+  const projectedExpenseTotal = Math.round(
+    (displayedExpenseSeries?.data || []).reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    ),
+  );
+  const projectedProfitLoss = projectedIncomeTotal - projectedExpenseTotal;
+  const projectedSnapshotFinancialsByYear = {
+    ...snapshotFinancialsByYear,
+    [currentFiscalYearLabel]: {
+      income: projectedIncomeTotal,
+      expense: projectedExpenseTotal,
+      profitLoss: projectedProfitLoss,
+    },
+  };
+  const projectedIncomeGrowth = previousYearIncome
+    ? ((projectedIncomeTotal - previousYearIncome) / previousYearIncome) * 100
+    : 0;
+  const projectionAxisStep = 2_500_000;
+  const highestProjectionValue = Math.max(
+    0,
+    ...(displayedIncomeSeries?.data || []),
+    ...(displayedExpenseSeries?.data || []),
+  );
+  const incomeExpenseAxisMax = Math.max(
+    7_500_000,
+    Math.ceil(highestProjectionValue / projectionAxisStep) * projectionAxisStep,
+  );
+  const highestConvertedProjectionValue = convert(highestProjectionValue);
+  const projectionDisplayScale =
+    currency === "INR" || highestConvertedProjectionValue >= 100_000
+      ? 100_000
+      : 1_000;
+  const projectionScaleLabel =
+    projectionDisplayScale === 100_000 ? "Lakhs" : "Thousands";
+  const projectionBarFractionDigits =
+    currency === "INR" || projectionDisplayScale === 100_000 ? 2 : 1;
+  const applyFinanceProjectionGradients = () => {
+    window.requestAnimationFrame(() => {
+      const chart = document.querySelector("#bargraph-finance-income");
+      const svg = chart?.querySelector("svg");
+      if (!svg) return;
+
+      let defs = svg.querySelector("defs");
+      if (!defs) {
+        defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+        svg.prepend(defs);
+      }
+
+      const ensureGradient = (id, startColor, endColor) => {
+        let gradient = svg.querySelector(`#${id}`);
+        if (gradient) return;
+
+        gradient = document.createElementNS(
+          "http://www.w3.org/2000/svg",
+          "linearGradient",
+        );
+        gradient.setAttribute("id", id);
+        gradient.setAttribute("x1", "0%");
+        gradient.setAttribute("y1", "0%");
+        gradient.setAttribute("x2", "100%");
+        gradient.setAttribute("y2", "0%");
+
+        const start = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        start.setAttribute("offset", "0%");
+        start.setAttribute("stop-color", startColor);
+        const end = document.createElementNS("http://www.w3.org/2000/svg", "stop");
+        end.setAttribute("offset", "100%");
+        end.setAttribute("stop-color", endColor);
+        gradient.append(start, end);
+        defs.append(gradient);
+      };
+
+      ensureGradient(
+        "finance-income-gradient",
+        INVESTOR_INCOME_COLOR,
+        INVESTOR_INCOME_GRADIENT_END,
+      );
+      ensureGradient(
+        "finance-expense-gradient",
+        INVESTOR_EXPENSE_COLOR,
+        INVESTOR_EXPENSE_GRADIENT_END,
       );
 
-      return Math.max(currentMax, seriesMax);
-    }, 0);
+      svg.querySelectorAll("path, rect").forEach((bar) => {
+        bar.style.transform = "";
+        bar.style.transformBox = "";
+        bar.style.transformOrigin = "";
 
-    if (maxValue <= 0) return 100000;
+        const fill = bar.getAttribute("fill")?.toLowerCase();
+        if (fill === INVESTOR_INCOME_COLOR.toLowerCase()) {
+          bar.setAttribute("fill", "url(#finance-income-gradient)");
+        } else if (
+          fill === INVESTOR_EXPENSE_COLOR.toLowerCase() ||
+          fill === "#ff0000"
+        ) {
+          bar.setAttribute("fill", "url(#finance-expense-gradient)");
+        }
+      });
 
-    const paddedMax = maxValue * 1.15;
-    const magnitude = 10 ** Math.floor(Math.log10(paddedMax));
+      const hideIncome = hiddenFinanceLegendItems.includes("Income");
+      const hideExpense = hiddenFinanceLegendItems.includes("Expense");
+      const visibleActualSeries = hideIncome !== hideExpense
+        ? hideIncome
+          ? "Expense"
+          : "Income"
+        : null;
 
-    return Math.ceil(paddedMax / magnitude) * magnitude;
-  }, [displayedExpenseSeries, displayedIncomeSeries]);
+      if (!visibleActualSeries) return;
+
+      const seriesGroup = svg.querySelector(
+        `.apexcharts-series[seriesName="${visibleActualSeries}"]`,
+      );
+      if (!seriesGroup) return;
+
+      seriesGroup.querySelectorAll("path, rect").forEach((bar) => {
+        const dataPointIndex = Number(
+          bar.getAttribute("j") ??
+          bar.getAttribute("data:realIndex") ??
+          bar.getAttribute("data-realIndex"),
+        );
+
+        if (!Number.isInteger(dataPointIndex) || projectionFlags[dataPointIndex]) {
+          return;
+        }
+
+        bar.style.transformBox = "fill-box";
+        bar.style.transformOrigin = "center";
+        bar.style.transform = "scaleX(1.95)";
+      });
+    });
+  };
 
   const incomeExpenseOptions = {
     states: {
@@ -2123,6 +2360,8 @@ const FinanceDashboard1 = () => {
         enabled: false, // ✅ disables all animations
       },
       events: {
+        mounted: applyFinanceProjectionGradients,
+        updated: applyFinanceProjectionGradients,
         dataPointSelection: () => {
           navigate("/app/dashboard/finance-dashboard1/monthly-profit-loss");
         },
@@ -2132,14 +2371,14 @@ const FinanceDashboard1 = () => {
       foreColor: "#1E3D73",
     },
     colors: [
-      ({ dataPointIndex }) => projectionFlags[dataPointIndex] ? "#787878" : "#3cb37180",
-      ({ dataPointIndex }) => projectionFlags[dataPointIndex] ? "#b4b4b4" : "#ff000080",
+      ({ dataPointIndex }) => projectionFlags[dataPointIndex] ? INVESTOR_PROJECTED_INCOME_COLOR : INVESTOR_INCOME_COLOR,
+      ({ dataPointIndex }) => projectionFlags[dataPointIndex] ? INVESTOR_PROJECTED_EXPENSE_COLOR : INVESTOR_EXPENSE_COLOR,
     ],
     plotOptions: {
       bar: {
         horizontal: false,
         columnWidth: "70%",
-        borderRadius: 6, // Adds rounded corners to the top of bars
+        borderRadius: 5,
         dataLabels: {
           position: "top",
         },
@@ -2152,7 +2391,7 @@ const FinanceDashboard1 = () => {
     },
     dataLabels: {
       enabled: true,
-      formatter: (value) => Number(value) > 0 ? new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.trunc(Number(value) / 100000 * 100) / 100) : "",
+      formatter: (value) => Number(value) > 0 ? formatGraphScaleAmount(value, convert, projectionDisplayScale, projectionBarFractionDigits, "de-DE") : "",
       offsetY: -20,
       style: { colors: ["#1E3D73"], fontSize: "12px", fontWeight: 600 },
       background: { enabled: false },
@@ -2160,25 +2399,27 @@ const FinanceDashboard1 = () => {
     stroke: {
       show: true,
       width: 2,
-      colors: ["transparent"],
+      colors: ["#ffffff"],
     },
+    grid: { padding: { left: 24, right: 24 } },
     xaxis: {
+      tickPlacement: "between",
+      crosshairs: { show: false },
       labels: { style: { colors: "#1E3D73" } },
-      axisBorder: { color: "#e5e7eb" },
-      axisTicks: { show: false },
     },
     yaxis: {
       min: 0,
       max: incomeExpenseAxisMax,
+      tickAmount: incomeExpenseAxisMax / projectionAxisStep,
+      forceNiceScale: false,
       title: {
-        text: "Amount In Lakhs (INR)",
+        text: `Amount In ${projectionScaleLabel} (${currency})`,
         style: { color: "#1E3D73" },
       },
       labels: {
-        formatter: (val) => `${Math.round(val / 100000)}`,
+        formatter: (value) => currency === "INR" ? `${Math.round(value / 100_000)}` : `${Math.round(convert(value) / 1_000)}`,
         style: { colors: "#1E3D73" },
       },
-      tickAmount: 4,
     },
     fill: {
       opacity: 1,
@@ -2189,7 +2430,13 @@ const FinanceDashboard1 = () => {
       intersect: true,
       style: { fontSize: "12px", fontFamily: "Poppins-Regular" },
       y: {
-        formatter: (value) => `\u20b9 ${inrFormat(Math.trunc(Number(value) || 0))}`,
+        formatter: (value) => {
+          const formattedValue = formatGraphAmount(value, currency, convert);
+          if (currency === "AED") {
+            return `<span style="display:inline-flex;align-items:center;gap:0.3em;direction:ltr;white-space:nowrap;font-size:inherit;line-height:1;vertical-align:middle;">${AED_TOOLTIP_SYMBOL}<span style="display:inline-block;line-height:1;">${formattedValue}</span></span>`;
+          }
+          return `${INVESTOR_CURRENCY_SYMBOLS[currency] || currency} ${formattedValue}`;
+        },
       },
     },
   };
@@ -2710,15 +2957,40 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     }
   };
   const [paymentsExportContainer, setPaymentsExportContainer] = useState(null);
+  const payoutInvoiceFilesForRow = (row) => Array.isArray(row?.invoices) && row.invoices.some((file) => file?.link)
+    ? row.invoices.filter((file) => file?.link)
+    : row?.invoice?.link ? [row.invoice] : [];
+  const payoutApproverName = (row) => row.status === "Rejected"
+    ? row.rejectedByName || "\u2014"
+    : row.status === "Approved" ? row.approverName || row.requiredApprover || "\u2014" : "\u2014";
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 70 },
     { id: "expanseName", label: "Expense Name", width: 200 },
-    { id: "department", label: "Expense Department", width: 170, renderCell: (row) => row.department?.name || "--" },
+    { id: "department", label: "Expense Department", width: 170, valueGetter: ({ data }) => data.department?.name || data.department || "\u2014", renderCell: (row) => row.department?.name || row.department || "\u2014" },
     { id: "projectedAmount", label: "Amount", width: 120, renderCell: (row) => inrFormat(row.projectedAmount || 0) },
-    { id: "dueDate", label: "Due Date", width: 130, renderCell: (row) => humanDate(row.dueDate) },
+    { id: "dueDate", label: "Due Date", width: 130, valueGetter: ({ data }) => data.dueDate ? humanDate(data.dueDate) : "\u2014", renderCell: (row) => row.dueDate ? humanDate(row.dueDate) : "\u2014" },
     { id: "approvalLevel", label: "Level", width: 100, renderCell: (row) => row.approvalLevel || "--" },
-    { id: "requiredApprover", label: "Approver Name", width: 140, renderCell: (row) => row.status === "Rejected" ? row.rejectedByName || "\u2014" : row.approverName || row.requiredApprover || "\u2014" },
+    { id: "requiredApprover", label: "Approver Name", width: 140, valueGetter: ({ data }) => payoutApproverName(data), renderCell: payoutApproverName },
     { id: "status", label: "Status", width: 120, renderCell: (row) => <StatusChip status={row.status} /> },
+    { id: "expanseType", label: "Expense Type", hide: true },
+    { id: "paymentType", label: "Payment Type", hide: true },
+    { id: "actualAmount", label: "Actual Amount", hide: true },
+    { id: "unitName", label: "Unit", hide: true, valueGetter: ({ data }) => data.unit?.unitName || "\u2014" },
+    { id: "unitNo", label: "Unit No", hide: true, valueGetter: ({ data }) => data.unit?.unitNo || "\u2014" },
+    { id: "buildingName", label: "Building", hide: true, valueGetter: ({ data }) => data.unit?.building?.buildingName || "\u2014" },
+    { id: "invoiceName", label: "Invoice Name", hide: true, valueGetter: ({ data }) => {
+      const files = payoutInvoiceFilesForRow(data);
+      return `${files.length} ${files.length === 1 ? "file" : "files"} uploaded`;
+    } },
+    { id: "invoiceDate", label: "Invoice Date", hide: true, valueGetter: ({ data }) => {
+      const files = payoutInvoiceFilesForRow(data);
+      const date = data.invoice?.date || data.invoiceDate || files[0]?.date;
+      return date ? humanDate(date) : "\u2014";
+    } },
+    { id: "isPaid", label: "Paid Status", hide: true },
+    { id: "invoiceFile", label: "Invoice File", hide: true, valueGetter: ({ data }) => payoutInvoiceFilesForRow(data).map((file) => file.link).join(", ") || "\u2014" },
+    { id: "rejectedByName", label: "Rejected By", hide: true },
+    { id: "category", label: "Category", hide: true },
     { id: "actions", label: "Action", width: 115, renderCell: (row) => (
       <div className="flex items-center gap-2">
         <button type="button" aria-label="View payment" onClick={() => viewPayout(row)} className="rounded-lg bg-[#eaf4ff] p-2 text-[#1E3D73]"><MdOutlineRemoveRedEye size={18} /></button>
@@ -2847,8 +3119,6 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           <span>FINANCE INCOME V/S EXPENSE</span>
         </span>
       ),
-      TitleAmountGreen: `INR ${inrFormat(totalIncomeAmount)}`,
-      TitleAmountRed: `INR ${inrFormat(totalExpense)}`,
       onYearChange: setSelectedFiscalYear,
 
       permission: PERMISSIONS.FINANCE1_INCOME_EXPENSE_YEARLY_GRAPH.value,
@@ -3029,17 +3299,17 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           data={item.data}
           options={item.options}
           chartId={item.chartId}
+          chartHeight={360}
           chartTopContent={financeProjectionLegend}
           title={item.title}
           sectionBorderColor="#1E3D73"
           sectionBodyBorderColor="#9FB2CF"
           headerRightContent={
-            <div className="flex flex-wrap justify-end gap-2">
-              {[item.TitleAmountGreen, item.TitleAmountRed].map((amount, index) => (
-                <span key={index} aria-label={`${index === 0 ? "Income" : "Expense"}: ${amount}`} className={`flex items-center justify-center rounded-lg border px-3 py-2 text-body font-pmedium uppercase ${index === 0 ? "border-[#b9e3ca] bg-[#e8f6ee] text-[#16784b]" : "border-[#f3c8c8] bg-[#fdecec] text-[#b83c3c]"}`}>
-                  {amount}
-                </span>
-              ))}
+            <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+              <span>Projection:</span>
+              <span>
+                {formatGraphAmount(projectedIncomeTotal, currency, convert)}
+              </span>
             </div>
           }
           onYearChange={item.onYearChange}
@@ -3063,14 +3333,27 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       layout: 1,
       compactTop: true,
       widgets: userPermissions.includes(PERMISSIONS.FINANCE1_BIZNEST_THREE_YEARS_SNAPSHOT.value) ? [
-        <InvestorDashboard key="finance1-investor-snapshot" snapshotOnly snapshotFinancialsByYear={snapshotFinancialsByYear} snapshotRoute="/app/dashboard/finance-dashboard1/biznest-3-years-snapshot" />,
+        <InvestorDashboard key="finance1-investor-snapshot" snapshotOnly snapshotFinancialsByYear={projectedSnapshotFinancialsByYear} snapshotRoute="/app/dashboard/finance-dashboard1/biznest-3-years-snapshot" />,
       ] : [],
     },
     {
       layout: 1,
       compactTop: true,
       widgets: userPermissions.includes(PERMISSIONS.FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT.value) ? [
-        <Finance1Snapshot key="finance1-snapshot" incomeData={incomeData} expenseData={expenseData} fiscalYear={selectedFiscalYear} now={projectionMonth} />,
+        <Finance1Snapshot
+          key="finance1-snapshot"
+          incomeData={incomeData}
+          expenseData={expenseData}
+          fiscalYear={selectedFiscalYear}
+          projectedFinancials={{
+            revenue: projectedIncomeTotal,
+            expense: projectedExpenseTotal,
+            profitLoss: projectedProfitLoss,
+          }}
+          totalSqft={totalSqft}
+          assetValueOwned={APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * Math.max(0, fiscalMonthIndex(projectionMonth) - APPRECIATION_PROJECTION_START_INDEX)}
+          totalInventory={inventoryGraphSummary().total}
+        />,
       ] : [],
     },
 
@@ -3125,6 +3408,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
 
     {
       layout: 1,
+      compactTop: true,
       widgets: userPermissions.includes(PERMISSIONS.FINANCE1_CASHFLOW_YEARLY_GRAPH.value) ? [
         <FinanceCashflow key="finance1-cashflow" financialSeries={[...incomeData, ...expenseData]} now={projectionMonth} />,
       ] : [],
@@ -3288,11 +3572,16 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           exportData
           exportButtonContainer={paymentsExportContainer}
           tableTitle={`BIZNEST PAYMENTS - ${dayjs().format("MMMM YYYY").toUpperCase()}`}
+          processExportCell={(params) => ["dueDate", "invoiceDate"].includes(params?.column?.getColDef?.()?.field)
+            ? String(params.value ?? "")
+            : undefined}
           data={item.rows}
-          columns={item.columns.map(({ id, label, width, renderCell }) => ({
+          columns={item.columns.map(({ id, label, width, hide, valueGetter, renderCell }) => ({
             field: id,
             headerName: label,
             width,
+            hide,
+            valueGetter,
             minWidth: id === "actions" ? 115 : 80,
             flex: id === "srNo" ? undefined : 1,
             cellStyle: { color: "#1E3D73" },
@@ -3325,24 +3614,55 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
   }
   if (location.pathname.endsWith("/biznest-3-years-snapshot")) {
     return userPermissions.includes(PERMISSIONS.FINANCE1_BIZNEST_THREE_YEARS_SNAPSHOT.value)
-      ? <div className="px-4"><InvestorDashboard snapshotOnly snapshotFinancialsByYear={snapshotFinancialsByYear} snapshotRoute="/app/dashboard/finance-dashboard1/biznest-3-years-snapshot" /></div>
+      ? <div className="px-4"><InvestorDashboard snapshotOnly snapshotFinancialsByYear={projectedSnapshotFinancialsByYear} snapshotRoute="/app/dashboard/finance-dashboard1/biznest-3-years-snapshot" /></div>
       : <Navigate to="/unauthorized" replace />;
   }
   if (location.pathname.endsWith("/finance-3-years-snapshot")) {
     return userPermissions.includes(PERMISSIONS.FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT.value)
-      ? <div className="px-4"><Finance1Snapshot incomeData={incomeData} expenseData={expenseData} fiscalYear={selectedFiscalYear} now={projectionMonth} /></div>
+      ? <div className="px-4"><Finance1Snapshot
+        incomeData={incomeData}
+        expenseData={expenseData}
+        fiscalYear={selectedFiscalYear}
+        projectedFinancials={{
+          revenue: projectedIncomeTotal,
+          expense: projectedExpenseTotal,
+          profitLoss: projectedProfitLoss,
+        }}
+        totalSqft={totalSqft}
+        assetValueOwned={APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * Math.max(0, fiscalMonthIndex(projectionMonth) - APPRECIATION_PROJECTION_START_INDEX)}
+        totalInventory={inventoryGraphSummary().total}
+      /></div>
       : <Navigate to="/unauthorized" replace />;
   }
   return (
     <div className="flex flex-col gap-4">
-      <MuiModal title="Reject Budget" widthClass="w-[94vw] max-w-[520px]" open={Boolean(payoutRejectRow)} onClose={() => { if (!isPayoutApprovalPending) setPayoutRejectRow(null); }}>
-        <form className="space-y-4 p-5" onSubmit={(event) => {
+      <MuiModal
+        title={
+          <span className="text-subtitle font-pmedium text-primary uppercase">
+            Pending Approvals Budget Summary
+          </span>
+        }
+        widthClass="w-[94vw] max-w-[768px]"
+        open={Boolean(payoutRejectRow)}
+        onClose={() => { if (!isPayoutApprovalPending) setPayoutRejectRow(null); }}
+      >
+        <form className="flex flex-col gap-4" onSubmit={(event) => {
           event.preventDefault();
           if (payoutRejectReason.trim() && !isPayoutApprovalPending) updatePayoutApproval({ row: payoutRejectRow, action: "reject", reason: payoutRejectReason.trim() });
         }}>
-          <label htmlFor="payout-reject-reason" className="block text-sm text-[#1E3D73]">Reason for rejection</label>
-          <textarea id="payout-reject-reason" required value={payoutRejectReason} onChange={(event) => setPayoutRejectReason(event.target.value)} className="min-h-24 w-full rounded-lg border border-gray-300 p-3" disabled={isPayoutApprovalPending} />
-          <button type="submit" disabled={isPayoutApprovalPending || !payoutRejectReason.trim()} className="rounded-lg bg-[#1E3D73] px-4 py-2 text-white disabled:opacity-50">{isPayoutApprovalPending ? "Rejecting..." : "Reject"}</button>
+          <TextField
+            id="payout-reject-reason"
+            label="Reason"
+            placeholder="Enter the reason"
+            multiline
+            fullWidth
+            rows={4}
+            required
+            value={payoutRejectReason}
+            onChange={(event) => setPayoutRejectReason(event.target.value)}
+            disabled={isPayoutApprovalPending}
+          />
+          <button type="submit" disabled={isPayoutApprovalPending || !payoutRejectReason.trim()} className="w-full rounded-md bg-[#1E3D73] px-4 py-2 text-white">{isPayoutApprovalPending ? "Submitting..." : "Submit"}</button>
         </form>
       </MuiModal>
       <MuiModal
@@ -3432,7 +3752,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           </div>
         </div>
       </div>
-      <FinanceDashboard1Summary assetValueOwned={APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * Math.max(0, fiscalMonthIndex(projectionMonth) - APPRECIATION_PROJECTION_START_INDEX)} inventorySummary={inventoryGraphSummary()} uniqueClientsSummary={uniqueClientsSummary} income={totalIncomeAmount} expense={totalExpense} incomeGrowth={previousYearIncome ? ((totalIncomeAmount - previousYearIncome) / previousYearIncome) * 100 : 0} fiscalYear={selectedFiscalYear} userPermissions={userPermissions} />
+      <FinanceDashboard1Summary assetValueOwned={APPRECIATION_BASE_VALUATION + APPRECIATION_MONTHLY_INCREMENT * Math.max(0, fiscalMonthIndex(projectionMonth) - APPRECIATION_PROJECTION_START_INDEX)} inventorySummary={inventoryGraphSummary()} uniqueClientsSummary={uniqueClientsSummary} income={projectedIncomeTotal} expense={projectedExpenseTotal} profitLoss={projectedProfitLoss} incomeGrowth={projectedIncomeGrowth} totalSqft={totalSqft} fiscalYear={selectedFiscalYear} userPermissions={userPermissions} />
       </div>
       {visibleTechWidgets.map((section, index) => (
         <div key={index} className={index === 0 ? "-mt-4" : section.compactTop ? "-mt-8" : ""}>

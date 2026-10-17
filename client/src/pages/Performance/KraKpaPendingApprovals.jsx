@@ -218,7 +218,7 @@ const KraKpaPendingApprovals = () => {
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}Pending KPA Approvals - {employeeName}
+          {departmentName ? `${departmentName} - ` : ""}{employeeName}
         </h1>
       </div>
       <div className="mb-1 flex flex-wrap items-center justify-center gap-2">

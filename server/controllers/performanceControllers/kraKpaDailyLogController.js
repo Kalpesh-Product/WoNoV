@@ -472,7 +472,13 @@ const listDailyLogOptions = async (req, res, next) => {
 
 const listDailyLogs = async (req, res, next) => {
   try {
-    const { department, employee, date: requestedDate } = req.query;
+    const {
+      department,
+      employee,
+      date: requestedDate,
+      startDate,
+      endDate,
+    } = req.query;
     if (department && !mongoose.isValidObjectId(department)) {
       return res.status(400).json({ message: "Invalid department ID" });
     }
@@ -480,8 +486,21 @@ const listDailyLogs = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid employee ID" });
     }
     const occurrenceDate = requestedDate ? parseDate(requestedDate) : null;
+    const rangeStart = startDate ? parseDate(startDate) : null;
+    const rangeEnd = endDate ? parseDate(endDate) : null;
     if (requestedDate && !occurrenceDate) {
       return res.status(400).json({ message: "Invalid Daily Log date" });
+    }
+    if (startDate && !rangeStart) {
+      return res.status(400).json({ message: "Invalid Daily Log start date" });
+    }
+    if (endDate && !rangeEnd) {
+      return res.status(400).json({ message: "Invalid Daily Log end date" });
+    }
+    if (rangeStart && rangeEnd && rangeStart > rangeEnd) {
+      return res.status(400).json({
+        message: "Daily Log start date cannot be after the end date",
+      });
     }
     const access = await getAccess(req);
     if (department && !access.allDepartments &&
@@ -509,6 +528,12 @@ const listDailyLogs = async (req, res, next) => {
       ...getScopedFilter(req, access),
       ...(department && { department }),
       ...(employee && { employee }),
+      ...((rangeStart || rangeEnd) && {
+        date: {
+          ...(rangeStart && { $gte: rangeStart }),
+          ...(rangeEnd && { $lte: rangeEnd }),
+        },
+      }),
     })
       .sort({ date: -1, createdAt: -1 })
       .populate(POPULATION)
