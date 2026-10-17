@@ -20,6 +20,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SideBarContext";
 import { MdHome } from "react-icons/md";
 import { RiAdminFill } from "react-icons/ri";
+import { PiHandCoinsFill } from "react-icons/pi";
 import { TbCashRegister } from "react-icons/tb";
 import { FaUserTie } from "react-icons/fa6";
 import { MdMeetingRoom } from "react-icons/md";
@@ -195,6 +196,14 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           icon: <RiStockLine />,
           permission: PERMISSIONS.SIDEBAR_INVESTOR_DASHBOARD.value,
         },
+         {
+          id: 12,
+          title: "Finance Dashboard",
+          codeName: "Finance1",
+          route: "/app/dashboard/finance-dashboard1",
+          icon: <PiHandCoinsFill />,
+          permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD1.value,
+        },
         {
           id: 4,
           title: "Finance Dashboard",
@@ -203,14 +212,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           icon: <TbCashRegister />,
           permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD.value,
         },
-        {
-          id: 12,
-          title: "Finance Dashboard1",
-          codeName: "Finance1",
-          route: "/app/dashboard/finance-dashboard1",
-          icon: <TbCashRegister />,
-          permission: PERMISSIONS.SIDEBAR_FINANCE_DASHBOARD1.value,
-        },
+       
         {
           id: 5,
           title: "Sales Dashboard",
