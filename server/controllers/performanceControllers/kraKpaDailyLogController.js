@@ -9,6 +9,7 @@ const SelfKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const SelfKra = require("../../models/performances/KraKpaSelfKra");
 const SelfKraCompletion = require("../../models/performances/KraKpaSelfKraCompletion");
 const Event = require("../../models/events/Events");
+const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const {
   calculateDelayedWorkingDays,
   toCalendarKey,
@@ -77,6 +78,7 @@ const getAccess = async (req) => {
     canCreateGeneralTask,
     departmentIds,
     isHr,
+    isTopManagement,
   };
 };
 
@@ -640,6 +642,13 @@ const updateDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    const canEditDailyLog = access.isHr || access.isTopManagement ||
+      await isDepartmentManager(req, record.department, access);
+    if (!canEditDailyLog) {
+      return res.status(403).json({
+        message: "Only the department manager, HR or Top Management can edit Daily Logs",
+      });
+    }
     const validation = validateLog(req.body, { requireKpaSlot: false });
     if (validation.error) return res.status(400).json({ message: validation.error });
     if (Object.hasOwn(req.body, "resourceComment")) {
@@ -743,7 +752,7 @@ const completeDailyLog = async (req, res, next) => {
       typeof req.body?.reasonForCarryForward === "string"
         ? req.body.reasonForCarryForward.trim()
         : "";
-    if (record.carriedFromDailyLog && !reasonForCarryForward) {
+    if ((record.carriedFromDailyLog || record.isCarryForward) && !reasonForCarryForward) {
       return res.status(400).json({
         message: "Reason for Carry Forward is required",
       });
@@ -841,7 +850,7 @@ const completeDailyLog = async (req, res, next) => {
     record.status = "Done";
     record.startTime = startTime;
     record.endTime = endTime;
-    if (record.carriedFromDailyLog) {
+    if (record.carriedFromDailyLog || record.isCarryForward) {
       record.reasonForCarryForward = reasonForCarryForward;
     }
     record.resourceComment = resourceComment;

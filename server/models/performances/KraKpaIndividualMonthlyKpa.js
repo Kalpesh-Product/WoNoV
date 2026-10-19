@@ -32,7 +32,7 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
     deadline: { type: Date, default: null },
     approvalStatus: {
       type: String,
-      enum: ["Pending Approval", "Approved"],
+      enum: ["Pending Approval", "Approved", "Rejected"],
       default: "Approved",
       required: true,
     },
@@ -42,6 +42,12 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
       default: null,
     },
     approvedAt: { type: Date, default: null },
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
+    rejectedAt: { type: Date, default: null },
     status: {
       type: String,
       enum: ["Pending", "Completed"],

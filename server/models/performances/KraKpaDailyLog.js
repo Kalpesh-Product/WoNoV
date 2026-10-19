@@ -39,6 +39,7 @@ const dailyLogSchema = new mongoose.Schema(
       default: null,
     },
     date: { type: Date, required: true },
+    isCarryForward: { type: Boolean, default: false },
     deadline: { type: Date, default: null },
     dayTaskName: { type: String, required: true, trim: true },
     type: {
