@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
-const Company = require("../../models/hr/Company");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const Event = require("../../models/events/Events");
+const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const {
   calculateDelayedWorkingDays,
 } = require("../../utils/kraKpaDelayedDays");
@@ -16,6 +16,7 @@ const DETAIL_POPULATION = [
   { path: "department", select: "name" },
   { path: "createdBy", select: "firstName middleName lastName" },
   { path: "approvedBy", select: "firstName middleName lastName" },
+  { path: "rejectedBy", select: "firstName middleName lastName" },
   { path: "completionHistory.completedBy", select: "firstName middleName lastName" },
   { path: "managerReviewedBy", select: "firstName middleName lastName" },
   { path: "managerReviewHistory.reviewedBy", select: "firstName middleName lastName" },
@@ -110,25 +111,6 @@ const getScopedFilter = (req, access) => ({
     ...(!access.allDepartments && { department: { $in: access.departmentIds } }),
     ...(!access.canViewOthers && { employee: req.user }),
 });
-
-const isDepartmentManager = async (req, departmentId, access) => {
-  if (!access.departmentIds.includes(String(departmentId))) return false;
-
-  const company = await Company.findById(req.company)
-    .select("selectedDepartments.department selectedDepartments.admin")
-    .lean();
-  const assignment = company?.selectedDepartments?.find((item) =>
-    String(item.department) === String(departmentId),
-  );
-  if (!assignment?.admin) return false;
-
-  return Boolean(await UserData.exists({
-    _id: req.user,
-    company: req.company,
-    departments: departmentId,
-    role: assignment.admin,
-  }));
-};
 
 const canDeleteKraKpa = async (req, departmentId, access) =>
   access.isTopManagement || await isDepartmentManager(req, departmentId, access);
@@ -324,6 +306,7 @@ const getIndividualMonthlyKpaReviewAccess = async (req, res, next) => {
       access.isTopManagement || access.isHr || departmentManager;
     const canEditHrRating = access.isHr;
     return res.json({
+      canApproveKpa: access.isTopManagement || departmentManager,
       canEditReview: canEditManagerReview || canEditHrRating,
       canEditManagerReview,
       canEditHrRating,
@@ -387,16 +370,48 @@ const approveIndividualMonthlyKpa = async (req, res, next) => {
         message: "Only the department manager or Top Management can approve this KPA",
       });
     }
-    if (existing.approvalStatus === "Approved") {
-      return res.status(409).json({ message: "KPA is already approved" });
+    if (existing.approvalStatus !== "Pending Approval") {
+      return res.status(409).json({ message: "Only pending KPAs can be approved" });
     }
-    existing.approvalStatus = "Approved";
-    existing.approvedBy = req.user;
-    existing.approvedAt = new Date();
-    existing.updatedBy = req.user;
-    await existing.save();
-    await existing.populate(DETAIL_POPULATION);
-    return res.json(existing);
+    const approved = await IndividualMonthlyKpa.findOneAndUpdate(
+      { _id: existing._id, company: req.company, isDeleted: { $ne: true }, approvalStatus: "Pending Approval" },
+      { $set: { approvalStatus: "Approved", approvedBy: req.user, approvedAt: new Date(), updatedBy: req.user } },
+      { new: true, runValidators: true },
+    ).populate(DETAIL_POPULATION);
+    if (!approved) {
+      return res.status(409).json({ message: "KPA is no longer pending approval" });
+    }
+    return res.json(approved);
+  } catch (error) {
+    return next(error);
+  }
+};
+
+const rejectIndividualMonthlyKpa = async (req, res, next) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid KPA ID" });
+    }
+    const access = await getAccess(req);
+    const scope = { _id: req.params.id, company: req.company, isDeleted: { $ne: true } };
+    const existing = await IndividualMonthlyKpa.findOne(scope)
+      .select("department approvalStatus").lean();
+    if (!existing) return res.status(404).json({ message: "KPA not found" });
+    const departmentManager = await isDepartmentManager(req, existing.department, access);
+    if (!access.isTopManagement && !departmentManager) {
+      return res.status(403).json({
+        message: "Only the department manager or Top Management can reject this KPA",
+      });
+    }
+    const rejected = await IndividualMonthlyKpa.findOneAndUpdate(
+      { ...scope, approvalStatus: "Pending Approval" },
+      { $set: { approvalStatus: "Rejected", rejectedBy: req.user, rejectedAt: new Date(), updatedBy: req.user } },
+      { new: true, runValidators: true },
+    ).populate(DETAIL_POPULATION);
+    if (!rejected) {
+      return res.status(409).json({ message: "Only pending KPAs can be rejected" });
+    }
+    return res.json(rejected);
   } catch (error) {
     return next(error);
   }
@@ -668,7 +683,7 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
       .select("status createdBy employee verification approvalStatus")
       .lean();
     if (!existing) return res.status(404).json({ message: "KPA not found" });
-    if (existing.approvalStatus === "Pending Approval") {
+    if (existing.approvalStatus && existing.approvalStatus !== "Approved") {
       return res.status(409).json({
         message: "KPA must be approved before it can be marked as done",
       });
@@ -758,6 +773,7 @@ module.exports = {
   getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
   approveIndividualMonthlyKpa,
+  rejectIndividualMonthlyKpa,
   updateIndividualMonthlyKpa,
   completeIndividualMonthlyKpa,
   deleteIndividualMonthlyKpa,

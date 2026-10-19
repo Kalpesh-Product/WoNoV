@@ -67,6 +67,7 @@ const KraKpaPendingApprovals = () => {
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
+  const [rejectionRecord, setRejectionRecord] = useState(null);
   const [form, setForm] = useState({ month: "", target: "", deadline: "" });
   const [errors, setErrors] = useState({});
 
@@ -136,6 +137,23 @@ const KraKpaPendingApprovals = () => {
     setErrors({});
   };
 
+  const rejectKpa = useMutation({
+    mutationFn: async (record) => {
+      const response = await axios.patch(
+        `/api/kra-kpa/individual-monthly-kpa/${record._id}/reject`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      refresh();
+      setRejectionRecord(null);
+      toast.success("KPA rejected");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Unable to reject KPA");
+    },
+  });
+
   const submitEdit = (event) => {
     event.preventDefault();
     const nextErrors = {};
@@ -189,7 +207,7 @@ const KraKpaPendingApprovals = () => {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
-      width: 185,
+      width: 265,
       sortable: false,
       filter: false,
       cellRenderer: ({ data }) => (
@@ -209,6 +227,14 @@ const KraKpaPendingApprovals = () => {
             handleSubmit={() => setApprovalRecord(data)}
             className="!h-8 !px-3 !py-1 !text-xs"
           />
+          <button
+            type="button"
+            onClick={() => setRejectionRecord(data)}
+            className="h-8 rounded border border-red-600 px-3 text-xs text-red-600 hover:bg-red-50"
+            aria-label={`Reject ${data.target}`}
+          >
+            Reject
+          </button>
         </div>
       ),
     },
@@ -349,6 +375,17 @@ const KraKpaPendingApprovals = () => {
         cancelText="Cancel"
         cancelFirst
         isLoading={approveKpa.isPending}
+      />
+      <ConfirmationModal
+        open={Boolean(rejectionRecord)}
+        onClose={() => !rejectKpa.isPending && setRejectionRecord(null)}
+        onConfirm={() => rejectionRecord && rejectKpa.mutate(rejectionRecord)}
+        title="Reject KPA"
+        message="Reject this KPA? It will remain in Self KPA as rejected and cannot be scheduled or completed."
+        confirmText="Reject"
+        cancelText="Cancel"
+        cancelFirst
+        isLoading={rejectKpa.isPending}
       />
     </PageFrame>
   );

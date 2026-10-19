@@ -18,22 +18,14 @@ import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import DailyLogTypeChip from "./DailyLogTypeChip";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
+const isCarriedForward = (record) =>
+  Boolean(record.carriedFromDailyLog || record.isCarryForward);
 const formatTime = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("hh:mm A") : "-";
-
-const TYPE_CHIP_STYLES = {
-  KRA: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
-  KPA: { backgroundColor: "#ffe2dc", color: "#b42318" },
-  GENERAL: { backgroundColor: "#dcfce7", color: "#15803d" },
-};
-
-const DEFAULT_TYPE_CHIP_STYLE = {
-  backgroundColor: "#f3f4f6",
-  color: "#4b5563",
-};
 
 const emptyForm = () => ({
   dayTaskName: "",
@@ -189,6 +181,18 @@ const KraKpaDailyLogs = () => {
       return response.data || [];
     },
   });
+  const { data: editAccess } = useQuery({
+    queryKey: ["kraKpaIndividualMonthlyKpaReviewAccess", departmentId],
+    enabled: Boolean(departmentId),
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa/review-access",
+        { params: { department: departmentId } },
+      );
+      return response.data;
+    },
+  });
+  const canEditDailyLog = Boolean(editAccess?.canEditManagerReview);
   const { data: dailyLogOptionConfig } = useQuery({
     queryKey: ["kraKpaDailyLogOptions", departmentId, employeeId],
     enabled: Boolean(departmentId && employeeId),
@@ -319,7 +323,7 @@ const KraKpaDailyLogs = () => {
       errors.endTime = "End Time must be after Start Time";
     }
     if (
-      pendingAction.record.carriedFromDailyLog &&
+      isCarriedForward(pendingAction.record) &&
       !completionTimes.reasonForCarryForward.trim()
     ) {
       errors.reasonForCarryForward = "Reason for Carry Forward is required";
@@ -348,7 +352,7 @@ const KraKpaDailyLogs = () => {
   };
 
   const openEdit = (record) => {
-    if (!canManageOthers) return;
+    if (!canEditDailyLog) return;
     setEditingRecord(record);
     setForm({
       dayTaskName: record.dayTaskName || "",
@@ -416,7 +420,7 @@ const KraKpaDailyLogs = () => {
     total: filteredRecords.length,
     due: dueRows.length,
     carryForward: filteredRecords.filter(
-      (record) => Boolean(record.carriedFromDailyLog),
+      (record) => isCarriedForward(record),
     ).length,
   };
   const canCompleteRecord = (record) =>
@@ -455,26 +459,14 @@ const KraKpaDailyLogs = () => {
       headerName: "Type",
       field: "type",
       width: 125,
-      cellRenderer: ({ data, value }) => (
-        <Chip
-          size="small"
-          label={
-            value === "KPA"
-              ? data.sourceSelfKpa
-                ? "KPA"
-                : "KPA Task"
-              : value
-          }
-          sx={TYPE_CHIP_STYLES[value] || DEFAULT_TYPE_CHIP_STYLE}
-        />
-      ),
+      cellRenderer: DailyLogTypeChip,
     },
     {
       headerName: "Task Source",
       field: "taskSource",
       width: 155,
       valueGetter: ({ data }) =>
-        data.carriedFromDailyLog ? "Carry Forward" : "New Task",
+        isCarriedForward(data) ? "Carry Forward" : "New Task",
       cellRenderer: ({ value }) => (
         <Chip
           size="small"
@@ -523,13 +515,19 @@ const KraKpaDailyLogs = () => {
       : []),
   ];
 
+  const actionsColumnWidth = 140 +
+    (canEditDailyLog ? 40 : 0) +
+    (canManageOthers && !isOwnPage ? 40 : 0);
   const dueColumns = [
     ...baseColumns,
     {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
-      width: 230,
+      width: actionsColumnWidth,
+      minWidth: actionsColumnWidth,
+      maxWidth: actionsColumnWidth,
+      suppressSizeToFit: true,
       sortable: false,
       filter: false,
       cellRenderer: ({ data, node }) => (
@@ -539,7 +537,7 @@ const KraKpaDailyLogs = () => {
           onEdit={openEdit}
           onAction={openRowAction}
           canComplete={canCompleteRecord(data)}
-          canEdit={canManageOthers}
+          canEdit={canEditDailyLog}
           canDelete={canManageOthers && !isOwnPage}
           isPending={rowAction.isPending}
         />
@@ -784,7 +782,7 @@ const KraKpaDailyLogs = () => {
                 }}
               />
             </div>
-            {pendingAction.record.carriedFromDailyLog && (
+            {isCarriedForward(pendingAction.record) && (
               <TextField
                 label="Reason for Carry Forward *"
                 size="small"

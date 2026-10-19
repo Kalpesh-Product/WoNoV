@@ -405,6 +405,7 @@ import KraKpaRating from "../pages/Performance/KraKpaRating";
 import KraKpaDepartmentEntry from "../pages/Performance/KraKpaDepartmentEntry";
 import KraKpaIndividualLayout from "../pages/Performance/KraKpaIndividualLayout";
 import KraKpaEmployeeDashboard from "../pages/Performance/KraKpaEmployeeDashboard";
+import KraKpaMemberDashboardLayout from "../pages/Performance/KraKpaMemberDashboardLayout";
 import PerformanceTeamKra from "../pages/Performance/DepartmentDetails/PerformanceTeamKra";
 import PerformanceTeamKpa from "../pages/Performance/DepartmentDetails/PerformanceTeamKpa";
 import PerformanceAnnual from "../pages/Performance/DepartmentDetails/PerformanceAnnual";
@@ -5173,8 +5174,17 @@ export const routes = createBrowserRouter([
                             ),
                           },
                           {
-                            path: "employee-dashboard",
-                            element: <KraKpaEmployeeDashboard />,
+                            element: <KraKpaMemberDashboardLayout />,
+                            children: [
+                              {
+                                path: "employee-dashboard",
+                                element: <KraKpaEmployeeDashboard />,
+                              },
+                              {
+                                path: "member-pending-approvals",
+                                element: <KraKpaPendingApprovals />,
+                              },
+                            ],
                           },
                           {
                             path: "employee-dashboard/kra-kpa",
