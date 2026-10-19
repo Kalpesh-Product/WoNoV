@@ -284,7 +284,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const isSelectedSelfKraToday = selectedSelfKraDate.isSame(dayjs(), "day");
   const canCompleteRecord = (record) =>
     !isSelfKra &&
-    record?.approvalStatus !== "Pending Approval" &&
+    (!record?.approvalStatus || record.approvalStatus === "Approved") &&
     isAssignedToLoggedInUser(record);
 
   const refreshKpaQueries = () => {
@@ -865,6 +865,24 @@ const KraKpaIndividualMonthlyKpa = () => {
       }
     />
   );
+  const approvalStatusColumn = {
+    headerName: "Approvals",
+    field: "approvalStatus",
+    width: 180,
+    cellRenderer: ({ value }) => (
+      <Chip
+        size="small"
+        label={value || "Approved"}
+        sx={
+          value === "Rejected"
+            ? { backgroundColor: "#fde2e2", color: "#b42318" }
+            : value === "Pending Approval"
+              ? { backgroundColor: "#ffedc9", color: "#ad7000" }
+              : { backgroundColor: "#d8f0df", color: "#16784d" }
+        }
+      />
+    ),
+  };
   const reviewStatusColumn = {
     headerName: "Review Status",
     field: "reviewStatus",
@@ -926,7 +944,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       ),
     },
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
-    { headerName: "Approved", field: "approvalStatus", width: 180 },
+    approvalStatusColumn,
     statusColumn,
     reviewStatusColumn,
     finalClosureColumn,
@@ -1014,7 +1032,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           ),
         },
         { headerName: "Deadline", field: "deadlineLabel", width: 165 },
-        { headerName: "Approved", field: "approvalStatus", width: 180 },
+        approvalStatusColumn,
         {
           headerName: "Completed Date",
           field: "closingDate",
@@ -1405,6 +1423,12 @@ const KraKpaIndividualMonthlyKpa = () => {
                   detail={viewRecord.activeStatus}
                 />
                 <DetalisFormatted title="Status" detail={viewRecord.status} />
+                {viewRecord.approvalStatus === "Rejected" && (
+                  <>
+                    <DetalisFormatted title="Rejected By" detail={formatUserName(viewRecord.rejectedBy)} />
+                    <DetalisFormatted title="Rejected On" detail={formatDateTime(viewRecord.rejectedAt)} />
+                  </>
+                )}
                 <DetalisFormatted
                   title="Closing Date"
                   detail={formatDateTime(viewRecord.closingDate)}
@@ -1704,7 +1728,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       >
         {pendingAction?.type === "complete" && !isSelfKra && (
           <TextField
-            label="Resource Comment (Optional)"
+            label="Resource Comment"
             size="small"
             multiline
             minRows={3}

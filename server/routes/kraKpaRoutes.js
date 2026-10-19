@@ -6,6 +6,7 @@ const {
   getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
   approveIndividualMonthlyKpa,
+  rejectIndividualMonthlyKpa,
   updateIndividualMonthlyKpa,
   completeIndividualMonthlyKpa,
   deleteIndividualMonthlyKpa,
@@ -48,6 +49,7 @@ router.get("/individual-monthly-kpa/review-access", getIndividualMonthlyKpaRevie
 router.get("/delete-access", getKraKpaDeleteAccess);
 router.post("/individual-monthly-kpa", createIndividualMonthlyKpa);
 router.patch("/individual-monthly-kpa/:id/approve", approveIndividualMonthlyKpa);
+router.patch("/individual-monthly-kpa/:id/reject", rejectIndividualMonthlyKpa);
 router.patch("/individual-monthly-kpa/:id/complete", completeIndividualMonthlyKpa);
 router.patch("/individual-monthly-kpa/:id", updateIndividualMonthlyKpa);
 router.delete("/individual-monthly-kpa/:id", deleteIndividualMonthlyKpa);

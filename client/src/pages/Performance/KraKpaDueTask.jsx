@@ -117,9 +117,7 @@ const KraKpaDueTask = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const isIndividualRoute = location.pathname.includes(
-    "/kra-kpa/individual/",
-  );
+  const isIndividualRoute = location.pathname.includes("/kra-kpa/individual/");
   const member = isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
@@ -184,6 +182,18 @@ const KraKpaDueTask = () => {
     },
   });
 
+  const { data: deadlineAccess } = useQuery({
+    queryKey: ["kraKpaIndividualMonthlyKpaReviewAccess", departmentId],
+    enabled: Boolean(departmentId),
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa/review-access",
+        { params: { department: departmentId } },
+      );
+      return response.data;
+    },
+  });
+
   const { data: userOptions = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["kraKpaDueTaskUsers", departmentId],
     enabled: Boolean(departmentId),
@@ -221,7 +231,9 @@ const KraKpaDueTask = () => {
           },
         );
         return [...(response.data || [])]
-          .filter((kpa) => kpa.approvalStatus !== "Pending Approval")
+          .filter(
+            (kpa) => !kpa.approvalStatus || kpa.approvalStatus === "Approved",
+          )
           .sort((first, second) => {
             const firstDeadline = first.deadline
               ? dayjs(first.deadline).valueOf()
@@ -446,6 +458,8 @@ const KraKpaDueTask = () => {
   const canAddToDailyLogsRecord = (record) =>
     !record.isAddedToDailyLogs &&
     record.status !== "Closed" &&
+    Boolean(record.deadline && dayjs(record.deadline).isValid()) &&
+    !dayjs(record.deadline).isBefore(dayjs(), "day") &&
     (isTaskEmployee(record) || canCloseRecord(record));
 
   const canAddSelectedTasks =
@@ -461,18 +475,8 @@ const KraKpaDueTask = () => {
   const openAddToDailyLogs = () => {
     if (!canAddSelectedTasks) return;
     setDailyLogTargets(selectedDueTasks);
-    const earliestDeadline = selectedDueTasks.reduce((earliest, record) => {
-      if (!record.deadline || !dayjs(record.deadline).isValid())
-        return earliest;
-      const deadline = dayjs(record.deadline).startOf("day");
-      return !earliest || deadline.isBefore(earliest) ? deadline : earliest;
-    }, null);
-    const today = dayjs().startOf("day");
     setDailyLogForm({
-      date:
-        earliestDeadline && today.isAfter(earliestDeadline)
-          ? earliestDeadline.format("YYYY-MM-DD")
-          : today.format("YYYY-MM-DD"),
+      date: dayjs().format("YYYY-MM-DD"),
     });
     setDailyLogErrors({});
   };
@@ -481,6 +485,12 @@ const KraKpaDueTask = () => {
     event.preventDefault();
     const errors = {};
     if (!dailyLogForm.date) errors.date = "Date is required";
+    if (
+      dailyLogForm.date &&
+      dayjs(dailyLogForm.date).isBefore(dayjs(), "day")
+    ) {
+      errors.date = "Schedule Date cannot be in the past";
+    }
     if (
       dailyLogForm.date &&
       dailyLogMaxDate &&
@@ -614,7 +624,8 @@ const KraKpaDueTask = () => {
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}{employeeName}
+          {departmentName ? `${departmentName} - ` : ""}
+          {employeeName}
         </h1>
         {canAdd && (
           <PrimaryButton
@@ -782,6 +793,9 @@ const KraKpaDueTask = () => {
                     <div className="mt-0.5 text-xs text-gray-500">
                       {record.parentKpa?.target || "KPA"}
                     </div>
+                    <div className="mt-1 text-xs text-primary">
+                      Deadline: {formatDate(record.deadline)}
+                    </div>
                   </div>
                   <button
                     type="button"
@@ -804,6 +818,7 @@ const KraKpaDueTask = () => {
             <DatePicker
               label="Schedule Date *"
               format="DD-MM-YYYY"
+              minDate={dayjs().startOf("day")}
               value={dailyLogForm.date ? dayjs(dailyLogForm.date) : null}
               maxDate={dailyLogMaxDate || undefined}
               onChange={(date) => {
@@ -1001,6 +1016,9 @@ const KraKpaDueTask = () => {
                 }
                 maxDate={selectedParentDeadline || undefined}
                 value={form.deadline ? dayjs(form.deadline) : null}
+                disabled={Boolean(
+                  editingRecord && !deadlineAccess?.canEditManagerReview,
+                )}
                 onChange={(date) => {
                   setForm((current) => ({
                     ...current,
@@ -1011,9 +1029,6 @@ const KraKpaDueTask = () => {
                     deadline: "",
                   }));
                 }}
-                disabled={Boolean(
-                  editingRecord && isTaskEmployee(editingRecord),
-                )}
                 slotProps={{
                   textField: {
                     size: "small",
