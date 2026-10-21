@@ -12,7 +12,7 @@ import {
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday, MdClose, MdDeleteForever } from "react-icons/md";
+import { MdCalendarToday, MdClose, MdDeleteForever, MdHistory } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import DailyLogEditHistory from "./DailyLogEditHistory";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -57,6 +58,7 @@ const DueTaskActionCell = ({
   data,
   node,
   onEdit,
+  onHistory,
   onAction,
   canEdit,
   canDelete,
@@ -75,6 +77,9 @@ const DueTaskActionCell = ({
 
   return (
     <div className="flex h-full items-center gap-2">
+      <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dueTaskName}`} disabled={disabled} onClick={() => onHistory(data)} className="flex h-8 w-8 shrink-0 items-center justify-center disabled:cursor-not-allowed">
+        <MdHistory size={25} color={disabled ? "#9ca3af" : "#111827"} />
+      </button>
       {data.status !== "Closed" && canEdit && (
         <button
           type="button"
@@ -155,6 +160,7 @@ const KraKpaDueTask = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
+  const [historyRecord, setHistoryRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedDueTasks, setSelectedDueTasks] = useState([]);
   const [dailyLogTargets, setDailyLogTargets] = useState([]);
@@ -510,6 +516,7 @@ const KraKpaDueTask = () => {
     92,
     ...tableData.map((record) => {
       const controlWidths = [
+        32,
         record.status !== "Closed" && canEditRecord(record) ? 32 : 0,
         canDeleteRecord(record) ? 32 : 0,
       ].filter(Boolean);
@@ -611,6 +618,7 @@ const KraKpaDueTask = () => {
           data={data}
           node={node}
           onEdit={openEdit}
+          onHistory={setHistoryRecord}
           onAction={(type, record) => setPendingAction({ type, record })}
           canEdit={canEditRecord(data)}
           canDelete={canDeleteRecord(data)}
@@ -622,6 +630,7 @@ const KraKpaDueTask = () => {
 
   return (
     <PageFrame>
+      {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}

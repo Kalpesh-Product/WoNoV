@@ -30,6 +30,7 @@ const DEFAULT_GENERAL_TASK_NAMES = new Set(
   GENERAL_DAILY_LOG_OPTIONS.map(normalizeGeneralTaskName),
 );
 const POPULATION = [
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
@@ -37,6 +38,30 @@ const POPULATION = [
   { path: "sourceSelfKra", select: "title description category lead startsOn" },
   { path: "sourceSelfKpa", select: "target deadline status closingDate" },
 ];
+
+const HISTORY_FIELDS = {
+  date: "Log Date",
+  managerComments: "Manager Comments",
+  hrComments: "HR Comments",
+  status: "Task Status",
+  startTime: "Start Time",
+  endTime: "End Time",
+  resourceComment: "Resource Comment",
+  reasonForCarryForward: "Reason for Carry Forward",
+};
+const historyValue = (value) => value instanceof Date ? value.toISOString() : value || null;
+const historySnapshot = (record) => Object.fromEntries(
+  Object.keys(HISTORY_FIELDS).map((field) => [field, historyValue(record[field])]),
+);
+const appendEditHistory = (record, before, fields, user) => {
+  const changes = fields.flatMap((field) => {
+    const newValue = historyValue(record[field]);
+    return before[field] === newValue ? [] : [{ field, label: HISTORY_FIELDS[field], oldValue: before[field], newValue }];
+  });
+  if (!changes.length) return;
+  if (!Array.isArray(record.editHistory)) record.editHistory = [];
+  record.editHistory.push({ editedBy: user, editedAt: new Date(), changes });
+};
 
 const parseDate = (value) => {
   if (typeof value !== "string" || !DATE_PATTERN.test(value)) return undefined;
@@ -118,6 +143,13 @@ const canCreateGeneralTaskForDepartment = async (
 
 const hideRestrictedComments = (record, access) => {
   const value = typeof record?.toObject === "function" ? record.toObject() : { ...record };
+  value.editHistory = (value.editHistory || []).map((entry) => ({
+    ...entry,
+    changes: (entry.changes || []).filter((change) =>
+      (access.canManageOthers || !["managerComments", "reviewerComments"].includes(change.field)) &&
+      (access.isHr || change.field !== "hrComments"),
+    ),
+  })).filter((entry) => entry.changes.length > 0);
   if (!access.canManageOthers) {
     delete value.managerComments;
     delete value.reviewerComments;
@@ -691,11 +723,14 @@ const updateDailyLog = async (req, res, next) => {
     if (hrComments === null || hrComments.length > 5000) {
       return res.status(400).json({ message: "HR Comments are invalid" });
     }
+    const historyBefore = historySnapshot(record);
     Object.assign(record, validation.value, {
       managerComments,
       hrComments,
       updatedBy: req.user,
     });
+    appendEditHistory(record, historyBefore,
+      ["date", "managerComments", "hrComments"].filter((field) => Object.hasOwn(req.body, field)), req.user);
     await record.save();
     await record.populate(POPULATION);
     return res.json(hideRestrictedComments(record, access));
@@ -718,6 +753,7 @@ const completeDailyLog = async (req, res, next) => {
     if (record.status === "Done") {
       return res.status(409).json({ message: "Daily Log is already completed" });
     }
+    const historyBefore = historySnapshot(record);
     if (record.sourceSelfKpa) {
       return res.status(400).json({
         message: "Complete the main KPA from the Self KPA page",
@@ -856,6 +892,7 @@ const completeDailyLog = async (req, res, next) => {
     record.resourceComment = resourceComment;
     record.completedAt = new Date();
     record.updatedBy = req.user;
+    appendEditHistory(record, historyBefore, ["status", "startTime", "endTime", "resourceComment", "reasonForCarryForward"], req.user);
     await record.save();
     await record.populate(POPULATION);
     return res.json(hideRestrictedComments(record, access));
