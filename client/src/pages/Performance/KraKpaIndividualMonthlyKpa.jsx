@@ -119,7 +119,7 @@ const KpaActionCell = ({
 
   const isInactive = data.isActive === false;
   const disabled = !selected || isPending || isInactive;
-  const editDisabled = isPending || (!selected && !isInactive);
+  const editDisabled = isPending || !selected;
 
   return (
     <div className="flex h-full items-center gap-2">
@@ -128,10 +128,11 @@ const KpaActionCell = ({
           type="button"
           title="View Edit History"
           aria-label={`View edit history for ${data.target || data.title || "task"}`}
+          disabled={!selected || isPending}
           onClick={() => onHistory(data)}
-          className="flex h-8 w-8 items-center justify-center"
+          className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
         >
-          <MdHistory size={25} color="#111827" />
+          <MdHistory size={25} color={!selected || isPending ? "#9ca3af" : "#111827"} />
         </button>
       )}
       {data.status !== "Completed" && canComplete && (
@@ -902,6 +903,27 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const showActionColumn =
     (!isSelfKra || isSelectedSelfKraToday) && (canEdit || canDelete);
+  const historyOnlyColumn = {
+    headerName: "Actions",
+    field: "historyActions",
+    pinned: "right",
+    width: 100,
+    sortable: false,
+    filter: false,
+    cellRenderer: ({ data }) => (
+      <div className="flex h-full items-center">
+        <button
+          type="button"
+          title="View Edit History"
+          aria-label={`View edit history for ${data.title || data.target || "task"}`}
+          onClick={() => openEditHistory(data)}
+          className="flex h-8 w-8 items-center justify-center"
+        >
+          <MdHistory size={25} color="#111827" />
+        </button>
+      </div>
+    ),
+  };
   const actionColumns = showActionColumn
     ? [
         {
@@ -925,7 +947,7 @@ const KraKpaIndividualMonthlyKpa = () => {
                 (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser)
               }
               canComplete={canCompleteRecord(data)}
-              showHistory={!isSelfKra}
+              showHistory
             />
           ),
         },
@@ -998,7 +1020,12 @@ const KraKpaIndividualMonthlyKpa = () => {
     scheduledColumn,
     { headerName: "Active Status", field: "activeStatus", width: 150 },
     statusColumn,
-    ...actionColumns,
+    ...(actionColumns.length ? actionColumns : [{
+      ...historyOnlyColumn,
+      cellRenderer: ({ data, node }) => (
+        <KpaActionCell data={data} node={node} onHistory={openEditHistory} showHistory />
+      ),
+    }]),
   ];
   const columns = isSelfKra ? selfKraColumns : individualKpaColumns;
   const completedColumns = isSelfKra
@@ -1035,6 +1062,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           width: 220,
           valueFormatter: ({ value }) => formatDateTime(value),
         },
+        historyOnlyColumn,
       ]
     : [
         { headerName: "Sr No", field: "srNo", width: 85 },
@@ -1138,6 +1166,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     }));
   const editHistoryRows = editHistoryEntries.flatMap((entry) =>
     (entry.changes || []).filter((change) => {
+      if (isSelfKra) return true;
       // Omit dependent status/date/rating resets from older history entries.
       if (change.field === "closingDate") return false;
       if (change.field === "status") return change.newValue === "Completed";
@@ -1638,7 +1667,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           setHistoryRecord(null);
           setHistoryCalendarAnchor(null);
         }}
-        title={historyRecord?.target || "KPA"}
+        title={isSelfKra ? historyRecord?.title || "KRA" : historyRecord?.target || "KPA"}
         widthClass="w-[calc(100vw-2rem)] max-w-[960px]"
       >
         <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
