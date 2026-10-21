@@ -614,6 +614,19 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     Object.assign(record, validation.value, review.value || {}, {
       updatedBy: req.user,
     });
+    // Capture submitted fields before review processing resets related values.
+    const submittedChanges = { ...getEditHistorySnapshot(record) };
+    if (verification.value && Object.hasOwn(req.body, "verification")) {
+      submittedChanges.verification = verification.value.verification;
+    }
+    if (verification.value?.verification === "Closed" && Object.hasOwn(req.body, "verificationDate")) {
+      submittedChanges.verificationClosedDate = verification.value.reviewDate;
+    }
+    const editHistoryChanges = getEditHistoryChanges(editHistoryBefore, submittedChanges)
+      .filter(({ field }) => Object.hasOwn(
+        req.body,
+        field === "verificationClosedDate" ? "verificationDate" : field,
+      ));
     if (verification.value) {
       const reviewStatusChanged =
         record.verification !== verification.value.verification;
@@ -655,7 +668,6 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
         record.verificationClosedDate = reviewDate;
       }
     }
-    const editHistoryChanges = getEditHistoryChanges(editHistoryBefore, record);
     if (editHistoryChanges.length > 0) {
       if (!Array.isArray(record.editHistory)) record.editHistory = [];
       record.editHistory.push({
@@ -705,11 +717,18 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
       return res.status(400).json({ message: "Resource Comment is too long" });
     }
     const completedAt = new Date();
+    const statusChanges = [{
+      field: "status",
+      label: EDIT_HISTORY_FIELDS.status,
+      oldValue: existing.status,
+      newValue: "Completed",
+    }];
     const record = await IndividualMonthlyKpa.findOneAndUpdate(
       {
         ...scope,
         status: "Pending",
         employee: req.user,
+        verification: existing.verification,
       },
       {
         $set: {
@@ -722,6 +741,11 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
           updatedBy: req.user,
         },
         $push: {
+          editHistory: {
+            editedBy: req.user,
+            editedAt: completedAt,
+            changes: statusChanges,
+          },
           completionHistory: {
             completedBy: req.user,
             completedAt,
