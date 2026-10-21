@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Autocomplete, Chip, CircularProgress, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { MdChevronLeft, MdChevronRight, MdDeleteForever } from "react-icons/md";
+import { MdChevronLeft, MdChevronRight, MdDeleteForever, MdHistory } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -19,6 +19,7 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogTypeChip from "./DailyLogTypeChip";
+import DailyLogEditHistory from "./DailyLogEditHistory";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -38,6 +39,7 @@ const DailyLogActionCell = ({
   data,
   node,
   onEdit,
+  onHistory,
   onAction,
   canComplete,
   canEdit,
@@ -57,6 +59,9 @@ const DailyLogActionCell = ({
 
   return (
     <div className="flex h-full items-center gap-2">
+      <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dayTaskName}`} disabled={disabled} onClick={() => onHistory(data)} className="flex h-8 w-8 shrink-0 items-center justify-center disabled:cursor-not-allowed">
+        <MdHistory size={25} color={disabled ? "#9ca3af" : "#111827"} />
+      </button>
       {canComplete && (
         <PrimaryButton
           type="button"
@@ -150,6 +155,7 @@ const KraKpaDailyLogs = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
+  const [historyRecord, setHistoryRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [completionTimes, setCompletionTimes] = useState({
     startTime: null,
@@ -515,7 +521,7 @@ const KraKpaDailyLogs = () => {
       : []),
   ];
 
-  const actionsColumnWidth = 140 +
+  const actionsColumnWidth = 180 +
     (canEditDailyLog ? 40 : 0) +
     (canManageOthers && !isOwnPage ? 40 : 0);
   const dueColumns = [
@@ -535,6 +541,7 @@ const KraKpaDailyLogs = () => {
           data={data}
           node={node}
           onEdit={openEdit}
+          onHistory={setHistoryRecord}
           onAction={openRowAction}
           canComplete={canCompleteRecord(data)}
           canEdit={canEditDailyLog}
@@ -545,10 +552,25 @@ const KraKpaDailyLogs = () => {
     },
   ];
 
-  const completedColumns = baseColumns;
+  const completedColumns = [...baseColumns, {
+    headerName: "History",
+    field: "history",
+    width: 100,
+    pinned: "right",
+    sortable: false,
+    filter: false,
+    cellRenderer: ({ data }) => (
+      <div className="flex h-full items-center">
+        <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dayTaskName}`} onClick={() => setHistoryRecord(data)} className="flex h-8 w-8 items-center justify-center">
+          <MdHistory size={25} color="#111827" />
+        </button>
+      </div>
+    ),
+  }];
 
   return (
     <PageFrame>
+      {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}{employeeName}

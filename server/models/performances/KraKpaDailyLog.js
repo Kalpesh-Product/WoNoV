@@ -66,6 +66,19 @@ const dailyLogSchema = new mongoose.Schema(
     startTime: { type: Date, default: null },
     endTime: { type: Date, default: null },
     completedAt: { type: Date, default: null },
+    editHistory: {
+      type: [{
+        editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData", required: true },
+        editedAt: { type: Date, required: true },
+        changes: [{
+          field: { type: String, required: true },
+          label: { type: String, required: true },
+          oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
+          newValue: { type: mongoose.Schema.Types.Mixed, default: null },
+        }],
+      }],
+      default: [],
+    },
     isDeleted: { type: Boolean, default: false },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },

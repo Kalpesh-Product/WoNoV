@@ -13,6 +13,7 @@ const {
 
 const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const POPULATION = [
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
   { path: "parentKpa", select: "target deadline month status" },
@@ -352,12 +353,40 @@ const updateDueTask = async (req, res, next) => {
       "Task Identifier",
     );
     if (identifierError) return res.status(400).json({ message: identifierError });
+    await record.populate([
+      { path: "parentKpa", select: "target" },
+      { path: "taskIdentifier", select: "firstName middleName lastName" },
+    ]);
+    const historyChanges = [];
+    for (const [field, label] of Object.entries({
+      dueTaskName: "KPA Task", identificationDate: "Identification Date",
+      deadline: "KPA Task Deadline", comments: "Comments",
+    })) {
+      if (!Object.hasOwn(req.body, field)) continue;
+      const serialize = (value) => value instanceof Date ? value.toISOString() : value || null;
+      const oldValue = serialize(record[field]);
+      const newValue = serialize(validation.value[field]);
+      if (oldValue !== newValue) historyChanges.push({ field, label, oldValue, newValue });
+    }
+    if (String(record.parentKpa?._id || record.parentKpa) !== String(parentKpaValidation.value)) {
+      const parent = await IndividualMonthlyKpa.findById(parentKpaValidation.value).select("target").lean();
+      historyChanges.push({ field: "parentKpa", label: "Main KPA", oldValue: record.parentKpa?.target || null, newValue: parent?.target || null });
+    }
+    if (String(record.taskIdentifier?._id || record.taskIdentifier) !== String(req.body.taskIdentifier)) {
+      const identifier = await UserData.findById(req.body.taskIdentifier).select("firstName middleName lastName").lean();
+      const name = (user) => [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") || null;
+      historyChanges.push({ field: "taskIdentifier", label: "Task Identifier", oldValue: name(record.taskIdentifier), newValue: name(identifier) });
+    }
     Object.assign(record, validation.value, {
       parentKpa: parentKpaValidation.value,
       lead: record.employee,
       taskIdentifier: req.body.taskIdentifier,
       updatedBy: req.user,
     });
+    if (historyChanges.length) {
+      if (!Array.isArray(record.editHistory)) record.editHistory = [];
+      record.editHistory.push({ editedBy: req.user, editedAt: new Date(), changes: historyChanges });
+    }
     await record.save();
     await DailyLog.updateMany(
       { sourceDueTask: record._id, isDeleted: { $ne: true } },
