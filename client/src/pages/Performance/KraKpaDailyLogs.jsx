@@ -408,14 +408,14 @@ const KraKpaDailyLogs = () => {
   );
   const dailyLogOptions = dailyLogOptionConfig?.options || [];
 
-  const mapRows = (items) =>
-    items.map((record, index) => ({ ...record, srNo: index + 1 }));
-  const dueRows = mapRows(
-    filteredRecords.filter((record) => record.status !== "Done"),
-  );
-  const completedRows = mapRows(
-    filteredRecords.filter((record) => record.status === "Done"),
-  );
+  const { dueRows, completedRows } = useMemo(() => {
+    const mapRows = (items) =>
+      items.map((record, index) => ({ ...record, srNo: index + 1 }));
+    return {
+      dueRows: mapRows(filteredRecords.filter((record) => record.status !== "Done")),
+      completedRows: mapRows(filteredRecords.filter((record) => record.status === "Done")),
+    };
+  }, [filteredRecords]);
   const summaryCounts = {
     total: filteredRecords.length,
     due: dueRows.length,
