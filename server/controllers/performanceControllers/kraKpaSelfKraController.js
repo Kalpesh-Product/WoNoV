@@ -196,6 +196,13 @@ const listSelfKra = async (req, res, next) => {
       .populate(COMPLETION_POPULATION)
       .lean();
 
+    const scheduledIds = await DailyLog.distinct("sourceSelfKra", {
+      company: req.company,
+      sourceSelfKra: { $in: [...templates.map((template) => template._id), ...completions.map((completion) => completion.kraTemplate)] },
+      date: new Date(`${occurrenceDate}T00:00:00.000Z`),
+      isDeleted: { $ne: true },
+    });
+    const scheduledTemplates = new Set(scheduledIds.map(String));
     const completionByTemplate = new Map(
       completions.map((completion) => [String(completion.kraTemplate), completion]),
     );
@@ -209,6 +216,7 @@ const listSelfKra = async (req, res, next) => {
           ...completion,
           _id: template._id,
           isActive: template.isActive,
+          isScheduled: scheduledTemplates.has(String(template._id)),
           completionId: completion._id,
           closingDate: completion.completedAt,
         });
@@ -222,6 +230,7 @@ const listSelfKra = async (req, res, next) => {
       rows.push({
         ...template,
         startsOn,
+        isScheduled: scheduledTemplates.has(String(template._id)),
         status: isLegacyCompletion ? "Completed" : "Pending",
         closingDate: isLegacyCompletion ? template.closingDate : null,
       });
@@ -230,6 +239,7 @@ const listSelfKra = async (req, res, next) => {
       rows.push({
         ...completion,
         _id: completion.kraTemplate,
+        isScheduled: scheduledTemplates.has(String(completion.kraTemplate)),
         completionId: completion._id,
         closingDate: completion.completedAt,
       });
@@ -468,7 +478,7 @@ const updateSelfKra = async (req, res, next) => {
     }
     const record = await SelfKra.findOneAndUpdate(
       filter,
-      changes,
+      { $set: changes },
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
     if (!record) return res.status(404).json({ message: "Self KRA not found" });
