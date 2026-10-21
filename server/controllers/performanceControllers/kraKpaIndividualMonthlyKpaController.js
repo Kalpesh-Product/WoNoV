@@ -306,7 +306,7 @@ const getIndividualMonthlyKpaReviewAccess = async (req, res, next) => {
       access.isTopManagement || access.isHr || departmentManager;
     const canEditHrRating = access.isHr;
     return res.json({
-      canApproveKpa: access.isTopManagement || departmentManager,
+      canApproveKpa: access.isTopManagement || access.isHr || departmentManager,
       canEditReview: canEditManagerReview || canEditHrRating,
       canEditManagerReview,
       canEditHrRating,
@@ -327,9 +327,9 @@ const listPendingKpaApprovals = async (req, res, next) => {
     }
     const access = await getAccess(req);
     const departmentManager = await isDepartmentManager(req, department, access);
-    if (!access.isTopManagement && !departmentManager) {
+    if (!access.isTopManagement && !access.isHr && !departmentManager) {
       return res.status(403).json({
-        message: "Only the department manager or Top Management can view pending approvals",
+        message: "Only the department manager, HR or Top Management can view pending approvals",
       });
     }
     const records = await IndividualMonthlyKpa.find({
@@ -365,9 +365,9 @@ const approveIndividualMonthlyKpa = async (req, res, next) => {
       existing.department,
       access,
     );
-    if (!access.isTopManagement && !departmentManager) {
+    if (!access.isTopManagement && !access.isHr && !departmentManager) {
       return res.status(403).json({
-        message: "Only the department manager or Top Management can approve this KPA",
+        message: "Only the department manager, HR or Top Management can approve this KPA",
       });
     }
     if (existing.approvalStatus !== "Pending Approval") {
@@ -398,9 +398,9 @@ const rejectIndividualMonthlyKpa = async (req, res, next) => {
       .select("department approvalStatus").lean();
     if (!existing) return res.status(404).json({ message: "KPA not found" });
     const departmentManager = await isDepartmentManager(req, existing.department, access);
-    if (!access.isTopManagement && !departmentManager) {
+    if (!access.isTopManagement && !access.isHr && !departmentManager) {
       return res.status(403).json({
-        message: "Only the department manager or Top Management can reject this KPA",
+        message: "Only the department manager, HR or Top Management can reject this KPA",
       });
     }
     const rejected = await IndividualMonthlyKpa.findOneAndUpdate(

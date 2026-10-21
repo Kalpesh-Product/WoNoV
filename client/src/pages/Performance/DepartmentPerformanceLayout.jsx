@@ -14,6 +14,7 @@ const DepartmentPerformanceLayout = () => {
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const isManager = roleTitles.some((role) => role.includes("manager"));
+  const isHr = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
   const isTopManagement =
     roleTitles.includes("top management") ||
     auth?.user?.departments?.some(
@@ -94,7 +95,7 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
       label: "Daily Logs",
       path: "daily-logs",
       permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
-    }, ...(isManager || isTopManagement ? [{
+    }, ...(isManager || isTopManagement || isHr ? [{
       label: "Pending Approvals",
       path: "pending-approvals",
       permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
