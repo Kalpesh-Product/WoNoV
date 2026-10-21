@@ -1476,6 +1476,10 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <div className="font-bold">KRA Details</div>
                 <DetalisFormatted title="KRA Title" detail={viewRecord.title} />
                 <DetalisFormatted
+                  title="Approved By"
+                  detail={formatUserName(viewRecord.approvedBy)}
+                />
+                <DetalisFormatted
                   title="Category"
                   detail={viewRecord.categoryName || "-"}
                 />

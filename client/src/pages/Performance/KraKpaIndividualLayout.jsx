@@ -16,6 +16,7 @@ const KraKpaIndividualLayout = ({
   const canViewPendingApprovals =
     showPendingApprovals &&
     (roleTitles.some((role) => role.includes("manager")) ||
+      roleTitles.some((role) => /^hr(?:\s|$)/.test(role)) ||
       roleTitles.includes("top management"));
 
   const tabs = isDailyScore
