@@ -3,7 +3,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
-import { computeOffset, getElapsedSecondsWithOffset } from "../utils/time";
+import { getAttendanceDurations } from "../utils/attendanceDurations";
 import humanTime from "../utils/humanTime";
 import { queryClient } from "../main";
 import { useDispatch, useSelector } from "react-redux";
@@ -112,89 +112,68 @@ const ClockInOutAttendance = () => {
     }
   }, [auth?.user?._id, lastUserId]);
 
-  // Boot with server timestamps
+  // Ignore persisted breaks from other attendance sessions.
   useEffect(() => {
-    const clockIn = auth?.user?.clockInDetails?.clockInTime;
-    const hasClockedIn = auth?.user?.clockInDetails?.hasClockedIn;
-    const clockOut = auth?.user?.clockInDetails?.clockOutTime; // if clock out for prev day then clock out time may be stored and used to calculate today's work hours
-    const serverNow = auth?.user?.time;
-    const breaksFromServer = auth?.user?.clockInDetails?.breaks;
-    const todayClockIn = clockIn && new Date(clockIn);
-    const todayClockOut = clockOut && new Date(clockOut);
-    const startBreakTime =
-      Array.isArray(breaksFromServer) &&
-      breaksFromServer.length > 0 &&
-      new Date(breaksFromServer[0].start);
-    const isTodayBreak = isSameDay(startBreakTime);
-
+    const details = auth?.user?.clockInDetails || {};
+    const sessionStart = details.clockInTime;
+    const sessionBreaks = (details.breaks || []).filter((brk) =>
+      sessionStart && new Date(brk.start).getTime() >= new Date(sessionStart).getTime(),
+    );
+    dispatch(resetAttendanceState());
     dispatch(setLastUserId(userId));
-
-    if (hasClockedIn && clockIn && serverNow) {
-      dispatch(setIsToday(isSameDay(clockIn)));
-      dispatch(setClockInTime(clockIn));
-      dispatch(setHasClockedIn(true));
-
-      setStartTime(clockIn);
-      setClockedInStatus(true);
-      const calculatedOffset = computeOffset(new Date());
-      setOffset(calculatedOffset);
-      setElapsedTime(getElapsedSecondsWithOffset(clockIn, calculatedOffset));
-
-      setClockTime((prev) => ({
-        ...prev,
-        startTime: clockIn,
-        endTime: clockIn && clockOut ? clockOut : null,
-      }));
-    }
-
-    if (
-      hasClockedIn &&
-      Array.isArray(breaksFromServer) &&
-      breaksFromServer.length > 0 &&
-      isTodayBreak
-    ) {
-      console.log("isTodayBreak", isTodayBreak);
-      setBreaks(breaksFromServer);
-
-      const breakDuration = breaksFromServer.reduce((total, brk) => {
-        if (brk.start && brk.end) {
-          return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
-        }
-        return total;
-      }, 0);
-
-      calculateTotalHoursServer(breaksFromServer, clockIn, clockOut);
-    }
-
-    const isTodayClockout = isSameDay(clockOut);
-
-    if (clockOut && isTodayClockout) {
-      dispatch(setClockOutTime(clockOut));
-      dispatch(setHasClockedIn(false));
-
-      //Set redux state to display today's timings even after session storage is deleted
-      dispatch(setClockInTime(clockIn));
-
-      if (isTodayBreak) {
-        calculateTotalHoursServer(breaksFromServer, clockIn, clockOut);
-      }
-    }
-
+    dispatch(setClockInTime(sessionStart || null));
+    dispatch(setClockOutTime(details.clockOutTime || null));
+    dispatch(setHasClockedIn(Boolean(details.hasClockedIn)));
+    dispatch(setIsToday(Boolean(sessionStart && isSameDay(sessionStart))));
+    dispatch(setBreakTimings(sessionBreaks));
+    setStartTime(sessionStart || null);
+    setBreaks(sessionBreaks);
     setIsBooting(false);
   }, [userId]);
 
-  // Timer ticking using offset
-  useEffect(() => {
-    if (startTime) {
-      timerRef.current = setInterval(() => {
-        setElapsedTime(getElapsedSecondsWithOffset(startTime, offset));
-      }, 1000);
-    } else {
-      clearInterval(timerRef.current);
-    }
+  const { data: attendanceRecord } = useQuery({
+    queryKey: ["attendance-clock", userId],
+    enabled: Boolean(userId && auth?.user?.empId),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/attendance/get-attendance/${auth.user.empId}`,
+        { params: { latest: "true" } },
+      );
+      return (response.data || []).slice()
+        .sort((a, b) => new Date(b.inTime) - new Date(a.inTime))[0] || null;
+    },
+    refetchInterval: 60000,
+  });
 
+  // Use the same Attendance record as the timeline for break totals.
+  useEffect(() => {
+    if (!attendanceRecord) return;
+    const sessionBreaks = (attendanceRecord.breaks || []).map((brk) => ({
+      start: brk.startBreak, end: brk.endBreak || null,
+    }));
+    setStartTime(attendanceRecord.inTime);
+    setBreaks(sessionBreaks);
+    dispatch(setClockInTime(attendanceRecord.inTime));
+    dispatch(setClockOutTime(attendanceRecord.outTime || null));
+    dispatch(setBreakTimings(sessionBreaks));
+    dispatch(setIsToday(isSameDay(attendanceRecord.inTime)));
+    if (attendanceRecord.outTime) dispatch(setHasClockedIn(false));
+  }, [attendanceRecord, dispatch]);
+
+  useEffect(() => {
+    const updateDurations = () => {
+      const totals = getAttendanceDurations(startTime, clockOutTime, breaks);
+      const work = hasClockedIn || clockOutTime ? totals.workSeconds : 0;
+      const paused = hasClockedIn || clockOutTime ? totals.breakSeconds : 0;
+      setElapsedTime(work);
+      dispatch(setWorkHours(formatTime(work)));
+      dispatch(setBreakHours(formatTime(paused)));
+      dispatch(setHasTakenBreak(Boolean(hasClockedIn && totals.isOnBreak)));
+    };
+    updateDurations();
+    if (startTime && hasClockedIn) timerRef.current = setInterval(updateDurations, 1000);
     return () => clearInterval(timerRef.current);
-  }, [startTime, offset]);
+  }, [startTime, clockOutTime, breaks, hasClockedIn, dispatch]);
 
   const { mutate: clockIn, isPending: isClockingIn } = useMutation({
     // mutationFn: async (inTime) => {
@@ -213,15 +192,22 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, inTime }) => {
       toast.success("Clocked in successfully!");
       setStartTime(inTime);
-      setClockTime((prev) => ({ ...prev, startTime: inTime }));
+      setClockTime({ startTime: inTime, endTime: null });
+      setBreaks([]);
+      dispatch(setClockOutTime(null));
+      dispatch(setBreakTimings([]));
+      dispatch(setHasTakenBreak(false));
+      dispatch(setWorkHours("00:00:00"));
+      dispatch(setBreakHours("00:00:00"));
       dispatch(setIsToday(isSameDay(inTime)));
 
       setOffset(0); // start fresh
-      setElapsedTime(getElapsedSecondsWithOffset(inTime, 0));
+      setElapsedTime(0);
       setClockedInStatus(true);
       dispatch(setClockInTime(inTime));
       dispatch(setHasClockedIn(true));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-clock", userId] });
       setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -242,7 +228,6 @@ const ClockInOutAttendance = () => {
     onSuccess: ({ data, outTime }) => {
       setOpenClockOutConfirmation(false);
       toast.success("Clocked out successfully!");
-      setStartTime(null);
       if (clockInTime) {
         // avoid showing clock-out time if clocking out for prev day
         setClockTime((prev) => ({ ...prev, endTime: outTime }));
@@ -267,12 +252,12 @@ const ClockInOutAttendance = () => {
 
         dispatch(setClockOutTime(outTime));
       }
-      setElapsedTime(0);
       setOffset(0);
       setClockedInStatus(false);
 
       dispatch(setHasClockedIn(false));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-clock", userId] });
       setCameraAction(null);
     },
     onError: (error) =>
@@ -326,6 +311,7 @@ const ClockInOutAttendance = () => {
         ),
       );
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-clock", userId] });
        setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -369,6 +355,7 @@ const ClockInOutAttendance = () => {
       dispatch(setHasTakenBreak(false));
       dispatch(setBreakHours(calculateTotalHours(updatedBreaks)));
       queryClient.invalidateQueries({ queryKey: ["user-attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-clock", userId] });
        setCameraAction(null);
     },
     onError: (error) => toast.error(error.response.data.message),
@@ -481,82 +468,11 @@ const ClockInOutAttendance = () => {
     return today;
   };
 
-  const calculateTotalHours = (breakTimings, startTime, endTime, type) => {
-    if (type === "workhours") {
-      const totalSeconds = (new Date(endTime) - new Date(startTime)) / 1000;
-      const breakDuration = breakTimings.reduce((total, brk) => {
-        if (brk.start && brk.end) {
-          return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
-        }
-        return total;
-      }, 0);
-
-      const netWorkSeconds = totalSeconds - breakDuration;
-
-      return formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
-    } else {
-      const breakDuration = breakTimings.reduce((total, brk) => {
-        const start = brk.start;
-        const end = brk.end;
-
-        if (start && end) {
-          return total + (new Date(end) - new Date(start)) / 1000;
-        }
-        return total;
-      }, 0);
-
-      return formatTime(breakDuration);
-    }
-  };
-
-  const calculateTotalHoursServer = (breaksFromServer, clockIn, clockOut) => {
-    let calculatedWorkHours = workHours,
-      calculatedBreakHours = breakHours;
-    const len = breaksFromServer?.length;
-    const lastBreak = breaksFromServer[len - 1]?.start;
-
-    const now = new Date();
-    const clockInTime = new Date(clockIn);
-
-    let effectiveEndTime = now;
-
-    // Check if clock-out time is present and valid
-    if (!hasClockedIn && clockOut) {
-      effectiveEndTime = new Date(clockOut);
-    }
-
-    // Handle ongoing break (started but not ended)
-    const lastBreakObj = breaksFromServer?.[breaksFromServer.length - 1];
-    const isOngoingBreak = lastBreakObj?.start && !lastBreakObj?.end;
-
-    if (!clockOut && isOngoingBreak) {
-      effectiveEndTime = new Date(lastBreakObj.start);
-    }
-
-    // Compute total completed break seconds
-    const completedBreakDuration = breaksFromServer.reduce((total, brk) => {
-      if (brk.start && brk.end) {
-        return total + (new Date(brk.end) - new Date(brk.start)) / 1000;
-      }
-      return total;
-    }, 0);
-
-    const totalWorkSeconds = (effectiveEndTime - clockInTime) / 1000;
-    const netWorkSeconds = totalWorkSeconds - completedBreakDuration;
-
-    dispatch(setHasTakenBreak(isOngoingBreak));
-    dispatch(setBreakTimings(breaksFromServer));
-    dispatch(setBreakHours(formatTime(completedBreakDuration)));
-    dispatch(setWorkHours(formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0)));
-
-    calculatedWorkHours = formatTime(netWorkSeconds > 0 ? netWorkSeconds : 0);
-
-    calculatedBreakHours = formatTime(completedBreakDuration);
-
-    // setTotalHours((prev) => ({
-    //   workHours: calculatedWorkHours,
-    //   breakHours: calculatedBreakHours,
-    // }));
+  const calculateTotalHours = (sessionBreaks, inTime, outTime, type) => {
+    const totals = getAttendanceDurations(
+      inTime || clockInTime, outTime || clockOutTime, sessionBreaks,
+    );
+    return formatTime(type === "workhours" ? totals.workSeconds : totals.breakSeconds);
   };
 
   if (isBooting) {
@@ -643,7 +559,7 @@ const ClockInOutAttendance = () => {
   const showActiveIndicator =
     attendanceStatus === "Clocked In" || attendanceStatus === "On Break";
   const displayedDuration =
-    hasClockedIn && isToday ? formatElapsedTime(elapsedTime) : "00:00:00";
+    isToday ? formatElapsedTime(elapsedTime) : "00:00:00";
   const actionMessage = hasClockedIn
     ? hasTakenBreak
       ? "Your break is currently active."
@@ -838,6 +754,8 @@ const ClockInOutAttendance = () => {
               render={({ field }) => (
                 <TimePicker
                   {...field}
+                  timeSteps={{ minutes: 1 }}
+                  minutesStep={1}
                   label={"Select Out-Time"}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                   value={field.value ? dayjs(field.value) : null}

@@ -137,18 +137,10 @@ const AttendanceRequests = () => {
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         requestDay: humanDate(item.inTime || item.originalInTime) || "N/A",
-        inTime: item.inTime
-          ? humanTime(item.inTime)
-          : item.originalInTime
-            ? humanTime(item.originalInTime)
-            : "N/A",
-        outTime: humanTime(item.outTime),
-        originalInTime: item.originalInTime ? humanTime(item.originalInTime)  : "N/A",
-        originalOutTime: item.originalOutTime
-          ? humanTime(item.originalOutTime)
-          : item.outTime
-            ? humanTime(item.outTime)
-            : "N/A",
+        inTime: item.inTime ? humanTime(item.inTime) : "-",
+        outTime: item.outTime ? humanTime(item.outTime) : "-",
+        originalInTime: item.originalInTime ? humanTime(item.originalInTime) : "-",
+        originalOutTime: item.originalOutTime ? humanTime(item.originalOutTime) : "-",
         createdDate: item.createdDate,
         status: item.status,
       }));

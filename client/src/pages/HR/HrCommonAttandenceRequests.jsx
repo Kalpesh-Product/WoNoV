@@ -73,18 +73,10 @@ export default function HrCommonAttandenceRequests() {
     id: req._id, // Important for MUI or other tables
     srNo: idx + 1,
     employee: `${req.user?.firstName} ${req.user?.lastName}`,
-    inTime: req.inTime
-          ? humanTime(req.inTime)
-          : req.originalInTime
-            ? humanTime(req.originalInTime)
-            : "-",
-     outTime: req.outTime ? humanTime(req.outTime) : "-",
+    inTime: req.inTime ? humanTime(req.inTime) : "-",
+    outTime: req.outTime ? humanTime(req.outTime) : "-",
     originalInTime: req.originalInTime ? humanTime(req.originalInTime) : "-",
-     originalOutTime: req.originalOutTime
-          ? humanTime(req.originalOutTime)
-          : req.outTime
-            ? humanTime(req.outTime)
-            : "-",
+    originalOutTime: req.originalOutTime ? humanTime(req.originalOutTime) : "-",
     reason: req.reason,
     status: req.status,
     date: req.createdAt,

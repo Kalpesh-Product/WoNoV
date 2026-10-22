@@ -1304,6 +1304,13 @@ const closeTicket = async (req, res, next) => {
       );
     }
 
+    if (String(foundTicket.company) !== String(company)) {
+      return res.status(404).json({ message: "Ticket does not exist" });
+    }
+    if (foundTicket.status === "Closed") {
+      return res.status(409).json({ message: "Ticket is already closed" });
+    }
+
     const ticketDepartment = await Department.findById(
       foundTicket.raisedToDepartment,
     )
@@ -1333,8 +1340,8 @@ const closeTicket = async (req, res, next) => {
       );
     }
 
-    const updatedTicket = await Tickets.findByIdAndUpdate(
-      ticketId,
+    const updatedTicket = await Tickets.findOneAndUpdate(
+      { _id: ticketId, company, status: { $ne: "Closed" } },
       {
         status: "Closed",
         closedAt: new Date(),
@@ -1347,12 +1354,19 @@ const closeTicket = async (req, res, next) => {
       { new: true },
     );
     if (!updatedTicket) {
-      throw new CustomError(
-        "Failed to close ticket",
-        logPath,
-        logAction,
-        logSourceKey,
-      );
+      return res.status(409).json({ message: "Ticket is already closed or no longer available" });
+    }
+
+    if (updatedTicket.raisedBy) {
+      const closedByName = [foundUser.firstName, foundUser.middleName, foundUser.lastName]
+        .filter(Boolean).join(" ");
+      emitter.emit("notification", {
+        initiatorData: user,
+        users: [{ userActions: { whichUser: updatedTicket.raisedBy, hasRead: false } }],
+        type: "close ticket",
+        module: "Tickets",
+        message: `Your ticket "${updatedTicket.ticket}" has been closed${closedByName ? ` by ${closedByName}` : ""}.`,
+      });
     }
 
     // Log the successful ticket closure
