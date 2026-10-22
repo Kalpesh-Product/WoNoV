@@ -497,28 +497,20 @@ const KraKpaDailyLogs = () => {
       minWidth: 220,
       flex: 1,
     },
-    ...(canEditManagerComments
-      ? [
-          {
-            headerName: "Manager Comments",
-            field: "managerComments",
-            valueGetter: ({ data }) =>
-              data.managerComments || data.reviewerComments || "",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
-    ...(canEditHrComments
-      ? [
-          {
-            headerName: "HR Comments",
-            field: "hrComments",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
+    {
+      headerName: "Manager Comments",
+      field: "managerComments",
+      valueGetter: ({ data }) =>
+        data.managerComments || data.reviewerComments || "",
+      minWidth: 240,
+      flex: 1,
+    },
+    {
+      headerName: "HR Comments",
+      field: "hrComments",
+      minWidth: 240,
+      flex: 1,
+    },
   ];
 
   const actionsColumnWidth = 180 +

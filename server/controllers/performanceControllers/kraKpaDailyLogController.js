@@ -150,11 +150,6 @@ const hideRestrictedComments = (record, access) => {
       (access.isHr || change.field !== "hrComments"),
     ),
   })).filter((entry) => entry.changes.length > 0);
-  if (!access.canManageOthers) {
-    delete value.managerComments;
-    delete value.reviewerComments;
-  }
-  if (!access.isHr) delete value.hrComments;
   return value;
 };
 
