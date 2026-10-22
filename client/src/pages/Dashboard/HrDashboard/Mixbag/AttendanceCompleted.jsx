@@ -70,18 +70,10 @@ const AttendanceCompleted = () => {
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         date: item.createdAt,
-         inTime: item.inTime
-          ? humanTime(item.inTime)
-          : item.originalInTime
-            ? humanTime(item.originalInTime)
-            : "N/A",
-        outTime: humanTime(item.outTime),
-        originalInTime: humanTime(item.originalInTime),
-        originalOutTime: item.originalOutTime
-          ? humanTime(item.originalOutTime)
-          : item.outTime
-            ? humanTime(item.outTime)
-            : "N/A",
+        inTime: item.inTime ? humanTime(item.inTime) : "-",
+        outTime: item.outTime ? humanTime(item.outTime) : "-",
+        originalInTime: item.originalInTime ? humanTime(item.originalInTime) : "-",
+        originalOutTime: item.originalOutTime ? humanTime(item.originalOutTime) : "-",
         status: item.status,
       }));
 

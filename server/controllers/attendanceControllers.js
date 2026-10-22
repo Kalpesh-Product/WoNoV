@@ -225,7 +225,7 @@ const clockIn = async (req, res, next) => {
             "clockInDetails.hasClockedIn": true,
             "clockInDetails.clockInTime": clockInTime,
             "clockInDetails.clockOutTime": null,
-            breaks: [],
+            "clockInDetails.breaks": [],
           },
         }
       )
@@ -525,7 +525,7 @@ const endBreak = async (req, res, next) => {
           },
         },
         {
-          arrayFilters: [{ "last.end": null }],
+          arrayFilters: [{ "last.start": startBreakTime, "last.end": null }],
           new: true,
         }
       )
@@ -612,10 +612,14 @@ const getAttendance = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const attendances = await Attendance.find({
+    const attendanceQuery = Attendance.find({
       user: user._id,
       company,
-    })
+    });
+    if (req.query.latest === "true") {
+      attendanceQuery.sort({ inTime: -1, createdAt: -1 }).limit(1);
+    }
+    const attendances = await attendanceQuery
       .lean()
       .exec();
 
@@ -896,7 +900,7 @@ const correctAttendance = async (req, res, next) => {
             "clockInDetails.hasClockedIn": false,
             "clockInDetails.clockInTime": null,
             "clockInDetails.clockOutTime": null,
-            breaks: [],
+            "clockInDetails.breaks": [],
           },
         }
       )

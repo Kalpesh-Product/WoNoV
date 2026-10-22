@@ -186,6 +186,8 @@ const HrCommonAttendance = () => {
               render={({ field }) => (
                 <TimePicker
                   {...field}
+                  timeSteps={{ minutes: 1 }}
+                  minutesStep={1}
                   label={"Select In-Time"}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                   value={field.value ? dayjs(field.value) : null}
@@ -204,6 +206,8 @@ const HrCommonAttendance = () => {
               render={({ field }) => (
                 <TimePicker
                   {...field}
+                  timeSteps={{ minutes: 1 }}
+                  minutesStep={1}
                   label={"Select Out-Time"}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                   value={field.value ? dayjs(field.value) : null}
