@@ -873,6 +873,8 @@ const Attendance = () => {
                 render={({ field }) => (
                   <TimePicker
                     {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
                     label={"Select In-Time"}
                     slotProps={{ textField: { size: "small" } }}
                     render={(params) => <TextField {...params} fullWidth />}
@@ -887,6 +889,8 @@ const Attendance = () => {
                 render={({ field }) => (
                   <TimePicker
                     {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
                     label={"Select Out-Time"}
                     slotProps={{ textField: { size: "small" } }}
                     render={(params) => <TextField {...params} fullWidth />}

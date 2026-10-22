@@ -327,13 +327,25 @@ const HrSearchPalette = () => {
       className="relative flex w-full max-w-2xl items-center"
       onKeyDown={handleKeyDown}
     >
-      <div className="relative flex h-10 min-w-0 flex-1 items-center">
+      <form
+        id="dashboard-page-search-form"
+        role="search"
+        autoComplete="off"
+        onSubmit={(event) => event.preventDefault()}
+        className="relative flex h-10 min-w-0 flex-1 items-center"
+      >
         <IoIosSearch
           className="pointer-events-none absolute left-4 z-10 text-primary"
           size={20}
         />
         <input
           ref={inputRef}
+          type="search"
+          id="dashboard-page-search"
+          name="dashboard-page-search"
+          autoComplete="off"
+          autoCapitalize="none"
+          spellCheck={false}
           value={search}
           onFocus={() => setOpen(true)}
           onChange={(event) => {
@@ -360,7 +372,7 @@ const HrSearchPalette = () => {
             Ctrl K
           </kbd>
         )}
-      </div>
+      </form>
 
       {open && (
         <section

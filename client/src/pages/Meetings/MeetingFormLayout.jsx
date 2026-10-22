@@ -510,8 +510,13 @@ const MeetingFormLayout = () => {
       return participantOptions;
     }
 
+    const nonTechEmployees = biznestEmployees.filter((user) =>
+      !user.departments?.some((department) =>
+        String(department?.name || "").trim().toLowerCase() === "tech",
+      ),
+    );
     const seen = new Set();
-    return [...participantOptions, ...biznestEmployees].filter((user) => {
+    return [...participantOptions, ...nonTechEmployees].filter((user) => {
       const key = String(user?.email || user?._id || "")
         .trim()
         .toLowerCase();
