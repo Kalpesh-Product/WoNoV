@@ -691,7 +691,7 @@ const KraKpaDueTask = () => {
           searchRowActions={
             <PrimaryButton
               type="button"
-              title={`Add to Daily Logs (${selectedDueTasks.length})`}
+              title={`Add Daily Logs (${selectedDueTasks.length})`}
               handleSubmit={openAddToDailyLogs}
               disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
               className="!w-[230px]"

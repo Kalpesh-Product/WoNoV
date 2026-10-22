@@ -113,7 +113,7 @@ const getScopedFilter = (req, access) => ({
 });
 
 const canDeleteKraKpa = async (req, departmentId, access) =>
-  access.isTopManagement || await isDepartmentManager(req, departmentId, access);
+  access.isHr || access.isTopManagement || await isDepartmentManager(req, departmentId, access);
 
 const parseRating = (value) => {
   if (value === "" || value === null) return null;
@@ -775,7 +775,7 @@ const deleteIndividualMonthlyKpa = async (req, res, next) => {
     if (!existing) return res.status(404).json({ message: "KPA not found" });
     if (!await canDeleteKraKpa(req, existing.department, access)) {
       return res.status(403).json({
-        message: "Only Top Management or this department's manager can delete a KPA",
+        message: "Only HR, Top Management or this department's manager can delete a KPA",
       });
     }
     const record = await IndividualMonthlyKpa.findOneAndUpdate(
