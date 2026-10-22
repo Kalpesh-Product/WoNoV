@@ -63,11 +63,12 @@ const getAccess = async (req) => {
     canSelectLead: isManager || isTopManagement,
     departmentIds,
     isTopManagement,
+    isHr,
   };
 };
 
 const canDeleteKraKpa = async (req, departmentId, access) => {
-  if (access.isTopManagement) return true;
+  if (access.isHr || access.isTopManagement) return true;
   if (!access.departmentIds.includes(String(departmentId))) return false;
   const company = await Company.findById(req.company)
     .select("selectedDepartments.department selectedDepartments.admin")
@@ -608,7 +609,7 @@ const deleteSelfKra = async (req, res, next) => {
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
     if (!await canDeleteKraKpa(req, existing.department, access)) {
       return res.status(403).json({
-        message: "Only Top Management or this department's manager can delete a Self KRA",
+        message: "Only HR, Top Management or this department's manager can delete a Self KRA",
       });
     }
     const record = await SelfKra.findOneAndUpdate(

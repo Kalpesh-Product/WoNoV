@@ -27,6 +27,10 @@ const isCarriedForward = (record) =>
   Boolean(record.carriedFromDailyLog || record.isCarryForward);
 const formatTime = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("hh:mm A") : "-";
+const formatCommentAuthor = (user) =>
+  user && typeof user === "object"
+    ? [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || "-"
+    : "-";
 
 const emptyForm = () => ({
   dayTaskName: "",
@@ -497,28 +501,20 @@ const KraKpaDailyLogs = () => {
       minWidth: 220,
       flex: 1,
     },
-    ...(canEditManagerComments
-      ? [
-          {
-            headerName: "Manager Comments",
-            field: "managerComments",
-            valueGetter: ({ data }) =>
-              data.managerComments || data.reviewerComments || "",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
-    ...(canEditHrComments
-      ? [
-          {
-            headerName: "HR Comments",
-            field: "hrComments",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
+    {
+      headerName: "Manager Comments",
+      field: "managerComments",
+      valueGetter: ({ data }) =>
+        data.managerComments || data.reviewerComments || "",
+      minWidth: 240,
+      flex: 1,
+    },
+    {
+      headerName: "HR Comments",
+      field: "hrComments",
+      minWidth: 240,
+      flex: 1,
+    },
   ];
 
   const actionsColumnWidth = 180 +
@@ -735,22 +731,26 @@ const KraKpaDailyLogs = () => {
               title="Resource Comment"
               detail={viewRecord.resourceComment || "-"}
             />
-            {canEditManagerComments && (
-              <DetalisFormatted
-                title="Manager Comments"
-                detail={
-                  viewRecord.managerComments ||
-                  viewRecord.reviewerComments ||
-                  "-"
-                }
-              />
-            )}
-            {canEditHrComments && (
-              <DetalisFormatted
-                title="HR Comments"
-                detail={viewRecord.hrComments || "-"}
-              />
-            )}
+            <DetalisFormatted
+              title="Resource Comment By"
+              detail={viewRecord.resourceComment ? formatCommentAuthor(viewRecord.resourceCommentBy) : "-"}
+            />
+            <DetalisFormatted
+              title="Manager Comments"
+              detail={viewRecord.managerComments || viewRecord.reviewerComments || "-"}
+            />
+            <DetalisFormatted
+              title="Manager Comment By"
+              detail={viewRecord.managerComments || viewRecord.reviewerComments ? formatCommentAuthor(viewRecord.managerCommentsBy) : "-"}
+            />
+            <DetalisFormatted
+              title="HR Comments"
+              detail={viewRecord.hrComments || "-"}
+            />
+            <DetalisFormatted
+              title="HR Comment By"
+              detail={viewRecord.hrComments ? formatCommentAuthor(viewRecord.hrCommentsBy) : "-"}
+            />
           </div>
         )}
       </MuiModal>
