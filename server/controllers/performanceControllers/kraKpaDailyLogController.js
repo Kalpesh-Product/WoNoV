@@ -30,6 +30,9 @@ const DEFAULT_GENERAL_TASK_NAMES = new Set(
   GENERAL_DAILY_LOG_OPTIONS.map(normalizeGeneralTaskName),
 );
 const POPULATION = [
+  { path: "resourceCommentBy", select: "firstName middleName lastName" },
+  { path: "managerCommentsBy", select: "firstName middleName lastName" },
+  { path: "hrCommentsBy", select: "firstName middleName lastName" },
   { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
@@ -143,6 +146,16 @@ const canCreateGeneralTaskForDepartment = async (
 
 const hideRestrictedComments = (record, access) => {
   const value = typeof record?.toObject === "function" ? record.toObject() : { ...record };
+  for (const field of ["resourceComment", "managerComments", "hrComments"]) {
+    const comment = value[field] || (field === "managerComments" ? value.reviewerComments : "");
+    if (!comment || value[`${field}By`]) continue;
+    const latestChange = (value.editHistory || []).slice()
+      .sort((a, b) => new Date(b.editedAt) - new Date(a.editedAt))
+      .find((entry) => entry.changes?.some((change) =>
+        change.field === field && change.newValue === comment,
+      ));
+    if (latestChange?.editedBy) value[`${field}By`] = latestChange.editedBy;
+  }
   value.editHistory = (value.editHistory || []).map((entry) => ({
     ...entry,
     changes: (entry.changes || []).filter((change) =>
@@ -719,6 +732,12 @@ const updateDailyLog = async (req, res, next) => {
       return res.status(400).json({ message: "HR Comments are invalid" });
     }
     const historyBefore = historySnapshot(record);
+    if (hasManagerComments && managerComments !== record.managerComments) {
+      record.managerCommentsBy = managerComments ? req.user : null;
+    }
+    if (hasHrComments && hrComments !== record.hrComments) {
+      record.hrCommentsBy = hrComments ? req.user : null;
+    }
     Object.assign(record, validation.value, {
       managerComments,
       hrComments,
@@ -885,6 +904,7 @@ const completeDailyLog = async (req, res, next) => {
       record.reasonForCarryForward = reasonForCarryForward;
     }
     record.resourceComment = resourceComment;
+    record.resourceCommentBy = req.user;
     record.completedAt = new Date();
     record.updatedBy = req.user;
     appendEditHistory(record, historyBefore, ["status", "startTime", "endTime", "resourceComment", "reasonForCarryForward"], req.user);
