@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
+import useAttendanceClock from "../hooks/useAttendanceClock";
+import { getAttendanceClockState } from "../utils/attendanceClockState";
 import { toast } from "sonner";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import useAuth from "../hooks/useAuth";
@@ -54,7 +56,6 @@ const ClockInOutAttendance = () => {
     breakHours,
     hasClockedIn,
     hasTakenBreak,
-    isToday,
     lastUserId,
   } = useSelector((state) => {
     return state.user;
@@ -131,23 +132,24 @@ const ClockInOutAttendance = () => {
     setIsBooting(false);
   }, [userId]);
 
-  const { data: attendanceRecord } = useQuery({
-    queryKey: ["attendance-clock", userId],
-    enabled: Boolean(userId && auth?.user?.empId),
-    queryFn: async () => {
-      const response = await axios.get(
-        `/api/attendance/get-attendance/${auth.user.empId}`,
-        { params: { latest: "true" } },
-      );
-      return (response.data || []).slice()
-        .sort((a, b) => new Date(b.inTime) - new Date(a.inTime))[0] || null;
-    },
-    refetchInterval: 60000,
+  const { data: attendanceRecord, clockState } = useAttendanceClock();
+  // Calculate the date from the actual session, not a persisted Redux flag.
+  const { isCurrentSession: isToday } = getAttendanceClockState({
+    inTime: clockInTime,
+    outTime: clockOutTime,
+    shiftSnapshot: attendanceRecord?.inTime === clockInTime
+      ? attendanceRecord?.shiftSnapshot : undefined,
   });
 
   // Use the same Attendance record as the timeline for break totals.
   useEffect(() => {
-    if (!attendanceRecord) return;
+    if (attendanceRecord === undefined) return;
+    if (!attendanceRecord) {
+      setStartTime(null);
+      setBreaks([]);
+      dispatch(resetAttendanceState());
+      return;
+    }
     const sessionBreaks = (attendanceRecord.breaks || []).map((brk) => ({
       start: brk.startBreak, end: brk.endBreak || null,
     }));
@@ -156,9 +158,9 @@ const ClockInOutAttendance = () => {
     dispatch(setClockInTime(attendanceRecord.inTime));
     dispatch(setClockOutTime(attendanceRecord.outTime || null));
     dispatch(setBreakTimings(sessionBreaks));
-    dispatch(setIsToday(isSameDay(attendanceRecord.inTime)));
-    if (attendanceRecord.outTime) dispatch(setHasClockedIn(false));
-  }, [attendanceRecord, dispatch]);
+    dispatch(setIsToday(clockState.isToday));
+    dispatch(setHasClockedIn(clockState.hasClockedIn));
+  }, [attendanceRecord, clockState.hasClockedIn, clockState.isToday, dispatch]);
 
   useEffect(() => {
     const updateDurations = () => {
@@ -378,6 +380,7 @@ const ClockInOutAttendance = () => {
       setOpenModal(false);
       toast.success(data.message);
       queryClient.invalidateQueries({ queryKey: ["attendance"] });
+      queryClient.invalidateQueries({ queryKey: ["attendance-clock", userId] });
       reset();
       dispatch(resetAttendanceState());
     },
@@ -537,8 +540,12 @@ const ClockInOutAttendance = () => {
         : "Clocked In"
       : clockOutTime && isToday
         ? "Clocked Out"
-        : "Not Clocked In";
+        : hasClockedIn ? "Clock-Out Required" : "Not Clocked In";
   const attendanceStatusStyle = {
+    "Clock-Out Required": {
+      badge: "bg-[#fff8e1] text-[#946200]",
+      dot: "bg-[#946200]",
+    },
     "Clocked In": {
       badge: "bg-[#e5f8ef] text-[#69ad2f]",
       dot: "bg-[#69ad2f]",
@@ -560,7 +567,9 @@ const ClockInOutAttendance = () => {
     attendanceStatus === "Clocked In" || attendanceStatus === "On Break";
   const displayedDuration =
     isToday ? formatElapsedTime(elapsedTime) : "00:00:00";
-  const actionMessage = hasClockedIn
+  const actionMessage = hasClockedIn && !isToday
+    ? "Your previous session is still open. Use Clock Out to request a correction."
+    : hasClockedIn
     ? hasTakenBreak
       ? "Your break is currently active."
       : "Your workday is in progress."
@@ -581,8 +590,7 @@ const ClockInOutAttendance = () => {
     handleStop();
   };
 
-  // Temporarily keep break controls available outside mutation loading states.
-  const isBreakDisabled = false;
+  const isBreakDisabled = !isToday;
 
   return (
     <div className="flex min-h-[365px] flex-col px-4 pb-4 pt-3 sm:px-5">

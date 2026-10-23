@@ -627,6 +627,18 @@ const getAttendance = async (req, res, next) => {
       return res.status(200).json([]);
     }
 
+    if (req.query.latest === "true" && !attendances[0].outTime) {
+      const latest = attendances[0];
+      const pendingCorrection = await AttendanceCorrection.exists({
+        company,
+        user: user._id,
+        originalInTime: latest.inTime,
+        outTime: { $type: "date" },
+        status: "Pending",
+      });
+      latest.hasPendingClockOutCorrection = Boolean(pendingCorrection);
+    }
+
     return res.status(200).json(attendances);
   } catch (error) {
     next(error);

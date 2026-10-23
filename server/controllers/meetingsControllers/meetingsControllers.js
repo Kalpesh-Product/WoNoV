@@ -30,6 +30,7 @@ const { resetMeetingCreditsIfNeeded } = require("../../utils/resetCredits");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const buildDateFilter = require("../../utils/dateFilter");
 const setAuditLogContext = require("../../utils/auditLogContext");
+const { getMeetingDepartments } = require("../../utils/meetingDepartments");
 
 const getEffectiveEndTime = (meeting) => {
   const originalEndTime = new Date(meeting?.endTime);
@@ -1310,7 +1311,7 @@ const getMyMeetings = async (req, res, next) => {
          bookedBy:
           bookedBy || meeting.clientBookedBy?.employeeName || "Unknown",
         clientBookedBy: meeting.clientBookedBy,
-        department: meeting?.bookedBy?.departments,
+        department: getMeetingDepartments(meeting),
         roomName: meeting.bookedRoom.name,
         location: meeting.bookedRoom.location,
         client: isClient
