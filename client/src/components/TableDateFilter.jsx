@@ -20,7 +20,7 @@ const TableDateFilter = ({ fields, field, onFieldChange, range, onChange, showPl
       )}
       <span className="whitespace-nowrap rounded-md border border-primary px-6 py-1 text-content text-gray-600">{showPlaceholders && !range ? "Start date" : dayjs(rangeValue.startDate).format("DD MMM YYYY")}</span>
       <span className="whitespace-nowrap rounded-md border border-primary px-6 py-1 text-content text-gray-600">{showPlaceholders && !range ? "End date" : dayjs(rangeValue.endDate).format("DD MMM YYYY")}</span>
-      <IconButton aria-label="Select date range" onClick={(event) => setAnchor(event.currentTarget)} sx={{ borderRadius: 1, bgcolor: "#1E3D73", color: "white", "&:hover": { bgcolor: "#16345f" } }}><MdCalendarToday size={19} /></IconButton>
+      <IconButton aria-label="Select date range" onClick={(event) => setAnchor(event.currentTarget)} sx={{ borderRadius: 1, bgcolor: "#1E3D73", color: "white", "&:hover": { bgcolor: "#16345f" } }}><MdCalendarToday size={19} color="#ffffff" /></IconButton>
       {range && <IconButton aria-label="Clear date filter" title="Show all dates" size="small" onClick={() => onChange(null)}><MdClose /></IconButton>}
       {range && unavailable && <span className="text-xs text-gray-500">No date data is available to filter these rows.</span>}
       <Popover open={Boolean(anchor)} anchorEl={anchor} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "left" }}>
