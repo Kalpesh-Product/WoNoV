@@ -148,8 +148,8 @@ const MonthWiseTable = ({
           srNo: index + 1,
           date: humanDate(item.date),
         }))}
-        hideFilter={filteredData.length <= 9}
-        search={filteredData.length >= 10}
+        hideFilter={false}
+        search
       />
     </div>
   );

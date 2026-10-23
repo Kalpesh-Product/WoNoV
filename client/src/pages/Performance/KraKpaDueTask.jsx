@@ -681,6 +681,7 @@ const KraKpaDueTask = () => {
         </div>
       ) : (
         <AgTable
+          showDateControls={false}
           data={tableData}
           columns={columns}
           hideTitle

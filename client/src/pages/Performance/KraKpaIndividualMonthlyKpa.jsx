@@ -1311,6 +1311,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         </div>
       ) : (
         <AgTable
+          showDateControls={false}
           data={pendingTableData}
           columns={columns}
           hideTitle
@@ -1349,6 +1350,7 @@ const KraKpaIndividualMonthlyKpa = () => {
 
       <div className="mt-6">
         <AgTable
+          showDateControls={false}
           data={completedTableData}
           columns={completedColumns}
           tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}

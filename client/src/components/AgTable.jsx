@@ -16,9 +16,11 @@ import SecondaryButton from "./SecondaryButton";
 import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
 import { IoFilter } from "react-icons/io5";
+import TableDateFilter from "./TableDateFilter";
+import { filterTableRows, getTableDateFields } from "../utils/tableFilters";
 const AgTableComponent = React.memo(
   ({
-    data,
+    data = [],
     columns,
     dropdownColumns = [],
     paginationPageSize,
@@ -26,7 +28,10 @@ const AgTableComponent = React.memo(
     exportButtonContainer,
     hideFilter,
     rowSelection,
-    search,
+    search = true,
+    dateColumn,
+    showDateControls = true,
+    dateRangePlaceholders = false,
     tableTitle,
     handleClick,
     buttonTitle,
@@ -63,8 +68,12 @@ const AgTableComponent = React.memo(
     headerBottomContent,
     processExportCell,
   }) => {
-    const [filteredData, setFilteredData] = useState(data);
     const [searchQuery, setSearchQuery] = useState("");
+    const [tableDateRange, setTableDateRange] = useState(null);
+    const [chosenDateField, setChosenDateField] = useState("");
+    const dateFields = useMemo(() => getTableDateFields(columns, data, dateColumn), [columns, data, dateColumn]);
+    const effectiveDateField = dateFields.some((entry) => entry.field === chosenDateField)
+      ? chosenDateField : dateFields.find((entry) => entry.field === dateColumn)?.field || dateFields[0]?.field || "";
     const [filters, setFilters] = useState({});
     const [appliedFilters, setAppliedFilters] = useState({});
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
@@ -72,9 +81,12 @@ const AgTableComponent = React.memo(
     const gridRef = useRef(null);
     const previousServerPageRef = useRef(paginationPage);
 
-    useEffect(() => {
-      setFilteredData(data || []);
-    }, [data]);
+    const filteredData = useMemo(() => filterTableRows(data || [], {
+      search: serverSearch ? "" : searchQuery,
+      filters: appliedFilters,
+      dateRange: showDateControls ? tableDateRange : null,
+      dateField: effectiveDateField,
+    }), [data, searchQuery, serverSearch, appliedFilters, tableDateRange, effectiveDateField, showDateControls]);
 
     useEffect(() => {
       if (serverSearch) setSearchQuery(searchValue || "");
@@ -122,16 +134,6 @@ const AgTableComponent = React.memo(
         onSearchChange?.(rawQuery);
         return;
       }
-      if (!query) {
-        setFilteredData(data);
-        return;
-      }
-      const filtered = data.filter((row) =>
-        Object.values(row).some((value) =>
-          value?.toString().toLowerCase().includes(query),
-        ),
-      );
-      setFilteredData(filtered);
     };
 
     const handleFilterChange = (field, value) => {
@@ -179,26 +181,14 @@ const AgTableComponent = React.memo(
           : filters;
 
       setAppliedFilters(safeFilters);
-      const filtered = data.filter((row) => {
-        return Object.keys(safeFilters).every((field) => {
-          const filterValue = safeFilters[field]?.toLowerCase();
-          return (
-            !filterValue ||
-            row[field]?.toString().toLowerCase().includes(filterValue)
-          );
-        });
-      });
-      setFilteredData(filtered);
       setFilterDrawerOpen(false);
     };
 
     const removeFilter = (field) => {
-      setFilters((prev) => {
-        const updatedFilters = { ...prev };
-        delete updatedFilters[field];
-        applyFilters(updatedFilters);
-        return updatedFilters;
-      });
+      const updatedFilters = { ...appliedFilters };
+      delete updatedFilters[field];
+      setFilters(updatedFilters);
+      setAppliedFilters(updatedFilters);
     };
 
     const clearFilters = () => {
@@ -206,7 +196,7 @@ const AgTableComponent = React.memo(
       setAppliedFilters({});
       setSearchQuery("");
       if (serverSearch) onSearchChange?.("");
-      setFilteredData(data);
+      setTableDateRange(null);
     };
 
     const handleSelectionChanged = useCallback(
@@ -411,12 +401,10 @@ const AgTableComponent = React.memo(
         {!hideHeaderDivider && <hr className="my-2" />}
 
         <div
-          className={`flex ${
-            search ? "justify-between" : "justify-end"
-          }  items-center py-2`}
+          className="grid grid-cols-1 items-center gap-3 py-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
         >
           {search ? (
-            <div className="flex items-center gap-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-3 xl:col-start-1">
               <TextField
                 label="Search"
                 variant="outlined"
@@ -424,6 +412,7 @@ const AgTableComponent = React.memo(
                 value={searchQuery}
                 onChange={handleSearch}
                 placeholder="Search"
+                sx={{ width: "100%", maxWidth: 280, minWidth: 0 }}
                 InputProps={{
                   startAdornment: (
                     <IoIosSearch size={20} style={{ marginRight: 8 }} />
@@ -437,30 +426,40 @@ const AgTableComponent = React.memo(
           ) : (
             <></>
           )}
-          <div className="flex items-start gap-4">
+          {showDateControls && (
+            <div className="xl:col-start-2" title={serverPagination ? "Date filter applies to currently loaded rows" : undefined}>
+              <TableDateFilter fields={dateFields} field={effectiveDateField} onFieldChange={setChosenDateField} range={tableDateRange} onChange={setTableDateRange} showPlaceholders={dateRangePlaceholders} />
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-end gap-4 xl:col-start-3">
             {searchRowActionsPosition === "right" && searchRowActions
               ? searchRowActions
               : ""}
             {hideFilter ? (
               ""
             ) : (
-              <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 {searchRowActionsPosition === "aboveFilter" && searchRowActions
                   ? searchRowActions
                   : ""}
                 <div className="flex items-center gap-2">
                   {!exportButtonContainer && renderExportButton()}
                 </div>
-                <div
+                <button
+                  type="button"
+                  aria-label="Advanced filter"
                   className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
                   onClick={() => setFilterDrawerOpen(true)}
                 >
                   <IoFilter />
-                </div>
+                </button>
               </div>
             )}
           </div>
         </div>
+        {serverPagination && ((showDateControls && tableDateRange) || Object.values(appliedFilters).some(Boolean)) && (
+          <p className="pb-2 text-xs text-gray-500">Date and advanced filters apply to loaded rows on this page.</p>
+        )}
         {searchBottomContent ? (
           <div className="w-full pb-3">{searchBottomContent}</div>
         ) : null}
@@ -511,6 +510,7 @@ const AgTableComponent = React.memo(
                 size="small"
                 fullWidth
                 margin="normal"
+                value={filters[column.field] || ""}
                 onChange={(e) =>
                   handleFilterChange(column.field, e.target.value)
                 }

@@ -665,6 +665,7 @@ const KraKpaRating = ({ type = "kpa" }) => {
           )}
           {isKpaRating ? (
             <AgTable
+              showDateControls={false}
               data={tableData}
               columns={kpaColumns}
               hideTitle

@@ -374,6 +374,8 @@ const PolicyUpload = () => {
             name: item?.name || "Untitled",
             documentLink: item?.documentLink || "#",
             date: item.createdAt,
+            dateRaw: item.createdAt,
+            updatedAtRaw: item.updatedAt,
             status: item.isDeleted
               ? "Disabled"
               : item.isActive
@@ -397,6 +399,8 @@ const PolicyUpload = () => {
       <div>
         <PageFrame>
           <YearWiseTable
+            dateRangePlaceholders
+            dateFilterOptions={[{ field: "date", label: "Uploaded Date" }, { field: "updatedAt", label: "Modified Date" }]}
             key={tableData.length}
             dateColumn={"date"}
             columns={columns}
