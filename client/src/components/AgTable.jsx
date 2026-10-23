@@ -468,7 +468,7 @@ const AgTableComponent = React.memo(
                   onClick={() => setFilterDrawerOpen(true)}
                 >
                   <IoFilter />
-                </button>
+                </div>
               </div>
             )}
           </div>
