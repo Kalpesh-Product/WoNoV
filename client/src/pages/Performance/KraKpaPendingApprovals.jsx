@@ -308,6 +308,7 @@ const KraKpaPendingApprovals = () => {
         </div>
       ) : (
         <AgTable
+          showDateControls={false}
           data={tableData}
           columns={columns}
           hideTitle

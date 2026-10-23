@@ -308,6 +308,7 @@ const ReportPrintout = () => {
           </Popover>
 
           <AgTable
+            showDateControls={false}
             data={tableRows}
             columns={columns}
             search
