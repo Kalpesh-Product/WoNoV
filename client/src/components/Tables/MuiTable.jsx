@@ -1,4 +1,5 @@
 import React from "react";
+import useTableControls from "../../hooks/useTableControls";
 import {
   Table,
   TableBody,
@@ -18,7 +19,8 @@ const MuiTable = ({
   scroll = false,
   scrollHeight = 480,
 }) => {
-  const displayedRows = rowsToDisplay ? rows.slice(0, rowsToDisplay) : rows;
+  const { filteredRows, toolbar } = useTableControls(rows, columns.map((column) => ({ field: column.id, headerName: column.label })));
+  const displayedRows = rowsToDisplay ? filteredRows.slice(0, rowsToDisplay) : filteredRows;
   const shouldScroll = scroll && (Boolean(rowsToDisplay) || Boolean(scrollHeight));
 
   return (
@@ -27,6 +29,7 @@ const MuiTable = ({
         {Title}
       </div>
       <Paper>
+        {toolbar}
         <TableContainer
           style={{
             height: shouldScroll ? scrollHeight : "none",

@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
-import { Popover } from "@mui/material";
-import { DateCalendar, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MdAccessTime, MdFormatListBulleted, MdOutlineCalendarToday, MdOutlineLocationOn, MdWork } from "react-icons/md";
 import AttendanceTimeline from "../../../components/AttendanceTimeline";
 import ClockInOutAttendance from "../../../components/ClockInOutAttendance";
@@ -23,12 +20,6 @@ const MainDashboard = () => {
     enabled: Boolean(empId) && !auth?.user?.gender,
   });
   const [currentDateTime, setCurrentDateTime] = useState(() => new Date());
-  const [calendarAnchor, setCalendarAnchor] = useState(null);
-  const [calendarDate, setCalendarDate] = useState(() => dayjs());
-  const openCalendar = (event) => {
-    setCalendarDate(dayjs(currentDateTime));
-    setCalendarAnchor(event.currentTarget);
-  };
   const hour = currentDateTime.getHours();
   const greeting =
     hour < 12 ? "Good Morning" : hour < 17 ? "Good Afternoon" : "Good Evening";
@@ -127,23 +118,9 @@ const MainDashboard = () => {
               { Icon: MdOutlineLocationOn, value: "Panaji, Goa, India", label: "Location" },
             ].map(({ Icon, value, label }) => (
               <div key={label} className="flex min-w-0 items-center gap-3">
-                {label === "Today's Date" ? (
-                  <button
-                    type="button"
-                    onClick={openCalendar}
-                    aria-label="Open calendar"
-                    aria-haspopup="dialog"
-                    aria-expanded={Boolean(calendarAnchor)}
-                    aria-controls={calendarAnchor ? "dashboard-calendar" : undefined}
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[#1545a5] transition-colors hover:bg-[#c8ddff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1545a5] focus-visible:ring-offset-2"
-                  >
-                    <Icon size={25} aria-hidden="true" />
-                  </button>
-                ) : (
-                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[#1545a5]">
-                    <Icon size={25} aria-hidden="true" />
-                  </span>
-                )}
+                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[#1545a5]">
+                  <Icon size={25} aria-hidden="true" />
+                </span>
                 <div className="min-w-0">
                   <p className="text-sm font-pbold leading-snug text-[#14376f] sm:text-[15px]">{value}</p>
                   <p className="mt-1 text-xs text-[#7b8fb4] sm:text-sm">{label}</p>
@@ -153,20 +130,6 @@ const MainDashboard = () => {
           </div>
         </div>
       </section>
-      <Popover
-        open={Boolean(calendarAnchor)}
-        anchorEl={calendarAnchor}
-        onClose={() => setCalendarAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{ paper: { sx: { mt: 1, borderRadius: 3 } } }}
-      >
-        <div id="dashboard-calendar" role="dialog" aria-label="Calendar">
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <DateCalendar value={calendarDate} onChange={setCalendarDate} sx={{ color: "#1E3D73" }} />
-          </LocalizationProvider>
-        </div>
-      </Popover>
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(320px,2fr)]">
         <section className="flex min-w-0 flex-col">
           {cardTitle(MdAccessTime, "Today's Attendance")}

@@ -46,6 +46,19 @@ const dueTaskSchema = new mongoose.Schema(
     closureDate: { type: Date, default: null },
     delayedDays: { type: Number, min: 0, default: 0 },
     comments: { type: String, trim: true, default: "" },
+    editHistory: {
+      type: [{
+        editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData", required: true },
+        editedAt: { type: Date, required: true },
+        changes: [{
+          field: { type: String, required: true },
+          label: { type: String, required: true },
+          oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
+          newValue: { type: mongoose.Schema.Types.Mixed, default: null },
+        }],
+      }],
+      default: [],
+    },
     isDeleted: { type: Boolean, default: false },
     assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },

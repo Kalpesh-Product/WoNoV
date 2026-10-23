@@ -11,6 +11,7 @@ const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const Visitor = require("../../models/visitor/Visitor");
 const { getPagination } = require("../../utils/pagination");
+const { getMeetingDepartments } = require("../../utils/meetingDepartments");
 
 const formatPersonName = (person) =>
   [person?.firstName, person?.lastName].filter(Boolean).join(" ");
@@ -652,7 +653,7 @@ const fetchMeetingReportService = async ({
           ? formatPersonName(meeting.receptionist)
           : "N/A",
         clientBookedBy: meeting.clientBookedBy,
-        department: meeting?.bookedBy?.departments,
+        department: getMeetingDepartments(meeting),
         roomName: meeting.bookedRoom?.name,
         bookedBy:
           meeting.bookedBy ||
@@ -744,7 +745,7 @@ const fetchMeetingReportService = async ({
           meetingType: meeting.meetingType,
           housekeepingStatus: meeting.houeskeepingStatus,
           ...(meetingTypeFilter === "internal" && {
-            department: (meeting?.bookedBy?.departments || [])
+            department: getMeetingDepartments(meeting)
               .map((dept) => dept?.name)
               .filter(Boolean)
               .join(", "),

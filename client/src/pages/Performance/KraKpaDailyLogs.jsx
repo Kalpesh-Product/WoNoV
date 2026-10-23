@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Autocomplete, Chip, CircularProgress, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { MdChevronLeft, MdChevronRight, MdDeleteForever } from "react-icons/md";
+import { MdChevronLeft, MdChevronRight, MdDeleteForever, MdHistory } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -18,22 +18,19 @@ import PrimaryButton from "../../components/PrimaryButton";
 import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import DailyLogTypeChip from "./DailyLogTypeChip";
+import DailyLogEditHistory from "./DailyLogEditHistory";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
+const isCarriedForward = (record) =>
+  Boolean(record.carriedFromDailyLog || record.isCarryForward);
 const formatTime = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("hh:mm A") : "-";
-
-const TYPE_CHIP_STYLES = {
-  KRA: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
-  KPA: { backgroundColor: "#ffe2dc", color: "#b42318" },
-  GENERAL: { backgroundColor: "#dcfce7", color: "#15803d" },
-};
-
-const DEFAULT_TYPE_CHIP_STYLE = {
-  backgroundColor: "#f3f4f6",
-  color: "#4b5563",
-};
+const formatCommentAuthor = (user) =>
+  user && typeof user === "object"
+    ? [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || "-"
+    : "-";
 
 const emptyForm = () => ({
   dayTaskName: "",
@@ -46,6 +43,7 @@ const DailyLogActionCell = ({
   data,
   node,
   onEdit,
+  onHistory,
   onAction,
   canComplete,
   canEdit,
@@ -65,6 +63,9 @@ const DailyLogActionCell = ({
 
   return (
     <div className="flex h-full items-center gap-2">
+      <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dayTaskName}`} disabled={disabled} onClick={() => onHistory(data)} className="flex h-8 w-8 shrink-0 items-center justify-center disabled:cursor-not-allowed">
+        <MdHistory size={25} color={disabled ? "#9ca3af" : "#111827"} />
+      </button>
       {canComplete && (
         <PrimaryButton
           type="button"
@@ -158,6 +159,7 @@ const KraKpaDailyLogs = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState(null);
   const [viewRecord, setViewRecord] = useState(null);
+  const [historyRecord, setHistoryRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [completionTimes, setCompletionTimes] = useState({
     startTime: null,
@@ -189,6 +191,18 @@ const KraKpaDailyLogs = () => {
       return response.data || [];
     },
   });
+  const { data: editAccess } = useQuery({
+    queryKey: ["kraKpaIndividualMonthlyKpaReviewAccess", departmentId],
+    enabled: Boolean(departmentId),
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa/review-access",
+        { params: { department: departmentId } },
+      );
+      return response.data;
+    },
+  });
+  const canEditDailyLog = Boolean(editAccess?.canEditManagerReview);
   const { data: dailyLogOptionConfig } = useQuery({
     queryKey: ["kraKpaDailyLogOptions", departmentId, employeeId],
     enabled: Boolean(departmentId && employeeId),
@@ -319,7 +333,7 @@ const KraKpaDailyLogs = () => {
       errors.endTime = "End Time must be after Start Time";
     }
     if (
-      pendingAction.record.carriedFromDailyLog &&
+      isCarriedForward(pendingAction.record) &&
       !completionTimes.reasonForCarryForward.trim()
     ) {
       errors.reasonForCarryForward = "Reason for Carry Forward is required";
@@ -348,7 +362,7 @@ const KraKpaDailyLogs = () => {
   };
 
   const openEdit = (record) => {
-    if (!canManageOthers) return;
+    if (!canEditDailyLog) return;
     setEditingRecord(record);
     setForm({
       dayTaskName: record.dayTaskName || "",
@@ -404,19 +418,19 @@ const KraKpaDailyLogs = () => {
   );
   const dailyLogOptions = dailyLogOptionConfig?.options || [];
 
-  const mapRows = (items) =>
-    items.map((record, index) => ({ ...record, srNo: index + 1 }));
-  const dueRows = mapRows(
-    filteredRecords.filter((record) => record.status !== "Done"),
-  );
-  const completedRows = mapRows(
-    filteredRecords.filter((record) => record.status === "Done"),
-  );
+  const { dueRows, completedRows } = useMemo(() => {
+    const mapRows = (items) =>
+      items.map((record, index) => ({ ...record, srNo: index + 1 }));
+    return {
+      dueRows: mapRows(filteredRecords.filter((record) => record.status !== "Done")),
+      completedRows: mapRows(filteredRecords.filter((record) => record.status === "Done")),
+    };
+  }, [filteredRecords]);
   const summaryCounts = {
     total: filteredRecords.length,
     due: dueRows.length,
     carryForward: filteredRecords.filter(
-      (record) => Boolean(record.carriedFromDailyLog),
+      (record) => isCarriedForward(record),
     ).length,
   };
   const canCompleteRecord = (record) =>
@@ -455,26 +469,14 @@ const KraKpaDailyLogs = () => {
       headerName: "Type",
       field: "type",
       width: 125,
-      cellRenderer: ({ data, value }) => (
-        <Chip
-          size="small"
-          label={
-            value === "KPA"
-              ? data.sourceSelfKpa
-                ? "KPA"
-                : "KPA Task"
-              : value
-          }
-          sx={TYPE_CHIP_STYLES[value] || DEFAULT_TYPE_CHIP_STYLE}
-        />
-      ),
+      cellRenderer: DailyLogTypeChip,
     },
     {
       headerName: "Task Source",
       field: "taskSource",
       width: 155,
       valueGetter: ({ data }) =>
-        data.carriedFromDailyLog ? "Carry Forward" : "New Task",
+        isCarriedForward(data) ? "Carry Forward" : "New Task",
       cellRenderer: ({ value }) => (
         <Chip
           size="small"
@@ -499,37 +501,35 @@ const KraKpaDailyLogs = () => {
       minWidth: 220,
       flex: 1,
     },
-    ...(canEditManagerComments
-      ? [
-          {
-            headerName: "Manager Comments",
-            field: "managerComments",
-            valueGetter: ({ data }) =>
-              data.managerComments || data.reviewerComments || "",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
-    ...(canEditHrComments
-      ? [
-          {
-            headerName: "HR Comments",
-            field: "hrComments",
-            minWidth: 240,
-            flex: 1,
-          },
-        ]
-      : []),
+    {
+      headerName: "Manager Comments",
+      field: "managerComments",
+      valueGetter: ({ data }) =>
+        data.managerComments || data.reviewerComments || "",
+      minWidth: 240,
+      flex: 1,
+    },
+    {
+      headerName: "HR Comments",
+      field: "hrComments",
+      minWidth: 240,
+      flex: 1,
+    },
   ];
 
+  const actionsColumnWidth = 180 +
+    (canEditDailyLog ? 40 : 0) +
+    (canManageOthers && !isOwnPage ? 40 : 0);
   const dueColumns = [
     ...baseColumns,
     {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
-      width: 230,
+      width: actionsColumnWidth,
+      minWidth: actionsColumnWidth,
+      maxWidth: actionsColumnWidth,
+      suppressSizeToFit: true,
       sortable: false,
       filter: false,
       cellRenderer: ({ data, node }) => (
@@ -537,9 +537,10 @@ const KraKpaDailyLogs = () => {
           data={data}
           node={node}
           onEdit={openEdit}
+          onHistory={setHistoryRecord}
           onAction={openRowAction}
           canComplete={canCompleteRecord(data)}
-          canEdit={canManageOthers}
+          canEdit={canEditDailyLog}
           canDelete={canManageOthers && !isOwnPage}
           isPending={rowAction.isPending}
         />
@@ -547,10 +548,25 @@ const KraKpaDailyLogs = () => {
     },
   ];
 
-  const completedColumns = baseColumns;
+  const completedColumns = [...baseColumns, {
+    headerName: "History",
+    field: "history",
+    width: 100,
+    pinned: "right",
+    sortable: false,
+    filter: false,
+    cellRenderer: ({ data }) => (
+      <div className="flex h-full items-center">
+        <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dayTaskName}`} onClick={() => setHistoryRecord(data)} className="flex h-8 w-8 items-center justify-center">
+          <MdHistory size={25} color="#111827" />
+        </button>
+      </div>
+    ),
+  }];
 
   return (
     <PageFrame>
+      {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}{employeeName}
@@ -715,22 +731,26 @@ const KraKpaDailyLogs = () => {
               title="Resource Comment"
               detail={viewRecord.resourceComment || "-"}
             />
-            {canEditManagerComments && (
-              <DetalisFormatted
-                title="Manager Comments"
-                detail={
-                  viewRecord.managerComments ||
-                  viewRecord.reviewerComments ||
-                  "-"
-                }
-              />
-            )}
-            {canEditHrComments && (
-              <DetalisFormatted
-                title="HR Comments"
-                detail={viewRecord.hrComments || "-"}
-              />
-            )}
+            <DetalisFormatted
+              title="Resource Comment By"
+              detail={viewRecord.resourceComment ? formatCommentAuthor(viewRecord.resourceCommentBy) : "-"}
+            />
+            <DetalisFormatted
+              title="Manager Comments"
+              detail={viewRecord.managerComments || viewRecord.reviewerComments || "-"}
+            />
+            <DetalisFormatted
+              title="Manager Comment By"
+              detail={viewRecord.managerComments || viewRecord.reviewerComments ? formatCommentAuthor(viewRecord.managerCommentsBy) : "-"}
+            />
+            <DetalisFormatted
+              title="HR Comments"
+              detail={viewRecord.hrComments || "-"}
+            />
+            <DetalisFormatted
+              title="HR Comment By"
+              detail={viewRecord.hrComments ? formatCommentAuthor(viewRecord.hrCommentsBy) : "-"}
+            />
           </div>
         )}
       </MuiModal>
@@ -784,7 +804,7 @@ const KraKpaDailyLogs = () => {
                 }}
               />
             </div>
-            {pendingAction.record.carriedFromDailyLog && (
+            {isCarriedForward(pendingAction.record) && (
               <TextField
                 label="Reason for Carry Forward *"
                 size="small"

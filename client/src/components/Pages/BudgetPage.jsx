@@ -12,6 +12,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../utils/currencyFormat";
+import { formatBudgetAmount, sumBudgetAmounts } from "../../utils/budgetAmounts";
 import { transformBudgetData } from "../../utils/transformBudgetData";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
@@ -285,8 +286,6 @@ const BudgetPage = () => {
     }
 
     // acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
-    acc[month].actualAmount += item.actualAmount; // Summing the total actual amount per month
-    acc[month].amount += item?.actualAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
@@ -299,8 +298,8 @@ const BudgetPage = () => {
       unit: item?.unit?.unitNo || "",
       unitName: item?.unit?.unitName || "",
       projectedAmountRaw: item?.projectedAmount || 0,
-      projectedAmount: item?.projectedAmount?.toFixed(2),
-      actualAmount: Number(item?.actualAmount || 0).toFixed(2),
+      projectedAmount: normalizeAmount(item?.projectedAmount),
+      actualAmount: normalizeAmount(item?.actualAmount),
       actualAmountRaw: item?.actualAmount ?? "",
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       dueDateRaw: item?.dueDate,
@@ -332,9 +331,7 @@ const BudgetPage = () => {
         // projectedAmount: Number(
         //   row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
         // ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-        actualAmount: Number(
-          row.actualAmount?.toLocaleString("en-IN").replace(/,/g, ""),
-        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        actualAmount: formatBudgetAmount(row.actualAmountRaw),
       }));
       const transformedCols = [
         { field: "srNo", headerName: "Sr No", width: 100 },
@@ -344,8 +341,8 @@ const BudgetPage = () => {
       return {
         ...data,
         // projectedAmount: data.projectedAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        actualAmount: data.actualAmount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
-        amount: data.amount.toLocaleString("en-IN"), // Ensuring two decimal places for total amount
+        actualAmount: formatBudgetAmount(sumBudgetAmounts(data.tableData.rows)),
+        amount: formatBudgetAmount(sumBudgetAmounts(data.tableData.rows)),
         tableData: {
           ...data.tableData,
           rows: transoformedRows,
@@ -407,7 +404,7 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
         fyData[fiscalYearLabel] = Array(12).fill(0);
       }
 
-      fyData[fiscalYearLabel][bucketIndex] += item.actualAmount || 0;
+      fyData[fiscalYearLabel][bucketIndex] += normalizeAmount(item.actualAmount);
     });
 
     return Object.keys(fyData)
@@ -790,17 +787,9 @@ legend: {
 
   const selectedFYActualAmount = useMemo(
     () =>
-      (hrFinance || []).reduce(
-        (acc, item) => {
-          if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
-            return acc;
-          }
-          const actualAmount = Number(item?.actualAmount || 0);
-
-          return acc + actualAmount;
-        },
-        0,
-      ),
+      sumBudgetAmounts((hrFinance || []).filter(
+        (item) => getFinancialYearLabel(item?.dueDate) === selectedFiscalYear,
+      )),
     [hrFinance, selectedFiscalYear],
   );
 
@@ -843,7 +832,7 @@ legend: {
         includePointMeta
         tooltipValueMode="meta"
         disableHoverCrosshair
-        TitleAmountGreen={`INR ${inrFormat(selectedFYActualAmount || 0)}`}
+        TitleAmountGreen={`INR ${formatBudgetAmount(selectedFYActualAmount)}`}
         TitleAmountTotal={`INR ${inrFormat(selectedFYProjectedAmount || 0)}`}
         greenTitle="Actual"
         totalTitle="Projected"

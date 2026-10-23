@@ -137,18 +137,10 @@ const AttendanceRequests = () => {
         reason: item.reason,
         name: `${item.user?.firstName} ${item.user?.lastName}`,
         requestDay: humanDate(item.inTime || item.originalInTime) || "N/A",
-        inTime: item.inTime
-          ? humanTime(item.inTime)
-          : item.originalInTime
-            ? humanTime(item.originalInTime)
-            : "N/A",
-        outTime: humanTime(item.outTime),
-        originalInTime: item.originalInTime ? humanTime(item.originalInTime)  : "N/A",
-        originalOutTime: item.originalOutTime
-          ? humanTime(item.originalOutTime)
-          : item.outTime
-            ? humanTime(item.outTime)
-            : "N/A",
+        inTime: item.inTime ? humanTime(item.inTime) : "-",
+        outTime: item.outTime ? humanTime(item.outTime) : "-",
+        originalInTime: item.originalInTime ? humanTime(item.originalInTime) : "-",
+        originalOutTime: item.originalOutTime ? humanTime(item.originalOutTime) : "-",
         createdDate: item.createdDate,
         status: item.status,
       }));
@@ -230,22 +222,12 @@ const AttendanceRequests = () => {
               </div>
 
               <div className="grid grid-cols-1 gap-4">
-                <DetalisFormatted
-                  title="Corrected In Time"
-                  detail={selectedRequest?.inTime}
-                />
-                <DetalisFormatted
-                  title="Corrected Out Time"
-                  detail={selectedRequest?.outTime}
-                />
-                <DetalisFormatted
-                  title="Original Start Time"
-                  detail={selectedRequest?.originalInTime}
-                />
-                <DetalisFormatted
-                  title="Original End Time"
-                  detail={selectedRequest?.originalOutTime}
-                />
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <DetalisFormatted title="Original In Time" detail={selectedRequest?.originalInTime} />
+                  <DetalisFormatted title="Corrected In Time" detail={selectedRequest?.inTime} />
+                  <DetalisFormatted title="Original Out Time" detail={selectedRequest?.originalOutTime} />
+                  <DetalisFormatted title="Corrected Out Time" detail={selectedRequest?.outTime} />
+                </div>
               
               </div>
             </div>

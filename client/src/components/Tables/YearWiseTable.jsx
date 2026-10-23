@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { DateRangePicker } from "react-date-range";
-import { addDays, isWithinInterval } from "date-fns";
+import { addDays } from "date-fns";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
-import { IconButton, Popover } from "@mui/material";
+import { IconButton, MenuItem, Popover, TextField } from "@mui/material";
+import { filterTableRows, parseTableDate } from "../../utils/tableFilters";
 import { DatePicker } from "@mui/x-date-pickers";
-import { MdCalendarToday, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MdCalendarToday, MdChevronLeft, MdChevronRight, MdClose } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -15,6 +16,7 @@ const YearWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
+  dateFilterOptions = [],
   formatTime = true,
   formatDate = true,
   tableHeight,
@@ -46,6 +48,7 @@ const YearWiseTable = ({
   totalKey = "actualAmount",
   showDateNavigator = false,
   hideDateControls = false,
+  dateRangePlaceholders = false,
   selectedDateLabel = "",
   selectedDate,
   onSelectedDateChange,
@@ -74,6 +77,9 @@ const YearWiseTable = ({
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const today = useMemo(() => dayjs(), []);
+  const [selectedDateField, setSelectedDateField] = useState(dateColumn);
+  const activeDateField = dateFilterOptions.some((option) => option.field === selectedDateField)
+    ? selectedDateField : dateFilterOptions[0]?.field || dateColumn;
   const navigatorButtonSx = {
     alignItems: "center",
     backgroundColor: "#1e3d73",
@@ -122,7 +128,7 @@ const YearWiseTable = ({
     const currentMonthStart = today.startOf("month");
     const currentMonthEnd = today.endOf("month");
 
-    if (preserveCurrentMonthRange) {
+    if (preserveCurrentMonthRange || dateRangePlaceholders) {
       setDateRange([
         {
           startDate: currentMonthStart.toDate(),
@@ -188,6 +194,7 @@ const YearWiseTable = ({
     initialDateRange,
     isUserChangedRange,
     preserveCurrentMonthRange,
+    dateRangePlaceholders,
     showDateNavigator,
     today,
   ]);
@@ -201,34 +208,26 @@ const YearWiseTable = ({
   const validDateSet = useMemo(() => {
     const set = new Set();
     data.forEach((item) => {
-      const d = dayjs(item[dateColumn]);
-      if (d.isValid()) set.add(d.format("YYYY-MM-DD"));
+      const date = parseTableDate(item[`${activeDateField}Raw`] ?? item[activeDateField]);
+      if (date) set.add(dayjs(date).format("YYYY-MM-DD"));
     });
     return set;
-  }, [data, dateColumn]);
+  }, [data, activeDateField]);
 
   const filteredData = useMemo(() => {
     if (
       serverPagination ||
+      (dateRangePlaceholders && !isUserChangedRange) ||
       showDateNavigator ||
-      !dateColumn ||
+      !activeDateField ||
       dateRange.length === 0 ||
       !dateRange[0]
     )
       return data;
     //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
-    const { startDate, endDate } = dateRange[0];
-    const start = dayjs(startDate).startOf("day").toDate();
-    const end = dayjs(endDate).endOf("day").toDate();
-
-    return data.filter((item) => {
-      const itemDate = dayjs(item[dateColumn]);
-      if (!itemDate.isValid()) return false;
-
-      return isWithinInterval(itemDate.toDate(), { start, end });
-    });
-  }, [data, dateColumn, dateRange, serverPagination, showDateNavigator]);
+    return filterTableRows(data, { dateRange: dateRange[0], dateField: activeDateField });
+  }, [data, activeDateField, dateRange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange]);
   // }, [data, dateColumn, dateRange]);
 
   useEffect(() => {
@@ -383,128 +382,29 @@ const YearWiseTable = ({
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="w-full flex items-center justify-between gap-2">
-        {tableTitle ? (
-          <span className="text-title text-primary font-pmedium uppercase">
-            {tableTitle}
-          </span>
-        ) : (
-          <span />
-        )}
-
-        <div className="flex gap-2 items-center justify-end flex-nowrap ml-auto">
-          {headerActions ? headerActions : null}
-
-          {/* ✅ Show calendar only if data is not empty */}
-
-          {!hideDateControls && (
-            <Popover
-              open={open}
-              anchorEl={anchorEl}
-              onClose={handleCloseCalendar}
-              anchorOrigin={{
-                vertical: "bottom",
-                horizontal: "left",
-              }}
-            >
-              {dateRange.length > 0 && (
-                <DateRangePicker
-                  onChange={handleDateRangeChange}
-                  moveRangeOnFirstSelection={false}
-                  ranges={dateRange}
-                  direction="vertical"
-                  dayContentRenderer={(date) => {
-                    const dateStr = dayjs(date).format("YYYY-MM-DD");
-                    const hasData = validDateSet.has(dateStr);
-                    return (
-                      <div className="overflow-hidden">
-                        <div
-                          style={{
-                            backgroundColor: hasData ? "white" : "transparent",
-                            borderBottom: hasData ? "4px solid #1E3D73" : "",
-                            borderTopLeftRadius: "5px",
-                            borderTopRightRadius: "5px",
-                            height: "25px",
-                            width: "25px",
-                            fontWeight: hasData ? "bold" : "normal",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {date.getDate()}
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-              )}
-            </Popover>
-          )}
-
-          {secondaryButtonTitle && (
-            <PrimaryButton
-              title={secondaryButtonTitle}
-              handleSubmit={handleSecondarySubmit}
-              disabled={secondaryButtonDisabled}
-            />
-          )}
-          {middleButtonTitle && (
-            <PrimaryButton
-              title={middleButtonTitle}
-              handleSubmit={handleMiddleSubmit}
-              disabled={middleButtonDisabled}
-            />
-          )}
-          {buttonTitle && (
-            <PrimaryButton
-              title={buttonTitle}
-              handleSubmit={handleSubmit}
-              disabled={buttonDisabled}
-            />
-          )}
-          {customExportTitle && handleCustomExport && (
-            <PrimaryButton
-              title={customExportTitle}
-              handleSubmit={handleCustomExport}
-              disabled={customExportDisabled}
-            />
-          )}
-          {exportData && (
-            <PrimaryButton
-              title={exportButtonTitle}
-              handleSubmit={handleExportPass}
-              padding="px-4 py-2"
-              className="shrink-0 whitespace-nowrap"
-            />
-          )}
-        </div>
-      </div>
-      {/* {dateRange.length > 0 && dateRange[0] && ( */}
-      {!hideDateControls &&
+  const dateControls = (<>
+{!hideDateControls &&
         !showDateNavigator &&
         dateRange.length > 0 &&
         dateRange[0] && (
-          <div className="flex justify-center items-center gap-2">
+          <div className={`flex justify-center items-center gap-2 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
+            {dateRangePlaceholders && dateFilterOptions.length > 1 && (
+              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: 130 }}>
+                {dateFilterOptions.map((option) => <MenuItem key={option.field} value={option.field}>{option.label}</MenuItem>)}
+              </TextField>
+            )}
             {/* Date information here */}
 
-            <div className="flex items-center gap-2  justify-center">
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                 <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                  {dateRangePlaceholders && !isUserChangedRange ? "Start date" : dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
                 </span>{" "}
               </div>
 
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                 <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                  {dateRangePlaceholders && !isUserChangedRange ? "End date" : dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
                 </span>
               </div>
             </div>
@@ -514,10 +414,15 @@ const YearWiseTable = ({
             >
               <MdCalendarToday size={19} />
             </div>
+            {dateRangePlaceholders && isUserChangedRange && (
+              <IconButton aria-label="Clear date filter" title="Show all dates" size="small" onClick={() => setIsUserChangedRange(false)}>
+                <MdClose />
+              </IconButton>
+            )}
           </div>
         )}
-      {!hideDateControls && showDateNavigator && (
-        // <div className="flex justify-center items-center gap-2">
+{!hideDateControls && showDateNavigator && (
+        // <div className="flex flex-wrap items-center gap-2">
         //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
         //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
         //     <span className="text-gray-600 text-content font-pregular">
@@ -526,7 +431,7 @@ const YearWiseTable = ({
         //   </div>
         //   <PrimaryButton title=">" handleSubmit={onNextDay} />
         // </div>
-        <div className="flex justify-center items-center gap-3">
+        <div className={`flex justify-center items-center gap-3 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
           {/* Previous Button */}
           <button
             type="button"
@@ -596,6 +501,83 @@ const YearWiseTable = ({
           </button>
         </div>
       )}
+{!hideDateControls && (
+            <Popover
+              open={open}
+              anchorEl={anchorEl}
+              onClose={handleCloseCalendar}
+              anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "left",
+              }}
+            >
+              {dateRange.length > 0 && (
+                <DateRangePicker
+                  onChange={handleDateRangeChange}
+                  moveRangeOnFirstSelection={false}
+                  ranges={dateRange}
+                  direction="vertical"
+                  dayContentRenderer={(date) => {
+                    const dateStr = dayjs(date).format("YYYY-MM-DD");
+                    const hasData = validDateSet.has(dateStr);
+                    return (
+                      <div className="overflow-hidden">
+                        <div
+                          style={{
+                            backgroundColor: hasData ? "white" : "transparent",
+                            borderBottom: hasData ? "4px solid #1E3D73" : "",
+                            borderTopLeftRadius: "5px",
+                            borderTopRightRadius: "5px",
+                            height: "25px",
+                            width: "25px",
+                            fontWeight: hasData ? "bold" : "normal",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {date.getDate()}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              )}
+            </Popover>
+          )}
+  </>);
+  const exportControls = (<>
+{customExportTitle && handleCustomExport && (
+            <PrimaryButton
+              title={customExportTitle}
+              handleSubmit={handleCustomExport}
+              disabled={customExportDisabled}
+            />
+          )}
+{exportData && (
+            <PrimaryButton
+              title={exportButtonTitle}
+              handleSubmit={handleExportPass}
+              padding="px-4 py-2"
+              className="shrink-0 whitespace-nowrap"
+            />
+          )}
+  </>);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+{(tableTitle || headerActions || secondaryButtonTitle || middleButtonTitle || buttonTitle) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {tableTitle && <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {headerActions}
+            {secondaryButtonTitle && <PrimaryButton title={secondaryButtonTitle} handleSubmit={handleSecondarySubmit} disabled={secondaryButtonDisabled} />}
+            {middleButtonTitle && <PrimaryButton title={middleButtonTitle} handleSubmit={handleMiddleSubmit} disabled={middleButtonDisabled} />}
+            {buttonTitle && <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} disabled={buttonDisabled} />}
+          </div>
+        </div>
+      )}
       {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">
         Total: INR {rangeTotal.toLocaleString("en-IN")}
@@ -604,8 +586,9 @@ const YearWiseTable = ({
       {/* Table */}
 
       <>
-        {showEmptyTable || finalTableData.length > 0 || (serverPagination && serverSearch) ? (
-          <AgTable
+        <AgTable
+            toolbarDateControls={dateControls}
+            toolbarActions={exportControls}
             key={key}
             enableCheckbox={checkbox}
             tableRef={agGridRef}
@@ -616,7 +599,8 @@ const YearWiseTable = ({
             tableHeight={tableHeight || 300}
             columns={formattedColumns}
             data={finalTableData}
-            hideFilter={filteredData.length <= 9}
+            hideFilter={false}
+            showDateControls={hideDateControls}
             search={search}
             searchRowActions={
               batchButton && selectedRows.length > 0 ? (
@@ -644,14 +628,6 @@ const YearWiseTable = ({
             onSearchChange={onSearchChange}
             getRowStyle={getRowStyle}
           />
-        ) : (
-          <div
-            className="h-[60vh] flex justify-center items-center"
-            style={{ padding: "2rem", color: "#666" }}
-          >
-            No data available for the selected date range.
-          </div>
-        )}
       </>
     </div>
   );

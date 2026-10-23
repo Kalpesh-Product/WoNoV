@@ -9,6 +9,7 @@ const SelfKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const SelfKra = require("../../models/performances/KraKpaSelfKra");
 const SelfKraCompletion = require("../../models/performances/KraKpaSelfKraCompletion");
 const Event = require("../../models/events/Events");
+const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const {
   calculateDelayedWorkingDays,
   toCalendarKey,
@@ -29,6 +30,10 @@ const DEFAULT_GENERAL_TASK_NAMES = new Set(
   GENERAL_DAILY_LOG_OPTIONS.map(normalizeGeneralTaskName),
 );
 const POPULATION = [
+  { path: "resourceCommentBy", select: "firstName middleName lastName" },
+  { path: "managerCommentsBy", select: "firstName middleName lastName" },
+  { path: "hrCommentsBy", select: "firstName middleName lastName" },
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
@@ -36,6 +41,30 @@ const POPULATION = [
   { path: "sourceSelfKra", select: "title description category lead startsOn" },
   { path: "sourceSelfKpa", select: "target deadline status closingDate" },
 ];
+
+const HISTORY_FIELDS = {
+  date: "Log Date",
+  managerComments: "Manager Comments",
+  hrComments: "HR Comments",
+  status: "Task Status",
+  startTime: "Start Time",
+  endTime: "End Time",
+  resourceComment: "Resource Comment",
+  reasonForCarryForward: "Reason for Carry Forward",
+};
+const historyValue = (value) => value instanceof Date ? value.toISOString() : value || null;
+const historySnapshot = (record) => Object.fromEntries(
+  Object.keys(HISTORY_FIELDS).map((field) => [field, historyValue(record[field])]),
+);
+const appendEditHistory = (record, before, fields, user) => {
+  const changes = fields.flatMap((field) => {
+    const newValue = historyValue(record[field]);
+    return before[field] === newValue ? [] : [{ field, label: HISTORY_FIELDS[field], oldValue: before[field], newValue }];
+  });
+  if (!changes.length) return;
+  if (!Array.isArray(record.editHistory)) record.editHistory = [];
+  record.editHistory.push({ editedBy: user, editedAt: new Date(), changes });
+};
 
 const parseDate = (value) => {
   if (typeof value !== "string" || !DATE_PATTERN.test(value)) return undefined;
@@ -77,6 +106,7 @@ const getAccess = async (req) => {
     canCreateGeneralTask,
     departmentIds,
     isHr,
+    isTopManagement,
   };
 };
 
@@ -116,11 +146,23 @@ const canCreateGeneralTaskForDepartment = async (
 
 const hideRestrictedComments = (record, access) => {
   const value = typeof record?.toObject === "function" ? record.toObject() : { ...record };
-  if (!access.canManageOthers) {
-    delete value.managerComments;
-    delete value.reviewerComments;
+  for (const field of ["resourceComment", "managerComments", "hrComments"]) {
+    const comment = value[field] || (field === "managerComments" ? value.reviewerComments : "");
+    if (!comment || value[`${field}By`]) continue;
+    const latestChange = (value.editHistory || []).slice()
+      .sort((a, b) => new Date(b.editedAt) - new Date(a.editedAt))
+      .find((entry) => entry.changes?.some((change) =>
+        change.field === field && change.newValue === comment,
+      ));
+    if (latestChange?.editedBy) value[`${field}By`] = latestChange.editedBy;
   }
-  if (!access.isHr) delete value.hrComments;
+  value.editHistory = (value.editHistory || []).map((entry) => ({
+    ...entry,
+    changes: (entry.changes || []).filter((change) =>
+      (access.canManageOthers || !["managerComments", "reviewerComments"].includes(change.field)) &&
+      (access.isHr || change.field !== "hrComments"),
+    ),
+  })).filter((entry) => entry.changes.length > 0);
   return value;
 };
 
@@ -472,7 +514,13 @@ const listDailyLogOptions = async (req, res, next) => {
 
 const listDailyLogs = async (req, res, next) => {
   try {
-    const { department, employee, date: requestedDate } = req.query;
+    const {
+      department,
+      employee,
+      date: requestedDate,
+      startDate,
+      endDate,
+    } = req.query;
     if (department && !mongoose.isValidObjectId(department)) {
       return res.status(400).json({ message: "Invalid department ID" });
     }
@@ -480,8 +528,21 @@ const listDailyLogs = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid employee ID" });
     }
     const occurrenceDate = requestedDate ? parseDate(requestedDate) : null;
+    const rangeStart = startDate ? parseDate(startDate) : null;
+    const rangeEnd = endDate ? parseDate(endDate) : null;
     if (requestedDate && !occurrenceDate) {
       return res.status(400).json({ message: "Invalid Daily Log date" });
+    }
+    if (startDate && !rangeStart) {
+      return res.status(400).json({ message: "Invalid Daily Log start date" });
+    }
+    if (endDate && !rangeEnd) {
+      return res.status(400).json({ message: "Invalid Daily Log end date" });
+    }
+    if (rangeStart && rangeEnd && rangeStart > rangeEnd) {
+      return res.status(400).json({
+        message: "Daily Log start date cannot be after the end date",
+      });
     }
     const access = await getAccess(req);
     if (department && !access.allDepartments &&
@@ -509,6 +570,12 @@ const listDailyLogs = async (req, res, next) => {
       ...getScopedFilter(req, access),
       ...(department && { department }),
       ...(employee && { employee }),
+      ...((rangeStart || rangeEnd) && {
+        date: {
+          ...(rangeStart && { $gte: rangeStart }),
+          ...(rangeEnd && { $lte: rangeEnd }),
+        },
+      }),
     })
       .sort({ date: -1, createdAt: -1 })
       .populate(POPULATION)
@@ -615,6 +682,13 @@ const updateDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    const canEditDailyLog = access.isHr || access.isTopManagement ||
+      await isDepartmentManager(req, record.department, access);
+    if (!canEditDailyLog) {
+      return res.status(403).json({
+        message: "Only the department manager, HR or Top Management can edit Daily Logs",
+      });
+    }
     const validation = validateLog(req.body, { requireKpaSlot: false });
     if (validation.error) return res.status(400).json({ message: validation.error });
     if (Object.hasOwn(req.body, "resourceComment")) {
@@ -657,11 +731,20 @@ const updateDailyLog = async (req, res, next) => {
     if (hrComments === null || hrComments.length > 5000) {
       return res.status(400).json({ message: "HR Comments are invalid" });
     }
+    const historyBefore = historySnapshot(record);
+    if (hasManagerComments && managerComments !== record.managerComments) {
+      record.managerCommentsBy = managerComments ? req.user : null;
+    }
+    if (hasHrComments && hrComments !== record.hrComments) {
+      record.hrCommentsBy = hrComments ? req.user : null;
+    }
     Object.assign(record, validation.value, {
       managerComments,
       hrComments,
       updatedBy: req.user,
     });
+    appendEditHistory(record, historyBefore,
+      ["date", "managerComments", "hrComments"].filter((field) => Object.hasOwn(req.body, field)), req.user);
     await record.save();
     await record.populate(POPULATION);
     return res.json(hideRestrictedComments(record, access));
@@ -684,6 +767,7 @@ const completeDailyLog = async (req, res, next) => {
     if (record.status === "Done") {
       return res.status(409).json({ message: "Daily Log is already completed" });
     }
+    const historyBefore = historySnapshot(record);
     if (record.sourceSelfKpa) {
       return res.status(400).json({
         message: "Complete the main KPA from the Self KPA page",
@@ -718,7 +802,7 @@ const completeDailyLog = async (req, res, next) => {
       typeof req.body?.reasonForCarryForward === "string"
         ? req.body.reasonForCarryForward.trim()
         : "";
-    if (record.carriedFromDailyLog && !reasonForCarryForward) {
+    if ((record.carriedFromDailyLog || record.isCarryForward) && !reasonForCarryForward) {
       return res.status(400).json({
         message: "Reason for Carry Forward is required",
       });
@@ -816,12 +900,14 @@ const completeDailyLog = async (req, res, next) => {
     record.status = "Done";
     record.startTime = startTime;
     record.endTime = endTime;
-    if (record.carriedFromDailyLog) {
+    if (record.carriedFromDailyLog || record.isCarryForward) {
       record.reasonForCarryForward = reasonForCarryForward;
     }
     record.resourceComment = resourceComment;
+    record.resourceCommentBy = req.user;
     record.completedAt = new Date();
     record.updatedBy = req.user;
+    appendEditHistory(record, historyBefore, ["status", "startTime", "endTime", "resourceComment", "reasonForCarryForward"], req.user);
     await record.save();
     await record.populate(POPULATION);
     return res.json(hideRestrictedComments(record, access));

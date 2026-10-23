@@ -1472,9 +1472,9 @@ const uploadInvoice = async (req, res, next) => {
         retainedKeys.has(String(invoice.link)),
     );
 
-    if (verifiedRetainedInvoices.length + files.length > 5) {
+    if (verifiedRetainedInvoices.length + files.length > 15) {
       throw new CustomError(
-        "You can attach a maximum of 5 files",
+        "You can attach a maximum of 15 files",
         logPath,
         logAction,
         logSourceKey,

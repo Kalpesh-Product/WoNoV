@@ -54,6 +54,9 @@ const ChangePassword = ({ pageTitle }) => {
   };
 
   const getPasswordFieldProps = (field, disabled) => ({
+    id: `change-password-${field}`,
+    name: field,
+    autoComplete: field === "currentPassword" ? "current-password" : "new-password",
     type: showPasswords[field] ? "text" : "password",
     disabled,
     InputProps: {
@@ -140,7 +143,24 @@ const ChangePassword = ({ pageTitle }) => {
             Change password
           </span>
         </div>
-        <div>
+        <form
+          id="change-password-form"
+          autoComplete="on"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (canChangePassword && passwordVerified) handlePasswordChange();
+          }}
+        >
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={auth?.user?.email || auth?.user?.empId || ""}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+            className="sr-only"
+          />
           {/* Current Password Field */}
           <div className="mb-4 w-full flex justify-start items-center gap-4">
             <TextField
@@ -214,12 +234,13 @@ const ChangePassword = ({ pageTitle }) => {
           <div className="mt-4 flex justify-center items-center">
             <PrimaryButton
               title={"Submit"}
+              type="button"
               handleSubmit={handlePasswordChange}
               disabled={!canChangePassword || !passwordVerified}>
               Change Password
             </PrimaryButton>
           </div>
-        </div>
+        </form>
       </PageFrame>
     </div>
   );

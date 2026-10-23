@@ -22,6 +22,7 @@ const isValidOccurrenceDate = (value) => {
 };
 
 const DETAIL_POPULATION = [
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName" },
   { path: "department", select: "name" },
   { path: "category", select: "categoryName" },
@@ -62,11 +63,12 @@ const getAccess = async (req) => {
     canSelectLead: isManager || isTopManagement,
     departmentIds,
     isTopManagement,
+    isHr,
   };
 };
 
 const canDeleteKraKpa = async (req, departmentId, access) => {
-  if (access.isTopManagement) return true;
+  if (access.isHr || access.isTopManagement) return true;
   if (!access.departmentIds.includes(String(departmentId))) return false;
   const company = await Company.findById(req.company)
     .select("selectedDepartments.department selectedDepartments.admin")
@@ -196,6 +198,13 @@ const listSelfKra = async (req, res, next) => {
       .populate(COMPLETION_POPULATION)
       .lean();
 
+    const scheduledIds = await DailyLog.distinct("sourceSelfKra", {
+      company: req.company,
+      sourceSelfKra: { $in: [...templates.map((template) => template._id), ...completions.map((completion) => completion.kraTemplate)] },
+      date: new Date(`${occurrenceDate}T00:00:00.000Z`),
+      isDeleted: { $ne: true },
+    });
+    const scheduledTemplates = new Set(scheduledIds.map(String));
     const completionByTemplate = new Map(
       completions.map((completion) => [String(completion.kraTemplate), completion]),
     );
@@ -209,6 +218,8 @@ const listSelfKra = async (req, res, next) => {
           ...completion,
           _id: template._id,
           isActive: template.isActive,
+          editHistory: template.editHistory || [],
+          isScheduled: scheduledTemplates.has(String(template._id)),
           completionId: completion._id,
           closingDate: completion.completedAt,
         });
@@ -222,6 +233,7 @@ const listSelfKra = async (req, res, next) => {
       rows.push({
         ...template,
         startsOn,
+        isScheduled: scheduledTemplates.has(String(template._id)),
         status: isLegacyCompletion ? "Completed" : "Pending",
         closingDate: isLegacyCompletion ? template.closingDate : null,
       });
@@ -230,6 +242,7 @@ const listSelfKra = async (req, res, next) => {
       rows.push({
         ...completion,
         _id: completion.kraTemplate,
+        isScheduled: scheduledTemplates.has(String(completion.kraTemplate)),
         completionId: completion._id,
         closingDate: completion.completedAt,
       });
@@ -435,7 +448,10 @@ const updateSelfKra = async (req, res, next) => {
     if (validation.error) return res.status(400).json({ message: validation.error });
     const access = await getAccess(req);
     const filter = { _id: req.params.id, ...getScopedFilter(req, access) };
-    const existing = await SelfKra.findOne(filter).select("department").lean();
+    const existing = await SelfKra.findOne(filter)
+      .select("department title category lead isActive")
+      .populate([{ path: "category", select: "categoryName" }, { path: "lead", select: "firstName middleName lastName" }])
+      .lean();
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
     if (!await isActiveDepartmentCategory(
       req,
@@ -466,9 +482,28 @@ const updateSelfKra = async (req, res, next) => {
       }
       changes.lead = leadValidation.value;
     }
+    const historyChanges = [];
+    if (existing.title !== changes.title) {
+      historyChanges.push({ field: "title", label: "KRA Title", oldValue: existing.title, newValue: changes.title });
+    }
+    if (String(existing.category?._id || existing.category) !== String(changes.category)) {
+      const category = await KraCategory.findById(changes.category).select("categoryName").lean();
+      historyChanges.push({ field: "category", label: "Category", oldValue: existing.category?.categoryName || null, newValue: category?.categoryName || null });
+    }
+    if (changes.lead && String(existing.lead?._id || existing.lead) !== String(changes.lead)) {
+      const lead = await UserData.findById(changes.lead).select("firstName middleName lastName").lean();
+      const name = (user) => [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") || null;
+      historyChanges.push({ field: "lead", label: "Lead", oldValue: name(existing.lead), newValue: name(lead) });
+    }
+    if (Object.hasOwn(changes, "isActive") && (existing.isActive !== false) !== changes.isActive) {
+      historyChanges.push({ field: "isActive", label: "Active Status", oldValue: existing.isActive !== false ? "Active" : "Inactive", newValue: changes.isActive ? "Active" : "Inactive" });
+    }
     const record = await SelfKra.findOneAndUpdate(
       filter,
-      changes,
+      {
+        $set: changes,
+        ...(historyChanges.length > 0 && { $push: { editHistory: { editedBy: req.user, editedAt: new Date(), changes: historyChanges } } }),
+      },
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
     if (!record) return res.status(404).json({ message: "Self KRA not found" });
@@ -574,7 +609,7 @@ const deleteSelfKra = async (req, res, next) => {
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
     if (!await canDeleteKraKpa(req, existing.department, access)) {
       return res.status(403).json({
-        message: "Only Top Management or this department's manager can delete a Self KRA",
+        message: "Only HR, Top Management or this department's manager can delete a Self KRA",
       });
     }
     const record = await SelfKra.findOneAndUpdate(

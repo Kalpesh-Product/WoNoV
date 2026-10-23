@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -35,6 +35,47 @@ const formatDateTime = (date) =>
     ? dayjs(date).format("DD-MM-YYYY, hh:mm A")
     : "-";
 
+const PendingApprovalActions = ({ data, node, onEdit, onApprove, onReject, isPending }) => {
+  const [selected, setSelected] = useState(() => Boolean(node.isSelected()));
+  useEffect(() => {
+    const syncSelection = () => setSelected(Boolean(node.isSelected()));
+    syncSelection();
+    node.addEventListener("rowSelected", syncSelection);
+    return () => node.removeEventListener("rowSelected", syncSelection);
+  }, [node]);
+  const disabled = !selected || isPending;
+  return (
+    <div className="flex h-full items-center gap-2">
+      <button
+        type="button"
+        title="Edit KPA"
+        aria-label={`Edit ${data.target}`}
+        disabled={disabled}
+        onClick={() => onEdit(data)}
+        className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
+      >
+        <HiPencilSquare size={24} color={disabled ? "#9ca3af" : "#111827"} />
+      </button>
+      <PrimaryButton
+        type="button"
+        title="Approve"
+        disabled={disabled}
+        handleSubmit={() => onApprove(data)}
+        className="!h-8 !px-3 !py-1 !text-xs"
+      />
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => onReject(data)}
+        className="h-8 rounded border border-red-600 px-3 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:border-gray-300 disabled:text-gray-400 disabled:hover:bg-transparent"
+        aria-label={`Reject ${data.target}`}
+      >
+        Reject
+      </button>
+    </div>
+  );
+};
+
 const KraKpaPendingApprovals = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -67,6 +108,7 @@ const KraKpaPendingApprovals = () => {
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
+  const [rejectionRecord, setRejectionRecord] = useState(null);
   const [form, setForm] = useState({ month: "", target: "", deadline: "" });
   const [errors, setErrors] = useState({});
 
@@ -136,6 +178,23 @@ const KraKpaPendingApprovals = () => {
     setErrors({});
   };
 
+  const rejectKpa = useMutation({
+    mutationFn: async (record) => {
+      const response = await axios.patch(
+        `/api/kra-kpa/individual-monthly-kpa/${record._id}/reject`,
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      refresh();
+      setRejectionRecord(null);
+      toast.success("KPA rejected");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Unable to reject KPA");
+    },
+  });
+
   const submitEdit = (event) => {
     event.preventDefault();
     const nextErrors = {};
@@ -189,27 +248,18 @@ const KraKpaPendingApprovals = () => {
       headerName: "Actions",
       field: "actions",
       pinned: "right",
-      width: 185,
+      width: 265,
       sortable: false,
       filter: false,
-      cellRenderer: ({ data }) => (
-        <div className="flex h-full items-center gap-2">
-          <button
-            type="button"
-            title="Edit KPA"
-            aria-label={`Edit ${data.target}`}
-            onClick={() => openEdit(data)}
-            className="flex h-8 w-8 items-center justify-center"
-          >
-            <HiPencilSquare size={24} color="#111827" />
-          </button>
-          <PrimaryButton
-            type="button"
-            title="Approve"
-            handleSubmit={() => setApprovalRecord(data)}
-            className="!h-8 !px-3 !py-1 !text-xs"
-          />
-        </div>
+      cellRenderer: ({ data, node }) => (
+        <PendingApprovalActions
+          data={data}
+          node={node}
+          onEdit={openEdit}
+          onApprove={setApprovalRecord}
+          onReject={setRejectionRecord}
+          isPending={saveKpa.isPending || approveKpa.isPending || rejectKpa.isPending}
+        />
       ),
     },
   ];
@@ -258,6 +308,7 @@ const KraKpaPendingApprovals = () => {
         </div>
       ) : (
         <AgTable
+          showDateControls={false}
           data={tableData}
           columns={columns}
           hideTitle
@@ -349,6 +400,17 @@ const KraKpaPendingApprovals = () => {
         cancelText="Cancel"
         cancelFirst
         isLoading={approveKpa.isPending}
+      />
+      <ConfirmationModal
+        open={Boolean(rejectionRecord)}
+        onClose={() => !rejectKpa.isPending && setRejectionRecord(null)}
+        onConfirm={() => rejectionRecord && rejectKpa.mutate(rejectionRecord)}
+        title="Reject KPA"
+        message="Reject this KPA? It will remain in Self KPA as rejected and cannot be scheduled or completed."
+        confirmText="Reject"
+        cancelText="Cancel"
+        cancelFirst
+        isLoading={rejectKpa.isPending}
       />
     </PageFrame>
   );

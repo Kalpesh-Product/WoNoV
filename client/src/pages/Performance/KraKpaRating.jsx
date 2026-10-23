@@ -15,6 +15,7 @@ import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import DailyLogTypeChip from "./DailyLogTypeChip";
 
 const formatUserName = (user) =>
   user && typeof user === "object"
@@ -27,12 +28,6 @@ const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
 const formatTime = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("hh:mm A") : "-";
-
-const DAILY_LOG_TYPE_STYLES = {
-  KRA: { backgroundColor: "#dbeafe", color: "#1d4ed8" },
-  KPA: { backgroundColor: "#ffe2dc", color: "#b42318" },
-  GENERAL: { backgroundColor: "#dcfce7", color: "#15803d" },
-};
 
 const initialDateRange = () => ({
   startDate: dayjs().startOf("month").toDate(),
@@ -500,31 +495,25 @@ const KraKpaRating = ({ type = "kpa" }) => {
       headerName: "Type",
       field: "type",
       width: 130,
-      cellRenderer: ({ data, value }) => (
-        <Chip
-          size="small"
-          label={
-            value === "KPA"
-              ? data.sourceSelfKpa
-                ? "KPA"
-                : "KPA Task"
-              : value
-          }
-          sx={
-            DAILY_LOG_TYPE_STYLES[value] || {
-              backgroundColor: "#f3f4f6",
-              color: "#4b5563",
-            }
-          }
-        />
-      ),
+      cellRenderer: DailyLogTypeChip,
     },
     {
       headerName: "Task Source",
       field: "taskSource",
       width: 160,
       valueGetter: ({ data }) =>
-        data.carriedFromDailyLog ? "Carry Forward" : "New Task",
+        data.carriedFromDailyLog || data.isCarryForward ? "Carry Forward" : "New Task",
+      cellRenderer: ({ value }) => (
+        <Chip
+          size="small"
+          label={value}
+          sx={
+            value === "Carry Forward"
+              ? { backgroundColor: "#ede9fe", color: "#6d28d9" }
+              : { backgroundColor: "#dbeafe", color: "#1d4ed8" }
+          }
+        />
+      ),
     },
     {
       headerName: "Status",
@@ -618,26 +607,6 @@ const KraKpaRating = ({ type = "kpa" }) => {
                   />
                 </WidgetSection>
               </div>
-              <div className="mb-1 flex justify-center">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    views={["year", "month"]}
-                    format="MMM-YY"
-                    value={dailyLogMonth}
-                    onChange={(value) => {
-                      if (value?.isValid()) {
-                        setDailyLogMonth(value.startOf("month"));
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        sx: { width: 150 },
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-              </div>
             </>
           )}
           {isKpaRating && (
@@ -676,6 +645,7 @@ const KraKpaRating = ({ type = "kpa" }) => {
           )}
           {isKpaRating ? (
             <AgTable
+              showDateControls={false}
               data={tableData}
               columns={kpaColumns}
               hideTitle
@@ -702,7 +672,28 @@ const KraKpaRating = ({ type = "kpa" }) => {
               )}
             />
           ) : (
-            <AgTable
+<AgTable
+              showDateControls={false}
+              toolbarDateControls={<div className="mb-1 flex justify-center">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    views={["year", "month"]}
+                    format="MMM-YY"
+                    value={dailyLogMonth}
+                    onChange={(value) => {
+                      if (value?.isValid()) {
+                        setDailyLogMonth(value.startOf("month"));
+                      }
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: { width: 150 },
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              </div>}
               data={dailyLogMatrix.rows}
               columns={dailyLogMatrix.columns}
               hideTitle

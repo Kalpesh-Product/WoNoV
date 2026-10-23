@@ -49,7 +49,7 @@ const VirtualOfficeClientDesks = () => {
             <PageFrame>
                 <AgTable
                     loading={isLoading}
-                    search={false}
+                    search
                     tableTitle={`${selectedClient?.clientName || "Client"} Desk Details`}
                     data={tableData}
                     columns={[

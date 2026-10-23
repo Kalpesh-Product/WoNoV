@@ -92,25 +92,7 @@ const MonthWiseTable = ({
     });
   }, [columns, formatTime]);
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-title text-primary font-pmedium uppercase">
-          {tableTitle}
-        </span>
-
-        <div className="flex items-center gap-4">
-          {buttonTitle ? (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          ) : null}
-          {exportData && (
-            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
-          )}
-        </div>
-      </div>
-      <div className="flex w-full justify-center">
+  const dateControls = (<div className="flex w-full justify-center">
         {monthLabels.length > 0 && (
           <div className="flex justify-end items-center">
             <PrimaryButton
@@ -134,9 +116,31 @@ const MonthWiseTable = ({
             />
           </div>
         )}
+      </div>);
+  const exportControls = (<>{exportData && (
+            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+          )}</>);
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <span className="text-title text-primary font-pmedium uppercase">
+          {tableTitle}
+        </span>
+
+        <div className="flex items-center gap-4">
+          {buttonTitle ? (
+            <div>
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <AgTable
+        showDateControls={false}
+        toolbarDateControls={dateControls}
+        toolbarActions={exportControls}
+        tableRef={agGridRef}
         key={key}
         enableCheckbox={checkbox}
         exportData={exportTable}
@@ -148,8 +152,8 @@ const MonthWiseTable = ({
           srNo: index + 1,
           date: humanDate(item.date),
         }))}
-        hideFilter={filteredData.length <= 9}
-        search={filteredData.length >= 10}
+        hideFilter={false}
+        search
       />
     </div>
   );

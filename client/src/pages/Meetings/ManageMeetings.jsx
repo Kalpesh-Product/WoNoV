@@ -27,6 +27,7 @@ import DetalisFormatted from "../../components/DetalisFormatted";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
+import { getMeetingDepartmentLabel } from "../../utils/meetingDepartment";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -463,12 +464,7 @@ const ManageMeetings = ({ financeView = false }) => {
     company: meeting.client || "",
     clientBookedBy: meeting.clientBookedBy || "",
     building: meeting.location?.building?.buildingName || "",
-    department: Array.isArray(meeting.department)
-      ? meeting.department
-          .map((dept) => dept?.name)
-          .filter(Boolean)
-          .join(", ")
-      : "Unknown",
+    department: getMeetingDepartmentLabel(meeting),
     // meetingCreditBalance: clientDetails.find((c) => c.clientName === meeting.client)?.meetingCreditBalance.toFixed(2) || "0.00",
   }));
 

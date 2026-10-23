@@ -178,6 +178,7 @@ const DepartmentTasks = () => {
               </div>
 
               <AgTable
+                showDateControls={false}
                 data={fetchedDepartments.map((item, index) => ({
                   srNo: index + 1,
                   mongoId: item.department?._id,

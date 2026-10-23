@@ -840,6 +840,8 @@ export default function BulkUpload() {
       displayName: template.displayName,
       documentLink: template.documentLink,
       isActive: "Active",
+      dateRaw: downloadedAtByTemplate[getTemplateTimestampKey(template)] || template.downloadedAt || null,
+      updatedAtRaw: uploadedAtByTemplate[getTemplateRowId(template)] || template.uploadedAt || null,
       date: formatTemplateTimestamp(
         downloadedAtByTemplate[getTemplateTimestampKey(template)] ||
           template.downloadedAt,
@@ -933,6 +935,9 @@ export default function BulkUpload() {
       <PageFrame>
         <AgTable
           data={formattedTemplates}
+          search
+          dateColumn="updatedAt"
+          dateRangePlaceholders
           columns={templateColumns}
           formatDate={true}
           tableTitle={"Bulk Upload Data templates"}

@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -119,10 +119,22 @@ const KpaActionCell = ({
 
   const isInactive = data.isActive === false;
   const disabled = !selected || isPending || isInactive;
-  const editDisabled = isPending || (!selected && !isInactive);
+  const editDisabled = isPending || !selected;
 
   return (
     <div className="flex h-full items-center gap-2">
+      {showHistory && (
+        <button
+          type="button"
+          title="View Edit History"
+          aria-label={`View edit history for ${data.target || data.title || "task"}`}
+          disabled={!selected || isPending}
+          onClick={() => onHistory(data)}
+          className="flex h-8 w-8 items-center justify-center disabled:cursor-not-allowed"
+        >
+          <MdHistory size={25} color={!selected || isPending ? "#9ca3af" : "#111827"} />
+        </button>
+      )}
       {data.status !== "Completed" && canComplete && (
         <PrimaryButton
           type="button"
@@ -131,17 +143,6 @@ const KpaActionCell = ({
           disabled={disabled}
           className="!px-2 !py-1 !text-xs !h-7 whitespace-nowrap"
         />
-      )}
-      {showHistory && (
-        <button
-          type="button"
-          title="View Edit History"
-          aria-label={`View edit history for ${data.target || "KPA"}`}
-          onClick={() => onHistory(data)}
-          className="flex h-8 w-8 items-center justify-center"
-        >
-          <MdHistory size={25} color="#111827" />
-        </button>
       )}
       {canEditActions && (
         <button
@@ -241,7 +242,8 @@ const KraKpaIndividualMonthlyKpa = () => {
   const [dailyLogDateError, setDailyLogDateError] = useState("");
   const [viewRecord, setViewRecord] = useState(null);
   const [historyRecord, setHistoryRecord] = useState(null);
-  const [expandedHistoryKey, setExpandedHistoryKey] = useState(null);
+  const [historyDateRange, setHistoryDateRange] = useState(() => monthRange(currentMonth()));
+  const [historyCalendarAnchor, setHistoryCalendarAnchor] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [completionComment, setCompletionComment] = useState("");
   const roleTitles =
@@ -276,15 +278,14 @@ const KraKpaIndividualMonthlyKpa = () => {
     isManager ||
     isTopManagement ||
     (isHrUser && !isSelfKra);
-  const canAddKraCategory =
-    isSelfKra && (isManager || isTopManagement || isHrUser);
+  const canAddKraCategory = isSelfKra;
   const isAssignedToLoggedInUser = (record) =>
     String(record?.employee?._id || record?.employee || "") ===
     String(auth?.user?._id || "");
   const isSelectedSelfKraToday = selectedSelfKraDate.isSame(dayjs(), "day");
   const canCompleteRecord = (record) =>
     !isSelfKra &&
-    record?.approvalStatus !== "Pending Approval" &&
+    (!record?.approvalStatus || record.approvalStatus === "Approved") &&
     isAssignedToLoggedInUser(record);
 
   const refreshKpaQueries = () => {
@@ -358,23 +359,17 @@ const KraKpaIndividualMonthlyKpa = () => {
     });
 
   const addKraCategory = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (categoryToCreate) => {
       const response = await axios.post("/api/kra-kpa/self-kra-categories", {
         department: departmentId,
-        categoryName: categoryName.trim(),
+        categoryName: categoryToCreate,
       });
       return response.data;
     },
-    onSuccess: (category) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["kraCategories", departmentId],
       });
-      setForm((current) => ({
-        ...current,
-        selfKras: current.selfKras.map((kra, index) =>
-          index === 0 ? { ...kra, category: category._id } : kra,
-        ),
-      }));
       setCategoryModalOpen(false);
       setCategoryName("");
       setCategoryError("");
@@ -498,6 +493,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onSuccess: (createdLogs) => {
       queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
+      queryClient.invalidateQueries({ queryKey: ["kraKpaSelfKra"] });
       setSelectedSelfKras([]);
       setDailyLogTargets([]);
       setDailyLogDate(dayjs().format("YYYY-MM-DD"));
@@ -526,6 +522,7 @@ const KraKpaIndividualMonthlyKpa = () => {
 
   const canScheduleSelfKra = (record) =>
     record?.isActive !== false &&
+    !record?.isScheduled &&
     String(record?.lead?._id || record?.lead || "") ===
       String(auth?.user?._id || "");
   const canScheduleSelectedSelfKras =
@@ -545,11 +542,11 @@ const KraKpaIndividualMonthlyKpa = () => {
       const date = dayjs(startsOn).startOf("day");
       return !latest || date.isAfter(latest) ? date : latest;
     }, null);
-    const today = dayjs().startOf("day");
+    const scheduleDay = selectedSelfKraDate.startOf("day");
     setDailyLogDate(
-      latestStartsOn && today.isBefore(latestStartsOn)
+      latestStartsOn && scheduleDay.isBefore(latestStartsOn)
         ? latestStartsOn.format("YYYY-MM-DD")
-        : today.format("YYYY-MM-DD"),
+        : scheduleDay.format("YYYY-MM-DD"),
     );
     setDailyLogDateError("");
     setDailyLogTargets(selectedSelfKras);
@@ -595,11 +592,21 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const handleCategorySubmit = (event) => {
     event.preventDefault();
-    if (!categoryName.trim()) {
+    const normalizedCategoryName = categoryName.trim().toLowerCase();
+    if (!normalizedCategoryName) {
       setCategoryError("Category name is required");
       return;
     }
-    addKraCategory.mutate();
+    if (
+      kraCategories.some(
+        (category) =>
+          category.categoryName.trim().toLowerCase() === normalizedCategoryName,
+      )
+    ) {
+      setCategoryError("This category already exists");
+      return;
+    }
+    addKraCategory.mutate(categoryName.trim());
   };
   const openEdit = (record) => {
     if (!isSelfKra && isEmployeeUser) return;
@@ -643,8 +650,17 @@ const KraKpaIndividualMonthlyKpa = () => {
     setModalOpen(true);
   };
   const openEditHistory = (record) => {
+    const dates = (record.editHistory || [])
+      .map((entry) => dayjs(entry.editedAt))
+      .filter((date) => date.isValid())
+      .sort((first, second) => first.valueOf() - second.valueOf());
+    setHistoryDateRange({
+      startDate: (dates[0] || dayjs()).startOf("day").toDate(),
+      endDate: (dates[dates.length - 1] || dayjs()).endOf("day").toDate(),
+      key: "selection",
+    });
+    setHistoryCalendarAnchor(null);
     setHistoryRecord(record);
-    setExpandedHistoryKey(null);
   };
   const clearFormError = (field) =>
     setFormErrors((current) => ({ ...current, [field]: "" }));
@@ -855,6 +871,24 @@ const KraKpaIndividualMonthlyKpa = () => {
       }
     />
   );
+  const approvalStatusColumn = {
+    headerName: "Approvals",
+    field: "approvalStatus",
+    width: 180,
+    cellRenderer: ({ value }) => (
+      <Chip
+        size="small"
+        label={value || "Approved"}
+        sx={
+          value === "Rejected"
+            ? { backgroundColor: "#fde2e2", color: "#b42318" }
+            : value === "Pending Approval"
+              ? { backgroundColor: "#ffedc9", color: "#ad7000" }
+              : { backgroundColor: "#d8f0df", color: "#16784d" }
+        }
+      />
+    ),
+  };
   const reviewStatusColumn = {
     headerName: "Review Status",
     field: "reviewStatus",
@@ -869,6 +903,27 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const showActionColumn =
     (!isSelfKra || isSelectedSelfKraToday) && (canEdit || canDelete);
+  const historyOnlyColumn = {
+    headerName: "Actions",
+    field: "historyActions",
+    pinned: "right",
+    width: 100,
+    sortable: false,
+    filter: false,
+    cellRenderer: ({ data }) => (
+      <div className="flex h-full items-center">
+        <button
+          type="button"
+          title="View Edit History"
+          aria-label={`View edit history for ${data.title || data.target || "task"}`}
+          onClick={() => openEditHistory(data)}
+          className="flex h-8 w-8 items-center justify-center"
+        >
+          <MdHistory size={25} color="#111827" />
+        </button>
+      </div>
+    ),
+  };
   const actionColumns = showActionColumn
     ? [
         {
@@ -892,7 +947,7 @@ const KraKpaIndividualMonthlyKpa = () => {
                 (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser)
               }
               canComplete={canCompleteRecord(data)}
-              showHistory={!isSelfKra}
+              showHistory
             />
           ),
         },
@@ -916,12 +971,27 @@ const KraKpaIndividualMonthlyKpa = () => {
       ),
     },
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
-    { headerName: "Approved", field: "approvalStatus", width: 180 },
+    approvalStatusColumn,
     statusColumn,
     reviewStatusColumn,
     finalClosureColumn,
     ...actionColumns,
   ];
+  const scheduledColumn = {
+    headerName: "Scheduled",
+    field: "isScheduled",
+    width: 140,
+    valueFormatter: ({ value }) => value ? "Yes" : "No",
+    cellRenderer: ({ value }) => (
+      <Chip
+        size="small"
+        label={value ? "Yes" : "No"}
+        sx={value
+          ? { backgroundColor: "#d8f0df", color: "#16784d" }
+          : { backgroundColor: "#f3f4f6", color: "#4b5563" }}
+      />
+    ),
+  };
   const selfKraColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
     {
@@ -947,9 +1017,15 @@ const KraKpaIndividualMonthlyKpa = () => {
       minWidth: 180,
       flex: 1,
     },
+    scheduledColumn,
     { headerName: "Active Status", field: "activeStatus", width: 150 },
     statusColumn,
-    ...actionColumns,
+    ...(actionColumns.length ? actionColumns : [{
+      ...historyOnlyColumn,
+      cellRenderer: ({ data, node }) => (
+        <KpaActionCell data={data} node={node} onHistory={openEditHistory} showHistory />
+      ),
+    }]),
   ];
   const columns = isSelfKra ? selfKraColumns : individualKpaColumns;
   const completedColumns = isSelfKra
@@ -978,6 +1054,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           minWidth: 180,
           flex: 1,
         },
+        scheduledColumn,
         { headerName: "Active Status", field: "activeStatus", width: 150 },
         {
           headerName: "Completed Date",
@@ -985,6 +1062,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           width: 220,
           valueFormatter: ({ value }) => formatDateTime(value),
         },
+        historyOnlyColumn,
       ]
     : [
         { headerName: "Sr No", field: "srNo", width: 85 },
@@ -1004,7 +1082,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           ),
         },
         { headerName: "Deadline", field: "deadlineLabel", width: 165 },
-        { headerName: "Approved", field: "approvalStatus", width: 180 },
+        approvalStatusColumn,
         {
           headerName: "Completed Date",
           field: "closingDate",
@@ -1020,6 +1098,27 @@ const KraKpaIndividualMonthlyKpa = () => {
         statusColumn,
         reviewStatusColumn,
         finalClosureColumn,
+        {
+          headerName: "Actions",
+          field: "completedActions",
+          pinned: "right",
+          width: 100,
+          sortable: false,
+          filter: false,
+          cellRenderer: ({ data }) => (
+            <div className="flex h-full items-center">
+              <button
+                type="button"
+                title="View Edit History"
+                aria-label={`View edit history for ${data.target || "KPA"}`}
+                onClick={() => openEditHistory(data)}
+                className="flex h-8 w-8 items-center justify-center"
+              >
+                <MdHistory size={25} color="#111827" />
+              </button>
+            </div>
+          ),
+        },
       ];
   const managerReviewTimeline = (() => {
     const history = Array.isArray(viewRecord?.managerReviewHistory)
@@ -1051,6 +1150,11 @@ const KraKpaIndividualMonthlyKpa = () => {
     ];
   })();
   const editHistoryEntries = (historyRecord?.editHistory || [])
+    .filter((entry) => {
+      const editedAt = dayjs(entry.editedAt);
+      return !editedAt.isBefore(dayjs(historyDateRange.startDate), "day") &&
+        !editedAt.isAfter(dayjs(historyDateRange.endDate), "day");
+    })
     .slice()
     .sort((first, second) =>
       dayjs(second.editedAt).valueOf() - dayjs(first.editedAt).valueOf(),
@@ -1060,6 +1164,24 @@ const KraKpaIndividualMonthlyKpa = () => {
       srNo: index + 1,
       historyKey: String(entry._id || `${entry.editedAt}-${index}`),
     }));
+  const editHistoryRows = editHistoryEntries.flatMap((entry) =>
+    (entry.changes || []).filter((change) => {
+      if (isSelfKra) return true;
+      // Omit dependent status/date/rating resets from older history entries.
+      if (change.field === "closingDate") return false;
+      if (change.field === "status") return change.newValue === "Completed";
+      if (change.field === "verification" && change.newValue === "Pending") return false;
+      const requestsChanges = entry.changes?.some(
+        (item) => item.field === "verification" && item.newValue === "Changes Required",
+      );
+      if (requestsChanges && ["verificationClosedDate", "kpaRating", "managerRatingDate", "hrRating", "hrRatingDate"].includes(change.field) && change.newValue == null) return false;
+      return true;
+    }).map((change, index) => ({
+      ...entry,
+      change,
+      rowKey: `${entry.historyKey}-${index}`,
+    })),
+  );
 
   return (
     <PageFrame>
@@ -1189,17 +1311,14 @@ const KraKpaIndividualMonthlyKpa = () => {
         </div>
       ) : (
         <AgTable
+          showDateControls={false}
           data={pendingTableData}
           columns={columns}
           hideTitle
           enableCheckbox
           checkAll={isSelfKra}
-          isRowSelectable={(node) =>
-            !isSelfKra || node.data?.isActive !== false
-          }
-          showDisabledCheckboxes={isSelfKra}
           getRowStyle={({ data }) =>
-            isSelfKra && data?.isActive === false
+            isSelfKra && (data?.isActive === false || data?.isScheduled)
               ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
               : undefined
           }
@@ -1231,6 +1350,7 @@ const KraKpaIndividualMonthlyKpa = () => {
 
       <div className="mt-6">
         <AgTable
+          showDateControls={false}
           data={completedTableData}
           columns={completedColumns}
           tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
@@ -1238,7 +1358,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           exportData
           hideFilter
           getRowStyle={({ data }) =>
-            isSelfKra && data?.isActive === false
+            isSelfKra && (data?.isActive === false || data?.isScheduled)
               ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
               : undefined
           }
@@ -1358,6 +1478,10 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <div className="font-bold">KRA Details</div>
                 <DetalisFormatted title="KRA Title" detail={viewRecord.title} />
                 <DetalisFormatted
+                  title="Approved By"
+                  detail={formatUserName(viewRecord.approvedBy)}
+                />
+                <DetalisFormatted
                   title="Category"
                   detail={viewRecord.categoryName || "-"}
                 />
@@ -1374,6 +1498,12 @@ const KraKpaIndividualMonthlyKpa = () => {
                   detail={viewRecord.activeStatus}
                 />
                 <DetalisFormatted title="Status" detail={viewRecord.status} />
+                {viewRecord.approvalStatus === "Rejected" && (
+                  <>
+                    <DetalisFormatted title="Rejected By" detail={formatUserName(viewRecord.rejectedBy)} />
+                    <DetalisFormatted title="Rejected On" detail={formatDateTime(viewRecord.rejectedAt)} />
+                  </>
+                )}
                 <DetalisFormatted
                   title="Closing Date"
                   detail={formatDateTime(viewRecord.closingDate)}
@@ -1541,11 +1671,41 @@ const KraKpaIndividualMonthlyKpa = () => {
         open={Boolean(historyRecord)}
         onClose={() => {
           setHistoryRecord(null);
-          setExpandedHistoryKey(null);
+          setHistoryCalendarAnchor(null);
         }}
-        title="KPA Edit History"
+        title={isSelfKra ? historyRecord?.title || "KRA" : historyRecord?.target || "KPA"}
         widthClass="w-[calc(100vw-2rem)] max-w-[960px]"
       >
+        <div className="mb-4 flex flex-wrap items-center justify-center gap-2">
+          <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+            {dayjs(historyDateRange.startDate).format("DD MMM YYYY")}
+          </div>
+          <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+            {dayjs(historyDateRange.endDate).format("DD MMM YYYY")}
+          </div>
+          <button
+            type="button"
+            aria-label="Select edit history date range"
+            className="rounded-md bg-primary p-3 text-white"
+            onClick={(event) => setHistoryCalendarAnchor(event.currentTarget)}
+          >
+            <MdCalendarToday size={20} />
+          </button>
+        </div>
+        <Popover
+          open={Boolean(historyCalendarAnchor)}
+          anchorEl={historyCalendarAnchor}
+          onClose={() => setHistoryCalendarAnchor(null)}
+          anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+          transformOrigin={{ vertical: "top", horizontal: "center" }}
+        >
+          <DateRangePicker
+            ranges={[historyDateRange]}
+            onChange={({ selection }) => setHistoryDateRange(selection)}
+            moveRangeOnFirstSelection={false}
+            direction="vertical"
+          />
+        </Popover>
         <div className="max-h-[65vh] overflow-auto rounded-md border border-borderGray">
           <table className="w-full min-w-[760px] border-collapse text-left text-sm">
             <thead className="sticky top-0 bg-gray-50 text-primary">
@@ -1553,91 +1713,32 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <th className="border-b px-4 py-3">Sr No</th>
                 <th className="border-b px-4 py-3">Edited On</th>
                 <th className="border-b px-4 py-3">Edited By</th>
-                <th className="border-b px-4 py-3">Changes</th>
-                <th className="w-[150px] border-b px-4 py-3 text-left">
-                  Action
-                </th>
+                <th className="border-b px-4 py-3">Field</th>
+                <th className="border-b px-4 py-3">Previous Value</th>
+                <th className="border-b px-4 py-3">New Value</th>
               </tr>
             </thead>
             <tbody>
-              {editHistoryEntries.length > 0 ? (
-                editHistoryEntries.map((entry) => {
-                  const isExpanded = expandedHistoryKey === entry.historyKey;
-                  const changes = entry.changes || [];
-                  return (
-                    <Fragment key={entry.historyKey}>
-                      <tr>
-                        <td className="border-b px-4 py-3">{entry.srNo}</td>
-                        <td className="whitespace-nowrap border-b px-4 py-3">
-                          {formatDateTime(entry.editedAt)}
-                        </td>
-                        <td className="border-b px-4 py-3">
-                          {formatUserName(entry.editedBy)}
-                        </td>
-                        <td className="border-b px-4 py-3">
-                          {changes.length} {changes.length === 1 ? "field" : "fields"} changed
-                        </td>
-                        <td className="border-b px-4 py-3 text-left">
-                          <button
-                            type="button"
-                            className="font-medium text-primary hover:underline"
-                            onClick={() =>
-                              setExpandedHistoryKey((current) =>
-                                current === entry.historyKey
-                                  ? null
-                                  : entry.historyKey,
-                              )
-                            }
-                          >
-                            {isExpanded ? "Hide Changes" : "View Changes"}
-                          </button>
-                        </td>
-                      </tr>
-                      {isExpanded && (
-                        <tr>
-                          <td colSpan={5} className="border-b bg-gray-50 p-4">
-                            <div className="overflow-hidden rounded-md border border-borderGray bg-white">
-                              <div className="grid grid-cols-[minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(220px,1fr)] bg-gray-50 font-medium text-primary">
-                                <div className="px-4 py-2">Field</div>
-                                <div className="px-4 py-2">Previous Value</div>
-                                <div className="px-4 py-2">New Value</div>
-                              </div>
-                              {changes.map((change, changeIndex) => (
-                                <div
-                                  key={`${entry.historyKey}-${change.field}-${changeIndex}`}
-                                  className="grid grid-cols-[minmax(150px,0.8fr)_minmax(220px,1fr)_minmax(220px,1fr)] border-t border-borderGray"
-                                >
-                                  <div className="px-4 py-3 font-medium">
-                                    {change.label}
-                                  </div>
-                                  <div className="whitespace-pre-wrap break-words px-4 py-3">
-                                    {formatHistoryValue(
-                                      change.field,
-                                      change.oldValue,
-                                    )}
-                                  </div>
-                                  <div className="whitespace-pre-wrap break-words px-4 py-3">
-                                    {formatHistoryValue(
-                                      change.field,
-                                      change.newValue,
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </Fragment>
-                  );
-                })
+              {editHistoryRows.length > 0 ? (
+                editHistoryRows.map((entry, index) => (
+                  <tr key={entry.rowKey}>
+                    <td className="border-b px-4 py-3 align-top">{index + 1}</td>
+                    <td className="whitespace-nowrap border-b px-4 py-3 align-top">{formatDateTime(entry.editedAt)}</td>
+                    <td className="border-b px-4 py-3 align-top">{formatUserName(entry.editedBy)}</td>
+                    <td className="border-b px-4 py-3 align-top font-medium">{entry.change.label}</td>
+                    <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{formatHistoryValue(entry.change.field, entry.change.oldValue)}</td>
+                    <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{formatHistoryValue(entry.change.field, entry.change.newValue)}</td>
+                  </tr>
+                ))
               ) : (
                 <tr>
                   <td
-                    colSpan={5}
+                    colSpan={6}
                     className="px-4 py-10 text-center text-borderGray"
                   >
-                    No edit history available
+                    {historyRecord?.editHistory?.length
+                      ? "No edit history found for the selected dates"
+                      : "No edit history available"}
                   </td>
                 </tr>
               )}
@@ -1673,7 +1774,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       >
         {pendingAction?.type === "complete" && !isSelfKra && (
           <TextField
-            label="Resource Comment (Optional)"
+            label="Resource Comment"
             size="small"
             multiline
             minRows={3}
@@ -1703,9 +1804,11 @@ const KraKpaIndividualMonthlyKpa = () => {
       >
         <form onSubmit={handleCategorySubmit} className="grid gap-4">
           <TextField
+            fullWidth
             label="Category Name *"
             size="small"
             value={categoryName}
+            disabled={isLoadingKraCategories || addKraCategory.isPending}
             onChange={(event) => {
               setCategoryName(event.target.value);
               setCategoryError("");
@@ -1715,6 +1818,22 @@ const KraKpaIndividualMonthlyKpa = () => {
             inputProps={{ maxLength: 200 }}
             autoFocus
           />
+          <div>
+            <div className="mb-2 text-sm font-medium text-primary">Existing Categories</div>
+            {isLoadingKraCategories ? (
+              <div className="text-sm text-gray-500">Loading categories...</div>
+            ) : kraCategories.length ? (
+              <ul className="max-h-48 divide-y divide-gray-100 overflow-y-auto rounded-md border border-borderGray">
+                {kraCategories.map((category) => (
+                  <li key={category._id} className="break-words px-3 py-2 text-sm text-gray-700">
+                    {category.categoryName}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-sm text-gray-500">No categories added yet.</div>
+            )}
+          </div>
           <div className="flex justify-end gap-3">
             <SecondaryButton
               type="button"
@@ -1729,7 +1848,7 @@ const KraKpaIndividualMonthlyKpa = () => {
               type="submit"
               title="Save"
               isLoading={addKraCategory.isPending}
-              disabled={addKraCategory.isPending}
+              disabled={isLoadingKraCategories || addKraCategory.isPending}
             />
           </div>
         </form>

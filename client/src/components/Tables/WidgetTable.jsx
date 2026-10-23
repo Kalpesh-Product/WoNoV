@@ -99,6 +99,7 @@ const WidgetTable = ({
 
     const monthHasData = data.some((item) => {
       const date = dayjs(item[dateColumn]);
+
       return (
         date.isValid() &&
         date.isAfter(currentMonthStart.subtract(1, "day")) &&
@@ -340,31 +341,37 @@ const WidgetTable = ({
     }));
   }, [finalTableData, sortByString, sortByNo, sortOrder]);
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
+  const dateControls = (<>
+{dateRange.length > 0 && dateRange[0] && (
+          <div className="flex justify-center items-center gap-2 xl:col-start-2">
+            {/* Date information here */}
 
-      <WidgetSection
-        border={border}
-        title={tableTitle}
-        TitleAmount={resolveSummaryValue(
-          titleAmountOverride,
-          `${totalText}  ${inrFormat(rangeTotal)}`
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                </span>{" "}
+              </div>
+
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                </span>
+              </div>
+            </div>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
+            </div>
+          </div>
         )}
-        TitleAmountGreen={resolveSummaryValue(titleAmountGreen)}
-        TitleAmountRed={resolveSummaryValue(titleAmountRed)}
-        TitleAmountTotal={resolveSummaryValue(titleAmountTotal)}
-        greenTitle={greenTitle}
-        redTitle={redTitle}
-        totalTitle={totalTitle}
-        summaryChipVariant={summaryChipVariant}
-        greenChipClassName={greenChipClassName}
-      >
-         <div className="w-full flex justify-end">
-          <div className="flex gap-2 items-center justify-end flex-wrap">
-            {/* ✅ Show calendar only if data is not empty */}
-
-            <Popover
+<Popover
               open={open}
               anchorEl={anchorEl}
               onClose={handleCloseCalendar}
@@ -406,54 +413,49 @@ const WidgetTable = ({
                 />
               )}
             </Popover>
+  </>);
 
-            {buttonTitle && (
+  const toolbarButtons = (<>
+{/* ✅ Show calendar only if data is not empty */}
+{buttonTitle && (
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             )}
-            {headerActions}
-            {exportData && (
-              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-            )}
-            {batchButton && selectedRows.length > 0 && (
+{headerActions}
+{batchButton && selectedRows.length > 0 && (
               <PrimaryButton
                 title={batchButton}
                 handleSubmit={() => handleBatchAction(selectedRows)}
               />
             )}
-          </div>
-        </div>
-        {dateRange.length > 0 && dateRange[0] && (
-          <div className="flex justify-center items-center gap-2">
-            {/* Date information here */}
+{exportData && (
+              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            )}
+  </>);
 
-            <div className="flex items-center gap-2  justify-center">
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                </span>{" "}
-              </div>
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
 
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                </span>
-              </div>
-            </div>
-            <div
-              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-              onClick={handleOpenCalendar}
-            >
-              <MdCalendarToday size={19} />
-            </div>
-          </div>
+      <WidgetSection
+        border={border}
+        title={tableTitle}
+        TitleAmount={resolveSummaryValue(
+          titleAmountOverride,
+          `${totalText}  ${inrFormat(rangeTotal)}`
         )}
+        TitleAmountGreen={resolveSummaryValue(titleAmountGreen)}
+        TitleAmountRed={resolveSummaryValue(titleAmountRed)}
+        TitleAmountTotal={resolveSummaryValue(titleAmountTotal)}
+        greenTitle={greenTitle}
+        redTitle={redTitle}
+        totalTitle={totalTitle}
+        summaryChipVariant={summaryChipVariant}
+        greenChipClassName={greenChipClassName}
+      >
         <>
-          {finalTableData.length > 0 ? (
-            <AgTable
+          <AgTable
+              toolbarDateControls={dateControls}
+              toolbarActions={toolbarButtons}
               key={key}
               enableCheckbox={checkbox}
               tableRef={agGridRef}
@@ -464,7 +466,8 @@ const WidgetTable = ({
               tableHeight={tableHeight || 300}
               columns={formattedColumns}
               data={groupByKey ? groupedData : sortedTableData}
-              hideFilter={filteredData.length <= 9}
+              hideFilter={false}
+              showDateControls={false}
               search={search}
               dateColumn={dateColumn}
               isRowSelectable={isRowSelectable}
@@ -472,14 +475,6 @@ const WidgetTable = ({
               batchButton={batchButton}
               hideTitle={hideTitle}
             />
-          ) : (
-            <div
-              className="h-[60vh] flex justify-center items-center"
-              style={{ padding: "2rem", color: "#666" }}
-            >
-              No data available for the selected date range.
-            </div>
-          )}
         </>
       </WidgetSection>
     </div>

@@ -5,13 +5,15 @@ const DueTask = require("../../models/performances/KraKpaDueTask");
 const DailyLog = require("../../models/performances/KraKpaDailyLog");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const Event = require("../../models/events/Events");
+const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
+const { validateTaskSchedule, isOverdueSchedule } = require("../../utils/kraKpaTaskSchedule");
 const {
   calculateDelayedWorkingDays,
-  toCalendarKey,
 } = require("../../utils/kraKpaDelayedDays");
 
 const DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
 const POPULATION = [
+  { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
   { path: "parentKpa", select: "target deadline month status" },
@@ -51,7 +53,7 @@ const getAccess = async (req) => {
   const canViewOthers =
     allDepartments ||
     roles.some((role) => role.includes("manager") || role.endsWith("admin"));
-  return { allDepartments, canViewOthers, departmentIds };
+  return { allDepartments, canViewOthers, departmentIds, isHr, isTopManagement };
 };
 
 const getScopedFilter = (req, access) => ({
@@ -311,13 +313,16 @@ const updateDueTask = async (req, res, next) => {
       return res.status(409).json({ message: "A closed Due Task cannot be edited" });
     }
     if (
-      String(record.employee) === String(req.user) &&
       validation.value.deadline.toISOString().slice(0, 10) !==
         record.deadline.toISOString().slice(0, 10)
     ) {
-      return res.status(403).json({
-        message: "Employees cannot edit the Due Task deadline",
-      });
+      const canEditDeadline = access.isHr || access.isTopManagement ||
+        await isDepartmentManager(req, record.department, access);
+      if (!canEditDeadline) {
+        return res.status(403).json({
+          message: "Only the department manager, HR or Top Management can edit the Due Task deadline",
+        });
+      }
     }
     if (
       String(record.employee) !== String(req.user) &&
@@ -348,12 +353,40 @@ const updateDueTask = async (req, res, next) => {
       "Task Identifier",
     );
     if (identifierError) return res.status(400).json({ message: identifierError });
+    await record.populate([
+      { path: "parentKpa", select: "target" },
+      { path: "taskIdentifier", select: "firstName middleName lastName" },
+    ]);
+    const historyChanges = [];
+    for (const [field, label] of Object.entries({
+      dueTaskName: "KPA Task", identificationDate: "Identification Date",
+      deadline: "KPA Task Deadline", comments: "Comments",
+    })) {
+      if (!Object.hasOwn(req.body, field)) continue;
+      const serialize = (value) => value instanceof Date ? value.toISOString() : value || null;
+      const oldValue = serialize(record[field]);
+      const newValue = serialize(validation.value[field]);
+      if (oldValue !== newValue) historyChanges.push({ field, label, oldValue, newValue });
+    }
+    if (String(record.parentKpa?._id || record.parentKpa) !== String(parentKpaValidation.value)) {
+      const parent = await IndividualMonthlyKpa.findById(parentKpaValidation.value).select("target").lean();
+      historyChanges.push({ field: "parentKpa", label: "Main KPA", oldValue: record.parentKpa?.target || null, newValue: parent?.target || null });
+    }
+    if (String(record.taskIdentifier?._id || record.taskIdentifier) !== String(req.body.taskIdentifier)) {
+      const identifier = await UserData.findById(req.body.taskIdentifier).select("firstName middleName lastName").lean();
+      const name = (user) => [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") || null;
+      historyChanges.push({ field: "taskIdentifier", label: "Task Identifier", oldValue: name(record.taskIdentifier), newValue: name(identifier) });
+    }
     Object.assign(record, validation.value, {
       parentKpa: parentKpaValidation.value,
       lead: record.employee,
       taskIdentifier: req.body.taskIdentifier,
       updatedBy: req.user,
     });
+    if (historyChanges.length) {
+      if (!Array.isArray(record.editHistory)) record.editHistory = [];
+      record.editHistory.push({ editedBy: req.user, editedAt: new Date(), changes: historyChanges });
+    }
     await record.save();
     await DailyLog.updateMany(
       { sourceDueTask: record._id, isDeleted: { $ne: true } },
@@ -413,6 +446,8 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
         message: "A closed Due Task cannot be added to Daily Logs",
       });
     }
+    const scheduleError = validateTaskSchedule(date, [record]);
+    if (scheduleError) return res.status(400).json({ message: scheduleError });
     const alreadyAdded = await DailyLog.exists({
       company: record.company,
       sourceDueTask: record._id,
@@ -428,6 +463,7 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
       employee: record.employee,
       sourceDueTask: record._id,
       date,
+      isCarryForward: isOverdueSchedule(date, record.deadline),
       deadline: record.deadline,
       dayTaskName: record.dueTaskName,
       type,
@@ -497,17 +533,8 @@ const addDueTasksToDailyLogs = async (req, res, next) => {
         message: "Closed Due Tasks cannot be added to Daily Logs",
       });
     }
-    const selectedDate = date.toISOString().slice(0, 10);
-    if (
-      records.some(
-        (record) =>
-          !record.deadline || selectedDate > toCalendarKey(record.deadline),
-      )
-    ) {
-      return res.status(400).json({
-        message: "Daily Log date cannot be after a selected task deadline",
-      });
-    }
+    const scheduleError = validateTaskSchedule(date, records);
+    if (scheduleError) return res.status(400).json({ message: scheduleError });
 
     const existingLinks = await DailyLog.distinct("sourceDueTask", {
       company: req.company,
@@ -526,6 +553,7 @@ const addDueTasksToDailyLogs = async (req, res, next) => {
         employee: record.employee,
         sourceDueTask: record._id,
         date,
+        isCarryForward: isOverdueSchedule(date, record.deadline),
         deadline: record.deadline,
         dayTaskName: record.dueTaskName,
         type: "KPA",
