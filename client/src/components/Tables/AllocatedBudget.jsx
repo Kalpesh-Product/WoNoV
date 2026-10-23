@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { addDays, isWithinInterval } from "date-fns";
-import { inrFormat } from "../../utils/currencyFormat";
+import { formatBudgetAmount as inrFormat, normalizeBudgetAmount, sumBudgetAmounts } from "../../utils/budgetAmounts";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
 //import { parseAmount } from "../../utils/parseAmount";
@@ -110,7 +110,7 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
 
   const selectFiles = (event) => {
     const selected = Array.from(event.target.files || []);
-    const availableSlots = 5 - files.length;
+    const availableSlots = 15 - files.length;
     const withinLimit = selected.slice(0, Math.max(availableSlots, 0));
     const validFiles = withinLimit.filter((file) => {
       if (file.size > 5 * 1024 * 1024) {
@@ -121,7 +121,7 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
     });
 
     if (selected.length > availableSlots) {
-      toast.error("You can attach a maximum of 5 files");
+      toast.error("You can attach a maximum of 15 files");
     }
     onChange([...files, ...validFiles]);
     event.target.value = "";
@@ -142,17 +142,17 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
         fullWidth
         label="Upload Files"
         value={files.length ? `${files.length} file(s) selected` : ""}
-        placeholder="Choose up to 5 files"
+        placeholder="Choose up to 15 files"
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton component="label" htmlFor={id} color="primary" disabled={files.length >= 5}>
+            <IconButton component="label" htmlFor={id} color="primary" disabled={files.length >= 15}>
               <LuImageUp />
             </IconButton>
           ),
         }}
       />
-      <FormHelperText>Maximum 5 files, 5 MB each. Images, PDF, Word, Excel, and CSV.</FormHelperText>
+      <FormHelperText>Maximum 15 files, 5 MB each. Images, PDF, Word, Excel, and CSV.</FormHelperText>
       <div className="flex flex-wrap gap-2">
         {files.map((file, index) => {
           const fileName = file.name || `Invoice ${index + 1}`;
@@ -287,14 +287,6 @@ const AllocatedBudget = ({
       ),
     [units],
   );
-  const normalizeBudgetAmount = (value) => {
-    if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const parsed = Number(value.replace(/,/g, ""));
-      return Number.isNaN(parsed) ? 0 : parsed;
-    }
-    return 0;
-  };
   // const onUpload = (data, row) => {
   //   const file = data.invoiceImage;
   //   if (!file || !row?.id) {
@@ -593,6 +585,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     const sample = financialData?.[0]?.tableData?.columns || [];
     // const base = [...sample];
     const base = sample.map((column) => {
+      if (column.field === "actualAmount") {
+        return {
+          ...column,
+          valueFormatter: (params) => inrFormat(params.data?.actualAmountRaw ?? params.value),
+        };
+      }
        if (column.field === "invoiceStatus") {
         return {
           ...column,
@@ -789,33 +787,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   );
 
   const totalActualAmount = useMemo(() => {
-    return filteredRows.reduce(
-      (sum, r) => sum + normalizeBudgetAmount(r.actualAmount),
-      0
-    );
+    return sumBudgetAmounts(filteredRows, "actualAmount");
   }, [filteredRows]);
 
   const totalProjectedAmount = useMemo(() => {
-    return filteredRows.reduce(
-      (sum, r) => sum + normalizeBudgetAmount(r.projectedAmount),
-      0
-    );
+    return sumBudgetAmounts(filteredRows, "projectedAmount");
   }, [filteredRows]);
 
   const disabledActualAmount = useMemo(
     () =>
-      disabledRows.reduce(
-        (sum, row) => sum + normalizeBudgetAmount(row.actualAmount),
-        0,
-      ),
+      sumBudgetAmounts(disabledRows, "actualAmount"),
     [disabledRows],
   );
   const disabledProjectedAmount = useMemo(
     () =>
-      disabledRows.reduce(
-        (sum, row) => sum + normalizeBudgetAmount(row.projectedAmount),
-        0,
-      ),
+      sumBudgetAmounts(disabledRows, "projectedAmount"),
     [disabledRows],
   );
 
@@ -893,8 +879,40 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
-          {(exportData || onRequestBudget) && (
-            <div className="flex justify-end gap-2">
+          <div className="grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+            <div className="flex justify-center items-center gap-2 xl:col-start-2">
+            {dateRange.length > 0 && dateRange[0] && (
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Date information here */}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                    <span className="text-gray-600 text-content font-pregular">
+                      {dateRange.length > 0 &&
+                        dateRange[0] &&
+                        dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                    </span>{" "}
+                  </div>
+
+                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                    <span className="text-gray-600 text-content font-pregular">
+                      {dateRange.length > 0 &&
+                        dateRange[0] &&
+                        dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+                  onClick={handleOpenCalendar}
+                >
+                  <MdCalendarToday size={19} />
+                </div>
+              </div>
+            )}
+          </div>
+            {(exportData || onRequestBudget) && (
+            <div className="flex flex-wrap items-center justify-end gap-2 xl:col-start-3">
               {exportData && (
                 <PrimaryButton title="Export" handleSubmit={handleExportPass} />
               )}
@@ -908,8 +926,6 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               )}
             </div>
           )}
-
-          <div className="flex justify-end">
             <Popover
               open={openCalendar}
               anchorEl={anchorEl}
@@ -951,40 +967,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             </Popover>
           </div>
 
-          <div className="flex justify-center items-center">
-            {dateRange.length > 0 && dateRange[0] && (
-              <div className="flex justify-center items-center gap-2">
-                {/* Date information here */}
-
-                <div className="flex items-center gap-2  justify-center">
-                  <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                    </span>{" "}
-                  </div>
-
-                  <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-                  onClick={handleOpenCalendar}
-                >
-                  <MdCalendarToday size={19} />
-                </div>
-              </div>
-            )}
-          </div>
-
           {filteredRows.length > 0 ? (
           <AgTable
+              showDateControls={false}
               search
               data={filteredRows}
               columns={tableColumns}

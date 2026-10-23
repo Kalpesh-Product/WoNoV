@@ -681,6 +681,7 @@ const Reviews = () => {
               </div>
 
               <AgTable
+                showDateControls={false}
                 search={true}
                 tableTitle="Client Credits"
                 searchColumn={"clientName"}

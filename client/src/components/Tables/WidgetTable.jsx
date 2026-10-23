@@ -360,8 +360,38 @@ const WidgetTable = ({
         summaryChipVariant={summaryChipVariant}
         greenChipClassName={greenChipClassName}
       >
-         <div className="w-full flex justify-end">
-          <div className="flex gap-2 items-center justify-end flex-wrap">
+         <div className="w-full grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        {dateRange.length > 0 && dateRange[0] && (
+          <div className="flex justify-center items-center gap-2 xl:col-start-2">
+            {/* Date information here */}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                </span>{" "}
+              </div>
+
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRange.length > 0 &&
+                    dateRange[0] &&
+                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                </span>
+              </div>
+            </div>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
+            </div>
+          </div>
+        )}
+
+          <div className="flex flex-wrap gap-2 items-center justify-end xl:col-start-3">
             {/* ✅ Show calendar only if data is not empty */}
 
             <Popover
@@ -422,35 +452,6 @@ const WidgetTable = ({
             )}
           </div>
         </div>
-        {dateRange.length > 0 && dateRange[0] && (
-          <div className="flex justify-center items-center gap-2">
-            {/* Date information here */}
-
-            <div className="flex items-center gap-2  justify-center">
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                </span>{" "}
-              </div>
-
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                </span>
-              </div>
-            </div>
-            <div
-              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-              onClick={handleOpenCalendar}
-            >
-              <MdCalendarToday size={19} />
-            </div>
-          </div>
-        )}
         <>
           {finalTableData.length > 0 ? (
             <AgTable
@@ -464,7 +465,8 @@ const WidgetTable = ({
               tableHeight={tableHeight || 300}
               columns={formattedColumns}
               data={groupByKey ? groupedData : sortedTableData}
-              hideFilter={filteredData.length <= 9}
+              hideFilter={false}
+              showDateControls={false}
               search={search}
               dateColumn={dateColumn}
               isRowSelectable={isRowSelectable}

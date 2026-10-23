@@ -3215,6 +3215,7 @@ const DepartmentReportCommon = () => {
         </div>
 
         <AgTable
+          showDateControls={false}
           hideTitle
           data={tableData}
           columns={columns}

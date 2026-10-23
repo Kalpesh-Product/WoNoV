@@ -1,13 +1,14 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { DateRangePicker } from "react-date-range";
-import { addDays, isWithinInterval } from "date-fns";
+import { addDays } from "date-fns";
 import dayjs from "dayjs";
 import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
-import { IconButton, Popover } from "@mui/material";
+import { IconButton, MenuItem, Popover, TextField } from "@mui/material";
+import { filterTableRows, parseTableDate } from "../../utils/tableFilters";
 import { DatePicker } from "@mui/x-date-pickers";
-import { MdCalendarToday, MdChevronLeft, MdChevronRight } from "react-icons/md";
+import { MdCalendarToday, MdChevronLeft, MdChevronRight, MdClose } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -15,6 +16,7 @@ const YearWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
+  dateFilterOptions = [],
   formatTime = true,
   formatDate = true,
   tableHeight,
@@ -46,6 +48,7 @@ const YearWiseTable = ({
   totalKey = "actualAmount",
   showDateNavigator = false,
   hideDateControls = false,
+  dateRangePlaceholders = false,
   selectedDateLabel = "",
   selectedDate,
   onSelectedDateChange,
@@ -74,6 +77,9 @@ const YearWiseTable = ({
   const [exportTable, setExportTable] = useState(false);
   const [selectedRows, setSelectedRows] = useState([]);
   const today = useMemo(() => dayjs(), []);
+  const [selectedDateField, setSelectedDateField] = useState(dateColumn);
+  const activeDateField = dateFilterOptions.some((option) => option.field === selectedDateField)
+    ? selectedDateField : dateFilterOptions[0]?.field || dateColumn;
   const navigatorButtonSx = {
     alignItems: "center",
     backgroundColor: "#1e3d73",
@@ -122,7 +128,7 @@ const YearWiseTable = ({
     const currentMonthStart = today.startOf("month");
     const currentMonthEnd = today.endOf("month");
 
-    if (preserveCurrentMonthRange) {
+    if (preserveCurrentMonthRange || dateRangePlaceholders) {
       setDateRange([
         {
           startDate: currentMonthStart.toDate(),
@@ -188,6 +194,7 @@ const YearWiseTable = ({
     initialDateRange,
     isUserChangedRange,
     preserveCurrentMonthRange,
+    dateRangePlaceholders,
     showDateNavigator,
     today,
   ]);
@@ -201,34 +208,26 @@ const YearWiseTable = ({
   const validDateSet = useMemo(() => {
     const set = new Set();
     data.forEach((item) => {
-      const d = dayjs(item[dateColumn]);
-      if (d.isValid()) set.add(d.format("YYYY-MM-DD"));
+      const date = parseTableDate(item[`${activeDateField}Raw`] ?? item[activeDateField]);
+      if (date) set.add(dayjs(date).format("YYYY-MM-DD"));
     });
     return set;
-  }, [data, dateColumn]);
+  }, [data, activeDateField]);
 
   const filteredData = useMemo(() => {
     if (
       serverPagination ||
+      (dateRangePlaceholders && !isUserChangedRange) ||
       showDateNavigator ||
-      !dateColumn ||
+      !activeDateField ||
       dateRange.length === 0 ||
       !dateRange[0]
     )
       return data;
     //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
-    const { startDate, endDate } = dateRange[0];
-    const start = dayjs(startDate).startOf("day").toDate();
-    const end = dayjs(endDate).endOf("day").toDate();
-
-    return data.filter((item) => {
-      const itemDate = dayjs(item[dateColumn]);
-      if (!itemDate.isValid()) return false;
-
-      return isWithinInterval(itemDate.toDate(), { start, end });
-    });
-  }, [data, dateColumn, dateRange, serverPagination, showDateNavigator]);
+    return filterTableRows(data, { dateRange: dateRange[0], dateField: activeDateField });
+  }, [data, activeDateField, dateRange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange]);
   // }, [data, dateColumn, dateRange]);
 
   useEffect(() => {
@@ -386,16 +385,136 @@ const YearWiseTable = ({
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-      <div className="w-full flex items-center justify-between gap-2">
+      <div className="w-full grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
         {tableTitle ? (
-          <span className="text-title text-primary font-pmedium uppercase">
+          <span className={`text-title text-primary font-pmedium uppercase ${exportData ? "col-span-full" : "col-span-full xl:col-span-2 xl:row-start-1"}`}>
             {tableTitle}
           </span>
         ) : (
-          <span />
+          null
         )}
 
-        <div className="flex gap-2 items-center justify-end flex-nowrap ml-auto">
+      {/* {dateRange.length > 0 && dateRange[0] && ( */}
+      {!hideDateControls &&
+        !showDateNavigator &&
+        dateRange.length > 0 &&
+        dateRange[0] && (
+          <div className={`flex justify-center items-center gap-2 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
+            {dateFilterOptions.length > 1 && (
+              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: 130 }}>
+                {dateFilterOptions.map((option) => <MenuItem key={option.field} value={option.field}>{option.label}</MenuItem>)}
+              </TextField>
+            )}
+            {/* Date information here */}
+
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRangePlaceholders && !isUserChangedRange ? "Start date" : dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                </span>{" "}
+              </div>
+
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                <span className="text-gray-600 text-content font-pregular">
+                  {dateRangePlaceholders && !isUserChangedRange ? "End date" : dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                </span>
+              </div>
+            </div>
+            <div
+              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+              onClick={handleOpenCalendar}
+            >
+              <MdCalendarToday size={19} />
+            </div>
+            {dateRangePlaceholders && isUserChangedRange && (
+              <IconButton aria-label="Clear date filter" title="Show all dates" size="small" onClick={() => setIsUserChangedRange(false)}>
+                <MdClose />
+              </IconButton>
+            )}
+          </div>
+        )}
+      {!hideDateControls && showDateNavigator && (
+        // <div className="flex flex-wrap items-center gap-2">
+        //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
+        //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
+        //     <span className="text-gray-600 text-content font-pregular">
+        //       {selectedDateLabel}
+        //     </span>
+        //   </div>
+        //   <PrimaryButton title=">" handleSubmit={onNextDay} />
+        // </div>
+        <div className={`flex justify-center items-center gap-3 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
+          {/* Previous Button */}
+          <button
+            type="button"
+            onClick={onPreviousDay}
+            style={navigatorButtonSx}
+            className="hover:opacity-90 transition-all"
+          >
+            <MdChevronLeft size={22} />
+          </button>
+
+          {selectedDate && onSelectedDateChange ? (
+            <DatePicker
+              format="ddd, MMMM D, YYYY"
+              value={dayjs(selectedDate)}
+              onChange={(value) => {
+                if (value?.isValid?.()) {
+                  onSelectedDateChange(value.startOf("day"));
+                }
+              }}
+              slotProps={{
+                textField: {
+                  size: "small",
+                  sx: {
+                    width: 245,
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "6px",
+                      height: 38,
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#1e3d73",
+                    },
+                    "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1e3d73",
+                      },
+                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
+                      {
+                        borderColor: "#1e3d73",
+                      },
+                    "& .MuiInputBase-input": {
+                      color: "#111827",
+                      fontSize: "0.875rem",
+                    },
+                    "& .MuiSvgIcon-root": {
+                      color: "#1e3d73",
+                    },
+                  },
+                },
+              }}
+            />
+          ) : (
+            <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
+              <span className="text-gray-600 text-sm font-pregular">
+                {selectedDateLabel}
+              </span>
+            </div>
+          )}
+
+          {/* Next Button */}
+          <button
+            type="button"
+            onClick={onNextDay}
+            style={navigatorButtonSx}
+            className="hover:opacity-90 transition-all"
+          >
+            <MdChevronRight size={22} />
+          </button>
+        </div>
+      )}
+
+        <div className={`flex flex-wrap items-center justify-end gap-2 xl:col-start-3 ${exportData && tableTitle ? "xl:row-start-2" : "xl:row-start-1"}`}>
           {headerActions ? headerActions : null}
 
           {/* ✅ Show calendar only if data is not empty */}
@@ -483,119 +602,6 @@ const YearWiseTable = ({
           )}
         </div>
       </div>
-      {/* {dateRange.length > 0 && dateRange[0] && ( */}
-      {!hideDateControls &&
-        !showDateNavigator &&
-        dateRange.length > 0 &&
-        dateRange[0] && (
-          <div className="flex justify-center items-center gap-2">
-            {/* Date information here */}
-
-            <div className="flex items-center gap-2  justify-center">
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                </span>{" "}
-              </div>
-
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                <span className="text-gray-600 text-content font-pregular">
-                  {dateRange.length > 0 &&
-                    dateRange[0] &&
-                    dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                </span>
-              </div>
-            </div>
-            <div
-              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-              onClick={handleOpenCalendar}
-            >
-              <MdCalendarToday size={19} />
-            </div>
-          </div>
-        )}
-      {!hideDateControls && showDateNavigator && (
-        // <div className="flex justify-center items-center gap-2">
-        //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
-        //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
-        //     <span className="text-gray-600 text-content font-pregular">
-        //       {selectedDateLabel}
-        //     </span>
-        //   </div>
-        //   <PrimaryButton title=">" handleSubmit={onNextDay} />
-        // </div>
-        <div className="flex justify-center items-center gap-3">
-          {/* Previous Button */}
-          <button
-            type="button"
-            onClick={onPreviousDay}
-            style={navigatorButtonSx}
-            className="hover:opacity-90 transition-all"
-          >
-            <MdChevronLeft size={22} />
-          </button>
-
-          {selectedDate && onSelectedDateChange ? (
-            <DatePicker
-              format="ddd, MMMM D, YYYY"
-              value={dayjs(selectedDate)}
-              onChange={(value) => {
-                if (value?.isValid?.()) {
-                  onSelectedDateChange(value.startOf("day"));
-                }
-              }}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  sx: {
-                    width: 245,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "6px",
-                      height: 38,
-                    },
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1e3d73",
-                    },
-                    "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiInputBase-input": {
-                      color: "#111827",
-                      fontSize: "0.875rem",
-                    },
-                    "& .MuiSvgIcon-root": {
-                      color: "#1e3d73",
-                    },
-                  },
-                },
-              }}
-            />
-          ) : (
-            <div className="px-4 py-1.5 rounded-lg border border-primary min-w-[140px] text-center bg-white">
-              <span className="text-gray-600 text-sm font-pregular">
-                {selectedDateLabel}
-              </span>
-            </div>
-          )}
-
-          {/* Next Button */}
-          <button
-            type="button"
-            onClick={onNextDay}
-            style={navigatorButtonSx}
-            className="hover:opacity-90 transition-all"
-          >
-            <MdChevronRight size={22} />
-          </button>
-        </div>
-      )}
       {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">
         Total: INR {rangeTotal.toLocaleString("en-IN")}
@@ -616,7 +622,8 @@ const YearWiseTable = ({
             tableHeight={tableHeight || 300}
             columns={formattedColumns}
             data={finalTableData}
-            hideFilter={filteredData.length <= 9}
+            hideFilter={false}
+            showDateControls={hideDateControls}
             search={search}
             searchRowActions={
               batchButton && selectedRows.length > 0 ? (

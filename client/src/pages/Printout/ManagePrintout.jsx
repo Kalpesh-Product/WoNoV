@@ -581,6 +581,7 @@ const ManagePrintout = () => {
           </Popover>
 
           <AgTable
+            showDateControls={false}
             data={tableRows}
             columns={columns}
             search

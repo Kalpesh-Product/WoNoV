@@ -38,7 +38,7 @@ router.patch("/:budgetId/restore", restoreBudget);
 router.patch(
   "/upload-budget-invoice/:budgetId",
   // upload.single("invoice"),
- upload.array("invoice", 5),
+ upload.array("invoice", 15),
   uploadInvoice
 );
 router.get("/company-budget", fetchBudget);

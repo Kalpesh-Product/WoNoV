@@ -13,8 +13,10 @@ import {
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { useState } from "react";
 import React from "react";
+import useTableControls from "../../hooks/useTableControls";
 
 const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
+  const { filteredRows, toolbar } = useTableControls(data, columns);
   const [openRows, setOpenRows] = useState({});
 
   const toggleRow = (rowId) => {
@@ -26,6 +28,7 @@ const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
 
   return (
     <TableContainer component={Paper}>
+      {toolbar}
       <Table stickyHeader>
         <TableHead>
           <TableRow className="font-pmedium">
@@ -49,7 +52,7 @@ const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
         </TableHead>
 
         <TableBody>
-          {!data || data.length === 0 ? (
+          {filteredRows.length === 0 ? (
             <TableRow>
             <TableCell
               align="center"
@@ -61,8 +64,8 @@ const CollapsibleTable = ({ columns, data, renderExpandedRow }) => {
           </TableRow>
           
           ) : (
-            data.map((row, index) => {
-              const rowId = row.id ?? index;
+            filteredRows.map((row, index) => {
+              const rowId = row.id ?? data.indexOf(row);
               return (
                 <React.Fragment key={rowId}>
                   <TableRow>
