@@ -2709,7 +2709,6 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       console.error("Unable to fetch payment details", error);
     }
   };
-  const [paymentsExportContainer, setPaymentsExportContainer] = useState(null);
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 70 },
     { id: "expanseName", label: "Expense Name", width: 200 },
@@ -3279,14 +3278,12 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       widgets: allowedMuiTables.map((item) => (
         <WidgetSection key={item.key} title={item.Title} border normalCase borderColor="#1E3D73" bodyBorderColor="#9FB2CF"
           headerContentClassName="min-h-[42px]"
-          headerRightContent={<div ref={setPaymentsExportContainer} />}
         >
         <div className="text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73]" style={{ "--ag-foreground-color": "#1E3D73", "--ag-header-foreground-color": "#1E3D73", "--ag-icon-color": "#1E3D73" }}>
         <AgTable
 
           hideTitle
           exportData
-          exportButtonContainer={paymentsExportContainer}
           tableTitle={`BIZNEST PAYMENTS - ${dayjs().format("MMMM YYYY").toUpperCase()}`}
           data={item.rows}
           columns={item.columns.map(({ id, label, width, renderCell }) => ({

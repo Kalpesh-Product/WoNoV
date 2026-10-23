@@ -94,24 +94,7 @@ const DateWiseTable = ({
     });
   }, [columns, formatTime]);
 
-  return (
-    <div ref={ref} className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <span className="text-title text-primary font-pmedium uppercase">
-          {tableTitle}
-        </span>
-        <div className="flex items-center gap-4">
-          {buttonTitle && (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          )}
-               {exportData && (
-            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
-          )}
-        </div>
-      </div>
-        <div className="flex w-full justify-center">
+  const dateControls = (<div className="flex w-full justify-center">
           {dateLabels.length > 0 && (
             <div className="flex justify-end items-center">
               <PrimaryButton
@@ -135,9 +118,29 @@ const DateWiseTable = ({
               />
             </div>
           )}
+        </div>);
+  const exportControls = (<>{exportData && (
+            <PrimaryButton title={"Export"} handleSubmit={handleExportPass} />
+          )}</>);
+  return (
+    <div ref={ref} className="flex flex-col gap-4">
+      <div className="flex items-center justify-between">
+        <span className="text-title text-primary font-pmedium uppercase">
+          {tableTitle}
+        </span>
+        <div className="flex items-center gap-4">
+          {buttonTitle && (
+            <div>
+              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
+            </div>
+          )}
         </div>
+      </div>
 
       <AgTable
+        showDateControls={false}
+        toolbarDateControls={dateControls}
+        toolbarActions={exportControls}
         key={key}
         tableRef={agGridRef}
         tableHeight={350}

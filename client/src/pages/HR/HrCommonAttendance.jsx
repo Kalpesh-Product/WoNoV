@@ -1,4 +1,5 @@
 import AgTable from "../../components/AgTable";
+import AttendanceCorrectionTimeRow from "../../components/AttendanceCorrectionTimeRow";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import humanDate from "../../utils/humanDateForamt";
@@ -179,45 +180,49 @@ const HrCommonAttendance = () => {
             )}
           />
 
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Controller
-              name="inTime"
-              control={control}
-              render={({ field }) => (
-                <TimePicker
-                  {...field}
-                  timeSteps={{ minutes: 1 }}
-                  minutesStep={1}
-                  label={"Select In-Time"}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(time) => {
-                    field.onChange(time ? time.toISOString() : null);
-                  }}
-                />
-              )}
-            />
-          </LocalizationProvider>
+          <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="inTime">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name="inTime"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
+                    label={"Corrected In Time"}
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(time) => {
+                      field.onChange(time ? time.toISOString() : null);
+                    }}
+                  />
+                )}
+              />
+            </LocalizationProvider>
+          </AttendanceCorrectionTimeRow>
 
-          <LocalizationProvider dateAdapter={AdapterDayjs}>
-            <Controller
-              name="outTime"
-              control={control}
-              render={({ field }) => (
-                <TimePicker
-                  {...field}
-                  timeSteps={{ minutes: 1 }}
-                  minutesStep={1}
-                  label={"Select Out-Time"}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(time) => {
-                    field.onChange(time ? time.toISOString() : null);
-                  }}
-                />
-              )}
-            />
-          </LocalizationProvider>
+          <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="outTime">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name="outTime"
+                control={control}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
+                    label={"Corrected Out Time"}
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(time) => {
+                      field.onChange(time ? time.toISOString() : null);
+                    }}
+                  />
+                )}
+              />
+            </LocalizationProvider>
+          </AttendanceCorrectionTimeRow>
           <Controller
             name="reason"
             control={control}

@@ -99,6 +99,7 @@ const WidgetTable = ({
 
     const monthHasData = data.some((item) => {
       const date = dayjs(item[dateColumn]);
+
       return (
         date.isValid() &&
         date.isAfter(currentMonthStart.subtract(1, "day")) &&
@@ -340,28 +341,8 @@ const WidgetTable = ({
     }));
   }, [finalTableData, sortByString, sortByNo, sortOrder]);
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-
-      <WidgetSection
-        border={border}
-        title={tableTitle}
-        TitleAmount={resolveSummaryValue(
-          titleAmountOverride,
-          `${totalText}  ${inrFormat(rangeTotal)}`
-        )}
-        TitleAmountGreen={resolveSummaryValue(titleAmountGreen)}
-        TitleAmountRed={resolveSummaryValue(titleAmountRed)}
-        TitleAmountTotal={resolveSummaryValue(titleAmountTotal)}
-        greenTitle={greenTitle}
-        redTitle={redTitle}
-        totalTitle={totalTitle}
-        summaryChipVariant={summaryChipVariant}
-        greenChipClassName={greenChipClassName}
-      >
-         <div className="w-full grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-        {dateRange.length > 0 && dateRange[0] && (
+  const dateControls = (<>
+{dateRange.length > 0 && dateRange[0] && (
           <div className="flex justify-center items-center gap-2 xl:col-start-2">
             {/* Date information here */}
 
@@ -390,11 +371,7 @@ const WidgetTable = ({
             </div>
           </div>
         )}
-
-          <div className="flex flex-wrap gap-2 items-center justify-end xl:col-start-3">
-            {/* ✅ Show calendar only if data is not empty */}
-
-            <Popover
+<Popover
               open={open}
               anchorEl={anchorEl}
               onClose={handleCloseCalendar}
@@ -436,25 +413,49 @@ const WidgetTable = ({
                 />
               )}
             </Popover>
+  </>);
 
-            {buttonTitle && (
+  const toolbarButtons = (<>
+{/* ✅ Show calendar only if data is not empty */}
+{buttonTitle && (
               <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
             )}
-            {headerActions}
-            {exportData && (
-              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-            )}
-            {batchButton && selectedRows.length > 0 && (
+{headerActions}
+{batchButton && selectedRows.length > 0 && (
               <PrimaryButton
                 title={batchButton}
                 handleSubmit={() => handleBatchAction(selectedRows)}
               />
             )}
-          </div>
-        </div>
+{exportData && (
+              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            )}
+  </>);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+
+      <WidgetSection
+        border={border}
+        title={tableTitle}
+        TitleAmount={resolveSummaryValue(
+          titleAmountOverride,
+          `${totalText}  ${inrFormat(rangeTotal)}`
+        )}
+        TitleAmountGreen={resolveSummaryValue(titleAmountGreen)}
+        TitleAmountRed={resolveSummaryValue(titleAmountRed)}
+        TitleAmountTotal={resolveSummaryValue(titleAmountTotal)}
+        greenTitle={greenTitle}
+        redTitle={redTitle}
+        totalTitle={totalTitle}
+        summaryChipVariant={summaryChipVariant}
+        greenChipClassName={greenChipClassName}
+      >
         <>
-          {finalTableData.length > 0 ? (
-            <AgTable
+          <AgTable
+              toolbarDateControls={dateControls}
+              toolbarActions={toolbarButtons}
               key={key}
               enableCheckbox={checkbox}
               tableRef={agGridRef}
@@ -474,14 +475,6 @@ const WidgetTable = ({
               batchButton={batchButton}
               hideTitle={hideTitle}
             />
-          ) : (
-            <div
-              className="h-[60vh] flex justify-center items-center"
-              style={{ padding: "2rem", color: "#666" }}
-            >
-              No data available for the selected date range.
-            </div>
-          )}
         </>
       </WidgetSection>
     </div>
