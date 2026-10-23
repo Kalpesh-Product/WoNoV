@@ -348,8 +348,14 @@ const MonthlyAttendanceSummary = ({
           <h1 className="text-title font-pmedium uppercase text-primary">
             Monthly Attendance Summary
           </h1>
-          {!fixedMonth && (
-            <TextField
+        </div>
+
+        {isLoading && !rows.length ? (
+          <Skeleton width="100%" height={420} />
+        ) : (
+          <AgTable
+            showDateControls={false}
+            toolbarDateControls={!fixedMonth ? (<TextField
               type="month"
               size="small"
               label="Month"
@@ -360,14 +366,7 @@ const MonthlyAttendanceSummary = ({
                 setMonth(event.target.value);
                 setPagination((current) => ({ ...current, page: 1 }));
               }}
-            />
-          )}
-        </div>
-
-        {isLoading && !rows.length ? (
-          <Skeleton width="100%" height={420} />
-        ) : (
-          <AgTable
+            />) : null}
             tableRef={tableRef}
             data={rows}
             columns={payrollView ? payrollColumns : columns}

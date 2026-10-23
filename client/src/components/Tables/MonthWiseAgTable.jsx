@@ -120,16 +120,7 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
     },
   ];
 
-  return (
-    <div className="space-y-2">
-      {/* Fiscal Year Selector */}
-
-      <WidgetSection
-        title={title}
-        TitleAmount={amount || `INR ${inrFormat(monthTotal)}`}
-        border
-      >
-        <div className="flex justify-center items-center space-x-2 px-4 pt-2 ">
+  const monthControls = (<div className="flex justify-center items-center space-x-2 px-4 pt-2 ">
           {/* Month Switcher */}
           {filteredMonths.length > 0 && (
             <div className="flex gap-4 items-center">
@@ -179,28 +170,29 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
               </div>
             )}
           </div>
-        </div>
+        </div>);
+  return (
+    <div className="space-y-2">
+      {/* Fiscal Year Selector */}
+
+      <WidgetSection
+        title={title}
+        TitleAmount={amount || `INR ${inrFormat(monthTotal)}`}
+        border
+      >
         {/* AgTable */}
         <div className="h-72 mt-4 px-4 overflow-y-auto">
-          {filteredMonths.length === 0 ? (
-            <div className="h-full flex justify-center items-center text-muted">
-              No data available for {selectedFY}
-            </div>
-          ) : monthData.rows.length === 0 ? (
-            <div className="h-full flex justify-center items-center text-muted">
-              No data available for {monthData.month || "selected month"}
-            </div>
-          ) : (
-            <AgTable
+          <AgTable
+              showDateControls={false}
+              toolbarDateControls={monthControls}
               data={monthData.rows.map((item, index) => ({
                 ...item,
                 srNo: index + 1,
               }))}
               columns={passedColumns ? passedColumns : columns}
               tableHeight={250}
-              hideFilter
+              hideFilter={false}
             />
-          )}
         </div>
       </WidgetSection>
     </div>

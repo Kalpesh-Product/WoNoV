@@ -31,6 +31,8 @@ const AgTableComponent = React.memo(
     search = true,
     dateColumn,
     showDateControls = true,
+    toolbarDateControls,
+    toolbarActions,
     dateRangePlaceholders = false,
     tableTitle,
     handleClick,
@@ -84,9 +86,9 @@ const AgTableComponent = React.memo(
     const filteredData = useMemo(() => filterTableRows(data || [], {
       search: serverSearch ? "" : searchQuery,
       filters: appliedFilters,
-      dateRange: showDateControls ? tableDateRange : null,
+      dateRange: showDateControls && toolbarDateControls === undefined ? tableDateRange : null,
       dateField: effectiveDateField,
-    }), [data, searchQuery, serverSearch, appliedFilters, tableDateRange, effectiveDateField, showDateControls]);
+    }), [data, searchQuery, serverSearch, appliedFilters, tableDateRange, effectiveDateField, showDateControls, toolbarDateControls]);
 
     useEffect(() => {
       if (serverSearch) setSearchQuery(searchValue || "");
@@ -358,9 +360,7 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
-              {hideFilter && !exportButtonContainer && exportBeforeHeaderActions ? renderExportButton() : null}
               {headerActions ? headerActions : ""}
-              {hideFilter && !exportButtonContainer && !exportBeforeHeaderActions ? renderExportButton() : null}
 
               {/* {buttonTitle ? (
                 <PrimaryButton
@@ -426,25 +426,22 @@ const AgTableComponent = React.memo(
           ) : (
             <></>
           )}
-          {showDateControls && (
-            <div className="xl:col-start-2" title={serverPagination ? "Date filter applies to currently loaded rows" : undefined}>
-              <TableDateFilter fields={dateFields} field={effectiveDateField} onFieldChange={setChosenDateField} range={tableDateRange} onChange={setTableDateRange} showPlaceholders={dateRangePlaceholders} />
+          {(toolbarDateControls !== undefined || showDateControls) && (
+            <div className="flex min-w-0 items-center justify-center xl:col-start-2" title={toolbarDateControls === undefined && serverPagination ? "Date filter applies to currently loaded rows" : undefined}>
+              {toolbarDateControls !== undefined ? toolbarDateControls : <TableDateFilter fields={dateFields} field={effectiveDateField} onFieldChange={setChosenDateField} range={tableDateRange} onChange={setTableDateRange} showPlaceholders={dateRangePlaceholders} showFieldSelector={dateRangePlaceholders} />}
             </div>
           )}
           <div className="flex flex-wrap items-center justify-end gap-4 xl:col-start-3">
             {searchRowActionsPosition === "right" && searchRowActions
               ? searchRowActions
               : ""}
+            {searchRowActionsPosition === "aboveFilter" ? searchRowActions : null}
+            {toolbarActions}
+            {!exportButtonContainer && renderExportButton()}
             {hideFilter ? (
               ""
             ) : (
               <div className="flex flex-wrap items-center gap-2">
-                {searchRowActionsPosition === "aboveFilter" && searchRowActions
-                  ? searchRowActions
-                  : ""}
-                <div className="flex items-center gap-2">
-                  {!exportButtonContainer && renderExportButton()}
-                </div>
                 <button
                   type="button"
                   aria-label="Advanced filter"

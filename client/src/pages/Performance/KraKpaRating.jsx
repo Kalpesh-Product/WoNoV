@@ -607,26 +607,6 @@ const KraKpaRating = ({ type = "kpa" }) => {
                   />
                 </WidgetSection>
               </div>
-              <div className="mb-1 flex justify-center">
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <DatePicker
-                    views={["year", "month"]}
-                    format="MMM-YY"
-                    value={dailyLogMonth}
-                    onChange={(value) => {
-                      if (value?.isValid()) {
-                        setDailyLogMonth(value.startOf("month"));
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        sx: { width: 150 },
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-              </div>
             </>
           )}
           {isKpaRating && (
@@ -692,7 +672,28 @@ const KraKpaRating = ({ type = "kpa" }) => {
               )}
             />
           ) : (
-            <AgTable
+<AgTable
+              showDateControls={false}
+              toolbarDateControls={<div className="mb-1 flex justify-center">
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    views={["year", "month"]}
+                    format="MMM-YY"
+                    value={dailyLogMonth}
+                    onChange={(value) => {
+                      if (value?.isValid()) {
+                        setDailyLogMonth(value.startOf("month"));
+                      }
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: { width: 150 },
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              </div>}
               data={dailyLogMatrix.rows}
               columns={dailyLogMatrix.columns}
               hideTitle
