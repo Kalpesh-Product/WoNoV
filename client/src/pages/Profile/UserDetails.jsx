@@ -248,7 +248,9 @@ const UserDetails = () => {
 
   const mutation = useMutation({
     mutationFn: async (updatedData) => {
-      return axios.patch(`/api/users/update-single-user`, updatedData);
+      const userId = auth?.user?._id;
+      if (!userId) throw new Error("Please sign in again before updating your profile.");
+      return axios.patch(`/api/users/update-single-user/${userId}`, updatedData);
     },
     onSuccess: (response, variables) => {
       toast.success(

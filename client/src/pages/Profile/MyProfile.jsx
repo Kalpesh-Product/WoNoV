@@ -65,6 +65,11 @@ const MyProfile = ({ handleClose, pageTitle }) => {
   // };
 
   const handleUpload = async () => {
+    const userId = auth?.user?._id;
+    if (!userId) {
+      toast.error("Please sign in again before updating your profile.");
+      return;
+    }
     if (!file) {
       alert("Please select a file before uploading.");
       return;
@@ -77,7 +82,7 @@ const MyProfile = ({ handleClose, pageTitle }) => {
 
     try {
       const response = await axios.patch(
-        "/api/users/update-single-user",
+        `/api/users/update-single-user/${userId}`,
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
@@ -187,10 +192,14 @@ const MyProfile = ({ handleClose, pageTitle }) => {
 
     // Send consolidatedFormData to API
 
-    const userId = auth.user._id;
+    const userId = auth?.user?._id;
+    if (!userId) {
+      toast.error("Please sign in again before updating your profile.");
+      return;
+    }
     try {
       const response = await api.patch(
-        `/api/users/update-single-user`,
+        `/api/users/update-single-user/${userId}`,
         consolidatedFormData
       );
       toast.success(response.data.message);
