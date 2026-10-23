@@ -382,25 +382,13 @@ const YearWiseTable = ({
     }
   };
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="w-full grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-        {tableTitle ? (
-          <span className={`text-title text-primary font-pmedium uppercase ${exportData ? "col-span-full" : "col-span-full xl:col-span-2 xl:row-start-1"}`}>
-            {tableTitle}
-          </span>
-        ) : (
-          null
-        )}
-
-      {/* {dateRange.length > 0 && dateRange[0] && ( */}
-      {!hideDateControls &&
+  const dateControls = (<>
+{!hideDateControls &&
         !showDateNavigator &&
         dateRange.length > 0 &&
         dateRange[0] && (
           <div className={`flex justify-center items-center gap-2 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
-            {dateFilterOptions.length > 1 && (
+            {dateRangePlaceholders && dateFilterOptions.length > 1 && (
               <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: 130 }}>
                 {dateFilterOptions.map((option) => <MenuItem key={option.field} value={option.field}>{option.label}</MenuItem>)}
               </TextField>
@@ -433,7 +421,7 @@ const YearWiseTable = ({
             )}
           </div>
         )}
-      {!hideDateControls && showDateNavigator && (
+{!hideDateControls && showDateNavigator && (
         // <div className="flex flex-wrap items-center gap-2">
         //   <PrimaryButton title="<" handleSubmit={onPreviousDay} />
         //   <div className="px-6 py-1 rounded-md border-primary border-[1px] min-w-[170px] text-center">
@@ -513,13 +501,7 @@ const YearWiseTable = ({
           </button>
         </div>
       )}
-
-        <div className={`flex flex-wrap items-center justify-end gap-2 xl:col-start-3 ${exportData && tableTitle ? "xl:row-start-2" : "xl:row-start-1"}`}>
-          {headerActions ? headerActions : null}
-
-          {/* ✅ Show calendar only if data is not empty */}
-
-          {!hideDateControls && (
+{!hideDateControls && (
             <Popover
               open={open}
               anchorEl={anchorEl}
@@ -563,36 +545,16 @@ const YearWiseTable = ({
               )}
             </Popover>
           )}
-
-          {secondaryButtonTitle && (
-            <PrimaryButton
-              title={secondaryButtonTitle}
-              handleSubmit={handleSecondarySubmit}
-              disabled={secondaryButtonDisabled}
-            />
-          )}
-          {middleButtonTitle && (
-            <PrimaryButton
-              title={middleButtonTitle}
-              handleSubmit={handleMiddleSubmit}
-              disabled={middleButtonDisabled}
-            />
-          )}
-          {buttonTitle && (
-            <PrimaryButton
-              title={buttonTitle}
-              handleSubmit={handleSubmit}
-              disabled={buttonDisabled}
-            />
-          )}
-          {customExportTitle && handleCustomExport && (
+  </>);
+  const exportControls = (<>
+{customExportTitle && handleCustomExport && (
             <PrimaryButton
               title={customExportTitle}
               handleSubmit={handleCustomExport}
               disabled={customExportDisabled}
             />
           )}
-          {exportData && (
+{exportData && (
             <PrimaryButton
               title={exportButtonTitle}
               handleSubmit={handleExportPass}
@@ -600,8 +562,22 @@ const YearWiseTable = ({
               className="shrink-0 whitespace-nowrap"
             />
           )}
+  </>);
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+{(tableTitle || headerActions || secondaryButtonTitle || middleButtonTitle || buttonTitle) && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {tableTitle && <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+            {headerActions}
+            {secondaryButtonTitle && <PrimaryButton title={secondaryButtonTitle} handleSubmit={handleSecondarySubmit} disabled={secondaryButtonDisabled} />}
+            {middleButtonTitle && <PrimaryButton title={middleButtonTitle} handleSubmit={handleMiddleSubmit} disabled={middleButtonDisabled} />}
+            {buttonTitle && <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} disabled={buttonDisabled} />}
+          </div>
         </div>
-      </div>
+      )}
       {/* 
       <div className="px-6 py-1 rounded-md border-green-600 border-[1px] bg-green-50 text-green-800 font-semibold">
         Total: INR {rangeTotal.toLocaleString("en-IN")}
@@ -610,8 +586,9 @@ const YearWiseTable = ({
       {/* Table */}
 
       <>
-        {showEmptyTable || finalTableData.length > 0 || (serverPagination && serverSearch) ? (
-          <AgTable
+        <AgTable
+            toolbarDateControls={dateControls}
+            toolbarActions={exportControls}
             key={key}
             enableCheckbox={checkbox}
             tableRef={agGridRef}
@@ -651,14 +628,6 @@ const YearWiseTable = ({
             onSearchChange={onSearchChange}
             getRowStyle={getRowStyle}
           />
-        ) : (
-          <div
-            className="h-[60vh] flex justify-center items-center"
-            style={{ padding: "2rem", color: "#666" }}
-          >
-            No data available for the selected date range.
-          </div>
-        )}
       </>
     </div>
   );

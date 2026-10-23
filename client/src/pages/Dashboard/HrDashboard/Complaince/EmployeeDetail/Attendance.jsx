@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
+import AttendanceCorrectionTimeRow from "../../../../../components/AttendanceCorrectionTimeRow";
 import WidgetSection from "../../../../../components/WidgetSection";
 import AgTable from "../../../../../components/AgTable";
 import { toast } from "sonner";
@@ -866,38 +867,42 @@ const Attendance = () => {
                 </LocalizationProvider>
               )}
             />
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Controller
-                name="inTime"
-                control={control}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    timeSteps={{ minutes: 1 }}
-                    minutesStep={1}
-                    label={"Select In-Time"}
-                    slotProps={{ textField: { size: "small" } }}
-                    render={(params) => <TextField {...params} fullWidth />}
-                  />
-                )}
-              />
-            </LocalizationProvider>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Controller
-                name="outTime"
-                control={control}
-                render={({ field }) => (
-                  <TimePicker
-                    {...field}
-                    timeSteps={{ minutes: 1 }}
-                    minutesStep={1}
-                    label={"Select Out-Time"}
-                    slotProps={{ textField: { size: "small" } }}
-                    render={(params) => <TextField {...params} fullWidth />}
-                  />
-                )}
-              />
-            </LocalizationProvider>
+            <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="inTime">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  name="inTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      timeSteps={{ minutes: 1 }}
+                      minutesStep={1}
+                      label={"Corrected In Time"}
+                      slotProps={{ textField: { size: "small", fullWidth: true } }}
+                      render={(params) => <TextField {...params} fullWidth />}
+                    />
+                  )}
+                />
+              </LocalizationProvider>
+            </AttendanceCorrectionTimeRow>
+            <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="outTime">
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Controller
+                  name="outTime"
+                  control={control}
+                  render={({ field }) => (
+                    <TimePicker
+                      {...field}
+                      timeSteps={{ minutes: 1 }}
+                      minutesStep={1}
+                      label={"Corrected Out Time"}
+                      slotProps={{ textField: { size: "small", fullWidth: true } }}
+                      render={(params) => <TextField {...params} fullWidth />}
+                    />
+                  )}
+                />
+              </LocalizationProvider>
+            </AttendanceCorrectionTimeRow>
             <Controller
               name="reason"
               rules={{

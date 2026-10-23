@@ -54,7 +54,8 @@ const isPermanentDeleteDepartment = (department) =>
 const canManageBudgetDeletes = (user) =>
   (user?.role || []).some((role) => {
     const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
-    return (
+
+return (
       !roleTitle.includes("employee") &&
       ["manager", "admin", "top management"].some((title) =>
         roleTitle.includes(title),
@@ -836,7 +837,94 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
 
   if (isLoading) return <CircularProgress />;
 
-  return (
+  const dateControls = (<>
+<div className="flex justify-center items-center gap-2 xl:col-start-2">
+            {dateRange.length > 0 && dateRange[0] && (
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Date information here */}
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                    <span className="text-gray-600 text-content font-pregular">
+                      {dateRange.length > 0 &&
+                        dateRange[0] &&
+                        dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                    </span>{" "}
+                  </div>
+
+                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                    <span className="text-gray-600 text-content font-pregular">
+                      {dateRange.length > 0 &&
+                        dateRange[0] &&
+                        dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+                  onClick={handleOpenCalendar}
+                >
+                  <MdCalendarToday size={19} />
+                </div>
+              </div>
+            )}
+          </div>
+<Popover
+              open={openCalendar}
+              anchorEl={anchorEl}
+              onClose={handleCloseCalendar}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            >
+              {dateRange.length > 0 && (
+                <DateRangePicker
+                  onChange={(item) => setDateRange([item.selection])}
+                  moveRangeOnFirstSelection={false}
+                  ranges={dateRange}
+                  direction="vertical"
+                  dayContentRenderer={(date) => {
+                    const dateStr = dayjs(date).format("YYYY-MM-DD");
+                    const hasData = validDateSet.has(dateStr);
+                    return (
+                      <div className="overflow-hidden">
+                        <div
+                          style={{
+                            backgroundColor: hasData ? "white" : "transparent",
+                            borderBottom: hasData ? "4px solid #1E3D73" : "",
+                            borderTopLeftRadius: "5px",
+                            borderTopRightRadius: "5px",
+                            height: "25px",
+                            width: "25px",
+                            fontWeight: hasData ? "bold" : "normal",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          {date.getDate()}
+                        </div>
+                      </div>
+                    );
+                  }}
+                />
+              )}
+            </Popover>
+  </>);
+
+  const toolbarButtons = (<>
+{onRequestBudget && (
+                <PrimaryButton
+                  title="Request Budget"
+                  padding="px-5 py-2"
+                  fontSize="text-base"
+                  handleSubmit={onRequestBudget}
+                />
+              )}
+{exportData && (
+                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+              )}
+  </>);
+
+    return (
     <>
       <WidgetSection
         title={
@@ -879,96 +967,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
-          <div className="grid grid-cols-1 items-center gap-3 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
-            <div className="flex justify-center items-center gap-2 xl:col-start-2">
-            {dateRange.length > 0 && dateRange[0] && (
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Date information here */}
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                    </span>{" "}
-                  </div>
-
-                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-                  onClick={handleOpenCalendar}
-                >
-                  <MdCalendarToday size={19} />
-                </div>
-              </div>
-            )}
-          </div>
-            {(exportData || onRequestBudget) && (
-            <div className="flex flex-wrap items-center justify-end gap-2 xl:col-start-3">
-              {exportData && (
-                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-              )}
-              {onRequestBudget && (
-                <PrimaryButton
-                  title="Request Budget"
-                  padding="px-5 py-2"
-                  fontSize="text-base"
-                  handleSubmit={onRequestBudget}
-                />
-              )}
-            </div>
-          )}
-            <Popover
-              open={openCalendar}
-              anchorEl={anchorEl}
-              onClose={handleCloseCalendar}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            >
-              {dateRange.length > 0 && (
-                <DateRangePicker
-                  onChange={(item) => setDateRange([item.selection])}
-                  moveRangeOnFirstSelection={false}
-                  ranges={dateRange}
-                  direction="vertical"
-                  dayContentRenderer={(date) => {
-                    const dateStr = dayjs(date).format("YYYY-MM-DD");
-                    const hasData = validDateSet.has(dateStr);
-                    return (
-                      <div className="overflow-hidden">
-                        <div
-                          style={{
-                            backgroundColor: hasData ? "white" : "transparent",
-                            borderBottom: hasData ? "4px solid #1E3D73" : "",
-                            borderTopLeftRadius: "5px",
-                            borderTopRightRadius: "5px",
-                            height: "25px",
-                            width: "25px",
-                            fontWeight: hasData ? "bold" : "normal",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {date.getDate()}
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-              )}
-            </Popover>
-          </div>
-
-          {filteredRows.length > 0 ? (
           <AgTable
+              toolbarDateControls={dateControls}
+              toolbarActions={toolbarButtons}
               showDateControls={false}
               search
               data={filteredRows}
@@ -985,11 +987,6 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   : undefined
               }
             />
-          ) : (
-            <div className="h-96 flex justify-center items-center text-muted">
-              No data available
-            </div>
-          )}
         </div>
       </WidgetSection>
 
