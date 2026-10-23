@@ -19,6 +19,61 @@ const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const normalizeAccessName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const FINANCE_MANAGED_DEPARTMENT_PREFIXES = [
+  "finance",
+  "legal",
+  "cafe",
+  "cafeteria",
+  "admin",
+  "administration",
+];
+
+const isFinanceManager = (roles = []) =>
+  roles.some((role) => {
+    const roleTitle = normalizeAccessName(role?.roleTitle || role);
+    return (
+      roleTitle.includes("finance") &&
+      (roleTitle.includes("manager") || roleTitle.includes("admin"))
+    );
+  });
+
+const isFinanceDepartment = (department) =>
+  normalizeAccessName(department?.name).startsWith("finance");
+
+const isFinanceManagerUser = (user) => {
+  const roles = user?.role || [];
+  const hasManagerRole = roles.some((role) => {
+    const roleTitle = normalizeAccessName(role?.roleTitle || role);
+    return (
+      (roleTitle.includes("manager") || roleTitle.includes("admin")) &&
+      !roleTitle.includes("employee")
+    );
+  });
+
+  return (
+    isFinanceManager(roles) ||
+    (hasManagerRole && (user?.departments || []).some(isFinanceDepartment))
+  );
+};
+
+const isGlobalBudgetAdmin = (roles = []) =>
+  roles.some((role) =>
+    ["masteradmin", "superadmin"].includes(
+      normalizeAccessName(role?.roleTitle || role),
+    ),
+  );
+
+const isFinanceManagedDepartment = (department) =>
+  FINANCE_MANAGED_DEPARTMENT_PREFIXES.some((prefix) =>
+    normalizeAccessName(department?.name).startsWith(prefix),
+  );
+
 const getBudgetApprovalAccess = (budget, user) => {
   const amount = budget.particulars?.length
     ? budget.particulars.reduce((sum, item) => sum + Number(item.particularAmount || 0), 0)
@@ -37,7 +92,7 @@ const getBudgetApprovalAccess = (budget, user) => {
   return {
     approvalLevel: level,
     approvalDepartment: level === "Level 3" ? "Finance" : "Top Management",
-    requiredApprover: level === "Level 3" ? "Finance" : level === "Level 2" ? "Kashif" : "Abrar",
+    requiredApprover: level === "Level 3" ? "Narshiva Naik" : level === "Level 2" ? "Kashif Saikh" : "Abrar Shaikh",
     canApproveBudget: Number.isFinite(amount) && amount >= 0 && (tech || (level === "Level 3" ? finance || kashif || abrar : level === "Level 2" ? kashif || abrar : abrar)),
   };
 };
@@ -435,8 +490,6 @@ const updateBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const updateFields = req.body;
-    const { departments, roles } = req;
-
     // const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
  const allowedFields = [
       "gstIn",
@@ -467,21 +520,47 @@ const updateBudget = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid budget ID provided" });
     }
 
-    const foundBudget = await Budget.findById(budgetId);
+    const [foundBudget, requestingUser] = await Promise.all([
+      Budget.findOne({ _id: budgetId, company }).populate(
+        "department",
+        "name",
+      ),
+      User.findById(user)
+        .select("departments role")
+        .populate("departments", "name")
+        .populate("role", "roleTitle")
+        .lean(),
+    ]);
     if (!foundBudget) {
       return res.status(400).json({ message: "Budget not found" });
     }
 
-    const departmentIds = (departments || []).map((department) =>
+    const userRoles = requestingUser?.role || req.roles || [];
+    const departmentIds = (
+      requestingUser?.departments ||
+      req.departments ||
+      []
+    ).map((department) =>
       typeof department === "string"
         ? department
         : department?._id?.toString?.() || department?.toString?.(),
     );
+    const budgetDepartmentId = String(
+      foundBudget.department?._id || foundBudget.department,
+    );
+    const hasFinanceManagerAccess =
+      isFinanceManagerUser(
+        requestingUser || {
+          role: userRoles,
+          departments: req.departments || [],
+        },
+      ) &&
+      isFinanceManagedDepartment(foundBudget.department);
 
     if (
-      !departmentIds.includes(foundBudget.department.toString()) &&
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin")
+      !departmentIds.includes(budgetDepartmentId) &&
+      !isGlobalBudgetAdmin(userRoles) &&
+      !hasFinanceManagerAccess
     ) {
       return res
         .status(403)
@@ -608,12 +687,35 @@ const fetchBudget = async (req, res, next) => {
     const { company } = req;
     const user = await User.findById(req.user)
       .populate("departments", "name")
+      .populate("role", "roleTitle")
       .lean()
       .exec();
     const canViewDeleted =
       includeDeleted === "true" &&
       belongsToPermanentDeleteDepartment(user?.departments);
 
+
+    let scopedDepartmentIds = departmentId ? [departmentId] : [];
+    if (departmentId && isFinanceManagerUser(user)) {
+      const requestedDepartment = await Department.findById(departmentId)
+        .select("name")
+        .lean();
+
+      if (
+        isFinanceDepartment(requestedDepartment)
+      ) {
+        const managedDepartments = await Department.find()
+          .select("name")
+          .lean();
+        scopedDepartmentIds = managedDepartments
+          .filter(isFinanceManagedDepartment)
+          .map((managedDepartment) => managedDepartment._id);
+      }
+    }
+
+    const departmentFilter = scopedDepartmentIds.length
+      ? { $in: scopedDepartmentIds }
+      : undefined;
 
     const currentMonthStart = new Date();
     currentMonthStart.setUTCHours(0, 0, 0, 0);
@@ -624,7 +726,7 @@ const fetchBudget = async (req, res, next) => {
     await Budget.updateMany(
       {
         company,
-        ...(departmentId ? { department: departmentId } : {}),
+        ...(departmentFilter ? { department: departmentFilter } : {}),
         isExtraBudget: false,
         status: "Approved",
         "finance.approvedAt": null,
@@ -640,6 +742,7 @@ const fetchBudget = async (req, res, next) => {
     const result = await fetchBudgetVoucherService({
       company: company,
       departmentId,
+      departmentIds: scopedDepartmentIds,
       dashboardView: view === "dashboard",
       profitLossView: view === "profit-loss",
       includeDeleted: canViewDeleted,

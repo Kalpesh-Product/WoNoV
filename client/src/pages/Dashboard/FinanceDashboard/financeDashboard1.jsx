@@ -1129,6 +1129,9 @@ const getGraphVirtualOfficeReportingAmount = (item) =>
       );
 
 // Keep Finance projections aligned with the Investor dashboard calculation.
+const getFinanceProjectionStartIndex = (now = new Date()) =>
+  Math.max(fiscalMonthIndex(now) - 1, 0);
+
 const projectFinanceSeries = (
   values,
   fiscalYear,
@@ -1142,7 +1145,7 @@ const projectFinanceSeries = (
   const currentFiscalYear = fiscalYearLabel(now);
   const isCurrentFiscalYear = fiscalYear === currentFiscalYear;
   const projectionStartIndex = isCurrentFiscalYear
-    ? Math.max(fiscalMonthIndex(now) - 1, 0)
+    ? getFinanceProjectionStartIndex(now)
     : 12;
   const average = projectionStartIndex
     ? Math.round(
@@ -1201,6 +1204,17 @@ const cashflowOpeningForYear = (financialSeries, startYear) => {
   return opening;
 };
 
+const getCashflowActualMonthCount = (startYear, now = new Date()) => {
+  const currentFiscalYearStart = Number(
+    fiscalYearLabel(now).match(/\d{4}/)?.[0],
+  );
+
+  if (startYear < currentFiscalYearStart) return 12;
+  if (startYear > currentFiscalYearStart) return 0;
+
+  return getFinanceProjectionStartIndex(now);
+};
+
 const FinanceCashflow = ({ financialSeries, now }) => {
   const [fiscalYear, setFiscalYear] = useState("FY 2026-27");
   const [hiddenLegendItems, setHiddenLegendItems] = useState([]);
@@ -1209,7 +1223,7 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   const income = financialSeries.find((item) => item.group === fiscalYear && item.name === "Income")?.data || [];
   const expenses = financialSeries.find((item) => item.group === fiscalYear && item.name === "Expense")?.data || [];
   const startYear = Number(fiscalYear.match(/\d{4}/)?.[0]);
-  const completedMonths = Math.max(0, Math.min(12, (now.getFullYear() - startYear) * 12 + now.getMonth() - 3));
+  const completedMonths = getCashflowActualMonthCount(startYear, now);
   const openingBalance = cashflowOpeningForYear(financialSeries, startYear);
   const rows = projectCashflowRows(income, expenses, completedMonths, openingBalance);
   const amountLabel = (value) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.trunc(Number(value) / 100000 * 100) / 100);
@@ -1219,7 +1233,7 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   const earliestFiscalYear = availableFiscalYears.length ? Math.min(...availableFiscalYears) : 2026;
   const chartData = [...new Set(financialSeries.map((series) => series.group))].map((group) => {
     const yearStart = Number(group.match(/\d{4}/)?.[0]);
-    const completed = Math.max(0, Math.min(12, (now.getFullYear() - yearStart) * 12 + now.getMonth() - 3));
+    const completed = getCashflowActualMonthCount(yearStart, now);
     const yearRows = projectCashflowRows(
       financialSeries.find((series) => series.group === group && series.name === "Income")?.data,
       financialSeries.find((series) => series.group === group && series.name === "Expense")?.data,
@@ -1451,6 +1465,11 @@ const FinanceDashboard1 = () => {
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
+  const currentApproverName =
+    [auth?.user?.firstName, auth?.user?.lastName]
+      .filter(Boolean)
+      .join(" ")
+      .trim() || auth?.user?.name || "";
 
   const location = useLocation();
   const navigate = useFinanceNavigate();
@@ -1617,6 +1636,28 @@ const FinanceDashboard1 = () => {
         item?.dueDate &&
         dayjs(item.dueDate).format("MMM-YY") === selectedPayoutMonth,
     );
+  const payoutSummary = payoutMonthPayments.reduce(
+    (summary, item) => {
+      const status = String(item?.status || "").trim().toLowerCase();
+      const amount = Number(item?.projectedAmount) || 0;
+
+      summary.total.count += 1;
+      summary.total.amount += amount;
+
+      if (summary[status]) {
+        summary[status].count += 1;
+        summary[status].amount += amount;
+      }
+
+      return summary;
+    },
+    {
+      total: { count: 0, amount: 0 },
+      approved: { count: 0, amount: 0 },
+      pending: { count: 0, amount: 0 },
+      rejected: { count: 0, amount: 0 },
+    },
+  );
 
   const chartPayoutMonthPayments = isBudgetDataLoading
     ? []
@@ -2933,10 +2974,26 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     onSuccess: async (_response, { row, action }) => {
       const status = action === "approve" ? "Approved" : "Rejected";
       payoutQueryClient.setQueryData(["budgetData", "finance-dashboard1"], (rows) => Array.isArray(rows)
-        ? rows.map((item) => item._id === row._id ? { ...item, status } : item) : rows);
+        ? rows.map((item) => item._id === row._id
+          ? {
+              ...item,
+              status,
+              ...(action === "approve" && currentApproverName
+                ? { approverName: currentApproverName }
+                : {}),
+            }
+          : item) : rows);
       payoutQueryClient.setQueryData(["pendingApprovalsBudget"], (rows) => Array.isArray(rows)
         ? rows.filter((item) => item._id !== row._id) : rows);
-      setPayoutDetails((current) => current?._id === row._id ? { ...current, status } : current);
+      setPayoutDetails((current) => current?._id === row._id
+        ? {
+            ...current,
+            status,
+            ...(action === "approve" && currentApproverName
+              ? { approverName: currentApproverName }
+              : {}),
+          }
+        : current);
       setPayoutRejectRow(null);
       setPayoutRejectReason("");
       toast.success(`Budget ${status.toLowerCase()} successfully`);
@@ -2956,13 +3013,26 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       console.error("Unable to fetch payment details", error);
     }
   };
-  const [paymentsExportContainer, setPaymentsExportContainer] = useState(null);
   const payoutInvoiceFilesForRow = (row) => Array.isArray(row?.invoices) && row.invoices.some((file) => file?.link)
     ? row.invoices.filter((file) => file?.link)
     : row?.invoice?.link ? [row.invoice] : [];
-  const payoutApproverName = (row) => row.status === "Rejected"
-    ? row.rejectedByName || "\u2014"
-    : row.status === "Approved" ? row.approverName || row.requiredApprover || "\u2014" : "\u2014";
+  const validPayoutName = (value) => {
+    const name = String(value || "").trim();
+    return name && !["-", "--", "\u2013", "\u2014"].includes(name) ? name : "";
+  };
+  const payoutApproverName = (row) => {
+    if (row.status === "Rejected") {
+      return validPayoutName(row.rejectedByName) || "\u2014";
+    }
+
+    if (row.status === "Approved") {
+      return validPayoutName(row.approverName) ||
+        validPayoutName(row.requiredApprover) || "\u2014";
+    }
+
+    return validPayoutName(row.requiredApprover) ||
+      validPayoutName(row.approverName) || "\u2014";
+  };
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 70 },
     { id: "expanseName", label: "Expense Name", width: 200 },
@@ -3563,18 +3633,27 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
       widgets: allowedMuiTables.map((item) => (
         <WidgetSection key={item.key} title={item.Title} border normalCase borderColor="#1E3D73" bodyBorderColor="#9FB2CF"
           headerContentClassName="min-h-[42px]"
-          headerRightContent={<div ref={setPaymentsExportContainer} />}
+          headerRightContent={(
+            <div className="flex flex-wrap items-center justify-end gap-2">
+              <span className="inline-flex items-center rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-sm font-pmedium uppercase text-[#274784]">
+                TOTAL: {payoutSummary.total.count} | INR {inrFormat(payoutSummary.total.amount)}
+              </span>
+              <span className="inline-flex items-center rounded-lg border border-[#9bd8ba] bg-[#eafbf3] px-3 py-2 text-sm font-pmedium uppercase text-[#16875d]">
+                APPROVAL: {payoutSummary.approved.count} | INR {inrFormat(payoutSummary.approved.amount)}
+              </span>
+              <span className="inline-flex items-center rounded-lg border border-[#f2cf83] bg-[#fff7df] px-3 py-2 text-sm font-pmedium uppercase text-[#b7791f]">
+                PENDING: {payoutSummary.pending.count} | INR {inrFormat(payoutSummary.pending.amount)}
+              </span>
+              <span className="inline-flex items-center rounded-lg border border-[#f3aaaa] bg-[#fff0f0] px-3 py-2 text-sm font-pmedium uppercase text-[#d64545]">
+                REJECTED: {payoutSummary.rejected.count} | INR {inrFormat(payoutSummary.rejected.amount)}
+              </span>
+            </div>
+          )}
         >
         <div className="text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73]" style={{ "--ag-foreground-color": "#1E3D73", "--ag-header-foreground-color": "#1E3D73", "--ag-icon-color": "#1E3D73" }}>
         <AgTable
 
           hideTitle
-          exportData
-          exportButtonContainer={paymentsExportContainer}
-          tableTitle={`BIZNEST PAYMENTS - ${dayjs().format("MMMM YYYY").toUpperCase()}`}
-          processExportCell={(params) => ["dueDate", "invoiceDate"].includes(params?.column?.getColDef?.()?.field)
-            ? String(params.value ?? "")
-            : undefined}
           data={item.rows}
           columns={item.columns.map(({ id, label, width, hide, valueGetter, renderCell }) => ({
             field: id,

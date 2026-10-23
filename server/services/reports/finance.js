@@ -20,6 +20,7 @@ const fetchBudgetVoucherService = async ({
   company,
   dateFilter,
   departmentId,
+  departmentIds = [],
   type = "",
   extraMatch = {},
   isReport,
@@ -33,8 +34,12 @@ const fetchBudgetVoucherService = async ({
     query.isDeleted = { $ne: true };
   }
 
-  if (departmentId && !["payout", "landlord-payments"].includes(type)) {
-    query.department = departmentId;
+  if (!["payout", "landlord-payments"].includes(type)) {
+    if (departmentIds.length) {
+      query.department = { $in: departmentIds };
+    } else if (departmentId) {
+      query.department = departmentId;
+    }
   }
 
   if (dateFilter) {
@@ -73,7 +78,13 @@ const fetchBudgetVoucherService = async ({
       ...query,
       company: new mongoose.Types.ObjectId(String(query.company)),
       ...(query.department && {
-        department: new mongoose.Types.ObjectId(String(query.department)),
+        department: query.department.$in
+          ? {
+              $in: query.department.$in.map(
+                (id) => new mongoose.Types.ObjectId(String(id)),
+              ),
+            }
+          : new mongoose.Types.ObjectId(String(query.department)),
       }),
     };
 

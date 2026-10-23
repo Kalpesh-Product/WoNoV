@@ -6,7 +6,107 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const ClientService = require("../../models/sales/ClientService");
+const Company = require("../../models/hr/Company");
 const { default: mongoose } = require("mongoose");
+
+const DEFAULT_VIRTUAL_OFFICE_SOURCING_OPTIONS = [
+  "Google",
+  "LinkedIn",
+  "Referral",
+  "IPC",
+  "Walk-IN",
+  "WhatsApp",
+];
+const VIRTUAL_OFFICE_CURRENT_STATUSES = [
+  "In Progress",
+  "Yet to start",
+  "On Hold",
+];
+
+const normalizeSourcingOptions = (options = []) => {
+  const uniqueOptions = new Map();
+
+  [...DEFAULT_VIRTUAL_OFFICE_SOURCING_OPTIONS, ...options].forEach((option) => {
+    const normalizedOption = String(option || "").trim();
+    if (!normalizedOption) return;
+
+    const displayOption =
+      normalizedOption.toLowerCase() === "bfc" ? "IPC" : normalizedOption;
+    uniqueOptions.set(displayOption.toLowerCase(), displayOption);
+  });
+
+  return Array.from(uniqueOptions.values());
+};
+
+const getVirtualOfficeSourcingOptions = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.company)
+      .select("virtualOfficeSourcingOptions")
+      .lean();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const options = normalizeSourcingOptions(
+      company.virtualOfficeSourcingOptions,
+    );
+
+    return res.status(200).json(options);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addVirtualOfficeSourcingOption = async (req, res, next) => {
+  try {
+    const requestedOption = String(req.body?.option || "").trim();
+    const option =
+      requestedOption.toLowerCase() === "bfc" ? "IPC" : requestedOption;
+
+    if (!option) {
+      return res.status(400).json({ message: "Sourcing name is required" });
+    }
+
+    if (option.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "Sourcing name cannot exceed 60 characters" });
+    }
+
+    const company = await Company.findById(req.company).select(
+      "virtualOfficeSourcingOptions",
+    );
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const currentOptions = normalizeSourcingOptions(
+      company.virtualOfficeSourcingOptions,
+    );
+    const existingOption = currentOptions.find(
+      (item) => item.toLowerCase() === option.toLowerCase(),
+    );
+    const selectedOption = existingOption || option;
+
+    company.virtualOfficeSourcingOptions = normalizeSourcingOptions([
+      ...currentOptions,
+      selectedOption,
+    ]);
+    await company.save();
+
+    return res.status(existingOption ? 200 : 201).json({
+      message: existingOption
+        ? "Sourcing already available"
+        : "Sourcing added successfully",
+      option: selectedOption,
+      options: company.virtualOfficeSourcingOptions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const {
   fetchVirtualOfficeClientsReportService,
@@ -503,6 +603,17 @@ const updateVirtualOfficeClient = async (req, res) => {
     const updates = { ...req.body };
     const hasField = (key) =>
       Object.prototype.hasOwnProperty.call(updates, key);
+
+    if (hasField("channel")) {
+      updates.channel = String(updates.channel || "").trim();
+    }
+
+    if (
+      hasField("currentStatus") &&
+      !VIRTUAL_OFFICE_CURRENT_STATUSES.includes(updates.currentStatus)
+    ) {
+      return res.status(400).json({ message: "Invalid current status" });
+    }
 
     const existing = await VirtualOfficeClient.findById(id).lean();
     if (!existing) {
@@ -1268,4 +1379,6 @@ module.exports = {
   updateVirtualOfficeStatus,
   bulkInsertVirtualOfficeClients,
   bulkUpdateVirtualOfficeClients,
+  getVirtualOfficeSourcingOptions,
+  addVirtualOfficeSourcingOption,
 };

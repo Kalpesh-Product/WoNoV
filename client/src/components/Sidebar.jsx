@@ -4,6 +4,7 @@ import {
   FaChevronUp,
   FaLaptopMedical,
   FaBoxesStacked,
+  FaSquarePollVertical,
 } from "react-icons/fa6";
 import {
   FaRegCalendarAlt,
@@ -18,7 +19,7 @@ import { SiAuthelia } from "react-icons/si";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SideBarContext";
-import { MdHome } from "react-icons/md";
+import { MdDashboard, MdHome } from "react-icons/md";
 import { RiAdminFill } from "react-icons/ri";
 import { PiHandCoinsFill } from "react-icons/pi";
 import { TbCashRegister } from "react-icons/tb";
@@ -45,6 +46,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
+  const [expandedMenuItems, setExpandedMenuItems] = useState(() =>
+    location.pathname.startsWith("/app/dashboard/sales-dashboard")
+      ? ["Sales Dashboard", "Sales Dashboard/Vertical"]
+      : [],
+  );
   const { auth } = useAuth();
   const logout = useLogout();
 
@@ -220,6 +226,46 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           icon: <FaChartLine />,
           route: "/app/dashboard/sales-dashboard",
           permission: PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+          submenus: [
+            {
+              id: 51,
+              title: "Dashboard",
+              icon: <MdDashboard />,
+              route: "/app/dashboard/sales-dashboard",
+              exactMatch: true,
+              permission: PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+            },
+            {
+              id: 52,
+              title: "Vertical",
+              icon: <FaSquarePollVertical />,
+              permission: PERMISSIONS.SALES_VERTICAL.value,
+              requireOwnPermission: true,
+              submenus: [
+                {
+                  id: 521,
+                  title: "Virtual Office",
+                  route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+                  permission:
+                    PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                },
+                {
+                  id: 522,
+                  title: "Co-Working",
+                  route: "/app/dashboard/sales-dashboard/vertical/co-working",
+                  permission:
+                    PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                },
+                {
+                  id: 523,
+                  title: "Meeting Room",
+                  route: "/app/dashboard/sales-dashboard/vertical/meeting-room",
+                  permission:
+                    PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                },
+              ],
+            },
+          ],
         },
         {
           id: 3,
@@ -285,25 +331,30 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
     },
   ];
 
-  const filteredModules = defaultModules
-    .map((module) => {
-      const filteredSubmenus = module.submenus.filter((submenu) =>
-        canAccessSidebarItem(submenu.permission),
-      );
+  const filterMenuTree = (items) =>
+    items
+      .map((item) => {
+        const filteredSubmenus = item.submenus
+          ? filterMenuTree(item.submenus)
+          : [];
+        const hasModulePermission = canAccessSidebarItem(item.permission);
 
-      const hasModulePermission = canAccessSidebarItem(module.permission);
+        if (
+          (!hasModulePermission && filteredSubmenus.length === 0) ||
+          (item.requireOwnPermission && !hasModulePermission)
+        ) {
+          return null;
+        }
 
-      if (!hasModulePermission && filteredSubmenus.length === 0) {
-        return null;
-      }
+        return {
+          ...item,
+          hasModulePermission,
+          ...(item.submenus ? { submenus: filteredSubmenus } : {}),
+        };
+      })
+      .filter(Boolean);
 
-      return {
-        ...module,
-        hasModulePermission,
-        submenus: filteredSubmenus,
-      };
-    })
-    .filter(Boolean);
+  const filteredModules = filterMenuTree(defaultModules);
 
   const handleMenuOpen = (item) => {
     navigate(item.route, { flushSync: true });
@@ -321,6 +372,76 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
 
   const isActive = (path) => (location.pathname === path || location.pathname.startsWith(`${path}/`));
   const isAppsActive = (path) => location.pathname.startsWith(`/app/${path}`);
+
+  const toggleMenuItem = (menuKey) => {
+    setExpandedMenuItems((currentItems) =>
+      currentItems.includes(menuKey)
+        ? currentItems.filter((item) => item !== menuKey)
+        : [...currentItems, menuKey],
+    );
+  };
+
+  const renderNestedMenus = (items, parentKey = "", depth = 0) =>
+    items.map((item) => {
+      const menuKey = parentKey ? `${parentKey}/${item.title}` : item.title;
+      const hasChildren = Boolean(item.submenus?.length);
+      const isExpanded = expandedMenuItems.includes(menuKey);
+      const canNavigate = Boolean(item.route);
+
+      return (
+        <div key={item.id || menuKey}>
+          <div
+            role={hasChildren ? "button" : undefined}
+            aria-expanded={hasChildren ? isExpanded : undefined}
+            className={`${
+              hasChildren || canNavigate ? "cursor-pointer" : "cursor-default"
+            } py-2.5 text-gray-500 transition-all duration-100 hover:text-[#1E3D73]`}
+            onClick={() =>
+              hasChildren
+                ? toggleMenuItem(menuKey)
+                : canNavigate
+                  ? handleMenuOpen(item)
+                  : undefined
+            }
+          >
+            <div
+              className={`flex items-center ${
+                isSidebarOpen ? "justify-start" : "justify-center"
+              }`}
+              style={isSidebarOpen ? { paddingLeft: `${depth * 16}px` } : undefined}
+            >
+              <div className="flex w-8 items-center justify-center text-sm">
+                {item.icon || <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+              </div>
+              {isSidebarOpen && (
+                <>
+                  <span className="flex-1 pl-4 text-sm">{item.title}</span>
+                  {hasChildren && (
+                    <span
+                      className={`mr-3 transition-transform duration-300 ${
+                        isExpanded ? "rotate-180" : "rotate-0"
+                      }`}
+                    >
+                      <FaAngleDown />
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {hasChildren && (
+            <div
+              className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${
+                isExpanded ? "max-h-96" : "max-h-0"
+              }`}
+            >
+              {renderNestedMenus(item.submenus, menuKey, depth + 1)}
+            </div>
+          )}
+        </div>
+      );
+    });
 
   return (
     <div className={`flex flex-col px-2  bg-gray`}>
@@ -384,41 +505,11 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                     )}
                   </div>
                   <div
-                    className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${expandedModule === index ? "max-h-[500px]" : "max-h-0"
+                    className={`overflow-hidden transition-[max-height] duration-300 ease-in-out ${expandedModule === index ? "max-h-[1200px]" : "max-h-0"
                       }`}
                   >
                     {module.submenus && (
-                      <div>
-                        {module.submenus.map((submenu, idx) => (
-                          <div
-                            key={idx}
-                            className={`cursor-pointer  hover:text-[#1E3D73] transition-all duration-100 ${isActive(submenu.route)
-                              ? "text-[#1E3D73]"
-                              : "text-gray-500"
-                              }  py-3`}
-                            onClick={() => handleMenuOpen(submenu)}
-                          >
-                            <div
-                              className={`flex items-center ${isSidebarOpen
-                                ? "justify-start"
-                                : "justify-center"
-                                }`}
-                            >
-                              <div
-                                className={`flex justify-center  items-center w-8 ${isSidebarOpen ? "text-sm" : "text-sm"
-                                  }`}
-                              >
-                                {submenu.icon}
-                              </div>
-                              {isSidebarOpen && (
-                                <span className="pl-4 text-sm">
-                                  {submenu.title}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <div>{renderNestedMenus(module.submenus)}</div>
                     )}
                   </div>
                 </div>
