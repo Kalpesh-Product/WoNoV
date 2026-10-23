@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
@@ -85,6 +85,13 @@ const LeadsLayout = ({
   investorTitleAmountChip = false,
   hideFinancialYearControls = false,
   actualMonthLag = 2,
+  virtualOfficeOnly = false,
+  virtualOfficeActualLegend = "Actual",
+  virtualOfficeProjectedLegend = "Projected",
+  virtualOfficeActualColor = "#80BF01",
+  virtualOfficeProjectedColor = "#9ca3af",
+  virtualOfficeTooltipLabel,
+  virtualOfficeDataLabelsAbove = false,
 }) => {
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -320,28 +327,53 @@ const LeadsLayout = ({
 
     return [...investorActualSeries, ...projectedSeries];
   }, [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag]);
+  const scopedUniqueClientsData = useMemo(() => {
+    if (!virtualOfficeOnly) return uniqueClientsData;
+
+    const actual = uniqueClientsData.find(
+      (series) => series.name === "Virtual Office",
+    );
+    const projected = uniqueClientsData.find(
+      (series) => series.name === "Projected Virtual Office",
+    );
+
+    return [
+      actual && { ...actual, name: "Actual" },
+      projected && { ...projected, name: "Projected" },
+    ].filter(Boolean);
+  }, [uniqueClientsData, virtualOfficeOnly]);
+  const getUniqueClientSeriesColor = useCallback(
+    (seriesName) => {
+      if (seriesName === "Actual") return virtualOfficeActualColor;
+      if (seriesName === "Projected") return virtualOfficeProjectedColor;
+      return UNIQUE_CLIENT_COLOR_BY_SERIES[seriesName] || "#6B7280";
+    },
+    [virtualOfficeActualColor, virtualOfficeProjectedColor],
+  );
   const displayedUniqueClientsData = useMemo(
     () =>
-      uniqueClientsData.map((series) => {
-        const legendKey = series.name.startsWith("Projected ")
-          ? "Projected"
-          : series.name;
+      scopedUniqueClientsData.map((series) => {
+        const legendKey = virtualOfficeOnly
+          ? series.name
+          : series.name.startsWith("Projected ")
+            ? "Projected"
+            : series.name;
 
         return hiddenInvestorSeries.has(legendKey)
           ? { ...series, data: series.data.map(() => 0) }
           : series;
       }),
-    [hiddenInvestorSeries, uniqueClientsData]
+    [hiddenInvestorSeries, scopedUniqueClientsData, virtualOfficeOnly]
   );
   const investorRankedMonthEntries = useMemo(() => {
     if (!investorBlueStyle) return [];
 
-    const actualSeries = displayedUniqueClientsData.slice(
-      0,
-      ACTUAL_UNIQUE_CLIENT_SERIES.length,
-    );
+    const actualSeriesCount = virtualOfficeOnly
+      ? 1
+      : ACTUAL_UNIQUE_CLIENT_SERIES.length;
+    const actualSeries = displayedUniqueClientsData.slice(0, actualSeriesCount);
     const projectedSeries = displayedUniqueClientsData.slice(
-      ACTUAL_UNIQUE_CLIENT_SERIES.length,
+      actualSeriesCount,
     );
 
     return financialYearMonths.map((_, monthIndex) => {
@@ -353,12 +385,18 @@ const LeadsLayout = ({
       const entries = monthSeries.map((series) => ({
           name: series.name,
           value: series.data[monthIndex] || 0,
-          color: UNIQUE_CLIENT_COLOR_BY_SERIES[series.name] || "#6B7280",
+          color: getUniqueClientSeriesColor(series.name),
         }));
 
       return entries.sort((a, b) => b.value - a.value);
     });
-  }, [displayedUniqueClientsData, financialYearMonths, investorBlueStyle]);
+  }, [
+    displayedUniqueClientsData,
+    financialYearMonths,
+    investorBlueStyle,
+    virtualOfficeOnly,
+    getUniqueClientSeriesColor,
+  ]);
   const investorRankedSeries = useMemo(() => {
     if (!investorBlueStyle) return [];
 
@@ -449,15 +487,24 @@ const LeadsLayout = ({
       forceNiceScale: true,
     },
     plotOptions: {
-      bar: { columnWidth: "40%", borderRadius: 4 },
+      bar: {
+        columnWidth: "40%",
+        borderRadius: 4,
+        ...(virtualOfficeDataLabelsAbove
+          ? { dataLabels: { position: "top" } }
+          : {}),
+      },
     },
     dataLabels: {
       enabled: true,
       formatter: (value) => (value > 0 ? value : ""),
+      ...(virtualOfficeDataLabelsAbove ? { offsetY: -22 } : {}),
       ...(investorBlueStyle
         ? {
             style: {
-              colors: ["#ffffff"],
+              colors: [
+                virtualOfficeDataLabelsAbove ? "#1E3D73" : "#ffffff",
+              ],
               fontWeight: 600,
             },
           }
@@ -475,8 +522,39 @@ const LeadsLayout = ({
           intersect: true,
           custom: ({ dataPointIndex, w }) => {
             const entries = investorRankedMonthEntries[dataPointIndex] || [];
+            if (virtualOfficeOnly) {
+              const clientCount = entries.reduce(
+                (total, entry) => total + (Number(entry.value) || 0),
+                0,
+              );
+              const isProjected = entries.some((entry) =>
+                entry.name === "Projected",
+              );
+              const markerColor = isProjected
+                ? virtualOfficeProjectedColor
+                : virtualOfficeActualColor;
+              const tooltipLabel = virtualOfficeTooltipLabel
+                ? virtualOfficeTooltipLabel
+                : isProjected
+                  ? "Projected Virtual Office Client"
+                  : "Actual Virtual Office Client";
+
+              return `
+                <div style="min-width:165px;background:#fff;color:#26364d;border:1px solid #d4dbe3;border-radius:5px;box-shadow:0 2px 8px rgba(0,0,0,.16);overflow:hidden;font-family:Poppins-Regular;font-size:12px;white-space:nowrap;">
+                  <div style="padding:9px 13px;background:#eef1f4;border-bottom:1px solid #d4dbe3;">
+                    ${w.globals.labels[dataPointIndex]}
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;padding:10px 13px;">
+                    <span style="width:11px;height:11px;border-radius:50%;background:${markerColor};display:inline-block;flex-shrink:0;"></span>
+                    <span>${tooltipLabel}:</span>
+                    <strong>${clientCount}${virtualOfficeTooltipLabel ? "" : " Clients"}</strong>
+                  </div>
+                </div>
+              `;
+            }
             const isProjectedMonth = entries.some((entry) =>
-              entry.name.startsWith("Projected "),
+              entry.name.startsWith("Projected ") ||
+              entry.name.includes("(Projected)"),
             );
             const overallClientsCount = entries.reduce(
               (total, entry) => total + (Number(entry.value) || 0),
@@ -522,8 +600,8 @@ const LeadsLayout = ({
           y: { formatter: (val) => `${val} Clients` },
         },
     colors: investorBlueStyle
-      ? uniqueClientsData.map(
-          ({ name }) => UNIQUE_CLIENT_COLOR_BY_SERIES[name] || "#6B7280",
+      ? scopedUniqueClientsData.map(({ name }) =>
+          getUniqueClientSeriesColor(name),
         )
       : ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
   };
@@ -572,12 +650,15 @@ const LeadsLayout = ({
 
         {investorBlueStyle ? (
           <div className="flex flex-wrap items-center justify-center gap-4 pb-2 pt-1">
-            {[...ACTUAL_UNIQUE_CLIENT_SERIES, "Projected"].map(
+            {(virtualOfficeOnly
+              ? ["Actual", "Projected"]
+              : [...ACTUAL_UNIQUE_CLIENT_SERIES, "Projected"]
+            ).map(
               (seriesName, index) => {
                 const legendColor =
-                  seriesName === "Projected"
+                  !virtualOfficeOnly && seriesName === "Projected"
                     ? "#3c3c3c"
-                    : UNIQUE_CLIENT_COLOR_BY_SERIES[seriesName];
+                    : getUniqueClientSeriesColor(seriesName);
                 const isHidden = hiddenInvestorSeries.has(seriesName);
 
                 return (
@@ -594,7 +675,13 @@ const LeadsLayout = ({
                       className="h-3 w-3"
                       style={{ backgroundColor: legendColor }}
                     />
-                    <span>{seriesName}</span>
+                    <span>
+                      {virtualOfficeOnly && seriesName === "Actual"
+                        ? virtualOfficeActualLegend
+                        : virtualOfficeOnly && seriesName === "Projected"
+                          ? virtualOfficeProjectedLegend
+                          : seriesName}
+                    </span>
                   </button>
                 );
               }

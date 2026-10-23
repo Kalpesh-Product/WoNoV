@@ -86,8 +86,8 @@ const MainDashboard = () => {
           </g>
         </svg>
         <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:gap-8">
-          <div className="flex items-center gap-5 xl:w-[32%] xl:shrink-0 xl:border-r xl:border-[#cfddf5] xl:pr-7">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#dceaff] sm:h-24 sm:w-24">
+          <div className="flex items-center gap-5 xl:w-[35%] xl:shrink-0 xl:gap-4 xl:border-r xl:border-[#cfddf5] xl:pr-7 min-[1800px]:w-[32%] min-[1800px]:gap-5">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#dceaff] sm:h-24 sm:w-24 xl:h-20 xl:w-20 min-[1800px]:h-24 min-[1800px]:w-24">
               {auth?.user?.profilePicture?.url ? (
                 <img src={auth.user.profilePicture.url} alt={userName} className="h-full w-full object-cover" />
               ) : (
@@ -101,10 +101,10 @@ const MainDashboard = () => {
               )}
             </div>
             <div className="min-w-0">
-              <p className="text-xl leading-tight text-[#5b606c] sm:text-[28px]">{greeting},</p>
-              <h1 className="mt-1 break-words text-2xl font-pbold leading-tight text-[#163b73] sm:text-[32px]">{displayName}</h1>
+              <p className="text-xl leading-tight text-[#5b606c] sm:text-[28px] xl:text-[23px] xl:whitespace-nowrap min-[1800px]:text-[28px]">{greeting},</p>
+              <h1 className="mt-1 break-words text-2xl font-pbold leading-tight text-[#163b73] sm:text-[32px] xl:text-[27px] xl:whitespace-nowrap min-[1800px]:text-[32px]">{displayName}</h1>
               {auth?.user?.designation && (
-                <span className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-[#d7e7ff] px-3 py-1.5 text-xs font-pbold text-[#557bb5] sm:text-sm">
+                <span className="mt-3 inline-flex max-w-full items-center gap-2 rounded-full bg-[#d7e7ff] px-3 py-1.5 text-xs font-pbold text-[#557bb5] sm:text-sm xl:text-xs xl:whitespace-nowrap min-[1800px]:text-sm">
                   <MdWork size={17} className="shrink-0" aria-hidden="true" />
                   {auth.user.designation}
                 </span>

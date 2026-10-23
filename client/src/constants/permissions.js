@@ -1645,6 +1645,177 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Dashboard
 
+  SALES_VERTICAL: {
+    value: "sales_vertical",
+    title: "SALES VERTICAL",
+    type: "read",
+    access: "page",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE: {
+    value: "sales_vertical_virtual_office",
+    title: "VERTICAL - VIRTUAL OFFICE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_ANNUAL_REVENUE_TARGET_CARD: {
+    value: "sales_vertical_virtual_office_annual_revenue_target_card",
+    title: "VIRTUAL OFFICE ANNUAL REVENUE TARGET CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_REVENUE_BOOKED_CARD: {
+    value: "sales_vertical_virtual_office_revenue_booked_card",
+    title: "VIRTUAL OFFICE REVENUE BOOKED CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_REVENUE_DUE_CARD: {
+    value: "sales_vertical_virtual_office_revenue_due_card",
+    title: "VIRTUAL OFFICE REVENUE DUE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_AVERAGE_VO_PRICE_CARD: {
+    value: "sales_vertical_virtual_office_average_vo_price_card",
+    title: "VIRTUAL OFFICE AVERAGE VO PRICE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_ACTIVE_UNIQUE_CUSTOMERS_CARD: {
+    value: "sales_vertical_virtual_office_active_unique_customers_card",
+    title: "VIRTUAL OFFICE ACTIVE UNIQUE CUSTOMERS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_CARD: {
+    value: "sales_vertical_virtual_office_pipeline_renewal_card",
+    title: "VIRTUAL OFFICE PIPELINE RENEWAL CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_DEAD_UNIQUE_CLIENTS_CARD: {
+    value: "sales_vertical_virtual_office_dead_unique_clients_card",
+    title: "VIRTUAL OFFICE DEAD UNIQUE CLIENTS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_AVERAGE_SHORTFALL_SURPLUS_CARD: {
+    value: "sales_vertical_virtual_office_average_shortfall_surplus_card",
+    title: "VIRTUAL OFFICE AVERAGE SHORTFALL / SURPLUS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_REVENUES_GRAPH: {
+    value: "sales_vertical_virtual_office_revenues_graph",
+    title: "VIRTUAL OFFICE REVENUES GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/revenues",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY: {
+    value: "sales_vertical_virtual_office_india_wise_occupancy",
+    title: "VIRTUAL OFFICE INDIA-WISE OCCUPANCY",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/india-wise-occupancy",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_SECTOR_WISE_OCCUPANCY: {
+    value: "sales_vertical_virtual_office_sector_wise_occupancy",
+    title: "VIRTUAL OFFICE SECTOR-WISE OCCUPANCY",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/sector-wise-occupancy",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS: {
+    value: "sales_vertical_virtual_office_sourcing_channels",
+    title: "VIRTUAL OFFICE SOURCING CHANNELS",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/sourcing-channels",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID: {
+    value: "sales_vertical_virtual_office_direct_vs_paid",
+    title: "VIRTUAL OFFICE DIRECT VS PAID",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/direct-vs-paid",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_UNIQUE_CLIENT_COUNT_GRAPH: {
+    value: "sales_vertical_virtual_office_unique_client_count_graph",
+    title: "VIRTUAL OFFICE UNIQUE CLIENT COUNT GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/unique-client-count",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_TABLE: {
+    value: "sales_vertical_virtual_office_pipeline_renewal_table",
+    title: "VIRTUAL OFFICE PIPELINE RENEWAL TABLE",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/pipeline-renewal",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD: {
+    value: "sales_vertical_virtual_office_add_client_card",
+    title: "VIRTUAL OFFICE ADD CLIENT CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/client-onboarding",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD: {
+    value: "sales_vertical_virtual_office_client_details_card",
+    title: "VIRTUAL OFFICE CLIENT DETAILS CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD: {
+    value: "sales_vertical_virtual_office_mix_bag_card",
+    title: "VIRTUAL OFFICE MIX BAG CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/mix-bag",
+  },
+  SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD: {
+    value: "sales_vertical_virtual_office_data_card",
+    title: "VIRTUAL OFFICE DATA CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/virtual-office/data",
+  },
+  SALES_VERTICAL_COWORKING: {
+    value: "sales_vertical_coworking",
+    title: "VERTICAL - CO-WORKING",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/co-working",
+  },
+  SALES_VERTICAL_MEETING_ROOM: {
+    value: "sales_vertical_meeting_room",
+    title: "VERTICAL - MEETING ROOM",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/vertical/meeting-room",
+  },
+
   SALES_TURNOVER: {
     value: "sales_turnover_card",
     title: "TURNOVER",

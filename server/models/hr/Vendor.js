@@ -51,6 +51,7 @@ const vendorSchema = new mongoose.Schema(
       type: String,
     },
     partyType: { type: String },
+    vendorType: { type: String, trim: true },
     ifscCode: { type: String },
     bankName: { type: String },
     branchName: { type: String },

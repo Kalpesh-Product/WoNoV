@@ -76,6 +76,31 @@ const BudgetPage = () => {
   );
   const location = useLocation();
   const department = usePageDepartment();
+  const userRoles = auth?.user?.role || [];
+  const hasFinanceManagerRole = userRoles.some((role) => {
+    const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
+    return (
+      roleTitle.includes("finance") &&
+      (roleTitle.includes("manager") || roleTitle.includes("admin"))
+    );
+  });
+  const hasManagerRole = userRoles.some((role) => {
+    const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
+    return (
+      (roleTitle.includes("manager") || roleTitle.includes("admin")) &&
+      !roleTitle.includes("employee")
+    );
+  });
+  const belongsToFinance = (auth?.user?.departments || []).some((item) =>
+    String(item?.name || "").trim().toLowerCase().startsWith("finance"),
+  );
+  const isFinanceManager =
+    hasFinanceManagerRole || (hasManagerRole && belongsToFinance);
+  const isFinanceBudgetPage = String(department?.name || "")
+    .trim()
+    .toLowerCase()
+    .startsWith("finance");
+  const showManagedDepartment = isFinanceManager && isFinanceBudgetPage;
   const queryClient = useQueryClient();
   const fyFromQuery = useMemo(
     () => new URLSearchParams(location.search).get("fy"),
@@ -236,7 +261,9 @@ const BudgetPage = () => {
           rows: [],
           columns: [
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
-            // { field: "department", headerName: "Department", flex: 200 },
+            ...(showManagedDepartment
+              ? [{ field: "department", headerName: "Department", flex: 1 }]
+              : []),
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
            // { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
              { field: "projectedAmount", headerName: "Projected Amount(INR)",  flex: 1,valueFormatter: (params) => inrFormat(params.value), },
@@ -262,7 +289,7 @@ const BudgetPage = () => {
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
-      department: item.department,
+      department: item.department?.name || "-",
       expanseType: item.expanseType,
       paymentType: item.paymentType || "",
       buildingId: item?.unit?.building?._id || "",

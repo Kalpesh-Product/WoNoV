@@ -55,6 +55,9 @@ const VirtualOfficeClients = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
+  const isVerticalClientDetailsRoute = location.pathname.startsWith(
+    "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+  );
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
 
@@ -111,10 +114,15 @@ const VirtualOfficeClients = () => {
   //-------------------------Event Handlers-----------------------------//
   const handleViewClient = (clientData) => {
     const isMixBag = location.pathname.includes("mix-bag");
+    const isVerticalClientDetails = location.pathname.startsWith(
+      "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+    );
     dispatch(setSelectedClient(clientData));
 
     navigate(
-      isMixBag
+      isVerticalClientDetails
+        ? `/app/dashboard/sales-dashboard/vertical/virtual-office/client/${encodeURIComponent(clientData.clientName)}`
+        : isMixBag
         ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`
         : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`,
     );
@@ -194,14 +202,18 @@ const VirtualOfficeClients = () => {
           data={verticalData}
           columns={columns}
           tableTitle={"Virtual Office Clients"}
-          buttonTitle="Add Client"
-          handleClick={() =>
-            navigate(
-              "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/client-onboarding",
-            )
+          buttonTitle={isVerticalClientDetailsRoute ? undefined : "Add Client"}
+          handleClick={
+            isVerticalClientDetailsRoute
+              ? undefined
+              : () =>
+                  navigate(
+                    "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/client-onboarding",
+                  )
           }
           search
           exportData
+          exportInTitleRow={isVerticalClientDetailsRoute}
         />
       </PageFrame>
     </div>

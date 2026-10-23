@@ -349,6 +349,21 @@ const companySchema = new mongoose.Schema({
       ref: "Building",
     },
   ],
+  virtualOfficeSourcingOptions: {
+    type: [String],
+    default: [
+      "Google",
+      "LinkedIn",
+      "Referral",
+      "IPC",
+      "Walk-IN",
+      "WhatsApp",
+    ],
+  },
+  vendorTypeOptions: {
+    type: [String],
+    default: [],
+  },
   leaveTypes: [
     {
       name: {

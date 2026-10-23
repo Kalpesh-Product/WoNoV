@@ -26,6 +26,7 @@ const AgTableComponent = React.memo(
     paginationPageSize,
     exportData,
     exportButtonContainer,
+    exportInTitleRow = false,
     hideFilter,
     rowSelection,
     search = true,
@@ -37,6 +38,7 @@ const AgTableComponent = React.memo(
     tableTitle,
     handleClick,
     buttonTitle,
+    exportButtonExternalStyles,
     headerActions,
     exportBeforeHeaderActions = false,
     searchRowActions,
@@ -243,6 +245,7 @@ const AgTableComponent = React.memo(
       exportData ? (
         <PrimaryButton
           title={"Export"}
+          externalStyles={exportButtonExternalStyles}
           handleSubmit={() => {
             if (gridRef.current) {
               gridRef.current.api.exportDataAsCsv({
@@ -360,7 +363,17 @@ const AgTableComponent = React.memo(
               ) : (
                 ""
               )}
+              {(hideFilter || exportInTitleRow) &&
+              !exportButtonContainer &&
+              exportBeforeHeaderActions
+                ? renderExportButton()
+                : null}
               {headerActions ? headerActions : ""}
+              {(hideFilter || exportInTitleRow) &&
+              !exportButtonContainer &&
+              !exportBeforeHeaderActions
+                ? renderExportButton()
+                : null}
 
               {/* {buttonTitle ? (
                 <PrimaryButton
@@ -441,15 +454,21 @@ const AgTableComponent = React.memo(
             {hideFilter ? (
               ""
             ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  aria-label="Advanced filter"
+              <div className="flex flex-col items-end gap-2">
+                {searchRowActionsPosition === "aboveFilter" && searchRowActions
+                  ? searchRowActions
+                  : ""}
+                <div className="flex items-center gap-2">
+                  {!exportButtonContainer &&
+                    !exportInTitleRow &&
+                    renderExportButton()}
+                </div>
+                <div
                   className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
                   onClick={() => setFilterDrawerOpen(true)}
                 >
                   <IoFilter />
-                </button>
+                </div>
               </div>
             )}
           </div>

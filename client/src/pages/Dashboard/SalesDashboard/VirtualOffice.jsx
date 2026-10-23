@@ -19,6 +19,17 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { queryClient } from "../../../main";
 
+const BiznestHeaderLogo = () => (
+  <span
+    aria-label="BIZNest"
+    className="inline-flex shrink-0 items-baseline whitespace-nowrap leading-none text-[#2a2525]"
+  >
+    <span>BI</span>
+    <span className="text-[#e33434]">Z</span>
+    <span>&nbsp;N<span className="lowercase">est</span></span>
+  </span>
+);
+
 const getNormalizedPaymentStatus = (status) => {
   if (typeof status === "string") return status.trim().toLowerCase();
   return status ? "paid" : "unpaid";
@@ -160,6 +171,15 @@ const getFinancialYear = (dateValue) => {
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
+const getFinancialYearMonths = (fyLabel) => {
+  const startYear = Number(fyLabel?.replace("FY", "").trim().split("-")[0]);
+  if (!Number.isFinite(startYear)) return [];
+
+  return Array.from({ length: 12 }, (_, index) =>
+    dayjs(new Date(startYear, 3, 1)).add(index, "month"),
+  );
+};
+
 const getUserDisplayName = (user) => {
   if (!user) return "";
   if (typeof user === "string") return user;
@@ -175,6 +195,8 @@ const getUserDisplayName = (user) => {
   //const VirtualOffice = ({ showChart = true }) => {
   const VirtualOffice = ({
     showChart = true,
+    graphOnly = false,
+    dashboardProjectionMode = false,
     showInvoiceProjections = false,
     useTaxableAmountForGraph = false,
   }) => {
@@ -661,11 +683,7 @@ const getUserDisplayName = (user) => {
       isLoadingVirtualOfficeRevenue
         ? []
         : tableData
-            .filter(
-              (item) =>
-                item.isHistoricalBilling === true ||
-                item.normalizedStatus === "paid",
-            )
+            .filter((item) => item.normalizedStatus === "paid")
             .map((item) => ({
               ...item,
               revenue: getNumericAmount(item.revenue),
@@ -688,6 +706,176 @@ const getUserDisplayName = (user) => {
       graphData.filter((item) => getFinancialYear(item.graphDate) === selectedFY),
     [graphData, selectedFY],
   );
+
+  const dashboardGraphData = useMemo(() => {
+    if (!dashboardProjectionMode) return graphData;
+
+    const fiscalMonths = getFinancialYearMonths(selectedFY);
+    const currentMonth = dayjs().startOf("month");
+    const isActualMonthAvailable = (month) =>
+      !currentMonth.isBefore(
+        month.startOf("month").add(2, "month"),
+        "month",
+      );
+    const actualByMonth = new Map();
+
+    selectedFiscalYearRevenue.forEach((item) => {
+      const date = dayjs(item.graphDate);
+      if (!date.isValid()) return;
+
+      const monthKey = date.format("YYYY-MM");
+      actualByMonth.set(
+        monthKey,
+        (actualByMonth.get(monthKey) || 0) +
+          getNumericAmount(item.reportingAmount),
+      );
+    });
+
+    const latestActualIndex = fiscalMonths.reduce(
+      (latestIndex, month, index) =>
+        isActualMonthAvailable(month) ? index : latestIndex,
+      -1,
+    );
+
+    if (latestActualIndex < 0) return [];
+
+    const actualIncomeThroughLatestMonth = fiscalMonths
+      .slice(0, latestActualIndex + 1)
+      .reduce(
+        (total, month) =>
+          total + (actualByMonth.get(month.format("YYYY-MM")) || 0),
+        0,
+      );
+    const projectedMonthlyAverage =
+      actualIncomeThroughLatestMonth / (latestActualIndex + 1);
+
+    return fiscalMonths.flatMap((month, index) => {
+      const monthKey = month.format("YYYY-MM");
+      const actualAmount = actualByMonth.get(monthKey) || 0;
+
+      if (index <= latestActualIndex && actualAmount > 0) {
+        return [
+          {
+            graphDate: month.toISOString(),
+            reportingAmount: actualAmount,
+            vertical: "Revenue Booked",
+          },
+        ];
+      }
+
+      if (index > latestActualIndex) {
+        return [
+          {
+            graphDate: month.toISOString(),
+            reportingAmount: projectedMonthlyAverage,
+            vertical: "Balance KRA Target",
+          },
+        ];
+      }
+
+      return [];
+    });
+  }, [
+    dashboardProjectionMode,
+    graphData,
+    selectedFY,
+    selectedFiscalYearRevenue,
+  ]);
+
+  const dashboardGraphSummary = useMemo(
+    () =>
+      dashboardGraphData.reduce(
+        (summary, item) => {
+          const amount = getNumericAmount(item.reportingAmount);
+          if (item.vertical === "Balance KRA Target") {
+            summary.projected += amount;
+          } else {
+            summary.income += amount;
+          }
+          return summary;
+        },
+        { income: 0, projected: 0 },
+      ),
+    [dashboardGraphData],
+  );
+
+  const dashboardMonthlyClientCounts = useMemo(() => {
+    if (!dashboardProjectionMode) return [];
+
+    const fiscalMonths = getFinancialYearMonths(selectedFY);
+    const currentMonth = dayjs().startOf("month");
+    const isActualMonthAvailable = (month) =>
+      !currentMonth.isBefore(
+        month.startOf("month").add(2, "month"),
+        "month",
+      );
+    const actualCountsByMonth = new Map(
+      fiscalMonths.map((month) => [month.format("YYYY-MM"), 0]),
+    );
+
+    virtualOfficeRevenue.forEach((row) => {
+      const revenueDate = dayjs(
+        row?.rentDate ||
+          row?.invoiceUploadedAt ||
+          row?.invoice?.date ||
+          row?.createdAt,
+      );
+      if (
+        !revenueDate.isValid() ||
+        getFinancialYear(revenueDate.toDate()) !== selectedFY
+      ) {
+        return;
+      }
+
+      const monthKey = revenueDate.format("YYYY-MM");
+      if (!actualCountsByMonth.has(monthKey)) return;
+      actualCountsByMonth.set(
+        monthKey,
+        (actualCountsByMonth.get(monthKey) || 0) + 1,
+      );
+    });
+
+    const completedActualMonths = fiscalMonths.filter((month) =>
+      isActualMonthAvailable(month),
+    );
+    const actualClientTotal = completedActualMonths.reduce(
+      (total, month) =>
+        total + (actualCountsByMonth.get(month.format("YYYY-MM")) || 0),
+      0,
+    );
+    const projectedMonthlyClientCount = completedActualMonths.length
+      ? Math.round(actualClientTotal / completedActualMonths.length)
+      : 0;
+
+    return fiscalMonths.map((month) =>
+      isActualMonthAvailable(month)
+        ? actualCountsByMonth.get(month.format("YYYY-MM")) || 0
+        : projectedMonthlyClientCount,
+    );
+  }, [dashboardProjectionMode, selectedFY, virtualOfficeRevenue]);
+
+  const dashboardAxisScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...dashboardGraphData.map((item) =>
+        getNumericAmount(item.reportingAmount),
+      ),
+    );
+    if (highestValue <= 0) {
+      return { max: 600000, step: 200000, tickAmount: 3 };
+    }
+
+    const rawStep = highestValue / 3;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const niceFactor = [1, 2, 5, 10].find(
+      (factor) => normalizedStep <= factor,
+    );
+    const step = (niceFactor || 10) * magnitude;
+    const max = Math.max(step, Math.ceil(highestValue / step) * step);
+
+    return { max, step, tickAmount: Math.round(max / step) };
+  }, [dashboardGraphData]);
 
   const maxVirtualOfficeAmount = useMemo(
     () =>
@@ -1011,34 +1199,113 @@ const getUserDisplayName = (user) => {
 
   const useLakhsScale = maxVirtualOfficeAmount >= 100000;
 
-  const options = useMemo(
-    () => ({
+  const options = useMemo(() => {
+    if (!dashboardProjectionMode) {
+      return {
+        dataLabels: {
+          enabled: true,
+          formatter: (val) => `${inrFormat(val)}`,
+          style: {
+            fontSize: "10px",
+            fontWeight: "bold",
+            colors: ["#000"],
+          },
+          offsetY: -22,
+        },
+        yaxis: {
+          min: 0,
+          title: {
+            text: useLakhsScale ? "Amount In Lakhs (INR)" : "Amount (INR)",
+          },
+          labels: {
+            formatter: (val) =>
+              useLakhsScale
+                ? `${Number(val / 100000).toLocaleString("en-IN", {
+                    maximumFractionDigits: 1,
+                  })}`
+                : `${Number(val).toLocaleString("en-IN", {
+                    maximumFractionDigits: 0,
+                  })}`,
+          },
+        },
+        tooltip: {
+          enabled: true,
+          custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+            const label =
+              w?.globals?.categoryLabels?.[dataPointIndex] ||
+              w?.config?.xaxis?.categories?.[dataPointIndex] ||
+              "";
+            const seriesName =
+              w?.globals?.seriesNames?.[seriesIndex] || "Virtual Office";
+            const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
+            const color = w?.globals?.colors?.[seriesIndex] || "#11daf5";
+
+            return `
+            <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
+              <div style="background: #eef2f6; color: #1f2937; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #dbe1e8;">
+                ${label}
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 12px; color: #111827;">
+                <span style="width: 12px; height: 12px; border-radius: 999px; background: ${color}; display: inline-block;"></span>
+                <span>${seriesName}:</span>
+                <span style="font-weight: 700;">INR ${inrFormat(value)}</span>
+              </div>
+            </div>
+          `;
+          },
+          y: {
+            formatter: (val) => `INR ${val.toLocaleString()}`,
+          },
+        },
+        plotOptions: {
+          bar: {
+            columnWidth: "40%",
+            borderRadius: 5,
+            dataLabels: {
+              position: "top",
+            },
+          },
+        },
+        colors: ["#11daf5"],
+      };
+    }
+
+    return {
       dataLabels: {
         enabled: true,
         formatter: function (val) {
-          return `${inrFormat(val)}`;
+          const truncatedLakhs = Math.floor((Number(val) / 100000) * 100) / 100;
+          return truncatedLakhs.toFixed(2).replace(".", ",");
         },
         style: {
           fontSize: "10px",
           fontWeight: "bold",
-          colors: ["#000"],
+          colors: ["#1E3D73"],
         },
         offsetY: -22,
       },
       yaxis: {
         min: 0,
+        max: dashboardAxisScale.max,
+        tickAmount: dashboardAxisScale.tickAmount,
+        forceNiceScale: false,
         title: {
-          text: useLakhsScale ? "Amount In Lakhs (INR)" : "Amount (INR)",
+          text: "Amount In Lakhs (INR)",
+          style: { color: "#1E3D73" },
         },
         labels: {
+          style: { colors: "#1E3D73" },
           formatter: (val) =>
-            useLakhsScale
-              ? `${Number(val / 100000).toLocaleString("en-IN", {
-                  maximumFractionDigits: 1,
-                })}`
-              : `${Number(val).toLocaleString("en-IN", {
-                  maximumFractionDigits: 0,
-                })}`,
+            `${Number(val / 100000).toLocaleString("en-IN", {
+              maximumFractionDigits: 1,
+            })}`,
+        },
+      },
+      xaxis: {
+        labels: {
+          style: {
+            colors: "#1E3D73",
+          },
         },
       },
       tooltip: {
@@ -1053,6 +1320,11 @@ const getUserDisplayName = (user) => {
           const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
           const color = w?.globals?.colors?.[seriesIndex] || "#11daf5";
 
+          const revenueLabel =
+            seriesName === "Balance KRA Target"
+              ? "Projected Revenue"
+              : "Booked Revenue";
+
           return `
           <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
             <div style="background: #eef2f6; color: #1f2937; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #dbe1e8;">
@@ -1060,8 +1332,13 @@ const getUserDisplayName = (user) => {
             </div>
             <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 12px; color: #111827;">
               <span style="width: 12px; height: 12px; border-radius: 999px; background: ${color}; display: inline-block;"></span>
-              <span>${seriesName}:</span>
-              <span style="font-weight: 700;">INR ${inrFormat(value)}</span>
+              <span>${revenueLabel}:</span>
+              <span style="font-weight: 700;">₹ ${inrFormat(value)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; font-size: 12px; color: #111827;">
+              <span aria-hidden="true">&#128101;</span>
+              <span>Virtual Office Client:</span>
+              <span style="font-weight: 700;">${dashboardMonthlyClientCounts[dataPointIndex] || 0}</span>
             </div>
           </div>
         `;
@@ -1079,33 +1356,81 @@ const getUserDisplayName = (user) => {
           },
         },
       },
-      colors: ["#11daf5"],
-    }),
-    [useLakhsScale],
-  );
+      legend: {
+        labels: {
+          colors: "#1E3D73",
+        },
+      },
+      colors: ["#3cb37180", "#787878"],
+    };
+  }, [
+    dashboardAxisScale,
+    dashboardMonthlyClientCounts,
+    dashboardProjectionMode,
+    useLakhsScale,
+  ]);
 
-  return (
-    <div className="flex flex-col gap-4">
-      {/* {!isLoadingVirtualOfficeRevenue ? ( */}
-      {showChart && (!isLoadingVirtualOfficeRevenue ? (
+  const revenueChart = !isLoadingVirtualOfficeRevenue ? (
         <FyBarGraph
+          key={
+            dashboardProjectionMode
+              ? "virtual-office-dashboard-revenues"
+              : "virtual-office-revenues-v2"
+          }
+          chartId={
+            dashboardProjectionMode
+              ? "virtual-office-dashboard-revenues"
+              : "virtual-office-revenues-v2"
+          }
           graphTitle={
-            useTaxableAmountForGraph
+            dashboardProjectionMode
+              ? (
+                  <span className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
+                    <BiznestHeaderLogo />
+                    <span className="inline-flex items-baseline leading-none">
+                      {`VIRTUAL OFFICE ${selectedFY} - REVENUES`}
+                    </span>
+                  </span>
+                )
+              : useTaxableAmountForGraph
               ? "ANNUAL MONTHLY VIRTUAL OFFICE TAXABLE AMOUNT"
               : "ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"
           }
-          data={graphData}
+          data={dashboardProjectionMode ? dashboardGraphData : graphData}
           dateKey="graphDate"
           valueKey="reportingAmount"
           chartOptions={options}
           selectedFY={selectedFY}
           onSelectedFYChange={setSelectedFY}
           disableHoverCrosshair
+          hideYearNavigation={dashboardProjectionMode}
+          borderColor={dashboardProjectionMode ? "#1E3D73" : undefined}
+          bodyBorderColor={dashboardProjectionMode ? "#9FB2CF" : undefined}
+          headerRightContent={
+            dashboardProjectionMode ? (
+              <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+                <span>Projection:</span>
+                <span>
+                  {inrFormat(
+                    dashboardGraphSummary.income +
+                      dashboardGraphSummary.projected,
+                  )}
+                </span>
+              </div>
+            ) : undefined
+          }
         />
       ) : (
         <Skeleton height={"500px"} width={"100%"} />
-      // )}
-      ))}
+      );
+
+  if (graphOnly) {
+    return <div className="flex flex-col gap-4">{revenueChart}</div>;
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      {showChart && revenueChart}
 
       {!isLoadingVirtualOfficeRevenue ? (
         <WidgetTable

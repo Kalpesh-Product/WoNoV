@@ -61,21 +61,37 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isNonNavigableSegment = segment === "visitor-history";
+    const isVerticalVirtualOfficeClientPath =
+      pathSegments.includes("vertical") &&
+      pathSegments.includes("virtual-office") &&
+      pathSegments.includes("client");
+    const isClientIdSegment =
+      isVerticalVirtualOfficeClientPath &&
+      pathSegments[index - 1] === "client" &&
+      ["client-details", "desks", "revenue"].includes(
+        pathSegments[index + 1],
+      );
+    const isNonNavigableSegment =
+      segment === "visitor-history" ||
+      (isVerticalVirtualOfficeClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
+    const isVirtualOfficeVerticalSegment =
+      segment === "vertical" && pathSegments[index + 1] === "virtual-office";
 
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isHistoryTabSegment
-      ? `/app/visitors/manage-visitors/${segment}`
-      : isDirectAppPath
-        ? `/app/${path}`
-        : `/app/dashboard/${path}`;
+    const fullPath = isVirtualOfficeVerticalSegment
+      ? "/app/dashboard/sales-dashboard/vertical/virtual-office"
+      : isHistoryTabSegment
+        ? `/app/visitors/manage-visitors/${segment}`
+        : isDirectAppPath
+          ? `/app/${path}`
+          : `/app/dashboard/${path}`;
 
     // Capitalize for display
     // const displayText = decodeURIComponent(segment)
@@ -86,6 +102,8 @@ const BreadCrumbComponent = () => {
       isLast && location.state?.breadcrumbLabel
         ? location.state.breadcrumbLabel
         : formatLabel(segment);
+
+    if (isClientIdSegment) return null;
 
     return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">

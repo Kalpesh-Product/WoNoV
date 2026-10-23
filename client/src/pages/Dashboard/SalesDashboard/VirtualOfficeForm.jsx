@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { TextField, MenuItem, CircularProgress } from "@mui/material";
+import {
+  Autocomplete,
+  TextField,
+  MenuItem,
+  CircularProgress,
+} from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -14,6 +19,7 @@ import PageFrame from "../../../components/Pages/PageFrame";
 import useAuth from "../../../hooks/useAuth";
 
 const VirtualOfficeForm = () => {
+  const queryClient = useQueryClient();
   const {
     control,
     handleSubmit,
@@ -28,6 +34,7 @@ const VirtualOfficeForm = () => {
       brandName: "",
       service: "",
       sector: "",
+      channel: "",
       hoCity: "",
       hoState: "",
       building: "",
@@ -88,6 +95,79 @@ const VirtualOfficeForm = () => {
   const axios = useAxiosPrivate();
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [sourcingOptions, setSourcingOptions] = useState([
+    "Google",
+    "LinkedIn",
+    "Referral",
+    "IPC",
+    "Walk-IN",
+    "WhatsApp",
+  ]);
+  const [newSourcingOption, setNewSourcingOption] = useState("");
+
+  const { data: savedSourcingOptions = [] } = useQuery({
+    queryKey: ["virtualOfficeSourcingOptions"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/sales/virtual-office/sourcing-options",
+      );
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    if (savedSourcingOptions.length) {
+      setSourcingOptions(savedSourcingOptions);
+    }
+  }, [savedSourcingOptions]);
+
+  const { mutate: saveSourcingOption, isPending: isSavingSourcingOption } =
+    useMutation({
+      mutationFn: async (option) => {
+        const response = await axios.post(
+          "/api/sales/virtual-office/sourcing-options",
+          { option },
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        setSourcingOptions(data.options);
+        queryClient.setQueryData(
+          ["virtualOfficeSourcingOptions"],
+          data.options,
+        );
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to add sourcing",
+        );
+      },
+    });
+
+  const handleAddSourcingOption = (option = newSourcingOption) => {
+    const nextOption = String(option || "").trim();
+    if (!nextOption) return;
+
+    const existingOption = sourcingOptions.find(
+      (option) => option.toLowerCase() === nextOption.toLowerCase(),
+    );
+    const selectedOption = existingOption || nextOption;
+
+    if (!existingOption) {
+      setSourcingOptions((options) => [...options, nextOption]);
+      saveSourcingOption(nextOption);
+    }
+
+    setValue("channel", selectedOption, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setNewSourcingOption(selectedOption);
+  };
+
   useEffect(() => {
     setStates(State.getStatesOfCountry("IN"));
   }, []);
@@ -158,8 +238,13 @@ const VirtualOfficeForm = () => {
         return response.data;
       },
       onSuccess: (data) => {
+        queryClient.invalidateQueries({
+          queryKey: ["virtualOfficeClientOptions"],
+        });
+        queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
         toast.success(data.message);
         reset();
+        setNewSourcingOption("");
       },
       onError: (error) => {
               toast.error(
@@ -176,6 +261,7 @@ const VirtualOfficeForm = () => {
       phone: data.phone,
       brandName: data.brandName,
       sector: data.sector,
+      channel: data.channel,
       state:
         states.find((item) => item.isoCode === data.hoState)?.name ||
         data.hoState,
@@ -300,7 +386,7 @@ const VirtualOfficeForm = () => {
                       />
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-3 gap-4">
                     <Controller
                       name="service"
                       control={control}
@@ -359,6 +445,96 @@ const VirtualOfficeForm = () => {
                             IT & Consulting
                           </MenuItem>
                         </TextField>
+                      )}
+                    />
+                    <Controller
+                      name="channel"
+                      control={control}
+                      rules={{ required: "Sourcing is required" }}
+                      render={({ field }) => (
+                        <Autocomplete
+                          freeSolo
+                          selectOnFocus
+                          clearOnBlur={false}
+                          handleHomeEndKeys
+                          options={sourcingOptions}
+                          value={field.value || null}
+                          inputValue={newSourcingOption}
+                          loading={isSavingSourcingOption}
+                          onInputChange={(_event, value, reason) => {
+                            if (reason !== "reset") {
+                              setNewSourcingOption(value);
+                            }
+                          }}
+                          onChange={(_event, value) => {
+                            if (value && typeof value === "object") {
+                              handleAddSourcingOption(value.inputValue);
+                              return;
+                            }
+
+                            if (
+                              value &&
+                              !sourcingOptions.some(
+                                (option) =>
+                                  option.toLowerCase() === value.toLowerCase(),
+                              )
+                            ) {
+                              handleAddSourcingOption(value);
+                              return;
+                            }
+
+                            field.onChange(value || "");
+                            setNewSourcingOption(value || "");
+                          }}
+                          filterOptions={(options, params) => {
+                            const typedValue = params.inputValue.trim();
+                            const filteredOptions = options.filter((option) =>
+                              option
+                                .toLowerCase()
+                                .includes(typedValue.toLowerCase()),
+                            );
+                            const alreadyExists = options.some(
+                              (option) =>
+                                option.toLowerCase() ===
+                                typedValue.toLowerCase(),
+                            );
+
+                            if (typedValue && !alreadyExists) {
+                              filteredOptions.push({
+                                inputValue: typedValue,
+                                label: `+ Add "${typedValue}"`,
+                              });
+                            }
+
+                            return filteredOptions;
+                          }}
+                          getOptionLabel={(option) =>
+                            typeof option === "string"
+                              ? option
+                              : option.label || ""
+                          }
+                          renderOption={(props, option) => (
+                            <li {...props} key={option.inputValue || option}>
+                              {typeof option === "string" ? (
+                                option
+                              ) : (
+                                <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                  {option.label}
+                                </span>
+                              )}
+                            </li>
+                          )}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              label="Sourcing"
+                              placeholder="Select or Add Source"
+                              error={!!errors.channel}
+                              helperText={errors.channel?.message}
+                            />
+                          )}
+                        />
                       )}
                     />
                   </div>
