@@ -56,7 +56,7 @@ const VirtualOfficeClients = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isVerticalClientDetailsRoute = location.pathname.startsWith(
-    "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+    "/app/dashboard/sales-dashboard/virtual-office/client-details",
   );
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
@@ -115,13 +115,13 @@ const VirtualOfficeClients = () => {
   const handleViewClient = (clientData) => {
     const isMixBag = location.pathname.includes("mix-bag");
     const isVerticalClientDetails = location.pathname.startsWith(
-      "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+      "/app/dashboard/sales-dashboard/virtual-office/client-details",
     );
     dispatch(setSelectedClient(clientData));
 
     navigate(
       isVerticalClientDetails
-        ? `/app/dashboard/sales-dashboard/vertical/virtual-office/client/${encodeURIComponent(clientData.clientName)}`
+        ? `/app/dashboard/sales-dashboard/virtual-office/client/${encodeURIComponent(clientData.clientName)}`
         : isMixBag
         ? `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`
         : `/app/dashboard/sales-dashboard/clients/virtual-office/${encodeURIComponent(clientData.clientName)}`,

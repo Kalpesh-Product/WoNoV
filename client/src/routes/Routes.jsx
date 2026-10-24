@@ -2637,12 +2637,11 @@ export const routes = createBrowserRouter([
                         element: <SalesDashboard />,
                       },
                       {
-                        path: "vertical/virtual-office",
+                        path: "virtual-office",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                             ]}
                           >
@@ -2651,12 +2650,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/client-onboarding",
+                        path: "virtual-office/client-onboarding",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD
@@ -2668,12 +2666,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/revenues",
+                        path: "virtual-office/revenues",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_REVENUES_GRAPH
@@ -2685,12 +2682,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/client-details",
+                        path: "virtual-office/client-details",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
@@ -2702,12 +2698,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/mix-bag",
+                        path: "virtual-office/mix-bag",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD
@@ -2719,12 +2714,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/data",
+                        path: "virtual-office/data",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
@@ -2735,12 +2729,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/data/vendor-onboard",
+                        path: "virtual-office/data/vendor-onboard",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
@@ -2751,12 +2744,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/data/:id",
+                        path: "virtual-office/data/:id",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
@@ -2767,12 +2759,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/client/:clientId",
+                        path: "virtual-office/client/:clientId",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
@@ -2798,12 +2789,11 @@ export const routes = createBrowserRouter([
                         ],
                       },
                       {
-                        path: "vertical/virtual-office/india-wise-occupancy",
+                        path: "virtual-office/india-wise-occupancy",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY
@@ -2815,12 +2805,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/sector-wise-occupancy",
+                        path: "virtual-office/sector-wise-occupancy",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_SECTOR_WISE_OCCUPANCY
@@ -2832,12 +2821,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/sourcing-channels",
+                        path: "virtual-office/sourcing-channels",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS
@@ -2849,12 +2837,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/direct-vs-paid",
+                        path: "virtual-office/direct-vs-paid",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID
@@ -2866,12 +2853,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/unique-client-count",
+                        path: "virtual-office/unique-client-count",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_UNIQUE_CLIENT_COUNT_GRAPH
@@ -2883,12 +2869,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/virtual-office/pipeline-renewal",
+                        path: "virtual-office/pipeline-renewal",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
                               PERMISSIONS
                                 .SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_TABLE
@@ -2900,12 +2885,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/co-working",
+                        path: "co-working",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_COWORKING.value,
                             ]}
                           >
@@ -2914,12 +2898,11 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "vertical/meeting-room",
+                        path: "meeting-room",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
-                              PERMISSIONS.SALES_VERTICAL.value,
                               PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
                             ]}
                           >

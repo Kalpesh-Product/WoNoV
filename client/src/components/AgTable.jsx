@@ -115,11 +115,14 @@ const AgTableComponent = React.memo(
       return () => cancelAnimationFrame(frameId);
     }, [paginationPage, serverPagination]);
 
-    const defaultColDef = {
-      resizable: true,
-      sortable: true,
-      autoHeight: true,
-    };
+    const defaultColDef = useMemo(
+      () => ({
+        resizable: true,
+        sortable: true,
+        autoHeight: true,
+      }),
+      [],
+    );
 
     // Get unique values for dropdown columns
     const columnOptions = useMemo(() => {
@@ -450,7 +453,6 @@ const AgTableComponent = React.memo(
               : ""}
             {searchRowActionsPosition === "aboveFilter" ? searchRowActions : null}
             {toolbarActions}
-            {!exportButtonContainer && renderExportButton()}
             {hideFilter ? (
               ""
             ) : (

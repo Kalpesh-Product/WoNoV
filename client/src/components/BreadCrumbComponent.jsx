@@ -61,37 +61,31 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isVerticalVirtualOfficeClientPath =
-      pathSegments.includes("vertical") &&
+    const isVirtualOfficeClientPath =
       pathSegments.includes("virtual-office") &&
       pathSegments.includes("client");
     const isClientIdSegment =
-      isVerticalVirtualOfficeClientPath &&
+      isVirtualOfficeClientPath &&
       pathSegments[index - 1] === "client" &&
       ["client-details", "desks", "revenue"].includes(
         pathSegments[index + 1],
       );
     const isNonNavigableSegment =
       segment === "visitor-history" ||
-      (isVerticalVirtualOfficeClientPath && segment === "client");
+      (isVirtualOfficeClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
-    const isVirtualOfficeVerticalSegment =
-      segment === "vertical" && pathSegments[index + 1] === "virtual-office";
-
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isVirtualOfficeVerticalSegment
-      ? "/app/dashboard/sales-dashboard/vertical/virtual-office"
-      : isHistoryTabSegment
-        ? `/app/visitors/manage-visitors/${segment}`
-        : isDirectAppPath
-          ? `/app/${path}`
-          : `/app/dashboard/${path}`;
+    const fullPath = isHistoryTabSegment
+      ? `/app/visitors/manage-visitors/${segment}`
+      : isDirectAppPath
+        ? `/app/${path}`
+        : `/app/dashboard/${path}`;
 
     // Capitalize for display
     // const displayText = decodeURIComponent(segment)

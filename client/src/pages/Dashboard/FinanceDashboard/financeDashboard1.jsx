@@ -4296,6 +4296,7 @@ const FinanceDashboard1 = () => {
             },
           }))}
           search
+          showDateControls={false}
         />
         </div>
         </WidgetSection>
