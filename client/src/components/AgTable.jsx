@@ -450,7 +450,6 @@ const AgTableComponent = React.memo(
               : ""}
             {searchRowActionsPosition === "aboveFilter" ? searchRowActions : null}
             {toolbarActions}
-            {!exportButtonContainer && renderExportButton()}
             {hideFilter ? (
               ""
             ) : (

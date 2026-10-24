@@ -854,6 +854,7 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
           columns={columns}
           search
           hideFilter
+          showDateControls={false}
         />
       </div>
       </WidgetSection>
