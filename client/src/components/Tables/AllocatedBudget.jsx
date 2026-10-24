@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import dayjs from "dayjs";
 import {
   Tabs,
@@ -234,8 +234,10 @@ const AllocatedBudget = ({
   const [confirmationAction, setConfirmationAction] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const openCalendar = Boolean(anchorEl);
-  const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
-  const handleCloseCalendar = () => setAnchorEl(null);
+  const handleOpenCalendar = useCallback((event) => {
+    setAnchorEl(event.currentTarget);
+  }, []);
+  const handleCloseCalendar = useCallback(() => setAnchorEl(null), []);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -439,15 +441,17 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     },
   }[confirmationAction?.type];
 
-  const handleOpenActionMenu = (event, row) => {
+  const handleOpenActionMenu = useCallback((event, row) => {
+    event.preventDefault();
+    event.stopPropagation();
     setActionAnchorEl(event.currentTarget);
     setActionRow(row);
-  };
+  }, []);
 
-  const handleCloseActionMenu = () => {
+  const handleCloseActionMenu = useCallback(() => {
     setActionAnchorEl(null);
     setActionRow(null);
-  };
+  }, []);
 
   const handleOpenEditModal = (row) => {
     resetEdit({
@@ -774,6 +778,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     canDeleteBudgets,
     enableActionMenu,
     financialData,
+    handleOpenActionMenu,
     isDeletePending,
     isRestorePending,
     // isTechDepartment,
@@ -806,7 +811,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     [disabledRows],
   );
 
-  const handleExportPass = () => {
+  const handleExportPass = useCallback(() => {
     if (!agGridRef.current) return;
 
     agGridRef.current.api.exportDataAsCsv({
@@ -833,11 +838,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
       },
     });
-  };
+  }, [newTitle, tableColumns]);
 
-  if (isLoading) return <CircularProgress />;
+  const getBudgetRowStyle = useCallback(
+    ({ data }) =>
+      data?.isDeleted
+        ? {
+            backgroundColor: "#eef1f5",
+            color: "#6b7280",
+            opacity: 0.82,
+          }
+        : undefined,
+    [],
+  );
 
-  const dateControls = (<>
+  const dateControls = useMemo(() => (<>
 <div className="flex justify-center items-center gap-2 xl:col-start-2">
             {dateRange.length > 0 && dateRange[0] && (
               <div className="flex flex-wrap items-center gap-2">
@@ -908,9 +923,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                 />
               )}
             </Popover>
-  </>);
+  </>), [anchorEl, dateRange, handleCloseCalendar, handleOpenCalendar, openCalendar, validDateSet]);
 
-  const toolbarButtons = (<>
+  const toolbarButtons = useMemo(() => (<>
 {onRequestBudget && (
                 <PrimaryButton
                   title="Request Budget"
@@ -922,7 +937,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
 {exportData && (
                 <PrimaryButton title="Export" handleSubmit={handleExportPass} />
               )}
-  </>);
+  </>), [exportData, handleExportPass, onRequestBudget]);
+
+  if (isLoading) return <CircularProgress />;
 
     return (
     <>
@@ -977,15 +994,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               columns={tableColumns}
               tableRef={agGridRef}
               tableHeight={350}
-              getRowStyle={({ data }) =>
-                data?.isDeleted
-                  ? {
-                      backgroundColor: "#eef1f5",
-                      color: "#6b7280",
-                      opacity: 0.82,
-                    }
-                  : undefined
-              }
+              getRowStyle={getBudgetRowStyle}
             />
         </div>
       </WidgetSection>
@@ -1143,8 +1152,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   anchorEl={actionAnchorEl}
   open={Boolean(actionAnchorEl)}
   onClose={handleCloseActionMenu}
-  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-  transformOrigin={{ vertical: "top", horizontal: "center" }}
+  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+  transformOrigin={{ vertical: "top", horizontal: "right" }}
   slotProps={{
     paper: {
       sx: {

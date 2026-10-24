@@ -489,12 +489,12 @@ const VirtualOfficeUniqueClientsGraph = ({ revenueRows }) => {
       hideAccordion
       title={
         <Link
-          to="/app/dashboard/sales-dashboard/vertical/virtual-office/unique-client-count"
+          to="/app/dashboard/sales-dashboard/virtual-office/unique-client-count"
           className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]"
         >
           <BiznestTitle />
           <span className="inline-flex items-baseline leading-none">
-            VIRTUAL OFFICE FY {financialYearLabel} - UNIQUE CLIENT COUNT
+            VIRTUAL OFFICE UNIQUE CLIENT COUNT - FY {financialYearLabel}
           </span>
         </Link>
       }
@@ -790,7 +790,7 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
 
                   dispatch(setSelectedClient(params.data));
                   navigate(
-                    `/app/dashboard/sales-dashboard/vertical/virtual-office/client/${encodeURIComponent(clientIdentifier)}/client-details`,
+                    `/app/dashboard/sales-dashboard/virtual-office/client/${encodeURIComponent(clientIdentifier)}/client-details`,
                     { state: { editMode: true, renewal: true } },
                   );
                 },
@@ -816,7 +816,7 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
       bodyBorderColor="#9FB2CF"
       title={
         <Link
-          to="/app/dashboard/sales-dashboard/vertical/virtual-office/pipeline-renewal"
+          to="/app/dashboard/sales-dashboard/virtual-office/pipeline-renewal"
           className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]"
         >
           <BiznestTitle />
@@ -878,7 +878,7 @@ const VirtualOfficeActionCards = ({ hasPermission }) => {
       title: "Onboard New VO Customer",
       icon: <MdPersonAddAlt1 />,
       route:
-        "/app/dashboard/sales-dashboard/vertical/virtual-office/client-onboarding",
+        "/app/dashboard/sales-dashboard/virtual-office/client-onboarding",
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD.value,
     },
@@ -886,7 +886,7 @@ const VirtualOfficeActionCards = ({ hasPermission }) => {
       title: "Overall VO Summary",
       icon: <MdAssignmentInd />,
       route:
-        "/app/dashboard/sales-dashboard/vertical/virtual-office/client-details",
+        "/app/dashboard/sales-dashboard/virtual-office/client-details",
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD.value,
     },
@@ -894,14 +894,14 @@ const VirtualOfficeActionCards = ({ hasPermission }) => {
       title: "Mix Bag",
       icon: <MdFormatListBulleted />,
       route:
-        "/app/dashboard/sales-dashboard/vertical/virtual-office/mix-bag",
+        "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
     },
     {
       title: "Data",
       icon: <SiGoogleadsense />,
-      route: "/app/dashboard/sales-dashboard/vertical/virtual-office/data",
+      route: "/app/dashboard/sales-dashboard/virtual-office/data",
       permission: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
     },
   ].filter((card) => hasPermission(card.permission));
@@ -1270,9 +1270,9 @@ const VirtualOfficeDashboard = ({
   );
   const occupancyRoutes = {
     india:
-      "/app/dashboard/sales-dashboard/vertical/virtual-office/india-wise-occupancy",
+      "/app/dashboard/sales-dashboard/virtual-office/india-wise-occupancy",
     sector:
-      "/app/dashboard/sales-dashboard/vertical/virtual-office/sector-wise-occupancy",
+      "/app/dashboard/sales-dashboard/virtual-office/sector-wise-occupancy",
   };
   const occupancyPermissions = {
     india:

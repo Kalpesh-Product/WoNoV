@@ -4,7 +4,6 @@ import {
   FaChevronUp,
   FaLaptopMedical,
   FaBoxesStacked,
-  FaSquarePollVertical,
 } from "react-icons/fa6";
 import {
   FaRegCalendarAlt,
@@ -19,7 +18,7 @@ import { SiAuthelia } from "react-icons/si";
 import { HiOutlineChatAlt2 } from "react-icons/hi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSidebar } from "../context/SideBarContext";
-import { MdDashboard, MdHome } from "react-icons/md";
+import { MdHome } from "react-icons/md";
 import { RiAdminFill } from "react-icons/ri";
 import { PiHandCoinsFill } from "react-icons/pi";
 import { TbCashRegister } from "react-icons/tb";
@@ -48,7 +47,7 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const [expandedModule, setExpandedModule] = useState(0);
   const [expandedMenuItems, setExpandedMenuItems] = useState(() =>
     location.pathname.startsWith("/app/dashboard/sales-dashboard")
-      ? ["Sales Dashboard", "Sales Dashboard/Vertical"]
+      ? ["Sales Dashboard"]
       : [],
   );
   const { auth } = useAuth();
@@ -229,41 +228,21 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           submenus: [
             {
               id: 51,
-              title: "Dashboard",
-              icon: <MdDashboard />,
-              route: "/app/dashboard/sales-dashboard",
-              exactMatch: true,
-              permission: PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+              title: "Virtual Office",
+              route: "/app/dashboard/sales-dashboard/virtual-office",
+              permission: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
             },
             {
               id: 52,
-              title: "Vertical",
-              icon: <FaSquarePollVertical />,
-              permission: PERMISSIONS.SALES_VERTICAL.value,
-              requireOwnPermission: true,
-              submenus: [
-                {
-                  id: 521,
-                  title: "Virtual Office",
-                  route: "/app/dashboard/sales-dashboard/vertical/virtual-office",
-                  permission:
-                    PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
-                },
-                {
-                  id: 522,
-                  title: "Co-Working",
-                  route: "/app/dashboard/sales-dashboard/vertical/co-working",
-                  permission:
-                    PERMISSIONS.SALES_VERTICAL_COWORKING.value,
-                },
-                {
-                  id: 523,
-                  title: "Meeting Room",
-                  route: "/app/dashboard/sales-dashboard/vertical/meeting-room",
-                  permission:
-                    PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
-                },
-              ],
+              title: "Meeting Room",
+              route: "/app/dashboard/sales-dashboard/meeting-room",
+              permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+            },
+            {
+              id: 53,
+              title: "Co-Working",
+              route: "/app/dashboard/sales-dashboard/co-working",
+              permission: PERMISSIONS.SALES_VERTICAL_COWORKING.value,
             },
           ],
         },
@@ -397,10 +376,10 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
               hasChildren || canNavigate ? "cursor-pointer" : "cursor-default"
             } py-2.5 text-gray-500 transition-all duration-100 hover:text-[#1E3D73]`}
             onClick={() =>
-              hasChildren
-                ? toggleMenuItem(menuKey)
-                : canNavigate
-                  ? handleMenuOpen(item)
+              canNavigate
+                ? handleMenuOpen(item)
+                : hasChildren
+                  ? toggleMenuItem(menuKey)
                   : undefined
             }
           >
@@ -418,6 +397,20 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
                   <span className="flex-1 pl-4 text-sm">{item.title}</span>
                   {hasChildren && (
                     <span
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${isExpanded ? "Collapse" : "Expand"} ${item.title}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        toggleMenuItem(menuKey);
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          toggleMenuItem(menuKey);
+                        }
+                      }}
                       className={`mr-3 transition-transform duration-300 ${
                         isExpanded ? "rotate-180" : "rotate-0"
                       }`}

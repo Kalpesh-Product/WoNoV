@@ -1388,7 +1388,7 @@ const getUserDisplayName = (user) => {
                   <span className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
                     <BiznestHeaderLogo />
                     <span className="inline-flex items-baseline leading-none">
-                      {`VIRTUAL OFFICE ${selectedFY} - REVENUES`}
+                      {`VIRTUAL OFFICE REVENUES - ${selectedFY}`}
                     </span>
                   </span>
                 )
