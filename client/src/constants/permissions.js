@@ -1809,6 +1809,20 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/sales-dashboard/meeting-room",
   },
+  SALES_VERTICAL_WORKATION: {
+    value: "sales_vertical_workation",
+    title: "WORKATION",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/workation",
+  },
+  SALES_VERTICAL_ALTERNATE_CHANNEL: {
+    value: "sales_vertical_alternate_channel",
+    title: "ALTERNATE CHANNEL",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel",
+  },
 
   SALES_TURNOVER: {
     value: "sales_turnover_card",
