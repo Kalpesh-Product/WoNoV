@@ -113,16 +113,16 @@ const MainDashboard = () => {
           </div>
           <div className="grid flex-1 grid-cols-1 gap-5 sm:grid-cols-[1.3fr_1fr_1.2fr] sm:gap-4">
             {[
-              { Icon: MdOutlineCalendarToday, value: dayjs(currentDateTime).format("dddd, D MMMM YYYY"), label: "Today's Date" },
+              { Icon: MdOutlineCalendarToday, value: dayjs(currentDateTime).format("dddd, D MMMM YYYY"), label: "Today's Date", keepOnOneLine: true },
               { Icon: MdAccessTime, value: dayjs(currentDateTime).format("hh:mm:ss A"), label: "Current Time" },
               { Icon: MdOutlineLocationOn, value: "Panaji, Goa, India", label: "Location" },
-            ].map(({ Icon, value, label }) => (
+            ].map(({ Icon, value, label, keepOnOneLine }) => (
               <div key={label} className="flex min-w-0 items-center gap-3">
                 <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#dce9ff] text-[#1545a5]">
                   <Icon size={25} aria-hidden="true" />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm font-pbold leading-snug text-[#14376f] sm:text-[15px]">{value}</p>
+                  <p className={`text-sm font-pbold leading-snug text-[#14376f] sm:text-[15px] ${keepOnOneLine ? "whitespace-nowrap" : ""}`}>{value}</p>
                   <p className="mt-1 text-xs text-[#7b8fb4] sm:text-sm">{label}</p>
                 </div>
               </div>

@@ -177,7 +177,7 @@ const InvestorHeaderLogo = ({ compact = false }) => (
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>{compact ? "NEST" : "\u00a0NEST"}</span>
+    <span>{compact ? "N" : "\u00a0N"}<span className="lowercase">est</span></span>
   </span>
 );
 
@@ -608,8 +608,15 @@ const InvestorSnapshotSection = ({
       borderColor="#1E3D73"
       bodyBorderColor="#9FB2CF"
       title={
-        <button type="button" onClick={() => snapshotRoute && snapshotNavigate(snapshotRoute)} className="inline-flex items-baseline gap-2 text-left leading-none text-[#1E3D73]">
-          <InvestorHeaderLogo compact />
+        <button type="button" onClick={() => snapshotRoute && snapshotNavigate(snapshotRoute)} className="inline-flex items-baseline gap-2 whitespace-nowrap text-left leading-none text-[#1E3D73]">
+          <span
+            aria-label="BIZNest"
+            className="inline-flex shrink-0 items-baseline whitespace-nowrap leading-none text-[#2a2525]"
+          >
+            <span>BI</span>
+            <span className="text-[#e33434]">Z</span>
+            <span>&nbsp;N<span className="lowercase">est</span></span>
+          </span>
           <span className="inline-flex items-baseline leading-none">
             3 YEARS SNAPSHOT - FY 2024-25 TO FY 2026-27
           </span>

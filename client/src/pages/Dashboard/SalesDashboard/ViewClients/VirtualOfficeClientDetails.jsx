@@ -1572,7 +1572,7 @@ const VirtualOfficeClientDetails = () => {
                         name="rentDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date", true)
+                          renderDatePickerField(field, "Rent Date")
                         }
                       />
                     ) : (

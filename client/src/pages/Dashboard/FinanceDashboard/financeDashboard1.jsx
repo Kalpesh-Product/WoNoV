@@ -12,7 +12,7 @@ import { CircularProgress, TextField } from "@mui/material";
 import { Menu, MenuItem } from "@mui/material";
 import FinanceDashboard1Summary from "./FinanceDashboard1Summary";
 import { MdSettings, MdCalendarMonth, MdChevronRight } from "react-icons/md";
-import financeBanner from "../../../assets/finance-banner.png";
+import financeBanner from "../../../assets/finance-dashboard-banner-new.png";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -320,14 +320,14 @@ const BizNestTitle = ({ children, prefix, monochrome = false }) => (
   </span>
 );
 
-const InvestorHeaderLogo = ({ compact = false }) => (
+const InvestorHeaderLogo = () => (
   <span
-    aria-label={compact ? "BIZNEST" : "BIZ NEST"}
-    className="inline-flex items-baseline whitespace-nowrap text-[1em] normal-case leading-none text-[#2a2525]"
+    aria-label="BIZNest"
+    className="inline-flex shrink-0 items-baseline whitespace-nowrap leading-none text-[#2a2525]"
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>{compact ? "NEST" : "\u00a0NEST"}</span>
+    <span>&nbsp;N<span className="lowercase">est</span></span>
   </span>
 );
 
@@ -523,7 +523,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
         <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
           <InvestorHeaderLogo />
           <span className="inline-flex items-baseline leading-none">
-            Monthly Income Breakdown Distribution -
+            Monthly Income Breakdown Distribution
           </span>
         </span>
       }
@@ -1552,14 +1552,14 @@ const FinanceCashflow = ({ financialSeries, now }) => {
       data={chartData}
       options={options}
       title={
-        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+        <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap text-[0.82em] leading-none text-[#1E3D73] min-[1800px]:gap-2 min-[1800px]:text-[1em]">
           <InvestorHeaderLogo />
           <span>{`CASHFLOW ${fiscalYear}`}</span>
         </span>
       }
       headerRightContent={
-        <span className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium text-[#274784]">
-          CASHFLOW : INR {inrFormat(cashflowBalance)}
+        <span className="flex items-center justify-center gap-1 whitespace-nowrap rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-2 py-1.5 text-sm font-pmedium text-[#274784] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-body">
+          CASHFLOW : {inrFormat(cashflowBalance)}
         </span>
       }
       chartTopContent={
@@ -1629,10 +1629,10 @@ const Finance1Snapshot = ({
               "/app/dashboard/finance-dashboard1/finance-3-years-snapshot",
             )
           }
-          className="inline-flex flex-wrap items-baseline gap-2 text-left text-[#1E3D73]"
+          className="inline-flex items-baseline gap-2 whitespace-nowrap text-left leading-none text-[#1E3D73]"
         >
-          <InvestorHeaderLogo compact />
-          <span>
+          <InvestorHeaderLogo />
+          <span className="inline-flex items-baseline leading-none">
             3 YEARS SNAPSHOT - FY {startYear - 2}-
             {String(startYear - 1).slice(-2)} TO {fiscalYear}
           </span>
@@ -3707,9 +3707,9 @@ const FinanceDashboard1 = () => {
       layout: 1,
       key: "financePayouts",
       Title: (
-        <span className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]">
+        <span className="inline-flex items-baseline gap-1.5 whitespace-nowrap text-[0.82em] leading-none text-[#1E3D73] min-[1800px]:gap-2 min-[1800px]:text-[1em]">
           <InvestorHeaderLogo />
-          <span className="inline-flex items-baseline leading-none">
+          <span className="inline-flex items-baseline whitespace-nowrap leading-none">
             {`PAYMENTS - ${dayjs().format("MMMM YYYY").toUpperCase()}`}
           </span>
         </span>
@@ -3744,15 +3744,8 @@ const FinanceDashboard1 = () => {
       chartId: "bargraph-finance-income",
       title: (
         <span className="inline-flex flex-wrap items-baseline gap-2 leading-none text-[#1E3D73]">
-          <span
-            aria-label="BIZ NEST"
-            className="inline-flex items-baseline whitespace-nowrap normal-case leading-none text-[#2a2525]"
-          >
-            <span>BI</span>
-            <span className="text-[#e33434]">Z</span>
-            <span>{"\u00a0NEST"}</span>
-          </span>
-          <span>FINANCE INCOME V/S EXPENSE</span>
+          <InvestorHeaderLogo />
+          <span>FINANCE INCOME V/S EXPENSE - {selectedFiscalYear}</span>
         </span>
       ),
       onYearChange: setSelectedFiscalYear,
@@ -4256,18 +4249,18 @@ const FinanceDashboard1 = () => {
           bodyBorderColor="#9FB2CF"
           headerContentClassName="min-h-[42px]"
           headerRightContent={(
-            <div className="flex flex-wrap items-center justify-end gap-2">
-              <span className="inline-flex items-center rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-sm font-pmedium uppercase text-[#274784]">
-                TOTAL: {payoutSummary.total.count} | INR {inrFormat(payoutSummary.total.amount)}
+            <div className="flex flex-wrap items-center justify-end gap-1.5 lg:flex-nowrap min-[1800px]:gap-2">
+              <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-2 py-1.5 text-xs font-pmedium uppercase text-[#274784] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
+                TOTAL: {payoutSummary.total.count} | {inrFormat(payoutSummary.total.amount)}
               </span>
-              <span className="inline-flex items-center rounded-lg border border-[#9bd8ba] bg-[#eafbf3] px-3 py-2 text-sm font-pmedium uppercase text-[#16875d]">
-                APPROVAL: {payoutSummary.approved.count} | INR {inrFormat(payoutSummary.approved.amount)}
+              <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#9bd8ba] bg-[#eafbf3] px-2 py-1.5 text-xs font-pmedium uppercase text-[#16875d] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
+                APPROVAL: {payoutSummary.approved.count} | {inrFormat(payoutSummary.approved.amount)}
               </span>
-              <span className="inline-flex items-center rounded-lg border border-[#f2cf83] bg-[#fff7df] px-3 py-2 text-sm font-pmedium uppercase text-[#b7791f]">
-                PENDING: {payoutSummary.pending.count} | INR {inrFormat(payoutSummary.pending.amount)}
+              <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#f2cf83] bg-[#fff7df] px-2 py-1.5 text-xs font-pmedium uppercase text-[#b7791f] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
+                PENDING: {payoutSummary.pending.count} | {inrFormat(payoutSummary.pending.amount)}
               </span>
-              <span className="inline-flex items-center rounded-lg border border-[#f3aaaa] bg-[#fff0f0] px-3 py-2 text-sm font-pmedium uppercase text-[#d64545]">
-                REJECTED: {payoutSummary.rejected.count} | INR {inrFormat(payoutSummary.rejected.amount)}
+              <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#f3aaaa] bg-[#fff0f0] px-2 py-1.5 text-xs font-pmedium uppercase text-[#d64545] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
+                REJECTED: {payoutSummary.rejected.count} | {inrFormat(payoutSummary.rejected.amount)}
               </span>
             </div>
           )}
@@ -4620,29 +4613,57 @@ const FinanceDashboard1 = () => {
       </Menu>
       <div className="flex flex-col gap-4 px-4">
         <div className="overflow-hidden rounded-lg">
-          <div className="relative h-44 w-full md:h-56 xl:h-64">
+          <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
             <img
               src={financeBanner}
               alt="Finance dashboard banner"
-              className="h-full w-full object-cover object-left"
+              className="absolute inset-y-0 right-0 h-full w-full object-cover object-center sm:w-[75%] lg:w-[68%]"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to right, transparent 0%, black 20%, black 100%)",
+                maskImage:
+                  "linear-gradient(to right, transparent 0%, black 20%, black 100%)",
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/70 to-transparent" />
-            <div className="absolute inset-0 flex flex-col justify-center gap-5 px-5 sm:px-8">
-              <h1 className="max-w-[80%] font-pbold text-3xl leading-tight text-[#173B78] sm:text-4xl lg:text-5xl">
-                FINANCE DASHBOARD
+            <div
+              aria-hidden="true"
+              className="absolute inset-y-0 left-0 w-[61%] bg-white/75"
+              style={{
+                WebkitMaskImage:
+                  "linear-gradient(to right, black 0%, black 74%, transparent 100%)",
+                maskImage:
+                  "linear-gradient(to right, black 0%, black 74%, transparent 100%)",
+              }}
+            />
+            <div className="absolute inset-y-0 left-0 flex w-[61%] flex-col py-4 sm:py-6">
+              <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base lg:text-[15px]">
+                Finance Dashboard
+              </p>
+              <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.88] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:text-5xl min-[1800px]:text-[56px]">
+                FINANCE{" "}
+                <span className="text-[#E64B4B]">DASHBOARD</span>
               </h1>
-              {settingsCards.length > 0 && (
+              <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[36px] min-[1800px]:text-[42px]">
+                Finance, Performance &amp; Insights
+              </p>
+            </div>
+            {settingsCards.length > 0 && (
+              <nav
+                aria-label="Finance dashboard navigation"
+                className="absolute bottom-0 left-0 z-10 flex w-[61%] items-center"
+              >
                 <button
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={Boolean(settingsAnchor)}
                   onClick={(event) => setSettingsAnchor(event.currentTarget)}
-                  className="mt-4 flex w-fit items-center gap-2 rounded-md border border-[#cbd5e1] bg-white/95 px-3 py-2 text-sm font-pmedium text-[#173B78] transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#173B78] sm:text-base"
+                  className="group relative inline-flex shrink-0 items-center gap-2 py-3 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm lg:text-base"
                 >
                   <MdSettings size={20} /> Settings
+                  <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
                 </button>
-              )}
-            </div>
+              </nav>
+            )}
           </div>
         </div>
         <FinanceDashboard1Summary
