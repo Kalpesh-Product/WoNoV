@@ -22,6 +22,7 @@ import useAuth from "../../../../hooks/useAuth";
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 const FINANCE_DEPARTMENT_ID = "6798bab0e469e809084e249a";
+const getBudgetRowId = ({ data }) => String(data._id);
 
 const canUseBulkApprove = (user) =>
   (Array.isArray(user?.departments) ? user.departments : []).some(
@@ -250,6 +251,7 @@ const PendingApprovalsBudget = () => {
       <PageFrame>
         <YearWiseTable
           dateColumn={"dueDate"}
+          preserveCurrentMonthRange={true}
           search={true}
           tableTitle={"Pending Approvals Budget"}
           data={pendingApprovals.map((item) => {
@@ -260,6 +262,7 @@ const PendingApprovalsBudget = () => {
             };
           })}
           columns={kraColumn}
+          getRowId={getBudgetRowId}
           isRowSelectable={(node) => Boolean(node.data?.canApproveBudget)}
           checkbox={canUseBulkBudgetActions}
           checkAll={canUseBulkBudgetActions}
