@@ -49,6 +49,7 @@ const AgTableComponent = React.memo(
     fillAvailableHeight = false,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
+    getRowId,
     checkAll,
     disabled,
     handleBatchAction,
@@ -554,6 +555,7 @@ const AgTableComponent = React.memo(
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
+            getRowId={getRowId}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
             pagination={isPagination && !serverPagination}

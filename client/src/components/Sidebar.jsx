@@ -239,6 +239,19 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
               permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
             },
             {
+              id: 54,
+              title: "Workation",
+              route: "/app/dashboard/sales-dashboard/workation",
+              permission: PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+            },
+            {
+              id: 55,
+              title: "Alternate Channel",
+              route: "/app/dashboard/sales-dashboard/alternate-channel",
+              permission:
+                PERMISSIONS.SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+            },
+            {
               id: 53,
               title: "Co-Working",
               route: "/app/dashboard/sales-dashboard/co-working",

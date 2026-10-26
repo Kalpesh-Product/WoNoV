@@ -18,6 +18,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import { queryClient } from "../../../../main";
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const getBudgetHistoryRowId = ({ data }) => String(data._id);
 
 const isTechDepartmentUser = (user) =>
   (Array.isArray(user?.departments) ? user.departments : []).some(
@@ -299,6 +300,7 @@ const BudgetHistory = () => {
         exportData
         checkbox={canUseBulkBudgetActions}
         checkAll={canUseBulkBudgetActions}
+        getRowId={getBudgetHistoryRowId}
         isRowSelectable={(node) =>
           canUseBulkBudgetActions &&
           String(node.data?.status || "").toLowerCase() === "approved"

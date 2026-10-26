@@ -138,6 +138,8 @@ import SalesDashboard from "../pages/Dashboard/SalesDashboard/SalesDashboard";
 import VirtualOfficeDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/VirtualOfficeDashboard";
 import CoWorkingDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/CoWorkingDashboard";
 import MeetingRoomDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/MeetingRoomDashboard";
+import WorkationDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/WorkationDashboard";
+import AlternateChannelDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/AlternateChannelDashboard";
 import SidebarDropdown from "../components/SidebarDropdown";
 import TotalRevenueLayout from "../pages/Dashboard/SalesDashboard/TotalRevenueLayout";
 import TotalRevenue from "../pages/Dashboard/SalesDashboard/TotalRevenue";
@@ -2907,6 +2909,33 @@ export const routes = createBrowserRouter([
                             ]}
                           >
                             <MeetingRoomDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "workation",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                            ]}
+                          >
+                            <WorkationDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "alternate-channel",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard />
                           </SidebarDropdown>
                         ),
                       },
