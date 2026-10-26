@@ -59,16 +59,14 @@ const nonClickableOccupancyCharts = new Set([
   "age",
 ]);
 
-const InvestorHeaderLogo = ({ mixedCase = false }) => (
+const InvestorHeaderLogo = () => (
   <span
     aria-label="BIZ NEST"
     className="inline-flex items-baseline whitespace-nowrap text-[1em] normal-case leading-none text-[#2a2525]"
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>
-      &nbsp;N{mixedCase ? <span className="lowercase">est</span> : "EST"}
-    </span>
+    <span>&nbsp;N<span className="lowercase">est</span></span>
   </span>
 );
 
@@ -241,7 +239,6 @@ const InvestorOperationalCharts = ({
   noOuterPadding = false,
   clientsOverride,
   occupancyChartsClickable = false,
-  biznestMixedCase = false,
   titleOverrides = {},
 }) => {
   const axios = useAxiosPrivate();
@@ -482,7 +479,7 @@ const InvestorOperationalCharts = ({
               }`}
             >
               {useNavyText ? (
-                <InvestorHeaderLogo mixedCase={biznestMixedCase} />
+                <InvestorHeaderLogo />
               ) : null}
               <span>{chartTitle}</span>
             </span>

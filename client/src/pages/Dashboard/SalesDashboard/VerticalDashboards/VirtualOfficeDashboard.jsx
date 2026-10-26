@@ -1374,28 +1374,14 @@ const VirtualOfficeDashboard = ({
             }}
           />
           <div className="absolute inset-y-0 left-0 flex w-[55%] flex-col px-3 py-4 sm:px-4 sm:py-6">
-            <p
-              className={`font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base ${
-                isBrowserZoomedOut ? "lg:text-lg" : "lg:text-[15px]"
-              }`}
-            >
+            <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base lg:text-[15px] min-[1700px]:text-base min-[1900px]:text-lg">
               Virtual Office Dashboard
             </p>
-            <h1
-              className={`mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl ${
-                isBrowserZoomedOut
-                  ? "lg:text-[45px] xl:text-[50px]"
-                  : "lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px]"
-              }`}
-            >
+            <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px] min-[1700px]:text-[46px] min-[1900px]:scale-x-100 min-[1900px]:text-[50px]">
               VIRTUAL OFFICE{" "}
               <span className="text-[#E64B4B]">DASHBOARD</span>
             </h1>
-            <p
-              className={`mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap ${
-                isBrowserZoomedOut ? "lg:text-[58px]" : "lg:text-[46px]"
-              }`}
-            >
+            <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">
               Virtual Office Customers
             </p>
           </div>
