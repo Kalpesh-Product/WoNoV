@@ -123,6 +123,9 @@ const toDateOrNull = (v) => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
+const toUtcDayTimestamp = (date) =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+
 const calculateTotalTermMonths = (startDate, endDate) => {
   if (!startDate || !endDate) return 0;
 
@@ -241,7 +244,7 @@ const createVirtualOfficeClient = async (req, res) => {
       });
     }
 
-    if (rentDate < termStartDate) {
+    if (toUtcDayTimestamp(rentDate) < toUtcDayTimestamp(termStartDate)) {
       return res.status(400).json({
         message: "rentDate cannot be before termStartDate",
       });
@@ -706,7 +709,7 @@ const updateVirtualOfficeClient = async (req, res) => {
         .json({ message: "termEnd must be after termStartDate" });
     }
 
-    if (rentDate < termStartDate) {
+    if (toUtcDayTimestamp(rentDate) < toUtcDayTimestamp(termStartDate)) {
       return res
         .status(400)
         .json({ message: "rentDate cannot be before termStartDate" });
