@@ -293,7 +293,7 @@ const ViewAvailability = () => {
       >
         <AgTable
           tableHeight={300}
-          hideFilter
+          hideFilter={false}
           columns={[
             { field: "id", headerName: "Sr. No", width: 100 },
             { field: "client", headerName: "Client Name", flex: 1 },

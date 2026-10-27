@@ -312,6 +312,7 @@ const RecievedTickets = ({ title, departmentId }) => {
           </div>
         ) : (
           <AgTable
+            dateColumn="raisedDate"
             key={rows.length}
             data={rows ? rows : []}
             // hideFilter

@@ -1885,7 +1885,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
     {
       layout: allowedMuiTables.length,
       widgets: allowedMuiTables.map((item) => (
-        <MuiTable
+        <MuiTable showTableControls={false}
           layout={item.layout}
           key={item.key}
           Title={item.Title}

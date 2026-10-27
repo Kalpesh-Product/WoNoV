@@ -1182,7 +1182,7 @@ const AssetsDashboard = () => {
       widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_RECENTLY_ADDED_ASSETS.value) && (
           <WidgetSection layout={1} padding>
-            <MuiTable
+            <MuiTable showTableControls={false}
               Title="Recently Added Assets"
               columns={assetColumns}
               rows={recentAssets}

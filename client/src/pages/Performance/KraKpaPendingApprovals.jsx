@@ -1,16 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircularProgress, Popover, TextField } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { DateRangePicker } from "react-date-range";
 import { HiPencilSquare } from "react-icons/hi2";
-import { MdCalendarToday } from "react-icons/md";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
+import TableDateFilter from "../../components/TableDateFilter";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import MuiModal from "../../components/MuiModal";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -80,6 +79,8 @@ const KraKpaPendingApprovals = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const location = useLocation();
+  const navigate = useNavigate();
+  const isOverview = location.pathname.replace(/\/$/, "") === "/app/kra-kpa/pending-approvals";
   const { auth } = useAuth();
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment,
@@ -90,9 +91,9 @@ const KraKpaPendingApprovals = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const member = location.state?.selectedMember || selectedMember;
+  const member = isOverview ? null : location.state?.selectedMember || selectedMember;
   const departmentId =
-    location.state?.selectedDepartment ||
+    isOverview ? undefined : location.state?.selectedDepartment ||
     selectedDepartment ||
     auth?.user?.departments?.[0]?._id;
   const departmentName =
@@ -104,17 +105,16 @@ const KraKpaPendingApprovals = () => {
   const employeeId = member?.memberId;
   const employeeName = member?.memberName || "Selected Member";
 
-  const [dateRange, setDateRange] = useState(initialDateRange);
-  const [calendarAnchor, setCalendarAnchor] = useState(null);
+  const [dateRange, setDateRange] = useState(() => isOverview ? null : initialDateRange());
   const [editingRecord, setEditingRecord] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [rejectionRecord, setRejectionRecord] = useState(null);
   const [form, setForm] = useState({ month: "", target: "", deadline: "" });
   const [errors, setErrors] = useState({});
 
-  const { data: records = [], isLoading } = useQuery({
+  const { data: records = [], isLoading, isError, error } = useQuery({
     queryKey: ["kraKpaPendingApprovals", departmentId, employeeId],
-    enabled: Boolean(departmentId && employeeId),
+    enabled: isOverview || Boolean(departmentId && employeeId),
     queryFn: async () => {
       const response = await axios.get(
         "/api/kra-kpa/individual-monthly-kpa/pending-approvals",
@@ -213,6 +213,7 @@ const KraKpaPendingApprovals = () => {
     () =>
       records
         .filter((record) => {
+          if (!dateRange) return true;
           if (!record.month) return false;
           const recordStart = dayjs(`${record.month}-01`).startOf("month");
           const recordEnd = recordStart.endOf("month");
@@ -224,6 +225,8 @@ const KraKpaPendingApprovals = () => {
         .map((record, index) => ({
         ...record,
         srNo: index + 1,
+        employeeName: formatUserName(record.employee),
+        departmentName: record.department?.name || "-",
         assignedByName: formatUserName(record.createdBy),
         deadlineLabel:
           record.deadline && dayjs(record.deadline).isValid()
@@ -235,6 +238,25 @@ const KraKpaPendingApprovals = () => {
 
   const columns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
+    ...(isOverview ? [
+      {
+        headerName: "Member", field: "employeeName", minWidth: 180, flex: 1,
+        valueGetter: ({ data }) => formatUserName(data.employee),
+        cellRenderer: ({ data }) => <button
+          type="button"
+          className="text-primary underline cursor-pointer"
+          disabled={!data.employee?._id || !data.department?._id}
+          onClick={() => navigate("/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard", {
+            state: {
+              selectedMember: { memberId: data.employee?._id, memberName: formatUserName(data.employee), memberRole: "Employee" },
+              selectedDepartment: data.department?._id,
+              selectedDepartmentName: data.department?.name,
+            },
+          })}
+        >{formatUserName(data.employee)}</button>,
+      },
+      { headerName: "Department", field: "departmentName", minWidth: 170, valueGetter: ({ data }) => data.department?.name || "-" },
+    ] : []),
     { headerName: "KPA", field: "target", minWidth: 280, flex: 2 },
     { headerName: "Deadline", field: "deadlineLabel", width: 155 },
     { headerName: "Assigned By", field: "assignedByName", minWidth: 180, flex: 1 },
@@ -268,54 +290,31 @@ const KraKpaPendingApprovals = () => {
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}{employeeName}
+          {isOverview ? "Pending KPA Approvals" : `${departmentName ? `${departmentName} - ` : ""}${employeeName}`}
         </h1>
       </div>
-      <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-        </div>
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-        </div>
-        <button
-          type="button"
-          aria-label="Select date range"
-          className="rounded-md bg-primary p-3 text-white"
-          onClick={(event) => setCalendarAnchor(event.currentTarget)}
-        >
-          <MdCalendarToday size={20} />
-        </button>
-      </div>
-      <Popover
-        open={Boolean(calendarAnchor)}
-        anchorEl={calendarAnchor}
-        onClose={() => setCalendarAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <DateRangePicker
-          ranges={[dateRange]}
-          onChange={({ selection }) => setDateRange(selection)}
-          moveRangeOnFirstSelection={false}
-          direction="vertical"
-        />
-      </Popover>
-
-      {isLoading ? (
+      {isError ? (
+        <p role="alert" className="py-6 text-red-600">{error?.response?.data?.message || "Unable to load pending approvals"}</p>
+      ) : isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <CircularProgress />
         </div>
       ) : (
         <AgTable
           showDateControls={false}
+          toolbarDateControls={<TableDateFilter
+            fields={[{ field: "month", label: "KPA Month" }]}
+            field="month"
+            range={dateRange}
+            onChange={setDateRange}
+          />}
           data={tableData}
           columns={columns}
           hideTitle
           enableCheckbox
           search
           exportData
-          hideFilter
+          hideFilter={false}
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
         />

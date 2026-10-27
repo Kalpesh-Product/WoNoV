@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import dayjs from "dayjs";
+import { getCurrentMonthDateRange } from "../../utils/tableFilters";
 import {
   Tabs,
   Tab,  
@@ -503,7 +504,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     [financialData],
   );
 
-  const [dateRange, setDateRange] = useState([]);
+  const [dateRange, setDateRange] = useState(() => [getCurrentMonthDateRange()]);
   const hasInitializedDateRangeRef = useRef(false);
 
   useEffect(() => {
@@ -914,15 +915,13 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
 {onRequestBudget && (
                 <PrimaryButton
                   title="Request Budget"
-                  padding="px-5 py-2"
-                  fontSize="text-base"
                   handleSubmit={onRequestBudget}
                 />
               )}
-{exportData && (
-                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-              )}
   </>);
+  const exportControls = exportData && (
+                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+              );
 
     return (
     <>
@@ -971,6 +970,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
           <AgTable
               toolbarDateControls={dateControls}
               toolbarActions={toolbarButtons}
+              exportAction={exportControls}
               showDateControls={false}
               search
               data={filteredRows}

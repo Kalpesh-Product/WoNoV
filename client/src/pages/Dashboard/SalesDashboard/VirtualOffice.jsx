@@ -1148,7 +1148,7 @@ const getUserDisplayName = (user) => {
           totalTitle="Total"
           summaryChipVariant="ticket"
           preserveCurrentMonthRange={showInvoiceProjections}
-          showCalendarWhenEmpty={showInvoiceProjections}
+          showCalendarWhenEmpty
           headerActions={
             showInvoiceProjections ? (
               <PrimaryButton title="Add Virtual" handleSubmit={openAdd} />

@@ -172,7 +172,7 @@ export default function BuildingUnits() {
           tableTitle={`${selectedBuilding || buildingName?.title || ""
             } units`}
           loading={isUnitsDataPending || isOccupancyDataPending}
-           headerActions={
+          titleRightContent={
             <span className="font-pmedium text-title text-primary uppercase">
               Total Desks : {totalDesksCount}
             </span>

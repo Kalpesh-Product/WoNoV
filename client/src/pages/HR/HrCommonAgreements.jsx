@@ -106,12 +106,12 @@ const HrCommonAgreements = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
-          key={tableData.length}
           search={true}
           tableTitle={`${name}'s Agreement List`}
           data={tableData}
           dateColumn={"createdAt"}
           columns={agreementColumn}
+          hideFilter={false}
         />
       </PageFrame>
     </div>

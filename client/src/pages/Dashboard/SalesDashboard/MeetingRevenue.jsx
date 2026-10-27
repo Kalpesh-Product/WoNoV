@@ -797,7 +797,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
 
           <WidgetTable
             data={visibleRevenueData}
-            headerActions={
+            summaryContent={
               !showChart ? (
                 <div className="flex flex-wrap items-center justify-end gap-2">
                   <Chip
@@ -817,17 +817,19 @@ const DayPassInvoiceFields = ({ revenue }) => {
                       },
                     }}
                   />
-                  <PrimaryButton
-                    title="Manage Meeting"
-                    handleSubmit={() =>
-                      navigate(
-                        "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
-                      )
-                    }
-                  />
                 </div>
               ) : null
             }
+            headerActions={!showChart ? (
+              <PrimaryButton
+                title="Manage Meeting"
+                handleSubmit={() =>
+                  navigate(
+                    "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+                  )
+                }
+              />
+            ) : null}
               tableTitle={
               showChart
                 ? "Monthly Revenue with Client Details"

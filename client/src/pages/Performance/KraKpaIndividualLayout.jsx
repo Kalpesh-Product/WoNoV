@@ -1,4 +1,5 @@
 import TabLayout from "../../components/Tabs/TabLayout";
+import { Outlet } from "react-router-dom";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 
@@ -66,7 +67,7 @@ const KraKpaIndividualLayout = ({
       ];
 
   return (
-    <TabLayout
+    isDailyScore ? <Outlet /> : <TabLayout
       basePath={basePath}
       defaultTabPath={tabs[0].path}
       tabs={tabs}

@@ -202,7 +202,7 @@ const LandlordAgreementData = () => {
           tableTitle={`AGREEMENTS -  ${name.toUpperCase()}`}
           buttonTitle={"Add Agreement"}
           handleClick={openAddModal}
-          hideFilter
+          hideFilter={false}
           loading={isLoading}
           disabled={!selectedLandlord}
         />

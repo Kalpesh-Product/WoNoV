@@ -26,6 +26,7 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogEditHistory from "./DailyLogEditHistory";
+import { getPerformanceRowId, isDueTaskRowSelectable, getDueTaskCheckboxTooltip } from "../../utils/performanceRowSelection";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -163,6 +164,7 @@ const KraKpaDueTask = () => {
   const [historyRecord, setHistoryRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedDueTasks, setSelectedDueTasks] = useState([]);
+  const [selectionResetKey, setSelectionResetKey] = useState(0);
   const [dailyLogTargets, setDailyLogTargets] = useState([]);
   const [dailyLogForm, setDailyLogForm] = useState({
     date: dayjs().format("YYYY-MM-DD"),
@@ -329,6 +331,7 @@ const KraKpaDueTask = () => {
       refresh();
       setDailyLogTargets([]);
       setSelectedDueTasks([]);
+      setSelectionResetKey((key) => key + 1);
       setDailyLogForm({
         date: dayjs().format("YYYY-MM-DD"),
       });
@@ -636,44 +639,17 @@ const KraKpaDueTask = () => {
           {departmentName ? `${departmentName} - ` : ""}
           {employeeName}
         </h1>
-        {canAdd && (
+        {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
+          {canAdd && <PrimaryButton type="button" title="Add Due Task" handleSubmit={openCreate} />}
           <PrimaryButton
             type="button"
-            title="Add Due Task"
-            handleSubmit={openCreate}
+            title={`Add Daily Logs (${selectedDueTasks.length})`}
+            handleSubmit={openAddToDailyLogs}
+            disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
+            className="!w-[230px]"
           />
-        )}
+        </div>}
       </div>
-      <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-        </div>
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-        </div>
-        <button
-          type="button"
-          aria-label="Select date range"
-          className="rounded-md bg-primary p-3 text-white"
-          onClick={(event) => setCalendarAnchor(event.currentTarget)}
-        >
-          <MdCalendarToday size={20} />
-        </button>
-      </div>
-      <Popover
-        open={Boolean(calendarAnchor)}
-        anchorEl={calendarAnchor}
-        onClose={() => setCalendarAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <DateRangePicker
-          ranges={[dateRange]}
-          onChange={({ selection }) => setDateRange(selection)}
-          moveRangeOnFirstSelection={false}
-          direction="vertical"
-        />
-      </Popover>
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
@@ -681,25 +657,49 @@ const KraKpaDueTask = () => {
         </div>
       ) : (
         <AgTable
+          toolbarDateControls={
+            <>
+              <div className="flex items-center justify-center gap-2">
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+                    </div>
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+                    </div>
+                    <button type="button" aria-label="Select date range" className="rounded-md bg-primary p-3 text-white" onClick={event => setCalendarAnchor(event.currentTarget)}>
+                      <MdCalendarToday size={20} />
+                    </button>
+                  </div>
+              <Popover open={Boolean(calendarAnchor)} anchorEl={calendarAnchor} onClose={() => setCalendarAnchor(null)} anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "center"
+              }} transformOrigin={{
+                vertical: "top",
+                horizontal: "center"
+              }}>
+                    <DateRangePicker ranges={[dateRange]} onChange={({
+                  selection
+                }) => setDateRange(selection)} moveRangeOnFirstSelection={false} direction="vertical" />
+                  </Popover>
+            </>
+          }
           showDateControls={false}
           data={tableData}
+          getRowId={getPerformanceRowId}
+          selectionResetKey={selectionResetKey}
           columns={columns}
           hideTitle
           enableCheckbox
           checkAll
+          isRowSelectable={isDueTaskRowSelectable}
+          showDisabledCheckboxes
+          checkboxTooltip={({ data }) => getDueTaskCheckboxTooltip(
+            data, Boolean(deadlineAccess?.canEditManagerReview && canEditRecord(data)),
+          )}
           search
           onSelectionChange={setSelectedDueTasks}
-          searchRowActions={
-            <PrimaryButton
-              type="button"
-              title={`Add Daily Logs (${selectedDueTasks.length})`}
-              handleSubmit={openAddToDailyLogs}
-              disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
-              className="!w-[230px]"
-            />
-          }
           exportData
-          hideFilter
+          hideFilter={false}
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
         />

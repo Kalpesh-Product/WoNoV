@@ -160,6 +160,7 @@ const VendorTable = () => {
       mobile: vendor.mobile,
       companyName: vendor.companyName,
       onboardingDate: humanDate(vendor.onboardingDate),
+      onboardingDateRaw: vendor.onboardingDate || null,
       city: vendor.city,
       pinCode: vendor.pinCode,
       panIdNo: vendor.panIdNo,
@@ -187,6 +188,7 @@ const VendorTable = () => {
       <PageFrame>
         <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
           <AgTable
+            dateColumn="onboardingDate"
             search={true}
             searchColumn={"Vendor"}
             tableTitle={"List of Vendors"}

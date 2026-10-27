@@ -3168,20 +3168,21 @@ const DepartmentReportCommon = () => {
   return (
     <div className="bg-white min-h-full p-4">
       <div className="rounded-xl border border-borderGray bg-white p-4 shadow-sm flex flex-col gap-4">
-        <div className="flex flex-col gap-4">
           <span className="font-pmedium text-title text-primary uppercase">
             {selectedModule.title}
           </span>
 
+        <AgTable
+          toolbarDateControls={
           <div className="flex justify-center items-center gap-3">
             <div className="flex items-center gap-2 justify-center">
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                 <span className="text-gray-600 text-content font-pregular">
                   {dayjs(dateRange?.[0]?.startDate).format("DD MMM YYYY")}
                 </span>{" "}
               </div>
 
-              <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                 <span className="text-gray-600 text-content font-pregular">
                   {dayjs(dateRange?.[0]?.endDate).format("DD MMM YYYY")}
                 </span>
@@ -3212,9 +3213,7 @@ const DepartmentReportCommon = () => {
               />
             </Popover>
           </div>
-        </div>
-
-        <AgTable
+          }
           showDateControls={false}
           hideTitle
           data={tableData}

@@ -571,67 +571,12 @@ const KraKpaDailyLogs = () => {
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}{employeeName}
         </h1>
-        {canAddDailyLog && (
-          <PrimaryButton
-            type="button"
-            title="Add Daily Log"
-            handleSubmit={openCreate}
-          />
-        )}
+        {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
+          <Chip label={`Total: ${summaryCounts.total}`} sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }} />
+          <Chip label={`Due: ${summaryCounts.due}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
+          <Chip label={`Carry Forward: ${summaryCounts.carryForward}`} sx={{ backgroundColor: "#ede9fe", color: "#6d28d9" }} />
+        </div>}
       </div>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <div className="mb-1 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            aria-label="Previous day"
-            onClick={() => setSelectedDate((date) => date.subtract(1, "day"))}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-          >
-            <MdChevronLeft size={22} />
-          </button>
-          <DatePicker
-            format="ddd, MMMM D, YYYY"
-            value={selectedDate}
-            onChange={(date) => {
-              if (date?.isValid()) setSelectedDate(date.startOf("day"));
-            }}
-            slotProps={{
-              textField: {
-                size: "small",
-                sx: {
-                  width: 245,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "6px",
-                    height: 38,
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiInputBase-input": {
-                    color: "#111827",
-                    fontSize: "0.875rem",
-                  },
-                  "& .MuiSvgIcon-root": { color: "#1e3d73" },
-                },
-              },
-            }}
-          />
-          <button
-            type="button"
-            aria-label="Next day"
-            onClick={() => setSelectedDate((date) => date.add(1, "day"))}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-          >
-            <MdChevronRight size={22} />
-          </button>
-        </div>
-      </LocalizationProvider>
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
@@ -640,30 +585,60 @@ const KraKpaDailyLogs = () => {
       ) : (
         <>
           <AgTable
+            headerActions={
+              canAddDailyLog && <PrimaryButton type="button" title="Add Daily Log" handleSubmit={openCreate} />
+            }
+            toolbarDateControls={
+              <>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <div className="mb-1 flex items-center justify-center gap-3">
+                        <button type="button" aria-label="Previous day" onClick={() => setSelectedDate(date => date.subtract(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronLeft size={22} />
+                        </button>
+                        <DatePicker format="ddd, MMMM D, YYYY" value={selectedDate} onChange={date => {
+                      if (date?.isValid()) setSelectedDate(date.startOf("day"));
+                    }} slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          width: 245,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "6px",
+                            height: 38
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiInputBase-input": {
+                            color: "#111827",
+                            fontSize: "0.875rem"
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: "#1e3d73"
+                          }
+                        }
+                      }
+                    }} />
+                        <button type="button" aria-label="Next day" onClick={() => setSelectedDate(date => date.add(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronRight size={22} />
+                        </button>
+                      </div>
+                    </LocalizationProvider>
+              </>
+            }
             data={dueRows}
             columns={dueColumns}
             hideTitle
             enableCheckbox
             search
-            searchRowActions={
-              <div className="flex flex-wrap items-center justify-end gap-3">
-                <Chip
-                  label={`Total: ${summaryCounts.total}`}
-                  sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}
-                />
-                <Chip
-                  label={`Due: ${summaryCounts.due}`}
-                  sx={{ backgroundColor: "#fef3c7", color: "#b45309" }}
-                />
-                <Chip
-                  label={`Carry Forward: ${summaryCounts.carryForward}`}
-                  sx={{ backgroundColor: "#ede9fe", color: "#6d28d9" }}
-                />
-              </div>
-            }
-            searchRowActionsPosition="right"
             exportData
-            hideFilter
+            hideFilter={false}
             processExportCell={({ value }) => value ?? ""}
             tableHeight={Math.max(300, Math.min(650, dueRows.length * 58 + 90))}
           />
@@ -674,7 +649,7 @@ const KraKpaDailyLogs = () => {
               tableTitle="COMPLETED DAILY LOGS"
               search
               exportData
-              hideFilter
+              hideFilter={false}
               processExportCell={({ value }) => value ?? ""}
               tableHeight={Math.max(
                 300,

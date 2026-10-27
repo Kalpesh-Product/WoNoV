@@ -281,6 +281,7 @@ const PerformanceOverallKPA = () => {
                         { field: "shortFall", headerName: "Shortfall (%)", flex: 1 },
                     ]}
                     data={tableData}
+                    search={false}
                     tableHeight={300}
                     hideFilter
                 />

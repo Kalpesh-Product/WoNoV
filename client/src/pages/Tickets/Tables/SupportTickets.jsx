@@ -187,6 +187,7 @@ const SupportTickets = ({
 
             closedBy,
             supportRequestedBy,
+            supportRequestedAtRaw: ticket?.createdAt || null,
             supportRequestedAt: ticket?.createdAt
               ? `${humanDate(ticket?.createdAt)}, ${humanTime(
                   ticket?.createdAt,
@@ -558,6 +559,7 @@ const SupportTickets = ({
       <div className="w-full">
         {!isClosingTicket ? (
           <AgTable
+            dateColumn="supportRequestedAt"
             key={rows.length}
             data={rows}
             columns={recievedTicketsColumns}

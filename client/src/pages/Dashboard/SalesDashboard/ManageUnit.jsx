@@ -213,6 +213,7 @@ export default function ManageUnit() {
     sqft: item.sqft,
     openDesks: item.openDesks,
     cabinDesks: item.cabinDesks,
+    totalUnits: (Number(item.openDesks) || 0) + (Number(item.cabinDesks) || 0),
     buildingName: item.building?.buildingName || "-",
     isDeleted: Boolean(item.isDeleted),
     deletedByName: item.deletedBy
@@ -238,6 +239,7 @@ export default function ManageUnit() {
       flex: 1,
       cellRenderer: (params) => inrFormat(params.value),
     },
+    { headerName: "Total Units", field: "totalUnits", flex: 1 },
     { headerName: "Open Desks", field: "openDesks", flex: 1 },
     { headerName: "Cabin Desks", field: "cabinDesks", flex: 1 },
     ...(isTechDepartment

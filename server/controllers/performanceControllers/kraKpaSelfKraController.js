@@ -208,6 +208,17 @@ const listSelfKra = async (req, res, next) => {
     const completionByTemplate = new Map(
       completions.map((completion) => [String(completion.kraTemplate), completion]),
     );
+    const completionHistoryByTemplate = new Map();
+    const historyCompletions = templates.length ? await SelfKraCompletion.find({
+      company: req.company,
+      kraTemplate: { $in: templates.map((template) => template._id) },
+    }).select("kraTemplate completedAt completedBy")
+      .populate({ path: "completedBy", select: "firstName middleName lastName" }).lean() : [];
+    for (const completion of historyCompletions) {
+      const key = String(completion.kraTemplate);
+      if (!completionHistoryByTemplate.has(key)) completionHistoryByTemplate.set(key, []);
+      completionHistoryByTemplate.get(key).push(completion);
+    }
     const rows = [];
     for (const template of templates) {
       const startsOn = template.startsOn || toOccurrenceDate(template.createdAt);
@@ -217,6 +228,10 @@ const listSelfKra = async (req, res, next) => {
         rows.push({
           ...completion,
           _id: template._id,
+          createdAt: template.createdAt,
+          createdBy: template.createdBy,
+          startsOn,
+          completionHistory: completionHistoryByTemplate.get(String(template._id)) || [],
           isActive: template.isActive,
           editHistory: template.editHistory || [],
           isScheduled: scheduledTemplates.has(String(template._id)),
@@ -232,6 +247,7 @@ const listSelfKra = async (req, res, next) => {
         toOccurrenceDate(template.closingDate) === occurrenceDate;
       rows.push({
         ...template,
+        completionHistory: completionHistoryByTemplate.get(String(template._id)) || [],
         startsOn,
         isScheduled: scheduledTemplates.has(String(template._id)),
         status: isLegacyCompletion ? "Completed" : "Pending",
@@ -242,6 +258,7 @@ const listSelfKra = async (req, res, next) => {
       rows.push({
         ...completion,
         _id: completion.kraTemplate,
+        createdAt: null,
         isScheduled: scheduledTemplates.has(String(completion.kraTemplate)),
         completionId: completion._id,
         closingDate: completion.completedAt,

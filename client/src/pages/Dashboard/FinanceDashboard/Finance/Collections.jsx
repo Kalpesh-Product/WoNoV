@@ -499,11 +499,9 @@ const Collections = () => {
         title={selectedCollectionMonthTitle}
         TitleAmount={`INR ${inrFormat(currentMonthTotal)}`}
       >
-        <div className="flex justify-end px-4 pt-4">
-          <PrimaryButton title="Export" handleSubmit={handleExport} />
-        </div>
 
         <WidgetTable
+          exportAction={<PrimaryButton title="Export" handleSubmit={handleExport} />}
           data={flatClientData}
           columns={kraColumn}
           dateColumn="date"

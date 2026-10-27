@@ -11,7 +11,6 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import { CircularProgress } from "@mui/material";
-import PrimaryButton from "../../../../components/PrimaryButton";
 
 const yearCategories = {
   "FY 2024-25": [
@@ -296,13 +295,9 @@ const Projections = () => {
             TitleAmount={`INR ${inrFormat(totalPnL)}`}
           >
             <div className="flex flex-col gap-3 w-full">
-              <div className="flex justify-end">
-                <PrimaryButton
-                  title="Export"
-                  handleSubmit={handleExportMonthlyPnL}
-                />
-              </div>
               <YearWiseTable
+                customExportTitle="Export"
+                handleCustomExport={handleExportMonthlyPnL}
                 dateColumn={"dueDate"}
                 data={monthlyProfitLossData}
                 columns={monthlyProfitLossColumns}

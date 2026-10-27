@@ -336,7 +336,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
         {/* <span className="text-subtitle">{title}</span> */}
       </div>
       <div className="w-full">
-        <AgTable data={rows} columns={recievedTicketsColumns} search />
+        <AgTable data={rows} columns={recievedTicketsColumns} dateColumn="escalatedAt" search />
         <MuiModal
           open={openView}
           onClose={() => setOpenView(false)}

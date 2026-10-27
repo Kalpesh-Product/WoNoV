@@ -23,16 +23,19 @@ const WidgetTable = ({
   buttonTitle,
   handleSubmit,
   headerActions,
+  summaryContent,
   checkbox,
   checkAll,
   key,
   exportData,
+  exportAction,
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
   isRowSelectable,
   hideTitle = true,
   search = true,
+  hideFilter = false,
   border = true,
   onMonthChange,
   totalKey = "actualAmount",
@@ -51,7 +54,7 @@ const WidgetTable = ({
   summaryChipVariant,
   greenChipClassName,
   preserveCurrentMonthRange = false,
-  showCalendarWhenEmpty = false,
+  showCalendarWhenEmpty = true,
   getMissingRangeData,
   getVisibleColumns,
 }) => {
@@ -427,10 +430,10 @@ const WidgetTable = ({
                 handleSubmit={() => handleBatchAction(selectedRows)}
               />
             )}
-{exportData && (
-              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-            )}
   </>);
+  const exportControls = exportAction !== undefined ? exportAction : exportData && (
+              <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+            );
 
   return (
     <div className="flex flex-col gap-4">
@@ -456,6 +459,8 @@ const WidgetTable = ({
           <AgTable
               toolbarDateControls={dateControls}
               toolbarActions={toolbarButtons}
+              summaryContent={summaryContent}
+              exportAction={exportControls}
               key={key}
               enableCheckbox={checkbox}
               tableRef={agGridRef}
@@ -466,7 +471,7 @@ const WidgetTable = ({
               tableHeight={tableHeight || 300}
               columns={formattedColumns}
               data={groupByKey ? groupedData : sortedTableData}
-              hideFilter={false}
+              hideFilter={hideFilter}
               showDateControls={false}
               search={search}
               dateColumn={dateColumn}

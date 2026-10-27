@@ -189,6 +189,7 @@ const DepartmentTasks = () => {
                 }))}
                 columns={departmentColumns}
                 tableTitle="ACTIVE DEPARTMENT WISE TASKS"
+                search={false}
                 hideTitle
                 hideFilter
               />

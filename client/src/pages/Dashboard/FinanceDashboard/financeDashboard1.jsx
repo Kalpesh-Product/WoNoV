@@ -3280,7 +3280,7 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
           headerContentClassName="min-h-[42px]"
         >
         <div className="text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73]" style={{ "--ag-foreground-color": "#1E3D73", "--ag-header-foreground-color": "#1E3D73", "--ag-icon-color": "#1E3D73" }}>
-        <AgTable
+        <AgTable showTableControls={false}
 
           hideTitle
           exportData
