@@ -81,7 +81,7 @@ const formatCurrency = (value) => {
 
 const useCurrentMonthStartDate = () => {
   const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
-    () => dayjs().startOf("month").toISOString(),
+    () => dayjs().startOf("month").format("YYYY-MM-DD"),
   );
 
   useEffect(() => {
@@ -93,12 +93,12 @@ const useCurrentMonthStartDate = () => {
       const delay = Math.max(nextMonthStart.diff(now), 0);
 
       timeoutId = window.setTimeout(() => {
-        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        setCurrentMonthStartDate(dayjs().startOf("month").format("YYYY-MM-DD"));
         scheduleNextUpdate();
       }, delay);
     };
 
-    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    setCurrentMonthStartDate(dayjs().startOf("month").format("YYYY-MM-DD"));
     scheduleNextUpdate();
 
     return () => {
@@ -200,7 +200,13 @@ const VirtualOfficeClientDetails = () => {
     [clientId],
   );
 
-  const { control, handleSubmit, reset, setValue } = useForm({
+  const {
+    control,
+    getValues,
+    handleSubmit,
+    reset,
+    setValue,
+  } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -539,7 +545,7 @@ const VirtualOfficeClientDetails = () => {
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
           selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
-        rentDate: currentMonthStartDate,
+        rentDate: selectedClient.rentDate || currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -577,10 +583,6 @@ const VirtualOfficeClientDetails = () => {
   }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
   useEffect(() => {
-    setValue("rentDate", currentMonthStartDate);
-  }, [currentMonthStartDate, setValue]);
-
-  useEffect(() => {
     setValue("totalDesks", computedTotalDesks);
   }, [computedTotalDesks, setValue]);
 
@@ -616,11 +618,13 @@ const VirtualOfficeClientDetails = () => {
         Number(data.totalReceivedAmount) || Number(data.receivedAmount) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
-      termStartDate: data.termStartDate,
-      termEnd: data.termEnd,
+      termStartDate: dayjs(data.termStartDate).format("YYYY-MM-DD"),
+      termEnd: dayjs(data.termEnd).format("YYYY-MM-DD"),
       lockInPeriodMonths: Number(data.lockInPeriodMonths) || 0,
-      rentDate: data.rentDate || currentMonthStartDate,
-      nextIncrementDate: data.nextIncrementDate,
+      rentDate: dayjs(data.rentDate).format("YYYY-MM-DD"),
+      nextIncrementDate: data.nextIncrementDate
+        ? dayjs(data.nextIncrementDate).format("YYYY-MM-DD")
+        : null,
       localPoc: {
         name: data.localPocName,
         email: data.localPocEmail,
@@ -687,6 +691,7 @@ const VirtualOfficeClientDetails = () => {
             Number(data.lockInPeriodMonths)) || 0,
         termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
         termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
+        rentDate: serverData.rentDate ?? data.rentDate,
         nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
       };
 
@@ -791,7 +796,7 @@ const VirtualOfficeClientDetails = () => {
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
           selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
-        rentDate: currentMonthStartDate,
+        rentDate: selectedClient.rentDate || currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -810,20 +815,32 @@ const VirtualOfficeClientDetails = () => {
     }
   };
 
-  const renderDatePickerField = (field, label, disabled = false) => (
+  const renderDatePickerField = (
+    field,
+    label,
+    disabled = false,
+    onDateChange,
+    errorMessage,
+  ) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
         label={label}
         format="DD-MM-YYYY"
         value={field.value ? dayjs(field.value) : null}
         disabled={disabled}
-        onChange={(dateValue) =>
-          field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
-        }
+        onChange={(dateValue) => {
+          const normalizedDate = dateValue
+            ? dayjs(dateValue).format("YYYY-MM-DD")
+            : "";
+          field.onChange(normalizedDate);
+          onDateChange?.(normalizedDate);
+        }}
         slotProps={{
           textField: {
             size: "small",
             fullWidth: true,
+            error: Boolean(errorMessage),
+            helperText: errorMessage,
           },
         }}
       />
@@ -1514,7 +1531,16 @@ const VirtualOfficeClientDetails = () => {
                         name="termStartDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Start Date")
+                          renderDatePickerField(
+                            field,
+                            "Start Date",
+                            false,
+                            (startDate) =>
+                              setValue("rentDate", startDate, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              }),
+                          )
                         }
                       />
                     ) : (
@@ -1571,8 +1597,27 @@ const VirtualOfficeClientDetails = () => {
                       <Controller
                         name="rentDate"
                         control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date")
+                        rules={{
+                          required: "Rent Date is required",
+                          validate: (rentDate) => {
+                            const startDate = getValues("termStartDate");
+
+                            if (!rentDate || !startDate) return true;
+
+                            return (
+                              !dayjs(rentDate).isBefore(dayjs(startDate), "day") ||
+                              "Rent Date cannot be before Start Date"
+                            );
+                          },
+                        }}
+                        render={({ field, fieldState }) =>
+                          renderDatePickerField(
+                            field,
+                            "Rent Date",
+                            false,
+                            undefined,
+                            fieldState.error?.message,
+                          )
                         }
                       />
                     ) : (
@@ -1587,7 +1632,9 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(currentMonthStartDate)}
+                            {humanDate(
+                              selectedClient?.rentDate || currentMonthStartDate,
+                            )}
                           </span>
                         </div>
                       </div>
