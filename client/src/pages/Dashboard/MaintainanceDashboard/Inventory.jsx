@@ -1950,6 +1950,12 @@ function getUnitInventorySummaryValues(rows = []) {
       cellRenderer: (params) => inrFormat(params.value),
     },
     {
+      field: "consumedValue",
+      headerName: "Consumed Valued",
+      valueGetter: (params) => params.data.newConsumedUnitValue ?? 0,
+      cellRenderer: (params) => inrFormat(params.value),
+    },
+    {
       field: "closingUnits",
       headerName: "Closing Units",
       valueGetter: (params) =>
