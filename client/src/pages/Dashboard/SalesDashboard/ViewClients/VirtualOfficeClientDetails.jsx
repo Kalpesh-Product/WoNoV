@@ -1,6 +1,13 @@
-import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Avatar,
+  Button,
+  Chip,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -15,7 +22,7 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const buildRateSchedule = (
   startDate,
@@ -74,7 +81,7 @@ const formatCurrency = (value) => {
 
 const useCurrentMonthStartDate = () => {
   const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
-    () => dayjs().startOf("month").toISOString(),
+    () => dayjs().startOf("month").format("YYYY-MM-DD"),
   );
 
   useEffect(() => {
@@ -86,12 +93,12 @@ const useCurrentMonthStartDate = () => {
       const delay = Math.max(nextMonthStart.diff(now), 0);
 
       timeoutId = window.setTimeout(() => {
-        setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+        setCurrentMonthStartDate(dayjs().startOf("month").format("YYYY-MM-DD"));
         scheduleNextUpdate();
       }, delay);
     };
 
-    setCurrentMonthStartDate(dayjs().startOf("month").toISOString());
+    setCurrentMonthStartDate(dayjs().startOf("month").format("YYYY-MM-DD"));
     scheduleNextUpdate();
 
     return () => {
@@ -168,6 +175,7 @@ const calculateAgreementExpiry = (startDate, endDate, referenceStartDate) => {
 };
 
 const VirtualOfficeClientDetails = () => {
+  const location = useLocation();
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -178,12 +186,27 @@ const VirtualOfficeClientDetails = () => {
   const currentMonthStartDate = useCurrentMonthStartDate();
   const DEFAULT_BOOKING_TYPE = "Direct";
   const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
+  const DEFAULT_SOURCING_OPTIONS = [
+    "Google",
+    "LinkedIn",
+    "Referral",
+    "IPC",
+    "Walk-IN",
+    "WhatsApp",
+  ];
+  const CURRENT_STATUS_OPTIONS = ["In Progress", "Yet to start", "On Hold"];
   const normalizedClientName = useMemo(
     () => decodeURIComponent(clientId || "").trim().toLowerCase(),
     [clientId],
   );
 
-  const { control, handleSubmit, reset, setValue } = useForm({
+  const {
+    control,
+    getValues,
+    handleSubmit,
+    reset,
+    setValue,
+  } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -220,10 +243,75 @@ const VirtualOfficeClientDetails = () => {
       hoPocEmail: "",
       hoPocPhone: "",
       clientStatus: true,
+      channel: "",
+      currentStatus: "In Progress",
       createdAt: "",
       updatedAt: "",
     },
   });
+
+  const [sourcingInput, setSourcingInput] = useState("");
+  const { data: storedSourcingOptions = [] } = useQuery({
+    queryKey: ["virtualOfficeSourcingOptions"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/sales/virtual-office/sourcing-options",
+      );
+      return response.data;
+    },
+  });
+  const sourcingOptions = storedSourcingOptions.length
+    ? storedSourcingOptions
+    : DEFAULT_SOURCING_OPTIONS;
+
+  const { mutate: saveSourcingOption, isPending: isSavingSourcingOption } =
+    useMutation({
+      mutationFn: async (option) => {
+        const response = await axios.post(
+          "/api/sales/virtual-office/sourcing-options",
+          { option },
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        queryClient.setQueryData(
+          ["virtualOfficeSourcingOptions"],
+          data.options,
+        );
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to add sourcing",
+        );
+      },
+    });
+
+  const handleAddSourcingOption = (option) => {
+    const nextOption = String(option || "").trim();
+    if (!nextOption) return;
+
+    const existingOption = sourcingOptions.find(
+      (item) => item.toLowerCase() === nextOption.toLowerCase(),
+    );
+    const selectedOption = existingOption || nextOption;
+
+    setValue("channel", selectedOption, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setSourcingInput(selectedOption);
+
+    if (!existingOption) {
+      queryClient.setQueryData(
+        ["virtualOfficeSourcingOptions"],
+        [...sourcingOptions, selectedOption],
+      );
+      saveSourcingOption(selectedOption);
+    }
+  };
 
   const virtualOfficeClientId = /^[a-fA-F0-9]{24}$/.test(clientId)
     ? clientId
@@ -279,7 +367,9 @@ const VirtualOfficeClientDetails = () => {
     },
   });
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(
+    () => location.state?.editMode === true,
+  );
   const selectedBuilding = useWatch({ control, name: "building" });
   const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
   const watchedOpenDesks = useWatch({ control, name: "openDesks" });
@@ -455,7 +545,7 @@ const VirtualOfficeClientDetails = () => {
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
           selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
-        rentDate: currentMonthStartDate,
+        rentDate: selectedClient.rentDate || currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -465,9 +555,12 @@ const VirtualOfficeClientDetails = () => {
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
+        channel: selectedClient.channel || "",
+        currentStatus: selectedClient.currentStatus || "In Progress",
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
+      setSourcingInput(selectedClient.channel || "");
     }
   }, [currentMonthStartDate, reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
@@ -490,10 +583,6 @@ const VirtualOfficeClientDetails = () => {
   }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
 
   useEffect(() => {
-    setValue("rentDate", currentMonthStartDate);
-  }, [currentMonthStartDate, setValue]);
-
-  useEffect(() => {
     setValue("totalDesks", computedTotalDesks);
   }, [computedTotalDesks, setValue]);
 
@@ -513,6 +602,8 @@ const VirtualOfficeClientDetails = () => {
       city: data.hoCity,
       state: data.hoState,
       clientStatus: data.clientStatus === true || data.clientStatus === "true",
+      channel: data.channel || "",
+      currentStatus: data.currentStatus || "In Progress",
       bookingType: data.bookingType || DEFAULT_BOOKING_TYPE,
       building: data.building,
       unit: data.unit,
@@ -527,11 +618,13 @@ const VirtualOfficeClientDetails = () => {
         Number(data.totalReceivedAmount) || Number(data.receivedAmount) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
-      termStartDate: data.termStartDate,
-      termEnd: data.termEnd,
+      termStartDate: dayjs(data.termStartDate).format("YYYY-MM-DD"),
+      termEnd: dayjs(data.termEnd).format("YYYY-MM-DD"),
       lockInPeriodMonths: Number(data.lockInPeriodMonths) || 0,
-      rentDate: data.rentDate || currentMonthStartDate,
-      nextIncrementDate: data.nextIncrementDate,
+      rentDate: dayjs(data.rentDate).format("YYYY-MM-DD"),
+      nextIncrementDate: data.nextIncrementDate
+        ? dayjs(data.nextIncrementDate).format("YYYY-MM-DD")
+        : null,
       localPoc: {
         name: data.localPocName,
         email: data.localPocEmail,
@@ -598,6 +691,7 @@ const VirtualOfficeClientDetails = () => {
             Number(data.lockInPeriodMonths)) || 0,
         termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
         termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
+        rentDate: serverData.rentDate ?? data.rentDate,
         nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
       };
 
@@ -702,7 +796,7 @@ const VirtualOfficeClientDetails = () => {
         termEnd: selectedClient.termEnd || selectedClient.endDate,
         lockInPeriodMonths:
           selectedClient.lockInPeriodMonths || selectedClient.lockinPeriod || 0,
-        rentDate: currentMonthStartDate,
+        rentDate: selectedClient.rentDate || currentMonthStartDate,
         nextIncrementDate:
           selectedClient.nextIncrementDate || selectedClient.nextIncrement,
         localPocName: selectedClient.localPoc?.name || "",
@@ -712,26 +806,41 @@ const VirtualOfficeClientDetails = () => {
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
+        channel: selectedClient.channel || "",
+        currentStatus: selectedClient.currentStatus || "In Progress",
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
+      setSourcingInput(selectedClient.channel || "");
     }
   };
 
-  const renderDatePickerField = (field, label, disabled = false) => (
+  const renderDatePickerField = (
+    field,
+    label,
+    disabled = false,
+    onDateChange,
+    errorMessage,
+  ) => (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <DatePicker
         label={label}
         format="DD-MM-YYYY"
         value={field.value ? dayjs(field.value) : null}
         disabled={disabled}
-        onChange={(dateValue) =>
-          field.onChange(dateValue ? dayjs(dateValue).toISOString() : "")
-        }
+        onChange={(dateValue) => {
+          const normalizedDate = dateValue
+            ? dayjs(dateValue).format("YYYY-MM-DD")
+            : "";
+          field.onChange(normalizedDate);
+          onDateChange?.(normalizedDate);
+        }}
         slotProps={{
           textField: {
             size: "small",
             fullWidth: true,
+            error: Boolean(errorMessage),
+            helperText: errorMessage,
           },
         }}
       />
@@ -767,7 +876,11 @@ const VirtualOfficeClientDetails = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div
+                  className={`grid grid-cols-1 gap-4 p-4 ${
+                    isEditing ? "lg:grid-cols-2" : ""
+                  }`}
+                >
                   {[
                     "clientName",
                     "sector",
@@ -892,6 +1005,148 @@ const VirtualOfficeClientDetails = () => {
                       )}
                     </div>
                   ))}
+                  <div
+                    className={`grid grid-cols-1 gap-4 ${
+                      isEditing ? "lg:col-span-2 lg:grid-cols-2" : ""
+                    }`}
+                  >
+                    {isEditing ? (
+                      <>
+                        <Controller
+                          name="channel"
+                          control={control}
+                          render={({ field }) => (
+                            <Autocomplete
+                              freeSolo
+                              selectOnFocus
+                              clearOnBlur={false}
+                              handleHomeEndKeys
+                              options={sourcingOptions}
+                              value={field.value || null}
+                              inputValue={sourcingInput}
+                              loading={isSavingSourcingOption}
+                              onInputChange={(_event, value, reason) => {
+                                if (reason !== "reset") {
+                                  setSourcingInput(value);
+                                }
+                              }}
+                              onChange={(_event, value) => {
+                                if (value && typeof value === "object") {
+                                  handleAddSourcingOption(value.inputValue);
+                                  return;
+                                }
+
+                                if (
+                                  value &&
+                                  !sourcingOptions.some(
+                                    (option) =>
+                                      option.toLowerCase() ===
+                                      value.toLowerCase(),
+                                  )
+                                ) {
+                                  handleAddSourcingOption(value);
+                                  return;
+                                }
+
+                                field.onChange(value || "");
+                                setSourcingInput(value || "");
+                              }}
+                              filterOptions={(options, params) => {
+                                const typedValue = params.inputValue.trim();
+                                const filteredOptions = options.filter(
+                                  (option) =>
+                                    option
+                                      .toLowerCase()
+                                      .includes(typedValue.toLowerCase()),
+                                );
+                                const alreadyExists = options.some(
+                                  (option) =>
+                                    option.toLowerCase() ===
+                                    typedValue.toLowerCase(),
+                                );
+
+                                if (typedValue && !alreadyExists) {
+                                  filteredOptions.push({
+                                    inputValue: typedValue,
+                                    label: `+ Add "${typedValue}"`,
+                                  });
+                                }
+
+                                return filteredOptions;
+                              }}
+                              getOptionLabel={(option) =>
+                                typeof option === "string"
+                                  ? option
+                                  : option.label || ""
+                              }
+                              renderOption={(props, option) => (
+                                <li
+                                  {...props}
+                                  key={option.inputValue || option}
+                                >
+                                  {typeof option === "string" ? (
+                                    option
+                                  ) : (
+                                    <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                      {option.label}
+                                    </span>
+                                  )}
+                                </li>
+                              )}
+                              renderInput={(params) => (
+                                <TextField
+                                  {...params}
+                                  size="small"
+                                  label="Sourcing"
+                                  placeholder="Select or Add Source"
+                                />
+                              )}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="currentStatus"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              select
+                              size="small"
+                              label="Current Status"
+                              fullWidth
+                            >
+                              {CURRENT_STATUS_OPTIONS.map((option) => (
+                                <MenuItem key={option} value={option}>
+                                  {option}
+                                </MenuItem>
+                              ))}
+                            </TextField>
+                          )}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <div className="py-2 flex justify-between items-center gap-2">
+                          <span className="w-full font-pmedium text-gray-600 text-content">
+                            Sourcing
+                          </span>
+                          <span>:</span>
+                          <span className="w-full text-gray-500">
+                            {selectedClient?.channel || "N/A"}
+                          </span>
+                        </div>
+                        <div className="py-2 flex justify-between items-center gap-2">
+                          <span className="w-full font-pmedium text-gray-600 text-content">
+                            Current Status
+                          </span>
+                          <span>:</span>
+                          <span className="w-full text-gray-500">
+                            {selectedClient?.currentStatus || "In Progress"}
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
               {/* Section: Company Details */}
@@ -902,7 +1157,11 @@ const VirtualOfficeClientDetails = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div
+                  className={`grid grid-cols-1 gap-4 p-4 ${
+                    isEditing ? "lg:grid-cols-2" : ""
+                  }`}
+                >
                   {isEditing ? (
                     <>
                       <Controller
@@ -941,7 +1200,7 @@ const VirtualOfficeClientDetails = () => {
                           </TextField>
                         )}
                       />
-                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                       <div className="grid grid-cols-1 lg:col-span-2 lg:grid-cols-2 gap-4">
                         <Controller
                           name="securityDeposit"
                           control={control}
@@ -976,7 +1235,7 @@ const VirtualOfficeClientDetails = () => {
                           control={control}
                           render={({ field }) =>
                             fieldKey === "clientStatus" ? (
-                              <TextField {...field} select size="small" label="Status" fullWidth>
+                              <TextField {...field} select size="small" label="Company Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
@@ -1023,7 +1282,7 @@ const VirtualOfficeClientDetails = () => {
                         <div className="w-[100%] justify-start flex">
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "clientStatus"
-                              ? "Status"
+                              ? "Company Status"
                               : fieldKey === "totalDesks"
                                 ? "No Of Desk"
                               : fieldKey === "currentRate"
@@ -1071,7 +1330,11 @@ const VirtualOfficeClientDetails = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div
+                  className={`grid grid-cols-1 gap-4 p-4 ${
+                    isEditing ? "lg:grid-cols-2" : ""
+                  }`}
+                >
                   {/* Annual Increment */}
                   <div>
                     {isEditing ? (
@@ -1223,6 +1486,44 @@ const VirtualOfficeClientDetails = () => {
                     )}
                   </div>
 
+                  {/* Lock-in Period */}
+                  <div>
+                    {isEditing ? (
+                      <Controller
+                        name="lockInPeriodMonths"
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            size="small"
+                            label="Lock-in Period"
+                            type="number"
+                            fullWidth
+                          />
+                        )}
+                      />
+                    ) : (
+                      <div className="py-2 flex justify-between items-start gap-2">
+                        <div className="w-[100%] justify-start flex">
+                          <span className="font-pmedium text-gray-600 text-content">
+                            Lock-in Period
+                          </span>{" "}
+                        </div>
+                        <div className="">
+                          <span>:</span>
+                        </div>
+                        <div className="w-full">
+                          <span className="text-gray-500">
+                            {selectedClient?.lockInPeriodMonths ||
+                              selectedClient?.lockinPeriod ||
+                              0}{" "}
+                            months
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   {/* Start Date */}
                   <div>
                     {isEditing ? (
@@ -1230,7 +1531,16 @@ const VirtualOfficeClientDetails = () => {
                         name="termStartDate"
                         control={control}
                         render={({ field }) =>
-                          renderDatePickerField(field, "Start Date")
+                          renderDatePickerField(
+                            field,
+                            "Start Date",
+                            false,
+                            (startDate) =>
+                              setValue("rentDate", startDate, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              }),
+                          )
                         }
                       />
                     ) : (
@@ -1281,52 +1591,33 @@ const VirtualOfficeClientDetails = () => {
                     )}
                   </div>
 
-                  {/* Lock-in Period */}
-                  <div>
-                    {isEditing ? (
-                      <Controller
-                        name="lockInPeriodMonths"
-                        control={control}
-                        render={({ field }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            label="Lock-in Period"
-                            type="number"
-                            fullWidth
-                          />
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[100%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Lock-in Period
-                          </span>{" "}
-                        </div>
-                        <div className="">
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {selectedClient?.lockInPeriodMonths ||
-                              selectedClient?.lockinPeriod ||
-                              0}{" "}
-                            months
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
                   {/* Rent Date */}
                   <div>
                     {isEditing ? (
                       <Controller
                         name="rentDate"
                         control={control}
-                        render={({ field }) =>
-                          renderDatePickerField(field, "Rent Date", true)
+                        rules={{
+                          required: "Rent Date is required",
+                          validate: (rentDate) => {
+                            const startDate = getValues("termStartDate");
+
+                            if (!rentDate || !startDate) return true;
+
+                            return (
+                              !dayjs(rentDate).isBefore(dayjs(startDate), "day") ||
+                              "Rent Date cannot be before Start Date"
+                            );
+                          },
+                        }}
+                        render={({ field, fieldState }) =>
+                          renderDatePickerField(
+                            field,
+                            "Rent Date",
+                            false,
+                            undefined,
+                            fieldState.error?.message,
+                          )
                         }
                       />
                     ) : (
@@ -1341,7 +1632,9 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(currentMonthStartDate)}
+                            {humanDate(
+                              selectedClient?.rentDate || currentMonthStartDate,
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1442,7 +1735,11 @@ const VirtualOfficeClientDetails = () => {
                   </span>
                 </div>
 
-                <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-1 gap-4 p-4">
+                <div
+                  className={`grid grid-cols-1 gap-4 p-4 ${
+                    isEditing ? "lg:grid-cols-2" : ""
+                  }`}
+                >
                   {[
                     "localPocName",
                     "localPocEmail",

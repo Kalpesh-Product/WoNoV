@@ -135,6 +135,12 @@ import AssignedTaskReports from "../pages/Tasks/TaskReports.jsx/AssignedTaskRepo
 import DepartmentTaskReports from "../pages/Tasks/TaskReports.jsx/DepartmentTaskReports";
 import SalesDashboardLayout from "../pages/Dashboard/SalesDashboard/SalesDashboardLayout";
 import SalesDashboard from "../pages/Dashboard/SalesDashboard/SalesDashboard";
+import VirtualOfficeDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/VirtualOfficeDashboard";
+import CoWorkingDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/CoWorkingDashboard";
+import MeetingRoomDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/MeetingRoomDashboard";
+import WorkationDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/WorkationDashboard";
+import AlternateChannelDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/AlternateChannelDashboard";
+import SidebarDropdown from "../components/SidebarDropdown";
 import TotalRevenueLayout from "../pages/Dashboard/SalesDashboard/TotalRevenueLayout";
 import TotalRevenue from "../pages/Dashboard/SalesDashboard/TotalRevenue";
 import ViewTemplate from "../pages/Dashboard/HrDashboard/Data/ViewTemplate";
@@ -1277,7 +1283,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "virtual-office",
-                            element: <VirtualOffice useTaxableAmountForGraph />,
+                            element: <VirtualOffice />,
                           },
                           {
                             path: "workation",
@@ -2631,6 +2637,307 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <SalesDashboard />,
+                      },
+                      {
+                        path: "virtual-office",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client-onboarding",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeForm />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <VirtualOffice graphOnly dashboardProjectionMode />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client-details",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeClients />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard emptyView />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <VendorTable />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data/vendor-onboard",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <Vendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data/:id",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <ViewVendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client/:clientId",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
+                                .value,
+                            ]}
+                          >
+                            <ViewClientLayout />
+                          </SidebarDropdown>
+                        ),
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDesks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientRevenue />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "virtual-office/india-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard occupancyView="india" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/sector-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_SECTOR_WISE_OCCUPANCY
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard occupancyView="sector" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/sourcing-channels",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard channelView="sourcing" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/direct-vs-paid",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard channelView="directPaid" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/pipeline-renewal",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_TABLE
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard pipelineRenewalOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <CoWorkingDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "workation",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                            ]}
+                          >
+                            <WorkationDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "alternate-channel",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard />
+                          </SidebarDropdown>
+                        ),
                       },
                       {
                         path: "turnover",

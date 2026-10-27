@@ -975,6 +975,7 @@ const AddClient = () => {
                       <MenuItem value="drivingLicense">
                         Driving License
                       </MenuItem>
+                      <MenuItem value="passport">Passport</MenuItem>
                     </TextField>
                   )}
                 />

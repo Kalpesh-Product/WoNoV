@@ -73,6 +73,7 @@ const FyBarGraph = ({
   redTitle,
   totalTitle,
   summaryChipVariant,
+  headerRightContent,
   selectedFY: controlledSelectedFY,
   onSelectedFYChange,
   responsiveResize = true,
@@ -80,6 +81,9 @@ const FyBarGraph = ({
   includePointMeta = false,
   tooltipValueMode = "raw",
   disableHoverCrosshair = false,
+  hideYearNavigation = false,
+  borderColor,
+  bodyBorderColor,
 }) => {
   const [internalSelectedFY, setInternalSelectedFY] = useState(
     getCurrentFinancialYearLabel(),
@@ -288,6 +292,19 @@ const FyBarGraph = ({
     }, 0);
   }, [stackedSeries]);
 
+  const chartDataKey = useMemo(
+    () =>
+      stackedSeries
+        .map((series) =>
+          [
+            series.name,
+            ...series.data.map((point) => Number(point?.y ?? point) || 0),
+          ].join(":"),
+        )
+        .join("|"),
+    [stackedSeries],
+  );
+
   const hasSummaryChips =
     TitleAmountGreen !== undefined ||
     TitleAmountRed !== undefined ||
@@ -296,7 +313,13 @@ const FyBarGraph = ({
   return (
     <WidgetSection
       border
-      title={`${graphTitle} ${selectedFY}`}
+      borderColor={borderColor}
+      bodyBorderColor={bodyBorderColor}
+      title={
+        React.isValidElement(graphTitle)
+          ? graphTitle
+          : `${graphTitle} ${selectedFY}`
+      }
       TitleAmount={hasSummaryChips ? "" : titleAmount || `INR ${inrFormat(fyTotal)}`}
       TitleAmountGreen={TitleAmountGreen}
       TitleAmountRed={TitleAmountRed}
@@ -305,9 +328,11 @@ const FyBarGraph = ({
       redTitle={redTitle}
       totalTitle={totalTitle}
       summaryChipVariant={summaryChipVariant}
+      headerRightContent={headerRightContent}
     >
       <div className="flex flex-col gap-4 rounded-md">
         <BarGraph
+          key={`${chartId}-${selectedFY}-${chartDataKey}`}
           options={mergedChartOptions}
           data={stackedSeries}
           responsiveResize={responsiveResize}
@@ -315,21 +340,27 @@ const FyBarGraph = ({
           height={350}
         />
 
-        <div className="flex justify-center items-center gap-4 mt-4">
-          <SecondaryButton
-            title={<MdNavigateBefore />}
-            handleSubmit={() => updateSelectedFY(shiftFinancialYear(selectedFY, -1))}
-          />
+        {!hideYearNavigation && (
+          <div className="mt-4 flex items-center justify-center gap-4">
+            <SecondaryButton
+              title={<MdNavigateBefore />}
+              handleSubmit={() =>
+                updateSelectedFY(shiftFinancialYear(selectedFY, -1))
+              }
+            />
 
-          <span className="text-primary text-content font-semibold">
-            {selectedFY || "N/A"}
-          </span>
+            <span className="text-content font-semibold text-primary">
+              {selectedFY || "N/A"}
+            </span>
 
-          <SecondaryButton
-            handleSubmit={() => updateSelectedFY(shiftFinancialYear(selectedFY, 1))}
-            title={<MdNavigateNext />}
-          />
-        </div>
+            <SecondaryButton
+              handleSubmit={() =>
+                updateSelectedFY(shiftFinancialYear(selectedFY, 1))
+              }
+              title={<MdNavigateNext />}
+            />
+          </div>
+        )}
       </div>
     </WidgetSection>
   );

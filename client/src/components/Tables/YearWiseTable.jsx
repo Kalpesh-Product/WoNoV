@@ -41,6 +41,7 @@ const YearWiseTable = ({
   handleBatchAction,
   batchButton,
   isRowSelectable,
+  getRowId,
   hideTitle = true,
   search = true,
   hideFilter = false,
@@ -613,6 +614,7 @@ const YearWiseTable = ({
             }
             dateColumn={dateColumn}
             isRowSelectable={isRowSelectable}
+            getRowId={getRowId}
             onSelectionChange={(rows) => setSelectedRows(rows)}
             batchButton={batchButton}
             hideTitle={hideTitle}

@@ -9,6 +9,84 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 //const Role = require("../../models/roles/Roles");
 
+const normalizeVendorTypeOptions = (options = []) => {
+  const uniqueOptions = new Map();
+
+  options.forEach((option) => {
+    const normalizedOption = String(option || "").trim();
+    if (!normalizedOption) return;
+    uniqueOptions.set(normalizedOption.toLowerCase(), normalizedOption);
+  });
+
+  return Array.from(uniqueOptions.values());
+};
+
+const getVendorTypeOptions = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.company)
+      .select("vendorTypeOptions")
+      .lean();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    return res
+      .status(200)
+      .json(normalizeVendorTypeOptions(company.vendorTypeOptions));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addVendorTypeOption = async (req, res, next) => {
+  try {
+    const option = String(req.body?.option || "").trim();
+
+    if (!option) {
+      return res.status(400).json({ message: "Vendor type is required" });
+    }
+
+    if (option.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "Vendor type cannot exceed 60 characters" });
+    }
+
+    const company = await Company.findById(req.company).select(
+      "vendorTypeOptions",
+    );
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const currentOptions = normalizeVendorTypeOptions(
+      company.vendorTypeOptions,
+    );
+    const existingOption = currentOptions.find(
+      (item) => item.toLowerCase() === option.toLowerCase(),
+    );
+    const selectedOption = existingOption || option;
+
+    company.vendorTypeOptions = normalizeVendorTypeOptions([
+      ...currentOptions,
+      selectedOption,
+    ]);
+    await company.save();
+
+    return res.status(existingOption ? 200 : 201).json({
+      message: existingOption
+        ? "Vendor type already available"
+        : "Vendor type added successfully",
+      option: selectedOption,
+      options: company.vendorTypeOptions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const onboardVendor = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Onboard Vendor";
@@ -29,6 +107,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
+      vendorType,
       ifscCode,
       bankName,
       branchName,
@@ -134,6 +213,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
+      vendorType,
       ifscCode,
       bankName,
       branchName,
@@ -345,6 +425,7 @@ const updateVendor = async (req, res, next) => {
     "panIdNo",
     "gstIn",
     "partyType",
+    "vendorType",
     "ifscCode",
     "bankName",
     "branchName",
@@ -617,4 +698,6 @@ module.exports = {
   fetchVendors,
   updateVendor,
   bulkInsertVendors,
+  getVendorTypeOptions,
+  addVendorTypeOption,
 };

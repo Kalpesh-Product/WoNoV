@@ -61,11 +61,21 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isNonNavigableSegment = segment === "visitor-history";
+    const isVirtualOfficeClientPath =
+      pathSegments.includes("virtual-office") &&
+      pathSegments.includes("client");
+    const isClientIdSegment =
+      isVirtualOfficeClientPath &&
+      pathSegments[index - 1] === "client" &&
+      ["client-details", "desks", "revenue"].includes(
+        pathSegments[index + 1],
+      );
+    const isNonNavigableSegment =
+      segment === "visitor-history" ||
+      (isVirtualOfficeClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
-
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
@@ -86,6 +96,8 @@ const BreadCrumbComponent = () => {
       isLast && location.state?.breadcrumbLabel
         ? location.state.breadcrumbLabel
         : formatLabel(segment);
+
+    if (isClientIdSegment) return null;
 
     return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">

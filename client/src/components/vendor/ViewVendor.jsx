@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Avatar,
   Button,
   Chip,
@@ -12,11 +13,12 @@ import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
 import { useLocation, useNavigate } from "react-router-dom";
 import PrimaryButton from "../PrimaryButton";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const ViewVendor = () => {
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   const initialValuesRef = React.useRef({});
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
@@ -24,12 +26,69 @@ const ViewVendor = () => {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [vendorTypeOptions, setVendorTypeOptions] = useState([]);
+  const [vendorTypeInput, setVendorTypeInput] = useState("");
   const { control, handleSubmit, reset, setValue, getValues } = useForm();
 
   const [isEditing, setIsEditing] = useState(false);
   const location = useLocation();
   const { state } = location;
   const navigate = useNavigate();
+
+  const { data: savedVendorTypeOptions = [] } = useQuery({
+    queryKey: ["vendorTypeOptions"],
+    queryFn: async () => {
+      const response = await axios.get("/api/vendors/vendor-type-options");
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    setVendorTypeOptions(savedVendorTypeOptions);
+  }, [savedVendorTypeOptions]);
+
+  const { mutate: saveVendorTypeOption, isPending: isSavingVendorTypeOption } =
+    useMutation({
+      mutationFn: async (option) => {
+        const response = await axios.post("/api/vendors/vendor-type-options", {
+          option,
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        setVendorTypeOptions(data.options);
+        queryClient.setQueryData(["vendorTypeOptions"], data.options);
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to add vendor type",
+        );
+      },
+    });
+
+  const handleAddVendorType = (option = vendorTypeInput) => {
+    const nextOption = String(option || "").trim();
+    if (!nextOption) return;
+
+    const existingOption = vendorTypeOptions.find(
+      (item) => item.toLowerCase() === nextOption.toLowerCase(),
+    );
+    const selectedOption = existingOption || nextOption;
+
+    if (!existingOption) {
+      setVendorTypeOptions((options) => [...options, nextOption]);
+      saveVendorTypeOption(nextOption);
+    }
+
+    setValue("vendorType", selectedOption, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setVendorTypeInput(selectedOption);
+  };
 
   const { mutate: updateVendor, isPending } = useMutation({
     mutationFn: async (data) => {
@@ -44,6 +103,7 @@ const ViewVendor = () => {
     },
     onSuccess: function (data) {
       toast.success(data.message);
+      queryClient.invalidateQueries({ queryKey: ["vendors"] });
       navigate(-1);
     },
     onError: function (data) {
@@ -129,6 +189,7 @@ const getCountryIsoCode = (countryValue) => {
         gstIn: state.gstIn || "N/A",
         gst: state.gstIn || "N/A",
         partyType: state.partyType,
+        vendorType: state.vendorType || "",
         registrationType: "regular", // default/fallback
         company: state.company,
         companyName: state.companyName,
@@ -155,6 +216,7 @@ const getCountryIsoCode = (countryValue) => {
       setSelectedCountry(normalizedCountry || state.country);
       setSelectedState(normalizedState || state.state);
       setSelectedCity(state.city);
+      setVendorTypeInput(state.vendorType || "");
       reset(mapping);
       initialValuesRef.current = mapping;
     }
@@ -218,7 +280,6 @@ const getCountryIsoCode = (countryValue) => {
     "address",
     "pinCode",
     "panIdNo",
-    "companyName",
     "status",
   ];
 
@@ -562,47 +623,161 @@ const getCountryIsoCode = (countryValue) => {
                       </div>
                     ))}
 
-                    {isEditing ? (
-                      <Controller
-                        name="partyType"
-                        control={control}
-                        defaultValue=""
-                        rules={{ required: "Party Type is required" }}
-                        render={({ field, fieldState: { error } }) => (
-                          <TextField
-                            {...field}
-                            size="small"
-                            select
-                            label={"Party Type"}
-                            error={!!error}
-                          >
-                            <MenuItem value="" disabled>
-                              Party Type
-                            </MenuItem>
-                            <MenuItem value="Domestic">Domestic</MenuItem>
-                            <MenuItem value="International">
-                              International
-                            </MenuItem>
-                          </TextField>
-                        )}
-                      />
-                    ) : (
-                      <div className="py-2 flex justify-between items-start gap-2">
-                        <div className="w-[35%] justify-start flex">
-                          <span className="font-pmedium text-gray-600 text-content">
-                            Party Type
-                          </span>
-                        </div>
-                        <div>
-                          <span>:</span>
-                        </div>
-                        <div className="w-full">
-                          <span className="text-gray-500">
-                            {state.partyType}
-                          </span>
-                        </div>
-                      </div>
-                    )}
+                    <div className="grid grid-cols-1 gap-4">
+                      {isEditing ? (
+                        <>
+                          <Controller
+                            name="partyType"
+                            control={control}
+                            defaultValue=""
+                            rules={{ required: "Party Type is required" }}
+                            render={({ field, fieldState: { error } }) => (
+                              <TextField
+                                {...field}
+                                size="small"
+                                select
+                                label="Party Type"
+                                error={!!error}
+                              >
+                                <MenuItem value="" disabled>
+                                  Party Type
+                                </MenuItem>
+                                <MenuItem value="Domestic">Domestic</MenuItem>
+                                <MenuItem value="International">
+                                  International
+                                </MenuItem>
+                              </TextField>
+                            )}
+                          />
+                          <Controller
+                            name="vendorType"
+                            control={control}
+                            defaultValue=""
+                            render={({ field }) => (
+                              <Autocomplete
+                                freeSolo
+                                selectOnFocus
+                                clearOnBlur={false}
+                                handleHomeEndKeys
+                                options={vendorTypeOptions}
+                                value={field.value || null}
+                                inputValue={vendorTypeInput}
+                                loading={isSavingVendorTypeOption}
+                                onInputChange={(_event, value, reason) => {
+                                  if (reason !== "reset") {
+                                    setVendorTypeInput(value);
+                                  }
+                                }}
+                                onChange={(_event, value) => {
+                                  if (value && typeof value === "object") {
+                                    handleAddVendorType(value.inputValue);
+                                    return;
+                                  }
+
+                                  if (
+                                    value &&
+                                    !vendorTypeOptions.some(
+                                      (option) =>
+                                        option.toLowerCase() ===
+                                        value.toLowerCase(),
+                                    )
+                                  ) {
+                                    handleAddVendorType(value);
+                                    return;
+                                  }
+
+                                  field.onChange(value || "");
+                                  setVendorTypeInput(value || "");
+                                }}
+                                filterOptions={(options, params) => {
+                                  const typedValue = params.inputValue.trim();
+                                  const filteredOptions = options.filter(
+                                    (option) =>
+                                      option
+                                        .toLowerCase()
+                                        .includes(typedValue.toLowerCase()),
+                                  );
+                                  const alreadyExists = options.some(
+                                    (option) =>
+                                      option.toLowerCase() ===
+                                      typedValue.toLowerCase(),
+                                  );
+
+                                  if (typedValue && !alreadyExists) {
+                                    filteredOptions.push({
+                                      inputValue: typedValue,
+                                      label: `+ Add "${typedValue}"`,
+                                    });
+                                  }
+
+                                  return filteredOptions;
+                                }}
+                                getOptionLabel={(option) =>
+                                  typeof option === "string"
+                                    ? option
+                                    : option.label || ""
+                                }
+                                renderOption={(props, option) => (
+                                  <li
+                                    {...props}
+                                    key={option.inputValue || option}
+                                  >
+                                    {typeof option === "string" ? (
+                                      option
+                                    ) : (
+                                      <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                        {option.label}
+                                      </span>
+                                    )}
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    size="small"
+                                    label="Type Of Vendor"
+                                    placeholder="Select or Add Vendor Type"
+                                  />
+                                )}
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="companyName"
+                            control={control}
+                            render={({ field }) => (
+                              <TextField
+                                {...field}
+                                size="small"
+                                label="Company Name"
+                                fullWidth
+                              />
+                            )}
+                          />
+                        </>
+                      ) : (
+                        <>
+                          {[
+                            ["Party Type", getValues("partyType")],
+                            ["Type Of Vendor", getValues("vendorType")],
+                            ["Company Name", getValues("companyName")],
+                          ].map(([label, value]) => (
+                            <div
+                              className="py-2 flex justify-between items-start gap-2"
+                              key={label}
+                            >
+                              <div className="w-[35%] font-pmedium text-gray-600 text-content">
+                                {label}
+                              </div>
+                              <div>:</div>
+                              <div className="w-full text-gray-500">
+                                {value || "N/A"}
+                              </div>
+                            </div>
+                          ))}
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <div>

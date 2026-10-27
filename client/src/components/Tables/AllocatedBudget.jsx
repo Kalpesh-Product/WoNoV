@@ -1,23 +1,33 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
 import dayjs from "dayjs";
 import { getCurrentMonthDateRange } from "../../utils/tableFilters";
 import {
   Tabs,
-  Tab,  
+  Tab,
   Chip,
   CircularProgress,
   IconButton,
   Popover,
-   Menu,
+  Menu,
   MenuItem,
   TextField,
   FormControl,
-   FormHelperText,
+  FormHelperText,
   Select,
 } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { addDays, isWithinInterval } from "date-fns";
-import { formatBudgetAmount as inrFormat, normalizeBudgetAmount, sumBudgetAmounts } from "../../utils/budgetAmounts";
+import {
+  formatBudgetAmount as inrFormat,
+  normalizeBudgetAmount,
+  sumBudgetAmounts,
+} from "../../utils/budgetAmounts";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
 //import { parseAmount } from "../../utils/parseAmount";
@@ -36,7 +46,13 @@ import useAuth from "../../hooks/useAuth";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 //import { MdCalendarToday, MdNavigateNext } from "react-icons/md";
-import { MdCalendarToday, MdDeleteForever, MdNavigateNext, MdOutlineRemoveRedEye, MdOutlineRestore } from "react-icons/md";
+import {
+  MdCalendarToday,
+  MdDeleteForever,
+  MdNavigateNext,
+  MdOutlineRemoveRedEye,
+  MdOutlineRestore,
+} from "react-icons/md";
 import { LuImageUp } from "react-icons/lu";
 import { HiOutlineDotsHorizontal } from "react-icons/hi";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -54,9 +70,11 @@ const isPermanentDeleteDepartment = (department) =>
 
 const canManageBudgetDeletes = (user) =>
   (user?.role || []).some((role) => {
-    const roleTitle = String(role?.roleTitle || role).trim().toLowerCase();
+    const roleTitle = String(role?.roleTitle || role)
+      .trim()
+      .toLowerCase();
 
-return (
+    return (
       !roleTitle.includes("employee") &&
       ["manager", "admin", "top management"].some((title) =>
         roleTitle.includes(title),
@@ -81,7 +99,12 @@ const getBudgetInvoiceFiles = (budget) => {
           name: link === budget.invoice?.link ? budget.invoice.name : "",
         }))
       : budget.invoice?.link || budget.invoiceLink
-        ? [{ ...budget.invoice, link: budget.invoice?.link || budget.invoiceLink }]
+        ? [
+            {
+              ...budget.invoice,
+              link: budget.invoice?.link || budget.invoiceLink,
+            },
+          ]
         : [];
 
   return files
@@ -104,11 +127,14 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
     [files],
   );
 
-  useEffect(() => () => {
-    fileUrls.forEach(({ url, shouldRevoke }) => {
-      if (shouldRevoke) URL.revokeObjectURL(url);
-    });
-  }, [fileUrls]);
+  useEffect(
+    () => () => {
+      fileUrls.forEach(({ url, shouldRevoke }) => {
+        if (shouldRevoke) URL.revokeObjectURL(url);
+      });
+    },
+    [fileUrls],
+  );
 
   const selectFiles = (event) => {
     const selected = Array.from(event.target.files || []);
@@ -148,29 +174,42 @@ const InvoiceFilesInput = ({ value = [], onChange, id }) => {
         InputProps={{
           readOnly: true,
           endAdornment: (
-            <IconButton component="label" htmlFor={id} color="primary" disabled={files.length >= 15}>
+            <IconButton
+              component="label"
+              htmlFor={id}
+              color="primary"
+              disabled={files.length >= 15}
+            >
               <LuImageUp />
             </IconButton>
           ),
         }}
       />
-      <FormHelperText>Maximum 15 files, 5 MB each. Images, PDF, Word, Excel, and CSV.</FormHelperText>
+      <FormHelperText>
+        Maximum 15 files, 5 MB each. Images, PDF, Word, Excel, and CSV.
+      </FormHelperText>
       <div className="flex flex-wrap gap-2">
         {files.map((file, index) => {
           const fileName = file.name || `Invoice ${index + 1}`;
           return (
             <Chip
               key={file.id || `${fileName}-${file.lastModified || index}`}
-              label={fileName.length > 28
-                ? `${fileName.slice(0, 20)}...${fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : ""}`
-                : fileName}
+              label={
+                fileName.length > 28
+                  ? `${fileName.slice(0, 20)}...${fileName.includes(".") ? fileName.slice(fileName.lastIndexOf(".")) : ""}`
+                  : fileName
+              }
               title={fileName}
               size="small"
               variant="outlined"
               color="primary"
               onClick={() => {
                 if (fileUrls[index]?.url) {
-                  window.open(fileUrls[index].url, "_blank", "noopener,noreferrer");
+                  window.open(
+                    fileUrls[index].url,
+                    "_blank",
+                    "noopener,noreferrer",
+                  );
                 }
               }}
               onDelete={() => onChange(files.filter((_, i) => i !== index))}
@@ -198,7 +237,7 @@ const AllocatedBudget = ({
   exportData = false,
   onRequestBudget,
 }) => {
- const axios = useAxiosPrivate();
+  const axios = useAxiosPrivate();
   const { auth } = useAuth();
   const canPermanentlyDelete = (auth?.user?.departments || []).some(
     isPermanentDeleteDepartment,
@@ -211,7 +250,9 @@ const AllocatedBudget = ({
   const [viewBudget, setViewBudget] = useState(null);
   const [selectedRow, setSelectedRow] = useState([]);
   const isSelectedBudgetApproved =
-    String(selectedRow?.status || "").trim().toLowerCase() === "approved";
+    String(selectedRow?.status || "")
+      .trim()
+      .toLowerCase() === "approved";
   const [invoiceFiles, setInvoiceFiles] = useState([]);
   const viewInvoiceFiles = useMemo(() => {
     if (!viewBudget) return [];
@@ -220,23 +261,33 @@ const AllocatedBudget = ({
       : viewBudget.invoiceLinks?.length
         ? viewBudget.invoiceLinks.map((link) => ({
             link,
-            name: link === viewBudget.invoice?.link ? viewBudget.invoice.name : "",
+            name:
+              link === viewBudget.invoice?.link ? viewBudget.invoice.name : "",
           }))
         : viewBudget.invoice?.link || viewBudget.invoiceLink
-          ? [{ ...viewBudget.invoice, link: viewBudget.invoice?.link || viewBudget.invoiceLink }]
+          ? [
+              {
+                ...viewBudget.invoice,
+                link: viewBudget.invoice?.link || viewBudget.invoiceLink,
+              },
+            ]
           : [];
-    return files.filter((file) => file.link).map((file, index) => ({
-      ...file,
-      name: file.name || `Invoice ${index + 1}`,
-    }));
+    return files
+      .filter((file) => file.link)
+      .map((file, index) => ({
+        ...file,
+        name: file.name || `Invoice ${index + 1}`,
+      }));
   }, [viewBudget]);
   const [actionAnchorEl, setActionAnchorEl] = useState(null);
   const [actionRow, setActionRow] = useState(null);
   const [confirmationAction, setConfirmationAction] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const openCalendar = Boolean(anchorEl);
-  const handleOpenCalendar = (e) => setAnchorEl(e.currentTarget);
-  const handleCloseCalendar = () => setAnchorEl(null);
+  const handleOpenCalendar = useCallback((event) => {
+    setAnchorEl(event.currentTarget);
+  }, []);
+  const handleCloseCalendar = useCallback(() => setAnchorEl(null), []);
 
   const { control, handleSubmit, reset } = useForm({
     defaultValues: {
@@ -244,7 +295,7 @@ const AllocatedBudget = ({
     },
   });
 
-   const {
+  const {
     control: editControl,
     handleSubmit: handleEditSubmit,
     reset: resetEdit,
@@ -258,7 +309,7 @@ const AllocatedBudget = ({
       projectedAmount: "",
       dueDate: "",
       actualAmount: "",
-       invoiceImage: [],
+      invoiceImage: [],
     },
   });
 
@@ -327,7 +378,6 @@ const AllocatedBudget = ({
     uploadInvoiceMutation(formData);
   };
 
-
   const { mutate: uploadInvoiceMutation, isPending: isUploadPending } =
     useMutation({
       mutationFn: async (formData) => {
@@ -338,7 +388,7 @@ const AllocatedBudget = ({
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
-          }
+          },
         );
         return response.data;
       },
@@ -355,18 +405,18 @@ const AllocatedBudget = ({
       },
     });
 
-const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
+  const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     useMutation({
       mutationFn: async ({ budgetId, payload }) => {
         const response = await axios.patch(
           `/api/budget/update-budget/${budgetId}`,
-          payload
+          payload,
         );
         return response.data;
       },
       onSuccess: (data, { invoiceImage, row, syncInvoices }) => {
         toast.success(data.message || "Budget updated successfully");
-         if (syncInvoices) {
+        if (syncInvoices) {
           onUpload({ invoiceImage }, row);
         } else {
           setEditModalOpen(false);
@@ -378,7 +428,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         queryClient.invalidateQueries({ queryKey: ["departmentBudget"] });
       },
       onError: (error) => {
-        toast.error(error?.response?.data?.message || "Failed to update budget");
+        toast.error(
+          error?.response?.data?.message || "Failed to update budget",
+        );
       },
     });
 
@@ -395,7 +447,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       },
       onError: (error) => {
-        toast.error(error?.response?.data?.message || "Failed to delete budget");
+        toast.error(
+          error?.response?.data?.message || "Failed to delete budget",
+        );
       },
     });
 
@@ -412,7 +466,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       },
       onError: (error) => {
-        toast.error(error?.response?.data?.message || "Failed to restore budget");
+        toast.error(
+          error?.response?.data?.message || "Failed to restore budget",
+        );
       },
     });
 
@@ -440,22 +496,24 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     },
   }[confirmationAction?.type];
 
-  const handleOpenActionMenu = (event, row) => {
+  const handleOpenActionMenu = useCallback((event, row) => {
+    event.preventDefault();
+    event.stopPropagation();
     setActionAnchorEl(event.currentTarget);
     setActionRow(row);
-  };
+  }, []);
 
-  const handleCloseActionMenu = () => {
+  const handleCloseActionMenu = useCallback(() => {
     setActionAnchorEl(null);
     setActionRow(null);
-  };
+  }, []);
 
   const handleOpenEditModal = (row) => {
     resetEdit({
       expanseName: row.expanseName || "",
       expanseType: row.expanseType || "",
       paymentType: row.paymentType || "",
-         building: row.buildingId || "",
+      building: row.buildingId || "",
       unit: row.unitId || "",
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
       dueDate: row.dueDateRaw || row.dueDate || "",
@@ -479,11 +537,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         paymentType: data.paymentType,
         unit: data.unit,
         dueDate: data.dueDate,
-        ...(isSelectedBudgetApproved ? { actualAmount: data.actualAmount } : {}),
+        ...(isSelectedBudgetApproved
+          ? { actualAmount: data.actualAmount }
+          : {}),
       },
     });
   };
-
 
   const allTypes = useMemo(() => {
     const types = new Set();
@@ -496,15 +555,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   }, [financialData]);
 
   const expenseTypes = useMemo(
-    () => [...new Set(
-      (financialData || []).flatMap((item) =>
-        (item.tableData?.rows || []).map((row) => row.expanseType),
-      ).filter((type) => type?.trim()),
-    )],
+    () => [
+      ...new Set(
+        (financialData || [])
+          .flatMap((item) =>
+            (item.tableData?.rows || []).map((row) => row.expanseType),
+          )
+          .filter((type) => type?.trim()),
+      ),
+    ],
     [financialData],
   );
 
-  const [dateRange, setDateRange] = useState(() => [getCurrentMonthDateRange()]);
+  const [dateRange, setDateRange] = useState(() => [
+    getCurrentMonthDateRange(),
+  ]);
   const hasInitializedDateRangeRef = useRef(false);
 
   useEffect(() => {
@@ -557,30 +622,33 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     return set;
   }, [financialData]);
 
-
   const filteredRows = useMemo(() => {
     if (!dateRange.length) return [];
     const { startDate, endDate } = dateRange[0];
-    return financialData
-      .filter((fd) => {
-        const date = new Date(fd.month);
-        return isWithinInterval(date, { start: startDate, end: endDate });
-      })
-      //.flatMap((fd) => fd.tableData?.rows || []);
+    return (
+      financialData
+        .filter((fd) => {
+          const date = new Date(fd.month);
+          return isWithinInterval(date, { start: startDate, end: endDate });
+        })
+        //.flatMap((fd) => fd.tableData?.rows || []);
         .flatMap((fd) => fd.tableData?.rows || [])
-      .filter((row) => {
-        if (!filterApprovedAndPendingOnly) return true;
+        .filter((row) => {
+          if (!filterApprovedAndPendingOnly) return true;
 
-        const normalizedStatus = String(row?.status || "")
-          .trim()
-          .toLowerCase();
+          const normalizedStatus = String(row?.status || "")
+            .trim()
+            .toLowerCase();
 
-        return normalizedStatus === "approved" || normalizedStatus === "pending";
-      })
-      .map((row, index) => ({
-        ...row,
-        srNo: index + 1,
-      }));
+          return (
+            normalizedStatus === "approved" || normalizedStatus === "pending"
+          );
+        })
+        .map((row, index) => ({
+          ...row,
+          srNo: index + 1,
+        }))
+    );
   }, [financialData, dateRange, filterApprovedAndPendingOnly]);
 
   const tableColumns = useMemo(() => {
@@ -590,10 +658,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       if (column.field === "actualAmount") {
         return {
           ...column,
-          valueFormatter: (params) => inrFormat(params.data?.actualAmountRaw ?? params.value),
+          valueFormatter: (params) =>
+            inrFormat(params.data?.actualAmountRaw ?? params.value),
         };
       }
-       if (column.field === "invoiceStatus") {
+      if (column.field === "invoiceStatus") {
         return {
           ...column,
           cellRenderer: (params) => {
@@ -608,7 +677,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             //       Uploaded
             //     </a>
             //   );
-              const links = params.data?.invoiceLinks?.length
+            const links = params.data?.invoiceLinks?.length
               ? params.data.invoiceLinks
               : params.data?.invoiceLink
                 ? [params.data.invoiceLink]
@@ -616,7 +685,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             if (params.data?.invoiceAttached && links.length) {
               return (
                 <span className="inline-flex items-center gap-2">
-                  <a href={links[0]} target="_blank" rel="noreferrer" className="font-medium text-primary underline">
+                  <a
+                    href={links[0]}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium text-primary underline"
+                  >
                     Uploaded
                   </a>
                   {links.length > 1 && (
@@ -624,10 +698,17 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                       type="button"
                       className="font-medium text-primary underline"
                       aria-label={`View all ${links.length} invoice files`}
-                      onClick={() => setInvoiceFiles(links.map((link, index) => ({
-                        link,
-                        name: params.data.invoices?.find((file) => file.link === link)?.name || `Invoice ${index + 1}`,
-                      })))}
+                      onClick={() =>
+                        setInvoiceFiles(
+                          links.map((link, index) => ({
+                            link,
+                            name:
+                              params.data.invoices?.find(
+                                (file) => file.link === link,
+                              )?.name || `Invoice ${index + 1}`,
+                          })),
+                        )
+                      }
                     >
                       +{links.length - 1} more
                     </button>
@@ -654,7 +735,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             pending: { backgroundColor: "#FEF3C7", color: "#92400E" },
           };
 
-          const { backgroundColor, color } = statusColorMap[normalizedStatus] || {
+          const { backgroundColor, color } = statusColorMap[
+            normalizedStatus
+          ] || {
             backgroundColor: "#E5E7EB",
             color: "#374151",
           };
@@ -675,7 +758,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         headerName: "Actions",
         pinned: "right",
         cellRenderer: (params) => {
-           if (enableActionMenu) {
+          if (enableActionMenu) {
             return (
               <div className="p-2 flex gap-2 items-center">
                 <button
@@ -694,7 +777,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                     title="Restore budget"
                     disabled={isDeletePending || isRestorePending}
                     onClick={() =>
-                      setConfirmationAction({ type: "restore", row: params.data })
+                      setConfirmationAction({
+                        type: "restore",
+                        row: params.data,
+                      })
                     }
                     className="p-1 h-7 w-7 flex items-center justify-center rounded-full text-black hover:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
                   >
@@ -705,7 +791,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   <button
                     type="button"
                     aria-label="Delete budget"
-                    title={params.data.isDeleted ? "Permanently delete budget" : "Delete budget"}
+                    title={
+                      params.data.isDeleted
+                        ? "Permanently delete budget"
+                        : "Delete budget"
+                    }
                     disabled={isDeletePending || isRestorePending}
                     onClick={() =>
                       setConfirmationAction({
@@ -730,7 +820,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   // }
                   <IconButton
                     disabled={false}
-                    onClick={(event) => handleOpenActionMenu(event, params.data)}
+                    onClick={(event) =>
+                      handleOpenActionMenu(event, params.data)
+                    }
                   >
                     <HiOutlineDotsHorizontal />
                   </IconButton>
@@ -775,6 +867,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     canDeleteBudgets,
     enableActionMenu,
     financialData,
+    handleOpenActionMenu,
     isDeletePending,
     isRestorePending,
     // isTechDepartment,
@@ -797,17 +890,15 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
   }, [filteredRows]);
 
   const disabledActualAmount = useMemo(
-    () =>
-      sumBudgetAmounts(disabledRows, "actualAmount"),
+    () => sumBudgetAmounts(disabledRows, "actualAmount"),
     [disabledRows],
   );
   const disabledProjectedAmount = useMemo(
-    () =>
-      sumBudgetAmounts(disabledRows, "projectedAmount"),
+    () => sumBudgetAmounts(disabledRows, "projectedAmount"),
     [disabledRows],
   );
 
-  const handleExportPass = () => {
+  const handleExportPass = useCallback(() => {
     if (!agGridRef.current) return;
 
     agGridRef.current.api.exportDataAsCsv({
@@ -834,96 +925,125 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
       },
     });
-  };
+  }, [newTitle, tableColumns]);
+
+  const getBudgetRowStyle = useCallback(
+    ({ data }) =>
+      data?.isDeleted
+        ? {
+            backgroundColor: "#eef1f5",
+            color: "#6b7280",
+            opacity: 0.82,
+          }
+        : undefined,
+    [],
+  );
+
+  const dateControls = useMemo(
+    () => (
+      <>
+        <div className="flex justify-center items-center gap-2 xl:col-start-2">
+          {dateRange.length > 0 && dateRange[0] && (
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Date information here */}
+
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                  <span className="text-gray-600 text-content font-pregular">
+                    {dateRange.length > 0 &&
+                      dateRange[0] &&
+                      dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
+                  </span>{" "}
+                </div>
+
+                <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+                  <span className="text-gray-600 text-content font-pregular">
+                    {dateRange.length > 0 &&
+                      dateRange[0] &&
+                      dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
+                  </span>
+                </div>
+              </div>
+              <div
+                className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+                onClick={handleOpenCalendar}
+              >
+                <MdCalendarToday size={19} />
+              </div>
+            </div>
+          )}
+        </div>
+        <Popover
+          open={openCalendar}
+          anchorEl={anchorEl}
+          onClose={handleCloseCalendar}
+          anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        >
+          {dateRange.length > 0 && (
+            <DateRangePicker
+              onChange={(item) => setDateRange([item.selection])}
+              moveRangeOnFirstSelection={false}
+              ranges={dateRange}
+              direction="vertical"
+              dayContentRenderer={(date) => {
+                const dateStr = dayjs(date).format("YYYY-MM-DD");
+                const hasData = validDateSet.has(dateStr);
+                return (
+                  <div className="overflow-hidden">
+                    <div
+                      style={{
+                        backgroundColor: hasData ? "white" : "transparent",
+                        borderBottom: hasData ? "4px solid #1E3D73" : "",
+                        borderTopLeftRadius: "5px",
+                        borderTopRightRadius: "5px",
+                        height: "25px",
+                        width: "25px",
+                        fontWeight: hasData ? "bold" : "normal",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {date.getDate()}
+                    </div>
+                  </div>
+                );
+              }}
+            />
+          )}
+        </Popover>
+      </>
+    ),
+    [
+      anchorEl,
+      dateRange,
+      handleCloseCalendar,
+      handleOpenCalendar,
+      openCalendar,
+      validDateSet,
+    ],
+  );
+
+  const toolbarButtons = useMemo(
+    () => (
+      <>
+        {onRequestBudget && (
+          <PrimaryButton
+            title="Request Budget"
+            handleSubmit={onRequestBudget}
+          />
+        )}
+        {exportData && (
+          <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+        )}
+      </>
+    ),
+    [exportData, handleExportPass, onRequestBudget],
+  );
 
   if (isLoading) return <CircularProgress />;
 
-  const dateControls = (<>
-<div className="flex justify-center items-center gap-2 xl:col-start-2">
-            {dateRange.length > 0 && dateRange[0] && (
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Date information here */}
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
-                    </span>{" "}
-                  </div>
-
-                  <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
-                    <span className="text-gray-600 text-content font-pregular">
-                      {dateRange.length > 0 &&
-                        dateRange[0] &&
-                        dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-                  onClick={handleOpenCalendar}
-                >
-                  <MdCalendarToday size={19} />
-                </div>
-              </div>
-            )}
-          </div>
-<Popover
-              open={openCalendar}
-              anchorEl={anchorEl}
-              onClose={handleCloseCalendar}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-            >
-              {dateRange.length > 0 && (
-                <DateRangePicker
-                  onChange={(item) => setDateRange([item.selection])}
-                  moveRangeOnFirstSelection={false}
-                  ranges={dateRange}
-                  direction="vertical"
-                  dayContentRenderer={(date) => {
-                    const dateStr = dayjs(date).format("YYYY-MM-DD");
-                    const hasData = validDateSet.has(dateStr);
-                    return (
-                      <div className="overflow-hidden">
-                        <div
-                          style={{
-                            backgroundColor: hasData ? "white" : "transparent",
-                            borderBottom: hasData ? "4px solid #1E3D73" : "",
-                            borderTopLeftRadius: "5px",
-                            borderTopRightRadius: "5px",
-                            height: "25px",
-                            width: "25px",
-                            fontWeight: hasData ? "bold" : "normal",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                          }}
-                        >
-                          {date.getDate()}
-                        </div>
-                      </div>
-                    );
-                  }}
-                />
-              )}
-            </Popover>
-  </>);
-
-  const toolbarButtons = (<>
-{onRequestBudget && (
-                <PrimaryButton
-                  title="Request Budget"
-                  handleSubmit={onRequestBudget}
-                />
-              )}
-  </>);
-  const exportControls = exportData && (
-                <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-              );
-
-    return (
+  return (
     <>
       <WidgetSection
         title={
@@ -966,27 +1086,18 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         border
       >
         <div className="flex flex-col gap-4 rounded-md">
-
           <AgTable
-              toolbarDateControls={dateControls}
-              toolbarActions={toolbarButtons}
-              exportAction={exportControls}
-              showDateControls={false}
-              search
-              data={filteredRows}
-              columns={tableColumns}
-              tableRef={agGridRef}
-              tableHeight={350}
-              getRowStyle={({ data }) =>
-                data?.isDeleted
-                  ? {
-                      backgroundColor: "#eef1f5",
-                      color: "#6b7280",
-                      opacity: 0.82,
-                    }
-                  : undefined
-              }
-            />
+            toolbarDateControls={dateControls}
+            toolbarActions={toolbarButtons}
+            exportAction={exportControls}
+            showDateControls={false}
+            search
+            data={filteredRows}
+            columns={tableColumns}
+            tableRef={agGridRef}
+            tableHeight={350}
+            getRowStyle={getBudgetRowStyle}
+          />
         </div>
       </WidgetSection>
 
@@ -1022,10 +1133,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               title="Unit"
               detail={viewBudget.unitName || "-"}
             />
-            <DetalisFormatted
-              title="Unit No"
-              detail={viewBudget.unit || "-"}
-            />
+            <DetalisFormatted title="Unit No" detail={viewBudget.unit || "-"} />
             <DetalisFormatted
               title="Building"
               detail={viewBudget.building || "-"}
@@ -1034,11 +1142,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               title="Due Date"
               detail={
                 viewBudget.dueDateRaw && dayjs(viewBudget.dueDateRaw).isValid()
-                  ? new Date(viewBudget.dueDateRaw).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })
+                  ? new Date(viewBudget.dueDateRaw).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      },
+                    )
                   : viewBudget.dueDate || "-"
               }
             />
@@ -1049,12 +1160,16 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             <DetalisFormatted
               title="Invoice Date"
               detail={
-                viewBudget.invoiceDate && dayjs(viewBudget.invoiceDate).isValid()
-                  ? new Date(viewBudget.invoiceDate).toLocaleDateString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })
+                viewBudget.invoiceDate &&
+                dayjs(viewBudget.invoiceDate).isValid()
+                  ? new Date(viewBudget.invoiceDate).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      },
+                    )
                   : "-"
               }
             />
@@ -1074,28 +1189,34 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             />
             <DetalisFormatted
               title="Invoice File"
-              detail={viewInvoiceFiles.length ? (
-                <span className="flex flex-wrap gap-2 max-w-full">
-                  {viewInvoiceFiles.map((file, index) => (
-                    <Chip
-                      key={file.id || `${file.link}-${index}`}
-                      component="a"
-                      href={file.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      clickable
-                      label={file.name.length > 28
-                        ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
-                        : file.name}
-                      title={file.name}
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      sx={{ maxWidth: "100%" }}
-                    />
-                  ))}
-                </span>
-              ) : "-"}
+              detail={
+                viewInvoiceFiles.length ? (
+                  <span className="flex flex-wrap gap-2 max-w-full">
+                    {viewInvoiceFiles.map((file, index) => (
+                      <Chip
+                        key={file.id || `${file.link}-${index}`}
+                        component="a"
+                        href={file.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        clickable
+                        label={
+                          file.name.length > 28
+                            ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+                            : file.name
+                        }
+                        title={file.name}
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        sx={{ maxWidth: "100%" }}
+                      />
+                    ))}
+                  </span>
+                ) : (
+                  "-"
+                )
+              }
             />
             {viewBudget.isDeleted ? (
               <DetalisFormatted
@@ -1127,7 +1248,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             //     previewType="pdf"
             //   />
             // )}
-              render={({ field }) => <InvoiceFilesInput {...field} id="budget-invoice-upload" />}
+            render={({ field }) => (
+              <InvoiceFilesInput {...field} id="budget-invoice-upload" />
+            )}
           />
           <div className="text-right">
             <PrimaryButton
@@ -1140,48 +1263,46 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         </form>
       </MuiModal>
       <Menu
-  anchorEl={actionAnchorEl}
-  open={Boolean(actionAnchorEl)}
-  onClose={handleCloseActionMenu}
-  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-  transformOrigin={{ vertical: "top", horizontal: "center" }}
-  slotProps={{
-    paper: {
-      sx: {
-        mt: 0.8,
-        minWidth: 120,
-        borderRadius: "8px",
-        overflow: "hidden",
-        boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
-      },
-    },
-    list: { sx: { p: 0 } },
-  }}
->
- {/* (For edit & upload invoice button) */}
-  <MenuItem
-    sx={{
-      justifyContent: "flex-start",
-      fontWeight: 500,
-      color: "#1E3D73",
-      py: 1.1,
-      // borderBottom:
-      //   actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
-    }}
-    onClick={() => {
-      if (actionRow) {
-        handleOpenEditModal(actionRow);
-      }
-      handleCloseActionMenu();
-    }}
-  >
-    Edit
-  </MenuItem>
+        anchorEl={actionAnchorEl}
+        open={Boolean(actionAnchorEl)}
+        onClose={handleCloseActionMenu}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{
+          paper: {
+            sx: {
+              mt: 0.8,
+              minWidth: 120,
+              borderRadius: "8px",
+              overflow: "hidden",
+              boxShadow: "0 8px 18px rgba(15, 23, 42, 0.18)",
+            },
+          },
+          list: { sx: { p: 0 } },
+        }}
+      >
+        {/* (For edit & upload invoice button) */}
+        <MenuItem
+          sx={{
+            justifyContent: "flex-start",
+            fontWeight: 500,
+            color: "#1E3D73",
+            py: 1.1,
+            // borderBottom:
+            //   actionRow?.status === "Approved" ? "1px solid #D1D5DB" : "none",
+          }}
+          onClick={() => {
+            if (actionRow) {
+              handleOpenEditModal(actionRow);
+            }
+            handleCloseActionMenu();
+          }}
+        >
+          Edit
+        </MenuItem>
 
-  
-
-  {/* For Only Edit Button  */}
-   {/* {actionRow?.status !== "Approved" && (
+        {/* For Only Edit Button  */}
+        {/* {actionRow?.status !== "Approved" && (
     <MenuItem
       sx={{
         justifyContent: "flex-start",
@@ -1200,8 +1321,8 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
     </MenuItem>
   )} */}
 
-{/* For  Only Upload Invoice Button */}
-  {/* {actionRow?.status === "Approved" && (
+        {/* For  Only Upload Invoice Button */}
+        {/* {actionRow?.status === "Approved" && (
     <MenuItem
       sx={{
         justifyContent: "flex-start", // 👉 left side
@@ -1218,7 +1339,7 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
       Upload Invoice
     </MenuItem>
   )} */}
-</Menu>
+      </Menu>
       <MuiModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
@@ -1229,7 +1350,12 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             name="expanseName"
             control={editControl}
             render={({ field }) => (
-                <TextField {...field} label="Expense Name" fullWidth size="small" />
+              <TextField
+                {...field}
+                label="Expense Name"
+                fullWidth
+                size="small"
+              />
               // <TextField {...field} label="Expense Name" fullWidth size="small" disabled />
             )}
           />
@@ -1240,9 +1366,13 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
             render={({ field }) => (
               <FormControl fullWidth>
                 <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>Select Expense Type</MenuItem>
+                  <MenuItem value="" disabled>
+                    Select Expense Type
+                  </MenuItem>
                   {expenseTypes.map((type) => (
-                    <MenuItem key={type} value={type}>{type}</MenuItem>
+                    <MenuItem key={type} value={type}>
+                      {type}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1258,8 +1388,10 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Payment Type"}
                   </MenuItem> */}
-                   <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>Select Payment Type</MenuItem>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Payment Type
+                  </MenuItem>
                   <MenuItem value="One Time">One Time</MenuItem>
                   {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
                 </Select>
@@ -1276,10 +1408,14 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Building"}
                   </MenuItem> */}
-                   <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>Select Building</MenuItem>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Building
+                  </MenuItem>
                   {editBuildings.map(([id, name]) => (
-                    <MenuItem key={id} value={id}>{name}</MenuItem>
+                    <MenuItem key={id} value={id}>
+                      {name}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1295,12 +1431,18 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
                   <MenuItem value={field.value || ""}>
                     {field.value || "Select Unit"}
                   </MenuItem> */}
-                  <Select {...field} size="small" displayEmpty>
-                  <MenuItem value="" disabled>Select Unit</MenuItem>
+                <Select {...field} size="small" displayEmpty>
+                  <MenuItem value="" disabled>
+                    Select Unit
+                  </MenuItem>
                   {units
-                    .filter((unit) => unit?.building?._id === selectedEditBuilding)
+                    .filter(
+                      (unit) => unit?.building?._id === selectedEditBuilding,
+                    )
                     .map((unit) => (
-                      <MenuItem key={unit._id} value={unit._id}>{unit.unitNo}</MenuItem>
+                      <MenuItem key={unit._id} value={unit._id}>
+                        {unit.unitNo}
+                      </MenuItem>
                     ))}
                 </Select>
               </FormControl>
@@ -1370,19 +1512,21 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
           )}
 
           {isSelectedBudgetApproved && (
-              <Controller
-                name="invoiceImage"
-                control={editControl}
-                // render={({ field }) => (
-                //   <UploadFileInput
-                //     value={field.value}
-                //     onChange={field.onChange}
-                //     allowedExtensions={["pdf"]}
-                //     previewType="pdf"
-                //   />
-                // )}
-                     render={({ field }) => <InvoiceFilesInput {...field} id="edit-budget-invoice-upload" />}
-              />
+            <Controller
+              name="invoiceImage"
+              control={editControl}
+              // render={({ field }) => (
+              //   <UploadFileInput
+              //     value={field.value}
+              //     onChange={field.onChange}
+              //     allowedExtensions={["pdf"]}
+              //     previewType="pdf"
+              //   />
+              // )}
+              render={({ field }) => (
+                <InvoiceFilesInput {...field} id="edit-budget-invoice-upload" />
+              )}
+            />
           )}
           <div className="flex justify-center">
             <PrimaryButton
@@ -1409,9 +1553,11 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
               target="_blank"
               rel="noreferrer"
               clickable
-              label={file.name.length > 28
-                ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
-                : file.name}
+              label={
+                file.name.length > 28
+                  ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+                  : file.name
+              }
               title={file.name}
               size="small"
               variant="outlined"
@@ -1427,7 +1573,9 @@ const { mutate: updateBudgetMutation, isPending: isUpdatePending } =
         onConfirm={confirmBudgetAction}
         title={confirmationContent?.title}
         message={confirmationContent?.message}
-        confirmText={confirmationAction?.type === "restore" ? "Restore" : "Delete"}
+        confirmText={
+          confirmationAction?.type === "restore" ? "Restore" : "Delete"
+        }
         isLoading={isDeletePending || isRestorePending}
       />
     </>

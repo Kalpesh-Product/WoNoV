@@ -66,7 +66,7 @@ const InvestorHeaderLogo = () => (
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>&nbsp;NEST</span>
+    <span>&nbsp;N<span className="lowercase">est</span></span>
   </span>
 );
 
@@ -237,6 +237,9 @@ const InvestorOperationalCharts = ({
   flushLayout = false,
   investorInventoryStyle = false,
   noOuterPadding = false,
+  clientsOverride,
+  occupancyChartsClickable = false,
+  titleOverrides = {},
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -247,7 +250,8 @@ const InvestorOperationalCharts = ({
     ["visitorCategory", "visitorClientType", "visitorGender"].includes(key),
   );
 
-  const { data: clients = [], isPending: clientsPending } = useQuery({
+  const hasClientsOverride = Array.isArray(clientsOverride);
+  const { data: fetchedClients = [], isPending: clientsPending } = useQuery({
     queryKey: ["investor-operational-coworking-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
@@ -255,8 +259,9 @@ const InvestorOperationalCharts = ({
         ? response.data.filter((client) => client.isActive)
         : [];
     },
-    enabled: needsClients,
+    enabled: needsClients && !hasClientsOverride,
   });
+  const clients = hasClientsOverride ? clientsOverride : fetchedClients;
   const showGenderDetails =
     showDetails && visibleCharts.length === 1 && visibleCharts[0] === "gender";
   const showAgeDetails =
@@ -306,7 +311,13 @@ const InvestorOperationalCharts = ({
       true,
     );
     const states = topWithOther(
-      countBy(clients, (client) => client.hostate?.trim() || client.hoState?.trim()),
+      countBy(
+        clients,
+        (client) =>
+          client.hostate?.trim() ||
+          client.hoState?.trim() ||
+          client.state?.trim(),
+      ),
     );
     const members = clients.flatMap((client) =>
       Array.isArray(client.members) ? client.members : [],
@@ -399,11 +410,15 @@ const InvestorOperationalCharts = ({
   }, [clients, visitors]);
 
   const isLoading =
-    (needsClients && clientsPending) || (needsVisitors && visitorsPending);
+    (needsClients && !hasClientsOverride && clientsPending) ||
+    (needsVisitors && visitorsPending);
 
   const renderChart = (key) => {
     const chart = chartData[key];
-    const isClickable = !nonClickableOccupancyCharts.has(key) && routes?.[key];
+    const chartTitle = titleOverrides[key] || chart.title;
+    const isClickable =
+      routes?.[key] &&
+      (occupancyChartsClickable || !nonClickableOccupancyCharts.has(key));
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
@@ -463,11 +478,13 @@ const InvestorOperationalCharts = ({
                 useNavyText ? "text-[#1E3D73]" : "text-[#1234c9]"
               }`}
             >
-              {useNavyText ? <InvestorHeaderLogo /> : null}
-              <span>{chart.title}</span>
+              {useNavyText ? (
+                <InvestorHeaderLogo />
+              ) : null}
+              <span>{chartTitle}</span>
             </span>
           ) : (
-            chart.title
+            chartTitle
           )
         }
         border
@@ -480,7 +497,7 @@ const InvestorOperationalCharts = ({
             ? {
                 role: "button",
                 tabIndex: 0,
-                "aria-label": `View ${chart.title}`,
+                "aria-label": `View ${chartTitle}`,
                 onClick: () => navigate(routes[key]),
                 onKeyDown: (event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -569,7 +586,10 @@ const InvestorOperationalCharts = ({
   const indiaDetailsData = useMemo(() => {
     const stateCounts = clients.reduce((counts, client) => {
       const state = String(
-        client.hostate?.trim() || client.hoState?.trim() || "",
+        client.hostate?.trim() ||
+          client.hoState?.trim() ||
+          client.state?.trim() ||
+          "",
       );
       if (!state || state.toLowerCase() === "unknown") return counts;
       counts[state] = (counts[state] || 0) + 1;

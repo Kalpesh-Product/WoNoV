@@ -89,6 +89,7 @@ const VendorTable = () => {
      {field: "city", headerName: "City", flex: 1,hide: true},
      {field: "gstIn", headerName: "GSTIN", flex: 1,hide: true},
      {field: "partyType", headerName: "Party Type", flex: 1,hide: true},
+     {field: "vendorType", headerName: "Type Of Vendor", flex: 1,hide: true},
      {field: "ifscCode", headerName: "IFSC Code", flex: 1,hide: true},
      {field: "bankName", headerName: "Bank Name", flex: 1,hide: true},
      {field: "branchName", headerName: "Branch Name", flex: 1,hide: true},
@@ -153,6 +154,7 @@ const VendorTable = () => {
       country: getCountryName(vendor.country),
       countryCode: vendor.country,
       partyType: vendor?.partyType,
+      vendorType: vendor?.vendorType,
       status: vendor.status,
       departmentId: vendor.departmentId,
       company: vendor.company,
@@ -235,6 +237,10 @@ const VendorTable = () => {
             <DetalisFormatted
               title="Party Type"
               detail={selectedVendor?.partyType}
+            />
+            <DetalisFormatted
+              title="Type Of Vendor"
+              detail={selectedVendor?.vendorType}
             />
             <DetalisFormatted title="Status" detail={selectedVendor?.status} />
             {/* <DetalisFormatted

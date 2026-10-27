@@ -366,12 +366,18 @@ const WidgetTable = ({
                 </span>
               </div>
             </div>
-            <div
-              className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
+            <IconButton
+              aria-label="Select date range"
               onClick={handleOpenCalendar}
+              sx={{
+                borderRadius: 1,
+                backgroundColor: "#1E3D73",
+                color: "#ffffff",
+                "&:hover": { backgroundColor: "#16345f" },
+              }}
             >
-              <MdCalendarToday size={19} />
-            </div>
+              <MdCalendarToday size={19} color="#ffffff" />
+            </IconButton>
           </div>
         )}
 <Popover
