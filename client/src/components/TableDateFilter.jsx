@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { IconButton, MenuItem, Popover, TextField } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday } from "react-icons/md";
+import { MdCalendarToday, MdClose } from "react-icons/md";
 import dayjs from "dayjs";
 import { getCurrentMonthDateRange } from "../utils/tableFilters";
 import "react-date-range/dist/styles.css";

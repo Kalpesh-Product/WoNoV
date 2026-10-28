@@ -151,7 +151,6 @@ const DateWiseTable = ({
         data={filteredData.map((item, index) => ({ ...item, srno: index + 1 }))}
         hideFilter={hideFilter}
         search={search}
-        search
       />
     </div>
   );

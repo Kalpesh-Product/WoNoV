@@ -77,7 +77,6 @@ const AgTableComponent = React.memo(
     hideHeaderDivider,
     tableRef,
     onSelectionChange,
-    getRowId,
     selectionResetKey,
     isPagination = false,
     serverPagination,
@@ -575,23 +574,14 @@ const AgTableComponent = React.memo(
               !filterableColumns.length ? (
                 ""
               ) : (
-                <div className="flex flex-col items-end gap-2">
-                  {searchRowActionsPosition === "aboveFilter" &&
-                  searchRowActions
-                    ? searchRowActions
-                    : ""}
-                  <div className="flex items-center gap-2">
-                    {!exportButtonContainer &&
-                      !exportInTitleRow &&
-                      renderExportButton()}
-                  </div>
-                  <div
-                    className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
-                    onClick={() => setFilterDrawerOpen(true)}
-                  >
-                    <IoFilter />
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  aria-label="Advanced filter"
+                  className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
+                  onClick={() => setFilterDrawerOpen(true)}
+                >
+                  <IoFilter />
+                </button>
               )}
             </div>
           </div>
@@ -681,7 +671,6 @@ const AgTableComponent = React.memo(
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
-            getRowId={getRowId}
             getRowId={getRowId}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}

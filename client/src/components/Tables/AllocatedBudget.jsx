@@ -1033,12 +1033,16 @@ const AllocatedBudget = ({
             handleSubmit={onRequestBudget}
           />
         )}
-        {exportData && (
-          <PrimaryButton title="Export" handleSubmit={handleExportPass} />
-        )}
       </>
     ),
-    [exportData, handleExportPass, onRequestBudget],
+    [onRequestBudget],
+  );
+
+  const exportControls = useMemo(
+    () => exportData ? (
+      <PrimaryButton title="Export" handleSubmit={handleExportPass} />
+    ) : undefined,
+    [exportData, handleExportPass],
   );
 
   if (isLoading) return <CircularProgress />;
