@@ -6,6 +6,7 @@ import useAuth from "../../hooks/useAuth";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { toast } from "sonner";
 import humanDate from "../../utils/humanDateForamt";
+import PageFrame from "../../components/Pages/PageFrame";
 
 const HrCommonPayslips = () => {
   const axios = useAxiosPrivate();
@@ -82,18 +83,20 @@ const HrCommonPayslips = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
+      <PageFrame>
         <YearWiseTable
-          key={tableData.length}
           search={true}
           tableHeight={300}
           searchColumn={"month"}
           tableTitle={"Payslips"}
           data={tableData}
           columns={payslipColumns}
+          dateColumn="month"
+          exportData
+          hideFilter={false}
           isLoading={isLoading}
         />
-      </div>
+      </PageFrame>
     </div>
   );
 };

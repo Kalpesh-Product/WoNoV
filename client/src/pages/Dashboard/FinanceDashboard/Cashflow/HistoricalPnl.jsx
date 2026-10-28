@@ -300,7 +300,7 @@ const HistoricalPnl = () => {
               headerName: "Total Profit / Loss (INR)",
             },
           ]}
-          hideFilter
+          hideFilter={false}
           data={historicalTableData}
           exportData
         />

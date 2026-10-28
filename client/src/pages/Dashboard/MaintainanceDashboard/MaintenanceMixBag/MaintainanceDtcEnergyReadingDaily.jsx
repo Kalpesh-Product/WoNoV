@@ -497,8 +497,8 @@ const MaintainanceDtcEnergyReadingDaily = () => {
             buttonTitle="Add Reading"
             handleClick={openAddModal}
             disabled={isAddReadingDisabled}
-            headerActions={
-              <div className="order-first">
+            titleRightContent={
+              <div>
                 <Chip
                   label={`TOTAL CONSUMPTION : ${formatWholeNumber(totalConsumption)}`}
                   sx={{
@@ -518,9 +518,10 @@ const MaintainanceDtcEnergyReadingDaily = () => {
               </div>
             }
             exportData
-            hideFilter
-            headerBottomContent={
-              <div className="flex w-full justify-center pt-2 pb-4">
+            hideFilter={false}
+            showDateControls={false}
+            toolbarDateControls={
+              <div className="flex justify-center">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"

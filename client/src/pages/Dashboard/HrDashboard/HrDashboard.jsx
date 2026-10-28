@@ -2326,7 +2326,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       widgets: [
         userPermissions.includes(birthdayTableConfig.permission) &&
           (!usersQuery.isLoading ? (
-            <MuiTable
+            <MuiTable showTableControls={false}
               key={birthdays.length}
               Title="Current Month's Birthday List"
               columns={columns}
@@ -2349,7 +2349,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
             <CircularProgress key="loading-spinner" />
           )),
         userPermissions.includes(holidayTableConfig.permission) && (
-          <MuiTable
+          <MuiTable showTableControls={false}
             Title="Current Months Holiday List"
             columns={columns2}
             rows={holidayEvents

@@ -31,7 +31,10 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-const Reviews = () => {
+const Reviews = ({
+  basePath = "/app/meetings",
+  ignoreTabPermissions = false,
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,22 +96,26 @@ const Reviews = () => {
       {
         key: "clientCredit",
         label: "Client Credit",
-        path: "/app/meetings/client-credit",
+        path: `${basePath}/client-credit`,
         permission: PERMISSIONS.MEETINGS_CLIENT_CREDIT.value,
       },
       {
         key: "clientReview",
         label: "Client Review",
-        path: "/app/meetings/client-review",
+        path: `${basePath}/client-review`,
         permission: PERMISSIONS.MEETINGS_CLIENT_REVIEW.value,
       },
     ],
-    [],
+    [basePath],
   );
 
   const visibleTabs = useMemo(
-    () => tabItems.filter((tab) => userPermissions.includes(tab.permission)),
-    [tabItems, userPermissions],
+    () =>
+      tabItems.filter(
+        (tab) =>
+          ignoreTabPermissions || userPermissions.includes(tab.permission),
+      ),
+    [ignoreTabPermissions, tabItems, userPermissions],
   );
 
   const activeTabIndex = Math.max(
@@ -625,62 +632,38 @@ const Reviews = () => {
         ) : activeTabKey === "clientCredit" ? (
           <div className="space-y-4">
             <PageFrame>
-              <div className="flex flex-col gap-4 pb-4">
-                <div className="grid grid-cols-12 items-center w-full pb-4">
-                  <div className="col-span-4">
-                    <span className="text-title text-primary font-pmedium uppercase">
-                      Client Credits
-                    </span>
-                  </div>
-                  <div className="col-span-4 flex justify-center">
-                    <div className="flex items-center gap-2">
-                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                        <span className="text-gray-600 text-content font-pregular">
-                          {dayjs(dateRange[0]?.startDate).format("DD MMM YYYY")}
-                        </span>
-                      </div>
-                      <div className="px-6 py-1 rounded-md border-primary border-[1px]">
-                        <span className="text-gray-600 text-content font-pregular">
-                          {dayjs(dateRange[0]?.endDate).format("DD MMM YYYY")}
-                        </span>
-                      </div>
-                      <div
-                        className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]"
-                        onClick={handleOpenCalendar}
-                      >
-                        <MdCalendarToday size={19} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-span-4 flex justify-end">
-                    <PrimaryButton
-                      title="Export"
-                      handleSubmit={() => exportClientCredits()}
-                      type="button"
-                      externalStyles="!bg-primary"
-                      padding="px-6 py-2"
-                    />
-                  </div>
-                </div>
-
-                <Popover
-                  open={openCalendar}
-                  anchorEl={anchorEl}
-                  onClose={handleCloseCalendar}
-                  anchorOrigin={{
-                    vertical: "bottom",
-                    horizontal: "left",
-                  }}
-                >
-                  <DateRangePicker
-                    ranges={dateRange}
-                    onChange={handleCreditDateRangeChange}
-                    moveRangeOnFirstSelection={false}
-                  />
-                </Popover>
-              </div>
 
               <AgTable
+                toolbarDateControls={
+                  <>
+                    <div className="flex justify-center">
+                                      <div className="flex items-center gap-2">
+                                        <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                                          <span className="text-gray-600 text-content font-pregular">
+                                            {dayjs(dateRange[0]?.startDate).format("DD MMM YYYY")}
+                                          </span>
+                                        </div>
+                                        <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                                          <span className="text-gray-600 text-content font-pregular">
+                                            {dayjs(dateRange[0]?.endDate).format("DD MMM YYYY")}
+                                          </span>
+                                        </div>
+                                        <div className="p-2 rounded-md bg-primary text-white cursor-pointer hover:bg-[#1E3D55]" onClick={handleOpenCalendar}>
+                                          <MdCalendarToday size={19} />
+                                        </div>
+                                      </div>
+                                    </div>
+                    <Popover open={openCalendar} anchorEl={anchorEl} onClose={handleCloseCalendar} anchorOrigin={{
+                      vertical: "bottom",
+                      horizontal: "left"
+                    }}>
+                                    <DateRangePicker ranges={dateRange} onChange={handleCreditDateRangeChange} moveRangeOnFirstSelection={false} />
+                                  </Popover>
+                  </>
+                }
+                exportAction={
+                  <PrimaryButton title="Export" handleSubmit={() => exportClientCredits()} type="button" externalStyles="!bg-primary" padding="px-6 py-2" />
+                }
                 showDateControls={false}
                 search={true}
                 tableTitle="Client Credits"
@@ -688,7 +671,7 @@ const Reviews = () => {
                 data={clientCreditRows}
                 columns={clientCreditColumns}
                 loading={isClientsLoading}
-                hideTitle={true}
+                hideTitle={false}
                 serverPagination
                 pageSizeOptions={PAGE_SIZE_OPTIONS}
                 paginationPageSize={creditPagination.limit}

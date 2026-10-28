@@ -342,18 +342,8 @@ const expenseRawSeries = useMemo(() => {
         titleAmount={`INR ${inrFormat(totalUtilised)}`}
       />
 
-      {!isTop && (
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Request Budget"}
-            padding="px-5 py-2"
-            fontSize="text-base"
-            handleSubmit={() => setOpenModal(true)}
-          />
-        </div>
-      )}
 
-      <AllocatedBudget financialData={financialData} />
+      <AllocatedBudget financialData={financialData} onRequestBudget={!isTop ? () => setOpenModal(true) : undefined} />
       <MuiModal
         title="Request Budget"
         open={openModal}

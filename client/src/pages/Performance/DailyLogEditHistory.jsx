@@ -3,6 +3,7 @@ import { Popover } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import dayjs from "dayjs";
+import { getKraKpaEditHistory } from "../../utils/kraKpaEditHistory";
 import MuiModal from "../../components/MuiModal";
 
 const displayValue = (field, value) => {
@@ -14,9 +15,10 @@ const displayValue = (field, value) => {
 };
 
 const DailyLogEditHistory = ({ record, onClose }) => {
+  const history = getKraKpaEditHistory(record);
   const [anchor, setAnchor] = useState(null);
   const [range, setRange] = useState(() => {
-    const dates = (record.editHistory || []).map((entry) => dayjs(entry.editedAt))
+    const dates = history.map((entry) => dayjs(entry.editedAt))
       .filter((date) => date.isValid()).sort((a, b) => a.valueOf() - b.valueOf());
     return {
       startDate: (dates[0] || dayjs()).startOf("day").toDate(),
@@ -24,10 +26,10 @@ const DailyLogEditHistory = ({ record, onClose }) => {
       key: "selection",
     };
   });
-  const rows = (record.editHistory || []).filter((entry) =>
+  const rows = history.filter((entry) =>
     !dayjs(entry.editedAt).isBefore(dayjs(range.startDate), "day") &&
     !dayjs(entry.editedAt).isAfter(dayjs(range.endDate), "day"),
-  ).slice().sort((a, b) => dayjs(b.editedAt).valueOf() - dayjs(a.editedAt).valueOf())
+  )
     .flatMap((entry) => (entry.changes || []).map((change, index) => ({
       ...entry, change, key: `${entry._id || entry.editedAt}-${index}`,
     })));
@@ -63,7 +65,7 @@ const DailyLogEditHistory = ({ record, onClose }) => {
                 <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{displayValue(row.change.field, row.change.oldValue)}</td>
                 <td className="whitespace-pre-wrap break-words border-b px-4 py-3 align-top">{displayValue(row.change.field, row.change.newValue)}</td>
               </tr>
-            )) : <tr><td colSpan={6} className="px-4 py-10 text-center text-borderGray">{record.editHistory?.length ? "No edit history found for the selected dates" : "No edit history available"}</td></tr>}
+            )) : <tr><td colSpan={6} className="px-4 py-10 text-center text-borderGray">{history.length ? "No edit history found for the selected dates" : "No edit history available"}</td></tr>}
           </tbody>
         </table>
       </div>

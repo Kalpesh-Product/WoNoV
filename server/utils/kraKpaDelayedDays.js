@@ -57,4 +57,15 @@ const calculateDelayedWorkingDays = (deadline, closingDate, holidays = []) => {
   return delayedDays;
 };
 
-module.exports = { calculateDelayedWorkingDays, toCalendarKey };
+const calculateDailyLogDelay = (record, holidays = [], now = new Date()) => {
+  const deadline = record.deadline || record.sourceDueTask?.deadline ||
+    record.sourceSelfKpa?.deadline || record.date;
+  if (!deadline) return 0;
+  const end = record.status === "Done"
+    ? record.completedAt || record.endTime || record.date
+    : now;
+  if (!end) return 0;
+  return calculateDelayedWorkingDays(deadline, end, holidays);
+};
+
+module.exports = { calculateDelayedWorkingDays, calculateDailyLogDelay, toCalendarKey };

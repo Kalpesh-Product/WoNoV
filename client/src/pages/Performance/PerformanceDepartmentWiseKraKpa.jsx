@@ -510,6 +510,7 @@ tooltip: {
                   ?.pendingKraCount || 0,
             }))}
             columns={departmentColumns}
+            search={false}
             tableTitle="DEPARTMENT-WISE PENDING KPA & KRA"
             hideFilter
           />

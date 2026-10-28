@@ -12,6 +12,7 @@ const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const {
   calculateDelayedWorkingDays,
+  calculateDailyLogDelay,
   toCalendarKey,
 } = require("../../utils/kraKpaDelayedDays");
 
@@ -580,7 +581,18 @@ const listDailyLogs = async (req, res, next) => {
       .sort({ date: -1, createdAt: -1 })
       .populate(POPULATION)
       .lean();
-    return res.json(records.map((record) => hideRestrictedComments(record, access)));
+    const holidays = records.length
+      ? await Event.find({
+          company: req.company,
+          type: { $regex: /^holidays?$/i },
+          active: { $ne: false },
+        }).select("start end").lean()
+      : [];
+    const now = new Date();
+    return res.json(records.map((record) => hideRestrictedComments({
+      ...record,
+      delayedDays: calculateDailyLogDelay(record, holidays, now),
+    }, access)));
   } catch (error) {
     return next(error);
   }

@@ -396,6 +396,7 @@ const AcceptedTickets = ({
         )}
         {!isLoading ? (
           <AgTable
+            dateColumn="acceptedAt"
             key={acceptedTickets.length}
             search
             // hideFilter

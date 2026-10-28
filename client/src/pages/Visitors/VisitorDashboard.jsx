@@ -1153,7 +1153,7 @@ const VisitorDashboard = () => {
         ...allowedVisitorsTodayTables.map((item) => (
           <WidgetSection key={item.key} layout={item.layout} padding>
             {!isVisitorsData ? (
-              <MuiTable
+              <MuiTable showTableControls={false}
                 Title={item.title}
                 columns={item.columns}
                 rows={item.rows}

@@ -9,6 +9,8 @@ const MonthWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
+  hideFilter = false,
+  search = true,
   formatTime = false,
   tableTitle,
   buttonTitle,
@@ -39,6 +41,7 @@ const MonthWiseTable = ({
       }
     });
 
+    if (!monthSet.size && dateColumn) monthSet.add(dayjs().format("MMM-YYYY"));
     return Array.from(monthSet).sort((a, b) => {
       return dayjs(a, "MMM-YYYY").toDate() - dayjs(b, "MMM-YYYY").toDate();
     });
@@ -50,7 +53,7 @@ const MonthWiseTable = ({
   const selectedMonthIndexDefault = useMemo(() => {
     const index = monthLabels.findIndex((label) => label === currentMonth);
     return index >= 0 ? index : 0;
-  }, [monthLabels]);
+  }, [monthLabels, currentMonth]);
 
   // Step 3: Selected month state
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
@@ -128,18 +131,15 @@ const MonthWiseTable = ({
         </span>
 
         <div className="flex items-center gap-4">
-          {buttonTitle ? (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          ) : null}
         </div>
       </div>
 
       <AgTable
         showDateControls={false}
         toolbarDateControls={dateControls}
-        toolbarActions={exportControls}
+        exportAction={exportControls}
+        buttonTitle={buttonTitle}
+        handleClick={handleSubmit}
         tableRef={agGridRef}
         key={key}
         enableCheckbox={checkbox}
@@ -152,8 +152,8 @@ const MonthWiseTable = ({
           srNo: index + 1,
           date: humanDate(item.date),
         }))}
-        hideFilter={false}
-        search
+        hideFilter={hideFilter}
+        search={search}
       />
     </div>
   );

@@ -16,6 +16,8 @@ const PrimaryButton = ({
 
   return (
     <motion.button
+      data-ui-action="text"
+      data-export-action={typeof title === "string" && /\bexport\b/i.test(title) ? "true" : undefined}
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.9 }}
       disabled={disabled || isLoading} // Disable if loading

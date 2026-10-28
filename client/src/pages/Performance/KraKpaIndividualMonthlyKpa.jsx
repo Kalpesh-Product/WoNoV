@@ -23,7 +23,10 @@ import {
 import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
 import dayjs from "dayjs";
+import { getKraKpaEditHistory } from "../../utils/kraKpaEditHistory";
+import { getPerformanceRowId } from "../../utils/performanceRowSelection";
 import AgTable from "../../components/AgTable";
+import WidgetSection from "../../components/WidgetSection";
 import PageFrame from "../../components/Pages/PageFrame";
 import MuiModal from "../../components/MuiModal";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -235,6 +238,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const [categoryName, setCategoryName] = useState("");
   const [categoryError, setCategoryError] = useState("");
   const [selectedSelfKras, setSelectedSelfKras] = useState([]);
+  const [selectionResetKey, setSelectionResetKey] = useState(0);
   const [dailyLogTargets, setDailyLogTargets] = useState([]);
   const [dailyLogDate, setDailyLogDate] = useState(
     dayjs().format("YYYY-MM-DD"),
@@ -256,6 +260,11 @@ const KraKpaIndividualMonthlyKpa = () => {
         department?.name?.trim().toLowerCase() === "top management",
     );
   const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
+  const showAssigneeField =
+    !isEmployeeRoute &&
+    !isIndividualRoute &&
+    Boolean(member?.memberId) &&
+    (isManager || isHrUser || isTopManagement);
   const isEmployeeUser =
     roleTitles.some((role) => role.includes("employee")) &&
     !isManager &&
@@ -495,6 +504,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
       queryClient.invalidateQueries({ queryKey: ["kraKpaSelfKra"] });
       setSelectedSelfKras([]);
+      setSelectionResetKey((key) => key + 1);
       setDailyLogTargets([]);
       setDailyLogDate(dayjs().format("YYYY-MM-DD"));
       setDailyLogDateError("");
@@ -650,7 +660,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     setModalOpen(true);
   };
   const openEditHistory = (record) => {
-    const dates = (record.editHistory || [])
+    const dates = getKraKpaEditHistory(record, isSelfKra ? "kra" : "kpa")
       .map((entry) => dayjs(entry.editedAt))
       .filter((date) => date.isValid())
       .sort((first, second) => first.valueOf() - second.valueOf());
@@ -903,11 +913,32 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const showActionColumn =
     (!isSelfKra || isSelectedSelfKraToday) && (canEdit || canDelete);
+  const canEditActions =
+    canEdit && (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser);
+  const actionsColumnWidth = Math.max(
+    92,
+    ...pendingTableData.map((record) => {
+      const controlWidths = [
+        32,
+        record.status !== "Completed" && canCompleteRecord(record) ? 110 : 0,
+        canEditActions ? 32 : 0,
+        canDelete ? 32 : 0,
+      ].filter(Boolean);
+      return (
+        24 +
+        controlWidths.reduce((total, width) => total + width, 0) +
+        Math.max(0, controlWidths.length - 1) * 8
+      );
+    }),
+  );
   const historyOnlyColumn = {
     headerName: "Actions",
     field: "historyActions",
     pinned: "right",
-    width: 100,
+    width: 92,
+    minWidth: 92,
+    maxWidth: 92,
+    suppressSizeToFit: true,
     sortable: false,
     filter: false,
     cellRenderer: ({ data }) => (
@@ -930,7 +961,10 @@ const KraKpaIndividualMonthlyKpa = () => {
           headerName: "Actions",
           field: "actions",
           pinned: "right",
-          width: canDelete ? 230 : 190,
+          width: actionsColumnWidth,
+          minWidth: actionsColumnWidth,
+          maxWidth: actionsColumnWidth,
+          suppressSizeToFit: true,
           sortable: false,
           filter: false,
           cellRenderer: ({ data, node }) => (
@@ -942,10 +976,7 @@ const KraKpaIndividualMonthlyKpa = () => {
               onAction={openRowAction}
               isPending={performRowAction.isPending}
               canDelete={canDelete}
-              canEditActions={
-                canEdit &&
-                (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser)
-              }
+              canEditActions={canEditActions}
               canComplete={canCompleteRecord(data)}
               showHistory
             />
@@ -1102,7 +1133,10 @@ const KraKpaIndividualMonthlyKpa = () => {
           headerName: "Actions",
           field: "completedActions",
           pinned: "right",
-          width: 100,
+          width: 92,
+          minWidth: 92,
+          maxWidth: 92,
+          suppressSizeToFit: true,
           sortable: false,
           filter: false,
           cellRenderer: ({ data }) => (
@@ -1149,16 +1183,12 @@ const KraKpaIndividualMonthlyKpa = () => {
       },
     ];
   })();
-  const editHistoryEntries = (historyRecord?.editHistory || [])
+  const editHistoryEntries = getKraKpaEditHistory(historyRecord, isSelfKra ? "kra" : "kpa")
     .filter((entry) => {
       const editedAt = dayjs(entry.editedAt);
       return !editedAt.isBefore(dayjs(historyDateRange.startDate), "day") &&
         !editedAt.isAfter(dayjs(historyDateRange.endDate), "day");
     })
-    .slice()
-    .sort((first, second) =>
-      dayjs(second.editedAt).valueOf() - dayjs(first.editedAt).valueOf(),
-    )
     .map((entry, index) => ({
       ...entry,
       srNo: index + 1,
@@ -1184,137 +1214,105 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
 
   return (
-    <PageFrame>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}
-          {employeeName}
-        </h1>
-        {(canAddKraKpa || canAddKraCategory) && (
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            {canAddKraCategory && (
-              <PrimaryButton
-                type="button"
-                title="Add Category"
-                handleSubmit={openCategoryModal}
-              />
-            )}
-            {canAddKraKpa && (
-              <PrimaryButton
-                type="button"
-                title={isSelfKra ? "Add Self KRA" : "Add Self KPA"}
-                handleSubmit={openCreate}
-              />
-            )}
-          </div>
-        )}
-      </div>
-      {!isSelfKra && (
-        <>
-          <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-            <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-              {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-            </div>
-            <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-              {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-            </div>
-            <button
-              type="button"
-              aria-label="Select date range"
-              className="rounded-md bg-primary p-3 text-white"
-              onClick={(event) => setCalendarAnchor(event.currentTarget)}
-            >
-              <MdCalendarToday size={20} />
-            </button>
-          </div>
-          <Popover
-            open={Boolean(calendarAnchor)}
-            anchorEl={calendarAnchor}
-            onClose={() => setCalendarAnchor(null)}
-            anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-            transformOrigin={{ vertical: "top", horizontal: "center" }}
-          >
-            <DateRangePicker
-              ranges={[dateRange]}
-              onChange={({ selection }) => setDateRange(selection)}
-              moveRangeOnFirstSelection={false}
-              direction="vertical"
-            />
-          </Popover>
-        </>
-      )}
-      {isSelfKra && (
-        <LocalizationProvider dateAdapter={AdapterDayjs}>
-          <div className="mb-1 flex items-center justify-center gap-3">
-            <button
-              type="button"
-              aria-label="Previous day"
-              onClick={() =>
-                setSelectedSelfKraDate((date) => date.subtract(1, "day"))
-              }
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-            >
-              <MdChevronLeft size={22} />
-            </button>
-            <DatePicker
-              format="ddd, MMMM D, YYYY"
-              value={selectedSelfKraDate}
-              onChange={(date) => {
-                if (date?.isValid())
-                  setSelectedSelfKraDate(date.startOf("day"));
-              }}
-              slotProps={{
-                textField: {
-                  size: "small",
-                  sx: {
-                    width: 245,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: "6px",
-                      height: 38,
-                    },
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1e3d73",
-                    },
-                    "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiInputBase-input": {
-                      color: "#111827",
-                      fontSize: "0.875rem",
-                    },
-                    "& .MuiSvgIcon-root": { color: "#1e3d73" },
-                  },
-                },
-              }}
-            />
-            <button
-              type="button"
-              aria-label="Next day"
-              onClick={() =>
-                setSelectedSelfKraDate((date) => date.add(1, "day"))
-              }
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-            >
-              <MdChevronRight size={22} />
-            </button>
-          </div>
-        </LocalizationProvider>
-      )}
+    <div className="p-4">
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <CircularProgress />
         </div>
       ) : (
+        <PageFrame>
+        <WidgetSection padding>
         <AgTable
+          titleRightContent={isSelfKra && (
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {canAddKraCategory && <PrimaryButton type="button" title="Add Category" handleSubmit={openCategoryModal} />}
+              {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
+              <PrimaryButton
+                type="button"
+                title={`Add to Daily Logs (${selectedSelfKras.length})`}
+                handleSubmit={openAddSelfKrasToDailyLogs}
+                disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
+                className="!w-[230px]"
+              />
+            </div>
+          )}
+          headerActions={
+            !isSelfKra && canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
+          }
+          toolbarDateControls={
+            <>
+              {!isSelfKra && <>
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                          {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+                        </div>
+                        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                          {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+                        </div>
+                        <button type="button" aria-label="Select date range" className="rounded-md bg-primary p-3 text-white" onClick={event => setCalendarAnchor(event.currentTarget)}>
+                          <MdCalendarToday size={20} />
+                        </button>
+                      </div>
+                      <Popover open={Boolean(calendarAnchor)} anchorEl={calendarAnchor} onClose={() => setCalendarAnchor(null)} anchorOrigin={{
+                  vertical: "bottom",
+                  horizontal: "center"
+                }} transformOrigin={{
+                  vertical: "top",
+                  horizontal: "center"
+                }}>
+                        <DateRangePicker ranges={[dateRange]} onChange={({
+                    selection
+                  }) => setDateRange(selection)} moveRangeOnFirstSelection={false} direction="vertical" />
+                      </Popover>
+                    </>}
+              {isSelfKra && <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <div className="flex items-center justify-center gap-3">
+                        <button type="button" aria-label="Previous day" onClick={() => setSelectedSelfKraDate(date => date.subtract(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronLeft size={22} />
+                        </button>
+                        <DatePicker format="ddd, MMMM D, YYYY" value={selectedSelfKraDate} onChange={date => {
+                    if (date?.isValid()) setSelectedSelfKraDate(date.startOf("day"));
+                  }} slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: {
+                        width: 245,
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "6px",
+                          height: 38
+                        },
+                        "& .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#1e3d73"
+                        },
+                        "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#1e3d73"
+                        },
+                        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#1e3d73"
+                        },
+                        "& .MuiInputBase-input": {
+                          color: "#111827",
+                          fontSize: "0.875rem"
+                        },
+                        "& .MuiSvgIcon-root": {
+                          color: "#1e3d73"
+                        }
+                      }
+                    }
+                  }} />
+                        <button type="button" aria-label="Next day" onClick={() => setSelectedSelfKraDate(date => date.add(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronRight size={22} />
+                        </button>
+                      </div>
+                    </LocalizationProvider>}
+            </>
+          }
           showDateControls={false}
           data={pendingTableData}
+          getRowId={getPerformanceRowId}
+          selectionResetKey={selectionResetKey}
           columns={columns}
-          hideTitle
+          tableTitle={`PENDING ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
           enableCheckbox
           checkAll={isSelfKra}
           getRowStyle={({ data }) =>
@@ -1324,31 +1322,21 @@ const KraKpaIndividualMonthlyKpa = () => {
           }
           search
           onSelectionChange={isSelfKra ? setSelectedSelfKras : undefined}
-          searchRowActions={
-            isSelfKra ? (
-              <PrimaryButton
-                type="button"
-                title={`Add to Daily Logs (${selectedSelfKras.length})`}
-                handleSubmit={openAddSelfKrasToDailyLogs}
-                disabled={
-                  !canScheduleSelectedSelfKras ||
-                  addSelfKrasToDailyLogs.isPending
-                }
-                className="!w-[230px]"
-              />
-            ) : null
-          }
           exportData
-          hideFilter
+          hideFilter={false}
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(
             300,
             Math.min(650, pendingTableData.length * 58 + 90),
           )}
         />
+        </WidgetSection>
+        </PageFrame>
       )}
 
       <div className="mt-6">
+        <PageFrame>
+        <WidgetSection padding>
         <AgTable
           showDateControls={false}
           data={completedTableData}
@@ -1356,7 +1344,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
           search
           exportData
-          hideFilter
+          hideFilter={false}
           getRowStyle={({ data }) =>
             isSelfKra && (data?.isActive === false || data?.isScheduled)
               ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
@@ -1368,6 +1356,8 @@ const KraKpaIndividualMonthlyKpa = () => {
             Math.min(650, completedTableData.length * 58 + 90),
           )}
         />
+        </WidgetSection>
+        </PageFrame>
       </div>
 
       <MuiModal
@@ -1736,7 +1726,7 @@ const KraKpaIndividualMonthlyKpa = () => {
                     colSpan={6}
                     className="px-4 py-10 text-center text-borderGray"
                   >
-                    {historyRecord?.editHistory?.length
+                    {getKraKpaEditHistory(historyRecord, isSelfKra ? "kra" : "kpa").length
                       ? "No edit history found for the selected dates"
                       : "No edit history available"}
                   </td>
@@ -1872,6 +1862,15 @@ const KraKpaIndividualMonthlyKpa = () => {
         widthClass="w-[92vw] max-w-[680px]"
       >
         <form onSubmit={handleSubmit} className="grid gap-4">
+          {!editingRecord && showAssigneeField && (
+            <TextField
+              label="Assignee"
+              size="small"
+              value={employeeName}
+              disabled
+              fullWidth
+            />
+          )}
           {isSelfKra ? (
             <>
               <TextField
@@ -2222,7 +2221,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           </div>
         </form>
       </MuiModal>
-    </PageFrame>
+    </div>
   );
 };
 

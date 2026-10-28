@@ -536,20 +536,18 @@ const ManagePrintout = () => {
     <div className="p-4">
       <PageFrame>
         <div className="flex flex-col gap-4 pb-4">
-          <div className="grid grid-cols-12 items-center w-full pb-4">
-            <div className="col-span-12 md:col-span-4">
               <span className="text-title text-primary font-pmedium uppercase">
                 Manage Printout
               </span>
-            </div>
-            <div className="col-span-12 md:col-span-4 flex justify-center">
+          <AgTable
+            toolbarDateControls={<>
               <div className="flex items-center gap-2">
-                <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                   <span className="text-gray-600 text-content font-pregular">
                     {dayjs(dateRange[0]?.startDate).format("DD MMM YYYY")}
                   </span>
                 </div>
-                <div className="px-6 py-1 rounded-md border-primary border-[1px]">
+                <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
                   <span className="text-gray-600 text-content font-pregular">
                     {dayjs(dateRange[0]?.endDate).format("DD MMM YYYY")}
                   </span>
@@ -561,8 +559,6 @@ const ManagePrintout = () => {
                   <MdCalendarToday size={19} />
                 </div>
               </div>
-            </div>
-          </div>
 
           <Popover
             open={openCalendar}
@@ -579,8 +575,7 @@ const ManagePrintout = () => {
               moveRangeOnFirstSelection={false}
             />
           </Popover>
-
-          <AgTable
+            </>}
             showDateControls={false}
             data={tableRows}
             columns={columns}

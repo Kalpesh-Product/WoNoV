@@ -2,11 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
+import TableDateFilter from "../../../../components/TableDateFilter";
+import { getCurrentMonthDateRange } from "../../../../utils/tableFilters";
+import { getAttendanceRangeDays, getAttendanceRangeParams } from "../../../../utils/attendanceDateRange";
 import dayjs from "dayjs";
-import SecondaryButton from "../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../components/PrimaryButton";
-import { Box, MenuItem, Skeleton, TextField, Tooltip } from "@mui/material";
-import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+import { Box, Skeleton, TextField, Tooltip } from "@mui/material";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
@@ -26,26 +27,8 @@ const getLocalMonthBoundary = (value, endOfMonth = false) => {
 const HrAttendance = () => {
   const axios = useAxiosPrivate();
 
-  const fyOptions = [
-    {
-      label: "FY 2024–25",
-      start: new Date(2024, 3, 1),
-      end: new Date(2025, 2, 31),
-    },
-    {
-      label: "FY 2025–26",
-      start: new Date(2025, 3, 1),
-      end: new Date(2026, 2, 31),
-    },
-    {
-      label: "FY 2026–27",
-      start: new Date(2026, 3, 1),
-      end: new Date(2027, 2, 31),
-    },
-  ];
-
-  const [selectedFY, setSelectedFY] = useState(fyOptions[fyOptions.length - 1]);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [dateRange, setDateRange] = useState(getCurrentMonthDateRange);
+  const currentMonth = dateRange.startDate;
   const [manageAttendanceOpen, setManageAttendanceOpen] = useState(false);
   const [viewAttendanceOpen, setViewAttendanceOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
@@ -54,54 +37,20 @@ const HrAttendance = () => {
   );
   const [editableWorkedDays, setEditableWorkedDays] = useState(0);
   const [attendanceSaveAttempted, setAttendanceSaveAttempted] = useState(false);
-const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
-  const extendedFyOptions = useMemo(
-    () =>
-      Array.from({ length: 11 }, (_, index) => {
-        const startYear = 2020 + index;
-        return {
-          label: `FY ${startYear}-${String(startYear + 1).slice(-2)}`,
-          start: new Date(startYear, 3, 1),
-          end: new Date(startYear + 1, 2, 31),
-        };
-      }),
-    []
-  );
-
-  const defaultFY = useMemo(() => {
-    const today = dayjs();
-    const currentFyStartYear =
-      today.month() >= 3 ? today.year() : today.year() - 1;
-
-    return (
-      extendedFyOptions.find(
-        (fy) => fy.start.getFullYear() === currentFyStartYear
-      ) || extendedFyOptions[extendedFyOptions.length - 1]
-    );
-  }, [extendedFyOptions]);
-
-  useEffect(() => {
-    setSelectedFY(defaultFY);
-       setPagination((current) => ({ ...current, page: 1 }));
-    setCurrentMonth(
-      dayjs().isBetween(dayjs(defaultFY.start), dayjs(defaultFY.end), "month", "[]")
-        ? new Date()
-        : defaultFY.start
-    );
-  }, [defaultFY]);
+  const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE, total: 0 });
 
   const { data: attendanceData = {}, isLoading } = useQuery({
-     queryKey: [
+    queryKey: [
       "hr-attendance",
-      currentMonth,
+      dateRange.startDate,
+      dateRange.endDate,
       pagination.page,
       pagination.limit,
     ],
     queryFn: async () => {
-     const response = await axios.get("/api/company/company-attandances", {
+      const response = await axios.get("/api/company/company-attandances", {
         params: {
-          startDate: getLocalMonthBoundary(currentMonth),
-          endDate: getLocalMonthBoundary(currentMonth, true),
+          ...getAttendanceRangeParams(dateRange),
           page: pagination.page,
           limit: pagination.limit,
         },
@@ -118,7 +67,7 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
      placeholderData: keepPreviousData,
   });
 
-  const formattedMonth = dayjs(currentMonth).format("MMMM YYYY");
+  const formattedRange = `${dayjs(dateRange.startDate).format("DD MMM YYYY")} - ${dayjs(dateRange.endDate).format("DD MMM YYYY")}`;
 
   const { data: attendanceDetails = {}, isLoading: attendanceDetailsLoading } =
     useQuery({
@@ -322,40 +271,8 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
     setAttendanceMonth(dayjs(currentMonth).format("YYYY-MM"));
     setViewAttendanceOpen(true);
   };
-  const generateMonthOptions = (startDate, endDate) => {
-    const months = [];
-    let date = dayjs(startDate);
-
-    while (date.isSameOrBefore(endDate, "month")) {
-      months.push({
-        label: date.format("MMM-YY"),
-        value: date.format("YYYY-MM"),
-      });
-      date = date.add(1, "month");
-    }
-
-    return months;
-  };
-
-  const handlePrevMonth = () => {
-    const newMonth = dayjs(currentMonth).subtract(1, "month").toDate();
-    if (newMonth >= selectedFY.start) setCurrentMonth(newMonth);
-  };
-
-  const handleNextMonth = () => {
-    const newMonth = dayjs(currentMonth).add(1, "month").toDate();
-    if (newMonth <= selectedFY.end) setCurrentMonth(newMonth);
-  };
-
-  const daysInMonth = dayjs(currentMonth).daysInMonth();
-  const currentMonthNum = dayjs(currentMonth).month();
-  const currentYearNum = dayjs(currentMonth).year();
-
-  const workingDaysInMonth = Array.from({ length: daysInMonth }, (_, i) => {
-    const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
-    const day = date.day();
-    return day !== 0 && day !== 6;
-  }).filter(Boolean).length;
+  const rangeDays = useMemo(() => getAttendanceRangeDays(dateRange), [dateRange]);
+  const workingDaysInRange = rangeDays.filter((date) => ![0, 6].includes(dayjs(date).day())).length;
 
   const tableData = useMemo(() => {
     const groupedUsers = {};
@@ -440,32 +357,32 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
 
         const startDate = dayjs(userInfo?.startDate);
 
-        for (let day = 1; day <= daysInMonth; day++) {
-          const date = dayjs(new Date(currentYearNum, currentMonthNum, day));
+        for (const dateKey of rangeDays) {
+          const date = dayjs(dateKey);
           const key = `${userId}-${date.format("YYYY-MM-DD")}`;
-          const isWeekend = date.day() === 0 || date.day() === 7;
+          const isWeekend = date.day() === 0;
           const beforeJoining =
             startDate.isValid() && date.isBefore(startDate, "day");
 
           if (beforeJoining) {
-            row[`day${day}`] = "N/A";
+            row[`day${dateKey}`] = "N/A";
           } else if (attendanceMap[key]) {
             const worked = attendanceMap[key];
-            row[`day${day}`] = worked;
+            row[`day${dateKey}`] = worked;
             totalWorkedHours += worked;
             hasData = true;
           } else if (leaveMap[key]) {
-            row[`day${day}`] = leaveMap[key];
+            row[`day${dateKey}`] = leaveMap[key];
             hasData = true;
           } else if (!isWeekend) {
-            row[`day${day}`] = "A";
+            row[`day${dateKey}`] = "A";
             hasData = true;
           } else {
-            row[`day${day}`] = "H";
+            row[`day${dateKey}`] = "H";
           }
         }
 
-        row["totalHours"] = DAILY_WORK_HOURS * workingDaysInMonth;
+        row["totalHours"] = DAILY_WORK_HOURS * workingDaysInRange;
         row["workedHours"] = Number(totalWorkedHours.toFixed(2));
 
         return hasData ? row : null;
@@ -475,21 +392,20 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
     return finalRows;
   }, [
     attendanceData,
-    currentMonthNum,
-    currentYearNum,
-    daysInMonth,
+    rangeDays,
     pagination.limit,
     pagination.page,
-    workingDaysInMonth,
+    workingDaysInRange,
   ]);
 
-  const dayColumns = Array.from({ length: daysInMonth }, (_, i) => {
-    const date = dayjs(new Date(currentYearNum, currentMonthNum, i + 1));
+  const dayColumns = rangeDays.map((dateKey) => {
+    const date = dayjs(dateKey);
     const isSunday = date.format("ddd") === "Sun";
 
     return {
-      field: `day${i + 1}`,
-      headerName: isSunday ? "SUN" : `${i + 1}`,
+      field: `day${dateKey}`,
+      headerName: !dayjs(dateRange.startDate).isSame(dateRange.endDate, "month")
+        ? date.format("DD MMM") : isSunday ? "SUN" : date.format("D"),
       width: 80,
       cellStyle: { textAlign: "center" },
       headerClass: "ag-center-header",
@@ -654,9 +570,6 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
     { field: "status", headerName: "Status", flex: 1 },
   ];
 
-  const isMonthWithinFY =
-    dayjs(currentMonth).isSameOrAfter(dayjs(selectedFY.start), "month") &&
-    dayjs(currentMonth).isSameOrBefore(dayjs(selectedFY.end), "month");
 
   return (
     <PageFrame>
@@ -664,92 +577,26 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
         <div className="flex flex-col md:flex-row items-center gap-4 mb-4 justify-between">
           <div>
             <span className="text-title text-primary font-pmedium uppercase">
-              ATTENDANCE - {formattedMonth}
+              ATTENDANCE - {formattedRange}
             </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-2 items-center ">
-              <TextField
-                select
-                size="small"
-                value={selectedFY.label}
-                onChange={(e) => {
-                  const fy = extendedFyOptions.find(
-                    (fy) => fy.label === e.target.value
-                  );
-                  setSelectedFY(fy);
-                  setCurrentMonth(fy.start);
-                  setPagination((current) => ({ ...current, page: 1 }));
-                }}
-                className="min-w-[140px]"
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#1E3D73",
-                    color: "#fff",
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1E3D73",
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: "#fff",
-                  },
-                }}
-              >
-                {extendedFyOptions.map((fy) => (
-                  <MenuItem key={fy.label} value={fy.label}>
-                    {fy.label}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </div>
-
-            <div className="flex items-center gap-4">
-              {/* <SecondaryButton handleSubmit={handlePrevMonth} title="Prev" /> */}
-
-              <TextField
-                select
-                size="small"
-                value={dayjs(currentMonth).format("YYYY-MM")}
-                onChange={(e) => {
-                  const [year, month] = e.target.value.split("-");
-                  const newDate = dayjs(`${year}-${month}-01`).toDate();
-                  setCurrentMonth(newDate);
-                   setPagination((current) => ({ ...current, page: 1 }));
-                }}
-                className="min-w-[160px]"
-                SelectProps={{
-                  IconComponent: KeyboardArrowDownIcon,
-                }}
-                sx={{
-                  "& .MuiOutlinedInput-root": {
-                    backgroundColor: "#1E3D73",
-                    color: "#fff",
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1E3D73",
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: "#fff",
-                  },
-                }}
-              >
-                {generateMonthOptions(selectedFY.start, selectedFY.end).map(
-                  (option) => (
-                    <MenuItem key={option.value} value={option.value}>
-                      {option.label}
-                    </MenuItem>
-                  )
-                )}
-              </TextField>
-
-              {/* <PrimaryButton handleSubmit={handleNextMonth} title="Next" /> */}
-            </div>
           </div>
         </div>
 
         {!isLoading ? (
-          isMonthWithinFY ? (
             <AgTable
+              showDateControls={false}
+              toolbarDateControls={
+                <TableDateFilter
+                  fields={[{ field: "inTime", label: "Attendance date" }]}
+                  field="inTime"
+                  range={dateRange}
+                  onChange={(range) => {
+                    if (!getAttendanceRangeDays(range).length) return;
+                    setDateRange(range);
+                    setPagination((current) => ({ ...current, page: 1 }));
+                  }}
+                />
+              }
               data={tableData.map((data, index) => ({
                 srNo: (pagination.page - 1) * pagination.limit + index + 1,
                 ...data,
@@ -774,11 +621,6 @@ const [pagination, setPagination] = useState({ page: 1, limit: DEFAULT_PAGE_SIZE
                 )
               }
             />
-          ) : (
-            <div className="text-center text-gray-500 py-8 text-lg">
-              Data not available for selected financial year.
-            </div>
-          )
         ) : (
           <Skeleton width={"100%"} height={600} />
         )}

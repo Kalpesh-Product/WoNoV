@@ -1029,7 +1029,7 @@ const TasksDashboard = () => {
             rows={priorityTasks}
             columns={priorityTasksColumns}
           /> */}
-          <MuiTable
+          <MuiTable showTableControls={false}
             Title="My Today's Tasks"
             columns={recentlyAddedTasksCol}
             rows={recentlyAddedTasksData}
@@ -1039,7 +1039,7 @@ const TasksDashboard = () => {
             className="h-full"
           />
 
-          <MuiTable
+          <MuiTable showTableControls={false}
             Title={config.meeting.title}
             columns={myTodayMeetingsColumns}
             rows={myTodayMeetingsData}

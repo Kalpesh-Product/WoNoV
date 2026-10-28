@@ -1,8 +1,8 @@
-import { useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Fragment, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { Chip, CircularProgress, Popover } from "@mui/material";
+import { Chip, CircularProgress, Popover, Tabs, Tab } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import ReactApexChart from "react-apexcharts";
@@ -11,11 +11,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import AgTable from "../../components/AgTable";
 import MuiModal from "../../components/MuiModal";
-import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogTypeChip from "./DailyLogTypeChip";
+import { PERMISSIONS } from "../../constants/permissions";
 
 const formatUserName = (user) =>
   user && typeof user === "object"
@@ -55,7 +55,7 @@ const ratingValue = ({ value }) =>
 const formatPercentage = (value) =>
   Number.isInteger(value) ? String(value) : value.toFixed(2);
 
-const KraKpaRating = ({ type = "kpa" }) => {
+const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
   const axios = useAxiosPrivate();
   const location = useLocation();
   const { auth } = useAuth();
@@ -548,13 +548,14 @@ const KraKpaRating = ({ type = "kpa" }) => {
   ];
 
   return (
-    <PageFrame>
+    <Fragment>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}
           {employeeName}
         </h1>
       </div>
+      {navigationTabs}
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <CircularProgress />
@@ -609,8 +610,13 @@ const KraKpaRating = ({ type = "kpa" }) => {
               </div>
             </>
           )}
-          {isKpaRating && (
-            <>
+          {isKpaRating ? (
+            <WidgetSection border title="KPA Rating" headerRightContent={
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <Chip label={`Final KPA Rating: ${formatPercentage(kpaRatingSummary.finalRating)}%`} sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }} />
+                <Chip label={`Pending Closure: ${kpaRatingSummary.yetToBeRated}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
+              </div>
+            }>
               <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
                 <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
                   {dayjs(dateRange.startDate).format("DD MMM YYYY")}
@@ -641,28 +647,12 @@ const KraKpaRating = ({ type = "kpa" }) => {
                   direction="vertical"
                 />
               </Popover>
-            </>
-          )}
-          {isKpaRating ? (
             <AgTable
               showDateControls={false}
               data={tableData}
               columns={kpaColumns}
               hideTitle
               search
-              searchRowActions={
-                <div className="flex flex-wrap items-center justify-end gap-3">
-                  <Chip
-                    label={`Final KPA Rating: ${formatPercentage(kpaRatingSummary.finalRating)}%`}
-                    sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}
-                  />
-                  <Chip
-                    label={`Pending Closure: ${kpaRatingSummary.yetToBeRated}`}
-                    sx={{ backgroundColor: "#fef3c7", color: "#b45309" }}
-                  />
-                </div>
-              }
-              searchRowActionsPosition="right"
               exportData
               hideFilter
               processExportCell={({ value }) => value ?? ""}
@@ -671,8 +661,10 @@ const KraKpaRating = ({ type = "kpa" }) => {
                 Math.min(650, tableData.length * 58 + 90),
               )}
             />
+            </WidgetSection>
           ) : (
-<AgTable
+            <WidgetSection border title="Daily Logs Rating">
+            <AgTable
               showDateControls={false}
               toolbarDateControls={<div className="mb-1 flex justify-center">
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -705,6 +697,7 @@ const KraKpaRating = ({ type = "kpa" }) => {
                 Math.min(650, dailyLogMatrix.rows.length * 58 + 90),
               )}
             />
+            </WidgetSection>
           )}
           {!isKpaRating && (
             <div className="mt-6">
@@ -780,7 +773,46 @@ const KraKpaRating = ({ type = "kpa" }) => {
           </MuiModal>
         </>
       )}
-    </PageFrame>
+    </Fragment>
+  );
+};
+
+const KraKpaRating = () => {
+  const { auth } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const permissions = auth?.user?.permissions?.permissions || [];
+  const showKpa = permissions.includes(PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value);
+  const showDailyLogs = permissions.includes(PERMISSIONS.KRAKPA_SELF_KRA.value);
+  const ratingTabs = [
+    ...(showKpa ? [{ label: "KPA Rating", value: "kpa", path: "kpa-rating" }] : []),
+    ...(showDailyLogs ? [{ label: "Daily Logs Rating", value: "daily-logs", path: "daily-logs-rating" }] : []),
+  ];
+  const requestedTab = location.pathname.replace(/\/$/, "").endsWith("/daily-logs-rating") ? "daily-logs" : "kpa";
+  const activeTab = ratingTabs.find((tab) => tab.value === requestedTab) || ratingTabs[0];
+  return (
+      <div className="flex flex-col gap-6 p-4">
+        {activeTab && <KraKpaRatingSection type={activeTab.value} navigationTabs={
+          <Tabs
+            value={activeTab.value}
+            variant="fullWidth"
+            aria-label="Daily score ratings"
+            onChange={(_event, value) => {
+              const selectedTab = ratingTabs.find((tab) => tab.value === value);
+              if (!selectedTab) return;
+              const basePath = location.pathname.replace(/\/(?:kpa-rating|daily-logs-rating)\/?$/, "");
+              navigate(`${basePath}/${selectedTab.path}`, { state: location.state });
+            }}
+            sx={{ mb: 3, border: "1px solid #d1d5db", borderRadius: 1, minHeight: 48,
+              "& .MuiTabs-indicator": { display: "none" },
+              "& .MuiTab-root": { textTransform: "none", color: "#1e3d73", minHeight: 48 },
+              "& .Mui-selected": { backgroundColor: "#1e3d73", color: "white !important" },
+            }}
+          >
+            {ratingTabs.map((tab) => <Tab key={tab.value} value={tab.value} label={tab.label} />)}
+          </Tabs>
+        } />}
+      </div>
   );
 };
 

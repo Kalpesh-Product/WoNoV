@@ -21,6 +21,8 @@ import usePageDepartment from "../../../hooks/usePageDepartment";
 import { queryClient } from "../../../main";
 import { inrFormat } from "../../../utils/currencyFormat";
 import AgTable from "../../../components/AgTable";
+import TableDateFilter from "../../../components/TableDateFilter";
+import { filterTableRows } from "../../../utils/tableFilters";
 import StatusChip from "../../../components/StatusChip";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
@@ -148,6 +150,8 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   const [selectedBuildingTab, setSelectedBuildingTab] = useState(
     forcedBuildingTab || "sunteck",
   );
+  const [unitDateRanges, setUnitDateRanges] = useState({ sunteck: null, dempo: null });
+  const unitDateRange = unitDateRanges[selectedBuildingTab] || null;
 
   const isAdminInventoryPath = location.pathname.includes(
     "/app/dashboard/admin-dashboard/inventory",
@@ -2073,6 +2077,12 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     unitsData,
   ]);
 
+  // Filter inventory entries before grouping them into unit totals.
+  const unitRangeInventoryData = useMemo(
+    () => filterTableRows(inventoryTableData || [], { dateRange: unitDateRange, dateField: "date" }),
+    [inventoryTableData, unitDateRange],
+  );
+
   const unitListingRows = useMemo(() => {
     return selectedBuildingUnits.map((unit, index) => {
       const normalizedBuildingName = String(
@@ -2086,7 +2096,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
           alias.toLowerCase(),
         ) || [];
 
-      const matchingInventories = (inventoryTableData || []).filter((inv) => {
+      const matchingInventories = unitRangeInventoryData.filter((inv) => {
         const matchesUnit =
           normalizeUnitNo(inv?.unitNo) === normalizeUnitNo(unit?.unitNo);
 
@@ -2176,7 +2186,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       };
     });
   }, [
-    inventoryTableData,
+    unitRangeInventoryData,
     selectedBuildingTab,
     selectedBuildingUnits,
     selectedTabConfig?.buildingAliases,
@@ -2747,6 +2757,18 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
               <PageFrame>
                 <AgTable
                   data={unitListingRows}
+                  showDateControls={false}
+                  toolbarDateControls={
+                    <TableDateFilter
+                      fields={[{ field: "date", label: "Inventory date" }]}
+                      field="date"
+                      range={unitDateRange}
+                      onChange={(range) => setUnitDateRanges((current) => ({
+                        ...current,
+                        [selectedBuildingTab]: range,
+                      }))}
+                    />
+                  }
                   columns={unitColumns}
                   search={true}
                   hideTitle={false}
@@ -2779,7 +2801,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                         }
                       : undefined
                   }
-                  headerActions={
+                  summaryContent={
                     <div className="flex items-center gap-2 flex-wrap">
                       {selectedUnitInventorySummaryCards.map((card) => (
                         <StatusChip
