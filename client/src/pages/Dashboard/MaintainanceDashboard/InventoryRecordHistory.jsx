@@ -571,6 +571,17 @@ const InventoryRecordHistory = () => {
         suppressExcelExport: !isOverallInventoryHistoryRoute,
         cellRenderer: (params) => inrFormat(params.value),
       },
+      {
+        field: "consumedValue",
+        headerName: "Consumed Valued",
+        flex: 1,
+        minWidth: 170,
+        hide: !isOverallInventoryHistoryRoute,
+        suppressCsvExport: !isOverallInventoryHistoryRoute,
+        suppressExcelExport: !isOverallInventoryHistoryRoute,
+        valueGetter: (params) => params.data.newConsumedUnitValue ?? 0,
+        cellRenderer: (params) => inrFormat(params.value),
+      },
       ...(isOverallInventoryHistoryRoute
         ? [
             {
