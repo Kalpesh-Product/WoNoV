@@ -8,11 +8,6 @@ export const isDueTaskOverdue = (record, today = dayjs()) =>
     dayjs(record.deadline).isBefore(today, "day"));
 
 export const isDueTaskRowSelectable = ({ data }) =>
-  Boolean(data) && !isDueTaskOverdue(data);
+  Boolean(data && data.status !== "Closed" && !data.isAddedToDailyLogs &&
+    data.deadline && dayjs(data.deadline).isValid());
 
-export const getDueTaskCheckboxTooltip = (record, canEditDeadline) => {
-  if (!isDueTaskOverdue(record)) return "";
-  return canEditDeadline
-    ? "Update deadline to add to Daily Logs."
-    : "Ask your manager to update the deadline.";
-};

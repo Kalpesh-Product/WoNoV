@@ -26,6 +26,7 @@ import dayjs from "dayjs";
 import { getKraKpaEditHistory } from "../../utils/kraKpaEditHistory";
 import { getPerformanceRowId } from "../../utils/performanceRowSelection";
 import AgTable from "../../components/AgTable";
+import WidgetSection from "../../components/WidgetSection";
 import PageFrame from "../../components/Pages/PageFrame";
 import MuiModal from "../../components/MuiModal";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -259,6 +260,11 @@ const KraKpaIndividualMonthlyKpa = () => {
         department?.name?.trim().toLowerCase() === "top management",
     );
   const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
+  const showAssigneeField =
+    !isEmployeeRoute &&
+    !isIndividualRoute &&
+    Boolean(member?.memberId) &&
+    (isManager || isHrUser || isTopManagement);
   const isEmployeeUser =
     roleTitles.some((role) => role.includes("employee")) &&
     !isManager &&
@@ -907,11 +913,32 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const showActionColumn =
     (!isSelfKra || isSelectedSelfKraToday) && (canEdit || canDelete);
+  const canEditActions =
+    canEdit && (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser);
+  const actionsColumnWidth = Math.max(
+    92,
+    ...pendingTableData.map((record) => {
+      const controlWidths = [
+        32,
+        record.status !== "Completed" && canCompleteRecord(record) ? 110 : 0,
+        canEditActions ? 32 : 0,
+        canDelete ? 32 : 0,
+      ].filter(Boolean);
+      return (
+        24 +
+        controlWidths.reduce((total, width) => total + width, 0) +
+        Math.max(0, controlWidths.length - 1) * 8
+      );
+    }),
+  );
   const historyOnlyColumn = {
     headerName: "Actions",
     field: "historyActions",
     pinned: "right",
-    width: 100,
+    width: 92,
+    minWidth: 92,
+    maxWidth: 92,
+    suppressSizeToFit: true,
     sortable: false,
     filter: false,
     cellRenderer: ({ data }) => (
@@ -934,7 +961,10 @@ const KraKpaIndividualMonthlyKpa = () => {
           headerName: "Actions",
           field: "actions",
           pinned: "right",
-          width: canDelete ? 230 : 190,
+          width: actionsColumnWidth,
+          minWidth: actionsColumnWidth,
+          maxWidth: actionsColumnWidth,
+          suppressSizeToFit: true,
           sortable: false,
           filter: false,
           cellRenderer: ({ data, node }) => (
@@ -946,10 +976,7 @@ const KraKpaIndividualMonthlyKpa = () => {
               onAction={openRowAction}
               isPending={performRowAction.isPending}
               canDelete={canDelete}
-              canEditActions={
-                canEdit &&
-                (isSelfKra ? isSelectedSelfKraToday : !isEmployeeUser)
-              }
+              canEditActions={canEditActions}
               canComplete={canCompleteRecord(data)}
               showHistory
             />
@@ -1106,7 +1133,10 @@ const KraKpaIndividualMonthlyKpa = () => {
           headerName: "Actions",
           field: "completedActions",
           pinned: "right",
-          width: 100,
+          width: 92,
+          minWidth: 92,
+          maxWidth: 92,
+          suppressSizeToFit: true,
           sortable: false,
           filter: false,
           cellRenderer: ({ data }) => (
@@ -1184,32 +1214,30 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
 
   return (
-    <PageFrame>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}
-          {employeeName}
-        </h1>
-        {!isLoading && isSelfKra && <div className="flex flex-wrap items-center justify-end gap-3">
-          {canAddKraCategory && <PrimaryButton type="button" title="Add Category" handleSubmit={openCategoryModal} />}
-          {canAddKraKpa && <PrimaryButton type="button" title="Add Self KRA" handleSubmit={openCreate} />}
-          <PrimaryButton
-            type="button"
-            title={`Add to Daily Logs (${selectedSelfKras.length})`}
-            handleSubmit={openAddSelfKrasToDailyLogs}
-            disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
-            className="!w-[230px]"
-          />
-        </div>}
-      </div>
+    <div className="p-4">
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
           <CircularProgress />
         </div>
       ) : (
+        <PageFrame>
+        <WidgetSection padding>
         <AgTable
+          titleRightContent={isSelfKra && (
+            <div className="flex flex-wrap items-center justify-end gap-3">
+              {canAddKraCategory && <PrimaryButton type="button" title="Add Category" handleSubmit={openCategoryModal} />}
+              {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
+              <PrimaryButton
+                type="button"
+                title={`Add to Daily Logs (${selectedSelfKras.length})`}
+                handleSubmit={openAddSelfKrasToDailyLogs}
+                disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
+                className="!w-[230px]"
+              />
+            </div>
+          )}
           headerActions={
-            !isSelfKra && canAddKraKpa && <PrimaryButton type="button" title="Add Self KPA" handleSubmit={openCreate} />
+            !isSelfKra && canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
           }
           toolbarDateControls={
             <>
@@ -1284,7 +1312,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           getRowId={getPerformanceRowId}
           selectionResetKey={selectionResetKey}
           columns={columns}
-          hideTitle
+          tableTitle={`PENDING ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
           enableCheckbox
           checkAll={isSelfKra}
           getRowStyle={({ data }) =>
@@ -1302,9 +1330,13 @@ const KraKpaIndividualMonthlyKpa = () => {
             Math.min(650, pendingTableData.length * 58 + 90),
           )}
         />
+        </WidgetSection>
+        </PageFrame>
       )}
 
       <div className="mt-6">
+        <PageFrame>
+        <WidgetSection padding>
         <AgTable
           showDateControls={false}
           data={completedTableData}
@@ -1324,6 +1356,8 @@ const KraKpaIndividualMonthlyKpa = () => {
             Math.min(650, completedTableData.length * 58 + 90),
           )}
         />
+        </WidgetSection>
+        </PageFrame>
       </div>
 
       <MuiModal
@@ -1828,6 +1862,15 @@ const KraKpaIndividualMonthlyKpa = () => {
         widthClass="w-[92vw] max-w-[680px]"
       >
         <form onSubmit={handleSubmit} className="grid gap-4">
+          {!editingRecord && showAssigneeField && (
+            <TextField
+              label="Assignee"
+              size="small"
+              value={employeeName}
+              disabled
+              fullWidth
+            />
+          )}
           {isSelfKra ? (
             <>
               <TextField
@@ -2178,7 +2221,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           </div>
         </form>
       </MuiModal>
-    </PageFrame>
+    </div>
   );
 };
 

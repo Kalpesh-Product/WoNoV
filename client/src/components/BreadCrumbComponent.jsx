@@ -2,10 +2,24 @@ import React from "react";
 import { Breadcrumbs, Typography, Link } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import CurrencySelector from "./CurrencySelector";
+import { useSelector } from "react-redux";
+import useAuth from "../hooks/useAuth";
 
 const BreadCrumbComponent = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const selectedMember = useSelector((state) => state.performance.selectedMember);
+  const isEmployeeKraKpaPage =
+    /\/(individual-Monthly-KPA|self-KRA)$/.test(location.pathname);
+  const isOwnEmployeePage =
+    location.pathname.includes("/employee-KRA-KPA") ||
+    location.pathname.includes("/kra-kpa/individual/");
+  const memberName = isOwnEmployeePage
+    ? [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+    : (location.state?.selectedMember || selectedMember)?.memberName;
 
   const formatLabel = (value) => {
     if (value.toLowerCase() === "kra-kpa") {
@@ -115,6 +129,14 @@ const BreadCrumbComponent = () => {
       </Link>
     );
   });
+
+  if (isEmployeeKraKpaPage && memberName) {
+    breadcrumbs.push(
+      <Typography key="employee-member" color="text.primary">
+        {memberName}
+      </Typography>
+    );
+  }
 
   // Append query parameters dynamically to the breadcrumb
   queryParamEntries.forEach(([key, value], index) => {

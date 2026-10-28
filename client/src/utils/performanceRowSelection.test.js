@@ -2,21 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import { parse } from "@babel/parser";
-import { getPerformanceRowId, isDueTaskOverdue, isDueTaskRowSelectable, getDueTaskCheckboxTooltip } from "./performanceRowSelection.js";
+import { getPerformanceRowId, isDueTaskOverdue, isDueTaskRowSelectable } from "./performanceRowSelection.js";
 
 const read = (file) => fs.readFileSync(new URL(`../${file}`, import.meta.url), "utf8");
 
-test("overdue checkbox tooltip reflects deadline edit access", () => {
-  const overdue = { deadline: "2000-01-01" };
-  assert.equal(getDueTaskCheckboxTooltip(overdue, true), "Update deadline to add to Daily Logs.");
-  assert.equal(getDueTaskCheckboxTooltip(overdue, false), "Ask your manager to update the deadline.");
-  assert.equal(getDueTaskCheckboxTooltip({ deadline: "2099-12-31" }, true), "");
-  assert.equal(getDueTaskCheckboxTooltip(undefined, false), "");
-  const table = read("components/AgTable.jsx");
-  assert.match(table, /tooltipValueGetter: checkboxTooltip/);
+test("Due Tasks checkboxes have no tooltip and deadline edit access is preserved", () => {
   const page = read("pages/Performance/KraKpaDueTask.jsx");
-  assert.match(page, /checkboxTooltip=\{\(\{ data \}\) => getDueTaskCheckboxTooltip/);
-  assert.match(page, /deadlineAccess\?\.canEditManagerReview && canEditRecord\(data\)/);
+  assert.doesNotMatch(page, /checkboxTooltip=/);
+  assert.match(page, /isTaskEmployee\(record\) \|\| Boolean\(deadlineAccess\?\.canEditManagerReview\)/);
+  assert.match(page, /editingRecord && !canEditDeadline\(editingRecord\)/);
 });
 
 test("Due Tasks overdue status compares calendar days, not time of day", () => {
@@ -28,8 +22,10 @@ test("Due Tasks overdue status compares calendar days, not time of day", () => {
   assert.equal(isDueTaskOverdue({ deadline: "invalid" }, today), false);
 });
 
-test("overdue Due Tasks cannot be selected individually or through the grid Select All", () => {
-  assert.equal(isDueTaskRowSelectable({ data: { deadline: "2000-01-01" } }), false);
+test("overdue Due Tasks can be selected, but closed or already scheduled tasks cannot", () => {
+  assert.equal(isDueTaskRowSelectable({ data: { deadline: "2000-01-01" } }), true);
+  assert.equal(isDueTaskRowSelectable({ data: { deadline: "2000-01-01", status: "Closed" } }), false);
+  assert.equal(isDueTaskRowSelectable({ data: { deadline: "2000-01-01", isAddedToDailyLogs: true } }), false);
   assert.equal(isDueTaskRowSelectable({ data: { deadline: "2099-12-31" } }), true);
   assert.equal(isDueTaskRowSelectable({ data: undefined }), false);
   const source = read("pages/Performance/KraKpaDueTask.jsx");
@@ -92,7 +88,9 @@ for (const [file, mutation] of [
     const tables = find(ast, (node) => node.type === "JSXElement" && node.openingElement.name?.name === "AgTable");
     const table = tables.find((node) => node.openingElement.attributes.some((attr) => attr.name?.name === "toolbarDateControls"));
     const attributes = table.openingElement.attributes;
-    const titleRow = find(ast, (node) => node.type === "JSXElement" && node.children?.some((child) => child.type === "JSXElement" && child.openingElement.name?.name === "h1"))[0];
+    const titleRow = file === "KraKpaIndividualMonthlyKpa.jsx"
+      ? attributes.find((attr) => attr.name?.name === "titleRightContent")
+      : find(ast, (node) => node.type === "JSXElement" && node.children?.some((child) => child.type === "JSXElement" && child.openingElement.name?.name === "h1"))[0];
     assert.ok(find(titleRow, (node) => node.type === "JSXElement" && node.openingElement.name?.name === "PrimaryButton").length >= 2);
     const kpaActions = attributes.find((attr) => attr.name?.name === "headerActions");
     if (file === "KraKpaIndividualMonthlyKpa.jsx") {

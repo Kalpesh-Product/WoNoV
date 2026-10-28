@@ -26,7 +26,7 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogEditHistory from "./DailyLogEditHistory";
-import { getPerformanceRowId, isDueTaskRowSelectable, getDueTaskCheckboxTooltip } from "../../utils/performanceRowSelection";
+import { getPerformanceRowId, isDueTaskRowSelectable } from "../../utils/performanceRowSelection";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -460,6 +460,10 @@ const KraKpaDueTask = () => {
   const isTaskEmployee = (record) =>
     String(record?.employee?._id || record?.employee) ===
     String(auth?.user?._id);
+  const canEditDeadline = (record) =>
+    record?.status !== "Closed" &&
+    canEditRecord(record) &&
+    (isTaskEmployee(record) || Boolean(deadlineAccess?.canEditManagerReview));
   const canDeleteRecord = (record) =>
     canManageOthers && !isTaskEmployee(record);
   const canCloseRecord = (record) =>
@@ -468,7 +472,6 @@ const KraKpaDueTask = () => {
     !record.isAddedToDailyLogs &&
     record.status !== "Closed" &&
     Boolean(record.deadline && dayjs(record.deadline).isValid()) &&
-    !dayjs(record.deadline).isBefore(dayjs(), "day") &&
     (isTaskEmployee(record) || canCloseRecord(record));
 
   const canAddSelectedTasks =
@@ -478,6 +481,7 @@ const KraKpaDueTask = () => {
   const dailyLogMaxDate = dailyLogTargets.reduce((earliest, record) => {
     if (!record.deadline || !dayjs(record.deadline).isValid()) return earliest;
     const deadline = dayjs(record.deadline).startOf("day");
+    if (deadline.isBefore(dayjs(), "day")) return earliest;
     return !earliest || deadline.isBefore(earliest) ? deadline : earliest;
   }, null);
 
@@ -636,8 +640,7 @@ const KraKpaDueTask = () => {
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}
-          {employeeName}
+          Unscheduled Due Tasks
         </h1>
         {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
           {canAdd && <PrimaryButton type="button" title="Add Due Task" handleSubmit={openCreate} />}
@@ -693,9 +696,6 @@ const KraKpaDueTask = () => {
           checkAll
           isRowSelectable={isDueTaskRowSelectable}
           showDisabledCheckboxes
-          checkboxTooltip={({ data }) => getDueTaskCheckboxTooltip(
-            data, Boolean(deadlineAccess?.canEditManagerReview && canEditRecord(data)),
-          )}
           search
           onSelectionChange={setSelectedDueTasks}
           exportData
@@ -1027,7 +1027,7 @@ const KraKpaDueTask = () => {
                 maxDate={selectedParentDeadline || undefined}
                 value={form.deadline ? dayjs(form.deadline) : null}
                 disabled={Boolean(
-                  editingRecord && !deadlineAccess?.canEditManagerReview,
+                  editingRecord && !canEditDeadline(editingRecord),
                 )}
                 onChange={(date) => {
                   setForm((current) => ({
