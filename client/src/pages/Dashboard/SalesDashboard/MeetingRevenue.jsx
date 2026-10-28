@@ -19,6 +19,19 @@ import UploadFileInput from "../../../components/UploadFileInput";
 import PrimaryButton from "../../../components/PrimaryButton";
 import dayjs from "dayjs";
 
+const BiznestHeaderLogo = () => (
+  <span
+    aria-label="BIZNest"
+    className="inline-flex shrink-0 items-baseline whitespace-nowrap leading-none text-[#2a2525]"
+  >
+    <span>BI</span>
+    <span className="text-[#e33434]">Z</span>
+    <span>
+      &nbsp;N<span className="lowercase">est</span>
+    </span>
+  </span>
+);
+
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
 
@@ -85,6 +98,15 @@ const getFinancialYear = (dateValue) => {
   const startYear =
     date.getMonth() < 3 ? date.getFullYear() - 1 : date.getFullYear();
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
+};
+
+const getFinancialYearMonths = (fyLabel) => {
+  const startYear = Number(fyLabel?.replace("FY", "").trim().split("-")[0]);
+  if (!Number.isFinite(startYear)) return [];
+
+  return Array.from({ length: 12 }, (_, index) =>
+    dayjs(new Date(startYear, 3, 1)).add(index, "month"),
+  );
 };
 
 const isPreviousMonth = (dateValue) => {
@@ -525,7 +547,11 @@ const DayPassInvoiceFields = ({ revenue }) => {
   // const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
   // const [selectedRevenue, setSelectedRevenue] = useState(null);
 
-  const MeetingRevenue = ({ showChart = true }) => {
+  const MeetingRevenue = ({
+    showChart = true,
+    graphOnly = false,
+    dashboardView = false,
+  }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -681,6 +707,167 @@ const DayPassInvoiceFields = ({ revenue }) => {
       graphData.filter((item) => getFinancialYear(item.date) === selectedFY),
     [graphData, selectedFY],
   );
+  const dashboardGraphData = useMemo(() => {
+    if (!dashboardView) return graphData;
+
+    const fiscalMonths = getFinancialYearMonths(selectedFY);
+    const currentMonth = dayjs().startOf("month");
+    const isActualMonthAvailable = (month) =>
+      !currentMonth.isBefore(
+        month.startOf("month").add(2, "month"),
+        "month",
+      );
+    const actualByMonth = new Map();
+
+    selectedFiscalYearRevenue.forEach((item) => {
+      const date = dayjs(item.date);
+      if (!date.isValid()) return;
+
+      const monthKey = date.format("YYYY-MM");
+      actualByMonth.set(
+        monthKey,
+        (actualByMonth.get(monthKey) || 0) + getNumericAmount(item.taxable),
+      );
+    });
+
+    const latestActualIndex = fiscalMonths.reduce(
+      (latestIndex, month, index) =>
+        isActualMonthAvailable(month) ? index : latestIndex,
+      -1,
+    );
+
+    if (latestActualIndex < 0) return [];
+
+    const actualRevenueThroughLatestMonth = fiscalMonths
+      .slice(0, latestActualIndex + 1)
+      .reduce(
+        (total, month) =>
+          total + (actualByMonth.get(month.format("YYYY-MM")) || 0),
+        0,
+      );
+    const projectedMonthlyAverage =
+      actualRevenueThroughLatestMonth / (latestActualIndex + 1);
+
+    return fiscalMonths.flatMap((month, index) => {
+      const actualAmount = actualByMonth.get(month.format("YYYY-MM")) || 0;
+
+      if (index <= latestActualIndex && actualAmount > 0) {
+        return [
+          {
+            date: month.toISOString(),
+            taxable: actualAmount,
+            vertical: "Revenue Booked",
+          },
+        ];
+      }
+
+      if (index > latestActualIndex) {
+        return [
+          {
+            date: month.toISOString(),
+            taxable: projectedMonthlyAverage,
+            vertical: "Balance KRA Target",
+          },
+        ];
+      }
+
+      return [];
+    });
+  }, [dashboardView, graphData, selectedFY, selectedFiscalYearRevenue]);
+  const dashboardGraphSummary = useMemo(
+    () =>
+      dashboardGraphData.reduce(
+        (summary, item) => {
+          const amount = getNumericAmount(item.taxable);
+          if (item.vertical === "Balance KRA Target") {
+            summary.projected += amount;
+          } else {
+            summary.income += amount;
+          }
+          return summary;
+        },
+        { income: 0, projected: 0 },
+      ),
+    [dashboardGraphData],
+  );
+  const dashboardMonthlyClientCounts = useMemo(() => {
+    if (!dashboardView) return [];
+
+    const fiscalMonths = getFinancialYearMonths(selectedFY);
+    const currentMonth = dayjs().startOf("month");
+    const isActualMonthAvailable = (month) =>
+      !currentMonth.isBefore(
+        month.startOf("month").add(2, "month"),
+        "month",
+      );
+    const actualCountsByMonth = new Map(
+      fiscalMonths.map((month) => [month.format("YYYY-MM"), 0]),
+    );
+
+    selectedFiscalYearRevenue.forEach((item) => {
+      const revenueDate = dayjs(item.date);
+      if (!revenueDate.isValid()) return;
+
+      const monthKey = revenueDate.format("YYYY-MM");
+      if (!actualCountsByMonth.has(monthKey)) return;
+      actualCountsByMonth.set(
+        monthKey,
+        (actualCountsByMonth.get(monthKey) || 0) + 1,
+      );
+    });
+
+    const completedActualMonths = fiscalMonths.filter((month) =>
+      isActualMonthAvailable(month),
+    );
+    const actualClientTotal = completedActualMonths.reduce(
+      (total, month) =>
+        total + (actualCountsByMonth.get(month.format("YYYY-MM")) || 0),
+      0,
+    );
+    const projectedMonthlyClientCount = completedActualMonths.length
+      ? Math.round(actualClientTotal / completedActualMonths.length)
+      : 0;
+
+    return fiscalMonths.map((month) =>
+      isActualMonthAvailable(month)
+        ? actualCountsByMonth.get(month.format("YYYY-MM")) || 0
+        : projectedMonthlyClientCount,
+    );
+  }, [dashboardView, selectedFY, selectedFiscalYearRevenue]);
+  const dashboardAxisScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...dashboardGraphData.map((item) => getNumericAmount(item.taxable)),
+    );
+    if (highestValue <= 0) {
+      return { max: 600000, step: 200000, tickAmount: 3 };
+    }
+
+    const rawStep = highestValue / 3;
+    const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+    const normalizedStep = rawStep / magnitude;
+    const niceFactor = [1, 2, 5, 10].find(
+      (factor) => normalizedStep <= factor,
+    );
+    const step = (niceFactor || 10) * magnitude;
+    const max = Math.max(step, Math.ceil(highestValue / step) * step);
+
+    return { max, step, tickAmount: Math.round(max / step) };
+  }, [dashboardGraphData]);
+  const dashboardAmountScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...dashboardGraphData.map((item) => getNumericAmount(item.taxable)),
+    );
+
+    if (highestValue >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (highestValue >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [dashboardGraphData]);
   const maxMeetingAmount = useMemo(
     () =>
       selectedFiscalYearRevenue.reduce(
@@ -756,6 +943,92 @@ const DayPassInvoiceFields = ({ revenue }) => {
     },
     colors: ["#2196F3"],
   };
+  const dashboardOptions = {
+    dataLabels: {
+      enabled: true,
+      formatter: function (val) {
+        const scaledValue =
+          Math.floor(
+            (Number(val) / dashboardAmountScale.divisor) * 100,
+          ) / 100;
+        return scaledValue.toFixed(2).replace(".", ",");
+      },
+      style: {
+        fontSize: "10px",
+        fontWeight: "bold",
+        colors: ["#1E3D73"],
+      },
+      offsetY: -22,
+    },
+    yaxis: {
+      min: 0,
+      max: dashboardAxisScale.max,
+      tickAmount: dashboardAxisScale.tickAmount,
+      forceNiceScale: false,
+      title: {
+        text: dashboardAmountScale.title,
+        style: { color: "#1E3D73" },
+      },
+      labels: {
+        style: { colors: "#1E3D73" },
+        formatter: (val) =>
+          Number(val / dashboardAmountScale.divisor).toLocaleString("en-IN", {
+            maximumFractionDigits: 1,
+          }),
+      },
+    },
+    xaxis: {
+      labels: {
+        style: { colors: "#1E3D73" },
+      },
+    },
+    tooltip: {
+      enabled: true,
+      custom: ({ series, seriesIndex, dataPointIndex, w }) => {
+        const label =
+          w?.globals?.categoryLabels?.[dataPointIndex] ||
+          w?.config?.xaxis?.categories?.[dataPointIndex] ||
+          "";
+        const seriesName =
+          w?.globals?.seriesNames?.[seriesIndex] || "Meeting Room";
+        const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
+        const color = w?.globals?.colors?.[seriesIndex] || "#3cb37180";
+        const revenueLabel =
+          seriesName === "Balance KRA Target"
+            ? "Projected Revenue"
+            : "Booked Revenue";
+
+        return `
+          <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
+            <div style="background: #eef2f6; color: #1f2937; font-size: 12px; padding: 8px 12px; border-bottom: 1px solid #dbe1e8;">
+              ${label}
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 10px 12px; font-size: 12px; color: #111827;">
+              <span style="width: 12px; height: 12px; border-radius: 999px; background: ${color}; display: inline-block;"></span>
+              <span>${revenueLabel}:</span>
+              <span style="font-weight: 700;">₹ ${inrFormat(value)}</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; font-size: 12px; color: #111827;">
+              <span aria-hidden="true">&#128101;</span>
+              <span>Meeting Room Client:</span>
+              <span style="font-weight: 700;">${dashboardMonthlyClientCounts[dataPointIndex] || 0}</span>
+            </div>
+          </div>
+        `;
+      },
+    },
+    plotOptions: {
+      bar: {
+        columnWidth: "40%",
+        borderRadius: 5,
+        dataLabels: { position: "top" },
+      },
+    },
+    legend: {
+      labels: { colors: "#1E3D73" },
+    },
+    colors: ["#3cb37180", "#787878"],
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -784,18 +1057,55 @@ const DayPassInvoiceFields = ({ revenue }) => {
           /> */}
            {showChart && (
             <FyBarGraph
-              data={graphData}
+              key={
+                dashboardView
+                  ? "meeting-room-dashboard-revenues"
+                  : "meeting-room-revenues"
+              }
+              chartId={
+                dashboardView
+                  ? "meeting-room-dashboard-revenues"
+                  : "meeting-room-revenues"
+              }
+              data={dashboardView ? dashboardGraphData : graphData}
               dateKey="date"
               valueKey="taxable"
-              graphTitle="ANNUAL MONTHLY MEETINGS REVENUES"
-              chartOptions={options}
+              graphTitle={
+                dashboardView ? (
+                  <span className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
+                    <BiznestHeaderLogo />
+                    <span className="inline-flex items-baseline leading-none">
+                      {`MEETING ROOM REVENUES - ${selectedFY}`}
+                    </span>
+                  </span>
+                ) : (
+                  "ANNUAL MONTHLY MEETINGS REVENUES"
+                )
+              }
+              chartOptions={dashboardView ? dashboardOptions : options}
               selectedFY={selectedFY}
               onSelectedFYChange={setSelectedFY}
               disableHoverCrosshair
+              hideYearNavigation={dashboardView}
+              borderColor={dashboardView ? "#1E3D73" : undefined}
+              bodyBorderColor={dashboardView ? "#9FB2CF" : undefined}
+              headerRightContent={
+                dashboardView ? (
+                  <div className="flex items-center justify-center gap-2 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-body font-pmedium uppercase text-[#274784]">
+                    <span>Projection:</span>
+                    <span>
+                      {inrFormat(
+                        dashboardGraphSummary.income +
+                          dashboardGraphSummary.projected,
+                      )}
+                    </span>
+                  </div>
+                ) : undefined
+              }
             />
           )}
 
-          <WidgetTable
+          {!graphOnly && <WidgetTable
             data={visibleRevenueData}
             headerActions={
               !showChart ? (
@@ -1031,7 +1341,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                 ),
               },
             ]}
-          />
+          />}
           <MuiModal
            // title="Meeting Revenue Details" 
              title={selectedRevenue?.source === "day-pass" ? "Visitor Revenue Detail" : "Meeting Revenue Details"}  

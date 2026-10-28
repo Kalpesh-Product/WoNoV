@@ -17,6 +17,7 @@ import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
+  MdShoppingBag,
 } from "react-icons/md";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import WidgetSection from "../../../components/WidgetSection";
@@ -1858,7 +1859,7 @@ const FinanceDashboard1 = () => {
     {
       route: "/app/dashboard/finance-dashboard1/mix-bag",
       title: "Mix-Bag",
-      icon: <SiGoogleadsense />,
+      icon: <MdShoppingBag />,
       permission: PERMISSIONS.FINANCE1_MIX_BAG.value,
     },
     {

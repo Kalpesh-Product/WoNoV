@@ -6,11 +6,11 @@ import dayjs from "dayjs";
 import {
   MdAutorenew,
   MdGroups,
-  MdFormatListBulleted,
   MdOutlineRemoveRedEye,
   MdPersonAddAlt1,
   MdPersonOff,
   MdSettings,
+  MdShoppingBag,
   MdAssignmentInd,
   MdTrendingDown,
   MdTrendingUp,
@@ -748,7 +748,7 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
   );
 
   const columns = [
-    { field: "srNo", headerName: "SR.NO.", width: 90 },
+    { field: "srNo", headerName: "Sr.No", width: 90 },
     { field: "clientName", headerName: "Customer Name", flex: 1.2 },
     { field: "formattedEndDate", headerName: "Expiry Date", flex: 0.9 },
     { field: "daysDue", headerName: "Days Due", flex: 0.7 },
@@ -892,7 +892,7 @@ const VirtualOfficeActionCards = ({ hasPermission }) => {
     },
     {
       title: "Mix Bag",
-      icon: <MdFormatListBulleted />,
+      icon: <MdShoppingBag />,
       route:
         "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
       permission:

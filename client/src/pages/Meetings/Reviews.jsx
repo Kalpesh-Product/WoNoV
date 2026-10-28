@@ -31,7 +31,10 @@ import {
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-const Reviews = () => {
+const Reviews = ({
+  basePath = "/app/meetings",
+  ignoreTabPermissions = false,
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const location = useLocation();
@@ -93,22 +96,26 @@ const Reviews = () => {
       {
         key: "clientCredit",
         label: "Client Credit",
-        path: "/app/meetings/client-credit",
+        path: `${basePath}/client-credit`,
         permission: PERMISSIONS.MEETINGS_CLIENT_CREDIT.value,
       },
       {
         key: "clientReview",
         label: "Client Review",
-        path: "/app/meetings/client-review",
+        path: `${basePath}/client-review`,
         permission: PERMISSIONS.MEETINGS_CLIENT_REVIEW.value,
       },
     ],
-    [],
+    [basePath],
   );
 
   const visibleTabs = useMemo(
-    () => tabItems.filter((tab) => userPermissions.includes(tab.permission)),
-    [tabItems, userPermissions],
+    () =>
+      tabItems.filter(
+        (tab) =>
+          ignoreTabPermissions || userPermissions.includes(tab.permission),
+      ),
+    [ignoreTabPermissions, tabItems, userPermissions],
   );
 
   const activeTabIndex = Math.max(

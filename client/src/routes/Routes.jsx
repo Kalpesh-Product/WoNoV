@@ -2913,6 +2913,365 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
+                        path: "meeting-room/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRevenue graphOnly dashboardView />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/monthly-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MONTHLY_CLIENTS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="monthlyClients" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/internal-external-bookings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_INTERNAL_EXTERNAL_BOOKINGS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="internalExternalBookings" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/external-guests",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_EXTERNAL_GUESTS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="externalGuests" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/average-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_AVERAGE_OCCUPANCY_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="averageOccupancy" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/availability-status",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_AVAILABILITY_STATUS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="availabilityStatus" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/busy-time-week",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_BUSY_TIME_WEEK_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="busyTimeWeek" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/ongoing-upcoming-meetings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_ONGOING_UPCOMING_TABLE
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingsTableOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/book-meeting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD
+                                .value,
+                            ]}
+                          >
+                            <BookMeetings
+                              bookingBasePath="/app/dashboard/sales-dashboard/meeting-room/book-meeting"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/book-meeting/schedule-meeting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD
+                                .value,
+                            ]}
+                          >
+                            <MeetingFormLayout
+                              calendarRoute="/app/dashboard/sales-dashboard/meeting-room/calendar"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/manage-bookings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MANAGE_BOOKINGS_CARD
+                                .value,
+                            ]}
+                          >
+                            <ManageMeetingsLayout
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/manage-bookings"
+                              ignoreTabPermissions
+                            />
+                          </SidebarDropdown>
+                        ),
+                        children: [
+                          {
+                            path: "internal-meetings",
+                            element: <ManageMeetings />,
+                          },
+                          {
+                            path: "external-clients",
+                            element: <ExternalMeetingClients />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "meeting-room/calendar",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_CALENDAR_CARD.value,
+                            ]}
+                          >
+                            <MeetingCalendar />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+                            ]}
+                          >
+                            <VisitorMixBag
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/mix-bag"
+                              ignoreCardPermissions
+                              financeCardStyle
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/repeat-day-pass",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/meeting-room/mix-bag/repeat-day-pass/repeat-external-companies"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/repeat-day-pass/repeat-external-companies",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+                            ]}
+                          >
+                            <RepeatExternalCompaanies />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/visitors-to-client",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/meeting-room/mix-bag/visitors-to-client/convert-internal-visitors"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/visitors-to-client/convert-internal-visitors",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+                            ]}
+                          >
+                            <ConvertInternalVisitors />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/repeat-visitors",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/meeting-room/mix-bag/repeat-visitors/repeat-internal-visitors"
+                            replace
+                          />
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag/repeat-visitors/repeat-internal-visitors",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+                            ]}
+                          >
+                            <RepeatInternalVisitors />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/data/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_DATA_CARD
+                                .value,
+                            ]}
+                          >
+                            <Reviews
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/data"
+                              ignoreTabPermissions
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/reports",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_REPORTS_CARD.value,
+                            ]}
+                          >
+                            <MeetingReports />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/setting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                            ]}
+                          >
+                            <MeetingSettings />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
                         path: "workation",
                         element: (
                           <SidebarDropdown
