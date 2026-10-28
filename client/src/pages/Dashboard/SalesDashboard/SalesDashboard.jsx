@@ -1886,7 +1886,7 @@ const SalesDashboard = () => {
       layout: 2,
       widgets: allowedMuiTableConfigs.map((config, index) => (
         <WidgetSection layout={config.layout} padding key={index}>
-          <MuiTable {...config} />
+          <MuiTable showTableControls={false} {...config} />
         </WidgetSection>
       )),
     },

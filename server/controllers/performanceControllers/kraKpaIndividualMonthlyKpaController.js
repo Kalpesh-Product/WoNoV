@@ -4,6 +4,8 @@ const UserData = require("../../models/hr/UserData");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
+const { getPendingApprovalScope } = require("../../utils/kraKpaPendingApprovalScope");
+const { buildKpaApprovalUpdate } = require("../../utils/kraKpaLifecycleHistory");
 const {
   calculateDelayedWorkingDays,
 } = require("../../utils/kraKpaDelayedDays");
@@ -318,27 +320,10 @@ const getIndividualMonthlyKpaReviewAccess = async (req, res, next) => {
 
 const listPendingKpaApprovals = async (req, res, next) => {
   try {
-    const { department, employee } = req.query;
-    if (!mongoose.isValidObjectId(department)) {
-      return res.status(400).json({ message: "Valid department ID is required" });
-    }
-    if (!mongoose.isValidObjectId(employee)) {
-      return res.status(400).json({ message: "Valid employee ID is required" });
-    }
     const access = await getAccess(req);
-    const departmentManager = await isDepartmentManager(req, department, access);
-    if (!access.isTopManagement && !access.isHr && !departmentManager) {
-      return res.status(403).json({
-        message: "Only the department manager, HR or Top Management can view pending approvals",
-      });
-    }
-    const records = await IndividualMonthlyKpa.find({
-      company: req.company,
-      department,
-      employee,
-      approvalStatus: "Pending Approval",
-      isDeleted: { $ne: true },
-    })
+    const scope = await getPendingApprovalScope(req, access, { isDepartmentManager, isValidObjectId: mongoose.isValidObjectId });
+    if (scope.status) return res.status(scope.status).json({ message: scope.message });
+    const records = await IndividualMonthlyKpa.find(scope.filter)
       .sort({ createdAt: 1, deadline: 1 })
       .populate(DETAIL_POPULATION)
       .lean();
@@ -375,7 +360,7 @@ const approveIndividualMonthlyKpa = async (req, res, next) => {
     }
     const approved = await IndividualMonthlyKpa.findOneAndUpdate(
       { _id: existing._id, company: req.company, isDeleted: { $ne: true }, approvalStatus: "Pending Approval" },
-      { $set: { approvalStatus: "Approved", approvedBy: req.user, approvedAt: new Date(), updatedBy: req.user } },
+      buildKpaApprovalUpdate("Approved", req.user, new Date()),
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
     if (!approved) {
@@ -405,7 +390,7 @@ const rejectIndividualMonthlyKpa = async (req, res, next) => {
     }
     const rejected = await IndividualMonthlyKpa.findOneAndUpdate(
       { ...scope, approvalStatus: "Pending Approval" },
-      { $set: { approvalStatus: "Rejected", rejectedBy: req.user, rejectedAt: new Date(), updatedBy: req.user } },
+      buildKpaApprovalUpdate("Rejected", req.user, new Date()),
       { new: true, runValidators: true },
     ).populate(DETAIL_POPULATION);
     if (!rejected) {

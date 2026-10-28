@@ -26,6 +26,7 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogEditHistory from "./DailyLogEditHistory";
+import { getPerformanceRowId, isDueTaskRowSelectable } from "../../utils/performanceRowSelection";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -163,6 +164,7 @@ const KraKpaDueTask = () => {
   const [historyRecord, setHistoryRecord] = useState(null);
   const [pendingAction, setPendingAction] = useState(null);
   const [selectedDueTasks, setSelectedDueTasks] = useState([]);
+  const [selectionResetKey, setSelectionResetKey] = useState(0);
   const [dailyLogTargets, setDailyLogTargets] = useState([]);
   const [dailyLogForm, setDailyLogForm] = useState({
     date: dayjs().format("YYYY-MM-DD"),
@@ -329,6 +331,7 @@ const KraKpaDueTask = () => {
       refresh();
       setDailyLogTargets([]);
       setSelectedDueTasks([]);
+      setSelectionResetKey((key) => key + 1);
       setDailyLogForm({
         date: dayjs().format("YYYY-MM-DD"),
       });
@@ -457,6 +460,10 @@ const KraKpaDueTask = () => {
   const isTaskEmployee = (record) =>
     String(record?.employee?._id || record?.employee) ===
     String(auth?.user?._id);
+  const canEditDeadline = (record) =>
+    record?.status !== "Closed" &&
+    canEditRecord(record) &&
+    (isTaskEmployee(record) || Boolean(deadlineAccess?.canEditManagerReview));
   const canDeleteRecord = (record) =>
     canManageOthers && !isTaskEmployee(record);
   const canCloseRecord = (record) =>
@@ -465,7 +472,6 @@ const KraKpaDueTask = () => {
     !record.isAddedToDailyLogs &&
     record.status !== "Closed" &&
     Boolean(record.deadline && dayjs(record.deadline).isValid()) &&
-    !dayjs(record.deadline).isBefore(dayjs(), "day") &&
     (isTaskEmployee(record) || canCloseRecord(record));
 
   const canAddSelectedTasks =
@@ -475,6 +481,7 @@ const KraKpaDueTask = () => {
   const dailyLogMaxDate = dailyLogTargets.reduce((earliest, record) => {
     if (!record.deadline || !dayjs(record.deadline).isValid()) return earliest;
     const deadline = dayjs(record.deadline).startOf("day");
+    if (deadline.isBefore(dayjs(), "day")) return earliest;
     return !earliest || deadline.isBefore(earliest) ? deadline : earliest;
   }, null);
 
@@ -633,47 +640,19 @@ const KraKpaDueTask = () => {
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}
-          {employeeName}
+          Unscheduled Due Tasks
         </h1>
-        {canAdd && (
+        {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
+          {canAdd && <PrimaryButton type="button" title="Add Due Task" handleSubmit={openCreate} />}
           <PrimaryButton
             type="button"
-            title="Add Due Task"
-            handleSubmit={openCreate}
+            title={`Add Daily Logs (${selectedDueTasks.length})`}
+            handleSubmit={openAddToDailyLogs}
+            disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
+            className="!w-[230px]"
           />
-        )}
+        </div>}
       </div>
-      <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-        </div>
-        <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-          {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-        </div>
-        <button
-          type="button"
-          aria-label="Select date range"
-          className="rounded-md bg-primary p-3 text-white"
-          onClick={(event) => setCalendarAnchor(event.currentTarget)}
-        >
-          <MdCalendarToday size={20} />
-        </button>
-      </div>
-      <Popover
-        open={Boolean(calendarAnchor)}
-        anchorEl={calendarAnchor}
-        onClose={() => setCalendarAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-        transformOrigin={{ vertical: "top", horizontal: "center" }}
-      >
-        <DateRangePicker
-          ranges={[dateRange]}
-          onChange={({ selection }) => setDateRange(selection)}
-          moveRangeOnFirstSelection={false}
-          direction="vertical"
-        />
-      </Popover>
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
@@ -681,25 +660,46 @@ const KraKpaDueTask = () => {
         </div>
       ) : (
         <AgTable
+          toolbarDateControls={
+            <>
+              <div className="flex items-center justify-center gap-2">
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+                    </div>
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+                    </div>
+                    <button type="button" aria-label="Select date range" className="rounded-md bg-primary p-3 text-white" onClick={event => setCalendarAnchor(event.currentTarget)}>
+                      <MdCalendarToday size={20} />
+                    </button>
+                  </div>
+              <Popover open={Boolean(calendarAnchor)} anchorEl={calendarAnchor} onClose={() => setCalendarAnchor(null)} anchorOrigin={{
+                vertical: "bottom",
+                horizontal: "center"
+              }} transformOrigin={{
+                vertical: "top",
+                horizontal: "center"
+              }}>
+                    <DateRangePicker ranges={[dateRange]} onChange={({
+                  selection
+                }) => setDateRange(selection)} moveRangeOnFirstSelection={false} direction="vertical" />
+                  </Popover>
+            </>
+          }
           showDateControls={false}
           data={tableData}
+          getRowId={getPerformanceRowId}
+          selectionResetKey={selectionResetKey}
           columns={columns}
           hideTitle
           enableCheckbox
           checkAll
+          isRowSelectable={isDueTaskRowSelectable}
+          showDisabledCheckboxes
           search
           onSelectionChange={setSelectedDueTasks}
-          searchRowActions={
-            <PrimaryButton
-              type="button"
-              title={`Add Daily Logs (${selectedDueTasks.length})`}
-              handleSubmit={openAddToDailyLogs}
-              disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
-              className="!w-[230px]"
-            />
-          }
           exportData
-          hideFilter
+          hideFilter={false}
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
         />
@@ -1027,7 +1027,7 @@ const KraKpaDueTask = () => {
                 maxDate={selectedParentDeadline || undefined}
                 value={form.deadline ? dayjs(form.deadline) : null}
                 disabled={Boolean(
-                  editingRecord && !deadlineAccess?.canEditManagerReview,
+                  editingRecord && !canEditDeadline(editingRecord),
                 )}
                 onChange={(date) => {
                   setForm((current) => ({

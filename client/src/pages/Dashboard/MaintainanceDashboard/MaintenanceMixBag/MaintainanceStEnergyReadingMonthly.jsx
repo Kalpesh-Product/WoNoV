@@ -1007,7 +1007,7 @@ const MaintainanceStEnergyReadingMonthly = () => {
                 </div>
               }
               exportData
-              hideFilter
+              hideFilter={false}
               taskExportDateTimeFormatting
             />
           </div>

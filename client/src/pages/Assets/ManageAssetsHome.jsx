@@ -278,7 +278,7 @@ const ManageAssetsHome = () => {
           inrFormat(totalAssetValue) || 0
         }`}
       >
-        <AgTable data={tableData} columns={departmentColumns} hideFilter />
+        <AgTable data={tableData} columns={departmentColumns} hideFilter search={false} />
       </WidgetSection>
     </div>
   );

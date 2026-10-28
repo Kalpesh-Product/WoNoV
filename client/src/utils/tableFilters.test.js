@@ -1,6 +1,46 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { parseTableDate, getTableDateFields, filterTableRows, getCurrentMonthDateRange } from "./tableFilters.js";
+import { parseTableDate, getTableDateFields, filterTableRows, getCurrentMonthDateRange, getAdvancedFilterColumns, shouldShowTableDateFilter } from "./tableFilters.js";
+
+test("view-modal dates filter records without a visible date column and remain configured when empty", () => {
+  const columns = [{ field: "ticketTitle", headerName: "Ticket" }];
+  for (const field of ["raisedDate", "acceptedAt", "assignedAt", "supportRequestedAt", "escalatedAt", "reviewDate", "targetDate", "onboardingDate"]) {
+    const records = [
+      { ticketTitle: "October", [field]: "not a formatted date", [`${field}Raw`]: "2026-10-23T08:00:00Z" },
+      { ticketTitle: "September", [field]: "2026-09-23T08:00:00Z" },
+      { ticketTitle: "Missing", [field]: null },
+    ];
+    assert.equal(shouldShowTableDateFilter(columns, field), true);
+    assert.ok(getTableDateFields(columns, [], field).some((entry) => entry.field === field));
+    const range = getCurrentMonthDateRange(new Date(2026, 9, 23));
+    assert.deepEqual(filterTableRows(records, { dateRange: range, dateField: field }), [records[0]]);
+    assert.deepEqual(filterTableRows(records, { dateField: field }), records, "No date selection must show all records");
+  }
+});
+
+test("date pickers depend on meaningful date fields, not row count", () => {
+  const summary = [{ field: "department" }, { field: "totalTickets" }];
+  assert.equal(shouldShowTableDateFilter(summary), false);
+  assert.equal(shouldShowTableDateFilter([{ field: "name", headerName: "Financial Year" }]), false);
+  assert.equal(shouldShowTableDateFilter([{ field: "dueDate", headerName: "Due Date" }]), true);
+  assert.equal(shouldShowTableDateFilter([], "approvedAt"), true);
+  assert.deepEqual(getTableDateFields([], [], "dueDateRaw"), [{ field: "dueDateRaw", label: "dueDateRaw" }]);
+  assert.equal(shouldShowTableDateFilter([{ field: "createdAt" }], undefined, false), false);
+  assert.equal(shouldShowTableDateFilter(summary, undefined, true), true);
+});
+
+test("advanced filters omit serial, internal, hidden, action and explicitly disabled fields", () => {
+  const columns = [
+    { field: "srNo", headerName: "Sr No" }, { field: "id" },
+    { field: "sequence", headerName: "Sr. No." }, { field: "mongoId" },
+    { field: "assignedAtRaw" }, { field: "actions" },
+    { field: "private", hide: true }, { field: "documentLink", filter: false },
+    { headerName: "Checkbox" },
+    { field: "title", headerName: "Task" }, { field: "status", headerName: "Status" },
+  ];
+  assert.deepEqual(getAdvancedFilterColumns(columns).map((column) => column.field), ["title", "status"]);
+  assert.deepEqual(getAdvancedFilterColumns(), []);
+});
 
 const rows = [
   { name: "Attendance HR", status: "Active", updatedAt: "23-10-2026, 11:01 AM", updatedAtRaw: "2026-10-23T05:31:00Z" },

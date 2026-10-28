@@ -517,7 +517,7 @@ const PerformanceHome = ({
 
   const standardPerformanceCards = [
     {
-      title: "DEPARTMENT MONTHLY KPA",
+      title: "DEPARTMENT KRA/KPA",
       route: `${modulePath}/department-KPA`,
       hasAccess: canAccessDepartmentKpaCard,
     },
@@ -545,7 +545,7 @@ const PerformanceHome = ({
 
   const kraKpaDashboardCards = [
     {
-      title: "INDIVIDUAL",
+      title: "EMPLOYEE KRA/KPA",
       route: employeeDashboard
         ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
         : `${modulePath}/individual/kra-kpa/individual-Monthly-KPA`,
@@ -561,12 +561,24 @@ const PerformanceHome = ({
       hasAccess: true,
     },
     {
-      title: "DEPARTMENT MONTHLY KPA",
+      title: "DEPARTMENT KRA/KPA",
       route: `${modulePath}/department-KPA`,
       icon: <CgWebsite />,
       hasAccess:
         !employeeDashboard &&
         (isManager || isHr || isTopManagement),
+    },
+    {
+      title: "PENDING APPROVALS",
+      route: `${modulePath}/pending-approvals`,
+      icon: <CgWebsite />,
+      hasAccess: !employeeDashboard && (isManager || isHr || isTopManagement),
+    },
+    {
+      title: "DEPARTMENT",
+      route: `${modulePath}/departments`,
+      icon: <CgWebsite />,
+      hasAccess: !employeeDashboard && hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
     },
   ];
 
@@ -574,13 +586,7 @@ const PerformanceHome = ({
     onlyFirstTwoCards ? kraKpaDashboardCards : standardPerformanceCards
   ).filter((card) => card.hasAccess);
 
-  const cardGridClass = onlyFirstTwoCards
-    ? performanceCards.length >= 3
-      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-      : performanceCards.length === 2
-        ? "grid-cols-1 md:grid-cols-2"
-        : "grid-cols-1"
-    : performanceCards.length >= 5
+  const cardGridClass = performanceCards.length >= 5
       ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-5"
       : performanceCards.length === 4
         ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
@@ -617,7 +623,7 @@ const PerformanceHome = ({
           {performanceCards.map((card) => (
             <div key={card.route} className="h-full">
               <Card
-                icon={card.icon || <CgWebsite />}
+                icon={employeeDashboard ? card.icon || <CgWebsite /> : <CgWebsite />}
                 title={card.title}
                 route={card.route}
                 navigationState={employeeDashboard ? location.state : undefined}

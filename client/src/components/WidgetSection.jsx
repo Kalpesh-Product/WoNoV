@@ -1,4 +1,5 @@
 import React from "react";
+import { TableHeaderBorderContext } from "./TableHeaderBorderContext";
 import PrimaryButton from "./PrimaryButton";
 import { Chip } from "@mui/material";
 import { FaArrowTrendUp } from "react-icons/fa6";
@@ -40,6 +41,9 @@ const WidgetSection = ({
   borderColor,
   bodyBorderColor,
 }) => {
+  const inheritedTitleBorder = React.useContext(TableHeaderBorderContext);
+  // Custom-colour headers use the body's top border as their divider.
+  const hasBorderedTitle = title ? !borderColor || Boolean(border) : inheritedTitleBorder;
   const visibleChildren = React.Children.toArray(children).filter(Boolean);
   // Tailwind grid classes for different layouts
   const gridClasses = {
@@ -95,10 +99,10 @@ const WidgetSection = ({
             normalCase ? "" : "uppercase"
           }`}>
           <div
-            className={`flex flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between ${headerContentClassName} ${
+            className={`flex min-w-0 max-w-full flex-col md:flex-col lg:flex-row w-full gap-4 items-center justify-between ${headerContentClassName} ${
               headerCenterContentInline ? "lg:flex-wrap" : ""
             }`}>
-            <div className="flex flex-col lg:flex-row justify-start lg:justify-start items-center gap-2">
+            <div className="flex min-w-0 max-w-full flex-col lg:flex-row justify-start lg:justify-start items-center gap-2">
               <span
                 style={titleStyle}
                 className={`${
@@ -139,9 +143,9 @@ const WidgetSection = ({
                 {headerCenterContent}
               </div>
             )}
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex min-w-0 max-w-full flex-col items-end gap-2">
               {headerRightContent ? (
-                <div className="flex flex-wrap items-center justify-end gap-2">
+                <div className="flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
                   {headerRightContent}
                 </div>
               ) : (
@@ -246,9 +250,11 @@ const WidgetSection = ({
           //   <div>{child}</div>
          
            className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
-          {visibleChildren.map((child, index) => (
-            <div key={index}>{child}</div>
-          ))}
+          <TableHeaderBorderContext.Provider value={hasBorderedTitle}>
+            {visibleChildren.map((child, index) => (
+              <div key={index}>{child}</div>
+            ))}
+          </TableHeaderBorderContext.Provider>
         </div>
       </div>
     </div>

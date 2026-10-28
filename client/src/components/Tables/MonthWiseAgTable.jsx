@@ -11,7 +11,7 @@ import { useEffect } from "react";
 
 dayjs.extend(customParseFormat);
 
-const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
+const MonthWiseAgTable = ({ financialData, passedColumns, title, amount, hideFilter = false, search = true }) => {
   const fiscalYears = ["FY 2024-25", "FY 2025-26"];
   const [selectedFYIndex, setSelectedFYIndex] = useState(0);
   const selectedFY = fiscalYears[selectedFYIndex];
@@ -191,7 +191,8 @@ const MonthWiseAgTable = ({ financialData, passedColumns, title, amount }) => {
               }))}
               columns={passedColumns ? passedColumns : columns}
               tableHeight={250}
-              hideFilter={false}
+              hideFilter={hideFilter}
+              search={search}
             />
         </div>
       </WidgetSection>

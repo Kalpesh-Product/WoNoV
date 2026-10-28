@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
+const checkRequestBudgetPermission = require("../middlewares/checkRequestBudgetPermission");
 
 const {
   requestBudget,
@@ -20,6 +21,7 @@ const {
 
 router.post(
   "/request-budget/:departmentId",
+  checkRequestBudgetPermission,
   upload.fields([
     { name: "invoice", maxCount: 1 },
     { name: "voucher", maxCount: 1 },

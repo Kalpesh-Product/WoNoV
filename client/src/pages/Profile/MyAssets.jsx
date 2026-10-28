@@ -33,6 +33,7 @@ const MyAssets = ({ pageTitle }) => {
     { field: "category", headerName: "Category" },
     { field: "subCategory", headerName: "Sub Category" },
     { field: "brand", headerName: "Brand" },
+    { field: "assignmentRequestedAt", headerName: "Assignment Request Date", hide: true, filter: false },
     {
       field: "status",
       headerName: "Status",
@@ -58,6 +59,7 @@ const MyAssets = ({ pageTitle }) => {
           category: category,
           subCategory,
           brand: assets?.brand,
+          assignmentRequestedAt: item.createdAt,
         };
       });
 
@@ -73,6 +75,8 @@ const MyAssets = ({ pageTitle }) => {
           <AgTable
             data={tableData}
             columns={assetsColumns}
+            dateColumn="assignmentRequestedAt"
+            showDateControls
             paginationPageSize={10}
             search
           />

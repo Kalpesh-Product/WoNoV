@@ -1413,7 +1413,7 @@ const MeetingDashboard = () => {
     {
       layout: allowedTables.length,
       widgets: allowedTables.map((table) => (
-        <MuiTable
+        <MuiTable showTableControls={false}
           key={table.key}
           Title={table.title}
           rows={table.rows}

@@ -212,14 +212,14 @@ const DepartmentTicketSettings = () => {
               : "Department Wise Tickets Issues"}
             hideTitle={!selectedDepartment}
             search={Boolean(selectedDepartment)}
-            headerActions={selectedDepartment ? (
-              <>
+            titleRightContent={selectedDepartment ? (
                 <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
                   <span>Total Issues :</span>
                   <span>{totalIssues}</span>
                 </div>
-                <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
-              </>
+            ) : undefined}
+            headerActions={selectedDepartment ? (
+              <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
             ) : undefined}
             exportData={Boolean(selectedDepartment)}
             fillAvailableHeight={Boolean(selectedDepartment)}

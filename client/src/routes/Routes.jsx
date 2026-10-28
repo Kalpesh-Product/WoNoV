@@ -5697,6 +5697,21 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
+                        path: "pending-approvals",
+                        element: <KraKpaPendingApprovals />,
+                      },
+                      {
+                        path: "departments",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA]}
+                            element={<PerformanceAssignKraKpa
+                              memberDestination="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard"
+                            />}
+                          />
+                        ),
+                      },
+                      {
                         path: "individual",
                         children: [
                           {
@@ -5795,20 +5810,26 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
                                       PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
@@ -5931,20 +5952,26 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
                                       PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
@@ -6014,20 +6041,26 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
                                       PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },

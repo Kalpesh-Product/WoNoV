@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Match the original Ticket Reports export (px-4 py-2); leave icon controls compact. */
+.table-toolbar-actions [data-ui-action="text"],
+button[data-export-action="true"] {
+  padding: 8px 16px !important;
+}
+
+/* Keep the date centred when everything fits; stack whole control groups when
+   a crowded action group would otherwise collide with it. */
+.table-toolbar:not([data-stacked="true"]) {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+}
+.table-toolbar:not([data-stacked="true"]) > * {
+  grid-row: 1;
+}
+.table-toolbar:not([data-stacked="true"]) .table-toolbar-search {
+  grid-column: 1;
+}
+.table-toolbar:not([data-stacked="true"]) .table-toolbar-dates {
+  grid-column: 2;
+}
+.table-toolbar:not([data-stacked="true"]) .table-toolbar-actions {
+  grid-column: 3;
+}
+.table-toolbar[data-stacked="true"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.table-toolbar[data-stacked="true"] > * {
+  grid-column: 1 / -1;
+}
+.table-toolbar[data-stacked="true"] .table-toolbar-actions {
+  flex-wrap: wrap;
+}
+
 @layer utilities {
 
   body {

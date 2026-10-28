@@ -397,7 +397,7 @@ const SopUpload = () => {
             key={data?.length || 0}
             columns={columns}
             data={tableData}
-            buttonTitle={"Add SOP"}
+            buttonTitle={"Upload SOP"}
             handleSubmit={handleAddSop}
             search
             tableTitle="SOP documents"
@@ -412,7 +412,7 @@ const SopUpload = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={modalType === "edit" ? "Edit SOP" : "Add SOP"}
+        title={modalType === "edit" ? "Edit SOP" : "Upload SOP"}
       >
         {modalType === "add" && (
           <div>

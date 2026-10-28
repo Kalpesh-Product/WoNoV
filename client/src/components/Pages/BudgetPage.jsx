@@ -123,7 +123,6 @@ const BudgetPage = () => {
   };
 
   const requestBudgetPermission =
-    //requestBudgetPermissionByDepartment[department?._id];
      requestBudgetPermissionByDepartment[department?._id] ||
     (department?.name?.toLowerCase() === "cafe"
       ? PERMISSIONS.CAFE_REQUEST_BUDGET_BUTTON.value
@@ -132,7 +131,7 @@ const BudgetPage = () => {
       : undefined);
   const canRequestBudget = requestBudgetPermission
     ? hasPermission(requestBudgetPermission)
-    : true;
+    : false;
 
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset, watch } = useForm({
@@ -353,6 +352,10 @@ const BudgetPage = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   const onSubmit = (data) => {
+    if (!canRequestBudget) {
+      toast.error("You do not have permission to request budget");
+      return;
+    }
     requestBudget(data);
     setOpenModal(false);
     reset();

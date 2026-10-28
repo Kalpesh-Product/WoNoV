@@ -883,7 +883,10 @@ const ListOfAssets = () => {
         data={tableData}
         columns={assetColumns}
         handleSubmit={isAssetCardView ? undefined : handleAddAsset}
-        exportData={!isAssetCardView}
+        exportData={!isAssetCardView || [
+          "total-assets", "assets-owned", "assets-rental",
+          "assets-under-maintenance", "assets-damaged", "assets-extra",
+        ].includes(normalizedAssetCard)}
         exportButtonTitle="Export"
         taskExportDateTimeFormatting
         serverPagination

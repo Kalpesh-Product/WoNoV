@@ -453,6 +453,7 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
               teamDailyKra: item.teamDailyKra,
             }))}
             columns={visibleDepartmentColumns}
+            search={false}
             tableTitle={`DEPARTMENT-WISE PENDING KRA - ${formatReadableDate(selectedDate)}`}
             hideFilter
           />

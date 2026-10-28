@@ -3,13 +3,11 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import AgTable from "../../../../components/AgTable";
 import dayjs from "dayjs";
-import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday } from "react-icons/md";
+import TableDateFilter from "../../../../components/TableDateFilter";
 import { IoFilter } from "react-icons/io5";
 import {
   Box,
   Chip,
-  Popover,
   Skeleton,
   TextField,
   Tooltip,
@@ -76,7 +74,6 @@ const HrLeaves = () => {
   const [viewLeavesOpen, setViewLeavesOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [leaveCounts, setLeaveCounts] = useState({ privileged: "", sick: "" });
-  const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [appliedFilters, setAppliedFilters] = useState(createDefaultFilters);
   const [dateRange, setDateRange] = useState(() => [
     {
@@ -954,41 +951,6 @@ const HrLeaves = () => {
               LEAVES
             </span>
           </div>
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <div className="rounded-md border border-primary px-4 py-2 text-sm text-primary">
-              {rangeLabel}
-            </div>
-            <button
-              type="button"
-              onClick={(event) => setCalendarAnchor(event.currentTarget)}
-              className="rounded-md bg-primary p-2.5 text-white"
-              aria-label="Select leave date range"
-            >
-              <MdCalendarToday size={19} />
-            </button>
-            <Popover
-              open={Boolean(calendarAnchor)}
-              anchorEl={calendarAnchor}
-              onClose={() => setCalendarAnchor(null)}
-              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-              transformOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-              <DateRangePicker
-                ranges={dateRange}
-                onChange={(item) => setDateRange([item.selection])}
-                moveRangeOnFirstSelection={false}
-                direction="vertical"
-              />
-            </Popover>
-            <button
-              type="button"
-              onClick={() => setFilterOpen(true)}
-              className="rounded-full border border-borderGray p-2.5 text-primary hover:bg-gray-100"
-              aria-label="Open advanced leave filters"
-            >
-              <IoFilter size={19} />
-            </button>
-          </div>
         </div>
 
         {activeFilterChips.length > 0 && (
@@ -1017,6 +979,23 @@ const HrLeaves = () => {
 
         {!isLoading ? (
           <MemoizedAgTable
+            showDateControls={false}
+            toolbarDateControls={
+              <TableDateFilter
+                fields={[{ field: "fromDate", label: "Leave date" }]}
+                field="fromDate"
+                range={dateRange[0]}
+                onChange={(range) => { if (range) setDateRange([range]); }}
+              />
+            }
+            advancedFilterAction={<button
+              type="button"
+              onClick={() => setFilterOpen(true)}
+              className="rounded-full border border-borderGray p-2.5 text-primary hover:bg-gray-100"
+              aria-label="Open advanced leave filters"
+            >
+              <IoFilter size={19} />
+            </button>}
             data={displayTableData}
             columns={columns}
             search={true}

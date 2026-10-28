@@ -133,6 +133,8 @@ const ManageTicketsHome = () => {
                 ]}
                 columns={departmentColumns}
                 tableTitle={"DEPARTMENT WISE TICKETS"}
+                showDateControls={false}
+                search={false}
                 hideTitle
                 hideFilter
               />

@@ -405,7 +405,7 @@ const PolicyUpload = () => {
             dateColumn={"date"}
             columns={columns}
             data={tableData}
-            buttonTitle={"Add Policy"}
+            buttonTitle={"Upload Policy"}
             handleSubmit={handleAddPolicy}
             search
             tableTitle="Policy documents"
@@ -420,7 +420,7 @@ const PolicyUpload = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={modalType === "edit" ? "Edit Policy" : "Add Policy"}
+        title={modalType === "edit" ? "Edit Policy" : "Upload Policy"}
       >
         {modalType === "add" && (
           <div>

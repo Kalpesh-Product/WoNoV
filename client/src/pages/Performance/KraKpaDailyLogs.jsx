@@ -10,6 +10,7 @@ import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import AgTable from "../../components/AgTable";
+import WidgetSection from "../../components/WidgetSection";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
@@ -111,9 +112,6 @@ const KraKpaDailyLogs = () => {
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment,
   );
-  const selectedDepartmentName = useSelector(
-    (state) => state.performance.selectedDepartmentName,
-  );
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
@@ -129,18 +127,6 @@ const KraKpaDailyLogs = () => {
       selectedDepartment ||
       auth?.user?.departments?.[0]?._id;
   const employeeId = member?.memberId || auth?.user?._id;
-  const employeeName =
-    member?.memberName ||
-    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
-      .filter(Boolean)
-      .join(" ");
-  const departmentName = isIndividualRoute
-    ? auth?.user?.departments?.[0]?.name
-    : location.state?.selectedDepartmentName ||
-      selectedDepartmentName ||
-      auth?.user?.departments?.find(
-        (department) => String(department?._id) === String(departmentId),
-      )?.name;
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const canManageOthers = roleTitles.some(
@@ -490,6 +476,13 @@ const KraKpaDailyLogs = () => {
       ),
     },
     {
+      headerName: "Delay",
+      field: "delayedDays",
+      width: 120,
+      headerTooltip: "Delayed working days (excluding Sundays and company holidays)",
+      valueGetter: ({ data }) => data?.delayedDays ?? 0,
+    },
+    {
       headerName: "Reason for Carry Forward",
       field: "reasonForCarryForward",
       minWidth: 260,
@@ -517,9 +510,22 @@ const KraKpaDailyLogs = () => {
     },
   ];
 
-  const actionsColumnWidth = 180 +
-    (canEditDailyLog ? 40 : 0) +
-    (canManageOthers && !isOwnPage ? 40 : 0);
+  const actionsColumnWidth = Math.max(
+    92,
+    ...dueRows.map((record) => {
+      const controlWidths = [
+        32,
+        canCompleteRecord(record) ? 110 : 0,
+        canEditDailyLog ? 32 : 0,
+        canManageOthers && !isOwnPage ? 32 : 0,
+      ].filter(Boolean);
+      return (
+        24 +
+        controlWidths.reduce((total, width) => total + width, 0) +
+        Math.max(0, controlWidths.length - 1) * 8
+      );
+    }),
+  );
   const dueColumns = [
     ...baseColumns,
     {
@@ -565,73 +571,8 @@ const KraKpaDailyLogs = () => {
   }];
 
   return (
-    <PageFrame>
+    <div className="p-4">
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}{employeeName}
-        </h1>
-        {canAddDailyLog && (
-          <PrimaryButton
-            type="button"
-            title="Add Daily Log"
-            handleSubmit={openCreate}
-          />
-        )}
-      </div>
-      <LocalizationProvider dateAdapter={AdapterDayjs}>
-        <div className="mb-1 flex items-center justify-center gap-3">
-          <button
-            type="button"
-            aria-label="Previous day"
-            onClick={() => setSelectedDate((date) => date.subtract(1, "day"))}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-          >
-            <MdChevronLeft size={22} />
-          </button>
-          <DatePicker
-            format="ddd, MMMM D, YYYY"
-            value={selectedDate}
-            onChange={(date) => {
-              if (date?.isValid()) setSelectedDate(date.startOf("day"));
-            }}
-            slotProps={{
-              textField: {
-                size: "small",
-                sx: {
-                  width: 245,
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: "6px",
-                    height: 38,
-                  },
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#1e3d73",
-                  },
-                  "& .MuiInputBase-input": {
-                    color: "#111827",
-                    fontSize: "0.875rem",
-                  },
-                  "& .MuiSvgIcon-root": { color: "#1e3d73" },
-                },
-              },
-            }}
-          />
-          <button
-            type="button"
-            aria-label="Next day"
-            onClick={() => setSelectedDate((date) => date.add(1, "day"))}
-            className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90"
-          >
-            <MdChevronRight size={22} />
-          </button>
-        </div>
-      </LocalizationProvider>
 
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
@@ -639,48 +580,93 @@ const KraKpaDailyLogs = () => {
         </div>
       ) : (
         <>
+          <PageFrame>
+          <WidgetSection padding>
           <AgTable
-            data={dueRows}
-            columns={dueColumns}
-            hideTitle
-            enableCheckbox
-            search
-            searchRowActions={
+            titleRightContent={
               <div className="flex flex-wrap items-center justify-end gap-3">
-                <Chip
-                  label={`Total: ${summaryCounts.total}`}
-                  sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }}
-                />
-                <Chip
-                  label={`Due: ${summaryCounts.due}`}
-                  sx={{ backgroundColor: "#fef3c7", color: "#b45309" }}
-                />
-                <Chip
-                  label={`Carry Forward: ${summaryCounts.carryForward}`}
-                  sx={{ backgroundColor: "#ede9fe", color: "#6d28d9" }}
-                />
+                <Chip label={`Total: ${summaryCounts.total}`} sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }} />
+                <Chip label={`Due: ${summaryCounts.due}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
+                <Chip label={`Carry Forward: ${summaryCounts.carryForward}`} sx={{ backgroundColor: "#ede9fe", color: "#6d28d9" }} />
               </div>
             }
-            searchRowActionsPosition="right"
+            headerActions={
+              canAddDailyLog && <PrimaryButton type="button" title="Add Daily Log" handleSubmit={openCreate} />
+            }
+            toolbarDateControls={
+              <>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <div className="mb-1 flex items-center justify-center gap-3">
+                        <button type="button" aria-label="Previous day" onClick={() => setSelectedDate(date => date.subtract(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronLeft size={22} />
+                        </button>
+                        <DatePicker format="ddd, MMMM D, YYYY" value={selectedDate} onChange={date => {
+                      if (date?.isValid()) setSelectedDate(date.startOf("day"));
+                    }} slotProps={{
+                      textField: {
+                        size: "small",
+                        sx: {
+                          width: 245,
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "6px",
+                            height: 38
+                          },
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                            borderColor: "#1e3d73"
+                          },
+                          "& .MuiInputBase-input": {
+                            color: "#111827",
+                            fontSize: "0.875rem"
+                          },
+                          "& .MuiSvgIcon-root": {
+                            color: "#1e3d73"
+                          }
+                        }
+                      }
+                    }} />
+                        <button type="button" aria-label="Next day" onClick={() => setSelectedDate(date => date.add(1, "day"))} className="flex h-[38px] w-[38px] items-center justify-center rounded-md bg-primary text-white transition-opacity hover:opacity-90">
+                          <MdChevronRight size={22} />
+                        </button>
+                      </div>
+                    </LocalizationProvider>
+              </>
+            }
+            data={dueRows}
+            columns={dueColumns}
+            tableTitle="PENDING DAILY LOGS"
+            enableCheckbox
+            search
             exportData
-            hideFilter
+            hideFilter={false}
             processExportCell={({ value }) => value ?? ""}
             tableHeight={Math.max(300, Math.min(650, dueRows.length * 58 + 90))}
           />
+          </WidgetSection>
+          </PageFrame>
           <div className="mt-6">
+            <PageFrame>
+            <WidgetSection padding>
             <AgTable
               data={completedRows}
               columns={completedColumns}
               tableTitle="COMPLETED DAILY LOGS"
               search
               exportData
-              hideFilter
+              hideFilter={false}
               processExportCell={({ value }) => value ?? ""}
               tableHeight={Math.max(
                 300,
                 Math.min(650, completedRows.length * 58 + 90),
               )}
             />
+            </WidgetSection>
+            </PageFrame>
           </div>
         </>
       )}
@@ -956,7 +942,7 @@ const KraKpaDailyLogs = () => {
           </div>
         </form>
       </MuiModal>
-    </PageFrame>
+    </div>
   );
 };
 

@@ -231,7 +231,7 @@ const PerformanceDepartmentKPA = () => {
                 ) : (
                     <AgTable
                         tableHeight={300}
-                        hideFilter
+                        hideFilter={false}
                         columns={tasksColumns}
                         data={filteredTasks.map((item, index) => ({
                             id: index + 1,

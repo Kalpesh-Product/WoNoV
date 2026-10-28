@@ -579,13 +579,17 @@ const updateVendor = async (req, res, next) => {
 };
 
 async function fetchVendors(req, res) {
+  const departmentId = req.params.departmentId;
+  if (!mongoose.isValidObjectId(departmentId)) {
+    return res.status(400).json({ message: "Invalid department ID" });
+  }
   const payload = await fetchVendorReportService({
-    departmentId: req.body?.departmentId,
+    departmentId,
     departments: req.body?.departments || req?.departments || [],
     roles: req?.roles || [],
     company: req?.company || null,
     user: req?.user || null,
-    query: req.body?.departmentId ? { department: req.body?.departmentId } : {},
+    query: { ...req.query, departmentId },
   });
 
   return res.status(200).json(payload);

@@ -344,15 +344,9 @@ const DirectorsCompany = () => {
   return (
     <div className="p-4 space-y-4">
       <PageFrame>
-        <div className="flex flex-wrap justify-end gap-3 pb-4">
-          <PrimaryButton
-            title="Add New Director KYC"
-            handleSubmit={() => openCreateModal("directorKyc")}
-            className="!w-auto"
-            padding="px-4 py-2"
-          />
-        </div>
         <AgTable
+          buttonTitle="Add New Director KYC"
+          handleClick={() => openCreateModal("directorKyc")}
           columns={columns}
           data={tableData}
           tableTitle=" DIRECTORS & COMPANY KYC"

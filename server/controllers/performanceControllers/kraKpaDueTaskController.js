@@ -6,6 +6,7 @@ const DailyLog = require("../../models/performances/KraKpaDailyLog");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
+const { buildLifecycleHistoryEntry } = require("../../utils/kraKpaLifecycleHistory");
 const { validateTaskSchedule, isOverdueSchedule } = require("../../utils/kraKpaTaskSchedule");
 const {
   calculateDelayedWorkingDays,
@@ -316,11 +317,12 @@ const updateDueTask = async (req, res, next) => {
       validation.value.deadline.toISOString().slice(0, 10) !==
         record.deadline.toISOString().slice(0, 10)
     ) {
-      const canEditDeadline = access.isHr || access.isTopManagement ||
+      const canEditDeadline = String(record.employee) === String(req.user) ||
+        access.isHr || access.isTopManagement ||
         await isDepartmentManager(req, record.department, access);
       if (!canEditDeadline) {
         return res.status(403).json({
-          message: "Only the department manager, HR or Top Management can edit the Due Task deadline",
+          message: "Only the assigned employee, department manager, HR or Top Management can edit the Due Task deadline",
         });
       }
     }
@@ -613,6 +615,11 @@ const closeDueTask = async (req, res, next) => {
       holidays,
     );
     record.status = "Closed";
+    if (!Array.isArray(record.editHistory)) record.editHistory = [];
+    record.editHistory.push(buildLifecycleHistoryEntry({
+      user: req.user, at: closureDate, field: "status", label: "Task Status",
+      oldValue: "Pending", newValue: "Closed",
+    }));
     record.closureDate = closureDate;
     record.delayedDays = delayedDays;
     record.updatedBy = req.user;
