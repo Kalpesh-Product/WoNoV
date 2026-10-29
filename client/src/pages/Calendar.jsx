@@ -21,12 +21,53 @@ import humanDate from "../utils/humanDateForamt";
 import humanTime from "../utils/humanTime";
 import useAuth from "../hooks/useAuth";
 
+const MAIN_FILTERS = ["holiday", "event", "meeting"];
+const MEETING_STATUS_FILTERS = [
+  "upcoming",
+  "ongoing",
+  "completed",
+  "extended",
+  "cancelled",
+];
+const MEETING_TYPE_FILTERS = ["internal", "external"];
+const ALL_FILTERS = [
+  ...MAIN_FILTERS,
+  ...MEETING_STATUS_FILTERS,
+  ...MEETING_TYPE_FILTERS,
+];
+const FILTER_COLORS = {
+  holiday: "#4caf50",
+  event: "#ff9800",
+  meeting: "#2196f3",
+  upcoming: "#3BACFF",
+  ongoing: "#14B8A6",
+  completed: "#22C55E",
+  extended: "#6366F1",
+  cancelled: "#EF4444",
+  internal: "#8B5CF6",
+  external: "#F59E0B",
+};
+
+const getMonthRange = (value = dayjs()) => ({
+  startDate: value.startOf("month"),
+  endDate: value.endOf("month"),
+});
+
+const normalize = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const getMeetingStatus = (meeting) => {
+  const status = normalize(meeting?.meetingStatus);
+  return status === "canceled" ? "cancelled" : status;
+};
+
 const Calender = () => {
   const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [filteredEvents, setFilteredEvents] = useState([]);
   const [headerBackground, setHeaderBackground] = useState("");
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -34,11 +75,31 @@ const Calender = () => {
     description: "",
   });
   const [eventFilter, setEventFilter] = useState([
-    "holiday",
-    "event",
-    "meeting",
+    ...ALL_FILTERS,
   ]);
+  const [calendarRange, setCalendarRange] = useState(() => getMonthRange());
   const axios = useAxiosPrivate();
+
+  const roleTitles = useMemo(
+    () =>
+      (auth?.user?.role || [])
+        .map((role) => normalize(role?.roleTitle || role))
+        .filter(Boolean),
+    [auth?.user?.role],
+  );
+  const roleIds = useMemo(
+    () =>
+      (auth?.user?.role || [])
+        .map((role) => String(role?.roleID || "").toUpperCase())
+        .filter(Boolean),
+    [auth?.user?.role],
+  );
+  const isEmployee = useMemo(
+    () =>
+      roleTitles.some((role) => role.includes("employee")) ||
+      roleIds.some((roleId) => roleId.includes("EMPLOYEE")),
+    [roleIds, roleTitles],
+  );
 
   //---------------------------------API------------------------------------------//
 
@@ -119,45 +180,46 @@ const Calender = () => {
   // const transformedMeetings = useMemo(
   //   () =>
   //     ownMeetings.map((meeting) => ({
-  const currentUserId = auth.user?._id?.toString();
-
   const visibleMeetings = useMemo(
     () =>
       meetings.filter((meeting) => {
-        const isVisibleStatus = ["upcoming", "completed"].includes(
-          meeting?.meetingStatus?.toLowerCase?.(),
+        const isVisibleStatus = MEETING_STATUS_FILTERS.includes(
+          getMeetingStatus(meeting),
         );
-        const isOwnBooking =
-          meeting?.isCurrentUserBooked === true ||
-          meeting?.bookedById?.toString() === currentUserId;
+        const isCurrentUserInvolved =
+          meeting?.isCurrentUserInvolved === true;
 
-        return isVisibleStatus && isOwnBooking;
+        return isVisibleStatus && isCurrentUserInvolved;
       }),
-    [currentUserId, meetings],
+    [meetings],
   );
 
   const transformedMeetings = useMemo(
     () =>
-      visibleMeetings.map((meeting) => ({
-        id: meeting._id,
-        title: meeting.subject || "Meeting",
-        start: meeting.startTime,
-        end: meeting.endTime,
-        allDay: false,
-        backgroundColor: "#2196f3", // blue for meetings
-        extendedProps: {
-          type: "meeting", // so it can be filtered
-          agenda: meeting.agenda,
-          roomName: meeting.roomName,
-          bookedBy: meeting.bookedBy,
-          receptionist: meeting.receptionist,
-          client: meeting.client,
-          meetingType: meeting.meetingType,
-          duration: meeting.duration,
-          startTime: meeting.startTime,
-          endTime: meeting.endTime,
-          subject: meeting.subject,
-          department: meeting.department,
+      visibleMeetings.map((meeting) => {
+        const status = getMeetingStatus(meeting);
+
+        return {
+          id: meeting._id,
+          title: meeting.subject || "Meeting",
+          start: meeting.startTime,
+          end: meeting.endTime,
+          allDay: false,
+          backgroundColor: FILTER_COLORS[status],
+          borderColor: FILTER_COLORS[status],
+          extendedProps: {
+            type: "meeting", // so it can be filtered
+            agenda: meeting.agenda,
+            roomName: meeting.roomName,
+            bookedBy: meeting.bookedBy,
+            receptionist: meeting.receptionist,
+            client: meeting.client,
+            meetingType: meeting.meetingType,
+            duration: meeting.duration,
+            startTime: meeting.startTime,
+            endTime: meeting.endTime,
+            subject: meeting.subject,
+            department: meeting.department,
     //       participants: meeting.participants?.map(
     //         (p) => `${p.firstName} ${p.lastName}`
     //       ),
@@ -167,47 +229,82 @@ const Calender = () => {
     //     },
     //   })),
     // [ownMeetings]
-     participants: meeting.participants?.map((participant) =>
-            participant?.firstName
-              ? `${participant.firstName} ${participant.lastName || ""}`.trim()
-              : participant?.employeeName || participant?.name || "N/A",
-          ),
-          meetingStatus: meeting.meetingStatus,
-          housekeepingStatus: meeting.housekeepingStatus,
-          location: meeting.location,
-        },
-      })),
-    [visibleMeetings]
+            participants: meeting.participants?.map((participant) =>
+              participant?.firstName
+                ? `${participant.firstName} ${participant.lastName || ""}`.trim()
+                : participant?.employeeName || participant?.name || "N/A",
+            ),
+            meetingStatus: meeting.meetingStatus,
+            housekeepingStatus: meeting.housekeepingStatus,
+            location: meeting.location,
+          },
+        };
+      }),
+    [visibleMeetings],
   );
 
   const transformedEvents = useMemo(
     () =>
       events.map((event) => {
         const type = event?.extendedProps?.type?.toLowerCase?.() || "event";
-        const colorMap = {
-          holiday: "#4caf50",
-          event: "#ff9800",
-          meeting: "#2196f3",
-        };
-
         return {
           ...event,
-          backgroundColor: colorMap[type] || "#757575", // default gray if unknown
+          backgroundColor: FILTER_COLORS[type] || "#757575",
         };
       }),
-    [events]
+    [events],
   );
 
 
   //---------------------------------API------------------------------------------//
 
-   const allCombinedEvents = [...transformedEvents, ...transformedMeetings];
-  const visibleEvents =
-    eventFilter.length === 0
-      ? []
-      : allCombinedEvents.filter((event) =>
-          eventFilter.includes(event.extendedProps?.type?.toLowerCase())
+  const allCombinedEvents = useMemo(
+    () => [...transformedEvents, ...transformedMeetings],
+    [transformedEvents, transformedMeetings],
+  );
+  const filterCounts = useMemo(() => {
+    const counts = Object.fromEntries(ALL_FILTERS.map((key) => [key, 0]));
+    const monthEvents = allCombinedEvents.filter((event) => {
+      const eventStart = dayjs(event.start);
+      const eventEnd = event.end ? dayjs(event.end) : eventStart;
+      if (!eventStart.isValid() || !eventEnd.isValid()) return false;
+
+      return (
+        !eventEnd.isBefore(calendarRange.startDate) &&
+        !eventStart.isAfter(calendarRange.endDate)
+      );
+    });
+
+    monthEvents.forEach((event) => {
+      const type = normalize(event.extendedProps?.type);
+      if (type in counts) counts[type]++;
+
+      if (type === "meeting") {
+        const status = getMeetingStatus(event.extendedProps);
+        const meetingType = normalize(event.extendedProps?.meetingType);
+        if (status in counts) counts[status]++;
+        if (meetingType in counts) counts[meetingType]++;
+      }
+    });
+
+    return counts;
+  }, [allCombinedEvents, calendarRange]);
+
+  const visibleEvents = useMemo(
+    () =>
+      allCombinedEvents.filter((event) => {
+        const type = normalize(event.extendedProps?.type);
+        if (!eventFilter.includes(type)) return false;
+
+        if (type !== "meeting") return true;
+
+        return (
+          eventFilter.includes(getMeetingStatus(event.extendedProps)) &&
+          eventFilter.includes(normalize(event.extendedProps?.meetingType))
         );
+      }),
+    [allCombinedEvents, eventFilter],
+  );
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
@@ -229,15 +326,10 @@ const Calender = () => {
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
-    const type = event.extendedProps?.type.toLowerCase();
-
-    const colors = {
-      holiday: "#4caf50",
-      event: "#ff9800",
-      meeting: "#2196f3",
-    };
-
-    const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
+    const type = normalize(event.extendedProps?.type);
+    const colorKey =
+      type === "meeting" ? getMeetingStatus(event.extendedProps) : type;
+    const headerBackground = FILTER_COLORS[colorKey] || "";
 
     setSelectedEvent(event);
     setDrawerMode("view");
@@ -268,52 +360,168 @@ const Calender = () => {
                     Event Filters
                   </span>
                 </div>
-                <div className="flex justify-start text-content px-2">
-                  {!isEventsPending ? (
-                    <FormGroup column>
-                      {["holiday", "event", "meeting"].map((type) => {
-                        const colors = {
-                          holiday: "#4caf50",
-                          event: "#ff9800",
-                          meetings: "#2196f3",
-                        };
-                        return (
-                          <FormControlLabel
-                            key={type}
-                            control={
-                              <Checkbox
-                                sx={{
-                                  fontSize: "0.75rem",
-                                  transform: "scale(0.8)",
-                                  color: colors[type],
-                                  "&.Mui-checked": { color: colors[type] },
-                                }}
-                                checked={eventFilter.includes(type)}
-                                onChange={(e) => {
-                                  const selectedType = e.target.value;
-                                  setEventFilter((prevFilter) =>
-                                    e.target.checked
-                                      ? [...prevFilter, selectedType]
-                                      : prevFilter.filter(
-                                          (t) => t !== selectedType
+                <div className="text-content">
+                  {MAIN_FILTERS.map((type, sectionIndex) => (
+                    <div
+                      key={type}
+                      className={
+                        sectionIndex
+                          ? "border-t border-borderGray p-2"
+                          : "p-2"
+                      }
+                    >
+                      <div className="flex items-center justify-between pr-3">
+                        <FormControlLabel
+                          sx={{ marginRight: 0 }}
+                          control={
+                            <Checkbox
+                              size="small"
+                              checked={eventFilter.includes(type)}
+                              onChange={(event) =>
+                                setEventFilter((previous) =>
+                                  event.target.checked
+                                    ? [...previous, type]
+                                    : previous.filter((item) => item !== type),
+                                )
+                              }
+                              sx={{
+                                color: FILTER_COLORS[type],
+                                "&.Mui-checked": {
+                                  color: FILTER_COLORS[type],
+                                },
+                              }}
+                            />
+                          }
+                          label={
+                            <span className="text-sm capitalize">{type}</span>
+                          }
+                        />
+                        <span
+                          className="rounded-full px-2 py-1 text-xs font-semibold"
+                          style={{
+                            color: FILTER_COLORS[type],
+                            backgroundColor: `${FILTER_COLORS[type]}18`,
+                          }}
+                        >
+                          {filterCounts[type]}
+                        </span>
+                      </div>
+
+                      {type === "meeting" && (
+                        <div className="ml-6 mt-1 border-l-2 border-blue-100 pl-3">
+                          <div className="mb-1 text-xs font-medium text-gray-500">
+                            Filter by status
+                          </div>
+                          <FormGroup>
+                            {MEETING_STATUS_FILTERS.map((status) => (
+                              <div
+                                key={status}
+                                className="flex items-center justify-between pr-3"
+                              >
+                                <FormControlLabel
+                                  sx={{ marginRight: 0 }}
+                                  control={
+                                    <Checkbox
+                                      size="small"
+                                      checked={eventFilter.includes(status)}
+                                      onChange={(event) =>
+                                        setEventFilter((previous) =>
+                                          event.target.checked
+                                            ? [...previous, status]
+                                            : previous.filter(
+                                                (item) => item !== status,
+                                              ),
                                         )
-                                  );
-                                }}
-                                value={type}
-                              />
-                            }
-                            label={
-                              <span style={{ fontSize: "0.875rem" }}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
-                              </span>
-                            }
-                          />
-                        );
-                      })}
-                    </FormGroup>
-                  ) : (
-                    <CircularProgress color="#1E3D73" size={15} />
-                  )}
+                                      }
+                                      sx={{
+                                        color: FILTER_COLORS[status],
+                                        "&.Mui-checked": {
+                                          color: FILTER_COLORS[status],
+                                        },
+                                      }}
+                                    />
+                                  }
+                                  label={
+                                    <span className="text-sm capitalize">
+                                      {status}
+                                    </span>
+                                  }
+                                />
+                                <span
+                                  className="rounded-full px-2 py-1 text-xs font-semibold"
+                                  style={{
+                                    color: FILTER_COLORS[status],
+                                    backgroundColor: `${FILTER_COLORS[status]}18`,
+                                  }}
+                                >
+                                  {filterCounts[status]}
+                                </span>
+                              </div>
+                            ))}
+                          </FormGroup>
+
+                          {!isEmployee && (
+                            <div className="mt-2 border-t border-blue-100 pt-2">
+                              <div className="mb-1 text-xs font-medium text-gray-500">
+                                Filter by type
+                              </div>
+                              <FormGroup>
+                                {MEETING_TYPE_FILTERS.map((meetingType) => (
+                                  <div
+                                    key={meetingType}
+                                    className="flex items-center justify-between pr-3"
+                                  >
+                                    <FormControlLabel
+                                      sx={{ marginRight: 0 }}
+                                      control={
+                                        <Checkbox
+                                          size="small"
+                                          checked={eventFilter.includes(
+                                            meetingType,
+                                          )}
+                                          onChange={(event) =>
+                                            setEventFilter((previous) =>
+                                              event.target.checked
+                                                ? [...previous, meetingType]
+                                                : previous.filter(
+                                                    (item) =>
+                                                      item !== meetingType,
+                                                  ),
+                                            )
+                                          }
+                                          sx={{
+                                            color: FILTER_COLORS[meetingType],
+                                            "&.Mui-checked": {
+                                              color:
+                                                FILTER_COLORS[meetingType],
+                                            },
+                                          }}
+                                        />
+                                      }
+                                      label={
+                                        <span className="text-sm capitalize">
+                                          {meetingType}
+                                        </span>
+                                      }
+                                    />
+                                    <span
+                                      className="rounded-full px-2 py-1 text-xs font-semibold"
+                                      style={{
+                                        color: FILTER_COLORS[meetingType],
+                                        backgroundColor: `${FILTER_COLORS[meetingType]}18`,
+                                      }}
+                                    >
+                                      {filterCounts[meetingType]}
+                                    </span>
+                                  </div>
+                                ))}
+                              </FormGroup>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -325,11 +533,11 @@ const Calender = () => {
                 <div className="px-2">
                   {todaysEvents.length > 0 ? (
                     todaysEvents.map((event, index) => {
-                      const colors = {
-                        holiday: "#4caf50",
-                        event: "#ff9800",
-                        meeting: "#2196f3",
-                      };
+                      const type = normalize(event.extendedProps.type);
+                      const colorKey =
+                        type === "meeting"
+                          ? getMeetingStatus(event.extendedProps)
+                          : type;
                       return (
                         <div
                           key={index}
@@ -338,7 +546,7 @@ const Calender = () => {
                           <div
                             className="w-3 h-3 rounded-full mr-2"
                             style={{
-                              backgroundColor: colors[event.extendedProps.type],
+                              backgroundColor: FILTER_COLORS[colorKey],
                             }}
                           ></div>
                           <div className="flex flex-col">
@@ -377,6 +585,11 @@ const Calender = () => {
                 contentHeight={520}
                 plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
+                datesSet={(dateInfo) =>
+                  setCalendarRange(
+                    getMonthRange(dayjs(dateInfo.view.calendar.getDate())),
+                  )
+                }
                 events={visibleEvents}
               />
             </div>

@@ -125,7 +125,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   const location = useLocation();
   const department = usePageDepartment();
   const isTechDepartment = auth?.user?.departments?.some(
-    (dept) => dept._id === "6798ba9de469e809084e2494",
+    (dept) => dept?.name?.trim().toLowerCase() === "tech",
   );
   const departmentNames =
     auth?.user?.departments?.map((dept) => dept?.name?.trim()) || [];
@@ -317,7 +317,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           "external-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
-          "false",
+          isTechDepartment ? "include-completed" : "active-only",
           pagination.page,
           pagination.limit,
           debouncedMeetingSearch,
@@ -339,7 +339,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               startDate: meetingFilters.startDate,
               endDate: meetingFilters.endDate,
               type: "External",
-              completed: "false",
+              completed: isTechDepartment ? "true" : "false",
               page: pagination.page,
               limit: pagination.limit,
               search: debouncedMeetingSearch || undefined,
@@ -976,21 +976,26 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           },
         ]
       : []),
-    {
-      field: "meetingStatus",
-      headerName: "Meeting Status",
-      sort: "desc",
-      cellRenderer: (params) => (
-        <Chip
-          label={params.value || ""}
-          sx={{
-            backgroundColor: statusColors[params.value]?.bg || "#F5F5F5",
-            color: statusColors[params.value]?.text || "#000",
-            fontWeight: "bold",
-          }}
-        />
-      ),
-    },
+    ...(financeView || isTechDepartment
+      ? [
+          {
+            field: "meetingStatus",
+            headerName: financeView ? "Meeting Status" : "Status",
+            sort: "desc",
+            cellRenderer: (params) => (
+              <Chip
+                label={params.value || ""}
+                sx={{
+                  backgroundColor:
+                    statusColors[params.value]?.bg || "#F5F5F5",
+                  color: statusColors[params.value]?.text || "#000",
+                  fontWeight: "bold",
+                }}
+              />
+            ),
+          },
+        ]
+      : []),
     {
       field: "housekeepingStatus",
       headerName: "Housekeeping Status",

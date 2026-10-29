@@ -273,6 +273,7 @@ const PendingApprovalsBudget = () => {
                 : "Approve All"
               : undefined
           }
+          batchButtonPosition="aboveFilter"
           handleBatchAction={(selectedRows) => {
             if (!canUseBulkBudgetActions || isBulkApprovePending) return;
             approveSelectedRequests(selectedRows);

@@ -28,12 +28,42 @@ const getMonthRange = (value = dayjs()) => ({
   startDate: value.startOf("month").toDate(),
   endDate: value.endOf("month").toDate(),
 });
+
+const FILTER_COLORS = {
+  upcoming: "#3BACFF",
+  ongoing: "#14B8A6",
+  completed: "#22C55E",
+  extended: "#6366F1",
+  cancelled: "#EF4444",
+  internal: "#8B5CF6",
+  external: "#F59E0B",
+};
+
+const STATUS_FILTERS = [
+  "upcoming",
+  "ongoing",
+  "completed",
+  "extended",
+  "cancelled",
+];
+const TYPE_FILTERS = ["internal", "external"];
+const ALL_FILTERS = [...STATUS_FILTERS, ...TYPE_FILTERS];
+
+const normalize = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase();
+
+const getMeetingStatus = (meeting) => {
+  const status = normalize(meeting.meetingStatus);
+  return status === "canceled" ? "cancelled" : status;
+};
+
 const Calender = () => {
   const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [filteredEvents, setFilteredEvents] = useState([]);
   const [headerBackground, setHeaderBackground] = useState("");
   const axios = useAxiosPrivate();
   const [newEvent, setNewEvent] = useState({
@@ -41,10 +71,9 @@ const Calender = () => {
     start: "",
     description: "",
   });
-  const [eventFilter, setEventFilter] = useState([
-    "upcoming",
-    "completed", // ⬅ change "Completed" to "completed"
-  ]);
+
+  const [eventFilter, setEventFilter] = useState(ALL_FILTERS);
+
   const [calendarRange, setCalendarRange] = useState(() => getMonthRange());
   const calendarFilters = useMemo(
     () => ({
@@ -54,7 +83,11 @@ const Calender = () => {
     [calendarRange],
   );
 
-  const { data: meetings = [], isLoading: isMeetingsLoading } = useQuery({
+  const {
+    data: meetings = [],
+    isLoading: isMeetingsLoading,
+    isPlaceholderData,
+  } = useQuery({
     queryKey: [
       "meetings-calendar",
       calendarFilters.startDate,
@@ -66,6 +99,7 @@ const Calender = () => {
         const respone = await axios.get("/api/meetings/get-meetings", {
           params: {
             ...calendarFilters,
+            calendar: "true",
             includeTotal: "true",
           },
         });
@@ -99,12 +133,12 @@ const Calender = () => {
   //       };
   //     });
 
- const roleTitles = useMemo(
+  const roleTitles = useMemo(
     () =>
       (auth?.user?.role || [])
         .map((role) => role?.roleTitle?.toLowerCase?.())
         .filter(Boolean),
-    [auth?.user?.role]
+    [auth?.user?.role],
   );
 
   const roleIds = useMemo(
@@ -112,14 +146,14 @@ const Calender = () => {
       (auth?.user?.role || [])
         .map((role) => role?.roleID?.toUpperCase?.())
         .filter(Boolean),
-    [auth?.user?.role]
+    [auth?.user?.role],
   );
 
   const isFinanceAdmin = useMemo(
     () =>
       roleIds.includes("ROLE_FINANCE_ADMIN") ||
       roleTitles.some((role) => role.includes("finance admin")),
-    [roleIds, roleTitles]
+    [roleIds, roleTitles],
   );
 
   const isPrivilegedAdmin = useMemo(
@@ -128,84 +162,105 @@ const Calender = () => {
         (role) =>
           role === "super admin" ||
           role === "master admin" ||
-          role.includes("admin")
+          role.includes("admin"),
       ) && !isFinanceAdmin,
-    [roleTitles, isFinanceAdmin]
+    [roleTitles, isFinanceAdmin],
   );
 
   const isFinanceManager = useMemo(
     () =>
       roleTitles.some(
-        (role) => role.includes("finance") && role.includes("manager")
+        (role) => role.includes("finance") && role.includes("manager"),
       ),
-    [roleTitles]
+    [roleTitles],
   );
 
   const isFinanceEmployee = useMemo(
     () =>
       roleIds.includes("ROLE_FINANCE_EMPLOYEE") ||
       roleTitles.some(
-        (role) => role.includes("finance") && role.includes("employee")
+        (role) => role.includes("finance") && role.includes("employee"),
       ),
-    [roleTitles, roleIds]
+    [roleTitles, roleIds],
   );
 
   const isManager = useMemo(
     () => roleTitles.some((role) => role.includes("manager")),
-    [roleTitles]
+    [roleTitles],
+  );
+
+  const isEmployee = useMemo(
+    () => roleTitles.some((role) => role.includes("employee")),
+    [roleTitles],
+  );
+
+  const isAdministrationDepartment = useMemo(
+    () =>
+      (auth?.user?.departments || []).some(
+        (department) =>
+          normalize(department?.name || department) === "administration",
+      ),
+    [auth?.user?.departments],
+  );
+
+  const showMeetingTypeFilters =
+    !isEmployee || isAdministrationDepartment;
+
+  const isTopManagement = useMemo(
+    () =>
+      roleTitles.some((role) => role.includes("top management")) ||
+      (auth?.user?.departments || []).some(
+        (department) =>
+          normalize(department?.name || department) === "top management",
+      ),
+    [roleTitles, auth?.user?.departments],
   );
 
   const userDepartmentIds = useMemo(
     () => (auth?.user?.departments || []).map((dept) => dept?._id?.toString()),
-    [auth?.user?.departments]
+    [auth?.user?.departments],
   );
 
-  const currentUserId = auth?.user?._id?.toString();
   const allowedMeetingStatuses = useMemo(
-    () => new Set(["upcoming", "completed"]),
+    () =>
+      new Set(["upcoming", "ongoing", "completed", "extended", "cancelled"]),
     [],
   );
 
   const visibleMeetings = useMemo(() => {
-    if (!Array.isArray(meetings)) return [];
+    if (isPlaceholderData || !Array.isArray(meetings)) return [];
 
     return meetings.filter((meeting) => {
-      const bookedById =
-        (typeof meeting?.bookedBy === "object"
-          ? meeting?.bookedBy?._id
-          : meeting?.bookedBy) || null;
-
       const meetingDepartmentIds = (meeting?.department || [])
         .map((dept) => dept?._id?.toString())
         .filter(Boolean);
-      const meetingStatus = meeting?.meetingStatus?.toLowerCase?.();
 
-      const isCurrentUserParticipant =
-        meeting?.isCurrentUserInvolved === true ||
-        bookedById?.toString() === currentUserId ||
-        meeting?.clientBookedBy?._id?.toString() === currentUserId ||
-        (meeting?.participants || []).some(
-          (participant) => participant?._id?.toString() === currentUserId
-        );  
+      const meetingStatus = getMeetingStatus(meeting);
+
+      const isCurrentUserInvolved =
+        meeting?.isCurrentUserInvolved === true;
 
       if (!allowedMeetingStatuses.has(meetingStatus)) {
         return false;
       }
 
+      if (isTopManagement) return true;
+
       if (isFinanceEmployee) {
-        //return bookedById?.toString() === currentUserId;
-        return isCurrentUserParticipant;
+        return isCurrentUserInvolved;
       }
 
       if (isFinanceAdmin || isFinanceManager || isManager) {
-        return meetingDepartmentIds.some((deptId) =>
-          userDepartmentIds.includes(deptId)
-        ) || isCurrentUserParticipant;
+        return (
+          meetingDepartmentIds.some((deptId) =>
+            userDepartmentIds.includes(deptId),
+          ) || isCurrentUserInvolved
+        );
       }
 
       if (isPrivilegedAdmin) return true;
 
-      return isCurrentUserParticipant;
+      return isCurrentUserInvolved;
     });
   }, [
     meetings,
@@ -214,46 +269,62 @@ const Calender = () => {
     isFinanceManager,
     isFinanceEmployee,
     isManager,
+    isTopManagement,
     userDepartmentIds,
-    currentUserId,
     allowedMeetingStatuses,
+    isPlaceholderData,
   ]);
 
+  const meetingCounts = useMemo(() => {
+    const counts = Object.fromEntries(ALL_FILTERS.map((key) => [key, 0]));
+
+    visibleMeetings.forEach((meeting) => {
+      const status = getMeetingStatus(meeting);
+      const type = normalize(meeting.meetingType);
+
+      if (status in counts) counts[status]++;
+      if (type in counts) counts[type]++;
+    });
+
+    return counts;
+  }, [visibleMeetings]);
+
   const transformedMeetings = useMemo(() => {
-    if (isMeetingsLoading) return [];
-
     return visibleMeetings.map((meeting) => {
-      const formattedStart = meeting.startTime.split("/").reverse().join("-");
-      const formattedEnd = meeting.endTime.split("/").reverse().join("-");
-
-      const status = meeting.meetingStatus.toLowerCase();
-      const colors = {
-        upcoming: "#3BACFF",
-        completed: "#5EFE1F",
-      };
+      const status = getMeetingStatus(meeting);
 
       return {
         id: meeting._id,
         title: meeting.subject,
-        start: formattedStart,
-        end: formattedEnd,
-        backgroundColor: colors[status] || undefined, // ✅ Add background color here
-        borderColor: colors[status] || undefined,
+        start: meeting.startTime.split("/").reverse().join("-"),
+        end: meeting.endTime.split("/").reverse().join("-"),
+        backgroundColor: FILTER_COLORS[status],
+        borderColor: FILTER_COLORS[status],
         extendedProps: { ...meeting },
       };
     });
-  }, [isMeetingsLoading, visibleMeetings]);
+  }, [visibleMeetings]);
 
-  useEffect(() => {
-    if (eventFilter.length === 0) {
-      setFilteredEvents([]); // Show nothing when no filters selected
-    } else {
-      const filtered = transformedMeetings.filter((event) =>
-        eventFilter.includes(event.extendedProps?.meetingStatus.toLowerCase())
-      );
-      setFilteredEvents(filtered);
+  const filteredEvents = useMemo(() => {
+    const selectedStatuses = eventFilter.filter((filter) =>
+      STATUS_FILTERS.includes(filter),
+    );
+
+    const selectedTypes = eventFilter.filter((filter) =>
+      TYPE_FILTERS.includes(filter),
+    );
+
+    if (!selectedStatuses.length || !selectedTypes.length) {
+      return [];
     }
-  }, [eventFilter, transformedMeetings]);
+
+    return transformedMeetings.filter((event) => {
+      const status = getMeetingStatus(event.extendedProps);
+      const type = normalize(event.extendedProps.meetingType);
+
+      return selectedStatuses.includes(status) && selectedTypes.includes(type);
+    });
+  }, [transformedMeetings, eventFilter]);
 
   const getTodaysEvents = () => {
     const today = dayjs().startOf("day");
@@ -271,14 +342,9 @@ const Calender = () => {
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
-    const type = event.extendedProps?.meetingStatus.toLowerCase();
-
-    const colors = {
-      upcoming: "#3BACFF",
-      completed: "#5EFE1F",
-    };
-
-    const headerBackground = colors[type] || ""; // Fallback to empty if type doesn't match
+    const status = getMeetingStatus(event.extendedProps);
+    const headerBackground = FILTER_COLORS[status] || "";
+    // Fallback to empty if type doesn't match
 
     setSelectedEvent(event);
     setDrawerMode("view");
@@ -309,50 +375,71 @@ const Calender = () => {
                       Meeting Filters
                     </span>
                   </div>
-                  <div className="flex justify-start text-content px-2">
-                    <FormGroup column>
-                      {["upcoming", "Completed"].map((type) => {
-                        const normalizedType = type.toLowerCase(); // ✅ always lowercase for logic
-                        const colors = {
-                          upcoming: "#3BACFF",
-                          completed: "#5EFE1F",
-                        };
-                        return (
-                          <FormControlLabel
-                            key={type}
-                            control={
-                              <Checkbox
-                                sx={{
-                                  fontSize: "0.75rem",
-                                  transform: "scale(0.8)",
-                                  color: colors[normalizedType],
-                                  "&.Mui-checked": {
-                                    color: colors[normalizedType],
-                                  },
-                                }}
-                                checked={eventFilter.includes(normalizedType)}
-                                onChange={(e) => {
-                                  const selectedType = normalizedType;
-                                  setEventFilter((prevFilter) =>
-                                    e.target.checked
-                                      ? [...prevFilter, selectedType]
-                                      : prevFilter.filter(
-                                          (t) => t !== selectedType
-                                        )
-                                  );
-                                }}
-                                value={normalizedType}
+                  <div className="text-content">
+                    {[
+                      { title: "Meeting Status", filters: STATUS_FILTERS },
+                      ...(showMeetingTypeFilters
+                        ? [{ title: "Meeting Type", filters: TYPE_FILTERS }]
+                        : []),
+                    ].map((section, sectionIndex) => (
+                      <div
+                        key={section.title}
+                        className={sectionIndex ? "border-t border-borderGray p-2" : "p-2"}
+                      >
+                        <div className="mb-1 text-xs font-semibold uppercase text-gray-500">
+                          {section.title}
+                        </div>
+                        <FormGroup>
+                          {section.filters.map((filter) => (
+                            <div
+                              key={filter}
+                              className="flex w-full items-center justify-between pr-3"
+                            >
+                              <FormControlLabel
+                                sx={{ marginRight: 0 }}
+                                control={
+                                  <Checkbox
+                                    size="small"
+                                    checked={eventFilter.includes(filter)}
+                                    onChange={(event) => {
+                                      setEventFilter((previous) =>
+                                        event.target.checked
+                                          ? [...previous, filter]
+                                          : previous.filter(
+                                              (item) => item !== filter,
+                                            ),
+                                      );
+                                    }}
+                                    sx={{
+                                      color: FILTER_COLORS[filter],
+                                      "&.Mui-checked": {
+                                        color: FILTER_COLORS[filter],
+                                      },
+                                    }}
+                                  />
+                                }
+                                label={
+                                  <span className="text-sm capitalize">
+                                    {filter}
+                                  </span>
+                                }
                               />
-                            }
-                            label={
-                              <span style={{ fontSize: "0.875rem" }}>
-                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              <span
+                                className="rounded-full px-2 py-1 text-xs font-semibold"
+                                style={{
+                                  color: FILTER_COLORS[filter],
+                                  backgroundColor: `${FILTER_COLORS[filter]}18`,
+                                }}
+                              >
+                                {isPlaceholderData
+                                  ? "…"
+                                  : meetingCounts[filter]}
                               </span>
-                            }
-                          />
-                        );
-                      })}
-                    </FormGroup>
+                            </div>
+                          ))}
+                        </FormGroup>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -399,7 +486,12 @@ const Calender = () => {
                   </div>
                 </div>
               </div>
-              <div className="w-full h-full overflow-y-auto">
+              <div className="relative w-full h-full overflow-y-auto">
+                {isPlaceholderData && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70">
+                    <CircularProgress size={36} />
+                  </div>
+                )}
                 <FullCalendar
                   allDayText="All Day"
                   headerToolbar={{
@@ -412,22 +504,22 @@ const Calender = () => {
                   eventContent={(meeting) => (
                     <span className="text-content">{meeting.event.title}</span>
                   )}
-                eventClick={handleEventClick}
-                contentHeight={520}
-                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                datesSet={(dateInfo) =>
-                  setCalendarRange({
-                    startDate: dayjs(dateInfo.view.calendar.getDate())
-                      .startOf("month")
-                      .toDate(),
-                    endDate: dayjs(dateInfo.view.calendar.getDate())
-                      .endOf("month")
-                      .toDate(),
-                  })
-                }
-                events={filteredEvents}
-              />
+                  eventClick={handleEventClick}
+                  contentHeight={520}
+                  plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  datesSet={(dateInfo) =>
+                    setCalendarRange({
+                      startDate: dayjs(dateInfo.view.calendar.getDate())
+                        .startOf("month")
+                        .toDate(),
+                      endDate: dayjs(dateInfo.view.calendar.getDate())
+                        .endOf("month")
+                        .toDate(),
+                    })
+                  }
+                  events={filteredEvents}
+                />
               </div>
             </div>
           </>
@@ -458,7 +550,7 @@ const Calender = () => {
               <DetalisFormatted
                 title="Time"
                 detail={`${humanTime(selectedEvent.start)} - ${humanTime(
-                  selectedEvent.end
+                  selectedEvent.end,
                 )}`}
               />
               <DetalisFormatted
@@ -497,10 +589,10 @@ const Calender = () => {
                         return p.employeeName
                           ? p.employeeName
                           : p.firstName
-                          ? `${p.firstName} ${p.lastName}`
-                          : p.name
-                          ? p.name
-                          : "N/A";
+                            ? `${p.firstName} ${p.lastName}`
+                            : p.name
+                              ? p.name
+                              : "N/A";
                       })
                       .join(", ") || "N/A"
                   }
@@ -528,7 +620,7 @@ const Calender = () => {
               <DetalisFormatted
                 title="Department"
                 detail={selectedEvent.extendedProps.department?.map(
-                  (item) => item.name
+                  (item) => item.name,
                 )}
               />
 

@@ -571,7 +571,7 @@ const KraKpaDailyLogs = () => {
   }];
 
   return (
-    <div className="p-4">
+    <div>
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
 
       {isLoading ? (

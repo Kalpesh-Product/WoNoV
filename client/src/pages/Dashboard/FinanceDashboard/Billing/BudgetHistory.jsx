@@ -312,6 +312,7 @@ const BudgetHistory = () => {
               : "Unapprove All"
             : undefined
         }
+        batchButtonPosition="aboveFilter"
         handleBatchAction={(selectedRows) => {
           if (!canUseBulkBudgetActions || isBulkUnapprovePending) return;
           unapproveSelectedBudgets(selectedRows);

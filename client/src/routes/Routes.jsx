@@ -70,7 +70,6 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
-import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
 import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
@@ -4092,14 +4091,6 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
-                          },
-                          {
-                            path: "payroll",
-                            element: <HrPayroll />,
-                          },
-                          {
-                            path: "payroll/:id",
-                            element: <ViewPayroll />,
                           },
                         ],
                       },

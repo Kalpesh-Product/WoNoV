@@ -774,7 +774,10 @@ const PayrollEntry = () => {
     {
       field: "action",
       headerName: "Action",
-      width: 140,
+      width: 136,
+      minWidth: 136,
+      maxWidth: 136,
+      suppressSizeToFit: true,
       pinned: "right",
       lockPinned: true,
       sortable: false,
@@ -788,7 +791,7 @@ const PayrollEntry = () => {
           (employeeId) => String(employeeId) === String(employee.employee)
         );
         return (
-          <div className="flex h-full items-center gap-2">
+          <div className="flex h-full items-center gap-1">
             <button
               type="button"
               title={
@@ -811,7 +814,7 @@ const PayrollEntry = () => {
                 (!isMarkedForDelete && !canUndoEmployee) ||
                 isUndoingEmployee
               }
-              className="rounded p-2 text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:text-gray-300"
             >
               <MdUndo size={20} />
             </button>
@@ -821,7 +824,7 @@ const PayrollEntry = () => {
               aria-label={`Edit ${employee.employeeName}`}
               onClick={() => openEmployeeEdit(employee)}
               disabled={isProcessed}
-              className="rounded p-2 text-primary hover:bg-blue-50"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-primary hover:bg-blue-50"
             >
               <MdEdit size={20} />
             </button>
@@ -831,7 +834,7 @@ const PayrollEntry = () => {
               aria-label={`${isMarkedForDelete ? "Unmark" : "Mark"} ${employee.employeeName} for deletion`}
               onClick={() => toggleEmployeeForDelete(employee)}
               disabled={isProcessed}
-              className={`rounded p-2 hover:bg-red-50 ${
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded hover:bg-red-50 ${
                 isMarkedForDelete ? "bg-red-100 text-red-700" : "text-red-500"
               }`}
             >
@@ -1026,8 +1029,8 @@ const PayrollEntry = () => {
             data={employeeRows}
             columns={employeeColumns}
             search
-            searchBottomContent={
-              <div className="flex flex-wrap items-center gap-3">
+            toolbarActions={
+              <div className="flex flex-nowrap items-center gap-3">
                 <span
                   title={
                     isProcessed

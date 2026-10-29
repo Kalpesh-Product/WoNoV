@@ -40,6 +40,7 @@ const YearWiseTable = ({
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
+  batchButtonPosition = "left",
   isRowSelectable,
   getRowId,
   hideTitle = true,
@@ -612,6 +613,7 @@ const YearWiseTable = ({
                 />
               ) : null
             }
+            searchRowActionsPosition={batchButtonPosition}
             dateColumn={dateColumn}
             isRowSelectable={isRowSelectable}
             getRowId={getRowId}

@@ -72,6 +72,8 @@ const KraKpaIndividualLayout = ({
       defaultTabPath={tabs[0].path}
       tabs={tabs}
       fitTabLabels
+      containerClassName="p-0"
+      contentClassName="pt-4"
     />
   );
 };

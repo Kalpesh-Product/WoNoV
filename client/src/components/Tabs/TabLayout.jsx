@@ -11,6 +11,7 @@ const TabLayout = ({
   defaultTabPath,
   hideTabsCondition = () => false,
   hideTabsOnPaths = [], // NEW PROP
+  containerClassName = "p-4",
   contentClassName = "py-4",
   fitTabLabels = false,
 }) => {
@@ -99,7 +100,7 @@ const TabLayout = ({
   }
 
   return (
-    <div className="p-4">
+    <div className={containerClassName}>
       {showTabs && filteredTabs.length > 0 && (
         <Tabs
           value={activeTab === -1 ? false : activeTab}

@@ -859,6 +859,7 @@ async function getMeetings(req, res, next) {
     const { user, company, roles, departments = [] } = req;
     const type = req.query?.type || req.type || "";
     const completed = req.query?.completed;
+    const calendar = req.query?.calendar === "true";
     const includeTotal = req.query?.includeTotal === "true";
     const includeReviews = req.query?.includeReviews === "true";
 
@@ -884,6 +885,7 @@ async function getMeetings(req, res, next) {
       company,
       type,
       completed,
+      calendar,
       includeTotal,
       includeReviews,
       page: req.query?.page,

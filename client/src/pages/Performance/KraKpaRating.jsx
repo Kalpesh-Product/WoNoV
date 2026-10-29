@@ -549,7 +549,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
 
   return (
     <Fragment>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}
           {employeeName}
@@ -791,7 +791,7 @@ const KraKpaRating = () => {
   const requestedTab = location.pathname.replace(/\/$/, "").endsWith("/daily-logs-rating") ? "daily-logs" : "kpa";
   const activeTab = ratingTabs.find((tab) => tab.value === requestedTab) || ratingTabs[0];
   return (
-      <div className="flex flex-col gap-6 p-4">
+      <div className="flex flex-col">
         {activeTab && <KraKpaRatingSection type={activeTab.value} navigationTabs={
           <Tabs
             value={activeTab.value}
@@ -803,7 +803,7 @@ const KraKpaRating = () => {
               const basePath = location.pathname.replace(/\/(?:kpa-rating|daily-logs-rating)\/?$/, "");
               navigate(`${basePath}/${selectedTab.path}`, { state: location.state });
             }}
-            sx={{ mb: 3, border: "1px solid #d1d5db", borderRadius: 1, minHeight: 48,
+            sx={{ mb: 2, border: "1px solid #d1d5db", borderRadius: 1, minHeight: 48,
               "& .MuiTabs-indicator": { display: "none" },
               "& .MuiTab-root": { textTransform: "none", color: "#1e3d73", minHeight: 48 },
               "& .Mui-selected": { backgroundColor: "#1e3d73", color: "white !important" },
