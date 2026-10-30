@@ -727,11 +727,7 @@ const LeadsLayout = ({
 
         <div className={investorBlueStyle ? "investor-unique-clients-chart" : ""}>
           <BarGraph
-            data={
-              investorBlueStyle
-                ? investorRankedSeries
-                : uniqueClientsData
-            }
+            data={investorBlueStyle ? investorRankedSeries : uniqueClientsData}
             title=""
             options={barChartOptions}
             height={investorBlueStyle ? 350 : 400}
