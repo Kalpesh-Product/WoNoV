@@ -25,6 +25,7 @@ const VisitorMixBag = ({
   basePath = "/app/visitors/mix-bag",
   ignoreCardPermissions = false,
   financeCardStyle = false,
+  hideAllCards = false,
 }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
@@ -57,9 +58,10 @@ const VisitorMixBag = ({
     },
   ].filter(
     (card) =>
-      ignoreCardPermissions ||
-      !card.permission ||
-      userPermissions.includes(card.permission),
+      !hideAllCards &&
+      (ignoreCardPermissions ||
+        !card.permission ||
+        userPermissions.includes(card.permission)),
   );
 
   if (financeCardStyle) {

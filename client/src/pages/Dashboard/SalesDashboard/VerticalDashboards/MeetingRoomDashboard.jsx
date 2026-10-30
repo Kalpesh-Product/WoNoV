@@ -1,24 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Menu, MenuItem } from "@mui/material";
+import { Menu } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MdAccessTime,
   MdAdd,
+  MdBarChart,
   MdCalendarMonth,
-  MdChevronRight,
   MdEdit,
   MdEventAvailable,
   MdGroups,
+  MdMeetingRoom,
   MdOutlineRemoveRedEye,
+  MdPercent,
   MdShoppingBag,
-  MdSettings,
+  MdKeyboardArrowDown,
   MdTrendingDown,
   MdTrendingUp,
 } from "react-icons/md";
+import {
+  FiCalendar,
+  FiCheckCircle,
+  FiChevronRight,
+  FiCreditCard,
+  FiGrid,
+  FiSettings,
+  FiUserPlus,
+  FiUsers,
+  FiX,
+} from "react-icons/fi";
 import { SiGoogleadsense } from "react-icons/si";
 import { FaGears } from "react-icons/fa6";
-import { TbMessageReportFilled } from "react-icons/tb";
+import { TbClockHour2Filled, TbMessageReportFilled } from "react-icons/tb";
+import { TiCancel } from "react-icons/ti";
 import {
   LuChartNoAxesCombined as ChartNoAxesCombined,
   LuChartPie as ChartPie,
@@ -30,7 +44,6 @@ import useUserPermissions from "../../../../hooks/useUserPermissions";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MeetingRevenue from "../MeetingRevenue";
 import LeadsLayout from "../ViewClients/LeadsLayout";
-import Card from "../../../../components/Card";
 import PieChartMui from "../../../../components/graphs/PieChartMui";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import HeatMap from "../../../../components/graphs/HeatMap";
@@ -125,18 +138,12 @@ const MeetingRoomSummaryCards = ({
         );
       });
     const actualByMonth = new Map();
-    const clientsByMonth = new Map();
-
     verifiedRevenueRows.forEach((row) => {
       const monthKey = dayjs(row.date).format("YYYY-MM");
       const amount =
         parseFloat(String(row?.taxable || "0").replace(/,/g, "")) || 0;
 
       actualByMonth.set(monthKey, (actualByMonth.get(monthKey) || 0) + amount);
-      clientsByMonth.set(
-        monthKey,
-        (clientsByMonth.get(monthKey) || 0) + 1,
-      );
     });
 
     const latestActualMonthIndex = fiscalMonths.reduce(
@@ -164,13 +171,6 @@ const MeetingRoomSummaryCards = ({
           total + (actualByMonth.get(month.format("YYYY-MM")) || 0),
         0,
       );
-    const actualClientCount = fiscalMonths
-      .slice(0, latestActualMonthIndex + 1)
-      .reduce(
-        (total, month) =>
-          total + (clientsByMonth.get(month.format("YYYY-MM")) || 0),
-        0,
-      );
     const projectedMonthlyAverage = booked / (latestActualMonthIndex + 1);
     const due =
       projectedMonthlyAverage * Math.max(11 - latestActualMonthIndex, 0);
@@ -187,10 +187,12 @@ const MeetingRoomSummaryCards = ({
       booked,
       due,
       averagePrice:
-        actualClientCount > 0 ? Math.round(booked / actualClientCount) : 0,
+        activeUniqueClientCount > 0
+          ? Math.round(booked / activeUniqueClientCount)
+          : 0,
       averageShortfallSurplus,
     };
-  }, [summaryMeetingRevenue]);
+  }, [activeUniqueClientCount, summaryMeetingRevenue]);
   const bookingCounts = useMemo(() => {
     const currentDate = dayjs();
     const financialYearStart = currentDate.month() >= 3
@@ -253,7 +255,7 @@ const MeetingRoomSummaryCards = ({
 
     return {
       ...counts,
-      total: counts.internal + counts.external + counts.openDesk,
+      total: counts.internal + counts.external,
     };
   }, [summaryMeetingRevenue, summaryMeetings]);
   const averageRoomUtilisation = useMemo(
@@ -265,6 +267,213 @@ const MeetingRoomSummaryCards = ({
       ),
     [summaryMeetings, summaryRooms],
   );
+  const activeMeetingRooms = summaryRooms.filter(
+    (room) => room?.isActive === true,
+  );
+  const activeMeetingRoomsByBuilding = Object.entries(
+    activeMeetingRooms.reduce((counts, room) => {
+      const buildingName =
+        room?.location?.building?.buildingName ||
+        room?.building?.buildingName ||
+        room?.buildingName ||
+        "Other";
+      counts[buildingName] = (counts[buildingName] || 0) + 1;
+      return counts;
+    }, {}),
+  ).map(([label, value], index) => ({
+    label,
+    value,
+    className: index % 2 === 0 ? "text-[#1687F8]" : "text-[#FF7A1A]",
+  }));
+  const totalHoursBooked = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const financialYearStart = currentMonth.month() >= 3
+      ? currentMonth.year()
+      : currentMonth.year() - 1;
+    const rangeStart = dayjs()
+      .year(financialYearStart)
+      .month(3)
+      .startOf("month");
+    const fiscalMonths = Array.from({ length: 12 }, (_item, index) =>
+      rangeStart.add(index, "month"),
+    );
+    const latestActualMonth = fiscalMonths.reduce(
+      (latestMonth, month) =>
+        !currentMonth.isBefore(month.add(2, "month"), "month")
+          ? month
+          : latestMonth,
+      null,
+    );
+    const rangeEnd = latestActualMonth
+      ? latestActualMonth.add(1, "month")
+      : rangeStart;
+    const activeRoomNames = new Set(
+      summaryRooms
+        .filter((room) => room?.isActive === true)
+        .map((room) => room?.name)
+        .filter(Boolean),
+    );
+
+    return summaryMeetings.reduce((total, meeting) => {
+      const meetingDate = dayjs(
+        meeting?.date || meeting?.startDate || meeting?.startTime,
+      );
+      const meetingStatus = String(
+        meeting?.meetingStatus || meeting?.status || "",
+      ).toLowerCase();
+      const roomName = meeting?.roomName || meeting?.bookedRoom?.name;
+      const duration = String(meeting?.duration || "0m");
+      const durationMatch = duration.match(/(\d+(?:\.\d+)?)(m|h)/i);
+      const durationValue = Number(durationMatch?.[1] || 0);
+      const durationMinutes =
+        durationMatch?.[2]?.toLowerCase() === "h"
+          ? durationValue * 60
+          : durationValue;
+
+      if (
+        meetingStatus === "cancelled" ||
+        !meetingDate.isValid() ||
+        meetingDate.isBefore(rangeStart) ||
+        !meetingDate.isBefore(rangeEnd) ||
+        !activeRoomNames.has(roomName)
+      ) {
+        return total;
+      }
+
+      return total + durationMinutes / 60;
+    }, 0);
+  }, [summaryMeetings, summaryRooms]);
+  const totalHoursCancelled = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const financialYearStart = currentMonth.month() >= 3
+      ? currentMonth.year()
+      : currentMonth.year() - 1;
+    const rangeStart = dayjs()
+      .year(financialYearStart)
+      .month(3)
+      .startOf("month");
+    const fiscalMonths = Array.from({ length: 12 }, (_item, index) =>
+      rangeStart.add(index, "month"),
+    );
+    const latestActualMonth = fiscalMonths.reduce(
+      (latestMonth, month) =>
+        !currentMonth.isBefore(month.add(2, "month"), "month")
+          ? month
+          : latestMonth,
+      null,
+    );
+    const rangeEnd = latestActualMonth
+      ? latestActualMonth.add(1, "month")
+      : rangeStart;
+    const activeRoomNames = new Set(
+      summaryRooms
+        .filter((room) => room?.isActive === true)
+        .map((room) => room?.name)
+        .filter(Boolean),
+    );
+
+    return summaryMeetings.reduce((total, meeting) => {
+      const meetingDate = dayjs(
+        meeting?.date || meeting?.startDate || meeting?.startTime,
+      );
+      const meetingStatus = String(
+        meeting?.meetingStatus || meeting?.status || "",
+      ).toLowerCase();
+      const roomName = meeting?.roomName || meeting?.bookedRoom?.name;
+      const duration = String(meeting?.duration || "0m");
+      const durationMatch = duration.match(/(\d+(?:\.\d+)?)(m|h)/i);
+      const durationValue = Number(durationMatch?.[1] || 0);
+      const durationMinutes =
+        durationMatch?.[2]?.toLowerCase() === "h"
+          ? durationValue * 60
+          : durationValue;
+
+      if (
+        meetingStatus !== "cancelled" ||
+        !meetingDate.isValid() ||
+        meetingDate.isBefore(rangeStart) ||
+        !meetingDate.isBefore(rangeEnd) ||
+        !activeRoomNames.has(roomName)
+      ) {
+        return total;
+      }
+
+      return total + durationMinutes / 60;
+    }, 0);
+  }, [summaryMeetings, summaryRooms]);
+  const occupancyPercent = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const financialYearStart = currentMonth.month() >= 3
+      ? currentMonth.year()
+      : currentMonth.year() - 1;
+    const rangeStart = dayjs()
+      .year(financialYearStart)
+      .month(3)
+      .startOf("month");
+    const fiscalMonths = Array.from({ length: 12 }, (_item, index) =>
+      rangeStart.add(index, "month"),
+    );
+    const latestActualMonth = fiscalMonths.reduce(
+      (latestMonth, month) =>
+        !currentMonth.isBefore(month.add(2, "month"), "month")
+          ? month
+          : latestMonth,
+      null,
+    );
+    const rangeEnd = latestActualMonth
+      ? latestActualMonth.add(1, "month")
+      : rangeStart;
+    const roomCapacityByName = new Map(
+      summaryRooms
+        .filter((room) => room?.isActive === true)
+        .map((room) => [room?.name, Number(room?.seats || 0)])
+        .filter(([name, seats]) => name && seats > 0),
+    );
+
+    const seatHours = summaryMeetings.reduce(
+      (totals, meeting) => {
+        const meetingDate = dayjs(
+          meeting?.date || meeting?.startDate || meeting?.startTime,
+        );
+        const meetingStatus = String(
+          meeting?.meetingStatus || meeting?.status || "",
+        ).toLowerCase();
+        const roomName = meeting?.roomName || meeting?.bookedRoom?.name;
+        const roomCapacity = roomCapacityByName.get(roomName) || 0;
+        const duration = String(meeting?.duration || "0m");
+        const durationMatch = duration.match(/(\d+(?:\.\d+)?)(m|h)/i);
+        const durationValue = Number(durationMatch?.[1] || 0);
+        const durationHours =
+          durationMatch?.[2]?.toLowerCase() === "h"
+            ? durationValue
+            : durationValue / 60;
+
+        if (
+          meetingStatus !== "completed" ||
+          !meetingDate.isValid() ||
+          meetingDate.isBefore(rangeStart) ||
+          !meetingDate.isBefore(rangeEnd) ||
+          roomCapacity <= 0 ||
+          durationHours <= 0
+        ) {
+          return totals;
+        }
+
+        const participantCount = Array.isArray(meeting?.participants)
+          ? meeting.participants.length
+          : 0;
+        totals.occupied +=
+          Math.min(participantCount, roomCapacity) * durationHours;
+        totals.available += roomCapacity * durationHours;
+        return totals;
+      },
+      { occupied: 0, available: 0 },
+    );
+
+    return seatHours.available > 0
+      ? (seatHours.occupied / seatHours.available) * 100
+      : 0;
+  }, [summaryMeetings, summaryRooms]);
   const cards = [
     {
       title: "Annual Revenue Target",
@@ -301,7 +510,7 @@ const MeetingRoomSummaryCards = ({
         PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_REVENUE_DUE_CARD.value,
     },
     {
-      title: "Average Meeting Room Price",
+      title: "Hourly Meeting Room Price",
       value: isSummaryRevenueLoading
         ? "—"
         : `₹ ${inrFormat(revenueSummary.averagePrice)}`,
@@ -333,11 +542,6 @@ const MeetingRoomSummaryCards = ({
           label: "External",
           value: bookingCounts.external,
           className: "text-[#FF7A1A]",
-        },
-        {
-          label: "Open Desk",
-          value: bookingCounts.openDesk,
-          className: "text-[#00A99D]",
         },
       ],
       icon: MdEventAvailable,
@@ -376,6 +580,48 @@ const MeetingRoomSummaryCards = ({
         PERMISSIONS
           .SALES_VERTICAL_MEETING_ROOM_AVERAGE_SHORTFALL_SURPLUS_CARD.value,
     },
+    {
+      title: "Total Meeting Room",
+      value: activeMeetingRooms.length,
+      bookingBreakdown: activeMeetingRoomsByBuilding,
+      icon: MdMeetingRoom,
+      tone: "lightNavy",
+      valueTone: "text-[#1E3D73]",
+      route: "/app/dashboard/sales-dashboard/meeting-room/calendar",
+      permission:
+        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_NO_OF_MEETING_ROOMS_CARD.value,
+    },
+    {
+      title: "Total Hours Booked",
+      value: Math.round(totalHoursBooked).toLocaleString("en-IN"),
+      icon: TbClockHour2Filled,
+      tone: "booked",
+      valueTone: "text-[#13a573]",
+      route: "/app/dashboard/sales-dashboard/meeting-room/reports",
+      permission:
+        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_TOTAL_HOURS_BOOKED_CARD.value,
+    },
+    {
+      title: "Total Hours Cancelled",
+      value: Math.round(totalHoursCancelled).toLocaleString("en-IN"),
+      icon: TiCancel,
+      tone: "red",
+      valueTone: "text-[#f04a4a]",
+      route: "/app/dashboard/sales-dashboard/meeting-room/reports",
+      permission:
+        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_TOTAL_HOURS_CANCELLED_CARD
+          .value,
+    },
+    {
+      title: "Occupancy %",
+      value: `${occupancyPercent.toFixed(1)}%`,
+      icon: MdPercent,
+      tone: "lightNavy",
+      valueTone: "text-[#1E3D73]",
+      route: "/app/dashboard/sales-dashboard/meeting-room/average-occupancy",
+      permission:
+        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_OCCUPANCY_PERCENT_CARD.value,
+    },
   ];
 
   const toneClasses = {
@@ -396,9 +642,10 @@ const MeetingRoomSummaryCards = ({
         const Icon = card.icon;
 
         return (
-          <div
+          <Link
             key={card.title}
-            className={`flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white py-4 shadow-sm ${
+            to={card.route || "."}
+            className={`flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white py-4 shadow-sm transition hover:border-[#c6d9f4] hover:shadow-md ${
               card.bookingBreakdown
                 ? "gap-2 px-2 min-[1450px]:gap-2.5 min-[1450px]:px-3 min-[1700px]:gap-4 min-[1700px]:px-5"
                 : "gap-4 px-5"
@@ -458,7 +705,7 @@ const MeetingRoomSummaryCards = ({
                 </span>
               )}
             </span>
-          </div>
+          </Link>
         );
       })}
     </div>
@@ -481,19 +728,37 @@ const BiznestTitle = () => (
 const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
   const axios = useAxiosPrivate();
   const { data: meetingRevenue = [] } = useQuery({
-    queryKey: ["meetings-revenue"],
+    queryKey: ["meeting-room-unique-client-revenue"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/get-meeting-revenue");
-      return Array.isArray(response.data) ? response.data : [];
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      const revenue = Array.isArray(response.data?.meetingRevenue)
+        ? response.data.meetingRevenue
+        : [];
+
+      return revenue.filter((row) => {
+        const meetingType = String(
+          row?.meetingType ||
+            row?.particulars ||
+            row?.visitorDetails?.purposeOfVisit ||
+            "",
+        )
+          .trim()
+          .toLowerCase();
+        const isDayPass =
+          row?.source === "day-pass" ||
+          meetingType.includes("half-day") ||
+          meetingType.includes("half day") ||
+          meetingType.includes("full-day") ||
+          meetingType.includes("full day");
+
+        return !isDayPass;
+      });
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
   const revenueRows = useMemo(
-    () =>
-      meetingRevenue.flatMap((monthData) =>
-        Array.isArray(monthData?.revenue) ? monthData.revenue : [],
-      ),
+    () => (Array.isArray(meetingRevenue) ? meetingRevenue : []),
     [meetingRevenue],
   );
   const clientsByMonth = useMemo(() => {
@@ -566,81 +831,32 @@ const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
   );
 };
 
-const MeetingRoomActionCards = ({ hasPermission }) => {
-  const cards = [
-    {
-      title: "Book a Meeting Room",
-      icon: MdAdd,
-      route: "/app/dashboard/sales-dashboard/meeting-room/book-meeting",
-      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD.value,
-    },
-    {
-      title: "Manage Bookings",
-      icon: MdEdit,
-      route: "/app/dashboard/sales-dashboard/meeting-room/manage-bookings",
-      permission:
-        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MANAGE_BOOKINGS_CARD.value,
-    },
-    {
-      title: "Room Calendar",
-      icon: MdCalendarMonth,
-      route: "/app/dashboard/sales-dashboard/meeting-room/calendar",
-      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_CALENDAR_CARD.value,
-    },
-    {
-      title: "Mix Bag",
-      icon: MdShoppingBag,
-      route: "/app/dashboard/sales-dashboard/meeting-room/mix-bag",
-      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
-    },
-    {
-      title: "Data",
-      icon: SiGoogleadsense,
-      route: "/app/dashboard/sales-dashboard/meeting-room/data",
-      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_DATA_CARD.value,
-    },
-    {
-      title: "Reports",
-      icon: TbMessageReportFilled,
-      route: "/app/dashboard/sales-dashboard/meeting-room/reports",
-      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_REPORTS_CARD.value,
-    },
-  ].filter((card) => hasPermission(card.permission));
-
-  if (!cards.length) return null;
-
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-      {cards.map((card) => {
-        const Icon = card.icon;
-
-        return (
-          <Card
-            key={card.title}
-            title={card.title}
-            icon={<Icon />}
-            route={card.route}
-            fontColor="#1E3D73"
-            titleColor="#1E3D73"
-          />
-        );
-      })}
-    </div>
-  );
-};
-
 const meetingClientChartConfig = {
-  monthlyClients: {
-    title: "MEETING ROOM MONTHLY CLIENTS",
-    route: "/app/dashboard/sales-dashboard/meeting-room/monthly-clients",
-    colors: ["#00C9A7", "#FF7A1A"],
-    tooltipUnit: "Client",
-  },
   internalExternalBookings: {
     title: "MEETING ROOM INTERNAL & EXTERNAL CLIENTS BOOKINGS",
     route:
       "/app/dashboard/sales-dashboard/meeting-room/internal-external-bookings",
     colors: ["#1687F8", "#FF7A1A"],
+    tooltipUnit: "Booking",
+  },
+  internalCommitmentUtilization: {
+    title: "MEETING ROOM INTERNAL COMMITMENT UTILIZATION",
+    route: "/app/dashboard/sales-dashboard/meeting-room/monthly-clients",
+    colors: ["#ef4444", "#16a34a", "#9fb2cf"],
+    tooltipUnit: "Credit",
+  },
+  bookedHoursCancelled: {
+    title: "MEETING ROOM BOOKED HOURS VS CANCELLED",
+    route:
+      "/app/dashboard/sales-dashboard/meeting-room/booked-hours-cancelled",
+    colors: ["#16a34a", "#ef4444"],
+    tooltipUnit: "Hour",
+  },
+  meetingDurationBreakdown: {
+    title: "MEETING ROOM DURATION BREAKDOWN",
+    route:
+      "/app/dashboard/sales-dashboard/meeting-room/meeting-duration-breakdown",
+    colors: ["#50c4a8", "#22457e", "#2f7ff0", "#f7a619", "#6aaed6", "#90caf9"],
     tooltipUnit: "Booking",
   },
 };
@@ -665,27 +881,26 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: monthlyOpenDeskVisitors = [] } = useQuery({
-    queryKey: [
-      "meeting-room-monthly-open-desk-clients",
-      dayjs().format("YYYY-MM"),
-    ],
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["rooms"],
     queryFn: async () => {
-      const currentMonth = dayjs();
-      const response = await axios.get("/api/visitors/fetch-visitors", {
-        params: {
-          filters: {
-            startDate: currentMonth.startOf("month").format("YYYY-MM-DD"),
-            endDate: currentMonth.endOf("month").format("YYYY-MM-DD"),
-          },
-          type: "day-pass",
-          visitorFlag: "Client",
-          multipleVisits: true,
-        },
+      const response = await axios.get("/api/meetings/get-rooms");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
+  const { data: internalClients = [] } = useQuery({
+    queryKey: ["meeting-room-internal-clients"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/co-working-clients", {
+        params: { active: true, page: 1, limit: 500 },
       });
-
-      if (Array.isArray(response.data)) return response.data;
-      return Array.isArray(response.data?.data) ? response.data.data : [];
+      return Array.isArray(response.data)
+        ? response.data
+        : Array.isArray(response.data?.data)
+          ? response.data.data
+          : [];
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
@@ -697,96 +912,6 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
       ),
     [meetingRevenue],
   );
-  const monthlyClientsData = useMemo(() => {
-    const now = dayjs();
-    const clients = {
-      "Meeting Room Client": new Set(),
-      "Open Desk Client": new Set(),
-    };
-
-    revenueRows.forEach((row, index) => {
-      const bookingDate = dayjs(row?.date || row?.createdAt);
-      if (
-        !bookingDate.isValid() ||
-        bookingDate.month() !== now.month() ||
-        bookingDate.year() !== now.year()
-      ) {
-        return;
-      }
-
-      const isOpenDesk =
-        row?.source === "day-pass" ||
-        ["full-day pass", "half-day pass"].includes(
-          String(row?.meetingType || row?.meetingTypeRaw || "").toLowerCase(),
-        );
-      if (!isOpenDesk) return;
-
-      const clientName =
-        row?.meetingCompanyName ||
-        row?.clientName ||
-        row?.visitorDetails?.visitorCompany ||
-        row?.id ||
-        row?._id ||
-        `open-desk-client-${index}`;
-
-      clients["Open Desk Client"].add(
-        String(clientName).trim().toLowerCase(),
-      );
-    });
-
-    meetings.forEach((meeting) => {
-      const meetingDate = dayjs(
-        meeting?.date || meeting?.startDate || meeting?.startTime,
-      );
-      const meetingType = String(meeting?.meetingType || "").toLowerCase();
-      const meetingStatus = String(
-        meeting?.meetingStatus || meeting?.status || "",
-      ).toLowerCase();
-
-      if (
-        !["internal", "external"].includes(meetingType) ||
-        !["upcoming", "completed"].includes(meetingStatus) ||
-        !meetingDate.isValid() ||
-        meetingDate.month() !== now.month() ||
-        meetingDate.year() !== now.year()
-      ) {
-        return;
-      }
-
-      const clientName =
-        getMeetingCompanyName(meeting, "") ||
-        getMeetingPersonName(
-          meeting?.bookedBy || meeting?.clientBookedBy,
-          "",
-        );
-      const clientKey = normalizeClientKey(clientName);
-
-      if (clientKey) clients["Meeting Room Client"].add(clientKey);
-    });
-
-    monthlyOpenDeskVisitors.forEach((visitor, index) => {
-      const clientName =
-        visitor?.registeredClientCompany ||
-        visitor?.brandName ||
-        visitor?.visitorCompany ||
-        [visitor?.firstName, visitor?.middleName, visitor?.lastName]
-          .filter(Boolean)
-          .join(" ") ||
-        visitor?.email ||
-        visitor?.phoneNumber ||
-        visitor?._id ||
-        `open-desk-client-${index}`;
-
-      clients["Open Desk Client"].add(
-        String(clientName).trim().toLowerCase(),
-      );
-    });
-
-    return Object.entries(clients).map(([label, values]) => ({
-      label,
-      value: values.size,
-    }));
-  }, [meetings, monthlyOpenDeskVisitors, revenueRows]);
   const internalExternalBookingsData = useMemo(() => {
     const counts = { Internal: 0, External: 0 };
     const sourceRows = meetings.length > 0 ? meetings : revenueRows;
@@ -826,9 +951,131 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
 
     return Object.entries(counts).map(([label, value]) => ({ label, value }));
   }, [meetings, revenueRows]);
+  const internalCommitmentUtilizationData = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const totals = internalClients.reduce(
+      (result, client) => {
+        const historyEntry = Array.isArray(client?.meetingCreditBalanceHistory)
+          ? client.meetingCreditBalanceHistory.find((history) =>
+              dayjs(history?.monthStartDate).isSame(currentMonth, "month"),
+            )
+          : null;
+        const totalCredit = Number(
+          historyEntry?.monthlyCredit ?? client?.totalMeetingCredits ?? 0,
+        );
+        const usedCredit = Number(historyEntry?.consumedCredit || 0);
+        result.total += totalCredit;
+        result.used += Math.max(usedCredit, 0);
+        return result;
+      },
+      { total: 0, used: 0 },
+    );
+
+    return [
+      { label: "Total Credit", value: Math.round(totals.total) },
+      { label: "Total Used Credit", value: Math.round(totals.used) },
+      {
+        label: "Remaining Credit",
+        value: Math.max(Math.round(totals.total - totals.used), 0),
+      },
+    ];
+  }, [internalClients]);
+  const bookedHoursCancelledData = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
+    const financialYearStart = currentMonth.month() >= 3
+      ? currentMonth.year()
+      : currentMonth.year() - 1;
+    const rangeStart = dayjs()
+      .year(financialYearStart)
+      .month(3)
+      .startOf("month");
+    const fiscalMonths = Array.from({ length: 12 }, (_item, index) =>
+      rangeStart.add(index, "month"),
+    );
+    const latestActualMonth = fiscalMonths.reduce(
+      (latestMonth, month) =>
+        !currentMonth.isBefore(month.add(2, "month"), "month")
+          ? month
+          : latestMonth,
+      null,
+    );
+    const rangeEnd = latestActualMonth
+      ? latestActualMonth.add(1, "month")
+      : rangeStart;
+    const activeRoomNames = new Set(
+      rooms
+        .filter((room) => room?.isActive === true)
+        .map((room) => room?.name)
+        .filter(Boolean),
+    );
+    const bookedStatuses = new Set([
+      "upcoming",
+      "ongoing",
+      "completed",
+      "extended",
+    ]);
+    const totals = meetings.reduce(
+      (result, meeting) => {
+        const meetingDate = dayjs(
+          meeting?.date || meeting?.startDate || meeting?.startTime,
+        );
+        const status = String(
+          meeting?.meetingStatus || meeting?.status || "",
+        ).toLowerCase();
+        const roomName = meeting?.roomName || meeting?.bookedRoom?.name;
+        if (
+          !meetingDate.isValid() ||
+          meetingDate.isBefore(rangeStart) ||
+          !meetingDate.isBefore(rangeEnd) ||
+          !activeRoomNames.has(roomName)
+        ) {
+          return result;
+        }
+
+        const hours = parseMeetingDurationMinutes(meeting) / 60;
+        if (status === "cancelled") result.cancelled += hours;
+        if (bookedStatuses.has(status)) result.booked += hours;
+        return result;
+      },
+      { booked: 0, cancelled: 0 },
+    );
+
+    return [
+      { label: "Booked Hours", value: Math.round(totals.booked) },
+      { label: "Cancelled Hours", value: Math.round(totals.cancelled) },
+    ];
+  }, [meetings, rooms]);
+  const meetingDurationBreakdownData = useMemo(() => {
+    const durationBuckets = ["15", "30", "60", "90", "120", "Others"];
+    const durationCount = durationBuckets.reduce((counts, bucket) => {
+      counts[bucket] = 0;
+      return counts;
+    }, {});
+
+    meetings.forEach((meeting) => {
+      const duration = String(meeting?.duration || "0m");
+      const hours = Number(duration.match(/(\d+(?:\.\d+)?)h/i)?.[1] || 0);
+      const minutes = Number(duration.match(/(\d+)m/i)?.[1] || 0);
+      const durationInMinutes = hours * 60 + minutes;
+
+      if (durationInMinutes <= 15) durationCount["15"] += 1;
+      else if (durationInMinutes <= 30) durationCount["30"] += 1;
+      else if (durationInMinutes <= 60) durationCount["60"] += 1;
+      else if (durationInMinutes <= 90) durationCount["90"] += 1;
+      else if (durationInMinutes <= 120) durationCount["120"] += 1;
+      else durationCount.Others += 1;
+    });
+
+    return durationBuckets.map((label) => ({
+      label,
+      value: durationCount[label],
+    }));
+  }, [meetings]);
   const dataByChart = {
-    monthlyClients: monthlyClientsData,
     internalExternalBookings: internalExternalBookingsData,
+    internalCommitmentUtilization: internalCommitmentUtilizationData,
+    bookedHoursCancelled: bookedHoursCancelledData,
+    meetingDurationBreakdown: meetingDurationBreakdownData,
   };
 
   return (
@@ -1888,22 +2135,115 @@ const MeetingRoomDashboard = ({
   meetingsTableOnly = false,
 }) => {
   const { hasPermission } = useUserPermissions();
-  const [isBrowserZoomedOut, setIsBrowserZoomedOut] = useState(false);
+  const navigate = useNavigate();
   const [settingsAnchor, setSettingsAnchor] = useState(null);
+  const [activeMenuCard, setActiveMenuCard] = useState(null);
   const [activeUniqueClientCount, setActiveUniqueClientCount] = useState(0);
 
-  useEffect(() => {
-    const updateBrowserZoom = () => {
-      const viewportZoomRatio = window.outerWidth / window.innerWidth;
-      setIsBrowserZoomedOut(
-        viewportZoomRatio < 0.9 || window.devicePixelRatio < 0.9,
-      );
-    };
-
-    updateBrowserZoom();
-    window.addEventListener("resize", updateBrowserZoom);
-    return () => window.removeEventListener("resize", updateBrowserZoom);
-  }, []);
+  const menuCards = [
+    {
+      title: "Book a Meeting Room",
+      icon: MdAdd,
+      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD.value,
+      items: [
+        {
+          label: "Book a Meeting Room",
+          description: "Create a new meeting room booking",
+          icon: FiCalendar,
+          route: "/app/dashboard/sales-dashboard/meeting-room/book-meeting",
+        },
+      ],
+    },
+    {
+      title: "Manage Bookings",
+      icon: MdEdit,
+      permission:
+        PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MANAGE_BOOKINGS_CARD.value,
+      items: [
+        {
+          label: "Internal Meetings",
+          description: "View and manage internal meetings",
+          icon: FiUsers,
+          route:
+            "/app/dashboard/sales-dashboard/meeting-room/manage-bookings/internal-meetings",
+        },
+        {
+          label: "External Clients",
+          description: "View and manage external client bookings",
+          icon: FiUserPlus,
+          route:
+            "/app/dashboard/sales-dashboard/meeting-room/manage-bookings/external-clients",
+        },
+      ],
+    },
+    {
+      title: "Room Calendar",
+      icon: MdCalendarMonth,
+      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_CALENDAR_CARD.value,
+      items: [
+        {
+          label: "Room Calendar",
+          description: "View meeting room availability",
+          icon: FiCalendar,
+          route: "/app/dashboard/sales-dashboard/meeting-room/calendar",
+        },
+      ],
+    },
+    {
+      title: "Mix Bag",
+      icon: MdShoppingBag,
+      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+      items: [],
+    },
+    {
+      title: "Data",
+      icon: SiGoogleadsense,
+      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_DATA_CARD.value,
+      items: [
+        {
+          label: "Client Credit",
+          description: "View meeting client credit data",
+          icon: FiCreditCard,
+          route:
+            "/app/dashboard/sales-dashboard/meeting-room/data/client-credit",
+        },
+        {
+          label: "Client Review",
+          description: "View meeting client reviews",
+          icon: FiCheckCircle,
+          route:
+            "/app/dashboard/sales-dashboard/meeting-room/data/client-review",
+        },
+      ],
+    },
+    {
+      title: "Reports",
+      icon: TbMessageReportFilled,
+      permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_REPORTS_CARD.value,
+      items: [
+        {
+          label: "Reports",
+          description: "Open meeting room reports",
+          icon: MdBarChart,
+          route: "/app/dashboard/sales-dashboard/meeting-room/reports",
+        },
+      ],
+    },
+    {
+      title: "Settings",
+      icon: FaGears,
+      items: [
+        {
+          label: "Settings",
+          description: "Configure meeting room settings",
+          icon: FiSettings,
+          route: "/app/dashboard/sales-dashboard/meeting-room/setting",
+        },
+      ],
+    },
+  ].filter((card) => !card.permission || hasPermission(card.permission));
+  const resolvedActiveMenuCard =
+    menuCards.find((card) => card.title === activeMenuCard) || menuCards[0];
 
   if (uniqueClientsOnly) {
     return (
@@ -1940,15 +2280,25 @@ const MeetingRoomDashboard = ({
   }
 
   const meetingChartPermissions = {
-    monthlyClients:
-      PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MONTHLY_CLIENTS_GRAPH.value,
+    internalCommitmentUtilization:
+      PERMISSIONS
+        .SALES_VERTICAL_MEETING_ROOM_INTERNAL_COMMITMENT_UTILIZATION_GRAPH
+        .value,
     internalExternalBookings:
       PERMISSIONS
         .SALES_VERTICAL_MEETING_ROOM_INTERNAL_EXTERNAL_BOOKINGS_GRAPH.value,
+    bookedHoursCancelled:
+      PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOKED_HOURS_CANCELLED_GRAPH
+        .value,
+    meetingDurationBreakdown:
+      PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MEETING_DURATION_BREAKDOWN_GRAPH
+        .value,
   };
   const visibleMeetingCharts = [
-    "monthlyClients",
     "internalExternalBookings",
+    "internalCommitmentUtilization",
+    "bookedHoursCancelled",
+    "meetingDurationBreakdown",
   ].filter((chart) => hasPermission(meetingChartPermissions[chart]));
   const operationalChartPermissions = {
     externalGuests:
@@ -1981,7 +2331,8 @@ const MeetingRoomDashboard = ({
         slotProps={{
           paper: {
             sx: {
-              minWidth: 240,
+              width: { xs: "calc(100vw - 24px)", sm: 680 },
+              maxWidth: "calc(100vw - 24px)",
               borderRadius: 2,
               border: "1px solid #e0e8f5",
               mt: 1,
@@ -1989,18 +2340,98 @@ const MeetingRoomDashboard = ({
           },
         }}
       >
-        <MenuItem
-          component={Link}
-          to="/app/dashboard/sales-dashboard/meeting-room/setting"
-          onClick={() => setSettingsAnchor(null)}
-          sx={{ gap: 2, py: 1.5, color: "#1E3D73" }}
-        >
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eff6fc] text-xl">
-            <FaGears aria-hidden="true" />
-          </span>
-          <span className="font-pmedium text-sm">Settings</span>
-          <MdChevronRight className="ml-auto" size={20} aria-hidden="true" />
-        </MenuItem>
+        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
+            {menuCards.map((card) => {
+              const Icon = card.icon;
+              return (
+                <button
+                  key={card.title}
+                  type="button"
+                  onClick={() => setActiveMenuCard(card.title)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${
+                    resolvedActiveMenuCard?.title === card.title
+                      ? "bg-[#e7f1ff]"
+                      : "hover:bg-[#eef5ff]"
+                  }`}
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
+                    <Icon />
+                  </span>
+                  <span className="min-w-0 flex-1 leading-tight">
+                    {card.title}
+                  </span>
+                  <FiChevronRight className="shrink-0" size={17} />
+                </button>
+              );
+            })}
+          </div>
+          <div className="relative min-h-[260px] p-4 sm:p-5">
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setSettingsAnchor(null)}
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-[#1E3D73] transition hover:bg-[#e8f1ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
+            >
+              <FiX size={19} aria-hidden="true" />
+            </button>
+            {resolvedActiveMenuCard && (() => {
+              const ActiveIcon = resolvedActiveMenuCard.icon;
+              return (
+                <>
+                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3 pr-10">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                      <ActiveIcon />
+                    </span>
+                    <div>
+                      <p className="font-psemibold text-base text-[#1E3D73]">
+                        {resolvedActiveMenuCard.title}
+                      </p>
+                      <p className="text-xs text-[#7084a4]">
+                        Open meeting room module
+                      </p>
+                    </div>
+                  </div>
+                  <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
+                    {resolvedActiveMenuCard.items.length === 0 && (
+                      <p className="px-2 py-6 text-center text-sm text-[#7b8eac]">
+                        No sub-modules available
+                      </p>
+                    )}
+                    {resolvedActiveMenuCard.items.map((item) => {
+                      const ItemIcon = item.icon || ActiveIcon;
+
+                      return (
+                        <button
+                          key={item.route}
+                          type="button"
+                          onClick={() => {
+                            setSettingsAnchor(null);
+                            navigate(item.route);
+                          }}
+                          className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
+                        >
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
+                            <ItemIcon />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block font-pmedium text-[15px] leading-tight">
+                              {item.label}
+                            </span>
+                            <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
+                              {item.description}
+                            </span>
+                          </span>
+                          <FiChevronRight className="shrink-0" size={17} />
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
       </Menu>
       <div className="overflow-hidden rounded-lg">
         <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
@@ -2033,18 +2464,14 @@ const MeetingRoomDashboard = ({
           </div>
           <nav
             aria-label="Meeting Room dashboard navigation"
-            className={`absolute bottom-0 left-0 z-10 flex items-center overflow-x-auto ${
-              isBrowserZoomedOut
-                ? "w-[46.5%] justify-between gap-0"
-                : "w-[61%] gap-4 sm:gap-5 lg:gap-5"
-            }`}
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
                 <Link
                   key={item}
                   to=""
-                  className="group relative shrink-0 py-3 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
                 >
                   {item}
                   <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100" />
@@ -2056,10 +2483,11 @@ const MeetingRoomDashboard = ({
               aria-haspopup="menu"
               aria-expanded={Boolean(settingsAnchor)}
               onClick={(event) => setSettingsAnchor(event.currentTarget)}
-              className="my-1.5 flex shrink-0 items-center gap-2 rounded-full border border-[#CBD5E1] bg-white/90 px-2.5 py-1.5 font-pmedium text-xs text-[#1E3D73] shadow-sm focus-visible:outline-none sm:text-sm lg:text-base"
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
             >
-              <MdSettings className="text-lg sm:text-xl" aria-hidden="true" />
-              Settings
+              <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
+              <span>Menu</span>
+              <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
             </button>
           </nav>
         </div>
@@ -2078,7 +2506,6 @@ const MeetingRoomDashboard = ({
           onUniqueClientCountChange={setActiveUniqueClientCount}
         />
       )}
-      <MeetingRoomActionCards hasPermission={hasPermission} />
       {visibleMeetingCharts.length > 0 && (
         <MeetingRoomClientCharts visibleCharts={visibleMeetingCharts} />
       )}
