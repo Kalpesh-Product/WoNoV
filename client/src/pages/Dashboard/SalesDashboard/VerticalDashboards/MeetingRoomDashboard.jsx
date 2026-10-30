@@ -642,10 +642,9 @@ const MeetingRoomSummaryCards = ({
         const Icon = card.icon;
 
         return (
-          <Link
+          <div
             key={card.title}
-            to={card.route || "."}
-            className={`flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white py-4 shadow-sm transition hover:border-[#c6d9f4] hover:shadow-md ${
+            className={`flex min-h-[92px] items-center rounded-lg border border-[#e8ecf4] bg-white py-4 shadow-sm ${
               card.bookingBreakdown
                 ? "gap-2 px-2 min-[1450px]:gap-2.5 min-[1450px]:px-3 min-[1700px]:gap-4 min-[1700px]:px-5"
                 : "gap-4 px-5"
@@ -705,7 +704,7 @@ const MeetingRoomSummaryCards = ({
                 </span>
               )}
             </span>
-          </Link>
+          </div>
         );
       })}
     </div>
@@ -802,15 +801,14 @@ const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
       data={clientsByMonth}
       hideAccordion
       title={
-        <Link
-          to="/app/dashboard/sales-dashboard/meeting-room/unique-client-count"
+        <span
           className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]"
         >
           <BiznestTitle />
           <span className="inline-flex items-baseline leading-none">
             MEETING ROOM UNIQUE CLIENT COUNT - FY {financialYearLabel}
           </span>
-        </Link>
+        </span>
       }
       titleAmount={totalUniqueClientsTitle}
       hideMonthAxisTitle
@@ -1114,8 +1112,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
           <WidgetSection
             key={chartKey}
             title={
-              <Link
-                to={chart.route}
+              <span
                 className="inline-flex items-baseline gap-2 whitespace-nowrap text-[#1E3D73]"
               >
                 <span
@@ -1127,7 +1124,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
                   <span>&nbsp;Nest</span>
                 </span>
                 <span>{chart.title}</span>
-              </Link>
+              </span>
             }
             border
             borderColor="#1E3D73"
@@ -1353,8 +1350,7 @@ const calculateAverageRoomUtilisation = (
 };
 
 const MeetingOperationalChartTitle = ({ chart, monthLabel }) => (
-  <Link
-    to={chart.route}
+  <span
     className="inline-flex items-baseline gap-2 whitespace-nowrap text-[#1E3D73]"
   >
     <span
@@ -1369,7 +1365,7 @@ const MeetingOperationalChartTitle = ({ chart, monthLabel }) => (
       {chart.title}
       {monthLabel ? ` - ${monthLabel}` : ""}
     </span>
-  </Link>
+  </span>
 );
 
 const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
@@ -2498,7 +2494,9 @@ const MeetingRoomDashboard = ({
       />
       {hasPermission(
         PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_REVENUES_GRAPH.value,
-      ) && <MeetingRevenue graphOnly dashboardView />}
+      ) && (
+        <MeetingRevenue graphOnly dashboardView />
+      )}
       {hasPermission(
         PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_UNIQUE_CLIENT_COUNT_GRAPH.value,
       ) && (
