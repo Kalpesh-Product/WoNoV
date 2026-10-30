@@ -1819,6 +1819,34 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/sales-dashboard/meeting-room",
   },
+  SALES_VERTICAL_MEETING_ROOM_NO_OF_MEETING_ROOMS_CARD: {
+    value: "sales_vertical_meeting_room_no_of_meeting_rooms_card",
+    title: "MEETING ROOM TOTAL MEETING ROOM CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/meeting-room/calendar",
+  },
+  SALES_VERTICAL_MEETING_ROOM_TOTAL_HOURS_BOOKED_CARD: {
+    value: "sales_vertical_meeting_room_total_hours_booked_card",
+    title: "MEETING ROOM TOTAL HOURS BOOKED CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/meeting-room/reports",
+  },
+  SALES_VERTICAL_MEETING_ROOM_TOTAL_HOURS_CANCELLED_CARD: {
+    value: "sales_vertical_meeting_room_total_hours_cancelled_card",
+    title: "MEETING ROOM TOTAL HOURS CANCELLED CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/meeting-room/reports",
+  },
+  SALES_VERTICAL_MEETING_ROOM_OCCUPANCY_PERCENT_CARD: {
+    value: "sales_vertical_meeting_room_occupancy_percent_card",
+    title: "MEETING ROOM OCCUPANCY PERCENT CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/meeting-room/average-occupancy",
+  },
   SALES_VERTICAL_MEETING_ROOM_AVERAGE_UTILISATION_CARD: {
     value: "sales_vertical_meeting_room_average_utilisation_card",
     title: "MEETING ROOM AVERAGE UTILISATION CARD",
@@ -1847,9 +1875,9 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/sales-dashboard/meeting-room/unique-client-count",
   },
-  SALES_VERTICAL_MEETING_ROOM_MONTHLY_CLIENTS_GRAPH: {
-    value: "sales_vertical_meeting_room_monthly_clients_graph",
-    title: "MEETING ROOM MONTHLY CLIENTS GRAPH",
+  SALES_VERTICAL_MEETING_ROOM_INTERNAL_COMMITMENT_UTILIZATION_GRAPH: {
+    value: "sales_vertical_meeting_room_internal_commitment_utilization_graph",
+    title: "MEETING ROOM INTERNAL COMMITMENT UTILIZATION GRAPH",
     type: "read",
     access: "page",
     route: "/app/dashboard/sales-dashboard/meeting-room/monthly-clients",
@@ -1861,6 +1889,22 @@ export const PERMISSIONS = {
     access: "page",
     route:
       "/app/dashboard/sales-dashboard/meeting-room/internal-external-bookings",
+  },
+  SALES_VERTICAL_MEETING_ROOM_BOOKED_HOURS_CANCELLED_GRAPH: {
+    value: "sales_vertical_meeting_room_booked_hours_cancelled_graph",
+    title: "MEETING ROOM BOOKED HOURS VS CANCELLED GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/meeting-room/booked-hours-cancelled",
+  },
+  SALES_VERTICAL_MEETING_ROOM_MEETING_DURATION_BREAKDOWN_GRAPH: {
+    value: "sales_vertical_meeting_room_meeting_duration_breakdown_graph",
+    title: "MEETING ROOM DURATION BREAKDOWN GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/meeting-room/meeting-duration-breakdown",
   },
   SALES_VERTICAL_MEETING_ROOM_EXTERNAL_GUESTS_GRAPH: {
     value: "sales_vertical_meeting_room_external_guests_graph",

@@ -575,6 +575,35 @@ const DayPassInvoiceFields = ({ revenue }) => {
       return Array.isArray(response.data) ? response.data : [];
     },
   });
+  const { data: consolidatedMeetingRevenue = [] } = useQuery({
+    queryKey: ["meeting-room-tooltip-revenue"],
+    enabled: dashboardView,
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      const revenue = Array.isArray(response.data?.meetingRevenue)
+        ? response.data.meetingRevenue
+        : [];
+
+      return revenue.filter((item) => {
+        const meetingType = String(
+          item?.meetingType ||
+            item?.particulars ||
+            item?.visitorDetails?.purposeOfVisit ||
+            "",
+        )
+          .trim()
+          .toLowerCase();
+        const isDayPass =
+          item?.source === "day-pass" ||
+          meetingType.includes("half-day") ||
+          meetingType.includes("half day") ||
+          meetingType.includes("full-day") ||
+          meetingType.includes("full day");
+
+        return !isDayPass;
+      });
+    },
+  });
 
   const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
   const tableData = meetingsData.map((monthData) => ({
@@ -804,7 +833,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
       fiscalMonths.map((month) => [month.format("YYYY-MM"), 0]),
     );
 
-    selectedFiscalYearRevenue.forEach((item) => {
+    consolidatedMeetingRevenue.forEach((item) => {
       const revenueDate = dayjs(item.date);
       if (!revenueDate.isValid()) return;
 
@@ -833,7 +862,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
         ? actualCountsByMonth.get(month.format("YYYY-MM")) || 0
         : projectedMonthlyClientCount,
     );
-  }, [dashboardView, selectedFY, selectedFiscalYearRevenue]);
+  }, [consolidatedMeetingRevenue, dashboardView, selectedFY]);
   const dashboardAxisScale = useMemo(() => {
     const highestValue = Math.max(
       0,
