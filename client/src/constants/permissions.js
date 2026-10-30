@@ -999,13 +999,6 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/finance-dashboard1/real-estate-owned",
   },
-  FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT: {
-    value: "finance1_three_years_snapshot",
-    title: "BIZNEST FINANCE 3 YEARS SNAPSHOT",
-    type: "read",
-    access: "page",
-    route: "/app/dashboard/finance-dashboard1/finance-3-years-snapshot",
-  },
   FINANCE1_BIZNEST_THREE_YEARS_SNAPSHOT: {
     value: "finance1_biznest_three_years_snapshot",
     title: "BIZNEST 3 YEARS SNAPSHOT",
@@ -1072,24 +1065,9 @@ export const PERMISSIONS = {
     title: "CASHFLOW",
     type: "read",
   },
-  FINANCE1_CATEGORY_WISE_TICKETS: {
-    value: "finance1_category_wise_tickets_chart",
-    title: "CATEGORY WISE TICKETS",
-    type: "read",
-  },
-  FINANCE1_CUSTOMER_COLLECTIONS: {
-    value: "finance1_customer_collections_pie_chart",
-    title: "FINANCE CUSTOMER COLLECTIONS PIE CHART",
-    type: "read",
-  },
   FINANCE1_DATA: {
     value: "finance1_data_card",
     title: "FINANCE DATA",
-    type: "read",
-  },
-  FINANCE1_DUE_TICKETS: {
-    value: "finance1_due_tickets_chart",
-    title: "DUE TICKETS",
     type: "read",
   },
   FINANCE1_EXECUTIVE_WISE_DUE_TASKS: {
@@ -1127,11 +1105,6 @@ export const PERMISSIONS = {
     title: "FINANCE MIX BAG",
     type: "read",
   },
-  FINANCE1_PAYOUTS: {
-    value: "finance1_payouts_pie_chart",
-    title: "FINANCE PAYOUTS PIE CHART",
-    type: "read",
-  },
   FINANCE1_PAYOUTS_MUI_TABLE: {
     value: "finance1_payouts_table",
     title: "FINANCE PAYOUTS TABLE",
@@ -1155,11 +1128,6 @@ export const PERMISSIONS = {
   FINANCE1_STATUTORY_PAYMENTS_DONUT: {
     value: "finance1_statutory_payments_donut_chart",
     title: "FINANCE STATUTORY PAYMENTS DONUT CHART",
-    type: "read",
-  },
-  FINANCE1_UNIT_WISE_DUE_TASKS: {
-    value: "finance1_unit_wise_due_tasks_chart",
-    title: "UNIT WISE DUE TASKS",
     type: "read",
   },
   SIDEBAR_FINANCE_DASHBOARD1: {

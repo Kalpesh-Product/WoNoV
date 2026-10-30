@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
+import { Menu } from "@mui/material";
 import { useDispatch } from "react-redux";
 import dayjs from "dayjs";
 import {
@@ -9,12 +10,20 @@ import {
   MdOutlineRemoveRedEye,
   MdPersonAddAlt1,
   MdPersonOff,
-  MdSettings,
+  MdKeyboardArrowDown,
   MdShoppingBag,
   MdAssignmentInd,
   MdTrendingDown,
   MdTrendingUp,
 } from "react-icons/md";
+import {
+  FiChevronRight,
+  FiDatabase,
+  FiGrid,
+  FiUploadCloud,
+  FiUserPlus,
+  FiUsers,
+} from "react-icons/fi";
 import {
   LuChartPie as ChartPie,
   LuChartNoAxesCombined as ChartNoAxesCombined,
@@ -26,7 +35,6 @@ import useUserPermissions from "../../../../hooks/useUserPermissions";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetSection from "../../../../components/WidgetSection";
-import Card from "../../../../components/Card";
 import PieChartMui from "../../../../components/graphs/PieChartMui";
 import AgTable from "../../../../components/AgTable";
 import StatusChip from "../../../../components/StatusChip";
@@ -37,6 +45,8 @@ import InvestorOperationalCharts from "../../InvestorDashboard/InvestorOperation
 import LeadsLayout from "../ViewClients/LeadsLayout";
 import VirtualOffice from "../VirtualOffice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
+
+const VIRTUAL_OFFICE_MONTHLY_PROJECTION = 500000;
 
 const getNumericAmount = (value) =>
   Number(String(value ?? "0").replace(/,/g, "")) || 0;
@@ -510,6 +520,7 @@ const VirtualOfficeUniqueClientsGraph = ({ revenueRows }) => {
       virtualOfficeProjectedLegend="Remaining KRA Target"
       virtualOfficeActualColor="#3cb37180"
       virtualOfficeProjectedColor="#787878"
+      virtualOfficeProjectedClientCount={35}
       virtualOfficeTooltipLabel="Virtual Office Client"
       virtualOfficeDataLabelsAbove
     />
@@ -872,58 +883,6 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
   );
 };
 
-const VirtualOfficeActionCards = ({ hasPermission }) => {
-  const cards = [
-    {
-      title: "Onboard New VO Customer",
-      icon: <MdPersonAddAlt1 />,
-      route:
-        "/app/dashboard/sales-dashboard/virtual-office/client-onboarding",
-      permission:
-        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD.value,
-    },
-    {
-      title: "Overall VO Summary",
-      icon: <MdAssignmentInd />,
-      route:
-        "/app/dashboard/sales-dashboard/virtual-office/client-details",
-      permission:
-        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD.value,
-    },
-    {
-      title: "Mix Bag",
-      icon: <MdShoppingBag />,
-      route:
-        "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
-      permission:
-        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
-    },
-    {
-      title: "Data",
-      icon: <SiGoogleadsense />,
-      route: "/app/dashboard/sales-dashboard/virtual-office/data",
-      permission: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
-    },
-  ].filter((card) => hasPermission(card.permission));
-
-  if (!cards.length) return null;
-
-  return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {cards.map((card) => (
-        <Card
-          key={card.title}
-          title={card.title}
-          icon={card.icon}
-          route={card.route}
-          fontColor="#1E3D73"
-          titleColor="#1E3D73"
-        />
-      ))}
-    </div>
-  );
-};
-
 const channelChartConfig = {
   sourcing: {
     title: "Sourcing Channels",
@@ -1104,20 +1063,78 @@ const VirtualOfficeDashboard = ({
   const { hasPermission } = useUserPermissions();
   const liveCurrentMonth = useLiveCurrentMonth();
   const fiscalYear = getFiscalYearLabel(liveCurrentMonth);
-  const [isBrowserZoomedOut, setIsBrowserZoomedOut] = useState(false);
+  const navigate = useNavigate();
+  const [menuAnchor, setMenuAnchor] = useState(null);
+  const [activeMenuCard, setActiveMenuCard] = useState(null);
 
-  useEffect(() => {
-    const updateBrowserZoom = () => {
-      const viewportZoomRatio = window.outerWidth / window.innerWidth;
-      setIsBrowserZoomedOut(
-        viewportZoomRatio < 0.9 || window.devicePixelRatio < 0.9,
-      );
-    };
-
-    updateBrowserZoom();
-    window.addEventListener("resize", updateBrowserZoom);
-    return () => window.removeEventListener("resize", updateBrowserZoom);
-  }, []);
+  const menuCards = [
+    {
+      title: "Onboard New VO Customer",
+      icon: <MdPersonAddAlt1 />,
+      permission:
+        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD.value,
+      items: [
+        {
+          label: "Client Onboarding",
+          description: "Add a new virtual office customer",
+          icon: <FiUserPlus />,
+          route:
+            "/app/dashboard/sales-dashboard/virtual-office/client-onboarding",
+        },
+      ],
+    },
+    {
+      title: "Overall VO Summary",
+      icon: <MdAssignmentInd />,
+      permission:
+        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD.value,
+      items: [
+        {
+          label: "Client Details",
+          description: "View all virtual office customers",
+          icon: <FiUsers />,
+          route:
+            "/app/dashboard/sales-dashboard/virtual-office/client-details",
+        },
+      ],
+    },
+    {
+      title: "Mix Bag",
+      icon: <MdShoppingBag />,
+      permission:
+        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
+      items: [],
+    },
+    {
+      title: "Data",
+      icon: <SiGoogleadsense />,
+      permission: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+      items: [
+        {
+          label: "Vendor Data",
+          description: "View and manage vendor records",
+          icon: <FiDatabase />,
+          route: "/app/dashboard/sales-dashboard/virtual-office/data",
+        },
+        {
+          label: "Vendor Onboarding",
+          description: "Add a new vendor record",
+          icon: <FiUploadCloud />,
+          route:
+            "/app/dashboard/sales-dashboard/virtual-office/data/vendor-onboard",
+        },
+      ],
+    },
+  ]
+    .filter((card) => hasPermission(card.permission))
+    .map((card) => ({
+      ...card,
+      items: card.items.filter(
+        (item) => !item.permission || hasPermission(item.permission),
+      ),
+    }));
+  const resolvedActiveMenuCard =
+    menuCards.find((card) => card.title === activeMenuCard) || menuCards[0];
 
   const {
     data: virtualOfficeRevenue = [],
@@ -1181,12 +1198,9 @@ const VirtualOfficeDashboard = ({
           : latest,
       -1,
     );
-    const projectedMonthlyAverage =
-      latestActualMonthIndex >= 0
-        ? actualIncome / (latestActualMonthIndex + 1)
-        : 0;
     const projectedIncome =
-      projectedMonthlyAverage * Math.max(11 - latestActualMonthIndex, 0);
+      VIRTUAL_OFFICE_MONTHLY_PROJECTION *
+      Math.max(11 - latestActualMonthIndex, 0);
     const latestActualMonthRevenue =
       latestActualMonthIndex >= 0
         ? actualRevenueRows.reduce((total, row) => {
@@ -1204,7 +1218,7 @@ const VirtualOfficeDashboard = ({
           }, 0)
         : 0;
     const averageShortfallSurplus = Math.round(
-      latestActualMonthRevenue - projectedMonthlyAverage,
+      latestActualMonthRevenue - VIRTUAL_OFFICE_MONTHLY_PROJECTION,
     );
     const activeUniqueCustomers = currentYearRevenue.filter((row) => {
       const revenueMonth = dayjs(getRevenueDate(row)).startOf("month");
@@ -1284,7 +1298,7 @@ const VirtualOfficeDashboard = ({
     hasPermission(occupancyPermissions[chart]),
   );
   const occupancyTitleOverrides = {
-    india: "Nationwise Bookings",
+    india: "Nationwise Companies Bookings",
     sector: "Sectorwise Bookings",
   };
   const channelPermissions = {
@@ -1296,16 +1310,6 @@ const VirtualOfficeDashboard = ({
   const visibleChannelCharts = ["sourcing", "directPaid"].filter((chart) =>
     hasPermission(channelPermissions[chart]),
   );
-  const activeOccupancyClients = useMemo(
-    () =>
-      virtualOfficeClients.filter((client) =>
-        typeof client?.isActive === "boolean"
-          ? client.isActive
-          : Boolean(client?.clientStatus),
-      ),
-    [virtualOfficeClients],
-  );
-
   if (emptyView) return null;
 
   if (occupancyView) {
@@ -1316,8 +1320,9 @@ const VirtualOfficeDashboard = ({
           routes={occupancyRoutes}
           showDetails
           noOuterPadding
-          clientsOverride={activeOccupancyClients}
           biznestMixedCase
+          indiaCompanyTooltip
+          sectorOtherTooltip
           titleOverrides={occupancyTitleOverrides}
         />
       </div>
@@ -1356,6 +1361,97 @@ const VirtualOfficeDashboard = ({
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={() => setMenuAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "calc(100vw - 24px)", sm: 680 },
+              maxWidth: "calc(100vw - 24px)",
+              borderRadius: 2,
+              border: "1px solid #e0e8f5",
+              mt: 1,
+            },
+          },
+        }}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
+            {menuCards.map((card) => (
+              <button
+                key={card.title}
+                type="button"
+                onClick={() => setActiveMenuCard(card.title)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${
+                  resolvedActiveMenuCard?.title === card.title
+                    ? "bg-[#e7f1ff]"
+                    : "hover:bg-[#eef5ff]"
+                }`}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
+                  {card.icon}
+                </span>
+                <span className="min-w-0 flex-1 leading-tight">{card.title}</span>
+                <FiChevronRight className="shrink-0" size={17} />
+              </button>
+            ))}
+          </div>
+          <div className="min-h-[260px] p-4 sm:p-5">
+            {resolvedActiveMenuCard && (
+              <>
+                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                    {resolvedActiveMenuCard.icon}
+                  </span>
+                  <div>
+                    <p className="font-psemibold text-base text-[#1E3D73]">
+                      {resolvedActiveMenuCard.title}
+                    </p>
+                    <p className="text-xs text-[#7084a4]">
+                      Open virtual office modules
+                    </p>
+                  </div>
+                </div>
+                <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
+                  {resolvedActiveMenuCard.items.length === 0 && (
+                    <p className="px-2 py-6 text-center text-sm text-[#7b8eac]">
+                      No sub-modules available
+                    </p>
+                  )}
+                  {resolvedActiveMenuCard.items.map((item) => (
+                    <button
+                      key={item.route}
+                      type="button"
+                      onClick={() => {
+                        setMenuAnchor(null);
+                        navigate(item.route);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
+                        {item.icon}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-pmedium text-[15px] leading-tight">
+                          {item.label}
+                        </span>
+                        <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
+                          {item.description}
+                        </span>
+                      </span>
+                      <FiChevronRight className="shrink-0" size={17} />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </Menu>
       <div className="overflow-hidden rounded-lg">
         <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
           <img
@@ -1387,31 +1483,31 @@ const VirtualOfficeDashboard = ({
           </div>
           <nav
             aria-label="Virtual Office dashboard navigation"
-            className={`absolute bottom-0 left-0 z-10 flex items-center overflow-x-auto px-3 sm:px-4 ${
-              isBrowserZoomedOut
-                ? "w-[46.5%] justify-between gap-0"
-                : "w-[61%] gap-4 sm:gap-5 lg:gap-5"
-            }`}
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
                 <Link
                   key={item}
                   to=""
-                  className="group relative shrink-0 py-3 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
                 >
                   {item}
                   <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100" />
                 </Link>
               ),
             )}
-            <Link
-              to=""
-              className="my-1.5 flex shrink-0 items-center gap-2 rounded-full border border-[#CBD5E1] bg-white/90 px-2.5 py-1.5 font-pmedium text-xs text-[#1E3D73] shadow-sm sm:text-sm lg:text-base"
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={Boolean(menuAnchor)}
+              onClick={(event) => setMenuAnchor(event.currentTarget)}
+              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
             >
-              <MdSettings className="text-lg sm:text-xl" aria-hidden="true" />
-              Settings
-            </Link>
+              <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
+              <span>Menu</span>
+              <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
+            </button>
           </nav>
         </div>
       </div>
@@ -1427,14 +1523,14 @@ const VirtualOfficeDashboard = ({
       {canViewUniqueClientsGraph && (
         <VirtualOfficeUniqueClientsGraph revenueRows={virtualOfficeRevenue} />
       )}
-      <VirtualOfficeActionCards hasPermission={hasPermission} />
       {visibleOccupancyCharts.length > 0 && (
         <InvestorOperationalCharts
           visibleCharts={visibleOccupancyCharts}
           routes={occupancyRoutes}
           investorInventoryStyle
-          clientsOverride={activeOccupancyClients}
           biznestMixedCase
+          indiaCompanyTooltip
+          sectorOtherTooltip
           titleOverrides={occupancyTitleOverrides}
         />
       )}

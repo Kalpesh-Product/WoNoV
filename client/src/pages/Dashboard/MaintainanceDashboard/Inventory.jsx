@@ -1720,6 +1720,25 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       return;
     }
 
+    const availableUnits = Number(
+      selectedAsset?.newRemainingUnitValue ??
+        selectedAsset?.remainingNewPurchaseInventoryUnits ??
+        selectedAsset?.remainingUnits ??
+        selectedAsset?.closingInventoryUnits ??
+        0,
+    );
+    const requestedConsumption = Number(data.newConsumedUnitValue);
+
+    if (!Number.isFinite(requestedConsumption) || requestedConsumption <= 0) {
+      toast.error("Consumed units must be greater than 0.");
+      return;
+    }
+
+    if (requestedConsumption > availableUnits) {
+      toast.error(`Only ${availableUnits} unit(s) are available to consume.`);
+      return;
+    }
+
     updateAsset({
       ...data,
       openingInventoryUnits: Number(data.openingInventoryUnits) || 0,
@@ -4064,7 +4083,27 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                 <Controller
                   name="newConsumedUnitValue"
                   control={updateControl}
-                  rules={{ required: "New consumed unit value is required" }}
+                  rules={{
+                    required: "New consumed unit value is required",
+                    min: {
+                      value: 1,
+                      message: "Consumed units must be greater than 0",
+                    },
+                    validate: (value) => {
+                      const availableUnits = Number(
+                        selectedAsset?.newRemainingUnitValue ??
+                          selectedAsset?.remainingNewPurchaseInventoryUnits ??
+                          selectedAsset?.remainingUnits ??
+                          selectedAsset?.closingInventoryUnits ??
+                          0,
+                      );
+
+                      return (
+                        Number(value) <= availableUnits ||
+                        `Only ${availableUnits} unit(s) are available`
+                      );
+                    },
+                  }}
                   render={({ field }) => (
                     <TextField
                       {...field}
@@ -4074,6 +4113,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                           : "New Consumed Units"
                       }
                       type="number"
+                      inputProps={{ min: 1 }}
                       size="small"
                       fullWidth
                       error={!!updateErrors.newConsumedUnitValue}
