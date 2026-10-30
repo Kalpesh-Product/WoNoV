@@ -9,11 +9,23 @@ import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import { useCurrency } from "../../../context/CurrencyContext";
 import { CircularProgress, TextField } from "@mui/material";
-import { Menu, MenuItem } from "@mui/material";
+import { Menu } from "@mui/material";
 import FinanceDashboard1Summary from "./FinanceDashboard1Summary";
-import { MdSettings, MdCalendarMonth, MdChevronRight } from "react-icons/md";
+import { MdCalendarMonth, MdKeyboardArrowDown } from "react-icons/md";
+import {
+  FiChevronRight,
+  FiGrid,
+  FiFileText,
+  FiUploadCloud,
+  FiUsers,
+  FiTrendingUp,
+  FiDatabase,
+  FiSettings,
+  FiCreditCard,
+  FiX,
+} from "react-icons/fi";
+import { FaChartSimple } from "react-icons/fa6";
 import financeBanner from "../../../assets/finance-dashboard-banner-new.png";
-import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
   MdOutlineMiscellaneousServices,
@@ -1407,7 +1419,7 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   const completedMonths = getCashflowActualMonthCount(startYear, now);
   const openingBalance = cashflowOpeningForYear(financialSeries, startYear);
   const rows = projectCashflowRows(income, expenses, completedMonths, openingBalance);
-  const amountLabel = (value) => new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.trunc(Number(value) / 100000 * 100) / 100);
+  const amountLabel = (value) => new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.trunc(Number(value) / 100000 * 100) / 100);
   const cashflowBalance = completedMonths ? rows[completedMonths - 1].closing : openingBalance;
   const visibleAmount = (row, field, label) => hiddenLegendItems.includes(label) || (row.projected && hiddenLegendItems.includes("Projected")) ? null : field === "closing" ? Math.max(0, row.closing) : row[field];
   const availableFiscalYears = financialSeries.map((series) => Number(series.group?.match(/\d{4}/)?.[0])).filter(Number.isFinite);
@@ -1595,204 +1607,6 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   );
 };
 
-const Finance1Snapshot = ({
-  incomeData,
-  expenseData,
-  fiscalYear,
-  projectedFinancials,
-  totalSqft,
-  assetValueOwned,
-  totalInventory,
-}) => {
-  const navigate = useFinanceNavigate();
-  const { currency, convert } = useCurrency();
-  const startYear = Number(fiscalYear.match(/\d{4}/)?.[0]);
-  const money = (value) =>
-    value === null ? (
-      "—"
-    ) : (
-      <InvestorCurrencyAmount
-        currency={currency}
-        value={formatGraphAmount(value, currency, convert)}
-      />
-    );
-  return (
-    <WidgetSection
-      border
-      normalCase
-      borderColor="#1E3D73"
-      bodyBorderColor="#9FB2CF"
-      title={
-        <button
-          type="button"
-          onClick={() =>
-            navigate(
-              "/app/dashboard/finance-dashboard1/finance-3-years-snapshot",
-            )
-          }
-          className="inline-flex items-baseline gap-2 whitespace-nowrap text-left leading-none text-[#1E3D73]"
-        >
-          <InvestorHeaderLogo />
-          <span className="inline-flex items-baseline leading-none">
-            3 YEARS SNAPSHOT - FY {startYear - 2}-
-            {String(startYear - 1).slice(-2)} TO {fiscalYear}
-          </span>
-        </button>
-      }
-    >
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {[0, 1, 2].map((offset) => {
-          const year = startYear - offset;
-          const label = `FY ${year}-${String(year + 1).slice(-2)}`;
-          const incomes =
-            incomeData.find((series) => series.group === label)?.data ||
-            Array(12).fill(0);
-          const expenses =
-            expenseData.find((series) => series.group === label)?.data ||
-            Array(12).fill(0);
-          const isCurrent = offset === 0;
-          const actualIncome = incomes.reduce(
-            (sum, value) => sum + (Number(value) || 0),
-            0,
-          );
-          const actualExpense = expenses.reduce(
-            (sum, value) => sum + (Number(value) || 0),
-            0,
-          );
-          const income = isCurrent
-            ? Number(projectedFinancials?.revenue) || 0
-            : actualIncome;
-          const expense = isCurrent
-            ? Number(projectedFinancials?.expense) || 0
-            : actualExpense;
-          const fiscalYearSqft = Math.max(
-            (Number(totalSqft) || 0) -
-              (offset === 1 ? 5_000 : offset === 2 ? 7_500 : 0),
-            0,
-          );
-          const profitLoss = income - expense;
-          const yearInventory = isCurrent ? Number(totalInventory) || 0 : 580;
-          const yearAssetOwned = isCurrent
-            ? Number(assetValueOwned) || 0
-            : offset === 1
-              ? 4_885_986
-              : 4_427_360;
-          const perSqFtIncome = fiscalYearSqft ? income / fiscalYearSqft : 0;
-          const perSqFtExpense = fiscalYearSqft ? expense / fiscalYearSqft : 0;
-          const perSqFtProfitLoss = perSqFtIncome - perSqFtExpense;
-          const cards = [
-            {
-              title: null,
-              rows: [
-                {
-                  label: "Income",
-                  value: money(income),
-                  tone: "text-[#12a573]",
-                },
-                {
-                  label: "Expenses",
-                  value: money(expense),
-                  tone: "text-[#f04a4a]",
-                },
-                {
-                  label: "Profit/Loss",
-                  value: money(profitLoss),
-                  tone: profitLoss >= 0 ? "text-[#12a573]" : "text-[#f04a4a]",
-                },
-                {
-                  label: "Exit Inventory",
-                  value: `${yearInventory.toLocaleString("en-IN")} Desks`,
-                  tone: "text-[#12a573]",
-                },
-                {
-                  label: "Asset Owned",
-                  value: money(yearAssetOwned),
-                  tone: "text-[#12a573]",
-                },
-              ],
-            },
-            {
-              title: `${label} - TOTAL SQ FT`,
-              totalSqFt: Math.round(fiscalYearSqft).toLocaleString("en-IN"),
-              rows: [
-                {
-                  label: "Per Sq. Ft. Income",
-                  value: money(Math.round(perSqFtIncome)),
-                  tone: "text-[#12a573]",
-                },
-                {
-                  label: "Per Sq. Ft. Expense",
-                  value: money(Math.round(perSqFtExpense)),
-                  tone: "text-[#f04a4a]",
-                },
-                {
-                  label: "Per Sq. Ft. Profit/Loss",
-                  value: money(Math.round(perSqFtProfitLoss)),
-                  tone:
-                    perSqFtProfitLoss >= 0
-                      ? "text-[#12a573]"
-                      : "text-[#f04a4a]",
-                },
-              ],
-            },
-          ];
-          return (
-            <div key={label} className="flex flex-col gap-3">
-              {cards.map((card, cardIndex) => (
-                <div
-                  key={card.title}
-                  className="rounded-lg border border-[#e0e8f5] bg-white px-5 py-4 shadow-sm"
-                >
-                  {cardIndex === 0 && (
-                    <div className="mb-4 flex items-center gap-4">
-                      <span
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${offset === 0 ? "bg-[#eafbf3] text-[#12a573]" : "bg-[#eaf0f8] text-[#3F6291]"}`}
-                        aria-hidden="true"
-                      >
-                        {offset === 1 ? (
-                          <MdCalendarMonth size={28} />
-                        ) : (
-                          <span className="flex h-8 w-8 items-end justify-center gap-1">
-                            <span className="h-3 w-1.5 rounded-full bg-current" />
-                            <span className="h-5 w-1.5 rounded-full bg-current" />
-                            <span className="h-7 w-1.5 rounded-full bg-current" />
-                          </span>
-                        )}
-                      </span>
-                      <h3 className="font-pmedium text-base uppercase text-[#1E3D73]">
-                        FY - {year}-{String(year + 1).slice(-2)} - PROJECTIONS
-                      </h3>
-                    </div>
-                  )}
-                  {card.title && (
-                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2 font-pmedium text-[#1E3D73]">
-                      <h4 className="uppercase">{card.title}</h4>
-                      {card.totalSqFt !== undefined && (
-                        <span>{card.totalSqFt}</span>
-                      )}
-                    </div>
-                  )}
-                  {card.rows.map((row) => (
-                    <div
-                      key={row.label}
-                      className="flex items-center justify-between gap-3 border-b border-[#edf1f6] py-2 text-sm last:border-b-0"
-                    >
-                      <span className="text-[#3F6291]">{row.label}</span>
-                      <span className={`shrink-0 ${row.tone}`}>
-                        {row.value}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          );
-        })}
-      </div>
-    </WidgetSection>
-  );
-};
-
 const FinanceDashboard1 = () => {
   const [payoutDetails, setPayoutDetails] = useState(null);
   const payoutInvoiceFiles =
@@ -1879,13 +1693,77 @@ const FinanceDashboard1 = () => {
   const allowedCards = cardsConfig.filter(
     (card) => !card.permission || userPermissions.includes(card.permission),
   );
-  const dashboardCards = allowedCards.filter((card) =>
-    ["Finance", "Billing", "Mix-Bag", "Data"].includes(card.title),
-  );
-  const settingsCards = allowedCards.filter(
-    (card) => !["Finance", "Billing", "Mix-Bag", "Data"].includes(card.title),
-  );
+  const settingsCards = allowedCards;
   const [settingsAnchor, setSettingsAnchor] = useState(null);
+  const [activeMenuCard, setActiveMenuCard] = useState(null);
+  const menuSections = {
+    Cashflow: [
+      ["Projections", "/app/dashboard/finance-dashboard1/cashflow/projections"],
+      ["Historical P&L", "/app/dashboard/finance-dashboard1/cashflow/historical-P&L"],
+    ],
+    Finance: [
+      ["Budget", "/app/dashboard/finance-dashboard1/finance/budget"],
+      ["Budget History", "/app/dashboard/finance-dashboard1/finance/budget-history"],
+      ["Payment Schedule", "/app/dashboard/finance-dashboard1/finance/payment-schedule"],
+      ["Voucher", "/app/dashboard/finance-dashboard1/finance/voucher"],
+      ["Voucher History", "/app/dashboard/finance-dashboard1/finance/voucher-history"],
+    ],
+    Billing: [
+      ["Client Invoicing", "/app/dashboard/finance-dashboard1/billing/client-invoicing/co-working-revenue-invoicing"],
+      ["Voucher Request", "/app/dashboard/finance-dashboard1/billing/voucher-request/department-invoice-voucher"],
+      ["Budget Request", "/app/dashboard/finance-dashboard1/billing/budget-request/department-invoice-budget"],
+    ],
+    "Mix-Bag": [
+      ["Revenue", "/app/dashboard/finance-dashboard1/mix-bag/revenue"],
+      ["Manage Meetings", "/app/dashboard/finance-dashboard1/mix-bag/manage-meetings"],
+      ["Department Wise Budget", "/app/dashboard/finance-dashboard1/mix-bag/department-wise-budget"],
+      ["Collection & Payments", "/app/dashboard/finance-dashboard1/mix-bag/collection-payments"],
+      ["Directors & Company KYC", "/app/dashboard/finance-dashboard1/mix-bag/directors-company-KYC"],
+      ["Compliance Documents", "/app/dashboard/finance-dashboard1/mix-bag/compliance-documents"],
+      ["Landlord Agreements", "/app/dashboard/finance-dashboard1/mix-bag/landlord-agreements"],
+      ["Client Agreements", "/app/dashboard/finance-dashboard1/mix-bag/client-agreements"],
+    ],
+    Data: [
+      ["Asset List", "/app/dashboard/finance-dashboard1/data/asset-list"],
+      ["Monthly Budget Reports", "/app/dashboard/finance-dashboard1/data/monthly-budget-report"],
+      ["Monthly Invoice Reports", "/app/dashboard/finance-dashboard1/data/monthly-invoice-reports"],
+      ["Vendor", "/app/dashboard/finance-dashboard1/data/vendor"],
+    ],
+    Settings: [
+      ["Bulk Upload", "/app/dashboard/finance-dashboard1/settings/bulk-upload"],
+      ["SOPs", "/app/dashboard/finance-dashboard1/settings/sops"],
+      ["Policies", "/app/dashboard/finance-dashboard1/settings/policies"],
+    ],
+  };
+  const menuItemMeta = {
+    Projections: { icon: <FiTrendingUp />, description: "Future financial projections" },
+    "Historical P&L": { icon: <FiFileText />, description: "Review historical profit and loss" },
+    Budget: { icon: <FiDatabase />, description: "Plan and manage department budgets" },
+    "Budget History": { icon: <FiFileText />, description: "View previous budget records" },
+    "Payment Schedule": { icon: <MdCalendarMonth />, description: "Track upcoming payments" },
+    Voucher: { icon: <FiCreditCard />, description: "Create and manage vouchers" },
+    "Voucher History": { icon: <FiFileText />, description: "View voucher history" },
+    "Client Invoicing": { icon: <FiUsers />, description: "Manage client invoices" },
+    "Voucher Request": { icon: <FiFileText />, description: "Request department vouchers" },
+    "Budget Request": { icon: <FiDatabase />, description: "Request department budgets" },
+    Revenue: { icon: <FaChartSimple />, description: "Track revenue performance" },
+    "Manage Meetings": { icon: <FiUsers />, description: "Manage meeting bookings" },
+    "Department Wise Budget": { icon: <FiDatabase />, description: "Compare budgets by department" },
+    "Collection & Payments": { icon: <FiCreditCard />, description: "Monitor collections and payments" },
+    "Directors & Company KYC": { icon: <FiUsers />, description: "Manage company KYC details" },
+    "Compliance Documents": { icon: <FiFileText />, description: "Manage compliance records" },
+    "Landlord Agreements": { icon: <FiFileText />, description: "Manage landlord agreements" },
+    "Client Agreements": { icon: <FiFileText />, description: "Manage client agreements" },
+    "Asset List": { icon: <FiDatabase />, description: "View and manage assets" },
+    "Monthly Budget Reports": { icon: <FiFileText />, description: "Monthly budget insights" },
+    "Monthly Invoice Reports": { icon: <FiFileText />, description: "Monthly invoice insights" },
+    Vendor: { icon: <FiUsers />, description: "Manage vendor information" },
+    "Bulk Upload": { icon: <FiUploadCloud />, description: "Upload data in bulk" },
+    SOPs: { icon: <FiFileText />, description: "Standard operating procedures" },
+    Policies: { icon: <FiSettings />, description: "Configure finance policies" },
+  };
+  const resolvedActiveMenuCard =
+    settingsCards.find((card) => card.title === activeMenuCard) || settingsCards[0];
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
@@ -1911,27 +1789,6 @@ const FinanceDashboard1 = () => {
     },
     enabled: Boolean(department?._id),
   });
-
-  const { data: financeTickets = [], isLoading: isFinanceTicketsLoading } =
-    useQuery({
-      queryKey: ["finance-dashboard1-tickets", department?._id],
-      queryFn: async () => {
-        if (!department?._id) {
-          return [];
-        }
-
-        try {
-          const response = await axios.get(
-            `/api/tickets/department-tickets/${department._id}`,
-          );
-          return Array.isArray(response.data) ? response.data : [];
-        } catch (error) {
-          console.error("Error fetching finance tickets:", error);
-          return [];
-        }
-      },
-      enabled: !!department?._id,
-    });
 
   const { data: revenueExpenseData = [], isLoading: isRevenueExpenseLoading } =
     useQuery({
@@ -2021,14 +1878,6 @@ const FinanceDashboard1 = () => {
     },
   );
 
-  const chartPayoutMonthPayments = isBudgetDataLoading
-    ? []
-    : budgetData.filter(
-        (item) =>
-          item?.dueDate &&
-          dayjs(item.dueDate).format("MMM-YY") === chartPayoutMonth,
-      );
-
   const financeBudgetsRaw = isBudgetDataLoading
     ? []
     : budgetData.filter(
@@ -2078,48 +1927,6 @@ const FinanceDashboard1 = () => {
     [tasks],
   );
 
-  const unitWiseTaskData = useMemo(() => {
-    const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
-      const unitName = task?.location?.unitNo || "Unassigned";
-
-      if (!acc[unitName]) {
-        acc[unitName] = {
-          unit: unitName,
-          tasks: 0,
-        };
-      }
-
-      acc[unitName].tasks += 1;
-      return acc;
-    }, {});
-
-    return Object.values(groupedTasks).sort((a, b) =>
-      a.unit.localeCompare(b.unit, undefined, { numeric: true }),
-    );
-  }, [pendingDepartmentTasks]);
-
-  const unitWisePieData = unitWiseTaskData.map((item) => ({
-    label: item.unit,
-    value: item.tasks,
-  }));
-
-  const unitPieChartOptions = {
-    labels: unitWisePieData.map((item) => item.label),
-    chart: {
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: () => {
-          navigate("/app/tasks");
-        },
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: (val) => `${val} Due tasks`,
-      },
-    },
-  };
-
   const executiveTasks = useMemo(() => {
     const groupedTasks = pendingDepartmentTasks.reduce((acc, task) => {
       const departmentName =
@@ -2155,155 +1962,6 @@ const FinanceDashboard1 = () => {
     "#E67E22",
     "#E91E63",
   ];
-
-  const financeCategoryWiseTickets = useMemo(() => {
-    if (isFinanceTicketsLoading || !Array.isArray(financeTickets)) return [];
-
-    const categoryCountMap = financeTickets.reduce((acc, item) => {
-      const category = String(item?.ticket || "Others").trim() || "Others";
-      acc[category] = (acc[category] || 0) + 1;
-      return acc;
-    }, {});
-
-    const sortedCategories = Object.entries(categoryCountMap)
-      .map(([label, value]) => ({ label, value }))
-      .sort((first, second) => second.value - first.value);
-
-    if (sortedCategories.length <= 5) {
-      return sortedCategories;
-    }
-
-    const topCategories = sortedCategories.slice(0, 5);
-    const othersCount = sortedCategories
-      .slice(5)
-      .reduce((sum, item) => sum + item.value, 0);
-
-    return [...topCategories, { label: "Others", value: othersCount }];
-  }, [financeTickets, isFinanceTicketsLoading]);
-
-  const financeCategoryWiseTicketsData = financeCategoryWiseTickets.map(
-    (item) => ({
-      label: item.label,
-      value: item.value,
-    }),
-  );
-
-  const financeCategoryWiseTicketsOptions = {
-    labels: financeCategoryWiseTickets.map((item) => item.label),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      horizontalAlign: "center",
-      itemMargin: {
-        horizontal: 4,
-        vertical: 2,
-      },
-      formatter: (seriesName) =>
-        `<span title="${seriesName}" style="display:inline-block;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom;font-size:12px;line-height:1.2;">${seriesName}</span>`,
-    },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ["#ffffff"],
-    },
-    colors: ["#274C77", "#6096BA", "#A3CEF1", "#8B5E3C", "#5B8E7D", "#D08C60"],
-    tooltip: {
-      fillSeriesColor: false,
-      custom: ({ series, seriesIndex, w }) => {
-        const category =
-          financeCategoryWiseTickets?.[seriesIndex]?.label ||
-          w?.globals?.labels?.[seriesIndex] ||
-          "Unknown";
-        const count = series?.[seriesIndex] ?? 0;
-        const color =
-          w?.globals?.colors?.[seriesIndex] ||
-          financeCategoryWiseTicketsOptions.colors[
-            seriesIndex % financeCategoryWiseTicketsOptions.colors.length
-          ];
-
-        return `<div style="
-          padding:8px 12px;
-          font-size:12px;
-          font-family:Poppins-Regular;
-          font-weight:600;
-          background:${color};
-          color:#fff;
-          border-radius:6px;
-        ">
-          ${category} : ${count}
-        </div>`;
-      },
-    },
-  };
-
-  const financePendingStatuses = new Set([
-    "open",
-    "pending",
-    "in progress",
-    "escalated",
-  ]);
-
-  const financePendingTicketsCount = (
-    Array.isArray(financeTickets) ? financeTickets : []
-  ).filter((ticket) =>
-    financePendingStatuses.has(String(ticket?.status || "").toLowerCase()),
-  ).length;
-
-  const financeCompletedTicketsCount = (
-    Array.isArray(financeTickets) ? financeTickets : []
-  ).filter(
-    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
-  ).length;
-
-  const financeDueTicketsData = [
-    { label: "Completed", value: financeCompletedTicketsCount },
-    { label: "Pending", value: financePendingTicketsCount },
-  ];
-
-  const financeDueTicketsOptions = {
-    labels: financeDueTicketsData.map((item) => item.label),
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    legend: {
-      horizontalAlign: "center",
-      itemMargin: {
-        horizontal: 8,
-        vertical: 4,
-      },
-    },
-    stroke: {
-      show: true,
-      width: 2,
-      colors: ["#ffffff"],
-    },
-    colors: ["#59C9A5", "#FCA5A5"],
-    tooltip: {
-      fillSeriesColor: false,
-      custom: ({ series, seriesIndex, w }) => {
-        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
-        const count = series?.[seriesIndex] ?? 0;
-        const color =
-          w?.globals?.colors?.[seriesIndex] ||
-          financeDueTicketsOptions.colors[
-            seriesIndex % financeDueTicketsOptions.colors.length
-          ];
-
-        return `<div style="
-          padding:8px 12px;
-          font-size:12px;
-          font-family:Poppins-Regular;
-          font-weight:600;
-          background:${color};
-          color:#fff;
-          border-radius:6px;
-        ">
-          ${label} : ${count}
-        </div>`;
-      },
-    },
-  };
 
   // const yearCategories = {
   //   "FY 2024-25": [
@@ -2879,7 +2537,7 @@ const FinanceDashboard1 = () => {
               convert,
               projectionDisplayScale,
               projectionBarFractionDigits,
-              "de-DE",
+              "en-US",
             )
           : "",
       offsetY: -20,
@@ -3020,230 +2678,6 @@ const FinanceDashboard1 = () => {
   };
 
   //-----------------------------------------------------DataCards------------------------------------------------------//
-  //-----------------------------------------------------Pie Monthly Payout------------------------------------------------------//
-  const clientPayouts = chartPayoutMonthPayments.map((expense) => ({
-    clientName: expense.expanseName,
-    amount: expense.actualAmount || 0,
-    status: expense.status === "Approved" ? "approved" : "pending",
-    date: dayjs(expense.dueDate).format("DD-MMM-YYYY"), // e.g., "15-May-2024"
-  }));
-
-  const approvedClients = clientPayouts.filter((c) => c.status === "approved");
-  const pendingClients = clientPayouts.filter((c) => c.status === "pending");
-  const approvedPayoutValue = approvedClients.reduce(
-    (sum, client) => sum + client.amount,
-    0,
-  );
-  const pendingPayoutValue = pendingClients.reduce(
-    (sum, client) => sum + client.amount,
-    0,
-  );
-  const totalPayoutValue = approvedPayoutValue + pendingPayoutValue;
-  const payoutPieStartAngle = totalPayoutValue
-    ? 180 - (approvedPayoutValue / totalPayoutValue) * 180
-    : 90;
-
-  const pieMonthlyPayoutData = [
-    {
-      label: "Approved",
-      value: Math.round(approvedPayoutValue),
-      clients: approvedClients,
-    },
-    {
-      label: "Pending",
-      value: Math.round(pendingPayoutValue),
-      clients: pendingClients,
-    },
-  ];
-
-  const pieMonthlyPayoutOptions = {
-    chart: {
-      fontFamily: "Poppins-Regular",
-      events: {
-        dataPointSelection: function (event, chartContext, config) {
-          const dataPointIndex = config.dataPointIndex;
-          const selectedCategory = pieMonthlyPayoutData[dataPointIndex];
-
-          // Perform navigation or logic
-          if (selectedCategory) {
-            // Example: navigate or log the label/value
-
-            // Replace with actual navigation logic
-            navigate(`finance`);
-          }
-        },
-      },
-    },
-    colors: ["#4CAF50", "#FDE3A7"],
-    labels: pieMonthlyPayoutData.map((item) => item.label),
-    legend: {
-      show: true,
-      position: "right",
-    },
-    dataLabels: {
-      formatter: (val) => `${val.toFixed(1)}%`,
-      style: {
-        fontSize: "14px",
-      },
-    },
-    tooltip: {
-      custom: function ({ seriesIndex }) {
-        const category = pieMonthlyPayoutData[seriesIndex];
-        const isPending = category?.label === "Pending";
-
-        return `
-          <div style="
-            padding: 6px 10px;
-            border-radius: 4px;
-            background: ${isPending ? "#FDE3A7" : "#4CAF50"};
-            color: ${isPending ? "#000000" : "#FFFFFF"};
-            font-family: Poppins-Regular;
-            font-size: 12px;
-            font-weight: 600;
-          ">
-            ${category?.label || ""}: INR ${category?.value?.toLocaleString("en-IN") || 0}
-          </div>
-        `;
-      },
-    },
-    plotOptions: {
-      pie: {
-        // startAngle: payoutPieStartAngle,
-        // endAngle: payoutPieStartAngle + 180,
-        expandOnClick: true,
-      },
-    },
-  };
-
-  //-----------------------------------------------------Pie Monthly Payout------------------------------------------------------//
-  //-----------------------------------------------------Pie Monthly Collections------------------------------------------------------//
-  // 1. Safe data access from the array structure
-  const incomeEntry = Array.isArray(revenueExpenseData)
-    ? revenueExpenseData.find((entry) => entry.income)
-    : null;
-
-  const income = incomeEntry?.income;
-  const currentCollectionsMonth = dayjs().subtract(1, "month").format("MMM-YY");
-
-  const getNormalizedPaymentStatus = (value) => {
-    if (typeof value === "string") return value.trim().toLowerCase();
-    return value ? "paid" : "unpaid";
-  };
-
-  const getNumericAmount = (value) => {
-    if (typeof value === "number") return value;
-    if (typeof value === "string") {
-      const parsedValue = parseFloat(value.replace(/,/g, ""));
-      return Number.isNaN(parsedValue) ? 0 : parsedValue;
-    }
-    return 0;
-  };
-
-  const unifiedRevenueData = useMemo(() => {
-    const flatten = [];
-
-    simpleRevenue.meetingRevenue?.forEach((item) => {
-      flatten.push({
-        revenue: getNumericAmount(item.taxable),
-        date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.alternateRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getNumericAmount(item.taxableAmount),
-        date: item.invoiceCreationDate,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getNumericAmount(item.revenue ?? item.taxableAmount),
-        date: item.rentDate,
-        normalizedStatus: getNormalizedPaymentStatus(
-          item.status ?? item.rentStatus,
-        ),
-      });
-    });
-
-    simpleRevenue.workationRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getNumericAmount(item.taxableAmount),
-        date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.coworkingRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getNumericAmount(item.revenue),
-        date: item.rentDate,
-        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
-      });
-    });
-
-    return flatten;
-  }, [simpleRevenue]);
-
-  // 2. Calculation function (unchanged but included for completeness)
-  const calculatePaidVsUnpaid = (revenueData = []) => {
-    let paid = 0;
-    let unpaid = 0;
-
-    revenueData.forEach((item) => {
-      if (!item.date || !dayjs(item.date).isValid()) return;
-
-      const monthKey = dayjs(item.date).format("MMM-YY");
-      if (monthKey !== currentCollectionsMonth) return;
-
-      const amount = getNumericAmount(item.revenue);
-
-      if (item.normalizedStatus === "paid") {
-        paid += amount;
-      } else {
-        unpaid += amount;
-      }
-    });
-
-    return { paid, unpaid };
-  };
-
-  // 3. Safely calculate paid and unpaid values
-  const { paid, unpaid } = unifiedRevenueData.length
-    ? calculatePaidVsUnpaid(unifiedRevenueData)
-    : { paid: 0, unpaid: 0 };
-
-  // 4. Prepare pie chart data
-  const pieChartData = [
-    { label: "Paid", value: paid },
-    { label: "Unpaid", value: unpaid },
-  ];
-
-  const pieChartOptions = {
-    chart: {
-      fontFamily: "Poppins-Regular",
-    },
-    labels: ["Paid", "Unpaid"],
-    colors: ["#66DB66", "#EA9A87"],
-    legend: {
-      position: "right",
-    },
-    dataLabels: {
-      formatter: function (val) {
-        return `${val.toFixed(0)}%`;
-      },
-    },
-    tooltip: {
-      y: {
-        formatter: function (value) {
-          return `INR ${inrFormat(value.toFixed(0))}`;
-        },
-      },
-    },
-  };
-
   // const pieMonthlyCollectionOptions = {
   //   chart: {
   //     fontFamily: "Poppins-Regular",
@@ -3638,34 +3072,6 @@ const FinanceDashboard1 = () => {
 
   //-----------------------------------------------------Table Rental Payments------------------------------------------------------//
 
-  //------------------------PAGE ACCESS PIE START-------------------//
-  const pieChartConfigs = [
-    {
-      key: "financePayouts",
-      title: `Payouts ${chartPayoutMonth} `,
-      layout: 1,
-      border: true,
-      data: pieMonthlyPayoutData,
-      options: pieMonthlyPayoutOptions,
-      permission: PERMISSIONS.FINANCE1_PAYOUTS.value,
-    },
-    {
-      key: "financeCustomerCollections",
-      title: `Customer Collections ${currentCollectionsMonth} `,
-      layout: 1,
-      border: true,
-      data: pieChartData,
-      options: pieChartOptions,
-      permission: PERMISSIONS.FINANCE1_CUSTOMER_COLLECTIONS.value,
-    },
-  ];
-
-  const allowedPieCharts = pieChartConfigs.filter(
-    (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission),
-  );
-  //------------------------PAGE ACCESS PIE END-------------------//
-
   //------------------------PAGE ACCESS DONUT START-------------------//
   const donutChartConfigs = [
     {
@@ -3831,17 +3237,6 @@ const FinanceDashboard1 = () => {
 
   const dueTasksConfigs = [
     {
-      key: PERMISSIONS.FINANCE1_UNIT_WISE_DUE_TASKS.value,
-      type: "PieChartMui",
-      border: true,
-      title: "Overall Unit Wise Due Tasks",
-      data: unitWisePieData,
-      options: unitPieChartOptions,
-      centerAlign: true,
-      height: 320,
-      width: 500,
-    },
-    {
       key: PERMISSIONS.FINANCE1_EXECUTIVE_WISE_DUE_TASKS.value,
       type: "DonutChart",
       border: true,
@@ -3857,35 +3252,6 @@ const FinanceDashboard1 = () => {
   ];
 
   const allowedDueTasks = dueTasksConfigs.filter(
-    (widget) => !widget.key || userPermissions.includes(widget.key),
-  );
-
-  const financeTicketChartConfigs = [
-    {
-      key: PERMISSIONS.FINANCE1_CATEGORY_WISE_TICKETS.value,
-      type: "PieChartMui",
-      border: true,
-      title: "Category Wise Tickets",
-      data: financeCategoryWiseTicketsData,
-      options: financeCategoryWiseTicketsOptions,
-      centerAlign: true,
-      height: 320,
-      width: 500,
-    },
-    {
-      key: PERMISSIONS.FINANCE1_DUE_TICKETS.value,
-      type: "PieChartMui",
-      border: true,
-      title: "Due Tickets",
-      data: financeDueTicketsData,
-      options: financeDueTicketsOptions,
-      centerAlign: true,
-      height: 320,
-      width: 500,
-    },
-  ];
-
-  const allowedFinanceTicketCharts = financeTicketChartConfigs.filter(
     (widget) => !widget.key || userPermissions.includes(widget.key),
   );
 
@@ -3996,39 +3362,6 @@ const FinanceDashboard1 = () => {
           ]
         : [],
     },
-    {
-      layout: 1,
-      compactTop: true,
-      widgets: userPermissions.includes(
-        PERMISSIONS.FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT.value,
-      )
-        ? [
-            <Finance1Snapshot
-              key="finance1-snapshot"
-              incomeData={incomeData}
-              expenseData={expenseData}
-              fiscalYear={selectedFiscalYear}
-              projectedFinancials={{
-                revenue: projectedIncomeTotal,
-                expense: projectedExpenseTotal,
-                profitLoss: projectedProfitLoss,
-              }}
-              totalSqft={totalSqft}
-              assetValueOwned={
-                APPRECIATION_BASE_VALUATION +
-                APPRECIATION_MONTHLY_INCREMENT *
-                  Math.max(
-                    0,
-                    fiscalMonthIndex(projectionMonth) -
-                      APPRECIATION_PROJECTION_START_INDEX,
-                  )
-              }
-              totalInventory={inventoryGraphSummary().total}
-            />,
-          ]
-        : [],
-    },
-
     // {
     //   layout: allowedDataCards.length,
     //   widgets: allowedDataCards.map((item) => (
@@ -4064,21 +3397,6 @@ const FinanceDashboard1 = () => {
     //   ],
     // },
     {
-      layout: dashboardCards.length,
-      compactTop: true,
-      widgets: dashboardCards.map((card) => (
-        <Card
-          key={card.title}
-          route={card.route}
-          title={card.title === "Mix-Bag" ? "Mix Bag" : card.title}
-          icon={card.icon}
-          fontColor="#1E3D73"
-          titleColor="#1E3D73"
-        />
-      )),
-    },
-
-    {
       layout: 1,
       compactTop: true,
       widgets: userPermissions.includes(
@@ -4094,43 +3412,10 @@ const FinanceDashboard1 = () => {
         : [],
     },
 
-    // {
-    //   layout: 2,
-    //   widgets: [
-    //     <WidgetSection title={`Payouts MAR-25 `} border>
-    //       <PieChartMui
-    //         data={pieMonthlyPayoutData}
-    //         options={pieMonthlyPayoutOptions}
-    //       />
-    //     </WidgetSection>,
-    //     <WidgetSection title={`Customer Collections MAR-25 `} border>
-    //       <PieChartMui data={pieChartData} options={pieChartOptions} />
-    //     </WidgetSection>,
-    //   ],
-    // },
-
     {
       layout: 1,
       compactTop: true,
       widgets: allowedExtraGraphs.map(renderExtraGraph),
-    },
-    {
-      layout: allowedPieCharts.length,
-      widgets: allowedPieCharts.map((item) => (
-        <WidgetSection
-          key={item.key}
-          layout={item.layout}
-          title={item.title}
-          border={item.border}
-        >
-          <PieChartMui
-            data={item.data}
-            options={item.options}
-            // width={item.width}
-            centerAlign
-          />
-        </WidgetSection>
-      )),
     },
     // {
     //   layout: 2,
@@ -4201,37 +3486,13 @@ const FinanceDashboard1 = () => {
       layout: allowedDueTasks.length,
       widgets: allowedDueTasks.map((config) => (
         <WidgetSection key={config.key} border title={config.title}>
-          {config.type === "PieChartMui" ? (
-            <PieChartMui
-              data={config.data}
-              options={config.options}
-              centerAlign={config.centerAlign}
-              height={config.height}
-              width={config.width}
-            />
-          ) : (
-            <DonutChart
-              centerLabel={config.centerLabel}
-              labels={config.labels}
-              colors={config.colors}
-              series={config.series}
-              tooltipValue={config.tooltipValue}
-              tooltipFormatter={config.tooltipFormatter}
-            />
-          )}
-        </WidgetSection>
-      )),
-    },
-    {
-      layout: allowedFinanceTicketCharts.length,
-      widgets: allowedFinanceTicketCharts.map((config) => (
-        <WidgetSection key={config.title} border title={config.title}>
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            centerAlign={config.centerAlign}
-            height={config.height}
-            width={config.width}
+          <DonutChart
+            centerLabel={config.centerLabel}
+            labels={config.labels}
+            colors={config.colors}
+            series={config.series}
+            tooltipValue={config.tooltipValue}
+            tooltipFormatter={config.tooltipFormatter}
           />
         </WidgetSection>
       )),
@@ -4322,37 +3583,6 @@ const FinanceDashboard1 = () => {
           snapshotOnly
           snapshotFinancialsByYear={projectedSnapshotFinancialsByYear}
           snapshotRoute="/app/dashboard/finance-dashboard1/biznest-3-years-snapshot"
-        />
-      </div>
-    ) : (
-      <Navigate to="/unauthorized" replace />
-    );
-  }
-  if (location.pathname.endsWith("/finance-3-years-snapshot")) {
-    return userPermissions.includes(
-      PERMISSIONS.FINANCE1_FINANCE_THREE_YEARS_SNAPSHOT.value,
-    ) ? (
-      <div className="px-4">
-        <Finance1Snapshot
-          incomeData={incomeData}
-          expenseData={expenseData}
-          fiscalYear={selectedFiscalYear}
-          projectedFinancials={{
-            revenue: projectedIncomeTotal,
-            expense: projectedExpenseTotal,
-            profitLoss: projectedProfitLoss,
-          }}
-          totalSqft={totalSqft}
-          assetValueOwned={
-            APPRECIATION_BASE_VALUATION +
-            APPRECIATION_MONTHLY_INCREMENT *
-              Math.max(
-                0,
-                fiscalMonthIndex(projectionMonth) -
-                  APPRECIATION_PROJECTION_START_INDEX,
-              )
-          }
-          totalInventory={inventoryGraphSummary().total}
         />
       </div>
     ) : (
@@ -4587,7 +3817,8 @@ const FinanceDashboard1 = () => {
         slotProps={{
           paper: {
             sx: {
-              minWidth: 240,
+              width: { xs: "calc(100vw - 24px)", sm: 680 },
+              maxWidth: "calc(100vw - 24px)",
               borderRadius: 2,
               border: "1px solid #e0e8f5",
               mt: 1,
@@ -4595,22 +3826,72 @@ const FinanceDashboard1 = () => {
           },
         }}
       >
-        {settingsCards.map((card) => (
-          <MenuItem
-            key={card.title}
-            onClick={() => {
-              setSettingsAnchor(null);
-              navigate(card.route);
-            }}
-            sx={{ gap: 2, py: 1.5, color: "#1E3D73" }}
+        <div className="relative grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setSettingsAnchor(null)}
+            className="absolute -right-2 -top-2 z-10 flex h-7 w-9 items-center justify-center rounded-tr-[7px] bg-[#ff000080] text-white transition hover:bg-[#ff0000b3] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/70"
           >
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#eff6fc] text-xl">
-              {card.icon}
-            </span>
-            <span className="font-pmedium text-sm">{card.title}</span>
-            <MdChevronRight className="ml-auto" size={20} />
-          </MenuItem>
-        ))}
+            <FiX size={14} strokeWidth={1.8} />
+          </button>
+          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
+            {settingsCards.map((card) => (
+              <button
+                key={card.title}
+                type="button"
+                onClick={() => setActiveMenuCard(card.title)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${resolvedActiveMenuCard?.title === card.title ? "bg-[#e7f1ff]" : "hover:bg-[#eef5ff]"}`}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
+                  {card.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{card.title}</span>
+                <FiChevronRight className="shrink-0" size={17} />
+              </button>
+            ))}
+          </div>
+          <div className="min-h-[260px] p-4 sm:p-5">
+            {resolvedActiveMenuCard && (
+              <>
+                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                    {resolvedActiveMenuCard.icon}
+                  </span>
+                  <div>
+                    <p className="font-psemibold text-base text-[#1E3D73]">{resolvedActiveMenuCard.title}</p>
+                    <p className="text-xs text-[#7084a4]">Open {resolvedActiveMenuCard.title.toLowerCase()} modules</p>
+                  </div>
+                </div>
+                <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
+                  {(menuSections[resolvedActiveMenuCard.title] || []).map(([label, route]) => {
+                    const meta = menuItemMeta[label] || { icon: <FaChartSimple />, description: "Open this module" };
+                    return (
+                    <button
+                      key={route}
+                      type="button"
+                      onClick={() => {
+                        setSettingsAnchor(null);
+                        navigate(route);
+                      }}
+                      className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
+                        {meta.icon}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-pmedium text-[15px] leading-tight">{label}</span>
+                        <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">{meta.description}</span>
+                      </span>
+                      <FiChevronRight size={17} />
+                    </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       </Menu>
       <div className="flex flex-col gap-4 px-4">
         <div className="overflow-hidden rounded-lg">
@@ -4651,17 +3932,28 @@ const FinanceDashboard1 = () => {
             {settingsCards.length > 0 && (
               <nav
                 aria-label="Finance dashboard navigation"
-                className="absolute bottom-0 left-0 z-10 flex w-[61%] items-center"
+                className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
               >
+                {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm lg:text-base"
+                  >
+                    {label}
+                    <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
+                  </button>
+                ))}
                 <button
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={Boolean(settingsAnchor)}
                   onClick={(event) => setSettingsAnchor(event.currentTarget)}
-                  className="group relative inline-flex shrink-0 items-center gap-2 py-3 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
                 >
-                  <MdSettings size={20} /> Settings
-                  <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
+                  <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
+                  <span>Menu</span>
+                  <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
                 </button>
               </nav>
             )}

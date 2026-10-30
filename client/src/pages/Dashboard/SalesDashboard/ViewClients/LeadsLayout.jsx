@@ -91,6 +91,7 @@ const LeadsLayout = ({
   virtualOfficeProjectedLegend = "Projected",
   virtualOfficeActualColor = "#80BF01",
   virtualOfficeProjectedColor = "#9ca3af",
+  virtualOfficeProjectedClientCount = null,
   virtualOfficeTooltipLabel,
   virtualOfficeDataLabelsAbove = false,
   onSelectedFinancialYearClientsCountChange,
@@ -330,6 +331,14 @@ const LeadsLayout = ({
           0,
         );
 
+        if (
+          virtualOfficeOnly &&
+          actualSeriesName === "Virtual Office" &&
+          Number.isFinite(Number(virtualOfficeProjectedClientCount))
+        ) {
+          return Number(virtualOfficeProjectedClientCount);
+        }
+
         return elapsedMonths > 0
           ? Math.round(actualTotal / elapsedMonths)
           : 0;
@@ -341,7 +350,14 @@ const LeadsLayout = ({
     );
 
     return [...investorActualSeries, ...projectedSeries];
-  }, [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag]);
+  }, [
+    currentFinancialYear,
+    investorBlueStyle,
+    transformedData,
+    actualMonthLag,
+    virtualOfficeOnly,
+    virtualOfficeProjectedClientCount,
+  ]);
   const scopedUniqueClientsData = useMemo(() => {
     if (!singleSeriesOnly) return uniqueClientsData;
 

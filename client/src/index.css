@@ -199,6 +199,28 @@ button[data-export-action="true"] {
   overflow: hidden !important; 
 }
 
+.virtual-office-company-tooltip .apexcharts-canvas,
+.virtual-office-company-tooltip .apexcharts-svg {
+  overflow: visible !important;
+}
+
+.virtual-office-company-tooltip .apexcharts-tooltip {
+  pointer-events: none !important;
+  overflow: visible !important;
+  transition: opacity 0.15s ease 0.15s !important;
+}
+
+.virtual-office-company-tooltip .apexcharts-tooltip.apexcharts-active,
+.virtual-office-company-tooltip
+  .apexcharts-tooltip:has(.interactive-other-tooltip-list:hover) {
+  opacity: 1 !important;
+  transition-delay: 0s !important;
+}
+
+.virtual-office-company-tooltip .interactive-other-tooltip-list {
+  pointer-events: auto !important;
+}
+
 .fy-percentage-chart .apexcharts-canvas {
   overflow: visible !important;
 }

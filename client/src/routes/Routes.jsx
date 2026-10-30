@@ -732,10 +732,6 @@ export const routes = createBrowserRouter([
                     element: <FinanceLayout />,
                     children: [
 {
-                    path: "finance-3-years-snapshot",
-                    element: <FinanceDashboard1 />,
-                  },
-{
                     path: "biznest-3-years-snapshot",
                     element: <FinanceDashboard1 />,
                   },

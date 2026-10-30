@@ -15,8 +15,46 @@ import { useLocation, useNavigate } from "react-router-dom";
 import PrimaryButton from "../PrimaryButton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useAuth from "../../hooks/useAuth";
+
+const VENDOR_TYPE_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+const canCreateVendorTypeOption = (user) => {
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+  const roles = [
+    ...(Array.isArray(user?.role) ? user.role : []),
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  return (
+    departments.some((department) => {
+      const departmentId = String(department?._id || department || "");
+      const departmentName = normalize(
+        department?.name || department?.departmentName,
+      );
+      return (
+        VENDOR_TYPE_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+        ["top management", "tech", "tech department"].includes(
+          departmentName,
+        )
+      );
+    }) ||
+    roles.some((role) => {
+      const roleTitle = normalize(role?.roleTitle || role?.name || role);
+      return (
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department")
+      );
+    })
+  );
+};
 
 const ViewVendor = () => {
+  const { auth } = useAuth();
+  const canCreateVendorType = canCreateVendorTypeOption(auth?.user);
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const initialValuesRef = React.useRef({});
@@ -70,6 +108,8 @@ const ViewVendor = () => {
     });
 
   const handleAddVendorType = (option = vendorTypeInput) => {
+    if (!canCreateVendorType) return;
+
     const nextOption = String(option || "").trim();
     if (!nextOption) return;
 
@@ -79,7 +119,11 @@ const ViewVendor = () => {
     const selectedOption = existingOption || nextOption;
 
     if (!existingOption) {
-      setVendorTypeOptions((options) => [...options, nextOption]);
+      setVendorTypeOptions((options) =>
+        [...options, nextOption].sort((first, second) =>
+          first.localeCompare(second, undefined, { sensitivity: "base" }),
+        ),
+      );
       saveVendorTypeOption(nextOption);
     }
 
@@ -655,7 +699,7 @@ const getCountryIsoCode = (countryValue) => {
                             defaultValue=""
                             render={({ field }) => (
                               <Autocomplete
-                                freeSolo
+                                freeSolo={canCreateVendorType}
                                 selectOnFocus
                                 clearOnBlur={false}
                                 handleHomeEndKeys
@@ -703,7 +747,11 @@ const getCountryIsoCode = (countryValue) => {
                                       typedValue.toLowerCase(),
                                   );
 
-                                  if (typedValue && !alreadyExists) {
+                                  if (
+                                    canCreateVendorType &&
+                                    typedValue &&
+                                    !alreadyExists
+                                  ) {
                                     filteredOptions.push({
                                       inputValue: typedValue,
                                       label: `+ Add "${typedValue}"`,
@@ -736,7 +784,11 @@ const getCountryIsoCode = (countryValue) => {
                                     {...params}
                                     size="small"
                                     label="Type Of Vendor"
-                                    placeholder="Select or Add Vendor Type"
+                                    placeholder={
+                                      canCreateVendorType
+                                        ? "Select or Add Vendor Type"
+                                        : "Select Vendor Type"
+                                    }
                                   />
                                 )}
                               />
