@@ -515,6 +515,29 @@ const PerformanceHome = ({
   const canAccessEmployeeKraKpaCard =
     hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
+  const kraKpaWorkAccess = [
+    PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+    PERMISSIONS.KRAKPA_SELF_KRA,
+    PERMISSIONS.KRAKPA_DUE_TASK,
+    PERMISSIONS.KRAKPA_DAILY_LOGS,
+  ].some(hasPermission);
+  const kraKpaScoreAccess = [
+    PERMISSIONS.KRAKPA_KPA_RATING,
+    PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
+  ].some(hasPermission);
+  const defaultKraKpaWorkPath = hasPermission(
+    PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+  )
+    ? "individual-Monthly-KPA"
+    : hasPermission(PERMISSIONS.KRAKPA_SELF_KRA)
+      ? "self-KRA"
+      : hasPermission(PERMISSIONS.KRAKPA_DUE_TASK)
+        ? "due-task"
+        : "daily-logs";
+  const defaultKraKpaScorePath = hasPermission(PERMISSIONS.KRAKPA_KPA_RATING)
+    ? "kpa-rating"
+    : "daily-logs-rating";
+
   const standardPerformanceCards = [
     {
       title: "DEPARTMENT KRA/KPA",
@@ -547,18 +570,18 @@ const PerformanceHome = ({
     {
       title: "EMPLOYEE KRA/KPA",
       route: employeeDashboard
-        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
-        : `${modulePath}/individual/kra-kpa/individual-Monthly-KPA`,
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/${defaultKraKpaWorkPath}`
+        : `${modulePath}/individual/kra-kpa/${defaultKraKpaWorkPath}`,
       icon: <FaUser />,
-      hasAccess: true,
+      hasAccess: kraKpaWorkAccess,
     },
     {
       title: "DAILY SCORE",
       route: employeeDashboard
-        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/daily-score/kpa-rating`
-        : `${modulePath}/individual/daily-score/kpa-rating`,
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/daily-score/${defaultKraKpaScorePath}`
+        : `${modulePath}/individual/daily-score/${defaultKraKpaScorePath}`,
       icon: <FaChartLine />,
-      hasAccess: true,
+      hasAccess: kraKpaScoreAccess,
     },
     {
       title: "DEPARTMENT KRA/KPA",
@@ -566,19 +589,26 @@ const PerformanceHome = ({
       icon: <CgWebsite />,
       hasAccess:
         !employeeDashboard &&
-        (isManager || isHr || isTopManagement),
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA),
     },
     {
       title: "PENDING APPROVALS",
       route: `${modulePath}/pending-approvals`,
       icon: <CgWebsite />,
-      hasAccess: !employeeDashboard && (isManager || isHr || isTopManagement),
+      hasAccess:
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS),
     },
     {
       title: "DEPARTMENT",
       route: `${modulePath}/departments`,
       icon: <CgWebsite />,
-      hasAccess: !employeeDashboard && hasPermission(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA),
+      hasAccess:
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_DEPARTMENTS),
     },
   ];
 

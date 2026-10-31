@@ -10,6 +10,7 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
+import TableDateFilter from "../../../../components/TableDateFilter";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import {
   DEFAULT_PAGE_SIZE,
@@ -38,6 +39,15 @@ const MonthlyAttendanceSummary = ({
   const [saveAttempted, setSaveAttempted] = useState(false);
   const [confirmationAction, setConfirmationAction] = useState(null);
   const tableRef = useRef(null);
+  const selectedMonthRange = useMemo(() => {
+    const selectedMonth = dayjs(`${month}-01`);
+
+    return {
+      startDate: selectedMonth.startOf("month").toDate(),
+      endDate: selectedMonth.endOf("month").toDate(),
+      key: "selection",
+    };
+  }, [month]);
 
   useEffect(() => {
     if (!fixedMonth) return;
@@ -355,18 +365,22 @@ const MonthlyAttendanceSummary = ({
         ) : (
           <AgTable
             showDateControls={false}
-            toolbarDateControls={!fixedMonth ? (<TextField
-              type="month"
-              size="small"
-              label="Month"
-              value={month}
-              inputProps={{ max: dayjs().format("YYYY-MM") }}
-              InputLabelProps={{ shrink: true }}
-              onChange={(event) => {
-                setMonth(event.target.value);
-                setPagination((current) => ({ ...current, page: 1 }));
-              }}
-            />) : null}
+            toolbarDateControls={!fixedMonth ? (
+              <TableDateFilter
+                fields={[{ field: "month", label: "Month" }]}
+                field="month"
+                range={selectedMonthRange}
+                showClearButton={false}
+                maxDate={dayjs().endOf("month").toDate()}
+                onChange={(range) => {
+                  if (!range?.startDate) return;
+
+                  const selectedMonth = dayjs(range.startDate).format("YYYY-MM");
+                  setMonth(selectedMonth);
+                  setPagination((current) => ({ ...current, page: 1 }));
+                }}
+              />
+            ) : null}
             tableRef={tableRef}
             data={rows}
             columns={payrollView ? payrollColumns : columns}

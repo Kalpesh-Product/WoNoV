@@ -6,7 +6,6 @@ import { Chip, TextField, MenuItem } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
 import PrimaryButton from "../../components/PrimaryButton";
 import { toast } from "sonner";
-import PageFrame from "../../components/Pages/PageFrame";
 import { useSelector } from "react-redux";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import UploadFileInput from "../../components/UploadFileInput";
@@ -104,8 +103,9 @@ const HrCommonAgreements = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <PageFrame>
+      <div>
         <YearWiseTable
+          compactToolbar
           search={true}
           tableTitle={`${name}'s Agreement List`}
           data={tableData}
@@ -113,7 +113,7 @@ const HrCommonAgreements = () => {
           columns={agreementColumn}
           hideFilter={false}
         />
-      </PageFrame>
+      </div>
     </div>
   );
 };

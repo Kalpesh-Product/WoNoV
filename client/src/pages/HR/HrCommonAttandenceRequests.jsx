@@ -92,6 +92,7 @@ export default function HrCommonAttandenceRequests() {
         ) : (
           <div>
             <YearWiseTable
+              compactToolbar
               tableTitle="Attendance Correction Requests"
               search={true}
               dateColumn="date"

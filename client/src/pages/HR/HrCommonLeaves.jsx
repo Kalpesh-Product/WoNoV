@@ -152,6 +152,7 @@ const HrCommonLeaves = () => {
   return (
     <div className="flex flex-col gap-8 overflow-hidden">
       <YearWiseTable
+        compactToolbar
         tableTitle="Leaves Table"
         tableHeight={300}
         dateColumn="fromDate"

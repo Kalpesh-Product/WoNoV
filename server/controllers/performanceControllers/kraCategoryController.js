@@ -10,6 +10,7 @@ const getAccess = async (req) => {
     .map((department) => String(department?._id || department))
     .filter((id) => mongoose.isValidObjectId(id));
   const isHr = roles.some((role) => /^hr(?:\s|$)/.test(role));
+  const isManager = roles.some((role) => role.includes("manager"));
   const isTopManagement =
     roles.includes("top management") ||
     Boolean(
@@ -24,6 +25,8 @@ const getAccess = async (req) => {
   );
   return {
     departmentIds,
+    isManager,
+    canCreateCategory: isManager || isHr || isTopManagement,
     canAccessAllDepartments: isHr || isTopManagement || isAdmin,
   };
 };
@@ -72,6 +75,12 @@ const createKraCategory = async (req, res, next) => {
       });
     }
     const access = await getAccess(req);
+    if (!access.canCreateCategory) {
+      return res.status(403).json({
+        message:
+          "Only managers, HR, and top management can create Self KRA categories",
+      });
+    }
     if (!validateDepartmentAccess(department, access)) {
       return res.status(403).json({ message: "Department access denied" });
     }

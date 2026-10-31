@@ -38,6 +38,8 @@ const DepartmentBudgetHistory = () => {
     { field: "expanseType", headerName: "Expense Type", flex: 1 },
     { field: "paymentType", headerName: "Payment Type", flex: 1 },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+    { field: "financeAmount", headerName: "Approved Budget (INR)", flex: 1 },
+    { field: "remainingAmount", headerName: "Available Balance (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     {
@@ -95,14 +97,21 @@ const DepartmentBudgetHistory = () => {
       //   hasBudgetShape && !hasVoucherData && isApprovedOrRejected && isExtraBudget
       // );
     })
-    .map((item) => ({
-      ...item,
-      projectedAmount: inrFormat(item?.projectedAmount || 0),
-      actualAmount: inrFormat(item?.actualAmount || 0),
-      dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
-      dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
-      status: item?.status || "-",
-    }));
+    .map((item) => {
+      const projectedAmount = Number(item?.projectedAmount || 0);
+      const financeAmount = Number(item?.financeAmount || 0);
+
+      return {
+        ...item,
+        projectedAmount: inrFormat(projectedAmount),
+        financeAmount: inrFormat(financeAmount),
+        remainingAmount: inrFormat(projectedAmount - financeAmount),
+        actualAmount: inrFormat(item?.actualAmount || 0),
+        dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
+        dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
+        status: item?.status || "-",
+      };
+    });
 
   return (
     <PageFrame>

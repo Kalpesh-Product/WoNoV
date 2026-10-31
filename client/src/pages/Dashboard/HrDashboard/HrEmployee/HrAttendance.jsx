@@ -590,6 +590,7 @@ const HrAttendance = () => {
                   fields={[{ field: "inTime", label: "Attendance date" }]}
                   field="inTime"
                   range={dateRange}
+                  showClearButton={false}
                   onChange={(range) => {
                     if (!getAttendanceRangeDays(range).length) return;
                     setDateRange(range);

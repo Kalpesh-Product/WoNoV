@@ -48,8 +48,10 @@ const AgTableComponent = React.memo(
     showDateControls,
     toolbarDateControls,
     toolbarActions,
+    compactToolbar = false,
     dateRangePlaceholders = false,
     tableTitle,
+    titleCenterContent,
     titleRightContent,
     handleClick,
     buttonTitle,
@@ -159,9 +161,10 @@ const AgTableComponent = React.memo(
         setStackToolbar(
           shouldStackTableToolbar({
             width: toolbarRef.current.clientWidth,
-            searchWidth: showTableControls && search ? 280 : 0,
+            searchWidth: showTableControls && search ? (compactToolbar ? 210 : 280) : 0,
             dateWidth,
             actionsWidth,
+            gap: compactToolbar ? 8 : 12,
           }),
         );
       };
@@ -176,6 +179,7 @@ const AgTableComponent = React.memo(
       search,
       toolbarDateControls,
       toolbarActions,
+      compactToolbar,
       headerActions,
       searchRowActions,
       buttonTitle,
@@ -462,12 +466,22 @@ const AgTableComponent = React.memo(
         }`}
       >
         {!hideTitle && tableTitle && (
-          <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
-            <span className="font-pmedium text-title text-primary uppercase">
-              {tableTitle}
-            </span>
-            {titleRightContent}
-          </div>
+          titleCenterContent ? (
+            <div className="grid grid-cols-1 items-center gap-3 pb-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <span className="font-pmedium text-title uppercase text-primary">
+                {tableTitle}
+              </span>
+              <div className="justify-self-center">{titleCenterContent}</div>
+              <div className="justify-self-end">{titleRightContent}</div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+              <span className="font-pmedium text-title uppercase text-primary">
+                {tableTitle}
+              </span>
+              {titleRightContent}
+            </div>
+          )
         )}
 
         {exportButtonContainer &&
@@ -496,7 +510,8 @@ const AgTableComponent = React.memo(
           <div
             ref={toolbarRef}
             data-stacked={stackToolbar || undefined}
-            className="table-toolbar grid items-center gap-3 py-2"
+            data-compact={compactToolbar || undefined}
+            className={`table-toolbar grid items-center py-2 ${compactToolbar ? "gap-2" : "gap-3"}`}
           >
             {showTableControls && search ? (
               <div className="table-toolbar-search flex min-w-0 flex-wrap items-center gap-3">
@@ -507,7 +522,11 @@ const AgTableComponent = React.memo(
                   value={searchQuery}
                   onChange={handleSearch}
                   placeholder="Search"
-                  sx={{ width: "100%", maxWidth: 280, minWidth: 0 }}
+                  sx={{
+                    width: "100%",
+                    maxWidth: compactToolbar ? 210 : 280,
+                    minWidth: 0,
+                  }}
                   InputProps={{
                     startAdornment: (
                       <IoIosSearch size={20} style={{ marginRight: 8 }} />
@@ -549,7 +568,7 @@ const AgTableComponent = React.memo(
               )}
             <div
               ref={toolbarActionsRef}
-              className="table-toolbar-actions flex w-max flex-nowrap items-center justify-end justify-self-end gap-4"
+              className={`table-toolbar-actions flex w-max flex-nowrap items-center justify-end justify-self-end ${compactToolbar ? "gap-2" : "gap-4"}`}
             >
               {buttonTitle && (
                 <PrimaryButton

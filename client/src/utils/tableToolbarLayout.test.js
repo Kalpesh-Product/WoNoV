@@ -122,11 +122,11 @@ test("Pending Approvals uses one compact centered date picker in the shared tool
   assert.equal(attribute(pickers[0], "range").value.expression.name, "dateRange");
   assert.equal(attribute(table, "showDateControls").value.expression.value, false);
   const { source: shared } = read("components/TableDateFilter.jsx");
-  const { source: closed } = read("components/Tables/YearWiseTable.jsx");
-  for (const source of [shared, closed]) {
-    assert.ok(source.includes("px-6 py-1"), "Date boxes match Closed Tickets' compact padding");
-    assert.ok(!source.includes("min-w-40"), "Do not force wider date boxes");
-  }
+  assert.ok(
+    shared.includes("flex h-10 items-center"),
+    "Shared date boxes match the search field height",
+  );
+  assert.ok(!shared.includes("min-w-40"), "Do not force wider date boxes");
 });
 
 test("Daily Logs places all summary chips alongside the page title", () => {

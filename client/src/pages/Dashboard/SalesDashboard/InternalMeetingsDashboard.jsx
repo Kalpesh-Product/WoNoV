@@ -191,7 +191,7 @@ const InternalMeetingsDashboard = () => {
 
     return (
         <PageFrame>
-            <YearWiseTable showTableControls={false}
+            <YearWiseTable
                 tableTitle="Internal Meetings"
                 data={tableData}
                 columns={columns}

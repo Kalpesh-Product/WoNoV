@@ -304,6 +304,7 @@ const AllocatedBudget = ({
       expanseName: "",
       expanseType: "",
       paymentType: "",
+      vendor: "",
       building: "",
       unit: "",
       projectedAmount: "",
@@ -314,6 +315,23 @@ const AllocatedBudget = ({
   });
 
   const department = usePageDepartment();
+  const editVendorDepartmentId =
+    selectedRow?.departmentId || department?._id || "";
+  const { data: editVendors = [], isLoading: editVendorsLoading } = useQuery({
+    queryKey: ["budgetVendors", editVendorDepartmentId],
+    enabled: Boolean(editModalOpen && editVendorDepartmentId),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/vendors/get-vendors/${editVendorDepartmentId}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data.filter(
+            (vendor) =>
+              vendor?.status === "Active" || vendor?._id === selectedRow?.vendorId,
+          )
+        : [];
+    },
+  });
   // Previous Tech-only exception retained for reference:
   // const isTechDepartment =
   //   String(department?._id || department) === TECH_DEPARTMENT_ID ||
@@ -513,6 +531,7 @@ const AllocatedBudget = ({
       expanseName: row.expanseName || "",
       expanseType: row.expanseType || "",
       paymentType: row.paymentType || "",
+      vendor: row.vendorId || "",
       building: row.buildingId || "",
       unit: row.unitId || "",
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
@@ -535,6 +554,7 @@ const AllocatedBudget = ({
         expanseName: data.expanseName,
         expanseType: data.expanseType,
         paymentType: data.paymentType,
+        vendor: data.vendor,
         unit: data.unit,
         dueDate: data.dueDate,
         ...(isSelectedBudgetApproved
@@ -1399,6 +1419,36 @@ const AllocatedBudget = ({
                   <MenuItem value="One Time">One Time</MenuItem>
                   {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
                 </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="vendor"
+            control={editControl}
+            rules={{ required: "Vendor is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select
+                  {...field}
+                  size="small"
+                  displayEmpty
+                  disabled={editVendorsLoading}
+                >
+                  <MenuItem value="" disabled>
+                    {editVendorsLoading ? "Loading Vendors..." : "Select Vendor"}
+                  </MenuItem>
+                  {editVendors.map((vendor) => (
+                    <MenuItem key={vendor._id} value={vendor._id}>
+                      {vendor.companyName || vendor.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {fieldState.error && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                )}
               </FormControl>
             )}
           />

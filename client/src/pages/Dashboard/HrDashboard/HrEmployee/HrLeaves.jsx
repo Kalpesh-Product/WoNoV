@@ -985,6 +985,7 @@ const HrLeaves = () => {
                 fields={[{ field: "fromDate", label: "Leave date" }]}
                 field="fromDate"
                 range={dateRange[0]}
+                showClearButton={false}
                 onChange={(range) => { if (range) setDateRange([range]); }}
               />
             }

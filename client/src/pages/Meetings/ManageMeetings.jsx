@@ -871,37 +871,39 @@ const ManageMeetings = ({ financeView = false }) => {
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
         const isEditAllowed = canEditMeeting(params.data);
+        const editMenuItem = {
+          label: "Edit",
+          onClick: () => handleEditMeeting("edit", params.data),
+        };
 
-        const menuItems = [
-          !isOngoing &&
-            !isHousekeepingCompleted && {
-              label: "Update Checklist",
-              onClick: () =>
-                handleOpenChecklistModal("update", params.data._id),
-            },
-          isEditAllowed && {
-            label: "Edit",
-            onClick: () => handleEditMeeting("edit", params.data),
-          },
-          !isOngoing &&
-            !isHousekeepingPending && {
-              label: "Mark As Ongoing",
-              onClick: () => handleOngoing("ongoing", params.data._id),
-            },
-          !isUpcoming && {
-            label: "Mark As Completed",
-            onClick: () => handleCompleted("complete", params.data._id),
-          },
-          !isUpcoming && {
-            label: "Extend Meeting",
-            onClick: () => handleExtendMeetingModal("extend", params.data),
-          },
-          // !isCancelled && {
-          isUpcoming && {
-            label: "Cancel",
-            onClick: () => handleSelectedMeeting("cancel", params.data),
-          },
-        ].filter(Boolean);
+        const menuItems = isCompleted
+          ? [editMenuItem]
+          : [
+              !isOngoing &&
+                !isHousekeepingCompleted && {
+                  label: "Update Checklist",
+                  onClick: () =>
+                    handleOpenChecklistModal("update", params.data._id),
+                },
+              isEditAllowed && editMenuItem,
+              !isOngoing &&
+                !isHousekeepingPending && {
+                  label: "Mark As Ongoing",
+                  onClick: () => handleOngoing("ongoing", params.data._id),
+                },
+              !isUpcoming && {
+                label: "Mark As Completed",
+                onClick: () => handleCompleted("complete", params.data._id),
+              },
+              !isUpcoming && {
+                label: "Extend Meeting",
+                onClick: () => handleExtendMeetingModal("extend", params.data),
+              },
+              isUpcoming && {
+                label: "Cancel",
+                onClick: () => handleSelectedMeeting("cancel", params.data),
+              },
+            ].filter(Boolean);
 
         return (
           <div className="flex gap-2 items-center">
@@ -914,7 +916,7 @@ const ManageMeetings = ({ financeView = false }) => {
               </span>
             </div>
 
-            {!isCancelled && !isFinance && (
+            {!isCancelled && (!isFinance || isCompleted) && (
               <ThreeDotMenu menuItems={menuItems} />
             )}
           </div>

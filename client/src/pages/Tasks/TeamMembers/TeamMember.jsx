@@ -242,23 +242,25 @@ const TeamMember = () => {
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          <div className="flex justify-end items-center gap-1.5 flex-wrap pb-4">
-            <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
-              <div>Total :</div>
-              <div>{taskSummary.total}</div>
-            </div>
-            <div className="flex gap-1 justify-center items-center uppercase bg-[#d8f0df] text-sm text-[#16784d] font-pmedium px-3 py-1.5 rounded-lg border border-[#a9ddba]">
-              <div>Completed :</div>
-              <div>{taskSummary.completed}</div>
-            </div>
-            <div className="flex gap-1 justify-center items-center uppercase bg-[#fce8e3] text-sm text-[#d96b4f] font-pmedium px-3 py-1.5 rounded-lg border border-[#f3b7a8]">
-              <div>Pending :</div>
-              <div>{taskSummary.pending}</div>
-            </div>
-          </div>
           <YearWiseTable
             search={true}
             tableTitle={`Team Members - ${selectedMonth.format("MMMM")}`}
+            titleRightContent={
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]">
+                  <div>Total :</div>
+                  <div>{taskSummary.total}</div>
+                </div>
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-1.5 text-sm font-pmedium uppercase text-[#16784d]">
+                  <div>Completed :</div>
+                  <div>{taskSummary.completed}</div>
+                </div>
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#f3b7a8] bg-[#fce8e3] px-3 py-1.5 text-sm font-pmedium uppercase text-[#d96b4f]">
+                  <div>Pending :</div>
+                  <div>{taskSummary.pending}</div>
+                </div>
+              </div>
+            }
             dateColumn={"reportMonthDate"}
             data={
               isLoading || !Array.isArray(taskList)

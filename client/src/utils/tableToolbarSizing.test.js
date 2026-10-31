@@ -9,6 +9,11 @@ test("Profile HR sidebar leaves enough space for search, dates and filter on one
   assert.equal(shouldStackTableToolbar({ width: 700, searchWidth: 280, dateWidth: 384, actionsWidth: 42 }), true);
 });
 
+test("compact Profile HR controls stay in one row at laptop-width content sizes", () => {
+  assert.equal(shouldStackTableToolbar({ width: 700, searchWidth: 210, dateWidth: 260, actionsWidth: 180, gap: 8 }), false);
+  assert.equal(shouldStackTableToolbar({ width: 680, searchWidth: 210, dateWidth: 260, actionsWidth: 180, gap: 8 }), true);
+});
+
 test("toolbar uses container measurement, not a viewport breakpoint, for its single-row layout", () => {
   const source = fs.readFileSync(new URL("../components/AgTable.jsx", import.meta.url), "utf8");
   const css = fs.readFileSync(new URL("../index.css", import.meta.url), "utf8");

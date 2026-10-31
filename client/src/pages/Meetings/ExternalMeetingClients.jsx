@@ -1061,8 +1061,12 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
 
         const shouldHideMenu =
           isCancelled || paymentVerificationStatus === "Verified" || !isPaid;
+        const editMenuItem = {
+          label: "Edit",
+          onClick: () => handleEditMeeting("edit", params.data),
+        };
 
-        const menuItems = [
+        const regularMenuItems = [
           // {
           //   label: "View",
           //   onClick: () => handleSelectedMeeting("viewDetails", params.data),
@@ -1106,10 +1110,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
                     onClick: () =>
                       handleOpenChecklistModal("update", params.data._id),
                   },
-                canEditMeeting(params.data) && {
-                  label: "Edit",
-                  onClick: () => handleEditMeeting("edit", params.data),
-                },
+                canEditMeeting(params.data) && editMenuItem,
                 !isOngoing &&
                   !isHousekeepingPending && {
                     label: "Mark As Ongoing",
@@ -1127,6 +1128,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               ]
             : []),
         ].filter(Boolean);
+        const menuItems = isCompleted ? [editMenuItem] : regularMenuItems;
 
         return (
           <div className="flex gap-2 items-center">

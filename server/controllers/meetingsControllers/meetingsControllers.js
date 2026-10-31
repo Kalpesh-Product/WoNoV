@@ -1,4 +1,3 @@
-const { bookExternalMeetingVisit } = require("../../services/bookExternalMeetingVisit");
 const { fetchMeetingReportService } = require("../../services/reports/meeting");
 const Meeting = require("../../models/meetings/Meetings");
 const User = require("../../models/hr/UserData");
@@ -216,6 +215,30 @@ const addMeetings = async (req, res, next) => {
         logAction,
         logSourceKey,
       );
+    }
+
+    if (meetingType === "External") {
+      if (!mongoose.Types.ObjectId.isValid(externalCompany)) {
+        throw new CustomError(
+          "Invalid external visitor Id provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const externalVisitorExists = await Visitor.exists({
+        _id: externalCompany,
+        company,
+      });
+      if (!externalVisitorExists) {
+        throw new CustomError(
+          "External visitor not found in this company",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     if (!mongoose.Types.ObjectId.isValid(bookedRoom)) {
@@ -645,9 +668,7 @@ const addMeetings = async (req, res, next) => {
       externalParticipants: externalParticipants || [],
     });
 
-    const savedMeeting = meetingType === "External"
-      ? await bookExternalMeetingVisit(meeting, roomAvailable)
-      : await meeting.save();
+    const savedMeeting = await meeting.save();
     meetingWasSaved = true;
     // await Promise.all([
     //   meeting.save(),

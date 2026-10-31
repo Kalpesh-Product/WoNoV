@@ -14,6 +14,7 @@ const {
 } = require("../../config/s3Config");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const Vendor = require("../../models/hr/Vendor");
 const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
@@ -189,6 +190,7 @@ const requestBudget = async (req, res, next) => {
       srNo,
       particulars,
       gstIn,
+      vendor,
     } = req.body;
     const { departmentId } = req.params;
     const invoiceFile = req.files?.invoice?.[0];
@@ -314,11 +316,37 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
+    if (vendor) {
+      if (!mongoose.Types.ObjectId.isValid(vendor)) {
+        throw new CustomError(
+          "Invalid vendor",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      const vendorExists = await Vendor.exists({
+        _id: vendor,
+        company,
+        departmentId,
+        status: "Active",
+      });
+      if (!vendorExists) {
+        throw new CustomError(
+          "Select an active vendor from this department",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
     const budgetData = {
       expanseName,
       projectedAmount: projectedAmount || 0,
       actualAmount: 0,
       department: departmentId,
+      vendor: vendor || null,
       company: company,
       dueDate: parsedDueDate,
       reimbursementDate: parsedReimbursementDate,
@@ -491,7 +519,7 @@ const updateBudget = async (req, res, next) => {
     const { budgetId } = req.params;
     const updateFields = req.body;
     // const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
- const allowedFields = [
+    const allowedFields = [
       "gstIn",
       "expanseName",
       "expanseType",
@@ -499,6 +527,7 @@ const updateBudget = async (req, res, next) => {
       "unit",
       "dueDate",
       "actualAmount",
+      "vendor",
     ];
     // Filter only allowed fields from incoming data
     const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
@@ -510,8 +539,8 @@ const updateBudget = async (req, res, next) => {
 
     if (Object.keys(filteredFields).length === 0) {
       return res.status(400).json({
-       message:
-          "Allowed fields include only: gstIn, expanseName, expanseType, paymentType, unit, dueDate, actualAmount",
+        message:
+          "Allowed fields include only: gstIn, expanseName, expanseType, paymentType, unit, dueDate, actualAmount, vendor",
         // message: "Allowed fields include only: gstIn, expanseType,actualAmount",
       });
     }
@@ -577,6 +606,23 @@ const updateBudget = async (req, res, next) => {
       });
     }
 
+    if (Object.hasOwn(filteredFields, "vendor")) {
+      if (!mongoose.Types.ObjectId.isValid(filteredFields.vendor)) {
+        return res.status(400).json({ message: "Invalid vendor" });
+      }
+      const vendorExists = await Vendor.exists({
+        _id: filteredFields.vendor,
+        company,
+        departmentId: budgetDepartmentId,
+        status: "Active",
+      });
+      if (!vendorExists) {
+        return res.status(400).json({
+          message: "Select an active vendor from this department",
+        });
+      }
+    }
+
     const originalData = foundBudget.toObject();
 
     if (filteredFields.actualAmount !== undefined) {
@@ -619,6 +665,77 @@ const updateBudget = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Budget updated successfully",
+      updatedBudget,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
+const updateFinanceAmount = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Update Finance Amount";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const { budgetId } = req.params;
+    const { financeAmount } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      return res.status(400).json({ message: "Invalid budget ID provided" });
+    }
+
+    if (
+      financeAmount === undefined ||
+      financeAmount === null ||
+      String(financeAmount).trim() === ""
+    ) {
+      return res.status(400).json({ message: "Finance amount is required" });
+    }
+
+    const amount = Number(financeAmount);
+
+    if (Number.isNaN(amount) || amount < 0) {
+      return res
+        .status(400)
+        .json({ message: "Finance amount must be a valid positive number" });
+    }
+
+    const foundBudget = await Budget.findOne({ _id: budgetId, company });
+
+    if (!foundBudget) {
+      return res.status(404).json({ message: "Budget not found" });
+    }
+
+    const previousFinanceAmount = foundBudget.financeAmount ?? 0;
+    foundBudget.financeAmount = amount;
+    foundBudget.financeAmountDate = new Date();
+
+    const updatedBudget = await foundBudget.save({ validateModifiedOnly: true });
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Finance amount updated for budget: ${budgetId}`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: {
+        before: { financeAmount: previousFinanceAmount },
+        after: { financeAmount: updatedBudget.financeAmount },
+      },
+    });
+
+    return res.status(200).json({
+      message: "Finance amount updated successfully",
       updatedBudget,
     });
   } catch (error) {
@@ -1854,6 +1971,7 @@ module.exports = {
   approveBudget,
   rejectBudget,
   updateBudget,
+  updateFinanceAmount,
   deleteBudget,
   restoreBudget,
   fetchBudget,

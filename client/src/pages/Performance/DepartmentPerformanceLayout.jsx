@@ -90,25 +90,25 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
     }, {
       label: "Due Task",
       path: "due-task",
-      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+      permission: PERMISSIONS.KRAKPA_DUE_TASK.value,
     }, {
       label: "Daily Logs",
       path: "daily-logs",
-      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+      permission: PERMISSIONS.KRAKPA_DAILY_LOGS.value,
     }, ...(isManager || isTopManagement || isHr ? [{
       label: "Pending Approvals",
       path: "pending-approvals",
-      permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
+      permission: PERMISSIONS.KRAKPA_PENDING_APPROVALS.value,
     }] : []),
     {
       label: "KPA Rating",
       path: "kpa-rating",
-      permission: PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value,
+      permission: PERMISSIONS.KRAKPA_KPA_RATING.value,
     },
     {
       label: "Daily Logs Rating",
       path: "daily-logs-rating",
-      permission: PERMISSIONS.KRAKPA_SELF_KRA.value,
+      permission: PERMISSIONS.KRAKPA_DAILY_LOGS_RATING.value,
     },
     ] : []),
     {
@@ -141,10 +141,7 @@ const isMemberWiseKpaFlow = location.pathname.includes("/department-KPA/member-w
         tab.path === "individual-Monthly-KPA" ||
         tab.path === "self-KRA" ||
         tab.path === "due-task" ||
-        tab.path === "daily-logs" ||
-        tab.path === "pending-approvals" ||
-        tab.path === "kpa-rating" ||
-        tab.path === "daily-logs-rating"
+        tab.path === "daily-logs"
       )
     : isAssignRoute
     ? tabs.filter(

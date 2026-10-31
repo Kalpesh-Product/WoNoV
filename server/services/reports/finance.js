@@ -188,6 +188,7 @@ const fetchBudgetVoucherService = async ({
   const populateOptions = dashboardView
     ? [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         { path: "unit", select: "unitNo" },
         ...(includeDeleted
           ? [{ path: "deletedBy", select: "firstName lastName employeeName name email" }]
@@ -196,6 +197,7 @@ const fetchBudgetVoucherService = async ({
     : isFilteredBudget
     ? [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         {
           path: "unit",
           select: "unitNo unitName building",
@@ -211,6 +213,7 @@ const fetchBudgetVoucherService = async ({
       ]
     : [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         {
           path: "unit",
           populate: {

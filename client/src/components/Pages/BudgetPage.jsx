@@ -139,6 +139,7 @@ const BudgetPage = () => {
       expanseName: "",
       expanseType: "",
       paymentType: "",
+      vendor: "",
       building: "",
       unitId: "",
       // projectedAmount: null,
@@ -149,6 +150,19 @@ const BudgetPage = () => {
   });
 
   const selectedBuilding = watch("building");
+
+  const { data: departmentVendors = [], isLoading: vendorsLoading } = useQuery({
+    queryKey: ["budgetVendors", department?._id],
+    enabled: Boolean(department?._id),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/vendors/get-vendors/${department._id}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data.filter((vendor) => vendor?.status === "Active")
+        : [];
+    },
+  });
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["departmentBudget", department?._id, canManageDeletedBudgets],
@@ -288,7 +302,10 @@ const BudgetPage = () => {
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
+      departmentId: item.department?._id || department?._id || "",
       department: item.department?.name || "-",
+      vendorId: item.vendor?._id || "",
+      vendorName: item.vendor?.companyName || item.vendor?.name || "-",
       expanseType: item.expanseType,
       paymentType: item.paymentType || "",
       buildingId: item?.unit?.building?._id || "",
@@ -916,6 +933,26 @@ legend: {
                   </MenuItem>
                   <MenuItem value="One Time">One Time</MenuItem>
                   {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="vendor"
+            control={control}
+            rules={{ required: "Vendor is required" }}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select {...field} size="small" displayEmpty disabled={vendorsLoading}>
+                  <MenuItem value="" disabled>
+                    {vendorsLoading ? "Loading Vendors..." : "Select Vendor"}
+                  </MenuItem>
+                  {departmentVendors.map((vendor) => (
+                    <MenuItem key={vendor._id} value={vendor._id}>
+                      {vendor.companyName || vendor.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}

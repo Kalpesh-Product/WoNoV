@@ -113,6 +113,7 @@ const HrCommonAttendance = () => {
           </div>
         ) : (
           <YearWiseTable
+            compactToolbar
             tableTitle={`Attendance Table`}
             dateColumn={"date"}
             columns={attendanceColumns}

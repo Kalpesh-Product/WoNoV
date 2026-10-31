@@ -11,6 +11,11 @@ const budgetSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vendor",
+      default: null,
+    },
     expanseName: {
       type: String,
     },
@@ -31,6 +36,14 @@ const budgetSchema = new mongoose.Schema(
       type: Number,
     },
     actualAmountDate: {
+      type: Date,
+      default: null,
+    },
+    financeAmount: {
+      type: Number,
+      default: 0,
+    },
+    financeAmountDate: {
       type: Date,
       default: null,
     },

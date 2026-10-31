@@ -282,7 +282,7 @@ const RepeatExternalCompaanies = () => {
           <ThreeDotMenu
             menuItems={[
               {
-                label: "Repeat Day Pass",
+                label: "Book Day Pass",
                 onClick: () => openRepeatClientModal(params.data),
               },
               {

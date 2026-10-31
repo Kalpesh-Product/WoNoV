@@ -617,38 +617,44 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                 <Chip label={`Pending Closure: ${kpaRatingSummary.yetToBeRated}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
               </div>
             }>
-              <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-                <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                  {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-                </div>
-                <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                  {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-                </div>
-                <button
-                  type="button"
-                  aria-label="Select date range"
-                  className="rounded-md bg-primary p-3 text-white"
-                  onClick={(event) => setCalendarAnchor(event.currentTarget)}
-                >
-                  <MdCalendarToday size={20} />
-                </button>
-              </div>
-              <Popover
-                open={Boolean(calendarAnchor)}
-                anchorEl={calendarAnchor}
-                onClose={() => setCalendarAnchor(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                transformOrigin={{ vertical: "top", horizontal: "center" }}
-              >
-                <DateRangePicker
-                  ranges={[dateRange]}
-                  onChange={({ selection }) => setDateRange(selection)}
-                  moveRangeOnFirstSelection={false}
-                  direction="vertical"
-                />
-              </Popover>
             <AgTable
               showDateControls={false}
+              toolbarDateControls={
+                <>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+                    </div>
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Select date range"
+                      className="rounded-md bg-primary p-3 text-white"
+                      onClick={(event) =>
+                        setCalendarAnchor(event.currentTarget)
+                      }
+                    >
+                      <MdCalendarToday size={20} />
+                    </button>
+                  </div>
+                  <Popover
+                    open={Boolean(calendarAnchor)}
+                    anchorEl={calendarAnchor}
+                    onClose={() => setCalendarAnchor(null)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                    transformOrigin={{ vertical: "top", horizontal: "center" }}
+                  >
+                    <DateRangePicker
+                      ranges={[dateRange]}
+                      onChange={({ selection }) => setDateRange(selection)}
+                      moveRangeOnFirstSelection={false}
+                      direction="vertical"
+                    />
+                  </Popover>
+                </>
+              }
               data={tableData}
               columns={kpaColumns}
               hideTitle
@@ -782,8 +788,10 @@ const KraKpaRating = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const permissions = auth?.user?.permissions?.permissions || [];
-  const showKpa = permissions.includes(PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value);
-  const showDailyLogs = permissions.includes(PERMISSIONS.KRAKPA_SELF_KRA.value);
+  const showKpa = permissions.includes(PERMISSIONS.KRAKPA_KPA_RATING.value);
+  const showDailyLogs = permissions.includes(
+    PERMISSIONS.KRAKPA_DAILY_LOGS_RATING.value,
+  );
   const ratingTabs = [
     ...(showKpa ? [{ label: "KPA Rating", value: "kpa", path: "kpa-rating" }] : []),
     ...(showDailyLogs ? [{ label: "Daily Logs Rating", value: "daily-logs", path: "daily-logs-rating" }] : []),

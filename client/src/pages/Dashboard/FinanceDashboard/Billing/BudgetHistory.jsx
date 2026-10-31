@@ -131,6 +131,8 @@ const BudgetHistory = () => {
     { field: "expanseType", headerName: "Expense Type", flex: 1.2 },
      { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1.2 },
+    { field: "financeAmount", headerName: "Approved Budget (INR)", flex: 1.2 },
+    { field: "remainingAmount", headerName: "Available Balance (INR)", flex: 1.2 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1.2 },
     { field: "dueDate", headerName: "Due Date", flex: 1.1 },
     {
@@ -230,6 +232,8 @@ const BudgetHistory = () => {
     .map((item) => {
       const invoice = item?.invoice || {};
       const unit = item?.unit || {};
+      const projectedAmountRaw = Number(item?.projectedAmount || 0);
+      const financeAmountRaw = Number(item?.financeAmount || 0);
 
       return {
         ...item,
@@ -237,9 +241,13 @@ const BudgetHistory = () => {
         unitName: unit?.unitName || "-",
         unitNo: unit?.unitNo || "-",
         buildingName: unit?.building?.buildingName || "-",
-        projectedAmountRaw: item?.projectedAmount || 0,
+        projectedAmountRaw,
         actualAmountRaw: item?.actualAmount || 0,
-        projectedAmount: inrFormat(item?.projectedAmount || 0),
+        financeAmountRaw,
+        availableBalanceRaw: projectedAmountRaw - financeAmountRaw,
+        projectedAmount: inrFormat(projectedAmountRaw),
+        financeAmount: inrFormat(financeAmountRaw),
+        remainingAmount: inrFormat(projectedAmountRaw - financeAmountRaw),
         actualAmount: inrFormat(item?.actualAmount || 0),
         dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
         dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
@@ -350,6 +358,14 @@ const BudgetHistory = () => {
             <BudgetViewDetail
               title="Projected Amount"
               detail={`INR ${Number(viewDetails.projectedAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <BudgetViewDetail
+              title="Approved Budget"
+              detail={`INR ${Number(viewDetails.financeAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <BudgetViewDetail
+              title="Available Balance"
+              detail={`INR ${Number(viewDetails.availableBalanceRaw || 0).toLocaleString("en-IN")}`}
             />
             <BudgetViewDetail
               title="Actual Amount"

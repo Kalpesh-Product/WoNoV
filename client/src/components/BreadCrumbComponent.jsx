@@ -26,6 +26,20 @@ const BreadCrumbComponent = () => {
       return "KRA & KPA";
     }
 
+    if (
+      value.toLowerCase() === "individual-monthly-kpa" &&
+      location.pathname.toLowerCase().startsWith("/app/kra-kpa")
+    ) {
+      return "Self KPA";
+    }
+
+    if (
+      value.toLowerCase() === "individual" &&
+      location.pathname.toLowerCase().startsWith("/app/kra-kpa")
+    ) {
+      return "Employee KRA/KPA";
+    }
+
     const acronymMap = {
       amc: "AMC",
       biz: "BIZ",

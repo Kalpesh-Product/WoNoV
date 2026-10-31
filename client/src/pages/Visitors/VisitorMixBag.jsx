@@ -9,8 +9,8 @@ const VisitorMixBag = () => {
 
   const mixBagCards = [
     {
-      title: "REPEAT DAY PASS",
-      route: "/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies",
+      title: "REPEAT BOOKING",
+      route: "/app/visitors/mix-bag/repeat-booking",
       permission: PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS.value,
     },
      {

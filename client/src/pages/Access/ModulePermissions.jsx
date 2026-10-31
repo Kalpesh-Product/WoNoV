@@ -95,6 +95,36 @@ const ModulePermissions = () => {
     setValue("permissions", Array.from(current));
   };
 
+  const modulePermissionActions = useMemo(
+    () => [...new Set(permissions.map(({ action }) => action).filter(Boolean))],
+    [permissions],
+  );
+  const selectedModulePermissionCount = modulePermissionActions.filter(
+    (action) => formPermissions.has(action),
+  ).length;
+  const areAllModulePermissionsSelected =
+    modulePermissionActions.length > 0 &&
+    selectedModulePermissionCount === modulePermissionActions.length;
+
+  const handleSelectAll = () => {
+    const current = new Set(watch("permissions") || []);
+
+    if (areAllModulePermissionsSelected) {
+      modulePermissionActions.forEach((action) => current.delete(action));
+    } else {
+      modulePermissionActions.forEach((action) => current.add(action));
+    }
+
+    setValue("permissions", Array.from(current));
+  };
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setValue("permissions", currentPermissions || []);
+    }
+    setIsEditing((prev) => !prev);
+  };
+
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -147,10 +177,6 @@ const ModulePermissions = () => {
           <span className="text-title font-pmedium text-primary uppercase">
             {module.charAt(0).toUpperCase() + module.slice(1)} Permissions
           </span>
-          <PrimaryButton
-            title={isEditing ? "Cancel" : "Edit"}
-            handleSubmit={() => setIsEditing((prev) => !prev)}
-          />
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -171,11 +197,31 @@ const ModulePermissions = () => {
                 ),
               }}
             />
-            <div
-              className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
-              onClick={() => setFilterDrawerOpen(true)}
-            >
-              <IoFilter />
+            <div className="flex items-center gap-3">
+              {isEditing && (
+                <label className="flex items-center cursor-pointer whitespace-nowrap">
+                  <Checkbox
+                    checked={areAllModulePermissionsSelected}
+                    indeterminate={
+                      selectedModulePermissionCount > 0 &&
+                      !areAllModulePermissionsSelected
+                    }
+                    onChange={handleSelectAll}
+                  />
+                  <span className="text-content">Select All</span>
+                </label>
+              )}
+              <PrimaryButton
+                title={isEditing ? "Cancel" : "Edit"}
+                type="button"
+                handleSubmit={handleEditToggle}
+              />
+              <div
+                className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
+                onClick={() => setFilterDrawerOpen(true)}
+              >
+                <IoFilter />
+              </div>
             </div>
           </div>
 

@@ -111,7 +111,7 @@ const BiometricAccessClients = () => {
                         key={data.length}
                         data={data}
                         columns={columns}
-                        summaryContent={
+                        titleRightContent={
                             <div className="flex items-center gap-2 flex-wrap">
                                 <StatusChip status="Total" count={clientStats.total} variant="count" />
                                 <StatusChip status="Active" count={clientStats.active} variant="count" />

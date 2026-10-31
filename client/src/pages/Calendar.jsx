@@ -19,7 +19,7 @@ import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
 import humanTime from "../utils/humanTime";
-import useAuth from "../hooks/useAuth";
+import { getStatusColors } from "../constants/statusColors";
 
 const MAIN_FILTERS = ["holiday", "event", "meeting"];
 const MEETING_STATUS_FILTERS = [
@@ -29,23 +29,14 @@ const MEETING_STATUS_FILTERS = [
   "extended",
   "cancelled",
 ];
-const MEETING_TYPE_FILTERS = ["internal", "external"];
 const ALL_FILTERS = [
   ...MAIN_FILTERS,
   ...MEETING_STATUS_FILTERS,
-  ...MEETING_TYPE_FILTERS,
 ];
 const FILTER_COLORS = {
   holiday: "#4caf50",
   event: "#ff9800",
   meeting: "#2196f3",
-  upcoming: "#3BACFF",
-  ongoing: "#14B8A6",
-  completed: "#22C55E",
-  extended: "#6366F1",
-  cancelled: "#EF4444",
-  internal: "#8B5CF6",
-  external: "#F59E0B",
 };
 
 const getMonthRange = (value = dayjs()) => ({
@@ -64,7 +55,6 @@ const getMeetingStatus = (meeting) => {
 };
 
 const Calender = () => {
-  const { auth } = useAuth();
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerMode, setDrawerMode] = useState(""); // 'view' or 'add'
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -79,27 +69,6 @@ const Calender = () => {
   ]);
   const [calendarRange, setCalendarRange] = useState(() => getMonthRange());
   const axios = useAxiosPrivate();
-
-  const roleTitles = useMemo(
-    () =>
-      (auth?.user?.role || [])
-        .map((role) => normalize(role?.roleTitle || role))
-        .filter(Boolean),
-    [auth?.user?.role],
-  );
-  const roleIds = useMemo(
-    () =>
-      (auth?.user?.role || [])
-        .map((role) => String(role?.roleID || "").toUpperCase())
-        .filter(Boolean),
-    [auth?.user?.role],
-  );
-  const isEmployee = useMemo(
-    () =>
-      roleTitles.some((role) => role.includes("employee")) ||
-      roleIds.some((roleId) => roleId.includes("EMPLOYEE")),
-    [roleIds, roleTitles],
-  );
 
   //---------------------------------API------------------------------------------//
 
@@ -198,6 +167,7 @@ const Calender = () => {
     () =>
       visibleMeetings.map((meeting) => {
         const status = getMeetingStatus(meeting);
+        const statusColors = getStatusColors(status);
 
         return {
           id: meeting._id,
@@ -205,8 +175,9 @@ const Calender = () => {
           start: meeting.startTime,
           end: meeting.endTime,
           allDay: false,
-          backgroundColor: FILTER_COLORS[status],
-          borderColor: FILTER_COLORS[status],
+          backgroundColor: statusColors.backgroundColor,
+          borderColor: "transparent",
+          textColor: statusColors.color,
           extendedProps: {
             type: "meeting", // so it can be filtered
             agenda: meeting.agenda,
@@ -214,7 +185,6 @@ const Calender = () => {
             bookedBy: meeting.bookedBy,
             receptionist: meeting.receptionist,
             client: meeting.client,
-            meetingType: meeting.meetingType,
             duration: meeting.duration,
             startTime: meeting.startTime,
             endTime: meeting.endTime,
@@ -281,9 +251,7 @@ const Calender = () => {
 
       if (type === "meeting") {
         const status = getMeetingStatus(event.extendedProps);
-        const meetingType = normalize(event.extendedProps?.meetingType);
         if (status in counts) counts[status]++;
-        if (meetingType in counts) counts[meetingType]++;
       }
     });
 
@@ -298,10 +266,7 @@ const Calender = () => {
 
         if (type !== "meeting") return true;
 
-        return (
-          eventFilter.includes(getMeetingStatus(event.extendedProps)) &&
-          eventFilter.includes(normalize(event.extendedProps?.meetingType))
-        );
+        return eventFilter.includes(getMeetingStatus(event.extendedProps));
       }),
     [allCombinedEvents, eventFilter],
   );
@@ -329,7 +294,9 @@ const Calender = () => {
     const type = normalize(event.extendedProps?.type);
     const colorKey =
       type === "meeting" ? getMeetingStatus(event.extendedProps) : type;
-    const headerBackground = FILTER_COLORS[colorKey] || "";
+    const headerBackground = type === "meeting"
+      ? getStatusColors(colorKey).backgroundColor
+      : FILTER_COLORS[colorKey] || "";
 
     setSelectedEvent(event);
     setDrawerMode("view");
@@ -434,9 +401,9 @@ const Calender = () => {
                                         )
                                       }
                                       sx={{
-                                        color: FILTER_COLORS[status],
+                                        color: getStatusColors(status).color,
                                         "&.Mui-checked": {
-                                          color: FILTER_COLORS[status],
+                                          color: getStatusColors(status).color,
                                         },
                                       }}
                                     />
@@ -450,8 +417,9 @@ const Calender = () => {
                                 <span
                                   className="rounded-full px-2 py-1 text-xs font-semibold"
                                   style={{
-                                    color: FILTER_COLORS[status],
-                                    backgroundColor: `${FILTER_COLORS[status]}18`,
+                                    color: getStatusColors(status).color,
+                                    backgroundColor:
+                                      getStatusColors(status).backgroundColor,
                                   }}
                                 >
                                   {filterCounts[status]}
@@ -460,64 +428,6 @@ const Calender = () => {
                             ))}
                           </FormGroup>
 
-                          {!isEmployee && (
-                            <div className="mt-2 border-t border-blue-100 pt-2">
-                              <div className="mb-1 text-xs font-medium text-gray-500">
-                                Filter by type
-                              </div>
-                              <FormGroup>
-                                {MEETING_TYPE_FILTERS.map((meetingType) => (
-                                  <div
-                                    key={meetingType}
-                                    className="flex items-center justify-between pr-3"
-                                  >
-                                    <FormControlLabel
-                                      sx={{ marginRight: 0 }}
-                                      control={
-                                        <Checkbox
-                                          size="small"
-                                          checked={eventFilter.includes(
-                                            meetingType,
-                                          )}
-                                          onChange={(event) =>
-                                            setEventFilter((previous) =>
-                                              event.target.checked
-                                                ? [...previous, meetingType]
-                                                : previous.filter(
-                                                    (item) =>
-                                                      item !== meetingType,
-                                                  ),
-                                            )
-                                          }
-                                          sx={{
-                                            color: FILTER_COLORS[meetingType],
-                                            "&.Mui-checked": {
-                                              color:
-                                                FILTER_COLORS[meetingType],
-                                            },
-                                          }}
-                                        />
-                                      }
-                                      label={
-                                        <span className="text-sm capitalize">
-                                          {meetingType}
-                                        </span>
-                                      }
-                                    />
-                                    <span
-                                      className="rounded-full px-2 py-1 text-xs font-semibold"
-                                      style={{
-                                        color: FILTER_COLORS[meetingType],
-                                        backgroundColor: `${FILTER_COLORS[meetingType]}18`,
-                                      }}
-                                    >
-                                      {filterCounts[meetingType]}
-                                    </span>
-                                  </div>
-                                ))}
-                              </FormGroup>
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
@@ -538,6 +448,9 @@ const Calender = () => {
                         type === "meeting"
                           ? getMeetingStatus(event.extendedProps)
                           : type;
+                      const indicatorColor = type === "meeting"
+                        ? getStatusColors(colorKey).color
+                        : FILTER_COLORS[colorKey];
                       return (
                         <div
                           key={index}
@@ -546,7 +459,7 @@ const Calender = () => {
                           <div
                             className="w-3 h-3 rounded-full mr-2"
                             style={{
-                              backgroundColor: FILTER_COLORS[colorKey],
+                              backgroundColor: indicatorColor,
                             }}
                           ></div>
                           <div className="flex flex-col">
@@ -687,17 +600,6 @@ const Calender = () => {
                           {selectedEvent.extendedProps.meetingStatus}
                         </span>
                       </span>{" "}
-                    </div>
-                  )}
-                  {selectedEvent.extendedProps?.meetingType && (
-                    <div>
-                      <span className="text-content flex items-start">
-                        <span className="w-[30%]">Meeting Type</span>
-                        <span>:</span>
-                        <span className="text-content   w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.meetingType}
-                        </span>
-                      </span>
                     </div>
                   )}
                   {selectedEvent.extendedProps?.client && (

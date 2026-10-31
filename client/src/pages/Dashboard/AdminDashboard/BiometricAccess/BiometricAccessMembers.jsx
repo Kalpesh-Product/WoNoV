@@ -450,7 +450,7 @@ const BiometricAccessMembers = () => {
                                 ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
                                 : undefined
                         }
-                        summaryContent={
+                        titleRightContent={
                             <div className="flex items-center gap-2 flex-wrap">
                                 <StatusChip status="Total" count={memberStats.total} variant="count" />
                                 <StatusChip status="Active" count={memberStats.active} variant="count" />

@@ -259,6 +259,8 @@ const KraKpaIndividualMonthlyKpa = () => {
         department?.name?.trim().toLowerCase() === "top management",
     );
   const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
+  const canCreateSelfKraCategory =
+    isManager || isTopManagement || isHrUser;
   const showAssigneeField =
     !isEmployeeRoute &&
     !isIndividualRoute &&
@@ -269,7 +271,9 @@ const KraKpaIndividualMonthlyKpa = () => {
     !isManager &&
     !isTopManagement &&
     !isHrUser;
-  const canSelectSelfKraLead = isManager || isTopManagement;
+  const canSelectSelfKraLead =
+    (isManager || isTopManagement) &&
+    String(employeeId) !== String(auth?.user?._id);
   const canManageOthers = roleTitles.some(
     (role) =>
       role.includes("manager") ||
@@ -704,6 +708,13 @@ const KraKpaIndividualMonthlyKpa = () => {
             normalizedCategoryName.toLowerCase(),
         )
       : null;
+    if (isSelfKra && !existingCategory && !canCreateSelfKraCategory) {
+      setFormErrors((current) => ({
+        ...current,
+        category: "Select an existing category",
+      }));
+      return;
+    }
     const payload = isSelfKra
       ? {
           ...(existingCategory
@@ -1215,21 +1226,24 @@ const KraKpaIndividualMonthlyKpa = () => {
         <PageFrame>
         <WidgetSection padding>
         <AgTable
-          titleRightContent={isSelfKra && (
+          titleRightContent={(
             <div className="flex flex-wrap items-center justify-end gap-3">
-              {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
-              <PrimaryButton
-                type="button"
-                title={`Add to Daily Logs (${selectedSelfKras.length})`}
-                handleSubmit={openAddSelfKrasToDailyLogs}
-                disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
-                className="!w-[230px]"
-              />
+              {isSelfKra ? (
+                <>
+                  {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
+                  <PrimaryButton
+                    type="button"
+                    title={`Add to Daily Logs (${selectedSelfKras.length})`}
+                    handleSubmit={openAddSelfKrasToDailyLogs}
+                    disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
+                    className="!w-[230px]"
+                  />
+                </>
+              ) : (
+                canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
+              )}
             </div>
           )}
-          headerActions={
-            !isSelfKra && canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
-          }
           toolbarDateControls={
             <>
               {!isSelfKra && <>
@@ -1826,15 +1840,19 @@ const KraKpaIndividualMonthlyKpa = () => {
             <>
               <Autocomplete
                 fullWidth
-                freeSolo
-                autoSelect
+                freeSolo={canCreateSelfKraCategory}
+                autoSelect={canCreateSelfKraCategory}
                 selectOnFocus
                 options={kraCategories.map(
                   (category) => category.categoryName,
                 )}
                 value={form.selfKras[0].category || null}
                 loading={isLoadingKraCategories}
-                noOptionsText="No options - type to add"
+                noOptionsText={
+                  canCreateSelfKraCategory
+                    ? "No options - type to add"
+                    : "No categories available"
+                }
                 onChange={(_, selectedValue) => {
                   setForm((current) => ({
                     ...current,

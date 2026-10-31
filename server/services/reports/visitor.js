@@ -26,6 +26,7 @@ const attachMeetingPaymentDetails = async (records, company) => {
 const { default: mongoose } = require("mongoose");
 const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const Visitor = require("../../models/visitor/Visitor");
+const Meeting = require("../../models/meetings/Meetings");
 const { getPagination } = require("../../utils/pagination");
 const {
   buildSearchRegex,
@@ -191,7 +192,15 @@ const populateVisitorListFields = [
     path: "meeting",
     select:
       "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
-    populate: { path: "bookedRoom", select: "perHourPrice" },
+    populate: {
+      path: "bookedRoom",
+      select: "name perHourPrice location",
+      populate: {
+        path: "location",
+        select: "unitNo unitName building",
+        populate: { path: "building", select: "buildingName" },
+      },
+    },
   },
   {
     path: "building",
@@ -218,7 +227,15 @@ const populateExternalVisitFields = [
     path: "meeting",
     select:
       "subject agenda startDate endDate startTime endTime extendTime meetingType status paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification bookedRoom",
-    populate: { path: "bookedRoom", select: "perHourPrice" },
+    populate: {
+      path: "bookedRoom",
+      select: "name perHourPrice location",
+      populate: {
+        path: "location",
+        select: "unitNo unitName building",
+        populate: { path: "building", select: "buildingName" },
+      },
+    },
   },
   {
     path: "unit",
@@ -485,6 +502,7 @@ const fetchVisitorReportVisits = async ({
   companyId,
   dateFilter,
   search,
+  meetingOnly = false,
   shouldPaginate,
   parsedPage,
   parsedLimit,
@@ -495,6 +513,7 @@ const fetchVisitorReportVisits = async ({
   const visitFilter = {
     company: companyId,
     visitorId: { $ne: null },
+    ...(meetingOnly && { meeting: { $ne: null } }),
     ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
   };
 
@@ -587,6 +606,154 @@ const fetchVisitorReportVisits = async ({
   };
 };
 
+const fetchVisitorReportMeetings = async ({
+  companyId,
+  dateFilter,
+  search,
+  shouldPaginate,
+  parsedPage,
+  parsedLimit,
+  skip,
+}) => {
+  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const searchRegex = buildSearchRegex(normalizedSearch);
+  const meetingFilter = {
+    company: companyId,
+    meetingType: "External",
+    externalClient: { $ne: null },
+    ...(dateFilter?.checkIn && { startTime: dateFilter.checkIn }),
+  };
+
+  if (searchRegex) {
+    const visitorSearchConditions = await buildVisitorSearchConditions({
+      company: companyId,
+      search: normalizedSearch,
+    });
+    const matchingVisitorIds = await Visitor.find({
+      company: companyId,
+      $or: visitorSearchConditions,
+    }).distinct("_id");
+
+    meetingFilter.$or = [
+      { subject: searchRegex },
+      { agenda: searchRegex },
+      { status: searchRegex },
+      { meetingType: searchRegex },
+      { paymentMode: searchRegex },
+      { paymentVerification: searchRegex },
+      { "externalParticipants.name": searchRegex },
+      { "externalParticipants.mobileNumber": searchRegex },
+      ...(matchingVisitorIds.length
+        ? [{ externalClient: { $in: matchingVisitorIds } }]
+        : []),
+    ];
+
+    if (normalizedSearch === "paid") {
+      meetingFilter.$or.push({ paymentStatus: true });
+    }
+    if (
+      normalizedSearch === "unpaid" ||
+      normalizedSearch === "wait for payment"
+    ) {
+      meetingFilter.$or.push({ paymentStatus: false });
+    }
+  }
+
+  let meetingsQuery = Meeting.find(meetingFilter)
+    .sort({ startTime: -1, _id: -1 })
+    .populate({
+      path: "externalClient",
+      select:
+        "firstName middleName lastName email gender phoneNumber city state sector brandName registeredClientCompany gstNumber gstFile panNumber panFile idProof otherFile visitorCompany visitorFlag visitorRoles",
+    })
+    .populate({
+      path: "bookedRoom",
+      select: "name perHourPrice location",
+      populate: {
+        path: "location",
+        select: "unitNo unitName building",
+        populate: { path: "building", select: "buildingName" },
+      },
+    })
+    .lean();
+
+  if (shouldPaginate) {
+    meetingsQuery = meetingsQuery.skip(skip).limit(parsedLimit);
+  }
+
+  const [meetings, total] = await Promise.all([
+    meetingsQuery.exec(),
+    shouldPaginate ? Meeting.countDocuments(meetingFilter).exec() : null,
+  ]);
+  const meetingIds = meetings.map((meeting) => meeting._id);
+  const attendanceRecords = meetingIds.length
+    ? await ExternalVisits.find({
+        company: companyId,
+        meeting: { $in: meetingIds },
+      })
+        .select(
+          "meeting checkIn checkOut checkedInBy checkedOutBy dateOfVisit createdAt",
+        )
+        .sort({ checkIn: -1, dateOfVisit: -1, createdAt: -1 })
+        .populate({ path: "checkedInBy", select: "firstName lastName" })
+        .populate({ path: "checkedOutBy", select: "firstName lastName" })
+        .lean()
+    : [];
+  const attendanceByMeeting = new Map();
+  attendanceRecords.forEach((attendance) => {
+    const meetingId = String(attendance.meeting);
+    if (!attendanceByMeeting.has(meetingId)) {
+      attendanceByMeeting.set(meetingId, attendance);
+    }
+  });
+
+  const data = meetings
+    .filter((meeting) => meeting.externalClient)
+    .map((meeting) => {
+      const visitor = meeting.externalClient;
+      const attendance = attendanceByMeeting.get(String(meeting._id));
+      return {
+        ...visitor,
+        _id: meeting._id,
+        visitorId: visitor._id,
+        meeting,
+        visitorFlag: "Client",
+        visitorType: "Meeting",
+        purposeOfVisit: "Meeting Room Booking",
+        dateOfVisit: meeting.startTime,
+        scheduledDate: meeting.startDate,
+        scheduledStartTime: meeting.startTime,
+        scheduledEndTime: meeting.extendTime || meeting.endTime,
+        checkIn: attendance?.checkIn || null,
+        checkOut: attendance?.checkOut || null,
+        checkedInBy: attendance?.checkedInBy || null,
+        checkedOutBy: attendance?.checkedOutBy || null,
+        amount: meeting.paymentBaseAmount ?? 0,
+        discount: meeting.discountAmount ?? 0,
+        gstAmount: meeting.paymentGstAmount ?? 0,
+        totalAmount: meeting.paymentAmount ?? 0,
+        paymentStatus: meeting.paymentStatus === true,
+        paymentMode: meeting.paymentMode || null,
+        paymentProof: meeting.paymentProof || {},
+        paymentVerification: meeting.paymentVerification || "Pending",
+        externalVisits: [],
+      };
+    });
+
+  await attachMeetingPaymentDetails(data, companyId);
+
+  if (!shouldPaginate) return data;
+  return {
+    data,
+    pagination: {
+      page: parsedPage,
+      limit: parsedLimit,
+      total,
+      totalPages: Math.ceil(total / parsedLimit),
+    },
+  };
+};
+
 const fetchVisitorReportService = async ({
   dateFilter,
   query,
@@ -601,6 +768,7 @@ const fetchVisitorReportService = async ({
   type = "",
   search,
   searchContext,
+  visitScope,
 }) => {
   try {
     const companyId = new mongoose.Types.ObjectId(company);
@@ -631,10 +799,22 @@ const fetchVisitorReportService = async ({
     }
 
     if (searchContext === "visitor-reports") {
+      if (visitScope === "meeting") {
+        return fetchVisitorReportMeetings({
+          companyId,
+          dateFilter,
+          search: normalizedSearch,
+          shouldPaginate,
+          parsedPage,
+          parsedLimit,
+          skip,
+        });
+      }
       return fetchVisitorReportVisits({
         companyId,
         dateFilter,
         search: normalizedSearch,
+        meetingOnly: false,
         shouldPaginate,
         parsedPage,
         parsedLimit,

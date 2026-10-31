@@ -24,17 +24,13 @@ import { setMeetings } from "../../redux/slices/meetingSlice";
 import humanTime from "../../utils/humanTime";
 import useAuth from "../../hooks/useAuth";
 import { toUtcDayBoundary } from "../../utils/dateRange";
+import { getStatusColors } from "../../constants/statusColors";
 const getMonthRange = (value = dayjs()) => ({
   startDate: value.startOf("month").toDate(),
   endDate: value.endOf("month").toDate(),
 });
 
 const FILTER_COLORS = {
-  upcoming: "#3BACFF",
-  ongoing: "#14B8A6",
-  completed: "#22C55E",
-  extended: "#6366F1",
-  cancelled: "#EF4444",
   internal: "#8B5CF6",
   external: "#F59E0B",
 };
@@ -48,6 +44,13 @@ const STATUS_FILTERS = [
 ];
 const TYPE_FILTERS = ["internal", "external"];
 const ALL_FILTERS = [...STATUS_FILTERS, ...TYPE_FILTERS];
+const getFilterColors = (filter) =>
+  STATUS_FILTERS.includes(filter)
+    ? getStatusColors(filter)
+    : {
+        color: FILTER_COLORS[filter],
+        backgroundColor: `${FILTER_COLORS[filter]}18`,
+      };
 
 const normalize = (value) =>
   String(value || "")
@@ -292,14 +295,16 @@ const Calender = () => {
   const transformedMeetings = useMemo(() => {
     return visibleMeetings.map((meeting) => {
       const status = getMeetingStatus(meeting);
+      const statusColors = getStatusColors(status);
 
       return {
         id: meeting._id,
         title: meeting.subject,
         start: meeting.startTime.split("/").reverse().join("-"),
         end: meeting.endTime.split("/").reverse().join("-"),
-        backgroundColor: FILTER_COLORS[status],
-        borderColor: FILTER_COLORS[status],
+        backgroundColor: statusColors.backgroundColor,
+        borderColor: "transparent",
+        textColor: statusColors.color,
         extendedProps: { ...meeting },
       };
     });
@@ -343,7 +348,7 @@ const Calender = () => {
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
     const status = getMeetingStatus(event.extendedProps);
-    const headerBackground = FILTER_COLORS[status] || "";
+    const headerBackground = getStatusColors(status).backgroundColor;
     // Fallback to empty if type doesn't match
 
     setSelectedEvent(event);
@@ -411,9 +416,9 @@ const Calender = () => {
                                       );
                                     }}
                                     sx={{
-                                      color: FILTER_COLORS[filter],
+                                      color: getFilterColors(filter).color,
                                       "&.Mui-checked": {
-                                        color: FILTER_COLORS[filter],
+                                        color: getFilterColors(filter).color,
                                       },
                                     }}
                                   />
@@ -427,8 +432,9 @@ const Calender = () => {
                               <span
                                 className="rounded-full px-2 py-1 text-xs font-semibold"
                                 style={{
-                                  color: FILTER_COLORS[filter],
-                                  backgroundColor: `${FILTER_COLORS[filter]}18`,
+                                  color: getFilterColors(filter).color,
+                                  backgroundColor:
+                                    getFilterColors(filter).backgroundColor,
                                 }}
                               >
                                 {isPlaceholderData
@@ -451,10 +457,9 @@ const Calender = () => {
                   <div className="px-2">
                     {todaysEvents.length > 0 ? (
                       todaysEvents.map((event, index) => {
-                        const colors = {
-                          Upcoming: "#3BACFF",
-                          Completed: "#5EFE1F",
-                        };
+                        const statusColors = getStatusColors(
+                          getMeetingStatus(event.extendedProps),
+                        );
                         return (
                           <div
                             key={index}
@@ -463,8 +468,7 @@ const Calender = () => {
                             <div
                               className="w-3 h-3 rounded-full mr-2"
                               style={{
-                                backgroundColor:
-                                  colors[event.extendedProps.meetingStatus],
+                                backgroundColor: statusColors.color,
                               }}
                             ></div>
                             <div className="flex flex-col">

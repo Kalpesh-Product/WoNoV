@@ -40,13 +40,25 @@ test("rating page has one unbordered heading followed by tabs and the selected s
 
 test("each rating section remains gated by its own permission", () => {
   const { source, ast } = read("pages/Performance/KraKpaRating.jsx");
-  const constants = { KRAKPA_INDIVIDUAL_MONTHLY_KPA: { value: "kpa" }, KRAKPA_SELF_KRA: { value: "kra" } };
-  for (const [variable, permission] of [["showKpa", "kpa"], ["showDailyLogs", "kra"]]) {
+  const constants = {
+    KRAKPA_KPA_RATING: { value: "kpa-rating" },
+    KRAKPA_DAILY_LOGS_RATING: { value: "daily-logs-rating" },
+  };
+  for (const [variable, permission] of [
+    ["showKpa", "kpa-rating"],
+    ["showDailyLogs", "daily-logs-rating"],
+  ]) {
     const expression = find(ast, (node) => node.type === "VariableDeclarator" && node.id?.name === variable)[0].init;
     const check = new Function("permissions", "PERMISSIONS", `return ${source.slice(expression.start, expression.end)}`);
     assert.equal(check([], constants), false);
     assert.equal(check([permission], constants), true);
-    assert.equal(check([permission === "kpa" ? "kra" : "kpa"], constants), false);
+    assert.equal(
+      check(
+        [permission === "kpa-rating" ? "daily-logs-rating" : "kpa-rating"],
+        constants,
+      ),
+      false,
+    );
   }
 });
 
@@ -58,6 +70,6 @@ test("Daily Score uses a tab-free outlet and all legacy rating URLs render the c
   assert.equal(guards.length, 6);
   for (const guard of guards) {
     assert.equal(attr(guard, "mode").value.value, "any");
-    assert.equal(attr(guard, "permissions").value.expression.elements.length, 2);
+    assert.equal(attr(guard, "permissions").value.expression.elements.length, 1);
   }
 });
