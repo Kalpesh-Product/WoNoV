@@ -86,13 +86,20 @@ const LeadsLayout = ({
   hideFinancialYearControls = false,
   actualMonthLag = 2,
   virtualOfficeOnly = false,
+  focusedClientSeries = null,
   virtualOfficeActualLegend = "Actual",
   virtualOfficeProjectedLegend = "Projected",
   virtualOfficeActualColor = "#80BF01",
   virtualOfficeProjectedColor = "#9ca3af",
+  virtualOfficeProjectedClientCount = null,
   virtualOfficeTooltipLabel,
   virtualOfficeDataLabelsAbove = false,
+  onSelectedFinancialYearClientsCountChange,
 }) => {
+  const singleSeriesOnly =
+    virtualOfficeOnly || Boolean(focusedClientSeries);
+  const focusedActualSeries = focusedClientSeries || "Virtual Office";
+  const focusedProjectedSeries = `Projected ${focusedActualSeries}`;
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
     [data]
@@ -231,6 +238,15 @@ const LeadsLayout = ({
       : titleAmount || `CLIENTS : ${selectedFinancialYearClientsCount}`;
 
   // ✅ Transform Data for ApexCharts
+  useEffect(() => {
+    onSelectedFinancialYearClientsCountChange?.(
+      selectedFinancialYearClientsCount,
+    );
+  }, [
+    onSelectedFinancialYearClientsCountChange,
+    selectedFinancialYearClientsCount,
+  ]);
+
   const uniqueClientsData = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
     const getMonthDate = (monthIndex) =>
@@ -315,6 +331,14 @@ const LeadsLayout = ({
           0,
         );
 
+        if (
+          virtualOfficeOnly &&
+          actualSeriesName === "Virtual Office" &&
+          Number.isFinite(Number(virtualOfficeProjectedClientCount))
+        ) {
+          return Number(virtualOfficeProjectedClientCount);
+        }
+
         return elapsedMonths > 0
           ? Math.round(actualTotal / elapsedMonths)
           : 0;
@@ -326,22 +350,34 @@ const LeadsLayout = ({
     );
 
     return [...investorActualSeries, ...projectedSeries];
-  }, [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag]);
+  }, [
+    currentFinancialYear,
+    investorBlueStyle,
+    transformedData,
+    actualMonthLag,
+    virtualOfficeOnly,
+    virtualOfficeProjectedClientCount,
+  ]);
   const scopedUniqueClientsData = useMemo(() => {
-    if (!virtualOfficeOnly) return uniqueClientsData;
+    if (!singleSeriesOnly) return uniqueClientsData;
 
     const actual = uniqueClientsData.find(
-      (series) => series.name === "Virtual Office",
+      (series) => series.name === focusedActualSeries,
     );
     const projected = uniqueClientsData.find(
-      (series) => series.name === "Projected Virtual Office",
+      (series) => series.name === focusedProjectedSeries,
     );
 
     return [
       actual && { ...actual, name: "Actual" },
       projected && { ...projected, name: "Projected" },
     ].filter(Boolean);
-  }, [uniqueClientsData, virtualOfficeOnly]);
+  }, [
+    focusedActualSeries,
+    focusedProjectedSeries,
+    singleSeriesOnly,
+    uniqueClientsData,
+  ]);
   const getUniqueClientSeriesColor = useCallback(
     (seriesName) => {
       if (seriesName === "Actual") return virtualOfficeActualColor;
@@ -353,7 +389,7 @@ const LeadsLayout = ({
   const displayedUniqueClientsData = useMemo(
     () =>
       scopedUniqueClientsData.map((series) => {
-        const legendKey = virtualOfficeOnly
+        const legendKey = singleSeriesOnly
           ? series.name
           : series.name.startsWith("Projected ")
             ? "Projected"
@@ -363,12 +399,12 @@ const LeadsLayout = ({
           ? { ...series, data: series.data.map(() => 0) }
           : series;
       }),
-    [hiddenInvestorSeries, scopedUniqueClientsData, virtualOfficeOnly]
+    [hiddenInvestorSeries, scopedUniqueClientsData, singleSeriesOnly]
   );
   const investorRankedMonthEntries = useMemo(() => {
     if (!investorBlueStyle) return [];
 
-    const actualSeriesCount = virtualOfficeOnly
+    const actualSeriesCount = singleSeriesOnly
       ? 1
       : ACTUAL_UNIQUE_CLIENT_SERIES.length;
     const actualSeries = displayedUniqueClientsData.slice(0, actualSeriesCount);
@@ -394,7 +430,7 @@ const LeadsLayout = ({
     displayedUniqueClientsData,
     financialYearMonths,
     investorBlueStyle,
-    virtualOfficeOnly,
+    singleSeriesOnly,
     getUniqueClientSeriesColor,
   ]);
   const investorRankedSeries = useMemo(() => {
@@ -522,7 +558,7 @@ const LeadsLayout = ({
           intersect: true,
           custom: ({ dataPointIndex, w }) => {
             const entries = investorRankedMonthEntries[dataPointIndex] || [];
-            if (virtualOfficeOnly) {
+            if (singleSeriesOnly) {
               const clientCount = entries.reduce(
                 (total, entry) => total + (Number(entry.value) || 0),
                 0,
@@ -650,13 +686,13 @@ const LeadsLayout = ({
 
         {investorBlueStyle ? (
           <div className="flex flex-wrap items-center justify-center gap-4 pb-2 pt-1">
-            {(virtualOfficeOnly
+            {(singleSeriesOnly
               ? ["Actual", "Projected"]
               : [...ACTUAL_UNIQUE_CLIENT_SERIES, "Projected"]
             ).map(
               (seriesName, index) => {
                 const legendColor =
-                  !virtualOfficeOnly && seriesName === "Projected"
+                  !singleSeriesOnly && seriesName === "Projected"
                     ? "#3c3c3c"
                     : getUniqueClientSeriesColor(seriesName);
                 const isHidden = hiddenInvestorSeries.has(seriesName);
@@ -676,9 +712,9 @@ const LeadsLayout = ({
                       style={{ backgroundColor: legendColor }}
                     />
                     <span>
-                      {virtualOfficeOnly && seriesName === "Actual"
+                      {singleSeriesOnly && seriesName === "Actual"
                         ? virtualOfficeActualLegend
-                        : virtualOfficeOnly && seriesName === "Projected"
+                        : singleSeriesOnly && seriesName === "Projected"
                           ? virtualOfficeProjectedLegend
                           : seriesName}
                     </span>
@@ -691,11 +727,7 @@ const LeadsLayout = ({
 
         <div className={investorBlueStyle ? "investor-unique-clients-chart" : ""}>
           <BarGraph
-            data={
-              investorBlueStyle
-                ? investorRankedSeries
-                : uniqueClientsData
-            }
+            data={investorBlueStyle ? investorRankedSeries : uniqueClientsData}
             title=""
             options={barChartOptions}
             height={investorBlueStyle ? 350 : 400}

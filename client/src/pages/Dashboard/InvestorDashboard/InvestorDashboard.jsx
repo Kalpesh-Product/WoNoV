@@ -2045,7 +2045,7 @@ const InvestorIncomeExpenseGraph = ({
               convert,
               projectionDisplayScale,
               projectionBarFractionDigits,
-              "de-DE",
+              "en-US",
             )
           : "",
       offsetY: -20,

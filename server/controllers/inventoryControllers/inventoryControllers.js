@@ -10,6 +10,29 @@ const Unit = require("../../models/locations/Unit");
 const User = require("../../models/hr/UserData");
 const setAuditLogContext = require("../../utils/auditLogContext");
 
+const getEffectiveRemainingUnits = (inventoryRows = []) =>
+  inventoryRows.reduce((remaining, row) => {
+    const totalConsumed = (row.consumptions || []).reduce(
+      (sum, consumption) => sum + Number(consumption?.quantity || 0),
+      0,
+    );
+    const assignedUnits = Number(row.assignedUnits || 0);
+
+    if (assignedUnits > 0) {
+      return remaining + assignedUnits;
+    }
+
+    // Keep this calculation in sync with getInventories. Consumption-history
+    // rows copy purchase values for display, so those purchases must not be
+    // counted again when an opening balance is present.
+    const purchaseUnits =
+      totalConsumed > 0 && row.openingInventoryUnits != null
+        ? 0
+        : Number(row.newPurchaseUnits || 0);
+
+    return remaining + purchaseUnits - totalConsumed;
+  }, 0);
+
 const PRIVILEGED_INVENTORY_DEPARTMENT_IDS = new Set([
   "67b2cf85b9b6ed5cedeb9a2e",
   "6798ba9de469e809084e2494",
@@ -1091,7 +1114,7 @@ const updateInventory = async (req, res) => {
     const { consumptions = [], unit, buildingName } = req.body;
     const { user, company } = req;
 
-    const inventory = await Inventory.findOne({ _id: id, company });
+    let inventory = await Inventory.findOne({ _id: id, company });
 
     if (!inventory) {
       return res
@@ -1169,7 +1192,24 @@ const updateInventory = async (req, res) => {
 
       /* ------------------ Calculate New Remaining ------------------ */
 
-      const currentRemaining = Number(inventory.remainingUnits || 0);
+      // The inventory list displays a cumulative/derived balance. Older rows
+      // can have a stale raw `remainingUnits` value, so validating only the
+      // clicked document can reject a valid consumption. Resolve the latest
+      // row and calculate the balance with the same history rules as the list.
+      const inventoryHistory = await Inventory.find({
+        company,
+        department: inventory.department,
+        itemName: inventory.itemName,
+        unit: inventory.unit || null,
+        buildingName: inventory.buildingName || "",
+        isDeleted: { $ne: true },
+      }).sort({ createdAt: 1, _id: 1 });
+
+      if (inventoryHistory.length > 0) {
+        inventory = inventoryHistory[inventoryHistory.length - 1];
+      }
+
+      const currentRemaining = getEffectiveRemainingUnits(inventoryHistory);
       newRemaining = currentRemaining - incomingConsumption;
 
       /* ------------------ Validation ------------------ */

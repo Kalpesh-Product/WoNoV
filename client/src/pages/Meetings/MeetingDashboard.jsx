@@ -184,6 +184,11 @@ const MeetingDashboard = () => {
     return 0; // Default to 0 if no valid duration format is found
   };
 
+  const isBookedMeetingStatus = (meeting) =>
+    ["upcoming", "ongoing", "completed", "extended"].includes(
+      String(meeting?.meetingStatus || meeting?.status || "").toLowerCase(),
+    );
+
   // Fetch internal meetings
   const meetingsInternal = useMemo(
     () => meetingsData.filter((item) => item.meetingType === "Internal"),
@@ -552,7 +557,11 @@ const MeetingDashboard = () => {
   const monthMap = new Map();
 
   meetingsData
-    .filter((meeting) => activeRoomNames.has(meeting.roomName))
+    .filter(
+      (meeting) =>
+        activeRoomNames.has(meeting.roomName) &&
+        isBookedMeetingStatus(meeting),
+    )
     .forEach((meeting) => {
       const date = new Date(meeting.date);
       const label =
@@ -593,7 +602,6 @@ const MeetingDashboard = () => {
     (acc, hours) => acc + hours,
     0,
   );
-  const [fyBookedHours, setFYBookedHours] = useState(totalBookedHours);
 
   fullMonthLabels.forEach((label) => {
     const [monthAbbr, yearSuffix] = label.split("-");
@@ -627,6 +635,11 @@ const MeetingDashboard = () => {
       totalBookableHoursForMonth,
     });
   });
+
+  const selectedFYKey = Array.from(bookedHoursByFY.keys()).find(
+    (key) => key.trim() === selectedFY.trim(),
+  );
+  const fyBookedHours = bookedHoursByFY.get(selectedFYKey) || totalBookedHours;
 
   // ✅ Final series for YearlyGraph
   const averageBookingSeries = Array.from(groupedDataMap.entries()).map(
@@ -662,6 +675,8 @@ const MeetingDashboard = () => {
             const meetingYearSuffix = date.getFullYear().toString().slice(-2);
 
             return (
+              activeRoomNames.has(meeting.roomName) &&
+              isBookedMeetingStatus(meeting) &&
               meetingMonthAbbr === clickedMonth &&
               meetingYearSuffix === clickedYearSuffix
             );
@@ -778,6 +793,7 @@ const MeetingDashboard = () => {
                 date.getFullYear().toString().slice(-2);
               return (
                 activeRoomNames.has(m.roomName) &&
+                isBookedMeetingStatus(m) &&
                 mLabel === monthLabel && // ✅ compare full label, not split parts
                 m.location?.building?.buildingName === buildingName
               );
@@ -1245,14 +1261,7 @@ const MeetingDashboard = () => {
       data: averageBookingSeries,
       options: averageBookingOptions,
       onYearChange: (fyLabel) => {
-        const normalized = fyLabel.trim();
-
-        const matchKey = Array.from(bookedHoursByFY.keys()).find(
-          (key) => key.trim() === normalized,
-        );
-
         setSelectedFY(fyLabel);
-        setFYBookedHours(bookedHoursByFY.get(matchKey) || 0);
       },
       permission: PERMISSIONS.MEETINGS_AVERAGE_ROOM_UTILIZATION.value,
     },

@@ -27,8 +27,44 @@ import {
 
 const optionalValidation = (validator) => (value) => !value || validator(value);
 
+const VENDOR_TYPE_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+const canCreateVendorTypeOption = (user) => {
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+  const roles = [
+    ...(Array.isArray(user?.role) ? user.role : []),
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  return (
+    departments.some((department) => {
+      const departmentId = String(department?._id || department || "");
+      const departmentName = normalize(
+        department?.name || department?.departmentName,
+      );
+      return (
+        VENDOR_TYPE_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+        ["top management", "tech", "tech department"].includes(
+          departmentName,
+        )
+      );
+    }) ||
+    roles.some((role) => {
+      const roleTitle = normalize(role?.roleTitle || role?.name || role);
+      return (
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department")
+      );
+    })
+  );
+};
+
 const Vendor = () => {
   const { auth } = useAuth();
+  const canCreateVendorType = canCreateVendorTypeOption(auth?.user);
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -79,6 +115,8 @@ const Vendor = () => {
     });
 
   const handleAddVendorType = (option = vendorTypeInput) => {
+    if (!canCreateVendorType) return;
+
     const nextOption = String(option || "").trim();
     if (!nextOption) return;
 
@@ -88,7 +126,11 @@ const Vendor = () => {
     const selectedOption = existingOption || nextOption;
 
     if (!existingOption) {
-      setVendorTypeOptions((options) => [...options, nextOption]);
+      setVendorTypeOptions((options) =>
+        [...options, nextOption].sort((first, second) =>
+          first.localeCompare(second, undefined, { sensitivity: "base" }),
+        ),
+      );
       saveVendorTypeOption(nextOption);
     }
 
@@ -549,7 +591,7 @@ const Vendor = () => {
                     rules={{ required: "Type Of Vendor is required" }}
                     render={({ field, fieldState: { error } }) => (
                       <Autocomplete
-                        freeSolo
+                        freeSolo={canCreateVendorType}
                         selectOnFocus
                         clearOnBlur={false}
                         handleHomeEndKeys
@@ -594,7 +636,11 @@ const Vendor = () => {
                               option.toLowerCase() === typedValue.toLowerCase(),
                           );
 
-                          if (typedValue && !alreadyExists) {
+                          if (
+                            canCreateVendorType &&
+                            typedValue &&
+                            !alreadyExists
+                          ) {
                             filteredOptions.push({
                               inputValue: typedValue,
                               label: `+ Add "${typedValue}"`,
@@ -624,7 +670,11 @@ const Vendor = () => {
                             {...params}
                             size="small"
                             label="Type Of Vendor"
-                            placeholder="Select or Add Vendor Type"
+                            placeholder={
+                              canCreateVendorType
+                                ? "Select or Add Vendor Type"
+                                : "Select Vendor Type"
+                            }
                             error={!!error}
                             helperText={error?.message}
                           />

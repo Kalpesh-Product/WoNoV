@@ -18,6 +18,42 @@ import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAuth from "../../../hooks/useAuth";
 
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const canCreateVirtualOfficeSourcingOption = (user) => {
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+  const roles = [
+    ...(Array.isArray(user?.role) ? user.role : []),
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  return (
+    departments.some((department) => {
+      const departmentId = String(department?._id || department || "");
+      const departmentName = normalize(
+        department?.name || department?.departmentName,
+      );
+      return (
+        SOURCING_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+        ["top management", "tech", "tech department"].includes(
+          departmentName,
+        )
+      );
+    }) ||
+    roles.some((role) => {
+      const roleTitle = normalize(role?.roleTitle || role?.name || role);
+      return (
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department")
+      );
+    })
+  );
+};
+
 const VirtualOfficeForm = () => {
   const queryClient = useQueryClient();
   const {
@@ -62,6 +98,10 @@ const VirtualOfficeForm = () => {
     },
   });
   const { auth } = useAuth();
+  const canCreateSourcingOption = useMemo(
+    () => canCreateVirtualOfficeSourcingOption(auth?.user),
+    [auth?.user],
+  );
   // const clientsData = useSelector((state) => state.sales.clientsData);
   // const [selectedUnit, setSelectedUnit] = useState("");
 
@@ -97,9 +137,9 @@ const VirtualOfficeForm = () => {
   const [cities, setCities] = useState([]);
   const [sourcingOptions, setSourcingOptions] = useState([
     "Google",
+    "IPC",
     "LinkedIn",
     "Referral",
-    "IPC",
     "Walk-IN",
     "WhatsApp",
   ]);
@@ -148,6 +188,8 @@ const VirtualOfficeForm = () => {
     });
 
   const handleAddSourcingOption = (option = newSourcingOption) => {
+    if (!canCreateSourcingOption) return;
+
     const nextOption = String(option || "").trim();
     if (!nextOption) return;
 
@@ -157,7 +199,11 @@ const VirtualOfficeForm = () => {
     const selectedOption = existingOption || nextOption;
 
     if (!existingOption) {
-      setSourcingOptions((options) => [...options, nextOption]);
+      setSourcingOptions((options) =>
+        [...options, nextOption].sort((first, second) =>
+          first.localeCompare(second, undefined, { sensitivity: "base" }),
+        ),
+      );
       saveSourcingOption(nextOption);
     }
 
@@ -453,7 +499,7 @@ const VirtualOfficeForm = () => {
                       rules={{ required: "Sourcing is required" }}
                       render={({ field }) => (
                         <Autocomplete
-                          freeSolo
+                          freeSolo={canCreateSourcingOption}
                           selectOnFocus
                           clearOnBlur={false}
                           handleHomeEndKeys
@@ -499,7 +545,11 @@ const VirtualOfficeForm = () => {
                                 typedValue.toLowerCase(),
                             );
 
-                            if (typedValue && !alreadyExists) {
+                            if (
+                              canCreateSourcingOption &&
+                              typedValue &&
+                              !alreadyExists
+                            ) {
                               filteredOptions.push({
                                 inputValue: typedValue,
                                 label: `+ Add "${typedValue}"`,
@@ -529,7 +579,11 @@ const VirtualOfficeForm = () => {
                               {...params}
                               size="small"
                               label="Sourcing"
-                              placeholder="Select or Add Source"
+                              placeholder={
+                                canCreateSourcingOption
+                                  ? "Select or Add Source"
+                                  : "Select Source"
+                              }
                               error={!!errors.channel}
                               helperText={errors.channel?.message}
                             />

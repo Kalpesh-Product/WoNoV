@@ -24,6 +24,42 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useLocation, useParams } from "react-router-dom";
 
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const canCreateVirtualOfficeSourcingOption = (user) => {
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+  const roles = [
+    ...(Array.isArray(user?.role) ? user.role : []),
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  return (
+    departments.some((department) => {
+      const departmentId = String(department?._id || department || "");
+      const departmentName = normalize(
+        department?.name || department?.departmentName,
+      );
+      return (
+        SOURCING_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+        ["top management", "tech", "tech department"].includes(
+          departmentName,
+        )
+      );
+    }) ||
+    roles.some((role) => {
+      const roleTitle = normalize(role?.roleTitle || role?.name || role);
+      return (
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department")
+      );
+    })
+  );
+};
+
 const buildRateSchedule = (
   startDate,
   endDate,
@@ -180,6 +216,10 @@ const VirtualOfficeClientDetails = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
   const { auth } = useAuth();
+  const canCreateSourcingOption = useMemo(
+    () => canCreateVirtualOfficeSourcingOption(auth?.user),
+    [auth?.user],
+  );
   const { clientId } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -188,9 +228,9 @@ const VirtualOfficeClientDetails = () => {
   const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
   const DEFAULT_SOURCING_OPTIONS = [
     "Google",
+    "IPC",
     "LinkedIn",
     "Referral",
-    "IPC",
     "Walk-IN",
     "WhatsApp",
   ];
@@ -290,6 +330,8 @@ const VirtualOfficeClientDetails = () => {
     });
 
   const handleAddSourcingOption = (option) => {
+    if (!canCreateSourcingOption) return;
+
     const nextOption = String(option || "").trim();
     if (!nextOption) return;
 
@@ -307,7 +349,9 @@ const VirtualOfficeClientDetails = () => {
     if (!existingOption) {
       queryClient.setQueryData(
         ["virtualOfficeSourcingOptions"],
-        [...sourcingOptions, selectedOption],
+        [...sourcingOptions, selectedOption].sort((first, second) =>
+          first.localeCompare(second, undefined, { sensitivity: "base" }),
+        ),
       );
       saveSourcingOption(selectedOption);
     }
@@ -1017,7 +1061,7 @@ const VirtualOfficeClientDetails = () => {
                           control={control}
                           render={({ field }) => (
                             <Autocomplete
-                              freeSolo
+                              freeSolo={canCreateSourcingOption}
                               selectOnFocus
                               clearOnBlur={false}
                               handleHomeEndKeys
@@ -1065,7 +1109,11 @@ const VirtualOfficeClientDetails = () => {
                                     typedValue.toLowerCase(),
                                 );
 
-                                if (typedValue && !alreadyExists) {
+                                if (
+                                  canCreateSourcingOption &&
+                                  typedValue &&
+                                  !alreadyExists
+                                ) {
                                   filteredOptions.push({
                                     inputValue: typedValue,
                                     label: `+ Add "${typedValue}"`,
@@ -1098,7 +1146,11 @@ const VirtualOfficeClientDetails = () => {
                                   {...params}
                                   size="small"
                                   label="Sourcing"
-                                  placeholder="Select or Add Source"
+                                  placeholder={
+                                    canCreateSourcingOption
+                                      ? "Select or Add Source"
+                                      : "Select Source"
+                                  }
                                 />
                               )}
                             />

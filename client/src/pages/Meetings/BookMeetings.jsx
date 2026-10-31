@@ -34,7 +34,9 @@ import dayjs from "dayjs";
 import { IoMdClose } from "react-icons/io";
 import StatusChip from "../../components/StatusChip";
 
-const BookMeetings = () => {
+const BookMeetings = ({
+  bookingBasePath = "/app/meetings/book-meeting",
+}) => {
   // ------------------------------Initializations ------------------------------------//
   const navigate = useNavigate();
   const locationState = useLocation();
@@ -366,7 +368,7 @@ const BookMeetings = () => {
     const selectedLocationId = selectedLocation.location?.building?._id;
     const selectedRoomId = selectedRoom._id;
     navigate(
-      `/app/meetings/book-meeting/schedule-meeting?location=${selectedLocationName}&meetingRoom=${selectedRoomName}`,
+      `${bookingBasePath}/schedule-meeting?location=${selectedLocationName}&meetingRoom=${selectedRoomName}`,
       {
         state: {
           meetingRoomId: selectedRoomId,

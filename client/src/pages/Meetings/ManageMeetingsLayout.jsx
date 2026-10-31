@@ -4,24 +4,31 @@ import { Tabs } from "@mui/material";
 import TabLayout from "../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../constants/permissions";
 
-const ManageMeetingsLayout = () => {
+const ManageMeetingsLayout = ({
+  basePath = "/app/meetings/manage-meetings",
+  ignoreTabPermissions = false,
+}) => {
   // Map routes to tabs
   const tabs = [
     {
       label: "Internal Meetings",
       path: "internal-meetings",
-      permission: PERMISSIONS.MEETINGS_MEETINGS_INTERNAL.value,
+      permission: ignoreTabPermissions
+        ? undefined
+        : PERMISSIONS.MEETINGS_MEETINGS_INTERNAL.value,
     },
     {
       label: "External Clients",
       path: "external-clients",
-      permission: PERMISSIONS.MEETINGS_MEETINGS_EXTERNAL.value,
+      permission: ignoreTabPermissions
+        ? undefined
+        : PERMISSIONS.MEETINGS_MEETINGS_EXTERNAL.value,
     },
   ];
 
   return (
     <TabLayout
-      basePath="/app/meetings/manage-meetings"
+      basePath={basePath}
       defaultTabPath="internal-meetings"
       tabs={tabs}
       hideTabsCondition={(pathname) => pathname.includes("internal-meetings/")}

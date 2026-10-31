@@ -7,6 +7,7 @@ const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const ClientService = require("../../models/sales/ClientService");
 const Company = require("../../models/hr/Company");
+const User = require("../../models/hr/UserData");
 const { default: mongoose } = require("mongoose");
 
 const DEFAULT_VIRTUAL_OFFICE_SOURCING_OPTIONS = [
@@ -23,6 +24,43 @@ const VIRTUAL_OFFICE_CURRENT_STATUSES = [
   "On Hold",
 ];
 
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const canCreateVirtualOfficeSourcingOption = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .populate("role", "roleTitle")
+    .select("departments role")
+    .lean();
+
+  const hasAllowedDepartment = (user?.departments || []).some((department) => {
+    const departmentId = String(department?._id || department);
+    const departmentName = String(department?.name || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      SOURCING_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+      ["top management", "tech", "tech department"].includes(departmentName)
+    );
+  });
+
+  const hasAllowedRole = (user?.role || []).some((role) => {
+    const roleTitle = String(role?.roleTitle || role || "")
+      .trim()
+      .toLowerCase();
+    return (
+      roleTitle.includes("top management") ||
+      roleTitle.includes("tech department")
+    );
+  });
+
+  return hasAllowedDepartment || hasAllowedRole;
+};
+
 const normalizeSourcingOptions = (options = []) => {
   const uniqueOptions = new Map();
 
@@ -35,7 +73,9 @@ const normalizeSourcingOptions = (options = []) => {
     uniqueOptions.set(displayOption.toLowerCase(), displayOption);
   });
 
-  return Array.from(uniqueOptions.values());
+  return Array.from(uniqueOptions.values()).sort((first, second) =>
+    first.localeCompare(second, undefined, { sensitivity: "base" }),
+  );
 };
 
 const getVirtualOfficeSourcingOptions = async (req, res, next) => {
@@ -60,6 +100,13 @@ const getVirtualOfficeSourcingOptions = async (req, res, next) => {
 
 const addVirtualOfficeSourcingOption = async (req, res, next) => {
   try {
+    if (!(await canCreateVirtualOfficeSourcingOption(req.user))) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department or Top Management can add sourcing options",
+      });
+    }
+
     const requestedOption = String(req.body?.option || "").trim();
     const option =
       requestedOption.toLowerCase() === "bfc" ? "IPC" : requestedOption;

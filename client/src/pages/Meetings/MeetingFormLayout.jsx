@@ -41,7 +41,9 @@ import { useFieldArray } from "react-hook-form";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import { inrFormat } from "../../utils/currencyFormat";
 
-const MeetingFormLayout = () => {
+const MeetingFormLayout = ({
+  calendarRoute = "/app/meetings/calendar",
+}) => {
   const { auth } = useAuth();
   const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
   const [open, setOpen] = useState(false);
@@ -832,7 +834,7 @@ const MeetingFormLayout = () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] });
       toast.success("Meeting booked successfully");
       setOpen(false);
-      navigate("/app/meetings/calendar");
+      navigate(calendarRoute);
     },
     onError: (error) => {
         toast.error(error.response?.data?.message || error.message || "ERROR");

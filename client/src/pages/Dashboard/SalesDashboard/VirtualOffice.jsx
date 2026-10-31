@@ -19,6 +19,9 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import { queryClient } from "../../../main";
 
+const VIRTUAL_OFFICE_MONTHLY_PROJECTION = 500000;
+const VIRTUAL_OFFICE_MONTHLY_CLIENT_PROJECTION = 35;
+
 const BiznestHeaderLogo = () => (
   <span
     aria-label="BIZNest"
@@ -739,16 +742,6 @@ const getUserDisplayName = (user) => {
 
     if (latestActualIndex < 0) return [];
 
-    const actualIncomeThroughLatestMonth = fiscalMonths
-      .slice(0, latestActualIndex + 1)
-      .reduce(
-        (total, month) =>
-          total + (actualByMonth.get(month.format("YYYY-MM")) || 0),
-        0,
-      );
-    const projectedMonthlyAverage =
-      actualIncomeThroughLatestMonth / (latestActualIndex + 1);
-
     return fiscalMonths.flatMap((month, index) => {
       const monthKey = month.format("YYYY-MM");
       const actualAmount = actualByMonth.get(monthKey) || 0;
@@ -767,7 +760,7 @@ const getUserDisplayName = (user) => {
         return [
           {
             graphDate: month.toISOString(),
-            reportingAmount: projectedMonthlyAverage,
+            reportingAmount: VIRTUAL_OFFICE_MONTHLY_PROJECTION,
             vertical: "Balance KRA Target",
           },
         ];
@@ -835,22 +828,10 @@ const getUserDisplayName = (user) => {
       );
     });
 
-    const completedActualMonths = fiscalMonths.filter((month) =>
-      isActualMonthAvailable(month),
-    );
-    const actualClientTotal = completedActualMonths.reduce(
-      (total, month) =>
-        total + (actualCountsByMonth.get(month.format("YYYY-MM")) || 0),
-      0,
-    );
-    const projectedMonthlyClientCount = completedActualMonths.length
-      ? Math.round(actualClientTotal / completedActualMonths.length)
-      : 0;
-
     return fiscalMonths.map((month) =>
       isActualMonthAvailable(month)
         ? actualCountsByMonth.get(month.format("YYYY-MM")) || 0
-        : projectedMonthlyClientCount,
+        : VIRTUAL_OFFICE_MONTHLY_CLIENT_PROJECTION,
     );
   }, [dashboardProjectionMode, selectedFY, virtualOfficeRevenue]);
 
@@ -1275,7 +1256,7 @@ const getUserDisplayName = (user) => {
         enabled: true,
         formatter: function (val) {
           const truncatedLakhs = Math.floor((Number(val) / 100000) * 100) / 100;
-          return truncatedLakhs.toFixed(2).replace(".", ",");
+          return truncatedLakhs.toFixed(2);
         },
         style: {
           fontSize: "10px",

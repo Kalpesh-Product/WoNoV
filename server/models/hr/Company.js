@@ -362,7 +362,16 @@ const companySchema = new mongoose.Schema({
   },
   vendorTypeOptions: {
     type: [String],
-    default: [],
+    default: [
+      "Manufacturer",
+      "Wholesaler",
+      "Distributor",
+      "Retailer",
+      "Service Provider",
+      "Contractor / Subcontractor",
+      "Consultant",
+      "Freelancer",
+    ],
   },
   leaveTypes: [
     {
