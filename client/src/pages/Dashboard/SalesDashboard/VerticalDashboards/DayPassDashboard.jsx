@@ -1,16 +1,13 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Menu } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
-import { FiChevronRight, FiGrid, FiX } from "react-icons/fi";
 import {
   MdAccessTime,
   MdBarChart,
   MdEventAvailable,
   MdGroupAdd,
   MdGroups,
-  MdKeyboardArrowDown,
   MdPersonAddAlt1,
   MdShoppingBag,
   MdOutlineRemoveRedEye,
@@ -32,6 +29,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import humanTime from "../../../../utils/humanTime";
 import MeetingRevenue from "../MeetingRevenue";
 import LeadsLayout from "../ViewClients/LeadsLayout";
+import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
 
 const BiznestTitle = () => (
   <span
@@ -884,8 +882,6 @@ const DayPassDashboard = ({
   clientDetailsTodayOnly = false,
   emptyView = false,
 }) => {
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [activeMenuCard, setActiveMenuCard] = useState(null);
   const { hasPermission } = useUserPermissions();
   const navigate = useNavigate();
   const menuCards = [
@@ -949,8 +945,6 @@ const DayPassDashboard = ({
       ],
     },
   ].filter((card) => hasPermission(card.permission));
-  const resolvedActiveMenuCard =
-    menuCards.find((card) => card.title === activeMenuCard) || menuCards[0];
 
   if (emptyView) return null;
 
@@ -980,137 +974,6 @@ const DayPassDashboard = ({
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={() => setMenuAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              width: { xs: "calc(100vw - 24px)", sm: 680 },
-              maxWidth: "calc(100vw - 24px)",
-              borderRadius: 2,
-              border: "1px solid #e0e8f5",
-              mt: 1,
-            },
-          },
-        }}
-      >
-        {menuCards.length ? (
-          <div className="relative grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
-            <button
-              type="button"
-              aria-label="Close menu"
-              onClick={() => setMenuAnchor(null)}
-              className="absolute -top-2 right-0 z-20 flex h-7 w-7 items-center justify-center bg-transparent text-[#1E3D73] transition hover:bg-[#ff7777] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
-            >
-              <FiX size={17} aria-hidden="true" />
-            </button>
-            <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
-              {menuCards.map((card) => {
-                const Icon = card.icon;
-
-                return (
-                  <button
-                    key={card.title}
-                    type="button"
-                    onClick={() => setActiveMenuCard(card.title)}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${
-                      resolvedActiveMenuCard?.title === card.title
-                        ? "bg-[#e7f1ff]"
-                        : "hover:bg-[#eef5ff]"
-                    }`}
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <span className="min-w-0 flex-1 leading-tight">{card.title}</span>
-                    <FiChevronRight className="shrink-0" size={17} />
-                  </button>
-                );
-              })}
-            </div>
-            <div className="relative min-h-[260px] p-4 sm:p-5">
-              {resolvedActiveMenuCard && (() => {
-                const Icon = resolvedActiveMenuCard.icon;
-                const menuHeader = (
-                  <div className="flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3 pr-10">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                      <Icon aria-hidden="true" />
-                    </span>
-                    <div className="text-left">
-                      <p className="font-psemibold text-base text-[#1E3D73]">
-                        {resolvedActiveMenuCard.title}
-                      </p>
-                      <p className="text-xs text-[#7084a4]">
-                        Open Day Pass modules
-                      </p>
-                    </div>
-                  </div>
-                );
-
-                return (
-                  <>
-                    {resolvedActiveMenuCard.openRoute ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMenuAnchor(null);
-                          navigate(resolvedActiveMenuCard.openRoute);
-                        }}
-                        className="mb-3 block w-full rounded-xl text-left transition hover:ring-1 hover:ring-[#d8e5f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
-                        aria-label="Open Day Pass Mix Bag cards"
-                      >
-                        {menuHeader}
-                      </button>
-                    ) : (
-                      <div className="mb-3">{menuHeader}</div>
-                    )}
-                    <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
-                      {resolvedActiveMenuCard.items.map((item) => {
-                        const ItemIcon = item.icon || Icon;
-
-                        return (
-                          <button
-                            key={item.route}
-                            type="button"
-                            onClick={() => {
-                              setMenuAnchor(null);
-                              navigate(item.route);
-                            }}
-                            className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
-                          >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
-                              <ItemIcon aria-hidden="true" />
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block font-pmedium text-[15px] leading-tight">
-                                {item.label}
-                              </span>
-                              {item.description && (
-                                <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
-                                  {item.description}
-                                </span>
-                              )}
-                            </span>
-                            <FiChevronRight className="shrink-0" size={17} />
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        ) : (
-          <p className="px-5 py-4 text-center text-sm text-[#7b8eac]">
-            No sub-modules available
-          </p>
-        )}
-      </Menu>
       <div className="overflow-hidden rounded-lg">
         <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
           <img
@@ -1155,17 +1018,7 @@ const DayPassDashboard = ({
                 </Link>
               ),
             )}
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={Boolean(menuAnchor)}
-              onClick={(event) => setMenuAnchor(event.currentTarget)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
-            >
-              <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
-              <span>Menu</span>
-              <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
-            </button>
+            <DashboardPopupMenu cards={menuCards} moduleLabel="Day Pass" />
           </nav>
         </div>
       </div>
