@@ -67,7 +67,7 @@ const toUtcDayBoundary = (value, endOfDay = false) => {
   ).toISOString();
 };
 
-const VisitorReports = () => {
+const VisitorReports = ({ dayPassOnly = false }) => {
   const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
@@ -160,6 +160,7 @@ const VisitorReports = () => {
       pagination.page,
       pagination.limit,
       debouncedVisitorSearch,
+      dayPassOnly,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
@@ -169,6 +170,7 @@ const VisitorReports = () => {
           limit: pagination.limit,
           search: debouncedVisitorSearch || undefined,
           searchContext: "visitor-reports",
+          ...(dayPassOnly && { type: "day-pass" }),
         },
       });
       const responsePagination = response.data.pagination || response.data;
@@ -469,7 +471,7 @@ const VisitorReports = () => {
             onDateFilterChange={handleVisitorDateFilterChange}
             search={true}
             searchColumn={"name"}
-            tableTitle={"Visitor Reports"}
+            tableTitle={dayPassOnly ? "Day Pass Visitor Reports" : "Visitor Reports"}
             data={rows}
             columns={meetingReportsColumn}
             loading={isVisitorsData}

@@ -40,6 +40,7 @@ const WidgetSection = ({
   gridGap = "gap-4",
   borderColor,
   bodyBorderColor,
+  autoHeight = false,
 }) => {
   const inheritedTitleBorder = React.useContext(TableHeaderBorderContext);
   // Custom-colour headers use the body's top border as their divider.
@@ -242,14 +243,14 @@ const WidgetSection = ({
               }
             : {}
         }
-        className="h-full rounded-b-xl">
+        className={`${autoHeight ? "" : "h-full"} rounded-b-xl`}>
         <div
           style={{ padding: padding ? "0" : "1rem" }}
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
          
-           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} h-full py-4`}>
+           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} ${autoHeight ? "" : "h-full"} py-4`}>
           <TableHeaderBorderContext.Provider value={hasBorderedTitle}>
             {visibleChildren.map((child, index) => (
               <div key={index}>{child}</div>

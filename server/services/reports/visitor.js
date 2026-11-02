@@ -485,6 +485,7 @@ const fetchVisitorReportVisits = async ({
   companyId,
   dateFilter,
   search,
+  type,
   shouldPaginate,
   parsedPage,
   parsedLimit,
@@ -497,6 +498,35 @@ const fetchVisitorReportVisits = async ({
     visitorId: { $ne: null },
     ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
   };
+
+  if (type === "day-pass") {
+    visitFilter.$and = [
+      {
+        $or: [
+          {
+            visitorType: {
+              $in: [
+                "Full-Day Pass",
+                "Half-Day Pass",
+                "Full Day Pass",
+                "Half Day Pass",
+              ],
+            },
+          },
+          {
+            purposeOfVisit: {
+              $in: [
+                "Full-Day Pass",
+                "Half-Day Pass",
+                "Full Day Pass",
+                "Half Day Pass",
+              ],
+            },
+          },
+        ],
+      },
+    ];
+  }
 
   if (searchRegex) {
     const visitorSearchConditions = await buildVisitorSearchConditions({
@@ -527,7 +557,7 @@ const fetchVisitorReportVisits = async ({
       },
     ]);
 
-    visitFilter.$or = [
+    const searchConditions = [
       { purposeOfVisit: searchRegex },
       { visitorType: searchRegex },
       { visitorCompany: searchRegex },
@@ -542,6 +572,12 @@ const fetchVisitorReportVisits = async ({
       ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
       ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
     ];
+
+    if (visitFilter.$and) {
+      visitFilter.$and.push({ $or: searchConditions });
+    } else {
+      visitFilter.$or = searchConditions;
+    }
   }
 
   let visitsQuery = ExternalVisits.find(visitFilter)
@@ -635,6 +671,7 @@ const fetchVisitorReportService = async ({
         companyId,
         dateFilter,
         search: normalizedSearch,
+        type,
         shouldPaginate,
         parsedPage,
         parsedLimit,

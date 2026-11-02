@@ -4,6 +4,7 @@ const CoworkingClient = require("../../models/sales/CoworkingClient");
 const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
+const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
 const WorkationClient = require("../../models/sales/WorkationClients");
 const { formatDate } = require("../../utils/formatDateTime");
 const { getPagination } = require("../../utils/pagination");
@@ -381,11 +382,15 @@ const fetchCoworkingClientReportService = async ({
 };
 
 const fetchVirtualOfficeClientsReportService = async ({
+  company,
   dateFilter,
   query = {},
   isReport = false,
 } = {}) => {
-  const filter = { ...query };
+  const filter = {
+    ...query,
+    ...(company ? { company } : {}),
+  };
 
   if (dateFilter?.termStartDate) {
     filter.termStartDate = dateFilter.termStartDate;
@@ -408,6 +413,29 @@ const fetchVirtualOfficeClientsReportService = async ({
     .exec();
 
   if (isReport) {
+    const clientIds = (clients || [])
+      .map((client) => client?._id)
+      .filter(Boolean);
+    const revenueTotals = clientIds.length
+      ? await VirtualOfficeRevenue.aggregate([
+          {
+            $match: {
+              client: { $in: clientIds },
+              ...(company ? { company } : {}),
+            },
+          },
+          {
+            $group: {
+              _id: "$client",
+              revenue: { $sum: { $ifNull: ["$revenue", 0] } },
+            },
+          },
+        ])
+      : [];
+    const revenueByClientId = new Map(
+      revenueTotals.map((item) => [String(item._id), item.revenue || 0]),
+    );
+
     return (clients || []).map((client) => {
       const {
         service,
@@ -421,6 +449,7 @@ const fetchVirtualOfficeClientsReportService = async ({
 
       return {
         ...restClient,
+        revenue: revenueByClientId.get(String(client._id)) || 0,
         unit: restClient.unit
           ? {
               ...restClient.unit,

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Menu } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import {
   MdAccessTime,
@@ -14,20 +13,16 @@ import {
   MdOutlineRemoveRedEye,
   MdPercent,
   MdShoppingBag,
-  MdKeyboardArrowDown,
   MdTrendingDown,
   MdTrendingUp,
 } from "react-icons/md";
 import {
   FiCalendar,
   FiCheckCircle,
-  FiChevronRight,
   FiCreditCard,
-  FiGrid,
   FiSettings,
   FiUserPlus,
   FiUsers,
-  FiX,
 } from "react-icons/fi";
 import { SiGoogleadsense } from "react-icons/si";
 import { FaGears } from "react-icons/fa6";
@@ -43,6 +38,7 @@ import { PERMISSIONS } from "../../../../constants/permissions";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import MeetingRevenue from "../MeetingRevenue";
+import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
 import LeadsLayout from "../ViewClients/LeadsLayout";
 import PieChartMui from "../../../../components/graphs/PieChartMui";
 import BarGraph from "../../../../components/graphs/BarGraph";
@@ -2132,8 +2128,6 @@ const MeetingRoomDashboard = ({
 }) => {
   const { hasPermission } = useUserPermissions();
   const navigate = useNavigate();
-  const [settingsAnchor, setSettingsAnchor] = useState(null);
-  const [activeMenuCard, setActiveMenuCard] = useState(null);
   const [activeUniqueClientCount, setActiveUniqueClientCount] = useState(0);
 
   const menuCards = [
@@ -2189,6 +2183,7 @@ const MeetingRoomDashboard = ({
       title: "Mix Bag",
       icon: MdShoppingBag,
       permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+      openRoute: "/app/dashboard/sales-dashboard/meeting-room/mix-bag",
       items: [],
     },
     {
@@ -2238,8 +2233,6 @@ const MeetingRoomDashboard = ({
       ],
     },
   ].filter((card) => !card.permission || hasPermission(card.permission));
-  const resolvedActiveMenuCard =
-    menuCards.find((card) => card.title === activeMenuCard) || menuCards[0];
 
   if (uniqueClientsOnly) {
     return (
@@ -2318,117 +2311,6 @@ const MeetingRoomDashboard = ({
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
-      <Menu
-        anchorEl={settingsAnchor}
-        open={Boolean(settingsAnchor)}
-        onClose={() => setSettingsAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              width: { xs: "calc(100vw - 24px)", sm: 680 },
-              maxWidth: "calc(100vw - 24px)",
-              borderRadius: 2,
-              border: "1px solid #e0e8f5",
-              mt: 1,
-            },
-          },
-        }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
-            {menuCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <button
-                  key={card.title}
-                  type="button"
-                  onClick={() => setActiveMenuCard(card.title)}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${
-                    resolvedActiveMenuCard?.title === card.title
-                      ? "bg-[#e7f1ff]"
-                      : "hover:bg-[#eef5ff]"
-                  }`}
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
-                    <Icon />
-                  </span>
-                  <span className="min-w-0 flex-1 leading-tight">
-                    {card.title}
-                  </span>
-                  <FiChevronRight className="shrink-0" size={17} />
-                </button>
-              );
-            })}
-          </div>
-          <div className="relative min-h-[260px] p-4 sm:p-5">
-            <button
-              type="button"
-              aria-label="Close menu"
-              onClick={() => setSettingsAnchor(null)}
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-full text-[#1E3D73] transition hover:bg-[#e8f1ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
-            >
-              <FiX size={19} aria-hidden="true" />
-            </button>
-            {resolvedActiveMenuCard && (() => {
-              const ActiveIcon = resolvedActiveMenuCard.icon;
-              return (
-                <>
-                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3 pr-10">
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                      <ActiveIcon />
-                    </span>
-                    <div>
-                      <p className="font-psemibold text-base text-[#1E3D73]">
-                        {resolvedActiveMenuCard.title}
-                      </p>
-                      <p className="text-xs text-[#7084a4]">
-                        Open meeting room module
-                      </p>
-                    </div>
-                  </div>
-                  <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
-                    {resolvedActiveMenuCard.items.length === 0 && (
-                      <p className="px-2 py-6 text-center text-sm text-[#7b8eac]">
-                        No sub-modules available
-                      </p>
-                    )}
-                    {resolvedActiveMenuCard.items.map((item) => {
-                      const ItemIcon = item.icon || ActiveIcon;
-
-                      return (
-                        <button
-                          key={item.route}
-                          type="button"
-                          onClick={() => {
-                            setSettingsAnchor(null);
-                            navigate(item.route);
-                          }}
-                          className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
-                        >
-                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
-                            <ItemIcon />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block font-pmedium text-[15px] leading-tight">
-                              {item.label}
-                            </span>
-                            <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
-                              {item.description}
-                            </span>
-                          </span>
-                          <FiChevronRight className="shrink-0" size={17} />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
-      </Menu>
       <div className="overflow-hidden rounded-lg">
         <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
           <img
@@ -2474,17 +2356,10 @@ const MeetingRoomDashboard = ({
                 </Link>
               ),
             )}
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={Boolean(settingsAnchor)}
-              onClick={(event) => setSettingsAnchor(event.currentTarget)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
-            >
-              <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
-              <span>Menu</span>
-              <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
-            </button>
+            <DashboardPopupMenu
+              cards={menuCards}
+              moduleLabel="Meeting Room"
+            />
           </nav>
         </div>
       </div>

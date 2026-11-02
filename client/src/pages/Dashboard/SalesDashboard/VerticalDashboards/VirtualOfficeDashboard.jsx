@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu } from "@mui/material";
 import { useDispatch } from "react-redux";
 import dayjs from "dayjs";
 import {
@@ -10,16 +9,13 @@ import {
   MdOutlineRemoveRedEye,
   MdPersonAddAlt1,
   MdPersonOff,
-  MdKeyboardArrowDown,
   MdShoppingBag,
   MdAssignmentInd,
   MdTrendingDown,
   MdTrendingUp,
 } from "react-icons/md";
 import {
-  FiChevronRight,
   FiDatabase,
-  FiGrid,
   FiUploadCloud,
   FiUserPlus,
   FiUsers,
@@ -43,6 +39,7 @@ import MuiModal from "../../../../components/MuiModal";
 import humanDate from "../../../../utils/humanDateForamt";
 import InvestorOperationalCharts from "../../InvestorDashboard/InvestorOperationalCharts";
 import LeadsLayout from "../ViewClients/LeadsLayout";
+import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
 import VirtualOffice from "../VirtualOffice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 
@@ -1064,8 +1061,6 @@ const VirtualOfficeDashboard = ({
   const liveCurrentMonth = useLiveCurrentMonth();
   const fiscalYear = getFiscalYearLabel(liveCurrentMonth);
   const navigate = useNavigate();
-  const [menuAnchor, setMenuAnchor] = useState(null);
-  const [activeMenuCard, setActiveMenuCard] = useState(null);
 
   const menuCards = [
     {
@@ -1103,6 +1098,7 @@ const VirtualOfficeDashboard = ({
       icon: <MdShoppingBag />,
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
+      openRoute: "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
       items: [],
     },
     {
@@ -1133,8 +1129,6 @@ const VirtualOfficeDashboard = ({
         (item) => !item.permission || hasPermission(item.permission),
       ),
     }));
-  const resolvedActiveMenuCard =
-    menuCards.find((card) => card.title === activeMenuCard) || menuCards[0];
 
   const {
     data: virtualOfficeRevenue = [],
@@ -1361,97 +1355,6 @@ const VirtualOfficeDashboard = ({
 
   return (
     <div className="flex flex-col gap-4 p-3 pt-3">
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={() => setMenuAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              width: { xs: "calc(100vw - 24px)", sm: 680 },
-              maxWidth: "calc(100vw - 24px)",
-              borderRadius: 2,
-              border: "1px solid #e0e8f5",
-              mt: 1,
-            },
-          },
-        }}
-      >
-        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
-          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
-            {menuCards.map((card) => (
-              <button
-                key={card.title}
-                type="button"
-                onClick={() => setActiveMenuCard(card.title)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${
-                  resolvedActiveMenuCard?.title === card.title
-                    ? "bg-[#e7f1ff]"
-                    : "hover:bg-[#eef5ff]"
-                }`}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
-                  {card.icon}
-                </span>
-                <span className="min-w-0 flex-1 leading-tight">{card.title}</span>
-                <FiChevronRight className="shrink-0" size={17} />
-              </button>
-            ))}
-          </div>
-          <div className="min-h-[260px] p-4 sm:p-5">
-            {resolvedActiveMenuCard && (
-              <>
-                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                    {resolvedActiveMenuCard.icon}
-                  </span>
-                  <div>
-                    <p className="font-psemibold text-base text-[#1E3D73]">
-                      {resolvedActiveMenuCard.title}
-                    </p>
-                    <p className="text-xs text-[#7084a4]">
-                      Open virtual office modules
-                    </p>
-                  </div>
-                </div>
-                <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
-                  {resolvedActiveMenuCard.items.length === 0 && (
-                    <p className="px-2 py-6 text-center text-sm text-[#7b8eac]">
-                      No sub-modules available
-                    </p>
-                  )}
-                  {resolvedActiveMenuCard.items.map((item) => (
-                    <button
-                      key={item.route}
-                      type="button"
-                      onClick={() => {
-                        setMenuAnchor(null);
-                        navigate(item.route);
-                      }}
-                      className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
-                    >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
-                        {item.icon}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-pmedium text-[15px] leading-tight">
-                          {item.label}
-                        </span>
-                        <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
-                          {item.description}
-                        </span>
-                      </span>
-                      <FiChevronRight className="shrink-0" size={17} />
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </Menu>
       <div className="overflow-hidden rounded-lg">
         <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
           <img
@@ -1497,17 +1400,10 @@ const VirtualOfficeDashboard = ({
                 </Link>
               ),
             )}
-            <button
-              type="button"
-              aria-haspopup="menu"
-              aria-expanded={Boolean(menuAnchor)}
-              onClick={(event) => setMenuAnchor(event.currentTarget)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
-            >
-              <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
-              <span>Menu</span>
-              <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
-            </button>
+            <DashboardPopupMenu
+              cards={menuCards}
+              moduleLabel="Virtual Office"
+            />
           </nav>
         </div>
       </div>

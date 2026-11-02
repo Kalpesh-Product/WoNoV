@@ -138,6 +138,7 @@ import SalesDashboard from "../pages/Dashboard/SalesDashboard/SalesDashboard";
 import VirtualOfficeDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/VirtualOfficeDashboard";
 import CoWorkingDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/CoWorkingDashboard";
 import MeetingRoomDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/MeetingRoomDashboard";
+import DayPassDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/DayPassDashboard";
 import WorkationDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/WorkationDashboard";
 import AlternateChannelDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/AlternateChannelDashboard";
 import SidebarDropdown from "../components/SidebarDropdown";
@@ -2905,6 +2906,369 @@ export const routes = createBrowserRouter([
                             ]}
                           >
                             <MeetingRoomDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                            ]}
+                          >
+                            <DayPassDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/annual-revenue-target",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_ANNUAL_REVENUE_TARGET_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="annualRevenueTarget" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/revenues-booked",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_REVENUES_BOOKED_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="revenuesBooked" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/revenue-due",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REVENUE_DUE_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="revenueDue" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/average-day-pass-price",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_AVERAGE_PRICE_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="averagePrice" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      ...[
+                        {
+                          path: "active-unique-client",
+                          cardView: "activeUniqueClient",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_ACTIVE_UNIQUE_CLIENT_CARD
+                              .value,
+                        },
+                        {
+                          path: "overall-bookings",
+                          cardView: "overallBookings",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_OVERALL_BOOKINGS_CARD
+                              .value,
+                        },
+                        {
+                          path: "day-pass-bookings",
+                          cardView: "dayPassBookings",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_DAY_PASS_MTD_BOOKINGS_CARD
+                              .value,
+                        },
+                        {
+                          path: "average-monthly-surplus",
+                          cardView: "averageMonthlySurplus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_AVERAGE_MONTHLY_SURPLUS_CARD
+                              .value,
+                        },
+                      ].map(({ path, cardView, permission }) => ({
+                        path: `day-pass/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              permission,
+                            ]}
+                          >
+                            <DayPassDashboard cardView={cardView} />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "day-pass/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRevenue
+                              graphOnly
+                              dashboardView
+                              dashboardTitle="DAY PASS REVENUES"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/booking-breakdown",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_BOOKING_BREAKDOWN_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard dayPassChartView="booking" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/external-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_EXTERNAL_CLIENTS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard dayPassChartView="externalClients" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/client-details-today",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_CLIENT_DETAILS_TODAY_TABLE
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard clientDetailsTodayOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/add-client",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_ADD_CLIENT_MENU.value,
+                            ]}
+                          >
+                            <AddClient />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass/external-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <ExternalClients
+                              tableTitle="Day Pass External Clients"
+                              filterToDayPass={true}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass/external-clients/visitor-history/:visitorId",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <VisitorHistory />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <VisitorMixBag
+                              basePath="/app/dashboard/sales-dashboard/day-pass/mix-bag"
+                              ignoreCardPermissions
+                              financeCardStyle
+                              closeRoute="/app/dashboard/sales-dashboard/day-pass"
+                              allowedCardTypes={["dayPass", "convert"]}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/repeat-day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/mix-bag/repeat-day-pass/repeat-external-companies"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/repeat-day-pass/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <RepeatExternalCompaanies />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/visitors-to-client",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/mix-bag/visitors-to-client/convert-internal-visitors"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/visitors-to-client/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <ConvertInternalVisitors />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/reports",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REPORTS_MENU.value,
+                            ]}
+                          >
+                            <VisitorReports dayPassOnly />
                           </SidebarDropdown>
                         ),
                       },

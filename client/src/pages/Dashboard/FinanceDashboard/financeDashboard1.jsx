@@ -86,6 +86,145 @@ export function useFinanceNavigate() {
   );
 }
 
+const FinanceDashboardMenu = ({ cards, sections, itemMeta }) => {
+  const navigate = useFinanceNavigate();
+  const [anchor, setAnchor] = useState(null);
+  const [activeCardTitle, setActiveCardTitle] = useState(null);
+  const activeCard =
+    cards.find((card) => card.title === activeCardTitle) || cards[0];
+
+  const navigateFromMenu = useCallback(
+    (route) => {
+      setAnchor(null);
+      navigate(route, { flushSync: true });
+    },
+    [navigate],
+  );
+
+  return (
+    <>
+      <Menu
+        anchorEl={anchor}
+        open={Boolean(anchor)}
+        onClose={() => setAnchor(null)}
+        keepMounted
+        transitionDuration={{ enter: 80, exit: 0 }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+        transformOrigin={{ vertical: "top", horizontal: "left" }}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: "calc(100vw - 24px)", sm: 680 },
+              maxWidth: "calc(100vw - 24px)",
+              borderRadius: 2,
+              border: "1px solid #e0e8f5",
+              mt: 1,
+            },
+          },
+        }}
+      >
+        <div className="relative grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setAnchor(null)}
+            className="absolute -right-2 -top-2 z-10 flex h-7 w-9 items-center justify-center rounded-tr-[7px] bg-transparent text-[#1E3D73] transition hover:bg-[#ff0000b3] hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#1E3D73]/70"
+          >
+            <FiX size={14} strokeWidth={1.8} />
+          </button>
+          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
+            {cards.map((card) => (
+              <button
+                key={card.title}
+                type="button"
+                onClick={() => setActiveCardTitle(card.title)}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${activeCard?.title === card.title ? "bg-[#e7f1ff]" : "hover:bg-[#eef5ff]"}`}
+              >
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
+                  {card.icon}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{card.title}</span>
+                <FiChevronRight className="shrink-0" size={17} />
+              </button>
+            ))}
+          </div>
+          <div className="min-h-[260px] p-4 sm:p-5">
+            {activeCard && (
+              <>
+                {activeCard.title === "Mix-Bag" ? (
+                  <button
+                    type="button"
+                    onClick={() => navigateFromMenu(activeCard.route)}
+                    className="mb-3 block w-full rounded-xl text-left transition hover:ring-1 hover:ring-[#d8e5f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
+                    aria-label="Open Finance Mix Bag"
+                  >
+                    <div className="flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                        {activeCard.icon}
+                      </span>
+                      <div>
+                        <p className="font-psemibold text-base text-[#1E3D73]">{activeCard.title}</p>
+                        <p className="text-xs text-[#7084a4]">Open mix-bag modules</p>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                      {activeCard.icon}
+                    </span>
+                    <div>
+                      <p className="font-psemibold text-base text-[#1E3D73]">{activeCard.title}</p>
+                      <p className="text-xs text-[#7084a4]">Open {activeCard.title.toLowerCase()} modules</p>
+                    </div>
+                  </div>
+                )}
+                <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
+                  {(sections[activeCard.title] || []).map(([label, route]) => {
+                    const meta = itemMeta[label] || {
+                      icon: <FaChartSimple />,
+                      description: "Open this module",
+                    };
+
+                    return (
+                      <button
+                        key={route}
+                        type="button"
+                        onClick={() => navigateFromMenu(route)}
+                        className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
+                      >
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
+                          {meta.icon}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-pmedium text-[15px] leading-tight">{label}</span>
+                          <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">{meta.description}</span>
+                        </span>
+                        <FiChevronRight size={17} />
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </Menu>
+      <button
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={Boolean(anchor)}
+        onClick={(event) => setAnchor(event.currentTarget)}
+        className="group relative inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
+      >
+        <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
+        <span>Menu</span>
+        <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
+      </button>
+    </>
+  );
+};
+
 const PayoutDetail = ({ detail, ...props }) => {
   const isMissing =
     detail == null ||
@@ -1694,8 +1833,6 @@ const FinanceDashboard1 = () => {
     (card) => !card.permission || userPermissions.includes(card.permission),
   );
   const settingsCards = allowedCards;
-  const [settingsAnchor, setSettingsAnchor] = useState(null);
-  const [activeMenuCard, setActiveMenuCard] = useState(null);
   const menuSections = {
     Cashflow: [
       ["Projections", "/app/dashboard/finance-dashboard1/cashflow/projections"],
@@ -1762,8 +1899,6 @@ const FinanceDashboard1 = () => {
     SOPs: { icon: <FiFileText />, description: "Standard operating procedures" },
     Policies: { icon: <FiSettings />, description: "Configure finance policies" },
   };
-  const resolvedActiveMenuCard =
-    settingsCards.find((card) => card.title === activeMenuCard) || settingsCards[0];
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
@@ -3808,91 +3943,6 @@ const FinanceDashboard1 = () => {
           )
         )}
       </MuiModal>
-      <Menu
-        anchorEl={settingsAnchor}
-        open={Boolean(settingsAnchor)}
-        onClose={() => setSettingsAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-        transformOrigin={{ vertical: "top", horizontal: "left" }}
-        slotProps={{
-          paper: {
-            sx: {
-              width: { xs: "calc(100vw - 24px)", sm: 680 },
-              maxWidth: "calc(100vw - 24px)",
-              borderRadius: 2,
-              border: "1px solid #e0e8f5",
-              mt: 1,
-            },
-          },
-        }}
-      >
-        <div className="relative grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
-          <button
-            type="button"
-            aria-label="Close menu"
-            onClick={() => setSettingsAnchor(null)}
-            className="absolute -right-2 -top-2 z-10 flex h-7 w-9 items-center justify-center rounded-tr-[7px] bg-[#ff000080] text-white transition hover:bg-[#ff0000b3] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/70"
-          >
-            <FiX size={14} strokeWidth={1.8} />
-          </button>
-          <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
-            {settingsCards.map((card) => (
-              <button
-                key={card.title}
-                type="button"
-                onClick={() => setActiveMenuCard(card.title)}
-                className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-pmedium text-sm text-[#1E3D73] transition ${resolvedActiveMenuCard?.title === card.title ? "bg-[#e7f1ff]" : "hover:bg-[#eef5ff]"}`}
-              >
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#e8f1ff] text-lg">
-                  {card.icon}
-                </span>
-                <span className="min-w-0 flex-1 truncate">{card.title}</span>
-                <FiChevronRight className="shrink-0" size={17} />
-              </button>
-            ))}
-          </div>
-          <div className="min-h-[260px] p-4 sm:p-5">
-            {resolvedActiveMenuCard && (
-              <>
-                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                    {resolvedActiveMenuCard.icon}
-                  </span>
-                  <div>
-                    <p className="font-psemibold text-base text-[#1E3D73]">{resolvedActiveMenuCard.title}</p>
-                    <p className="text-xs text-[#7084a4]">Open {resolvedActiveMenuCard.title.toLowerCase()} modules</p>
-                  </div>
-                </div>
-                <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
-                  {(menuSections[resolvedActiveMenuCard.title] || []).map(([label, route]) => {
-                    const meta = menuItemMeta[label] || { icon: <FaChartSimple />, description: "Open this module" };
-                    return (
-                    <button
-                      key={route}
-                      type="button"
-                      onClick={() => {
-                        setSettingsAnchor(null);
-                        navigate(route);
-                      }}
-                      className="flex w-full items-center gap-3 rounded-lg px-2 py-3 text-left text-[#294a7d] hover:bg-[#f7faff]"
-                    >
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#edf4ff] text-[#1E3D73]">
-                        {meta.icon}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-pmedium text-[15px] leading-tight">{label}</span>
-                        <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">{meta.description}</span>
-                      </span>
-                      <FiChevronRight size={17} />
-                    </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </Menu>
       <div className="flex flex-col gap-4 px-4">
         <div className="overflow-hidden rounded-lg">
           <div className="relative h-56 w-full md:h-[17rem] xl:h-[19rem]">
@@ -3944,17 +3994,11 @@ const FinanceDashboard1 = () => {
                     <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
                   </button>
                 ))}
-                <button
-                  type="button"
-                  aria-haspopup="menu"
-                  aria-expanded={Boolean(settingsAnchor)}
-                  onClick={(event) => setSettingsAnchor(event.currentTarget)}
-                  className="group relative inline-flex shrink-0 items-center gap-2 rounded-xl border border-[#C8DCFA] bg-[#EEF5FF] px-3 py-2 font-pmedium text-xs text-[#123B82] shadow-sm focus-visible:outline-none sm:text-sm"
-                >
-                  <FiGrid className="text-lg sm:text-xl" aria-hidden="true" />
-                  <span>Menu</span>
-                  <MdKeyboardArrowDown className="text-lg" aria-hidden="true" />
-                </button>
+                <FinanceDashboardMenu
+                  cards={settingsCards}
+                  sections={menuSections}
+                  itemMeta={menuItemMeta}
+                />
               </nav>
             )}
           </div>
