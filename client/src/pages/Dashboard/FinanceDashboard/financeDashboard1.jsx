@@ -3831,7 +3831,7 @@ const FinanceDashboard1 = () => {
             type="button"
             aria-label="Close menu"
             onClick={() => setSettingsAnchor(null)}
-            className="absolute -right-2 -top-2 z-10 flex h-7 w-9 items-center justify-center rounded-tr-[7px] bg-[#ff000080] text-white transition hover:bg-[#ff0000b3] focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white/70"
+            className="absolute -right-2 -top-2 z-10 flex h-7 w-9 items-center justify-center rounded-tr-[7px] bg-transparent text-[#1E3D73] transition hover:bg-[#ff0000b3] hover:text-white focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#1E3D73]/70"
           >
             <FiX size={14} strokeWidth={1.8} />
           </button>
@@ -3854,15 +3854,37 @@ const FinanceDashboard1 = () => {
           <div className="min-h-[260px] p-4 sm:p-5">
             {resolvedActiveMenuCard && (
               <>
-                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                    {resolvedActiveMenuCard.icon}
-                  </span>
-                  <div>
-                    <p className="font-psemibold text-base text-[#1E3D73]">{resolvedActiveMenuCard.title}</p>
-                    <p className="text-xs text-[#7084a4]">Open {resolvedActiveMenuCard.title.toLowerCase()} modules</p>
+                {resolvedActiveMenuCard.title === "Mix-Bag" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSettingsAnchor(null);
+                      navigate(resolvedActiveMenuCard.route);
+                    }}
+                    className="mb-3 block w-full rounded-xl text-left transition hover:ring-1 hover:ring-[#d8e5f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
+                    aria-label="Open Finance Mix Bag"
+                  >
+                    <div className="flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                        {resolvedActiveMenuCard.icon}
+                      </span>
+                      <div>
+                        <p className="font-psemibold text-base text-[#1E3D73]">{resolvedActiveMenuCard.title}</p>
+                        <p className="text-xs text-[#7084a4]">Open mix-bag modules</p>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                      {resolvedActiveMenuCard.icon}
+                    </span>
+                    <div>
+                      <p className="font-psemibold text-base text-[#1E3D73]">{resolvedActiveMenuCard.title}</p>
+                      <p className="text-xs text-[#7084a4]">Open {resolvedActiveMenuCard.title.toLowerCase()} modules</p>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
                   {(menuSections[resolvedActiveMenuCard.title] || []).map(([label, route]) => {
                     const meta = menuItemMeta[label] || { icon: <FaChartSimple />, description: "Open this module" };

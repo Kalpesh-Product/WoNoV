@@ -20,6 +20,7 @@ import {
   FiChevronRight,
   FiDatabase,
   FiGrid,
+  FiX,
   FiUploadCloud,
   FiUserPlus,
   FiUsers,
@@ -1103,6 +1104,7 @@ const VirtualOfficeDashboard = ({
       icon: <MdShoppingBag />,
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
+      openRoute: "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
       items: [],
     },
     {
@@ -1379,7 +1381,15 @@ const VirtualOfficeDashboard = ({
           },
         }}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+        <div className="relative grid grid-cols-1 sm:grid-cols-[220px_minmax(0,1fr)]">
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMenuAnchor(null)}
+            className="absolute -top-2 right-0 z-20 flex h-7 w-7 items-center justify-center bg-transparent text-[#1E3D73] transition hover:bg-[#ff7777] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
+          >
+            <FiX size={17} aria-hidden="true" />
+          </button>
           <div className="border-b border-[#e2eaf5] bg-[#f8fbff] p-2 sm:border-b-0 sm:border-r">
             {menuCards.map((card) => (
               <button
@@ -1403,19 +1413,45 @@ const VirtualOfficeDashboard = ({
           <div className="min-h-[260px] p-4 sm:p-5">
             {resolvedActiveMenuCard && (
               <>
-                <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
-                    {resolvedActiveMenuCard.icon}
-                  </span>
-                  <div>
-                    <p className="font-psemibold text-base text-[#1E3D73]">
-                      {resolvedActiveMenuCard.title}
-                    </p>
-                    <p className="text-xs text-[#7084a4]">
-                      Open virtual office modules
-                    </p>
+                {resolvedActiveMenuCard.openRoute ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuAnchor(null);
+                      navigate(resolvedActiveMenuCard.openRoute);
+                    }}
+                    className="mb-3 block w-full rounded-xl text-left transition hover:ring-1 hover:ring-[#d8e5f7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5]"
+                    aria-label="Open Virtual Office Mix Bag"
+                  >
+                    <div className="flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                        {resolvedActiveMenuCard.icon}
+                      </span>
+                      <div>
+                        <p className="font-psemibold text-base text-[#1E3D73]">
+                          {resolvedActiveMenuCard.title}
+                        </p>
+                        <p className="text-xs text-[#7084a4]">
+                          Open virtual office modules
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                ) : (
+                  <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f4f8ff] p-3">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3efff] text-xl text-[#1E3D73]">
+                      {resolvedActiveMenuCard.icon}
+                    </span>
+                    <div>
+                      <p className="font-psemibold text-base text-[#1E3D73]">
+                        {resolvedActiveMenuCard.title}
+                      </p>
+                      <p className="text-xs text-[#7084a4]">
+                        Open virtual office modules
+                      </p>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="max-h-[340px] divide-y divide-[#edf1f7] overflow-y-auto pr-1">
                   {resolvedActiveMenuCard.items.length === 0 && (
                     <p className="px-2 py-6 text-center text-sm text-[#7b8eac]">
