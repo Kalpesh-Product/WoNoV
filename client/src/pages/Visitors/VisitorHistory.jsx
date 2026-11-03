@@ -36,6 +36,9 @@ const VisitorHistory = () => {
   const isInternalHistory = historyType === "internal";
   const navigate = useNavigate();
   const location = useLocation();
+  const isSalesDayPassHistory = location.pathname.includes(
+    "/sales-dashboard/day-pass/manage-day-pass/external-clients/visitor-history/",
+  );
   const axios = useAxiosPrivate();
   const [selectedVisit, setSelectedVisit] = useState(null);
 
@@ -326,7 +329,9 @@ const VisitorHistory = () => {
     <PageFrame>
       <div className="mb-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-primary">Visitor History</h1>
-        <PrimaryButton title="Back" handleSubmit={() => navigate(-1)} />
+        {!isSalesDayPassHistory && (
+          <PrimaryButton title="Back" handleSubmit={() => navigate(-1)} />
+        )}
       </div>
 
       {isError ? (

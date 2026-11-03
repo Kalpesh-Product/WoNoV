@@ -239,6 +239,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
               permission: PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
             },
             {
+              id: 56,
+              title: "Day Pass",
+              route: "/app/dashboard/sales-dashboard/day-pass",
+              permission: PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+            },
+            {
               id: 54,
               title: "Workation",
               route: "/app/dashboard/sales-dashboard/workation",

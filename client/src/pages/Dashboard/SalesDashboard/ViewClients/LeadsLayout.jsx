@@ -226,7 +226,12 @@ const LeadsLayout = ({
         0,
       );
     },
-    [currentFinancialYear, investorBlueStyle, transformedData, actualMonthLag],
+    [
+      currentFinancialYear,
+      investorBlueStyle,
+      transformedData,
+      actualMonthLag,
+    ],
   );
 
   const resolvedTitleAmount =
@@ -322,9 +327,9 @@ const LeadsLayout = ({
       name: seriesName,
       data: transformedData.map((_, monthIndex) => {
         const monthDate = getMonthDate(monthIndex);
+        const actualSeriesName = seriesName.replace(/^Projected /, "");
         if (isActualMonthAvailable(monthDate)) return 0;
 
-        const actualSeriesName = seriesName.replace(/^Projected /, "");
         const actualValues = actualSeriesByName.get(actualSeriesName)?.data || [];
         const actualTotal = actualValues.reduce(
           (sum, value) => sum + (Number(value) || 0),

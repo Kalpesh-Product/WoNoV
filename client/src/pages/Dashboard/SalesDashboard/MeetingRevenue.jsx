@@ -557,6 +557,8 @@ const DayPassInvoiceFields = ({ revenue }) => {
     showChart = true,
     graphOnly = false,
     dashboardView = false,
+    dashboardTitle = "MEETING ROOM REVENUES",
+    dashboardClientLabel = "Meeting Room Client",
   }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -582,7 +584,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
     },
   });
   const { data: consolidatedMeetingRevenue = [] } = useQuery({
-    queryKey: ["meeting-room-tooltip-revenue"],
+    queryKey: ["meeting-room-tooltip-revenue", dashboardTitle],
     enabled: dashboardView,
     queryFn: async () => {
       const response = await axios.get("/api/sales/simple-consolidated-revenue");
@@ -601,12 +603,15 @@ const DayPassInvoiceFields = ({ revenue }) => {
           .toLowerCase();
         const isDayPass =
           item?.source === "day-pass" ||
+          meetingType.includes("open desk") ||
           meetingType.includes("half-day") ||
           meetingType.includes("half day") ||
           meetingType.includes("full-day") ||
           meetingType.includes("full day");
 
-        return !isDayPass;
+        return dashboardTitle.toLowerCase().includes("day pass")
+          ? isDayPass
+          : !isDayPass;
       });
     },
   });
@@ -731,19 +736,32 @@ const DayPassInvoiceFields = ({ revenue }) => {
     editingRevenue?.hoursBooked || editingRevenue?.unitsOrHours || "-";
   const isUpdateDisabled = updateInvoice.isPending;
 
-  const graphData = useMemo(
-    () =>
-      isMeetingsLoading
-        ? []
-        : allRevenueData
-            .filter(isVerifiedFinanceRow)
-            .map((item) => ({
-              date: item.date,
-              taxable: getNumericAmount(item.taxable),
-              vertical: "Meeting",
-            })),
-    [allRevenueData, isMeetingsLoading],
-  );
+  const graphData = useMemo(() => {
+    if (isMeetingsLoading) return [];
+
+    const isDayPassDashboard = dashboardTitle.toLowerCase().includes("day pass");
+    return allRevenueData
+      .filter((item) => {
+        if (!isVerifiedFinanceRow(item)) return false;
+        if (!isDayPassDashboard) return true;
+
+        const passType = String(item?.meetingType || item?.meetingTypeRaw || "")
+          .trim()
+          .toLowerCase();
+        return (
+          item?.source === "day-pass" &&
+          (passType.includes("half-day pass") ||
+            passType.includes("half day pass") ||
+            passType.includes("full-day pass") ||
+            passType.includes("full day pass"))
+        );
+      })
+      .map((item) => ({
+        date: item.date,
+        taxable: getNumericAmount(item.taxable),
+        vertical: "Meeting",
+      }));
+  }, [allRevenueData, dashboardTitle, isMeetingsLoading]);
   const selectedFiscalYearRevenue = useMemo(
     () =>
       graphData.filter((item) => getFinancialYear(item.date) === selectedFY),
@@ -1052,7 +1070,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
             </div>
             <div style="display: flex; align-items: center; gap: 8px; padding: 0 12px 10px; font-size: 12px; color: #111827;">
               <span aria-hidden="true">&#128101;</span>
-              <span>Meeting Room Client:</span>
+              <span>${dashboardClientLabel}:</span>
               <span style="font-weight: 700;">${dashboardMonthlyClientCounts[dataPointIndex] || 0}</span>
             </div>
           </div>
@@ -1117,7 +1135,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   <span className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
                     <BiznestHeaderLogo />
                     <span className="inline-flex items-baseline leading-none">
-                      {`MEETING ROOM REVENUES - ${selectedFY}`}
+                      {`${dashboardTitle} - ${selectedFY}`}
                     </span>
                   </span>
                 ) : (

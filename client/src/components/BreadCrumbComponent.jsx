@@ -76,10 +76,15 @@ const BreadCrumbComponent = () => {
         );
 
   const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
+  const isDayPassSalesHistoryPath =
+    basePathSegments.includes("sales-dashboard") &&
+    basePathSegments.includes("day-pass") &&
+    basePathSegments.includes("manage-day-pass") &&
+    basePathSegments.includes("external-clients");
   const historyType = searchParams.get("type");
   const pathSegments = [...basePathSegments];
 
-  if (isVisitorHistoryPath && historyType) {
+  if (isVisitorHistoryPath && historyType && !isDayPassSalesHistoryPath) {
     const historyIndex = pathSegments.indexOf("visitor-history");
     const historyTab =
       historyType === "internal" ? "internal-visitors" : "external-clients";
@@ -103,6 +108,7 @@ const BreadCrumbComponent = () => {
       (isVirtualOfficeClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
+      !isDayPassSalesHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");

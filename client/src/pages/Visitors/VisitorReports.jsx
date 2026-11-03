@@ -64,7 +64,7 @@ const toUtcDayBoundary = (value, endOfDay = false) => {
   ).toISOString();
 };
 
-const VisitorReports = () => {
+const VisitorReports = ({ dayPassOnly = false }) => {
   const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
@@ -552,7 +552,8 @@ const VisitorReports = () => {
       taxableAmount:
         paymentSource?.amount != null
           ? Math.max(
-              Number(paymentSource.amount) - Number(paymentSource.discount ?? 0),
+              Number(paymentSource.amount) -
+                Number(paymentSource.discount ?? 0),
               0,
             )
           : "-",
@@ -876,16 +877,20 @@ const VisitorReports = () => {
                 />
               </>
             )}
-            {(selectedVisitor.isMeeting || selectedVisitor.visitorFlag === "Client" ||
+            {(selectedVisitor.isMeeting ||
+              selectedVisitor.visitorFlag === "Client" ||
               ["Full-Day Pass", "Half-Day Pass", "Meeting"].includes(
                 selectedVisitor.visitorType,
-              )) && (
-              selectedVisitor.isMeeting ? (
-                <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} />
+              )) &&
+              (selectedVisitor.isMeeting ? (
+                <MeetingPaymentDetails
+                  revenue={selectedVisitor.meetingPaymentDetails}
+                />
               ) : (
-                <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} />
-              )
-            )}
+                <DayPassPaymentDetails
+                  revenue={selectedVisitor.paymentDetails}
+                />
+              ))}
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">
                 <img

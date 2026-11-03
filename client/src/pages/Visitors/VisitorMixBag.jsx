@@ -3,7 +3,7 @@ import WidgetSection from "../../components/WidgetSection";
 import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { FiChevronRight } from "react-icons/fi";
+import { FiChevronRight, FiX } from "react-icons/fi";
 import { MdEventRepeat, MdGroups, MdPersonAddAlt1 } from "react-icons/md";
 
 const MeetingRoomMixBagIcon = ({ type }) => {
@@ -26,6 +26,8 @@ const VisitorMixBag = ({
   ignoreCardPermissions = false,
   financeCardStyle = false,
   hideAllCards = false,
+  allowedCardTypes = null,
+  closeRoute = null,
 }) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
@@ -40,7 +42,7 @@ const VisitorMixBag = ({
     {
       title: "VISITORS TO CLIENT",
       description: "Convert an internal visitor into a client.",
-      action: "View Convert Visitor",
+      action: "View Visitors to Client",
       icon: "convert",
       route: `${basePath}/visitors-to-client/convert-internal-visitors`,
       permission: PERMISSIONS.VISITORS_MIX_BAG_VISITORS_TO_CLIENT.value,
@@ -56,6 +58,7 @@ const VisitorMixBag = ({
   ].filter(
     (card) =>
       !hideAllCards &&
+      (!allowedCardTypes || allowedCardTypes.includes(card.icon)) &&
       (ignoreCardPermissions ||
         !card.permission ||
         userPermissions.includes(card.permission)),
@@ -63,7 +66,17 @@ const VisitorMixBag = ({
 
   if (financeCardStyle) {
     return (
-      <div className="p-4 lg:p-5 min-[1800px]:p-6">
+      <div className="relative p-4 lg:p-5 min-[1800px]:p-6">
+        {closeRoute && (
+          <button
+            type="button"
+            aria-label="Close Day Pass Mix Bag"
+            onClick={() => navigate(closeRoute)}
+            className="absolute right-4 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full text-[#1E3D73] transition hover:bg-[#e8f1ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b8d2f5] min-[1800px]:right-6"
+          >
+            <FiX size={18} aria-hidden="true" />
+          </button>
+        )}
         <div className="flex w-full flex-wrap gap-4 min-[1800px]:gap-5">
           {mixBagCards.map((card) => (
             <button

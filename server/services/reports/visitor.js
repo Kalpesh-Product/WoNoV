@@ -1,5 +1,7 @@
 const MeetingRevenue = require("../../models/sales/MeetingRevenue");
-const { getMeetingPaymentDetails } = require("../../utils/meetingPaymentDetails");
+const {
+  getMeetingPaymentDetails,
+} = require("../../utils/meetingPaymentDetails");
 
 // Load revenue once per result batch, scoped to the current company and linked meetings.
 const attachMeetingPaymentDetails = async (records, company) => {
@@ -7,9 +9,14 @@ const attachMeetingPaymentDetails = async (records, company) => {
   if (!linked.length || !company) return;
   const ids = [...new Set(linked.map((record) => String(record.meeting._id)))];
   const revenues = await MeetingRevenue.find({ company, meeting: { $in: ids } })
-    .select("meeting date paymentDate hoursBooked costPerHour taxable gst totalAmount remarks invoice invoiceUploadedAt invoiceUploadedBy financeStatus")
+    .select(
+      "meeting date paymentDate hoursBooked costPerHour taxable gst totalAmount remarks invoice invoiceUploadedAt invoiceUploadedBy financeStatus",
+    )
     .sort({ date: -1, updatedAt: -1, createdAt: -1 })
-    .populate({ path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName" })
+    .populate({
+      path: "invoiceUploadedBy",
+      select: "firstName middleName lastName employeeName",
+    })
     .lean();
   const byMeeting = new Map();
   for (const revenue of revenues) {
@@ -18,7 +25,8 @@ const attachMeetingPaymentDetails = async (records, company) => {
   }
   for (const record of linked) {
     record.meetingPaymentDetails = getMeetingPaymentDetails(
-      byMeeting.get(String(record.meeting._id)), record.meeting,
+      byMeeting.get(String(record.meeting._id)),
+      record.meeting,
     );
   }
 };
@@ -86,19 +94,13 @@ const buildVisitorSearchConditions = async ({
       paymentVerification: "Under Review",
     });
   }
-  if (
-    normalizedSearch === "completed" ||
-    normalizedSearch === "verified"
-  ) {
+  if (normalizedSearch === "completed" || normalizedSearch === "verified") {
     paymentConditions.push({
       paymentStatus: true,
       paymentVerification: "Verified",
     });
   }
-  if (
-    normalizedSearch === "review payment" ||
-    normalizedSearch === "pending"
-  ) {
+  if (normalizedSearch === "review payment" || normalizedSearch === "pending") {
     paymentConditions.push({
       paymentStatus: true,
       paymentVerification: { $nin: ["Under Review", "Verified"] },
@@ -148,9 +150,7 @@ const buildVisitorSearchConditions = async ({
     ...(users.length ? [{ checkedOutBy: { $in: users } }] : []),
     ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
     ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
-    ...(paymentVisitorIds.length
-      ? [{ _id: { $in: paymentVisitorIds } }]
-      : []),
+    ...(paymentVisitorIds.length ? [{ _id: { $in: paymentVisitorIds } }] : []),
   ];
 };
 
@@ -213,7 +213,10 @@ const populateVisitorListFields = [
 ];
 
 const populateExternalVisitFields = [
-  { path: "invoiceUploadedBy", select: "firstName middleName lastName employeeName name" },
+  {
+    path: "invoiceUploadedBy",
+    select: "firstName middleName lastName employeeName name",
+  },
   { path: "department", select: "name" },
   { path: "toMeet", select: "firstName lastName email" },
   {
@@ -384,16 +387,10 @@ const getDayPassPaymentSearchConditions = (search) => {
   ) {
     return [{ paymentStatus: true, paymentVerification: "Under Review" }];
   }
-  if (
-    normalizedSearch === "completed" ||
-    normalizedSearch === "verified"
-  ) {
+  if (normalizedSearch === "completed" || normalizedSearch === "verified") {
     return [{ paymentStatus: true, paymentVerification: "Verified" }];
   }
-  if (
-    normalizedSearch === "review payment" ||
-    normalizedSearch === "pending"
-  ) {
+  if (normalizedSearch === "review payment" || normalizedSearch === "pending") {
     return [
       {
         paymentStatus: true,
@@ -418,7 +415,9 @@ const fetchFinanceDayPassVisits = async ({
     company: companyId,
     $or: [{ visitorFlag: "Client" }, { visitorRoles: "Client" }],
   };
-  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const normalizedSearch = String(search || "")
+    .trim()
+    .slice(0, 100);
   const searchRegex = buildSearchRegex(normalizedSearch);
 
   const clientVisitorIds = await Visitor.find(clientRoleFilter).distinct("_id");
@@ -442,7 +441,8 @@ const fetchFinanceDayPassVisits = async ({
   };
 
   if (searchRegex) {
-    const paymentConditions = getDayPassPaymentSearchConditions(normalizedSearch);
+    const paymentConditions =
+      getDayPassPaymentSearchConditions(normalizedSearch);
     visitFilter.$or = [
       { purposeOfVisit: searchRegex },
       { visitorType: searchRegex },
@@ -508,7 +508,9 @@ const fetchVisitorReportVisits = async ({
   parsedLimit,
   skip,
 }) => {
-  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const normalizedSearch = String(search || "")
+    .trim()
+    .slice(0, 100);
   const searchRegex = buildSearchRegex(normalizedSearch);
   const visitFilter = {
     company: companyId,
@@ -516,6 +518,35 @@ const fetchVisitorReportVisits = async ({
     ...(meetingOnly && { meeting: { $ne: null } }),
     ...(dateFilter?.checkIn && { dateOfVisit: dateFilter.checkIn }),
   };
+
+  if (type === "day-pass") {
+    visitFilter.$and = [
+      {
+        $or: [
+          {
+            visitorType: {
+              $in: [
+                "Full-Day Pass",
+                "Half-Day Pass",
+                "Full Day Pass",
+                "Half Day Pass",
+              ],
+            },
+          },
+          {
+            purposeOfVisit: {
+              $in: [
+                "Full-Day Pass",
+                "Half-Day Pass",
+                "Full Day Pass",
+                "Half Day Pass",
+              ],
+            },
+          },
+        ],
+      },
+    ];
+  }
 
   if (searchRegex) {
     const visitorSearchConditions = await buildVisitorSearchConditions({
@@ -546,7 +577,7 @@ const fetchVisitorReportVisits = async ({
       },
     ]);
 
-    visitFilter.$or = [
+    const searchConditions = [
       { purposeOfVisit: searchRegex },
       { visitorType: searchRegex },
       { visitorCompany: searchRegex },
@@ -561,6 +592,12 @@ const fetchVisitorReportVisits = async ({
       ...(members.length ? [{ clientToMeet: { $in: members } }] : []),
       ...(clients.length ? [{ toMeetCompany: { $in: clients } }] : []),
     ];
+
+    if (visitFilter.$and) {
+      visitFilter.$and.push({ $or: searchConditions });
+    } else {
+      visitFilter.$or = searchConditions;
+    }
   }
 
   let visitsQuery = ExternalVisits.find(visitFilter)
@@ -615,7 +652,9 @@ const fetchVisitorReportMeetings = async ({
   parsedLimit,
   skip,
 }) => {
-  const normalizedSearch = String(search || "").trim().slice(0, 100);
+  const normalizedSearch = String(search || "")
+    .trim()
+    .slice(0, 100);
   const searchRegex = buildSearchRegex(normalizedSearch);
   const meetingFilter = {
     company: companyId,
@@ -1309,7 +1348,10 @@ const fetchVisitorReportService = async ({
     }
 
     await attachMeetingPaymentDetails(
-      visitors.flatMap((visitor) => [visitor, ...(visitor.externalVisits || [])]),
+      visitors.flatMap((visitor) => [
+        visitor,
+        ...(visitor.externalVisits || []),
+      ]),
       companyId,
     );
 
