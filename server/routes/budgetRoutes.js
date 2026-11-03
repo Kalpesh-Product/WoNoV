@@ -14,6 +14,7 @@ const {
   approveFinanceBudget,
   fetchApprovedbudgets,
   updateBudget,
+  updateFinanceAmount,
   deleteBudget,
   restoreBudget,
   unapproveBudget,
@@ -35,6 +36,7 @@ router.patch("/approve-budget", upload.single("voucher"), approveFinanceBudget);
 router.patch("/unapprove-budget/:budgetId", unapproveBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch("/update-budget/:budgetId", updateBudget);
+router.patch("/update-finance-amount/:budgetId", updateFinanceAmount);
 router.delete("/:budgetId", deleteBudget);
 router.patch("/:budgetId/restore", restoreBudget);
 router.patch(

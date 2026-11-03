@@ -30,6 +30,7 @@ const YearWiseTable = ({
   middleButtonTitle,
   middleButtonDisabled,
   handleMiddleSubmit,
+  titleRightContent,
   headerActions,
   summaryContent,
   checkbox,
@@ -40,6 +41,7 @@ const YearWiseTable = ({
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
+  batchButtonPosition = "left",
   isRowSelectable,
   getRowId,
   hideTitle = true,
@@ -76,6 +78,8 @@ const YearWiseTable = ({
   searchValue = "",
   onSearchChange,
   getRowStyle,
+  compactToolbar = false,
+  loading = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -392,22 +396,22 @@ const YearWiseTable = ({
         !showDateNavigator &&
         dateRange.length > 0 &&
         dateRange[0] && (
-          <div className="flex w-max shrink-0 justify-center items-center gap-2">
+          <div className={`flex w-max shrink-0 items-center justify-center ${compactToolbar ? "gap-1.5" : "gap-2"}`}>
             {dateRangePlaceholders && dateFilterOptions.length > 1 && (
-              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: 130 }}>
+              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: compactToolbar ? 115 : 130 }}>
                 {dateFilterOptions.map((option) => <MenuItem key={option.field} value={option.field}>{option.label}</MenuItem>)}
               </TextField>
             )}
             {/* Date information here */}
 
-            <div className="flex flex-nowrap items-center gap-2">
-              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+            <div className={`flex flex-nowrap items-center ${compactToolbar ? "gap-1.5" : "gap-2"}`}>
+              <div className={`whitespace-nowrap rounded-md border-[1px] border-primary py-1 ${compactToolbar ? "px-3" : "px-6"}`}>
                 <span className="text-gray-600 text-content font-pregular">
                   {dateRangePlaceholders && !isUserChangedRange ? "Start date" : dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
                 </span>{" "}
               </div>
 
-              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+              <div className={`whitespace-nowrap rounded-md border-[1px] border-primary py-1 ${compactToolbar ? "px-3" : "px-6"}`}>
                 <span className="text-gray-600 text-content font-pregular">
                   {dateRangePlaceholders && !isUserChangedRange ? "End date" : dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
                 </span>
@@ -582,10 +586,13 @@ const YearWiseTable = ({
 
       <>
         <AgTable
+            loading={loading}
             toolbarDateControls={dateControls}
             showTableControls={showTableControls}
             toolbarActions={operationControls}
+            compactToolbar={compactToolbar}
             exportAction={exportControls}
+            titleRightContent={titleRightContent}
             headerActions={headerActions}
             summaryContent={summaryContent}
             buttonTitle={buttonTitle}
@@ -612,6 +619,7 @@ const YearWiseTable = ({
                 />
               ) : null
             }
+            searchRowActionsPosition={batchButtonPosition}
             dateColumn={dateColumn}
             isRowSelectable={isRowSelectable}
             getRowId={getRowId}

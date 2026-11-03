@@ -27,11 +27,20 @@ const fetchBudgetVoucherService = async ({
   dashboardView = false,
   profitLossView = false,
   includeDeleted = false,
+  invoiceUploadedOnly = false,
 }) => {
   const query = { company };
 
   if (!includeDeleted) {
     query.isDeleted = { $ne: true };
+  }
+
+  if (invoiceUploadedOnly) {
+    query.$or = [
+      { invoiceAttached: true },
+      { "invoices.0": { $exists: true } },
+      { "invoice.link": { $exists: true, $nin: [null, ""] } },
+    ];
   }
 
   if (!["payout", "landlord-payments"].includes(type)) {
@@ -188,6 +197,7 @@ const fetchBudgetVoucherService = async ({
   const populateOptions = dashboardView
     ? [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         { path: "unit", select: "unitNo" },
         ...(includeDeleted
           ? [{ path: "deletedBy", select: "firstName lastName employeeName name email" }]
@@ -196,6 +206,7 @@ const fetchBudgetVoucherService = async ({
     : isFilteredBudget
     ? [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         {
           path: "unit",
           select: "unitNo unitName building",
@@ -211,6 +222,7 @@ const fetchBudgetVoucherService = async ({
       ]
     : [
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName status departmentId" },
         {
           path: "unit",
           populate: {
@@ -223,7 +235,14 @@ const fetchBudgetVoucherService = async ({
           : []),
       ];
 
-  const budgets = await budgetQuery.populate(populateOptions).lean().exec();
+  const budgets = await budgetQuery
+    .populate(populateOptions)
+    .populate({
+      path: "financeAmountHistory.changedBy",
+      select: "firstName lastName",
+    })
+    .lean()
+    .exec();
 
   const allBudgets = budgets.map((budget) => {
     if (budget?.particulars?.length) {

@@ -70,7 +70,6 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
-import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
 import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
@@ -336,6 +335,7 @@ import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/Billings
 import VoucherRequest from "../pages/Dashboard/FinanceDashboard/Billing/VoucherRequest";
 import BudgetRequest from "../pages/Dashboard/FinanceDashboard/Billing/BudgetRequest";
 import BudgetHistory from "../pages/Dashboard/FinanceDashboard/Billing/BudgetHistory";
+import ManageBudgets from "../pages/Dashboard/FinanceDashboard/Billing/ManageBudgets";
 import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
 import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
 import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
@@ -1117,6 +1117,10 @@ export const routes = createBrowserRouter([
                                 element: <BudgetHistory />,
                               },
                               {
+                                path: "manage-budgets",
+                                element: <ManageBudgets />,
+                              },
+                              {
                                 path: "pending-approvals-budget/review-request",
                                 element: <ReviewRequest />,
                               },
@@ -1600,6 +1604,10 @@ export const routes = createBrowserRouter([
                               {
                                 path: "budget-history",
                                 element: <BudgetHistory />,
+                              },
+                              {
+                                path: "manage-budgets",
+                                element: <ManageBudgets />,
                               },
                               {
                                 path: "pending-approvals-budget/review-request",
@@ -5001,14 +5009,6 @@ export const routes = createBrowserRouter([
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
                           },
-                          {
-                            path: "payroll",
-                            element: <HrPayroll />,
-                          },
-                          {
-                            path: "payroll/:id",
-                            element: <ViewPayroll />,
-                          },
                         ],
                       },
                       {
@@ -6247,13 +6247,18 @@ export const routes = createBrowserRouter([
                       },
                       {
                         path: "pending-approvals",
-                        element: <KraKpaPendingApprovals />,
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.KRAKPA_PENDING_APPROVALS]}
+                            element={<KraKpaPendingApprovals />}
+                          />
+                        ),
                       },
                       {
                         path: "departments",
                         element: (
                           <PerformancePermissionRoute
-                            permissions={[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA]}
+                            permissions={[PERMISSIONS.KRAKPA_DEPARTMENTS]}
                             element={<PerformanceAssignKraKpa
                               memberDestination="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard"
                             />}
@@ -6279,12 +6284,14 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
+                                  PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                 ]}
                                 mode="any"
                                 element={
                                   <KraKpaIndividualLayout
                                     section="kra-kpa"
-                                    showPendingApprovals
                                   />
                                 }
                               />
@@ -6314,7 +6321,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -6323,7 +6330,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -6333,7 +6340,7 @@ export const routes = createBrowserRouter([
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
                                   />
@@ -6346,8 +6353,8 @@ export const routes = createBrowserRouter([
                             element: (
                               <PerformancePermissionRoute
                                 permissions={[
-                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={
@@ -6361,8 +6368,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6374,8 +6380,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6414,11 +6419,25 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 path: "employee-dashboard",
-                                element: <KraKpaEmployeeDashboard />,
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_EMPLOYEE_DASHBOARD,
+                                    ]}
+                                    element={<KraKpaEmployeeDashboard />}
+                                  />
+                                ),
                               },
                               {
                                 path: "member-pending-approvals",
-                                element: <KraKpaPendingApprovals />,
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
+                                    ]}
+                                    element={<KraKpaPendingApprovals />}
+                                  />
+                                ),
                               },
                             ],
                           },
@@ -6429,6 +6448,8 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
                                 ]}
                                 mode="any"
                                 element={
@@ -6464,7 +6485,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -6473,7 +6494,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -6485,8 +6506,8 @@ export const routes = createBrowserRouter([
                             element: (
                               <PerformancePermissionRoute
                                 permissions={[
-                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={
@@ -6503,8 +6524,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6516,8 +6536,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6532,6 +6551,11 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
+                                  PERMISSIONS.KRAKPA_PENDING_APPROVALS,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={<DepartmentPerformanceLayout />}
@@ -6562,7 +6586,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -6571,7 +6595,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -6581,7 +6605,7 @@ export const routes = createBrowserRouter([
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
                                   />
@@ -6592,8 +6616,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6605,8 +6628,7 @@ export const routes = createBrowserRouter([
                                 element: (
 <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                      PERMISSIONS.KRAKPA_SELF_KRA,
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                     ]}
                                     mode="any"
                                     element={<KraKpaRating />}
@@ -6854,10 +6876,30 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
+                    path: "mix-bag/repeat-bookings",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<RepeatExternalCompaanies />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
+                        ]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/repeat-booking",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-bookings"
+                        replace
+                      />
+                    ),
+                  },
+                  {
                     path: "mix-bag/repeat-day-pass",
                     element: (
                       <Navigate
-                        to="/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies"
+                        to="/app/visitors/mix-bag/repeat-bookings"
                         replace
                       />
                     ),
@@ -6865,11 +6907,9 @@ export const routes = createBrowserRouter([
                   {
                     path: "mix-bag/repeat-day-pass/repeat-external-companies",
                     element: (
-                      <PerformancePermissionRoute
-                        element={<RepeatExternalCompaanies />}
-                        permissions={[
-                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
-                        ]}
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-bookings"
+                        replace
                       />
                     ),
                   },

@@ -407,15 +407,62 @@ export const PERMISSIONS = {
   },
   KRAKPA_INDIVIDUAL_MONTHLY_KPA: {
     value: "kra_kpa_individual_monthly_kpa",
-    title: "INDIVIDUAL MONTHLY KPA",
+    title: "SELF KPA",
     type: "read",
     route: "/app/kra-kpa/department-KPA/member-wise-KPA/individual-Monthly-KPA",
+  },
+  KRAKPA_SELF_KPA_BULK_UPLOAD: {
+    value: "kra_kpa_self_kpa_bulk_upload",
+    title: "SELF KPA BULK UPLOAD",
+    type: "create",
+    route: "/app/kra-kpa/individual/kra-kpa/individual-Monthly-KPA",
   },
   KRAKPA_SELF_KRA: {
     value: "kra_kpa_self_kra",
     title: "SELF KRA",
     type: "read",
     route: "/app/kra-kpa/department-KPA/member-wise-KPA/self-KRA",
+  },
+  KRAKPA_DUE_TASK: {
+    value: "kra_kpa_due_task",
+    title: "DUE TASK",
+    type: "read",
+    route: "/app/kra-kpa/individual/kra-kpa/due-task",
+  },
+  KRAKPA_DAILY_LOGS: {
+    value: "kra_kpa_daily_logs",
+    title: "DAILY LOGS",
+    type: "read",
+    route: "/app/kra-kpa/individual/kra-kpa/daily-logs",
+  },
+  KRAKPA_PENDING_APPROVALS: {
+    value: "kra_kpa_pending_approvals",
+    title: "PENDING APPROVALS",
+    type: "read",
+    route: "/app/kra-kpa/pending-approvals",
+  },
+  KRAKPA_KPA_RATING: {
+    value: "kra_kpa_kpa_rating",
+    title: "KPA RATING",
+    type: "read",
+    route: "/app/kra-kpa/individual/daily-score/kpa-rating",
+  },
+  KRAKPA_DAILY_LOGS_RATING: {
+    value: "kra_kpa_daily_logs_rating",
+    title: "DAILY LOGS RATING",
+    type: "read",
+    route: "/app/kra-kpa/individual/daily-score/daily-logs-rating",
+  },
+  KRAKPA_DEPARTMENTS: {
+    value: "kra_kpa_departments",
+    title: "DEPARTMENTS",
+    type: "read",
+    route: "/app/kra-kpa/departments",
+  },
+  KRAKPA_EMPLOYEE_DASHBOARD: {
+    value: "kra_kpa_employee_dashboard",
+    title: "EMPLOYEE DASHBOARD",
+    type: "read",
   },
 
   //Tasks Module
@@ -533,9 +580,9 @@ export const PERMISSIONS = {
   },
   VISITORS_MIX_BAG_REPEAT_DAY_PASS: {
     value: "visitors_mix_bag_repeat_day_pass",
-    title: "VISITORS MIX BAG REPEAT DAY PASS",
+    title: "VISITORS MIX BAG REPEAT BOOKINGS",
     type: "read",
-    route: "/app/visitors/mix-bag/repeat-day-pass",
+    route: "/app/visitors/mix-bag/repeat-bookings",
   },
   VISITORS_MIX_BAG_VISITORS_TO_CLIENT: {
     value: "visitors_mix_bag_visitors_to_client",

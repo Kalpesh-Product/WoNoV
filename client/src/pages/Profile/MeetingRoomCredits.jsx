@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import AgTable from "../../components/AgTable";
-import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CircularProgress, LinearProgress, TextField } from "@mui/material";
+import { CircularProgress, TextField } from "@mui/material";
 import { toast } from "sonner";
 import { MdOutlineRateReview, MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -24,9 +23,6 @@ const MeetingRoomCredits = ({ pageTitle }) => {
   const [openModal, setOpenModal] = useState(false);
   const [detailsModal, setDetailsModal] = useState(false);
   const { auth } = useAuth();
-  const totalCredits = auth.user.company.totalMeetingCredits;
-  const creditsBalance = auth.user.company.meetingCreditBalance;
-
   const axios = useAxiosPrivate();
   const { data: myMeetings = [], isPending: isMyMeetingsPending } = useQuery({
     queryKey: ["myMeetings"],
@@ -75,27 +71,6 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     });
     setOpenModal(false);
   };
-
-  const navigationCards = [
-    // {
-    //   cardTitle: "Total Credits",
-    //   quantity: totalCredits,
-    //   bgcolor: "#0099FF",
-    //   quantityColor: "#000033",
-    // },
-    // {
-    //   cardTitle: "Remaining Credits",
-    //   quantity: creditsBalance,
-    //   bgcolor: "#66FFCC",
-    //   quantityColor: "#006600",
-    // },
-    // {
-    //   cardTitle: "Meetings Booked",
-    //   quantity: `${myMeetings.length || 0}`,
-    //   bgcolor: "#FFFFCC",
-    //   quantityColor: "#FF9900",
-    // },
-  ];
 
   const handleAddReview = (data) => {
     setSelectedMeeting(data);
@@ -152,95 +127,57 @@ const MeetingRoomCredits = ({ pageTitle }) => {
     },
   ];
   return (
-    <div>
-      <div className="flex flex-col gap-4">
-        <div>
-          {/* <span className="text-title font-pmedium text-primary uppercase">
-            Company Credit Details
-          </span> */}
-        </div>
-        <div>
-          <WidgetSection padding layout={navigationCards.length}>
-            {navigationCards.map((card, index) => (
-              <div
-                key={index}
-                className="border  rounded-lg p-4 shadow hover:shadow-md transition-shadow duration-200 cursor-pointer "
-                style={{
-                  backgroundColor: card.bgcolor,
-                  color: card.quantityColor,
-                }}
-              >
-                <div className="text-md">{card.cardTitle}</div>
-                <div className="text-lg font-bold">{card.quantity}</div>
-              </div>
-            ))}
-          </WidgetSection>
-        </div>
-        <PageFrame>
-          <div>
-            {!isMyMeetingsPending ? (
-              <div className=" rounded-md">
-                <YearWiseTable
-                  dateColumn={"date"}
-                  tableTitle={"My Meetings"}
-                  data={[
-                    ...myMeetings.map((meeting, index) => {
-                      const bookedByName =
-                        typeof meeting.bookedBy === "string" &&
-                        meeting.bookedBy !== "Unknown"
-                          ? meeting.bookedBy
-                          : meeting.bookedBy?.firstName
-                            ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim()
-                            : meeting.clientBookedBy?.employeeName ||
-                              meeting.clientBookedBy?.name ||
-                              "Unknown";
+    <>
+    <PageFrame>
+      <YearWiseTable
+        loading={isMyMeetingsPending}
+        dateColumn={"date"}
+        tableTitle={"My Meetings"}
+        data={[
+          ...myMeetings.map((meeting, index) => {
+            const bookedByName =
+              typeof meeting.bookedBy === "string" &&
+              meeting.bookedBy !== "Unknown"
+                ? meeting.bookedBy
+                : meeting.bookedBy?.firstName
+                  ? `${meeting.bookedBy.firstName || ""} ${meeting.bookedBy.lastName || ""}`.trim()
+                  : meeting.clientBookedBy?.employeeName ||
+                    meeting.clientBookedBy?.name ||
+                    "Unknown";
 
-                      return {
-                        srNo: index + 1,
-                        meetingId: meeting._id,
-                        agenda: meeting.agenda,
-                        client: meeting.client,
-                        roomName: meeting.roomName,
-                        duration: meeting.duration,
-                        meetingStatus: meeting.meetingStatus,
-                        meetingType: meeting.meetingType,
-                        date: meeting.date,
-                        bookedBy: bookedByName,
-                        clientBookedBy: meeting.clientBookedBy,
-                        receptionist: meeting.receptionist || "Unknown",
-                        reviews: meeting.reviews,
-                        location: meeting.location
-                          ? `${meeting.location?.unitNo}`
-                          : "N/A",
-                        buildingName: meeting.location.building.buildingName,
-                        participants:
-                          meeting.participants
-                            .map((p) => {
-                              return p.employeeName
-                                ? p.employeeName
-                                : p.firstName
-                                  ? `${p.firstName} ${p.lastName}`
-                                  : "N/A";
-                            })
-                            .join(", ") || "N/A",
-                      };
-                    }),
-                  ]}
-                  columns={myMeetingsColumn}
-                  search
-                />
-              </div>
-            ) : (
-              <LinearProgress
-                sx={{
-                  backgroundColor: "black",
-                  "& .MuiLinearProgress-bar": { backgroundColor: "black" },
-                }}
-              />
-            )}
-          </div>
-        </PageFrame>
-      </div>
+            return {
+              srNo: index + 1,
+              meetingId: meeting._id,
+              agenda: meeting.agenda,
+              client: meeting.client,
+              roomName: meeting.roomName,
+              duration: meeting.duration,
+              meetingStatus: meeting.meetingStatus,
+              meetingType: meeting.meetingType,
+              date: meeting.date,
+              bookedBy: bookedByName,
+              clientBookedBy: meeting.clientBookedBy,
+              receptionist: meeting.receptionist || "Unknown",
+              reviews: meeting.reviews,
+              location: meeting.location ? `${meeting.location?.unitNo}` : "N/A",
+              buildingName: meeting.location.building.buildingName,
+              participants:
+                meeting.participants
+                  .map((p) =>
+                    p.employeeName
+                      ? p.employeeName
+                      : p.firstName
+                        ? `${p.firstName} ${p.lastName}`
+                        : "N/A",
+                  )
+                  .join(", ") || "N/A",
+            };
+          }),
+        ]}
+        columns={myMeetingsColumn}
+        search
+      />
+    </PageFrame>
 
       <MuiModal
         open={openModal}
@@ -458,7 +395,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
           <CircularProgress />
         )}
       </MuiModal>
-    </div>
+    </>
   );
 };
 

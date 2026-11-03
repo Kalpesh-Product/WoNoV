@@ -306,12 +306,8 @@ const RecievedTickets = ({ title, departmentId }) => {
         </span>
       </div>
       <div className="w-full">
-        {isLoading ? (
-          <div className="w-full h-full flex justify-center items-center">
-            <CircularProgress color="black" />
-          </div>
-        ) : (
           <AgTable
+            loading={isLoading}
             dateColumn="raisedDate"
             key={rows.length}
             data={rows ? rows : []}
@@ -320,7 +316,6 @@ const RecievedTickets = ({ title, departmentId }) => {
             columns={recievedTicketsColumns}
             search
           />
-        )}
       </div>
       <MuiModal
         open={openView}

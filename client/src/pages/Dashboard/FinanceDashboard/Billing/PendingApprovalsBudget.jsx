@@ -31,13 +31,17 @@ const canUseBulkApprove = (user) =>
         String(department?._id || department),
       ) ||
       ["tech department", "finance department"].includes(
-        String(department?.name || "").trim().toLowerCase(),
+        String(department?.name || "")
+          .trim()
+          .toLowerCase(),
       ),
   );
 
 const BudgetViewDetail = ({ detail, ...props }) => {
-  const isMissing = detail == null ||
-    (typeof detail === "string" && ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
+  const isMissing =
+    detail == null ||
+    (typeof detail === "string" &&
+      ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
   return <DetalisFormatted {...props} detail={isMissing ? "\u2014" : detail} />;
 };
 
@@ -45,32 +49,35 @@ const PendingApprovalsBudget = () => {
   const navigate = useNavigate();
   const { auth } = useAuth();
   const isApprovalAdmin = (auth?.user?.role || []).some((role) =>
-    ["master admin", "super admin"].includes(String(role?.roleTitle || role).trim().toLowerCase()),
+    ["master admin", "super admin"].includes(
+      String(role?.roleTitle || role)
+        .trim()
+        .toLowerCase(),
+    ),
   );
-  const canUseBulkBudgetActions = canUseBulkApprove(auth?.user) || isApprovalAdmin;
+  const canUseBulkBudgetActions =
+    canUseBulkApprove(auth?.user) || isApprovalAdmin;
   const [modalOpen, setModalOpen] = useState(false);
   const [modalType, setModalType] = useState("");
   const [selectedBudget, setSelectedBudget] = useState([]);
   const axios = useAxiosPrivate();
   const cellClasses = "border border-black p-2 text-xs align-top";
   const tableClasses = "w-full border border-black border-collapse mb-5";
-  const { data: pendingApprovals = [] } = useQuery(
-    {
-      queryKey: ["pendingApprovalsBudget"],
-      queryFn: async () => {
-        try {
-          const response = await axios.get(`/api/budget/pending-approvals`);
-          const budgets = response.data.allBudgets;
-          return Array.isArray(budgets)
-            ? budgets.filter((budget) => budget.expanseType !== "Reimbursement")
-            : [];
-        } catch (error) {
-          console.error("Error fetching budget:", error);
-          return [];
-        }
-      },
-    }
-  );
+  const { data: pendingApprovals = [] } = useQuery({
+    queryKey: ["pendingApprovalsBudget"],
+    queryFn: async () => {
+      try {
+        const response = await axios.get(`/api/budget/pending-approvals`);
+        const budgets = response.data.allBudgets;
+        return Array.isArray(budgets)
+          ? budgets.filter((budget) => budget.expanseType !== "Reimbursement")
+          : [];
+      } catch (error) {
+        console.error("Error fetching budget:", error);
+        return [];
+      }
+    },
+  });
   const {
     handleSubmit: reasonSubmit,
     control,
@@ -90,7 +97,7 @@ const PendingApprovalsBudget = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/budget/reject-budget/${selectedBudget._id}`,
-        data
+        data,
       );
       return response.data;
     },
@@ -99,14 +106,21 @@ const PendingApprovalsBudget = () => {
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
       queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
-      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
+      queryClient.invalidateQueries({
+        queryKey: ["budgetData", "finance-dashboard1"],
+        refetchType: "all",
+      });
       reset();
       navigate(
-        "/app/dashboard/finance-dashboard/billing/budget-request/budget-history"
+        "/app/dashboard/finance-dashboard/billing/budget-request/budget-history",
       );
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || error.message || "FAILED TO REJECT REQUEST");
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "FAILED TO REJECT REQUEST",
+      );
     },
   });
 
@@ -125,7 +139,10 @@ const PendingApprovalsBudget = () => {
       queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
       queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
       queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
-      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
+      queryClient.invalidateQueries({
+        queryKey: ["budgetData", "finance-dashboard1"],
+        refetchType: "all",
+      });
       reset();
     },
     onError: (error) => {
@@ -137,7 +154,10 @@ const PendingApprovalsBudget = () => {
     useMutation({
       mutationKey: ["bulkApproveBudget"],
       mutationFn: async (selectedRows) => {
-        if (selectedRows.some((row) => !row.canApproveBudget)) throw new Error("Selection contains budgets requiring another approval level" );
+        if (selectedRows.some((row) => !row.canApproveBudget))
+          throw new Error(
+            "Selection contains budgets requiring another approval level",
+          );
         const budgetIds = selectedRows.map((row) => row._id).filter(Boolean);
 
         if (!budgetIds.length) {
@@ -159,11 +179,18 @@ const PendingApprovalsBudget = () => {
         queryClient.invalidateQueries({ queryKey: ["pendingApprovalsBudget"] });
         queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
         queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
-      queryClient.invalidateQueries({ queryKey: ["budgetData", "finance-dashboard1"], refetchType: "all" });
+        queryClient.invalidateQueries({
+          queryKey: ["budgetData", "finance-dashboard1"],
+          refetchType: "all",
+        });
         reset();
       },
       onError: (error) => {
-        toast.error(error.response?.data?.message || error.message || "FAILED TO APPROVE SELECTED REQUESTS");
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "FAILED TO APPROVE SELECTED REQUESTS",
+        );
       },
     });
 
@@ -194,7 +221,13 @@ const PendingApprovalsBudget = () => {
       headerName: "Due Date",
       valueFormatter: (params) => humanDate(params.value),
     },
-    { field: "status", headerName: "Approval Status", pinned: "right", width: 150, cellRenderer: (params) => <StatusChip status={params.value} />},
+    {
+      field: "status",
+      headerName: "Approval Status",
+      pinned: "right",
+      width: 150,
+      cellRenderer: (params) => <StatusChip status={params.value} />,
+    },
     {
       field: "actions",
       headerName: "Actions",
@@ -212,7 +245,13 @@ const PendingApprovalsBudget = () => {
                 <MdOutlineRemoveRedEye
                   className="cursor-pointer text-lg"
                   onClick={() => {
-                    setSelectedBudget({ ...params.data, srNo: params.node?.rowIndex == null ? params.data.srNo : params.node.rowIndex + 1 });
+                    setSelectedBudget({
+                      ...params.data,
+                      srNo:
+                        params.node?.rowIndex == null
+                          ? params.data.srNo
+                          : params.node.rowIndex + 1,
+                    });
                     setModalType("view");
                     setModalOpen(true);
                   }}
@@ -237,7 +276,9 @@ const PendingApprovalsBudget = () => {
                     },
                   ]}
                 />
-                <span className="text-xs font-semibold text-[#1E3D73]">{params.data.approvalLevel}</span>
+                <span className="text-xs font-semibold text-[#1E3D73]">
+                  {params.data.approvalLevel}
+                </span>
               </div>
             )}
           </>
@@ -270,9 +311,10 @@ const PendingApprovalsBudget = () => {
             canUseBulkBudgetActions
               ? isBulkApprovePending
                 ? "Approving..."
-                : "Approve All"
+                : "Approve"
               : undefined
           }
+          batchButtonPosition="aboveFilter"
           handleBatchAction={(selectedRows) => {
             if (!canUseBulkBudgetActions || isBulkApprovePending) return;
             approveSelectedRequests(selectedRows);
@@ -283,7 +325,7 @@ const PendingApprovalsBudget = () => {
         <MuiModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-         title={
+          title={
             <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
               Pending Approvals Budget Summary
             </span>
@@ -335,9 +377,17 @@ const PendingApprovalsBudget = () => {
                 detail={selectedBudget.expanseType}
               />
               <BudgetViewDetail
-              title="Payment Type"
-              detail={selectedBudget.paymentType || "-"}
-            />
+                title="Vendor"
+                detail={
+                  selectedBudget.vendor?.companyName ||
+                  selectedBudget.vendor?.name ||
+                  "-"
+                }
+              />
+              <BudgetViewDetail
+                title="Payment Type"
+                detail={selectedBudget.paymentType || "-"}
+              />
               <BudgetViewDetail
                 title="ProjectedAmount"
                 detail={`INR ${inrFormat(selectedBudget.projectedAmount)}`}
@@ -348,7 +398,10 @@ const PendingApprovalsBudget = () => {
                 // detail={selectedBudget.actualAmount?.toLocaleString()}
               />
               {/* <BudgetViewDetail title="GSTIN" detail={selectedBudget.gstIn} /> */}
-              <BudgetViewDetail title="Approval Status" detail={selectedBudget.status} />
+              <BudgetViewDetail
+                title="Approval Status"
+                detail={selectedBudget.status}
+              />
               <BudgetViewDetail
                 title="Paid Status"
                 detail={selectedBudget.isPaid}
@@ -423,7 +476,10 @@ const PendingApprovalsBudget = () => {
                 title="Due Date"
                 detail={humanDate(selectedBudget.dueDate)}
               />
-              <BudgetViewDetail title="Level" detail={selectedBudget.approvalLevel} />
+              <BudgetViewDetail
+                title="Level"
+                detail={selectedBudget.approvalLevel}
+              />
             </div>
           )}
           {modalType === "review" && (
@@ -447,10 +503,10 @@ const PendingApprovalsBudget = () => {
                   FY{" "}
                   {new Date().getMonth() + 1 >= 4
                     ? `${String(new Date().getFullYear()).slice(2)}-${String(
-                        new Date().getFullYear() + 1
+                        new Date().getFullYear() + 1,
                       ).slice(2)}`
                     : `${String(new Date().getFullYear() - 1).slice(
-                        2
+                        2,
                       )}-${String(new Date().getFullYear()).slice(2)}`}
                 </div>
 
@@ -512,7 +568,7 @@ const PendingApprovalsBudget = () => {
                           ?.reduce(
                             (sum, item) =>
                               sum + Number(item.particularAmount || 0),
-                            0
+                            0,
                           )
                           .toFixed(0)}
                       </td>
@@ -623,7 +679,6 @@ const PendingApprovalsBudget = () => {
 
 export default PendingApprovalsBudget;
 
-
 // import React, { useEffect, useState } from "react";
 // import AgTable from "../../../../components/AgTable";
 // import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -639,7 +694,7 @@ export default PendingApprovalsBudget;
 // import { toast } from "sonner";
 // import { queryClient } from "../../../../main";
 // import { IoCloseCircleOutline } from "react-icons/io5";
-// 
+//
 // import { useDispatch } from "react-redux";
 // import { setVoucherDetails } from "../../../../redux/slices/financeSlice";
 // import PageFrame from "../../../../components/Pages/PageFrame";

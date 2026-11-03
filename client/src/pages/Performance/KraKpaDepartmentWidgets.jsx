@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import Chart from "react-apexcharts";
 import WidgetSection from "../../components/WidgetSection";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 
 const INCLUDED_DEPARTMENTS = new Set([
@@ -99,9 +100,13 @@ const baseOptions = (categories, yAxisTitle, maximum) => ({
   tooltip: { shared: true, intersect: false },
 });
 
-const ChartWidget = ({ title, type = "bar", series, options }) => (
+const ChartWidget = ({ title, type = "bar", series, options, loading }) => (
   <WidgetSection border title={title}>
-    <Chart type={type} height={310} series={series} options={options} />
+    {loading ? (
+      <PerformanceChartSkeleton variant={type === "donut" ? "donut" : "bar"} height="h-[310px]" />
+    ) : (
+      <Chart type={type} height={310} series={series} options={options} />
+    )}
   </WidgetSection>
 );
 
@@ -311,14 +316,6 @@ const KraKpaDepartmentWidgets = ({
     baseOptions(categories, title, 100);
   const loading = departmentsLoading || kpasLoading || dailyLogsLoading;
 
-  if (loading) {
-    return (
-      <div className="flex min-h-60 items-center justify-center">
-        <CircularProgress />
-      </div>
-    );
-  }
-
   return (
     <section className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-300 bg-white p-4">
@@ -358,16 +355,19 @@ const KraKpaDepartmentWidgets = ({
             ...baseOptions(MONTH_LABELS, "Number of KPAs"),
             chart: { ...baseOptions(MONTH_LABELS).chart, stacked: true },
           }}
+          loading={loading}
         />
         <ChartWidget
           title="Department Performance Comparison"
           series={[{ name: "Performance", data: metrics.departments.map((item) => item.summary.performance) }]}
           options={percentOptions(departmentNames, "Performance")}
+          loading={loading}
         />
         <ChartWidget
           title="Department KPA Completion Rate"
           series={[{ name: "Completion", data: metrics.departments.map((item) => item.summary.kpaCompletion) }]}
           options={percentOptions(departmentNames, "Completion")}
+          loading={loading}
         />
         <ChartWidget
           title="On-Time vs Delayed Completion"
@@ -380,11 +380,13 @@ const KraKpaDepartmentWidgets = ({
             legend: { position: "bottom" },
             noData: { text: "No completed KPAs in this period" },
           }}
+          loading={loading}
         />
         <ChartWidget
           title="KPA Rating Comparison"
           series={[{ name: "Final KPA Rating", data: metrics.departments.map((item) => item.summary.rating) }]}
           options={percentOptions(departmentNames, "Rating")}
+          loading={loading}
         />
         <ChartWidget
           title="Daily Work Completion Trend"
@@ -394,6 +396,7 @@ const KraKpaDepartmentWidgets = ({
             { name: "Carried Forward", data: metrics.monthly.map((item) => item.carriedLogs) },
           ]}
           options={baseOptions(MONTH_LABELS, "Daily Tasks")}
+          loading={loading}
         />
         <ChartWidget
           title="Performance Trend by Department"
@@ -403,6 +406,7 @@ const KraKpaDepartmentWidgets = ({
             data: department.monthlySummary.map((item) => item.performance),
           }))}
           options={percentOptions(MONTH_LABELS, "Performance")}
+          loading={loading}
         />
         <ChartWidget
           title="KRA and KPA Completion Overview"
@@ -414,6 +418,7 @@ const KraKpaDepartmentWidgets = ({
             ...baseOptions(["KRA", "KPA"], "Number of Records"),
             chart: { ...baseOptions(["KRA", "KPA"]).chart, stacked: true },
           }}
+          loading={loading}
         />
       </div>
     </section>

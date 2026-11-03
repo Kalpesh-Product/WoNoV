@@ -2,9 +2,7 @@ import MeetingPaymentDetails from "../../components/MeetingPaymentDetails";
 import { isMeetingVisit } from "../../utils/isMeetingVisit";
 import DayPassPaymentDetails from "../../components/DayPassPaymentDetails";
 import { getDayPassPaymentDetails } from "../../utils/dayPassPaymentDetails";
-import AgTable from "../../components/AgTable";
-import { Chip } from "@mui/material";
-import PrimaryButton from "../../components/PrimaryButton";
+import { Tab, Tabs } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
@@ -12,11 +10,10 @@ import humanTime from "../../utils/humanTime";
 import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
-import formatDateTime, {
-  formatDateTimeFields,
-} from "../../utils/formatDateTime";
+import { formatDateTimeFields } from "../../utils/formatDateTime";
 import { State } from "country-state-city";
 import dayjs from "dayjs";
 import {
@@ -71,6 +68,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
   const axios = useAxiosPrivate();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedVisitor, setSelectedVisitor] = useState(null);
+  const [activeTab, setActiveTab] = useState(0);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: DEFAULT_PAGE_SIZE,
@@ -152,7 +150,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
     return () => clearTimeout(timeoutId);
   }, [visitorSearch]);
 
-  const { data: visitorsData = [], isPending: isVisitorsData } = useQuery({
+  const { data: visitorReportResponse, isPending: isVisitorsData } = useQuery({
     queryKey: [
       "visitor-reports",
       visitorFilters.startDate,
@@ -160,7 +158,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
       pagination.page,
       pagination.limit,
       debouncedVisitorSearch,
-      dayPassOnly,
+      activeTab,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
@@ -170,20 +168,35 @@ const VisitorReports = ({ dayPassOnly = false }) => {
           limit: pagination.limit,
           search: debouncedVisitorSearch || undefined,
           searchContext: "visitor-reports",
-          ...(dayPassOnly && { type: "day-pass" }),
+          visitScope: activeTab === 1 ? "meeting" : undefined,
         },
       });
-      const responsePagination = response.data.pagination || response.data;
+      return response.data;
+    },
+  });
 
-      setPagination((current) => ({
+  const visitorsData = Array.isArray(visitorReportResponse)
+    ? visitorReportResponse
+    : visitorReportResponse?.data || [];
+
+  useEffect(() => {
+    const responsePagination = visitorReportResponse?.pagination;
+    if (!responsePagination) return;
+
+    setPagination((current) => {
+      const nextPagination = {
         page: Number(responsePagination.page) || current.page,
         limit: Number(responsePagination.limit) || current.limit,
         total: Number(responsePagination.total) || 0,
-      }));
+      };
 
-      return response.data.data || [];
-    },
-  });
+      return current.page === nextPagination.page &&
+        current.limit === nextPagination.limit &&
+        current.total === nextPagination.total
+        ? current
+        : nextPagination;
+    });
+  }, [visitorReportResponse]);
 
   const handleDetailsClick = (visitor) => {
     setSelectedVisitor(formatDateTimeFields(visitor));
@@ -301,6 +314,66 @@ const VisitorReports = ({ dayPassOnly = false }) => {
     // },
   ];
 
+  const meetingVisitsColumns = [
+    { field: "srNo", headerName: "Sr No", width: 90 },
+    {
+      field: "name",
+      headerName: "Visitor Name",
+      minWidth: 180,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          className="cursor-pointer text-primary underline"
+          onClick={() => handleDetailsClick(params.data)}
+        >
+          {params.value}
+        </button>
+      ),
+    },
+    {
+      field: "registeredClientCompany",
+      headerName: "Client Company",
+      minWidth: 180,
+    },
+    { field: "phone", headerName: "Phone No", minWidth: 140 },
+    {
+      field: "meetingSubject",
+      headerName: "Meeting Subject",
+      minWidth: 200,
+    },
+    {
+      field: "meetingAgenda",
+      headerName: "Meeting Agenda",
+      minWidth: 200,
+    },
+    { field: "meetingRoom", headerName: "Meeting Room", minWidth: 150 },
+    { field: "meetingBuilding", headerName: "Building", minWidth: 150 },
+    { field: "meetingUnit", headerName: "Unit", minWidth: 140 },
+    { field: "meetingDate", headerName: "Meeting Date", minWidth: 140 },
+    {
+      field: "meetingStartTime",
+      headerName: "Start Time",
+      minWidth: 130,
+    },
+    { field: "meetingEndTime", headerName: "End Time", minWidth: 130 },
+    {
+      field: "meetingStatus",
+      headerName: "Meeting Status",
+      minWidth: 150,
+    },
+    { field: "meetingType", headerName: "Meeting Type", minWidth: 140 },
+    { field: "checkInTime", headerName: "Check In Time", minWidth: 140 },
+    { field: "checkOutTime", headerName: "Check Out Time", minWidth: 150 },
+    { field: "paymentStatus", headerName: "Payment Status", minWidth: 150 },
+    {
+      field: "paymentVerification",
+      headerName: "Payment Verification",
+      minWidth: 180,
+    },
+    { field: "paymentMode", headerName: "Payment Mode", minWidth: 140 },
+    { field: "totalAmount", headerName: "Total Amount", minWidth: 140 },
+  ];
+
   // Format table rows for AgTable
 
   // const rows = visitorsData.map((visitor, index) => ({
@@ -341,6 +414,15 @@ const VisitorReports = ({ dayPassOnly = false }) => {
     })[0];
 
     const paymentSource = latestVisit || visitor;
+    const meeting = paymentSource?.meeting || visitor?.meeting || null;
+    const meetingRoom = meeting?.bookedRoom || null;
+    const meetingLocation = meetingRoom?.location || null;
+    const effectiveMeetingEndTime =
+      meeting?.extendTime &&
+      new Date(meeting.extendTime).getTime() >
+        new Date(meeting?.endTime || 0).getTime()
+        ? meeting.extendTime
+        : meeting?.endTime;
     const toMeetName = visitor.toMeet
       ? `${visitor.toMeet?.firstName} ${visitor.toMeet?.lastName}`
       : visitor.clientToMeet
@@ -401,16 +483,26 @@ const VisitorReports = ({ dayPassOnly = false }) => {
       gstNumber: visitor.gstNumber || "-",
       checkIn: visitor.checkIn,
       checkInDate: formatDateValue(visitor.checkIn),
-      checkInTime: formatTimeValue(visitor.checkIn),
+      checkInTime:
+        visitor.checkIn || activeTab === 0
+          ? formatTimeValue(visitor.checkIn)
+          : "Not recorded",
       checkInBy: visitor.checkedInBy
         ? `${visitor.checkedInBy.firstName} ${visitor.checkedInBy.lastName}`
-        : "-",
+        : activeTab === 1
+          ? "Not recorded"
+          : "-",
       checkOut: visitor.checkOut,
       checkOutDate: formatDateValue(visitor.checkOut),
-      checkOutTime: formatTimeValue(visitor.checkOut),
+      checkOutTime:
+        visitor.checkOut || activeTab === 0
+          ? formatTimeValue(visitor.checkOut)
+          : "Not recorded",
       checkOutBy: visitor.checkedOutBy
         ? `${visitor.checkedOutBy.firstName} ${visitor.checkedOutBy.lastName}`
-        : "-",
+        : activeTab === 1
+          ? "Not recorded"
+          : "-",
       rawData: visitor, // Pass full object for modal
       visitorFlag: visitor.visitorFlag || "-",
       visitorType: visitor.visitorType || "-",
@@ -424,6 +516,32 @@ const VisitorReports = ({ dayPassOnly = false }) => {
       panFile: visitor?.panFile?.link,
       isMeeting: isMeetingVisit(paymentSource),
       meetingPaymentDetails: paymentSource.meetingPaymentDetails,
+      meeting,
+      meetingSubject: meeting?.subject || "-",
+      meetingAgenda: meeting?.agenda || "-",
+      meetingRoom: meetingRoom?.name || "-",
+      meetingBuilding: meetingLocation?.building?.buildingName || "-",
+      meetingUnit:
+        meetingLocation?.unitNo || meetingLocation?.unitName
+          ? [meetingLocation?.unitNo, meetingLocation?.unitName]
+              .filter(Boolean)
+              .join(" - ")
+          : "-",
+      meetingDate: formatDateValue(meeting?.startDate || meeting?.startTime),
+      meetingStartTime: formatTimeValue(meeting?.startTime),
+      meetingEndTime: formatTimeValue(effectiveMeetingEndTime),
+      meetingStatus: meeting?.status || "-",
+      meetingType: meeting?.meetingType || "-",
+      meetingParticipants: Array.isArray(meeting?.externalParticipants)
+        ? meeting.externalParticipants
+            .map((participant) =>
+              [participant?.name, participant?.mobileNumber]
+                .filter(Boolean)
+                .join(" - "),
+            )
+            .filter(Boolean)
+            .join(", ") || "-"
+        : "-",
       paymentDetails: getDayPassPaymentDetails(paymentSource),
       paymentAmount:
         paymentSource?.amount ??
@@ -434,7 +552,8 @@ const VisitorReports = ({ dayPassOnly = false }) => {
       taxableAmount:
         paymentSource?.amount != null
           ? Math.max(
-              Number(paymentSource.amount) - Number(paymentSource.discount ?? 0),
+              Number(paymentSource.amount) -
+                Number(paymentSource.discount ?? 0),
               0,
             )
           : "-",
@@ -456,24 +575,64 @@ const VisitorReports = ({ dayPassOnly = false }) => {
         visitor?.paymentProof?.url ||
         visitor?.paymentProof?.link ||
         "-",
-      registeredClientCompany: visitor?.registeredClientCompany || "-",
+      registeredClientCompany:
+        visitor?.registeredClientCompany ||
+        visitor?.visitorCompany ||
+        visitor?.brandName ||
+        "-",
     };
   });
 
   return (
-    <div className="flex flex-col gap-8 p-4">
+    <div className="flex flex-col gap-4 p-4">
+      <Tabs
+        value={activeTab}
+        onChange={(_, value) => {
+          setActiveTab(value);
+          setPagination((current) => ({ ...current, page: 1, total: 0 }));
+        }}
+        variant="fullWidth"
+        TabIndicatorProps={{ style: { display: "none" } }}
+        sx={{
+          backgroundColor: "white",
+          borderRadius: 2,
+          border: "1px solid #d1d5db",
+          overflow: "hidden",
+          "& .MuiTab-root": {
+            textTransform: "none",
+            fontWeight: 500,
+            padding: "12px 16px",
+            color: "#1E3D73",
+            borderRight: "1px solid #d1d5db",
+          },
+          "& .MuiTab-root:last-of-type": {
+            borderRight: "none",
+          },
+          "& .Mui-selected": {
+            backgroundColor: "#1E3D73",
+            color: "white !important",
+          },
+        }}
+      >
+        <Tab label="All Visits" />
+        <Tab label="Meeting Visits" />
+      </Tabs>
+
       <PageFrame>
         <div>
           <YearWiseTable
+            key={activeTab}
             exportData
             dateColumn={"checkIn"}
             initialDateRange={initialVisitorDateRange}
             onDateFilterChange={handleVisitorDateFilterChange}
             search={true}
             searchColumn={"name"}
-            tableTitle={dayPassOnly ? "Day Pass Visitor Reports" : "Visitor Reports"}
+            tableTitle={activeTab === 0 ? "All Visits" : "Meeting Visits"}
             data={rows}
-            columns={meetingReportsColumn}
+            columns={
+              activeTab === 0 ? meetingReportsColumn : meetingVisitsColumns
+            }
             loading={isVisitorsData}
             serverPagination
             pageSizeOptions={PAGE_SIZE_OPTIONS}
@@ -671,16 +830,67 @@ const VisitorReports = ({ dayPassOnly = false }) => {
               title="Scheduled Date"
               detail={selectedVisitor.scheduledDate}
             />
-            {(selectedVisitor.isMeeting || selectedVisitor.visitorFlag === "Client" ||
+            {selectedVisitor.isMeeting && selectedVisitor.meeting && (
+              <>
+                <br />
+                <div className="font-bold">Meeting Details</div>
+                <DetalisFormatted
+                  title="Subject"
+                  detail={selectedVisitor.meetingSubject}
+                />
+                <DetalisFormatted
+                  title="Agenda"
+                  detail={selectedVisitor.meetingAgenda}
+                />
+                <DetalisFormatted
+                  title="Meeting Room"
+                  detail={selectedVisitor.meetingRoom}
+                />
+                <DetalisFormatted
+                  title="Building"
+                  detail={selectedVisitor.meetingBuilding}
+                />
+                <DetalisFormatted
+                  title="Unit"
+                  detail={selectedVisitor.meetingUnit}
+                />
+                <DetalisFormatted
+                  title="Meeting Date"
+                  detail={selectedVisitor.meetingDate}
+                />
+                <MeetingTimeDetails
+                  startTime={selectedVisitor.meeting.startTime}
+                  endTime={selectedVisitor.meeting.endTime}
+                  extendTime={selectedVisitor.meeting.extendTime}
+                />
+                <DetalisFormatted
+                  title="Meeting Status"
+                  detail={selectedVisitor.meetingStatus}
+                />
+                <DetalisFormatted
+                  title="Meeting Type"
+                  detail={selectedVisitor.meetingType}
+                />
+                <DetalisFormatted
+                  title="External Participants"
+                  detail={selectedVisitor.meetingParticipants}
+                />
+              </>
+            )}
+            {(selectedVisitor.isMeeting ||
+              selectedVisitor.visitorFlag === "Client" ||
               ["Full-Day Pass", "Half-Day Pass", "Meeting"].includes(
                 selectedVisitor.visitorType,
-              )) && (
-              selectedVisitor.isMeeting ? (
-                <MeetingPaymentDetails revenue={selectedVisitor.meetingPaymentDetails} />
+              )) &&
+              (selectedVisitor.isMeeting ? (
+                <MeetingPaymentDetails
+                  revenue={selectedVisitor.meetingPaymentDetails}
+                />
               ) : (
-                <DayPassPaymentDetails revenue={selectedVisitor.paymentDetails} />
-              )
-            )}
+                <DayPassPaymentDetails
+                  revenue={selectedVisitor.paymentDetails}
+                />
+              ))}
             {selectedVisitor.rawData?.image?.url && (
               <div className="lg:col-span-2">
                 <img

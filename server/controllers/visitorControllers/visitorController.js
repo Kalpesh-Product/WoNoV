@@ -77,6 +77,7 @@ async function fetchVisitors(req, res, next) {
       visitorFlag: req.query?.visitorFlag,
       search: req.query?.search,
       searchContext: req.query?.searchContext,
+      visitScope: req.query?.visitScope,
       multipleVisits: req.query?.multipleVisits === "true",
       includeVisitCounts: req.query?.includeVisitCounts === "true",
       dateFilter: buildDateFilter({

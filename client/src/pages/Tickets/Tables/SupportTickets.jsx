@@ -559,6 +559,7 @@ const SupportTickets = ({
       <div className="w-full">
         {!isClosingTicket ? (
           <AgTable
+            loading={isLoading}
             dateColumn="supportRequestedAt"
             key={rows.length}
             data={rows}

@@ -64,7 +64,7 @@ const HrReportDirectory = () => {
       </h1>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-        {reportSections.map((section) => (
+        {reportSections.map((section, sectionIndex) => (
           <section
             key={section.title}
             className="min-h-[22rem] rounded-lg border border-gray-200 bg-white shadow-sm"
@@ -93,7 +93,9 @@ const HrReportDirectory = () => {
                     aria-hidden="true"
                     className="shrink-0 text-base"
                   />
-                  <span>{report}</span>
+                  <span className={sectionIndex < 2 ? "text-black" : undefined}>
+                    {report}
+                  </span>
                 </button>
               ))}
             </div>

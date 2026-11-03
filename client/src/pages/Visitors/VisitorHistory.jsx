@@ -340,6 +340,7 @@ const VisitorHistory = () => {
         <AgTable
           data={rows}
           columns={columns}
+          loading={isPending}
           search
           exportData
           processExportCell={(params) =>
@@ -350,7 +351,6 @@ const VisitorHistory = () => {
           tableHeight={480}
         />
       )}
-      {isPending && <p className="p-4 text-content">Loading history...</p>}
 
       <MuiModal
         open={Boolean(selectedVisit)}

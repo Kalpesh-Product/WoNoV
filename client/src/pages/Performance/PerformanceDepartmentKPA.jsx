@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Chip } from "@mui/material";
 import WidgetSection from "../../components/WidgetSection";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import AgTable from "../../components/AgTable";
 import SecondaryButton from "../../components/SecondaryButton";
 import PrimaryButton from "../../components/PrimaryButton";
@@ -56,7 +57,7 @@ const PerformanceDepartmentKPA = () => {
         initialMonthIndex !== -1 ? initialMonthIndex : 0
     );
 
-    const { data: kpaTasksRaw = [] } = useQuery({
+    const { data: kpaTasksRaw = [], isLoading: isKpaTasksLoading } = useQuery({
         queryKey: ["performanceKpaTasks"],
         queryFn: async () => {
             const response = await axios.get("/api/performance/get-kpa-tasks");
@@ -192,7 +193,9 @@ const PerformanceDepartmentKPA = () => {
                 TitleAmountTotal={tasksData.length || 0}
                 totalTitle="Total"
             >
-                <NormalBarGraph data={graphData} options={graphOptions} year={false} height={350} />
+                {isKpaTasksLoading ? (
+                    <PerformanceChartSkeleton variant="bar" height="h-[350px]" />
+                ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={350} />}
             </WidgetSection>
 
             <WidgetSection
@@ -224,7 +227,15 @@ const PerformanceDepartmentKPA = () => {
                     />
                 </div>
 
-                {filteredTasks.length === 0 ? (
+                {isKpaTasksLoading ? (
+                    <AgTable
+                        tableHeight={300}
+                        hideFilter={false}
+                        columns={tasksColumns}
+                        data={[]}
+                        loading
+                    />
+                ) : filteredTasks.length === 0 ? (
                     <div className="text-center flex justify-center items-center py-8 text-gray-500 h-80">
                         No data available
                     </div>

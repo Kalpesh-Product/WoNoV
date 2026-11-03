@@ -15,6 +15,8 @@ const TableDateFilter = ({
   onChange,
   showPlaceholders = false,
   showFieldSelector = false,
+  showClearButton = true,
+  maxDate,
 }) => {
   const [anchor, setAnchor] = useState(null);
   const unavailable = !fields.length;
@@ -51,29 +53,29 @@ const TableDateFilter = ({
           ))}
         </TextField>
       )}
-      <span className="whitespace-nowrap rounded-md border border-primary px-6 py-1 text-content text-gray-600">
-        {showPlaceholders && !range
-          ? "Start date"
-          : dayjs(rangeValue.startDate).format("DD MMM YYYY")}
-      </span>
-      <span className="whitespace-nowrap rounded-md border border-primary px-6 py-1 text-content text-gray-600">
-        {showPlaceholders && !range
-          ? "End date"
-          : dayjs(rangeValue.endDate).format("DD MMM YYYY")}
-      </span>
-      <IconButton
+      <div className="whitespace-nowrap rounded-md border-[1px] border-primary px-6 py-1">
+        <span className="text-content font-pregular text-gray-600">
+          {showPlaceholders && !range
+            ? "Start date"
+            : dayjs(rangeValue.startDate).format("DD MMM YYYY")}
+        </span>
+      </div>
+      <div className="whitespace-nowrap rounded-md border-[1px] border-primary px-6 py-1">
+        <span className="text-content font-pregular text-gray-600">
+          {showPlaceholders && !range
+            ? "End date"
+            : dayjs(rangeValue.endDate).format("DD MMM YYYY")}
+        </span>
+      </div>
+      <button
+        type="button"
         aria-label="Select date range"
         onClick={(event) => setAnchor(event.currentTarget)}
-        sx={{
-          borderRadius: 1,
-          bgcolor: "#1E3D73",
-          color: "white",
-          "&:hover": { bgcolor: "#16345f" },
-        }}
+        className="cursor-pointer rounded-md bg-primary p-2 text-white hover:bg-[#1E3D55]"
       >
         <MdCalendarToday size={19} color="#ffffff" />
-      </IconButton>
-      {range && (
+      </button>
+      {showClearButton && range && (
         <IconButton
           aria-label="Clear date filter"
           title="Show all dates"
@@ -99,6 +101,7 @@ const TableDateFilter = ({
           onChange={({ selection }) => onChange(selection)}
           moveRangeOnFirstSelection={false}
           direction="vertical"
+          maxDate={maxDate}
         />
       </Popover>
     </div>

@@ -1,0 +1,36 @@
+export const STATUS_COLOR_MAP = {
+  pending: { backgroundColor: "#FFECC5", color: "#CC8400" },
+  "in progress": { backgroundColor: "#FFECC5", color: "#CC8400" },
+  "yet to start": { backgroundColor: "#D9EEFF", color: "#1976D2" },
+  "on hold": { backgroundColor: "#FFD9DE", color: "#D6455D" },
+  resolved: { backgroundColor: "#90EE90", color: "#006400" },
+  active: { backgroundColor: "#90EE90", color: "#006400" },
+  inactive: { backgroundColor: "#FF9F93", color: "#B71C1C" },
+  disabled: { backgroundColor: "#D3D3D3", color: "#666666" },
+  total: { backgroundColor: "#dbe4ff", color: "#26457d" },
+  open: { backgroundColor: "#FF9F93", color: "#B71C1C" },
+  completed: { backgroundColor: "#D4F8D4", color: "#0A7A0A" },
+  approved: { backgroundColor: "#90EE90", color: "#006400" },
+  paid: { backgroundColor: "#90EE90", color: "#006400" },
+  unpaid: { backgroundColor: "#FDECEA", color: "#B71C1C" },
+  "upload invoice": { backgroundColor: "#FFF4E5", color: "#9A6700" },
+  verified: { backgroundColor: "#E8F5E9", color: "#1B5E20" },
+  closed: { backgroundColor: "#90EE90", color: "#006400" },
+  rejected: { backgroundColor: "#FFCCCC", color: "#B22222" },
+  revoked: { backgroundColor: "#EADCFD", color: "#6B3FA0" },
+  upcoming: { backgroundColor: "#E3F2FD", color: "#1565C0" },
+  assigned: { backgroundColor: "#90EE90", color: "#006400" },
+  ongoing: { backgroundColor: "#FFF3E0", color: "#E65100" },
+  extended: { backgroundColor: "#EDE9FE", color: "#6D28D9" },
+  cancelled: { backgroundColor: "#FDECEA", color: "#B71C1C" },
+  canceled: { backgroundColor: "#FDECEA", color: "#B71C1C" },
+  available: { backgroundColor: "#E3F2FD", color: "#0D47A1" },
+  occupied: { backgroundColor: "#ECEFF1", color: "#37474F" },
+  cleaning: { backgroundColor: "#E0F2F1", color: "#00796B" },
+};
+
+export const getStatusColors = (status) =>
+  STATUS_COLOR_MAP[String(status || "").trim().toLowerCase()] || {
+    backgroundColor: "gray",
+    color: "white",
+  };

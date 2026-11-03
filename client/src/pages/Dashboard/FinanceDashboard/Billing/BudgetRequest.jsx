@@ -17,6 +17,11 @@ const BudgetRequest = () => {
       //permission: PERMISSIONS.FINANCE_BILLING_PENDING_APPROVALS.value,
     },
     {
+      label: "Manage Budgets",
+      path: "manage-budgets",
+      permission: PERMISSIONS.FINANCE_BILLING_BUDGET_HISTORY.value,
+    },
+    {
       label: "Budget History",
       path: "budget-history",
       permission: PERMISSIONS.FINANCE_BILLING_BUDGET_HISTORY.value,

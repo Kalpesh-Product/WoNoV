@@ -16,6 +16,7 @@ const FinanceCard = ({
   hideDividerAfter = [],
   hideLastDivider = false,
   centerContent = false,
+  loading = false,
 }) => {
   const navigate = useNavigate();
   const hasSectionColors = Boolean(sectionColors);
@@ -87,7 +88,19 @@ const FinanceCard = ({
           hasSectionColors ? "flex flex-col grow" : "flex flex-col gap-2"
         }
       >
-        {descriptionData.map((item, index) => {
+        {loading ? (
+          <div className="flex flex-col gap-3 px-1 py-2" aria-label="Loading card data">
+            {descriptionData.map((item, index) => (
+              <div key={item.title || index}>
+                <div className="flex items-center justify-between gap-4 py-1">
+                  <span className="h-4 w-2/5 animate-pulse rounded bg-gray-200" />
+                  <span className="h-6 w-12 animate-pulse rounded bg-gray-200" />
+                </div>
+                {index < descriptionData.length - 1 && <hr className="border-dotted border-b-default" />}
+              </div>
+            ))}
+          </div>
+        ) : descriptionData.map((item, index) => {
           const isLink = !disableLinks && item.route && item.route !== "#";
           const numericValue =
             typeof item.value === "number"

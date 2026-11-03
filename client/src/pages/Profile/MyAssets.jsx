@@ -73,6 +73,7 @@ const MyAssets = ({ pageTitle }) => {
         </div>
         <div className=" w-full">
           <AgTable
+            loading={isAssetsListPending}
             data={tableData}
             columns={assetsColumns}
             dateColumn="assignmentRequestedAt"

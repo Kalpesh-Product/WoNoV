@@ -402,8 +402,8 @@ const TicketReports = () => {
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          {!isLoading ? (
-            <YearWiseTable
+          <YearWiseTable
+              loading={isLoading}
               search={true}
               exportData={true}
               tableTitle={"Ticket Reports"}
@@ -517,14 +517,6 @@ const TicketReports = () => {
               searchValue={ticketSearch}
               onSearchChange={handleTicketSearchChange}
             />
-          ) : (
-            // <MonthWiseTable
-
-            // />
-            <div className="flex justify-center items-center">
-              <CircularProgress />
-            </div>
-          )}
         </div>
       </PageFrame>
       <MuiModal

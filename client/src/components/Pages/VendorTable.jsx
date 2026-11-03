@@ -190,6 +190,7 @@ const VendorTable = () => {
       <PageFrame>
         <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
           <AgTable
+            loading={isVendorFetchingPending}
             dateColumn="onboardingDate"
             search={true}
             searchColumn={"Vendor"}

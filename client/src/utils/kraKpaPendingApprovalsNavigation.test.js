@@ -11,9 +11,9 @@ const read = (file) => {
 test("main KRA/KPA dashboard exposes Pending Approvals only outside the employee dashboard", () => {
   const source = read("pages/Performance/PerformanceHome.jsx");
   assert.match(source, /title: "PENDING APPROVALS",\s*route: `\$\{modulePath\}\/pending-approvals`/);
-  assert.match(source, /hasAccess: !employeeDashboard && \(isManager \|\| isHr \|\| isTopManagement\)/);
+  assert.match(source, /hasPermission\(PERMISSIONS\.KRAKPA_PENDING_APPROVALS\)/);
   const routes = read("routes/Routes.jsx");
-  assert.match(routes, /path: "pending-approvals",\s*element: <KraKpaPendingApprovals \/>/);
+  assert.match(routes, /path: "pending-approvals",\s*element: \(\s*<PerformancePermissionRoute\s*permissions=\{\[PERMISSIONS\.KRAKPA_PENDING_APPROVALS\]\}/);
 });
 test("overview ignores stale selected-member state and shows all dates until a range is selected", () => {
   const source = read("pages/Performance/KraKpaPendingApprovals.jsx");
@@ -44,9 +44,9 @@ test("main KRA/KPA and Performance dashboards share count-based card layout and 
   assert.ok(source.includes('title: "PENDING APPROVALS"'), "Keep existing dashboard destinations");
 });
 
-test("Department quick-access card stays in KRA/KPA and reuses Assign KRA/KPA permission", () => {
+test("Department quick-access card stays in KRA/KPA and uses its module permission", () => {
   const source = read("pages/Performance/PerformanceHome.jsx");
-  assert.match(source, /title: "DEPARTMENT",\s*route: `\$\{modulePath\}\/departments`,\s*icon: <CgWebsite \/>,\s*hasAccess: !employeeDashboard && hasPermission\(PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA\)/);
+  assert.match(source, /title: "DEPARTMENT",[\s\S]*?hasPermission\(PERMISSIONS\.KRAKPA_DEPARTMENTS\)/);
   for (const title of ["EMPLOYEE KRA/KPA", "DAILY SCORE", "DEPARTMENT KRA/KPA", "PENDING APPROVALS"]) {
     assert.ok(source.includes(`title: "${title}"`));
   }
@@ -54,7 +54,7 @@ test("Department quick-access card stays in KRA/KPA and reuses Assign KRA/KPA pe
 
 test("KRA/KPA department route renders the shared page with an in-module member destination", () => {
   const routes = read("routes/Routes.jsx");
-  assert.match(routes, /path: "departments",\s*element: \(\s*<PerformancePermissionRoute\s*permissions=\{\[PERMISSIONS.PERFORMANCE_ASSIGN_KRA_KPA\]\}\s*element=\{<PerformanceAssignKraKpa\s*memberDestination="\/app\/kra-kpa\/department-KPA\/member-wise-KPA\/employee-dashboard"/);
+  assert.match(routes, /path: "departments",\s*element: \(\s*<PerformancePermissionRoute\s*permissions=\{\[PERMISSIONS.KRAKPA_DEPARTMENTS\]\}\s*element=\{<PerformanceAssignKraKpa\s*memberDestination="\/app\/kra-kpa\/department-KPA\/member-wise-KPA\/employee-dashboard"/);
   const page = read("pages/Performance/PerformanceAssignKraKpa.jsx");
   assert.match(page, /navigate\(memberDestination,/);
   assert.match(page, /selectedDepartment: department\?\._id/);

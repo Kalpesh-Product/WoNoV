@@ -35,14 +35,11 @@ const VisitorMixBag = ({
 
   const mixBagCards = [
     {
-      title: "REPEAT DAY PASS",
-      description: "Repeat an existing client's day pass visit.",
-      action: "View Repeat Day Pass",
-      icon: "dayPass",
-      route: `${basePath}/repeat-day-pass/repeat-external-companies`,
+      title: "REPEAT BOOKINGS",
+      route: "/app/visitors/mix-bag/repeat-bookings",
       permission: PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS.value,
     },
-     {
+    {
       title: "VISITORS TO CLIENT",
       description: "Convert an internal visitor into a client.",
       action: "View Visitors to Client",
@@ -50,7 +47,7 @@ const VisitorMixBag = ({
       route: `${basePath}/visitors-to-client/convert-internal-visitors`,
       permission: PERMISSIONS.VISITORS_MIX_BAG_VISITORS_TO_CLIENT.value,
     },
-     {
+    {
       title: "REPEAT VISITORS",
       description: "Create another visit for an existing visitor.",
       action: "View Repeat Visitor",

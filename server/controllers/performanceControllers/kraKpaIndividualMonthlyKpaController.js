@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
+const DueTask = require("../../models/performances/KraKpaDueTask");
 const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const { getPendingApprovalScope } = require("../../utils/kraKpaPendingApprovalScope");
@@ -278,15 +279,44 @@ const listIndividualMonthlyKpa = async (req, res, next) => {
       .select("start end")
       .lean();
 
+    const taskProgress = records.length
+      ? await DueTask.aggregate([
+          {
+            $match: {
+              company: new mongoose.Types.ObjectId(req.company),
+              parentKpa: { $in: records.map((record) => record._id) },
+              isDeleted: { $ne: true },
+            },
+          },
+          {
+            $group: {
+              _id: "$parentKpa",
+              total: { $sum: 1 },
+              due: {
+                $sum: { $cond: [{ $ne: ["$status", "Closed"] }, 1, 0] },
+              },
+            },
+          },
+        ])
+      : [];
+    const taskProgressByKpa = new Map(
+      taskProgress.map((progress) => [String(progress._id), progress]),
+    );
+
     return res.json(
-      records.map((record) => ({
-        ...record,
-        delayedDays: calculateDelayedWorkingDays(
-          record.deadline,
-          record.closingDate,
-          holidays,
-        ),
-      })),
+      records.map((record) => {
+        const progress = taskProgressByKpa.get(String(record._id));
+        return {
+          ...record,
+          totalLinkedTasks: progress?.total || 0,
+          dueLinkedTasks: progress?.due || 0,
+          delayedDays: calculateDelayedWorkingDays(
+            record.deadline,
+            record.closingDate,
+            holidays,
+          ),
+        };
+      }),
     );
   } catch (error) {
     return next(error);
@@ -693,6 +723,17 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     }
     if (existing.status !== "Pending") {
       return res.status(409).json({ message: "KPA is already completed" });
+    }
+    const dueLinkedTasks = await DueTask.countDocuments({
+      company: req.company,
+      parentKpa: existing._id,
+      status: { $ne: "Closed" },
+      isDeleted: { $ne: true },
+    });
+    if (dueLinkedTasks > 0) {
+      return res.status(409).json({
+        message: `${dueLinkedTasks} KPA task${dueLinkedTasks === 1 ? " is" : "s are"} still due`,
+      });
     }
 
     const resourceComment = typeof req.body?.resourceComment === "string"

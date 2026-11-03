@@ -121,7 +121,7 @@ const RepeatInternalVisitors = () => {
     });
   }, []);
 
-  const { data: visitorsData = [] } = useQuery({
+  const { data: visitorsData = [], isLoading: isVisitorsLoading } = useQuery({
     queryKey: [
       "visitors",
       "repeat-internal",
@@ -516,6 +516,7 @@ const RepeatInternalVisitors = () => {
           dateColumn={"checkIn"}
           search
           tableTitle="Repeat Internal Visitors"
+          loading={isVisitorsLoading}
           // data={visitorsData
           //   .filter((m) => m.visitorFlag !== "Client")
           //   .map((item, index) => ({

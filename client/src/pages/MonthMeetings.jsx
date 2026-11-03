@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import AgTable from '../components/AgTable'
 import { useLocation } from 'react-router-dom';
-import humanTime from "../utils/humanTime";
 import { Avatar, AvatarGroup, Chip } from '@mui/material';
 import { MdOutlineRemoveRedEye } from 'react-icons/md';
 import dayjs from 'dayjs';
 import MuiModal from '../components/MuiModal';
 import DetalisFormatted from '../components/DetalisFormatted';
+import MeetingTimeDetails from '../components/MeetingTimeDetails';
+import { getMeetingDisplayStatus } from '../utils/meetingStatus';
 
 const MonthMeetings = () => {
 
@@ -46,7 +47,11 @@ const MonthMeetings = () => {
 
   const getDisplayDuration = (meeting) => {
     const startTime = meeting?.startTime;
-    const endTime = meeting?.endTime;
+    const endTime =
+      meeting?.extendTime &&
+      dayjs(meeting.extendTime).isAfter(dayjs(meeting.endTime))
+        ? meeting.extendTime
+        : meeting?.endTime;
 
     if (!startTime || !endTime) {
       return sanitizeDisplayValue(meeting?.duration);
@@ -100,6 +105,7 @@ const MonthMeetings = () => {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
     Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
     Completed: { bg: "#E8F5E9", text: "#1B5E20" }, // Light Green
+    Extended: { bg: "#EDE9FE", text: "#6D28D9" }, // Light Purple
     Cancelled: { bg: "#FFEBEE", text: "#B71C1C" }, // Light Red
     Available: { bg: "#E3F2FD", text: "#0D47A1" },
     Occupied: { bg: "#ECEFF1", text: "#37474F" },
@@ -168,7 +174,7 @@ const MonthMeetings = () => {
     { field: "meetingStart", headerName: "Start Time" },
     { field: "meetingEnd", headerName: "End Time" },
     {
-      field: "meetingStatus",
+      field: "displayMeetingStatus",
       headerName: "Meeting Status",
       sort: "desc",
       cellRenderer: (params) => (
@@ -261,6 +267,7 @@ const MonthMeetings = () => {
 
     return {
       ...meeting,
+      displayMeetingStatus: getMeetingDisplayStatus(meeting),
       participantsData: Array.isArray(meeting.participants)
         ? meeting.participants
         : [],
@@ -341,19 +348,15 @@ const MonthMeetings = () => {
               title="Date"
               detail={formatMeetingDate(selectedMeeting?.date)}
             />
-            <DetalisFormatted
-              title="Time"
-              detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime,
-              )}`}
-            />
-            <DetalisFormatted
-              title="Duration"
-              detail={getDisplayDuration(selectedMeeting)}
+            <MeetingTimeDetails
+              startTime={selectedMeeting.startTime}
+              endTime={selectedMeeting.endTime}
+              extendTime={selectedMeeting.extendTime}
+              duration={getDisplayDuration(selectedMeeting)}
             />
             <DetalisFormatted
               title="Status"
-              detail={selectedMeeting.meetingStatus || "N/A"}
+              detail={getMeetingDisplayStatus(selectedMeeting)}
             />
             <DetalisFormatted
               title="Type"

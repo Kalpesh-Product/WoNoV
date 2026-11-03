@@ -321,6 +321,7 @@ const AssetReports = () => {
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           search
           exportData
           exportAllColumns

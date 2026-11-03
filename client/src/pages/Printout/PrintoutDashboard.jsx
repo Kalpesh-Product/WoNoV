@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { CgProfile } from "react-icons/cg";
 import { MdFormatListBulleted } from "react-icons/md";
 import { RiArchiveDrawerLine, RiPagesLine } from "react-icons/ri";
+import { Skeleton } from "@mui/material";
 import Card from "../../components/Card";
 import DonutChart from "../../components/graphs/DonutChart";
 import PieChartMui from "../../components/graphs/PieChartMui";
@@ -42,7 +43,7 @@ const PrintoutDashboard = () => {
   const axios = useAxiosPrivate();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-  const { data: printouts = [] } = useQuery({
+  const { data: printouts = [], isLoading: isPrintoutsLoading } = useQuery({
     queryKey: ["printouts"],
     queryFn: async () => {
       const response = await axios.get("/api/printout");
@@ -220,7 +221,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
     <div className="flex flex-col gap-4 p-4 pb-20">
        {canViewMonthlyTotalPrintout && (
         <div className="w-full flex-none overflow-hidden">
-          <FyBarGraphCount
+          {isPrintoutsLoading ? <Skeleton variant="rounded" width="100%" height={360} /> : <FyBarGraphCount
             data={printoutGraphData}
             dateKey="takenAt"
             groupKey="printoutLegend"
@@ -234,7 +235,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
               },
               colors: ["#2196F3"],
             }}
-          />
+          />}
         </div>
       )}
       <div
@@ -246,7 +247,9 @@ const canViewClientWiseQuantity = userPermissions.includes(
               : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
         } relative z-10 mt-4 flex-none pb-2`}
       >
-        {allowedCards.map((card) => (
+        {isPrintoutsLoading && allowedCards.length > 0 ? Array.from({ length: allowedCards.length }, (_, index) => (
+          <Skeleton key={`printout-card-${index}`} variant="rounded" height={150} />
+        )) : allowedCards.map((card) => (
           <Card
             key={card.title}
             title={card.title}
@@ -271,7 +274,9 @@ const canViewClientWiseQuantity = userPermissions.includes(
                 titleLabel={chart.titleLabel}
                 border
               >
-                {chart.chartType === "pie" ? (
+                {isPrintoutsLoading ? (
+                  <Skeleton variant="rounded" width="100%" height={320} />
+                ) : chart.chartType === "pie" ? (
                   <PieChartMui
                     data={chart.data}
                     options={chart.options}

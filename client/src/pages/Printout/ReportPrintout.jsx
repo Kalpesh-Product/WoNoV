@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CircularProgress, Popover } from "@mui/material";
+import { Popover } from "@mui/material";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
@@ -328,11 +328,6 @@ const ReportPrintout = () => {
               )
             }
           />
-          {isPrintoutsLoading ? (
-            <div className="flex justify-center p-4">
-              <CircularProgress size={24} />
-            </div>
-          ) : null}
         </div>
       </PageFrame>
 

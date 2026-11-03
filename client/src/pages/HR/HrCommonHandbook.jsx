@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import biznestLogo from "../../assets/biznest/biznest_logo.jpg";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Skeleton } from "@mui/material";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -78,7 +78,10 @@ const HrCommonHandbook = () => {
       content: (
         <div className="flex flex-col gap-4">
           {isDocumentsLoading ? (
-            <span className="text-sm text-gray-500">Loading...</span>
+            <div className="flex flex-col gap-3 py-1">
+              <Skeleton variant="rounded" height={38} />
+              <Skeleton variant="rounded" height={38} />
+            </div>
           ) : companyDocuments?.[generalDoc]?.length > 0 ? (
             companyDocuments[generalDoc].map((doc) => (
               <div key={doc._id} className="flex justify-between items-center">
@@ -226,7 +229,9 @@ const HrCommonHandbook = () => {
               Departments
             </span>
           </div>
-          {filteredAccordionData.map((item) => (
+          {isLoading ? Array.from({ length: 4 }, (_, index) => (
+            <Skeleton key={`department-handbook-${index}`} variant="rounded" height={52} className="mb-2" />
+          )) : filteredAccordionData.map((item) => (
             <Accordion
               sx={{ boxShadow: "none", border: "1px solid #d1d5db" }}
               key={item.id}

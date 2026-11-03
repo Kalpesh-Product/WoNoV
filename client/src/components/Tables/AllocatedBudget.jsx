@@ -34,6 +34,7 @@ import AgTable from "../AgTable";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
 import DetalisFormatted from "../DetalisFormatted";
+import PaidAmountHistory from "../PaidAmountHistory";
 import ConfirmationModal from "../ConfirmationModal";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
@@ -81,6 +82,22 @@ const canManageBudgetDeletes = (user) =>
       )
     );
   });
+
+const getBudgetCreatedAt = (row = {}) => {
+  const explicitDate = row.createdAt || row._createdAt;
+  if (explicitDate) {
+    const timestamp = new Date(explicitDate).getTime();
+    if (Number.isFinite(timestamp)) return timestamp;
+  }
+
+  // Mongo ObjectIds encode their creation time in the first four bytes.
+  const id = String(row._id || row.id || "");
+  if (/^[a-f\d]{24}$/i.test(id)) {
+    return Number.parseInt(id.slice(0, 8), 16) * 1000;
+  }
+
+  return 0;
+};
 
 const getUserName = (user) =>
   user?.employeeName ||
@@ -236,6 +253,7 @@ const AllocatedBudget = ({
   filterApprovedAndPendingOnly = false,
   exportData = false,
   onRequestBudget,
+  sortRowsByCreatedAt = true,
 }) => {
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
@@ -304,6 +322,7 @@ const AllocatedBudget = ({
       expanseName: "",
       expanseType: "",
       paymentType: "",
+      vendor: "",
       building: "",
       unit: "",
       projectedAmount: "",
@@ -314,6 +333,23 @@ const AllocatedBudget = ({
   });
 
   const department = usePageDepartment();
+  const editVendorDepartmentId =
+    selectedRow?.departmentId || department?._id || "";
+  const { data: editVendors = [], isLoading: editVendorsLoading } = useQuery({
+    queryKey: ["budgetVendors", editVendorDepartmentId],
+    enabled: Boolean(editModalOpen && editVendorDepartmentId),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/vendors/get-vendors/${editVendorDepartmentId}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data.filter(
+            (vendor) =>
+              vendor?.status === "Active" || vendor?._id === selectedRow?.vendorId,
+          )
+        : [];
+    },
+  });
   // Previous Tech-only exception retained for reference:
   // const isTechDepartment =
   //   String(department?._id || department) === TECH_DEPARTMENT_ID ||
@@ -513,6 +549,7 @@ const AllocatedBudget = ({
       expanseName: row.expanseName || "",
       expanseType: row.expanseType || "",
       paymentType: row.paymentType || "",
+      vendor: row.vendorId || "",
       building: row.buildingId || "",
       unit: row.unitId || "",
       projectedAmount: row.projectedAmountRaw ?? row.projectedAmount ?? "",
@@ -535,6 +572,7 @@ const AllocatedBudget = ({
         expanseName: data.expanseName,
         expanseType: data.expanseType,
         paymentType: data.paymentType,
+        vendor: data.vendor,
         unit: data.unit,
         dueDate: data.dueDate,
         ...(isSelectedBudgetApproved
@@ -633,6 +671,18 @@ const AllocatedBudget = ({
         })
         //.flatMap((fd) => fd.tableData?.rows || []);
         .flatMap((fd) => fd.tableData?.rows || [])
+        .sort((first, second) => {
+          if (!sortRowsByCreatedAt) return 0;
+
+          const createdAtDifference =
+            getBudgetCreatedAt(second) - getBudgetCreatedAt(first);
+          if (createdAtDifference !== 0) return createdAtDifference;
+
+          // Break same-second ObjectId timestamp ties by the ObjectId itself.
+          return String(second._id || second.id || "").localeCompare(
+            String(first._id || first.id || ""),
+          );
+        })
         .filter((row) => {
           if (!filterApprovedAndPendingOnly) return true;
 
@@ -646,10 +696,18 @@ const AllocatedBudget = ({
         })
         .map((row, index) => ({
           ...row,
+          ...(sortRowsByCreatedAt && {
+            createdAt: row.createdAt || new Date(getBudgetCreatedAt(row)),
+          }),
           srNo: index + 1,
         }))
     );
-  }, [financialData, dateRange, filterApprovedAndPendingOnly]);
+  }, [
+    financialData,
+    dateRange,
+    filterApprovedAndPendingOnly,
+    sortRowsByCreatedAt,
+  ]);
 
   const tableColumns = useMemo(() => {
     const sample = financialData?.[0]?.tableData?.columns || [];
@@ -861,6 +919,24 @@ const AllocatedBudget = ({
         },
       });
     }
+    if (sortRowsByCreatedAt) {
+      base.unshift({
+        field: "id",
+        hide: true,
+        sort: "desc",
+        sortIndex: 1,
+        suppressCsvExport: true,
+        suppressExcelExport: true,
+      });
+      base.unshift({
+        field: "createdAt",
+        hide: true,
+        sort: "desc",
+        sortIndex: 0,
+        suppressCsvExport: true,
+        suppressExcelExport: true,
+      });
+    }
     return base;
   }, [
     canPermanentlyDelete,
@@ -870,6 +946,7 @@ const AllocatedBudget = ({
     handleOpenActionMenu,
     isDeletePending,
     isRestorePending,
+    sortRowsByCreatedAt,
     // isTechDepartment,
     noInvoice,
   ]);
@@ -1132,6 +1209,24 @@ const AllocatedBudget = ({
             <DetalisFormatted
               title="Actual Amount"
               detail={`INR ${inrFormat(normalizeBudgetAmount(viewBudget.actualAmountRaw ?? viewBudget.actualAmount))}`}
+            />
+            <DetalisFormatted
+              title="Paid Amount"
+              detail={`INR ${inrFormat(viewBudget.financeAmountRaw || 0)}`}
+            />
+            <DetalisFormatted
+              title="Paid Amount History"
+              detail={
+                <PaidAmountHistory
+                  history={viewBudget.financeAmountHistory}
+                  currentAmount={viewBudget.financeAmountRaw}
+                  currentDate={viewBudget.financeAmountDate}
+                />
+              }
+            />
+            <DetalisFormatted
+              title="Remaining Amount"
+              detail={`INR ${inrFormat(viewBudget.remainingAmountRaw ?? (normalizeBudgetAmount(viewBudget.actualAmountRaw ?? viewBudget.actualAmount) - Number(viewBudget.financeAmountRaw || 0)))}`}
             />
             <DetalisFormatted
               title="Unit"
@@ -1399,6 +1494,35 @@ const AllocatedBudget = ({
                   <MenuItem value="One Time">One Time</MenuItem>
                   {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
                 </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="vendor"
+            control={editControl}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select
+                  {...field}
+                  size="small"
+                  displayEmpty
+                  disabled={editVendorsLoading}
+                >
+                  <MenuItem value="">
+                    {editVendorsLoading ? "Loading Vendors..." : "No Vendor (Optional)"}
+                  </MenuItem>
+                  {editVendors.map((vendor) => (
+                    <MenuItem key={vendor._id} value={vendor._id}>
+                      {vendor.companyName || vendor.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {fieldState.error && (
+                  <p className="mt-1 text-xs text-red-600">
+                    {fieldState.error.message}
+                  </p>
+                )}
               </FormControl>
             )}
           />

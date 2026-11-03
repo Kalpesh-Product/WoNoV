@@ -580,6 +580,7 @@ const ManagePrintout = () => {
             data={tableRows}
             columns={columns}
             search
+            loading={isPrintoutsLoading}
             tableHeight={500}
             getRowStyle={({ data }) =>
               data?.rawPrintout?.isDeleted
@@ -595,11 +596,6 @@ const ManagePrintout = () => {
             paginationPageSize={10}
             //exportData
           />
-          {isPrintoutsLoading ? (
-            <div className="flex justify-center p-4">
-              <CircularProgress size={24} />
-            </div>
-          ) : null}
         </div>
       </PageFrame>
 

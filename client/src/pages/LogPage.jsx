@@ -398,6 +398,7 @@ const LogPage = () => {
     <div className="p-4">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           data={tableData || []}
           columns={columns}
           dateColumn="createdAt"

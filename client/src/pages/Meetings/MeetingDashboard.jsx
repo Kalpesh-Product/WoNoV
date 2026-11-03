@@ -21,6 +21,7 @@ import usePageDepartment from "../../hooks/usePageDepartment";
 import useAuth from "../../hooks/useAuth";
 import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
+import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 const WidgetSection = lazy(() => import("../../components/WidgetSection"));
 import { PERMISSIONS } from "./../../constants/permissions";
 
@@ -1306,7 +1307,7 @@ const MeetingDashboard = () => {
           meetingType: item.meetingType,
           endTime: humanTime(item.endTime),
           unitName: item.location?.unitName,
-          status: item.meetingStatus,
+          status: getMeetingDisplayStatus(item),
         })),
       columns: meetingColumns,
     },
@@ -1322,7 +1323,7 @@ const MeetingDashboard = () => {
           meetingType: item.meetingType,
           endTime: humanTime(item.endTime),
           unitName: item.location?.unitName,
-          status: item.meetingStatus,
+          status: getMeetingDisplayStatus(item),
         })),
       columns: meetingColumns,
     },
@@ -1416,6 +1417,7 @@ const MeetingDashboard = () => {
           description={card.description}
           route={card.route}
           onClick={card.onClick}
+          loading={isLoading}
         />
       )),
     },
@@ -1429,6 +1431,7 @@ const MeetingDashboard = () => {
           columns={table.columns}
           rowsToDisplay={table.rows.length > 0 ? table.rows.length : 8}
           scroll={true}
+          loading={isLoading}
         />
       )),
     },

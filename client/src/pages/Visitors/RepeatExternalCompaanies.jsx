@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -292,7 +292,7 @@ const RepeatExternalCompaanies = ({
           <ThreeDotMenu
             menuItems={[
               {
-                label: "Repeat Day Pass",
+                label: "Book Day Pass",
                 onClick: () => openRepeatClientModal(params.data),
               },
               {
@@ -310,12 +310,7 @@ const RepeatExternalCompaanies = ({
   return (
     <div className="p-4">
       <PageFrame>
-        {loading ? (
-          <div className="flex justify-center p-8">
-            <CircularProgress />
-          </div>
-        ) : (
-          <AgTable
+        <AgTable
             search
             tableTitle="REPEAT EXTERNAL COMPANIES"
             data={tableData}
@@ -339,8 +334,8 @@ const RepeatExternalCompaanies = ({
             serverSearch
             searchValue={companySearch}
             onSearchChange={handleCompanySearchChange}
+            loading={loading}
           />
-        )}
       </PageFrame>
 
       <MuiModal

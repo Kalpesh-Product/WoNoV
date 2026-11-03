@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { Chip, CircularProgress, Popover, Tabs, Tab } from "@mui/material";
+import { Chip, Popover, Tabs, Tab } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import ReactApexChart from "react-apexcharts";
@@ -15,6 +15,7 @@ import WidgetSection from "../../components/WidgetSection";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogTypeChip from "./DailyLogTypeChip";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const formatUserName = (user) =>
@@ -549,19 +550,14 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
 
   return (
     <Fragment>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {departmentName ? `${departmentName} - ` : ""}
           {employeeName}
         </h1>
       </div>
       {navigationTabs}
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
-        <>
+      <>
           {isKpaRating && (
             <div className="mb-6">
               <WidgetSection
@@ -584,12 +580,12 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                   </div>
                 }
               >
-                <ReactApexChart
+                {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[360px]" /> : <ReactApexChart
                   options={kpaChartOptions}
                   series={kpaChartSeries}
                   type="bar"
                   height={360}
-                />
+                />}
               </WidgetSection>
             </div>
           )}
@@ -600,12 +596,12 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                   border
                   title="Daily Tasks Assigned, Closed and Carried Forward"
                 >
-                  <ReactApexChart
+                  {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[330px]" /> : <ReactApexChart
                     type="bar"
                     height={330}
                     options={dailyLogChartOptions}
                     series={dailyLogChartSeries}
-                  />
+                  />}
                 </WidgetSection>
               </div>
             </>
@@ -617,38 +613,45 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                 <Chip label={`Pending Closure: ${kpaRatingSummary.yetToBeRated}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
               </div>
             }>
-              <div className="mb-1 flex flex-wrap items-center justify-center gap-2">
-                <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                  {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-                </div>
-                <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                  {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-                </div>
-                <button
-                  type="button"
-                  aria-label="Select date range"
-                  className="rounded-md bg-primary p-3 text-white"
-                  onClick={(event) => setCalendarAnchor(event.currentTarget)}
-                >
-                  <MdCalendarToday size={20} />
-                </button>
-              </div>
-              <Popover
-                open={Boolean(calendarAnchor)}
-                anchorEl={calendarAnchor}
-                onClose={() => setCalendarAnchor(null)}
-                anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-                transformOrigin={{ vertical: "top", horizontal: "center" }}
-              >
-                <DateRangePicker
-                  ranges={[dateRange]}
-                  onChange={({ selection }) => setDateRange(selection)}
-                  moveRangeOnFirstSelection={false}
-                  direction="vertical"
-                />
-              </Popover>
             <AgTable
+              loading={isLoading}
               showDateControls={false}
+              toolbarDateControls={
+                <>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+                    </div>
+                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                      {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+                    </div>
+                    <button
+                      type="button"
+                      aria-label="Select date range"
+                      className="rounded-md bg-primary p-3 text-white"
+                      onClick={(event) =>
+                        setCalendarAnchor(event.currentTarget)
+                      }
+                    >
+                      <MdCalendarToday size={20} />
+                    </button>
+                  </div>
+                  <Popover
+                    open={Boolean(calendarAnchor)}
+                    anchorEl={calendarAnchor}
+                    onClose={() => setCalendarAnchor(null)}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+                    transformOrigin={{ vertical: "top", horizontal: "center" }}
+                  >
+                    <DateRangePicker
+                      ranges={[dateRange]}
+                      onChange={({ selection }) => setDateRange(selection)}
+                      moveRangeOnFirstSelection={false}
+                      direction="vertical"
+                    />
+                  </Popover>
+                </>
+              }
               data={tableData}
               columns={kpaColumns}
               hideTitle
@@ -665,6 +668,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
           ) : (
             <WidgetSection border title="Daily Logs Rating">
             <AgTable
+              loading={isLoading}
               showDateControls={false}
               toolbarDateControls={<div className="mb-1 flex justify-center">
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -771,8 +775,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
               )}
             />
           </MuiModal>
-        </>
-      )}
+      </>
     </Fragment>
   );
 };
@@ -782,8 +785,10 @@ const KraKpaRating = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const permissions = auth?.user?.permissions?.permissions || [];
-  const showKpa = permissions.includes(PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA.value);
-  const showDailyLogs = permissions.includes(PERMISSIONS.KRAKPA_SELF_KRA.value);
+  const showKpa = permissions.includes(PERMISSIONS.KRAKPA_KPA_RATING.value);
+  const showDailyLogs = permissions.includes(
+    PERMISSIONS.KRAKPA_DAILY_LOGS_RATING.value,
+  );
   const ratingTabs = [
     ...(showKpa ? [{ label: "KPA Rating", value: "kpa", path: "kpa-rating" }] : []),
     ...(showDailyLogs ? [{ label: "Daily Logs Rating", value: "daily-logs", path: "daily-logs-rating" }] : []),
@@ -791,7 +796,7 @@ const KraKpaRating = () => {
   const requestedTab = location.pathname.replace(/\/$/, "").endsWith("/daily-logs-rating") ? "daily-logs" : "kpa";
   const activeTab = ratingTabs.find((tab) => tab.value === requestedTab) || ratingTabs[0];
   return (
-      <div className="flex flex-col gap-6 p-4">
+      <div className="flex flex-col">
         {activeTab && <KraKpaRatingSection type={activeTab.value} navigationTabs={
           <Tabs
             value={activeTab.value}
@@ -803,7 +808,7 @@ const KraKpaRating = () => {
               const basePath = location.pathname.replace(/\/(?:kpa-rating|daily-logs-rating)\/?$/, "");
               navigate(`${basePath}/${selectedTab.path}`, { state: location.state });
             }}
-            sx={{ mb: 3, border: "1px solid #d1d5db", borderRadius: 1, minHeight: 48,
+            sx={{ mb: 2, border: "1px solid #d1d5db", borderRadius: 1, minHeight: 48,
               "& .MuiTabs-indicator": { display: "none" },
               "& .MuiTab-root": { textTransform: "none", color: "#1e3d73", minHeight: 48 },
               "& .Mui-selected": { backgroundColor: "#1e3d73", color: "white !important" },

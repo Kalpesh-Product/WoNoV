@@ -1,4 +1,5 @@
 const router = require("express").Router();
+const upload = require("../config/multerConfig");
 const {
   listIndividualMonthlyKpa,
   listPendingKpaApprovals,
@@ -42,15 +43,37 @@ const {
   listKraCategories,
   createKraCategory,
 } = require("../controllers/performanceControllers/kraCategoryController");
+const {
+  bulkUploadSelfKpa,
+  requireSelfKpaBulkUploadPermission,
+} = require("../controllers/performanceControllers/kraKpaBulkUploadController");
 
 router.get("/individual-monthly-kpa", listIndividualMonthlyKpa);
-router.get("/individual-monthly-kpa/pending-approvals", listPendingKpaApprovals);
-router.get("/individual-monthly-kpa/review-access", getIndividualMonthlyKpaReviewAccess);
+router.get(
+  "/individual-monthly-kpa/pending-approvals",
+  listPendingKpaApprovals,
+);
+router.get(
+  "/individual-monthly-kpa/review-access",
+  getIndividualMonthlyKpaReviewAccess,
+);
 router.get("/delete-access", getKraKpaDeleteAccess);
+router.post(
+  "/individual-monthly-kpa/bulk-upload",
+  requireSelfKpaBulkUploadPermission,
+  upload.single("file"),
+  bulkUploadSelfKpa,
+);
 router.post("/individual-monthly-kpa", createIndividualMonthlyKpa);
-router.patch("/individual-monthly-kpa/:id/approve", approveIndividualMonthlyKpa);
+router.patch(
+  "/individual-monthly-kpa/:id/approve",
+  approveIndividualMonthlyKpa,
+);
 router.patch("/individual-monthly-kpa/:id/reject", rejectIndividualMonthlyKpa);
-router.patch("/individual-monthly-kpa/:id/complete", completeIndividualMonthlyKpa);
+router.patch(
+  "/individual-monthly-kpa/:id/complete",
+  completeIndividualMonthlyKpa,
+);
 router.patch("/individual-monthly-kpa/:id", updateIndividualMonthlyKpa);
 router.delete("/individual-monthly-kpa/:id", deleteIndividualMonthlyKpa);
 router.get("/self-kra", listSelfKra);

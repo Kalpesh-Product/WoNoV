@@ -373,6 +373,85 @@ const AttendanceLogsTimeline = () => {
     [],
   );
 
+  const employeeSelector = (
+    <Autocomplete
+      size="small"
+      options={employeeOptions}
+      value={selectedEmployee}
+      sx={{
+        width: dateNavigatorWidth,
+        "& .MuiOutlinedInput-notchedOutline": { borderColor: "#1e3d73" },
+        "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+          borderColor: "#1e3d73",
+        },
+        "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          borderColor: "#1e3d73",
+        },
+        "& .MuiSvgIcon-root": { color: "#1e3d73" },
+      }}
+      onChange={(_, employee) => setEmployeeId(employee?.id || "all")}
+      getOptionLabel={(employee) =>
+        employee?.empId
+          ? `${employee.name} (${employee.empId})`
+          : employee?.name || ""
+      }
+      renderInput={(params) => (
+        <TextField {...params} placeholder="Search employee" size="small" />
+      )}
+    />
+  );
+
+  const dateNavigator = (
+    <div className="flex items-center gap-2">
+      <IconButton
+        size="small"
+        onClick={() => setSelectedDate((date) => shiftDate(date, -1))}
+        aria-label="Previous day"
+        sx={dateButtonSx}
+      >
+        <MdChevronLeft />
+      </IconButton>
+      <DatePicker
+        format="ddd, MMMM D, YYYY"
+        size="small"
+        value={dayjs(selectedDate)}
+        onChange={(value) => {
+          if (value?.isValid?.()) setSelectedDate(value.toDate());
+        }}
+        slotProps={{
+          textField: {
+            size: "small",
+            sx: {
+              width: datePickerWidth,
+              "& .MuiOutlinedInput-root": {
+                borderRadius: "6px",
+                height: 38,
+              },
+              "& .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#1e3d73",
+              },
+              "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#1e3d73",
+              },
+              "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                borderColor: "#1e3d73",
+              },
+              "& .MuiSvgIcon-root": { color: "#1e3d73" },
+            },
+          },
+        }}
+      />
+      <IconButton
+        size="small"
+        onClick={() => setSelectedDate((date) => shiftDate(date, 1))}
+        aria-label="Next day"
+        sx={dateButtonSx}
+      >
+        <MdChevronRight />
+      </IconButton>
+    </div>
+  );
+
   return (
     <div className="p-4">
       <div className="rounded-xl border border-borderGray bg-white p-5 shadow-sm">
@@ -380,111 +459,18 @@ const AttendanceLogsTimeline = () => {
           data={isLoading ? [] : tableData}
           columns={columns}
           search
+          showDateControls={false}
           exportData
           tableTitle="LOGS TIMELINE"
+          titleCenterContent={employeeSelector}
+          toolbarDateControls={dateNavigator}
           dropdownColumns={["typeLabel", "employeeName", "date", "timeLabel"]}
           tableHeight={440}
           headerBottomContent={
-            <div className="flex w-full justify-center pb-6 pt-2">
-              <div
-                className="flex w-full flex-col gap-2"
-                style={{ maxWidth: 420 }}
-              >
-                <Autocomplete
-                  size="small"
-                  options={employeeOptions}
-                  value={selectedEmployee}
-                  sx={{
-                    width: dateNavigatorWidth,
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#1e3d73",
-                    },
-                    "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                      {
-                        borderColor: "#1e3d73",
-                      },
-                    "& .MuiSvgIcon-root": {
-                      color: "#1e3d73",
-                    },
-                  }}
-                  onChange={(_, employee) =>
-                    setEmployeeId(employee?.id || "all")
-                  }
-                  getOptionLabel={(employee) =>
-                    employee?.empId
-                      ? `${employee.name} (${employee.empId})`
-                      : employee?.name || ""
-                  }
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      placeholder="Search employee"
-                      size="small"
-                    />
-                  )}
-                />
-
-                <div className="flex items-center gap-2">
-                  <IconButton
-                    size="small"
-                    onClick={() => setSelectedDate((date) => shiftDate(date, -1))}
-                    aria-label="Previous day"
-                    sx={dateButtonSx}
-                  >
-                    <MdChevronLeft />
-                  </IconButton>
-                  <DatePicker
-                    format="ddd, MMMM D, YYYY"
-                    size="small"
-                    value={dayjs(selectedDate)}
-                    onChange={(value) => {
-                      if (value?.isValid?.()) {
-                        setSelectedDate(value.toDate());
-                      }
-                    }}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        sx: {
-                          width: datePickerWidth,
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "6px",
-                            height: 38,
-                          },
-                          "& .MuiOutlinedInput-notchedOutline": {
-                            borderColor: "#1e3d73",
-                          },
-                          "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline":
-                            {
-                              borderColor: "#1e3d73",
-                            },
-                          "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
-                            {
-                              borderColor: "#1e3d73",
-                            },
-                          "& .MuiSvgIcon-root": {
-                            color: "#1e3d73",
-                          },
-                        },
-                      },
-                    }}
-                  />
-                  <IconButton
-                    size="small"
-                    onClick={() => setSelectedDate((date) => shiftDate(date, 1))}
-                    aria-label="Next day"
-                    sx={dateButtonSx}
-                  >
-                    <MdChevronRight />
-                  </IconButton>
-                </div>
-
-                {attendanceSummary ? (
-                  <div className="mt-4 rounded-md border border-borderGray bg-white shadow-sm">
+            attendanceSummary ? (
+              <div className="flex w-full justify-center pb-4 pt-2">
+                <div className="w-full" style={{ maxWidth: 420 }}>
+                  <div className="rounded-md border border-borderGray bg-white shadow-sm">
                     <div className="flex items-center gap-2 border-b border-borderGray px-4 py-3">
                       <span className="text-lg font-medium text-gray-800">
                         Timeclock
@@ -550,9 +536,9 @@ const AttendanceLogsTimeline = () => {
                       </div>
                     </div>
                   </div>
-                ) : null}
+                </div>
               </div>
-            </div>
+            ) : null
           }
           searchBottomContent={
             isLoading ? (

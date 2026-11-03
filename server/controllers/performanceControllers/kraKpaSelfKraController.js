@@ -315,7 +315,9 @@ const createSelfKra = async (req, res, next) => {
     }
 
     let lead = req.user;
-    if (scope.access.canSelectLead) {
+    const isCreatingForAnotherEmployee =
+      String(req.body.employee) !== String(req.user);
+    if (scope.access.canSelectLead && isCreatingForAnotherEmployee) {
       const leadValidation = validateSelectedLead(req.body.lead);
       if (leadValidation.error) {
         return res.status(400).json({ message: leadValidation.error });
@@ -466,7 +468,7 @@ const updateSelfKra = async (req, res, next) => {
     const access = await getAccess(req);
     const filter = { _id: req.params.id, ...getScopedFilter(req, access) };
     const existing = await SelfKra.findOne(filter)
-      .select("department title category lead isActive")
+      .select("department employee title category lead isActive")
       .populate([{ path: "category", select: "categoryName" }, { path: "lead", select: "firstName middleName lastName" }])
       .lean();
     if (!existing) return res.status(404).json({ message: "Self KRA not found" });
@@ -489,7 +491,9 @@ const updateSelfKra = async (req, res, next) => {
       }
       changes.isActive = req.body.isActive;
     }
-    if (access.canSelectLead) {
+    const isEditingAnotherEmployee =
+      String(existing.employee) !== String(req.user);
+    if (access.canSelectLead && isEditingAnotherEmployee) {
       const leadValidation = validateSelectedLead(req.body.lead);
       if (leadValidation.error) {
         return res.status(400).json({ message: leadValidation.error });

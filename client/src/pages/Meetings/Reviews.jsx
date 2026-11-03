@@ -183,7 +183,7 @@ const Reviews = ({
     reset({ reply: "", monthlyCredit: "", consumedCredit: "" });
   };
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = [], isLoading: isReviewsLoading } = useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-reviews");
@@ -625,6 +625,7 @@ const Reviews = ({
                     };
                   })}
                   columns={reviewColumns}
+                  loading={isReviewsLoading}
                 />
               </PageFrame>
             </div>

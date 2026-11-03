@@ -13,6 +13,7 @@ import FyBarGraph from "../../../components/graphs/FyBarGraph";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../../components/MeetingTimeDetails";
 import humanDate from "../../../utils/humanDateForamt";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import UploadFileInput from "../../../components/UploadFileInput";
@@ -31,6 +32,11 @@ const BiznestHeaderLogo = () => (
     </span>
   </span>
 );
+
+const getEffectiveMeetingEndTime = (endTime, extendTime) =>
+  extendTime && dayjs(extendTime).isAfter(dayjs(endTime))
+    ? extendTime
+    : endTime;
 
 // const MeetingRevenue = () => {
 //   const axios = useAxiosPrivate();
@@ -633,6 +639,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
       meetingAgenda: client.meetingAgenda || "",
       meetingStartTime: client.meetingStartTime || null,
       meetingEndTime: client.meetingEndTime || null,
+      meetingExtendTime: client.meetingExtendTime || null,
       meetingStatus: client.meetingStatus || "N/A",
       meetingTypeRaw: client.meetingTypeRaw || client.meetingType || "N/A",
       meetingHousekeepingStatus: client.meetingHousekeepingStatus || "N/A",
@@ -645,11 +652,17 @@ const DayPassInvoiceFields = ({ revenue }) => {
           : getUnitLabel(client.unit),
       meetingTimeLabel: formatMeetingTimeRange(
         client.meetingStartTime,
-        client.meetingEndTime,
+        getEffectiveMeetingEndTime(
+          client.meetingEndTime,
+          client.meetingExtendTime,
+        ),
       ),
       meetingDurationLabel: formatMeetingDuration(
         client.meetingStartTime,
-        client.meetingEndTime,
+        getEffectiveMeetingEndTime(
+          client.meetingEndTime,
+          client.meetingExtendTime,
+        ),
         client.hoursBooked,
       ),
       invoiceUploadedBy: client.invoiceUploadedBy || null,
@@ -1415,13 +1428,11 @@ const DayPassInvoiceFields = ({ revenue }) => {
                   title="Date"
                   detail={humanDate(selectedRevenue.date)}
                 />
-                <DetalisFormatted
-                  title="Time"
-                  detail={selectedRevenue.meetingTimeLabel || "N/A"}
-                />
-                <DetalisFormatted
-                  title="Duration"
-                  detail={selectedRevenue.meetingDurationLabel || "N/A"}
+                <MeetingTimeDetails
+                  startTime={selectedRevenue.meetingStartTime}
+                  endTime={selectedRevenue.meetingEndTime}
+                  extendTime={selectedRevenue.meetingExtendTime}
+                  duration={selectedRevenue.meetingDurationLabel || "N/A"}
                 />
                 <DetalisFormatted
                   title="Status"

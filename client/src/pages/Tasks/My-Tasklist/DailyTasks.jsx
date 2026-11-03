@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, CircularProgress, TextField } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -792,12 +792,12 @@ const DailyTasks = () => {
               columns={departmentColumns}
               initialDateRange={selectedMyTaskRange}
               onDateFilterChange={handleMyTaskRangeChange}
+              loading={departmentLoading}
             />
           </WidgetSection>
         </PageFrame>
         <PageFrame>
-          {!isCompletedLoading ? (
-            <WidgetSection padding layout={1}>
+          <WidgetSection padding layout={1}>
               <YearWiseTable
                 exportData={true}
                 taskExportDateTimeFormatting
@@ -812,13 +812,9 @@ const DailyTasks = () => {
                 columns={completedColumns}
                 initialDateRange={selectedCompletedTaskRange}
                 onDateFilterChange={handleMyCompletedTaskRangeChange}
+                loading={isCompletedLoading}
               />
-            </WidgetSection>
-          ) : (
-            <div className="h-72 flex items-center justify-center">
-              <CircularProgress color="black" />
-            </div>
-          )}
+          </WidgetSection>
         </PageFrame>
       </div>
 

@@ -280,18 +280,13 @@ const DepartmentWiseTickets = ({ title }) => {
         <span className="text-subtitle">{title}</span>
       </div>
       <div className="w-full">
-        {isLoading ? (
-          <div className="w-full h-full flex justify-center items-center">
-            <CircularProgress color="black" />
-          </div>
-        ) : (
           <AgTable
+            loading={isLoading}
             key={rows.length}
             data={rows ? rows : []}
             tableHeight={350}
             columns={recievedTicketsColumns}
           />
-        )}
       </div>
       <MuiModal open={open} onClose={handleClose} title="Assign Tickets">
         <form onSubmit={handleSubmit(onSubmit)}>

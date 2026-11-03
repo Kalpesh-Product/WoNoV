@@ -95,6 +95,13 @@ const ModulePermissions = () => {
     setValue("permissions", Array.from(current));
   };
 
+  const handleEditToggle = () => {
+    if (isEditing) {
+      setValue("permissions", currentPermissions || []);
+    }
+    setIsEditing((prev) => !prev);
+  };
+
   const handleFilterChange = (field, value) => {
     setFilters((prev) => ({
       ...prev,
@@ -147,10 +154,6 @@ const ModulePermissions = () => {
           <span className="text-title font-pmedium text-primary uppercase">
             {module.charAt(0).toUpperCase() + module.slice(1)} Permissions
           </span>
-          <PrimaryButton
-            title={isEditing ? "Cancel" : "Edit"}
-            handleSubmit={() => setIsEditing((prev) => !prev)}
-          />
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)}>
@@ -171,11 +174,18 @@ const ModulePermissions = () => {
                 ),
               }}
             />
-            <div
-              className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
-              onClick={() => setFilterDrawerOpen(true)}
-            >
-              <IoFilter />
+            <div className="flex items-center gap-3">
+              <PrimaryButton
+                title={isEditing ? "Cancel" : "Edit"}
+                type="button"
+                handleSubmit={handleEditToggle}
+              />
+              <div
+                className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
+                onClick={() => setFilterDrawerOpen(true)}
+              >
+                <IoFilter />
+              </div>
             </div>
           </div>
 

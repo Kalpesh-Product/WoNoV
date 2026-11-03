@@ -195,6 +195,7 @@ const DepartmentTaskReports = () => {
             comment: task.comment,
           }))]}
           columns={departmentTaskReportsColumns}
+          loading={isLoading}
           serverSearch
           searchValue={taskSearch}
           onSearchChange={handleTaskSearchChange}

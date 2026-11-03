@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Autocomplete,
   Chip,
-  CircularProgress,
   MenuItem,
   Popover,
   TextField,
@@ -18,6 +18,7 @@ import {
   MdChevronRight,
   MdClose,
   MdDeleteForever,
+  MdErrorOutline,
   MdHistory,
 } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -35,6 +36,8 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useUserPermissions from "../../hooks/useUserPermissions";
+import { PERMISSIONS } from "../../constants/permissions";
 import {
   getCurrentFiscalYear,
   getFiscalMonthKey,
@@ -181,6 +184,7 @@ const KpaActionCell = ({
 const KraKpaIndividualMonthlyKpa = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const { hasPermission } = useUserPermissions();
   const location = useLocation();
   const isSelfKra = location.pathname.toLowerCase().endsWith("/self-kra");
   const { auth } = useAuth();
@@ -208,6 +212,12 @@ const KraKpaIndividualMonthlyKpa = () => {
   const employeeId = isEmployeeRoute
     ? auth?.user?._id
     : member?.memberId || auth?.user?._id;
+  const bulkKpaFileInputRef = useRef(null);
+  const canBulkUploadSelfKpa =
+    !isSelfKra &&
+    Boolean(auth?.user?._id && departmentId) &&
+    String(employeeId) === String(auth?.user?._id) &&
+    hasPermission(PERMISSIONS.KRAKPA_SELF_KPA_BULK_UPLOAD.value);
   const employeeName =
     member?.memberName ||
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
@@ -234,9 +244,6 @@ const KraKpaIndividualMonthlyKpa = () => {
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
-  const [categoryModalOpen, setCategoryModalOpen] = useState(false);
-  const [categoryName, setCategoryName] = useState("");
-  const [categoryError, setCategoryError] = useState("");
   const [selectedSelfKras, setSelectedSelfKras] = useState([]);
   const [selectionResetKey, setSelectionResetKey] = useState(0);
   const [dailyLogTargets, setDailyLogTargets] = useState([]);
@@ -260,6 +267,8 @@ const KraKpaIndividualMonthlyKpa = () => {
         department?.name?.trim().toLowerCase() === "top management",
     );
   const isHrUser = roleTitles.some((role) => /^hr(?:\s|$)/.test(role));
+  const canCreateSelfKraCategory =
+    isManager || isTopManagement || isHrUser;
   const showAssigneeField =
     !isEmployeeRoute &&
     !isIndividualRoute &&
@@ -270,7 +279,9 @@ const KraKpaIndividualMonthlyKpa = () => {
     !isManager &&
     !isTopManagement &&
     !isHrUser;
-  const canSelectSelfKraLead = isManager || isTopManagement;
+  const canSelectSelfKraLead =
+    (isManager || isTopManagement) &&
+    String(employeeId) !== String(auth?.user?._id);
   const canManageOthers = roleTitles.some(
     (role) =>
       role.includes("manager") ||
@@ -287,7 +298,6 @@ const KraKpaIndividualMonthlyKpa = () => {
     isManager ||
     isTopManagement ||
     (isHrUser && !isSelfKra);
-  const canAddKraCategory = isSelfKra;
   const isAssignedToLoggedInUser = (record) =>
     String(record?.employee?._id || record?.employee || "") ===
     String(auth?.user?._id || "");
@@ -296,6 +306,10 @@ const KraKpaIndividualMonthlyKpa = () => {
     !isSelfKra &&
     (!record?.approvalStatus || record.approvalStatus === "Approved") &&
     isAssignedToLoggedInUser(record);
+  const hasDueLinkedTasks = (record) =>
+    Number(record?.dueLinkedTasks || 0) > 0;
+  const canSubmitCompletion = (record) =>
+    canCompleteRecord(record) && !hasDueLinkedTasks(record);
 
   const refreshKpaQueries = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
@@ -308,6 +322,54 @@ const KraKpaIndividualMonthlyKpa = () => {
     queryClient.invalidateQueries({
       queryKey: ["performanceMemberWiseKraKpa"],
     });
+  };
+
+  const bulkUploadSelfKpa = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("department", departmentId);
+      const response = await axios.post(
+        "/api/kra-kpa/individual-monthly-kpa/bulk-upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      refreshKpaQueries();
+      toast.success(`${data.count} Self KPA row${data.count === 1 ? "" : "s"} uploaded and sent for approval.`);
+    },
+    onError: (error) => {
+      const responseData = error?.response?.data;
+      const firstRowError = responseData?.errors?.[0];
+      toast.error(
+        firstRowError
+          ? `Row ${firstRowError.row}${
+              firstRowError.field === "Deadline" &&
+              firstRowError.message === "Deadline is required."
+                ? ":"
+                : `, ${firstRowError.field}:`
+            } ${firstRowError.message}`
+          : responseData?.message || "Unable to upload Self KPAs.",
+      );
+    },
+    onSettled: () => {
+      if (bulkKpaFileInputRef.current) bulkKpaFileInputRef.current.value = "";
+    },
+  });
+
+  const downloadSelfKpaTemplate = () => {
+    const csv =
+      String.fromCharCode(65279) +
+      ["KPA,Deadline", "Example KPA,2026-11-30", ""].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "self-kpa-bulk-upload-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const { data: records = [], isLoading } = useQuery({
@@ -367,31 +429,6 @@ const KraKpaIndividualMonthlyKpa = () => {
       },
     });
 
-  const addKraCategory = useMutation({
-    mutationFn: async (categoryToCreate) => {
-      const response = await axios.post("/api/kra-kpa/self-kra-categories", {
-        department: departmentId,
-        categoryName: categoryToCreate,
-      });
-      return response.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["kraCategories", departmentId],
-      });
-      setCategoryModalOpen(false);
-      setCategoryName("");
-      setCategoryError("");
-      toast.success("KRA category added");
-    },
-    onError: (error) => {
-      const message =
-        error?.response?.data?.message || "Unable to add KRA category";
-      setCategoryError(message);
-      toast.error(message);
-    },
-  });
-
   const { data: reviewAccess } = useQuery({
     queryKey: ["kraKpaIndividualMonthlyKpaReviewAccess", departmentId],
     enabled: Boolean(departmentId && !isSelfKra),
@@ -426,17 +463,32 @@ const KraKpaIndividualMonthlyKpa = () => {
 
   const saveRecord = useMutation({
     mutationFn: async (payload) => {
+      let resolvedPayload = payload;
+      if (isSelfKra && payload.categoryNameToCreate) {
+        const categoryResponse = await axios.post(
+          "/api/kra-kpa/self-kra-categories",
+          {
+            department: departmentId,
+            categoryName: payload.categoryNameToCreate,
+          },
+        );
+        resolvedPayload = {
+          ...payload,
+          category: categoryResponse.data._id,
+        };
+        delete resolvedPayload.categoryNameToCreate;
+      }
       if (editingRecord) {
         const response = await axios.patch(
           `/api/kra-kpa/${isSelfKra ? "self-kra" : "individual-monthly-kpa"}/${editingRecord._id}`,
-          payload,
+          resolvedPayload,
         );
         return response.data;
       }
       const response = await axios.post(
         `/api/kra-kpa/${isSelfKra ? "self-kra" : "individual-monthly-kpa"}`,
         {
-          ...payload,
+          ...resolvedPayload,
           department: departmentId,
           employee: employeeId,
         },
@@ -445,6 +497,11 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onSuccess: (savedRecord, payload) => {
       refreshKpaQueries();
+      if (isSelfKra) {
+        queryClient.invalidateQueries({
+          queryKey: ["kraCategories", departmentId],
+        });
+      }
       if (!isSelfKra && payload.month) setDateRange(monthRange(payload.month));
       setModalOpen(false);
       setEditingRecord(null);
@@ -583,6 +640,10 @@ const KraKpaIndividualMonthlyKpa = () => {
 
   const confirmRowAction = () => {
     if (!pendingAction) return;
+    if (
+      pendingAction.type === "complete" &&
+      !canSubmitCompletion(pendingAction.record)
+    ) return;
     performRowAction.mutate({
       ...pendingAction,
       resourceComment: completionComment.trim(),
@@ -594,29 +655,6 @@ const KraKpaIndividualMonthlyKpa = () => {
     setForm(emptyForm());
     setFormErrors({});
     setModalOpen(true);
-  };
-  const openCategoryModal = () => {
-    setCategoryName("");
-    setCategoryError("");
-    setCategoryModalOpen(true);
-  };
-  const handleCategorySubmit = (event) => {
-    event.preventDefault();
-    const normalizedCategoryName = categoryName.trim().toLowerCase();
-    if (!normalizedCategoryName) {
-      setCategoryError("Category name is required");
-      return;
-    }
-    if (
-      kraCategories.some(
-        (category) =>
-          category.categoryName.trim().toLowerCase() === normalizedCategoryName,
-      )
-    ) {
-      setCategoryError("This category already exists");
-      return;
-    }
-    addKraCategory.mutate(categoryName.trim());
   };
   const openEdit = (record) => {
     if (!isSelfKra && isEmployeeUser) return;
@@ -650,7 +688,8 @@ const KraKpaIndividualMonthlyKpa = () => {
         : "",
       selfKras: [
         {
-          category: record.category?._id || record.category || "",
+          category:
+            record.category?.categoryName || record.categoryName || "",
           title: record.title || "",
           lead: record.lead?._id || record.lead || "",
           isActive: record.isActive !== false,
@@ -693,7 +732,8 @@ const KraKpaIndividualMonthlyKpa = () => {
     const selfKra = form.selfKras[0];
     const nextErrors = {};
     if (isSelfKra) {
-      if (!selfKra.category) nextErrors.category = "Category is required";
+      if (!String(selfKra.category || "").trim())
+        nextErrors.category = "Category is required";
       if (!selfKra.title.trim()) nextErrors.title = "Title is required";
       if (canSelectSelfKraLead && !selfKra.lead)
         nextErrors.lead = "Lead is required";
@@ -714,9 +754,28 @@ const KraKpaIndividualMonthlyKpa = () => {
     }
     setFormErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
+    const normalizedCategoryName = String(selfKra.category || "")
+      .trim()
+      .replace(/\s+/g, " ");
+    const existingCategory = isSelfKra
+      ? kraCategories.find(
+          (category) =>
+            category.categoryName.trim().replace(/\s+/g, " ").toLowerCase() ===
+            normalizedCategoryName.toLowerCase(),
+        )
+      : null;
+    if (isSelfKra && !existingCategory && !canCreateSelfKraCategory) {
+      setFormErrors((current) => ({
+        ...current,
+        category: "Select an existing category",
+      }));
+      return;
+    }
     const payload = isSelfKra
       ? {
-          category: selfKra.category,
+          ...(existingCategory
+            ? { category: existingCategory._id }
+            : { categoryNameToCreate: normalizedCategoryName }),
           title: selfKra.title.trim(),
           ...(editingRecord && { isActive: selfKra.isActive }),
           ...(canSelectSelfKraLead && { lead: selfKra.lead }),
@@ -1214,31 +1273,58 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
 
   return (
-    <div className="p-4">
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
+    <div>
         <PageFrame>
         <WidgetSection padding>
         <AgTable
-          titleRightContent={isSelfKra && (
+          loading={isLoading}
+          titleRightContent={(
             <div className="flex flex-wrap items-center justify-end gap-3">
-              {canAddKraCategory && <PrimaryButton type="button" title="Add Category" handleSubmit={openCategoryModal} />}
-              {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
-              <PrimaryButton
-                type="button"
-                title={`Add to Daily Logs (${selectedSelfKras.length})`}
-                handleSubmit={openAddSelfKrasToDailyLogs}
-                disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
-                className="!w-[230px]"
-              />
+              {canBulkUploadSelfKpa && (
+                <>
+                  <input
+                    ref={bulkKpaFileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    aria-label="Choose Self KPA CSV file"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) bulkUploadSelfKpa.mutate(file);
+                    }}
+                  />
+                  <SecondaryButton
+                    type="button"
+                    title="Template"
+                    handleSubmit={downloadSelfKpaTemplate}
+                    externalStyles="!px-4"
+                  />
+                  <PrimaryButton
+                    type="button"
+                    title="Bulk Upload KPA"
+                    handleSubmit={() => bulkKpaFileInputRef.current?.click()}
+                    disabled={bulkUploadSelfKpa.isPending}
+                    isLoading={bulkUploadSelfKpa.isPending}
+                    externalStyles="!px-4"
+                  />
+                </>
+              )}
+              {isSelfKra ? (
+                <>
+                  {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
+                  <PrimaryButton
+                    type="button"
+                    title={`Add to Daily Logs (${selectedSelfKras.length})`}
+                    handleSubmit={openAddSelfKrasToDailyLogs}
+                    disabled={!canScheduleSelectedSelfKras || addSelfKrasToDailyLogs.isPending}
+                    className="!w-[230px]"
+                  />
+                </>
+              ) : (
+                canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
+              )}
             </div>
           )}
-          headerActions={
-            !isSelfKra && canAddKraKpa && <PrimaryButton type="button" title="Add KPA" handleSubmit={openCreate} />
-          }
           toolbarDateControls={
             <>
               {!isSelfKra && <>
@@ -1332,12 +1418,12 @@ const KraKpaIndividualMonthlyKpa = () => {
         />
         </WidgetSection>
         </PageFrame>
-      )}
 
       <div className="mt-6">
         <PageFrame>
         <WidgetSection padding>
         <AgTable
+          loading={isLoading}
           showDateControls={false}
           data={completedTableData}
           columns={completedColumns}
@@ -1749,7 +1835,9 @@ const KraKpaIndividualMonthlyKpa = () => {
         message={
           pendingAction?.type === "delete"
             ? `Are you sure you want to delete this ${isSelfKra ? "Self KRA" : "KPA"}?`
-            : `Mark this ${isSelfKra ? "Self KRA" : "KPA"} as completed?${isSelfKra ? "" : " It will be submitted for review."}`
+            : hasDueLinkedTasks(pendingAction?.record)
+              ? "This KPA cannot be completed yet."
+              : `Mark this ${isSelfKra ? "Self KRA" : "KPA"} as completed?${isSelfKra ? "" : " It will be submitted for review."}`
         }
         confirmText={
           pendingAction?.type === "delete" ? "Delete" : "Mark as Done"
@@ -1758,91 +1846,49 @@ const KraKpaIndividualMonthlyKpa = () => {
         cancelFirst={pendingAction?.type === "complete"}
         confirmDisabled={
           pendingAction?.type === "complete" &&
-          !canCompleteRecord(pendingAction.record)
+          !canSubmitCompletion(pendingAction.record)
         }
         isLoading={performRowAction.isPending}
       >
         {pendingAction?.type === "complete" && !isSelfKra && (
-          <TextField
-            label="Resource Comment"
-            size="small"
-            multiline
-            minRows={3}
-            value={completionComment}
-            onChange={(event) => setCompletionComment(event.target.value)}
-            disabled={!canCompleteRecord(pendingAction.record)}
-            helperText={
-              canCompleteRecord(pendingAction.record)
-                ? ""
-                : "Only the assigned employee can complete it"
-            }
-            inputProps={{ maxLength: 5000 }}
-            fullWidth
-          />
+          <>
+            {hasDueLinkedTasks(pendingAction.record) ? (
+              <div
+                role="alert"
+                className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3"
+              >
+                <MdErrorOutline className="mt-0.5 shrink-0 text-xl text-amber-700" />
+                <div className="space-y-0.5">
+                  <p className="text-sm font-semibold text-amber-900">
+                    Complete linked tasks first
+                  </p>
+                  <p className="text-sm text-amber-800">
+                    {pendingAction.record.dueLinkedTasks} of {pendingAction.record.totalLinkedTasks} KPA task
+                    {Number(pendingAction.record.dueLinkedTasks) === 1 ? " is" : "s are"} still due.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <TextField
+                label="Resource Comment"
+                size="small"
+                multiline
+                minRows={3}
+                value={completionComment}
+                onChange={(event) => setCompletionComment(event.target.value)}
+                disabled={!canCompleteRecord(pendingAction.record)}
+                helperText={
+                  canCompleteRecord(pendingAction.record)
+                    ? ""
+                    : "Only the assigned employee can complete it"
+                }
+                inputProps={{ maxLength: 5000 }}
+                fullWidth
+              />
+            )}
+          </>
         )}
       </ConfirmationModal>
-
-      <MuiModal
-        open={categoryModalOpen}
-        onClose={() => {
-          setCategoryModalOpen(false);
-          setCategoryName("");
-          setCategoryError("");
-        }}
-        title="Add KRA Category"
-        widthClass="w-[92vw] max-w-[430px]"
-      >
-        <form onSubmit={handleCategorySubmit} className="grid gap-4">
-          <TextField
-            fullWidth
-            label="Category Name *"
-            size="small"
-            value={categoryName}
-            disabled={isLoadingKraCategories || addKraCategory.isPending}
-            onChange={(event) => {
-              setCategoryName(event.target.value);
-              setCategoryError("");
-            }}
-            error={Boolean(categoryError)}
-            helperText={categoryError}
-            inputProps={{ maxLength: 200 }}
-            autoFocus
-          />
-          <div>
-            <div className="mb-2 text-sm font-medium text-primary">Existing Categories</div>
-            {isLoadingKraCategories ? (
-              <div className="text-sm text-gray-500">Loading categories...</div>
-            ) : kraCategories.length ? (
-              <ul className="max-h-48 divide-y divide-gray-100 overflow-y-auto rounded-md border border-borderGray">
-                {kraCategories.map((category) => (
-                  <li key={category._id} className="break-words px-3 py-2 text-sm text-gray-700">
-                    {category.categoryName}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-sm text-gray-500">No categories added yet.</div>
-            )}
-          </div>
-          <div className="flex justify-end gap-3">
-            <SecondaryButton
-              type="button"
-              title="Close"
-              handleSubmit={() => {
-                setCategoryModalOpen(false);
-                setCategoryName("");
-                setCategoryError("");
-              }}
-            />
-            <PrimaryButton
-              type="submit"
-              title="Save"
-              isLoading={addKraCategory.isPending}
-              disabled={isLoadingKraCategories || addKraCategory.isPending}
-            />
-          </div>
-        </form>
-      </MuiModal>
 
       <MuiModal
         open={modalOpen}
@@ -1873,33 +1919,46 @@ const KraKpaIndividualMonthlyKpa = () => {
           )}
           {isSelfKra ? (
             <>
-              <TextField
-                label="Category *"
-                select
-                size="small"
-                value={form.selfKras[0].category}
-                onChange={updateSelfKra(0, "category")}
-                error={Boolean(formErrors.category)}
-                helperText={formErrors.category}
-                disabled={isLoadingKraCategories}
-              >
-                <MenuItem value="" disabled>
-                  {isLoadingKraCategories
-                    ? "Loading categories..."
-                    : "Select Category"}
-                </MenuItem>
-                {kraCategories.length ? (
-                  kraCategories.map((category) => (
-                    <MenuItem key={category._id} value={category._id}>
-                      {category.categoryName}
-                    </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem value="no-categories" disabled>
-                    No categories found
-                  </MenuItem>
+              <Autocomplete
+                fullWidth
+                freeSolo={canCreateSelfKraCategory}
+                autoSelect={canCreateSelfKraCategory}
+                selectOnFocus
+                options={kraCategories.map(
+                  (category) => category.categoryName,
                 )}
-              </TextField>
+                value={form.selfKras[0].category || null}
+                loading={isLoadingKraCategories}
+                noOptionsText={
+                  canCreateSelfKraCategory
+                    ? "No options - type to add"
+                    : "No categories available"
+                }
+                onChange={(_, selectedValue) => {
+                  setForm((current) => ({
+                    ...current,
+                    selfKras: current.selfKras.map((kra, index) =>
+                      index === 0
+                        ? { ...kra, category: selectedValue || "" }
+                        : kra,
+                    ),
+                  }));
+                  clearFormError("category");
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Category *"
+                    size="small"
+                    error={Boolean(formErrors.category)}
+                    helperText={formErrors.category}
+                    inputProps={{
+                      ...params.inputProps,
+                      maxLength: 200,
+                    }}
+                  />
+                )}
+              />
               <TextField
                 label="Title *"
                 size="small"

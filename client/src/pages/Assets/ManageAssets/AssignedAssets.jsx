@@ -326,6 +326,7 @@ const AssignedAssets = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          loading={isAssignedPending}
           key={assignedAssets.length}
           search={true}
           tableTitle={tableTitle}
