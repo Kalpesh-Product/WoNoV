@@ -8,7 +8,6 @@ import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import PageFrame from "../../components/Pages/PageFrame";
-import { CircularProgress } from "@mui/material";
 import { useMemo } from "react";
 
 const ManageTicketsHome = () => {
@@ -88,12 +87,7 @@ const ManageTicketsHome = () => {
     <div className="flex flex-col gap-4 p-4">
       <PageFrame>
         <WidgetSection layout={1} padding>
-          {isLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <CircularProgress />
-            </div>
-          ) : (
-            <>
+          <>
               <div className="w-full pb-3">
                 <div className="flex justify-between items-center gap-3 flex-wrap">
                   <span className="text-title text-primary font-pmedium uppercase">
@@ -120,6 +114,7 @@ const ManageTicketsHome = () => {
                 </div>
               </div>
               <AgTable
+                loading={isLoading}
                 data={[
                   ...getAllTickets.map((item, index) => ({
                     srNo: index + 1,
@@ -138,8 +133,7 @@ const ManageTicketsHome = () => {
                 hideTitle
                 hideFilter
               />
-            </>
-          )}
+          </>
         </WidgetSection>
       </PageFrame>
     </div>

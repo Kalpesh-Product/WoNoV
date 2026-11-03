@@ -15,6 +15,7 @@ import {
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
@@ -175,7 +176,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
 
   
 
-  const { data: memberWiseData = [] } = useQuery({
+  const { data: memberWiseData = [], isLoading: isMemberWiseLoading } = useQuery({
     queryKey: [
       "performanceMemberWiseKra",
       selectedDepartment,
@@ -687,7 +688,9 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
         redTitle="KRA"
         TitleAmountRed={totalPending}
       >
-        <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+        {isMemberWiseLoading ? (
+          <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
+        ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />}
 
         <div className="flex justify-center items-center pb-4">
           {/* <div className="flex items-center"> */}
@@ -722,6 +725,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
       <PageFrame>
         <WidgetSection layout={1} padding>
           <AgTable
+            loading={isMemberWiseLoading}
             data={visibleRowData}
             columns={columns}
             tableTitle={`${selectedDepartmentName || department || "Department"} - MEMBER WISE PENDING KRA - ${selectedDateLabel}`}

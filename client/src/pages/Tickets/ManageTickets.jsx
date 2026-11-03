@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import WidgetSection from "../../components/WidgetSection";
 import TicketCard from "../../components/TicketCard";
-import { CircularProgress, Tab, Tabs } from "@mui/material";
+import { Tab, Tabs } from "@mui/material";
 import RecievedTickets from "./Tables/RecievedTickets";
 import AcceptedTickets from "./Tables/AcceptedTickets";
 import SupportTickets from "./Tables/SupportTickets";
@@ -124,6 +124,7 @@ const ManageTickets = () => {
           )}
         >
           <TicketCard
+            loading={isLoading || isSupportLoading}
             title={"Open"}
             titleColor={"#1E3D73"}
             data={ticketsFilteredData.openTickets}
@@ -131,6 +132,7 @@ const ManageTickets = () => {
             fontFamily={"Poppins-Bold"}
           />
           <TicketCard
+            loading={isLoading || isSupportLoading}
             title={"In-Progress"}
             titleColor={"#1E3D73"}
             data={ticketsFilteredData.inProgressTickets}
@@ -138,6 +140,7 @@ const ManageTickets = () => {
             fontFamily={"Poppins-Bold"}
           />
           <TicketCard
+            loading={isLoading || isSupportLoading}
             title={"Closed"}
             titleColor={"#1E3D73"}
             data={ticketsFilteredData.closedTickets}
@@ -157,6 +160,7 @@ const ManageTickets = () => {
           )}
         >
           <TicketCard
+            loading={isLoading || isSupportLoading}
             title={"Accepted Tickets"}
             data={ticketsFilteredData.acceptedTickets}
             fontColor={"#1E3D73"}
@@ -164,6 +168,7 @@ const ManageTickets = () => {
             titleColor={"#1E3D73"}
           />
           <TicketCard
+            loading={isLoading || isSupportLoading}
             title={"Assigned Tickets"}
             data={ticketsFilteredData.assignedTickets}
             fontColor={"#1E3D73"}
@@ -172,6 +177,7 @@ const ManageTickets = () => {
           />
           {canViewEscalatedTickets ? (
             <TicketCard
+              loading={isLoading || isSupportLoading}
               title={"Escalated Tickets"}
               data={ticketsFilteredData.escalatedTickets}
               fontColor={"#1E3D73"}
@@ -181,6 +187,7 @@ const ManageTickets = () => {
           ) : (
             canViewSupportTickets && (
               <TicketCard
+                loading={isLoading || isSupportLoading}
                 title={"Support Tickets"}
                 data={ticketsFilteredData.supportTickets}
                 fontColor={"#1E3D73"}
@@ -283,8 +290,7 @@ const ManageTickets = () => {
   return (
     <div>
       {/* Widgets */}
-      {!isLoading && !isSupportLoading ? (
-        <div>
+      <div>
           {widgets.map((widget, index) => (
             <div key={index}>
               <WidgetSection layout={widget.layout}>
@@ -293,11 +299,6 @@ const ManageTickets = () => {
             </div>
           ))}
         </div>
-      ) : (
-        <div className="h-72 flex justify-center items-center">
-          <CircularProgress />
-        </div>
-      )}
 
       {/* Tabs */}
       {/* Tabs or Fallback */}

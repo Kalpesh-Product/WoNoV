@@ -47,6 +47,17 @@ const budgetSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    financeAmountHistory: {
+      type: [
+        {
+          previousAmount: { type: Number, default: 0 },
+          amount: { type: Number, required: true },
+          changedAt: { type: Date, default: Date.now },
+          changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+        },
+      ],
+      default: [],
+    },
     unit: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Unit",

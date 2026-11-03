@@ -28,6 +28,22 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
+
+const AssetChartSkeleton = ({ donut = false, height = "h-72" }) => (
+  <div className={`${height} animate-pulse rounded-lg bg-gray-50 p-5`} aria-label="Loading asset chart">
+    {donut ? (
+      <div className="flex h-full items-center justify-center">
+        <div className="h-48 w-48 rounded-full border-[28px] border-gray-200 bg-white" />
+      </div>
+    ) : (
+      <div className="flex h-full items-end gap-3 border-b border-l border-gray-300 px-4 pt-10">
+        {[38, 62, 47, 78, 56, 88, 68, 94, 58, 73, 44, 82].map((bar, index) => (
+          <div key={index} className="flex-1 rounded-t bg-gray-200" style={{ height: `${bar}%` }} />
+        ))}
+      </div>
+    )}
+  </div>
+);
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 import { PERMISSIONS } from "../../constants/permissions";
@@ -930,6 +946,8 @@ const AssetsDashboard = () => {
     { key: "underMaintenance", label: "Under Maintenance", color: "#1565C0" },
     { key: "damaged", label: "Damaged", color: "#7986CB" },
   ];
+  const isAssetsDashboardLoading =
+    isDepartmentLoading || isCategoriesLoading || isSubCategoriesLoading || isAssignedAssetsLoading;
 
   const meetingsWidgets = [
     {
@@ -964,13 +982,17 @@ const AssetsDashboard = () => {
                 );
               })}
             </div>
-            <YearlyGraph
+            {isAssetsDashboardLoading ? (
+              <WidgetSection border padding title={assetsValueGraph.title}>
+                <AssetChartSkeleton height="h-[26rem]" />
+              </WidgetSection>
+            ) : <YearlyGraph
               title={assetsValueGraph.title}
               titleAmount={assetsValueGraph.titleAmount}
               data={assetsValueGraph.data}
               options={assetsValueGraph.options}
               onYearChange={assetsValueGraph.onYearChange}
-            />
+            />}
           </div>
         )
       ],
@@ -994,6 +1016,7 @@ const AssetsDashboard = () => {
       widgets: [
            userPermissions.includes(PERMISSIONS.ASSETS_TOTAL_ASSETS.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalAssets.length}
             description={"Total Assets"}
@@ -1007,6 +1030,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_OWNED.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalOwnedAssets}
             description={"Assets Owned"}
@@ -1021,6 +1045,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_RENTAL.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalRentalAssets}
             description={"Assets Rental"}
@@ -1034,6 +1059,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_VALUE.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={`INR ${inrFormat(totalAssetsPrice)}`}
             description={"Assets Value"}
@@ -1047,6 +1073,7 @@ const AssetsDashboard = () => {
       widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalCategories}
             description={"Assets Categories"}
@@ -1056,6 +1083,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_SUB_CATEGORIES.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalSubCategories}
             description={"Assets Sub-Categories"}
@@ -1065,6 +1093,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_IN_USE.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalAssignedAssets}
             description={"Assets In Use"}
@@ -1078,6 +1107,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_UNASSIGNED_ASSETS.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalUnassignedAssets}
             description={"Unassigned Assets"}
@@ -1096,6 +1126,7 @@ const AssetsDashboard = () => {
       widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_UNDER_MAINTENANCE.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalAssetsUnderMaintenance}
             description={"Assets Under Maintenance"}
@@ -1110,6 +1141,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_DAMAGED.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalDamagedAssets}
             description={"Assets Damaged"}
@@ -1123,6 +1155,7 @@ const AssetsDashboard = () => {
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSETS_EXTRA.value) && (
           <DataCard
+            loading={isAssetsDashboardLoading}
             title={"Total"}
             data={totalExtraAssets}
             description={"Assets Extra"}
@@ -1145,12 +1178,12 @@ const AssetsDashboard = () => {
           title={item.title}
           border={item.border}
         >
-          <PieChartMui
+          {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <PieChartMui
             data={item.data}
             options={item.options}
             width={item.width}
             centerAlign
-          />
+          />}
         </WidgetSection>
       )),
     },
@@ -1160,18 +1193,18 @@ const AssetsDashboard = () => {
       widgets: [
         userPermissions.includes(PERMISSIONS.ASSETS_DEPARTMENT_WISE_ASSET_USAGE.value) && (
           <WidgetSection layout={1} title={"Department Wise Asset Usage"} border>
-            <PieChartMui
+            {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <PieChartMui
               data={departmentPieData}
               options={departmentPieOptions}
               width={550}
               centerAlign
-            />
+            />}
           </WidgetSection>
         ),
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
           <WidgetSection layout={1} title={"Asset Categories"} border>
             <div className="flex justify-center">
-              <DonutChart {...assetCategoriesData} width={440} />
+              {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <DonutChart {...assetCategoriesData} width={440} />}
             </div>
           </WidgetSection>
         ),
@@ -1189,6 +1222,7 @@ const AssetsDashboard = () => {
               rowKey="id"
               rowsToDisplay={8}
               className="h-full"
+              loading={isAssetsDashboardLoading}
             />
           </WidgetSection>
         ),

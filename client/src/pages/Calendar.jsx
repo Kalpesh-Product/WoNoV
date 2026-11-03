@@ -15,11 +15,16 @@ import {
 import dayjs from "dayjs";
 
 import MuiModal from "../components/MuiModal";
+import MeetingTimeDetails from "../components/MeetingTimeDetails";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
-import humanTime from "../utils/humanTime";
 import { getStatusColors } from "../constants/statusColors";
+import {
+  hasValidMeetingExtension,
+  getMeetingDisplayStatus,
+  getNormalizedMeetingDisplayStatus,
+} from "../utils/meetingStatus";
 
 const MAIN_FILTERS = ["holiday", "event", "meeting"];
 const MEETING_STATUS_FILTERS = [
@@ -49,10 +54,9 @@ const normalize = (value) =>
     .trim()
     .toLowerCase();
 
-const getMeetingStatus = (meeting) => {
-  const status = normalize(meeting?.meetingStatus);
-  return status === "canceled" ? "cancelled" : status;
-};
+const getMeetingStatus = getNormalizedMeetingDisplayStatus;
+const getMeetingCalendarColorStatus = (meeting) =>
+  hasValidMeetingExtension(meeting) ? "extended" : getMeetingStatus(meeting);
 
 const Calender = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -166,8 +170,9 @@ const Calender = () => {
   const transformedMeetings = useMemo(
     () =>
       visibleMeetings.map((meeting) => {
-        const status = getMeetingStatus(meeting);
-        const statusColors = getStatusColors(status);
+        const eventStatusColors = getStatusColors(
+          getMeetingCalendarColorStatus(meeting),
+        );
 
         return {
           id: meeting._id,
@@ -175,9 +180,9 @@ const Calender = () => {
           start: meeting.startTime,
           end: meeting.endTime,
           allDay: false,
-          backgroundColor: statusColors.backgroundColor,
+          backgroundColor: eventStatusColors.backgroundColor,
           borderColor: "transparent",
-          textColor: statusColors.color,
+          textColor: eventStatusColors.color,
           extendedProps: {
             type: "meeting", // so it can be filtered
             agenda: meeting.agenda,
@@ -188,6 +193,7 @@ const Calender = () => {
             duration: meeting.duration,
             startTime: meeting.startTime,
             endTime: meeting.endTime,
+            extendTime: meeting.extendTime,
             subject: meeting.subject,
             department: meeting.department,
     //       participants: meeting.participants?.map(
@@ -252,6 +258,12 @@ const Calender = () => {
       if (type === "meeting") {
         const status = getMeetingStatus(event.extendedProps);
         if (status in counts) counts[status]++;
+        if (
+          hasValidMeetingExtension(event.extendedProps) &&
+          status !== "extended"
+        ) {
+          counts.extended++;
+        }
       }
     });
 
@@ -266,7 +278,12 @@ const Calender = () => {
 
         if (type !== "meeting") return true;
 
-        return eventFilter.includes(getMeetingStatus(event.extendedProps));
+        const meetingStatus = getMeetingStatus(event.extendedProps);
+        return (
+          eventFilter.includes(meetingStatus) ||
+          (hasValidMeetingExtension(event.extendedProps) &&
+            eventFilter.includes("extended"))
+        );
       }),
     [allCombinedEvents, eventFilter],
   );
@@ -293,7 +310,9 @@ const Calender = () => {
     const event = clickInfo.event;
     const type = normalize(event.extendedProps?.type);
     const colorKey =
-      type === "meeting" ? getMeetingStatus(event.extendedProps) : type;
+      type === "meeting"
+        ? getMeetingCalendarColorStatus(event.extendedProps)
+        : type;
     const headerBackground = type === "meeting"
       ? getStatusColors(colorKey).backgroundColor
       : FILTER_COLORS[colorKey] || "";
@@ -446,7 +465,7 @@ const Calender = () => {
                       const type = normalize(event.extendedProps.type);
                       const colorKey =
                         type === "meeting"
-                          ? getMeetingStatus(event.extendedProps)
+                          ? getMeetingCalendarColorStatus(event.extendedProps)
                           : type;
                       const indicatorColor = type === "meeting"
                         ? getStatusColors(colorKey).color
@@ -565,30 +584,12 @@ const Calender = () => {
                     </span>{" "}
                   </span>{" "}
                   {selectedEvent.extendedProps.startTime && (
-                    <div>
-                      <span className="text-content flex  items-start ">
-                        <span className="w-[30%]"> Time</span>
-                        <span>:</span>
-
-                        <span className="text-content   w-full justify-start pl-4">
-                          {`${humanTime(selectedEvent.start)} - ${humanTime(
-                            selectedEvent.end
-                          )}`}
-                        </span>
-                      </span>{" "}
-                    </div>
-                  )}
-                  {selectedEvent.extendedProps.duration && (
-                    <div>
-                      <span className="text-content flex  items-start ">
-                        <span className="w-[30%]">Duration</span>
-                        <span>:</span>
-
-                        <span className="text-content   w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.duration}
-                        </span>
-                      </span>{" "}
-                    </div>
+                    <MeetingTimeDetails
+                      startTime={selectedEvent.start}
+                      endTime={selectedEvent.extendedProps.endTime}
+                      extendTime={selectedEvent.extendedProps.extendTime}
+                      duration={selectedEvent.extendedProps.duration}
+                    />
                   )}
                   {selectedEvent.extendedProps.meetingStatus && (
                     <div>
@@ -597,7 +598,7 @@ const Calender = () => {
                         <span>:</span>
 
                         <span className="text-content   w-full justify-start pl-4">
-                          {selectedEvent.extendedProps.meetingStatus}
+                          {getMeetingDisplayStatus(selectedEvent.extendedProps)}
                         </span>
                       </span>{" "}
                     </div>

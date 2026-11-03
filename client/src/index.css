@@ -38,6 +38,14 @@ button[data-export-action="true"] {
   grid-column: 1 / -1;
 }
 .table-toolbar[data-stacked="true"] .table-toolbar-actions {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+.table-toolbar[data-stacked="true"] .table-toolbar-dates {
+  width: 100%;
+  max-width: 100%;
   flex-wrap: wrap;
 }
 

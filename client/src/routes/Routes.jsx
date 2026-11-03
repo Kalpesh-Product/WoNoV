@@ -6284,7 +6284,7 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
-                    path: "mix-bag/repeat-booking",
+                    path: "mix-bag/repeat-bookings",
                     element: (
                       <PerformancePermissionRoute
                         element={<RepeatExternalCompaanies />}
@@ -6295,10 +6295,19 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
+                    path: "mix-bag/repeat-booking",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-bookings"
+                        replace
+                      />
+                    ),
+                  },
+                  {
                     path: "mix-bag/repeat-day-pass",
                     element: (
                       <Navigate
-                        to="/app/visitors/mix-bag/repeat-booking"
+                        to="/app/visitors/mix-bag/repeat-bookings"
                         replace
                       />
                     ),
@@ -6307,7 +6316,7 @@ export const routes = createBrowserRouter([
                     path: "mix-bag/repeat-day-pass/repeat-external-companies",
                     element: (
                       <Navigate
-                        to="/app/visitors/mix-bag/repeat-booking"
+                        to="/app/visitors/mix-bag/repeat-bookings"
                         replace
                       />
                     ),

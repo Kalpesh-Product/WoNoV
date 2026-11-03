@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import AgTable from "../../components/AgTable";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -114,12 +114,8 @@ const TicketsHistory = ({ pageTitle }) => {
           </span>
         </div>
         <div className=" w-full">
-          {ticketsLoading ? (
-            <div className="w-full h-full flex justify-center items-center">
-              <CircularProgress color="black" />
-            </div>
-          ) : (
-            <YearWiseTable
+          <YearWiseTable
+              loading={ticketsLoading}
               dateColumn={"date"}
               key={tickets?.length}
               search
@@ -146,7 +142,6 @@ const TicketsHistory = ({ pageTitle }) => {
               columns={recievedTicketsColumns}
               paginationPageSize={10}
             />
-          )}
         </div>
       </PageFrame>
 

@@ -10,6 +10,7 @@ import humanTime from "../../utils/humanTime";
 import humanDate from "../../utils/humanDateForamt";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../utils/formatDateTime";
@@ -856,13 +857,10 @@ const VisitorReports = () => {
                   title="Meeting Date"
                   detail={selectedVisitor.meetingDate}
                 />
-                <DetalisFormatted
-                  title="Start Time"
-                  detail={selectedVisitor.meetingStartTime}
-                />
-                <DetalisFormatted
-                  title="End Time"
-                  detail={selectedVisitor.meetingEndTime}
+                <MeetingTimeDetails
+                  startTime={selectedVisitor.meeting.startTime}
+                  endTime={selectedVisitor.meeting.endTime}
+                  extendTime={selectedVisitor.meeting.extendTime}
                 />
                 <DetalisFormatted
                   title="Meeting Status"

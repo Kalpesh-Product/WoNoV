@@ -447,6 +447,7 @@ const ManageVisitors = () => {
           tableTitle="Internal Visitors"
           initialDateRange={initialVisitorDateRange}
           onDateFilterChange={handleVisitorDateFilterChange}
+          loading={isVisitorsData}
           // data={visitorsData
           //   .filter((visitor) => hasRole(visitor, "Visitor"))
           //   .map((item, index) => {

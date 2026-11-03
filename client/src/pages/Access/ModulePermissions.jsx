@@ -95,29 +95,6 @@ const ModulePermissions = () => {
     setValue("permissions", Array.from(current));
   };
 
-  const modulePermissionActions = useMemo(
-    () => [...new Set(permissions.map(({ action }) => action).filter(Boolean))],
-    [permissions],
-  );
-  const selectedModulePermissionCount = modulePermissionActions.filter(
-    (action) => formPermissions.has(action),
-  ).length;
-  const areAllModulePermissionsSelected =
-    modulePermissionActions.length > 0 &&
-    selectedModulePermissionCount === modulePermissionActions.length;
-
-  const handleSelectAll = () => {
-    const current = new Set(watch("permissions") || []);
-
-    if (areAllModulePermissionsSelected) {
-      modulePermissionActions.forEach((action) => current.delete(action));
-    } else {
-      modulePermissionActions.forEach((action) => current.add(action));
-    }
-
-    setValue("permissions", Array.from(current));
-  };
-
   const handleEditToggle = () => {
     if (isEditing) {
       setValue("permissions", currentPermissions || []);
@@ -198,19 +175,6 @@ const ModulePermissions = () => {
               }}
             />
             <div className="flex items-center gap-3">
-              {isEditing && (
-                <label className="flex items-center cursor-pointer whitespace-nowrap">
-                  <Checkbox
-                    checked={areAllModulePermissionsSelected}
-                    indeterminate={
-                      selectedModulePermissionCount > 0 &&
-                      !areAllModulePermissionsSelected
-                    }
-                    onChange={handleSelectAll}
-                  />
-                  <span className="text-content">Select All</span>
-                </label>
-              )}
               <PrimaryButton
                 title={isEditing ? "Cancel" : "Edit"}
                 type="button"

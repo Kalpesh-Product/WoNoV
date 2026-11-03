@@ -19,6 +19,7 @@ const MuiTable = ({
   scroll = false,
   scrollHeight = 480,
   showTableControls = true,
+  loading = false,
 }) => {
   const { filteredRows, toolbar } = useTableControls(rows, columns.map((column) => ({ field: column.id, headerName: column.label })));
   const visibleRows = showTableControls ? filteredRows : rows;
@@ -58,7 +59,15 @@ const MuiTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-            {displayedRows.map((row) => (
+            {loading ? Array.from({ length: rowsToDisplay || 6 }).map((_, rowIndex) => (
+              <TableRow key={`loading-${rowIndex}`}>
+                {columns.map((column) => (
+                  <TableCell key={column.id} align={column.align || "left"}>
+                    <div className="h-4 animate-pulse rounded bg-gray-200" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            )) : displayedRows.map((row) => (
                 <TableRow key={row[rowKey]}>
                   {columns.map((column) => {
                     const value = column.renderCell

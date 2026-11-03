@@ -15,7 +15,6 @@ import {
   IconButton,
   AvatarGroup,
   Avatar,
-  CircularProgress,
   MenuItem,
 } from "@mui/material";
 import AgTable from "../../components/AgTable";
@@ -26,6 +25,7 @@ import PrimaryButton from "../../components/PrimaryButton";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
@@ -33,6 +33,7 @@ import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import UploadFileInput from "../../components/UploadFileInput";
 import { inrFormat } from "../../utils/currencyFormat";
+import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import usePageDepartment from "../../hooks/usePageDepartment";
@@ -178,6 +179,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
     Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
     Completed: { bg: "#E8F5E9", text: "#1B5E20" }, // Light Green
+    Extended: { bg: "#EDE9FE", text: "#6D28D9" }, // Light Purple
     Cancelled: { bg: "#FFEBEE", text: "#B71C1C" }, // Light Red
     Available: { bg: "#E3F2FD", text: "#0D47A1" },
     Occupied: { bg: "#ECEFF1", text: "#37474F" },
@@ -378,6 +380,8 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               .join(" ")
           : meeting.clientBookedBy?.employeeName || "Unknown",
         startTime: meeting.startTime,
+        displayMeetingStatus: getMeetingDisplayStatus(meeting),
+        scheduledEndTime: meeting.endTime,
         endTime:
           meeting.extendTime > meeting.endTime
             ? meeting.extendTime
@@ -979,7 +983,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     ...(financeView || isTechDepartment
       ? [
           {
-            field: "meetingStatus",
+            field: "displayMeetingStatus",
             headerName: financeView ? "Meeting Status" : "Status",
             sort: "desc",
             cellRenderer: (params) => (
@@ -1056,6 +1060,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         const isCompleted = status === "Completed";
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
+        const meetingStartTime = dayjs(params.data.startTime);
+        const hasReachedStartTime =
+          meetingStartTime.isValid() && !currentTime.isBefore(meetingStartTime);
         const isVerified = params.data.paymentVerification === "Verified";
         const paymentVerificationStatus = params.data.paymentVerification;
 
@@ -1112,6 +1119,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
                   },
                 canEditMeeting(params.data) && editMenuItem,
                 !isOngoing &&
+                  hasReachedStartTime &&
                   !isHousekeepingPending && {
                     label: "Mark As Ongoing",
                     onClick: () => handleOngoing("ongoing", params.data._id),
@@ -1156,16 +1164,14 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   return (
     <div className="flex-col gap-4">
       <PageFrame>
-        {isMeetingsLoading && meetings.length === 0 ? (
-          <CircularProgress />
-        ) : (
-          <YearWiseTable
+        <YearWiseTable
             search
             dateColumn={"date"}
             initialDateRange={initialMeetingDateRange}
             onDateFilterChange={handleMeetingDateFilterChange}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
+            loading={isMeetingsLoading && meetings.length === 0}
             columns={columns}
             exportData={shouldShowExportButton}
             serverPagination
@@ -1187,7 +1193,6 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             searchValue={meetingSearch}
             onSearchChange={handleMeetingSearchChange}
           />
-        )}
       </PageFrame>
 
       {/* Checklist Modal */}
@@ -1328,19 +1333,17 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               detail={selectedMeeting.agenda || "N/A"}
             />
             <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
-            <DetalisFormatted
-              title="Time"
-              detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime,
-              )}`}
-            />
-            <DetalisFormatted
-              title="Duration"
-              detail={selectedMeeting.duration || "N/A"}
+            <MeetingTimeDetails
+              startTime={selectedMeeting.startTime}
+              endTime={
+                selectedMeeting.scheduledEndTime || selectedMeeting.endTime
+              }
+              extendTime={selectedMeeting.extendTime}
+              duration={selectedMeeting.duration || "N/A"}
             />
             <DetalisFormatted
               title="Status"
-              detail={selectedMeeting.meetingStatus || "N/A"}
+              detail={selectedMeeting.displayMeetingStatus || "N/A"}
             />
             <DetalisFormatted
               title="Type"

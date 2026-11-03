@@ -903,8 +903,7 @@ const TasksViewDepartment = () => {
       <div className="flex flex-col gap-4">
         <PageFrame>
           <div>
-            {!departmentLoading ? (
-              <WidgetSection padding layout={1}>
+            <WidgetSection padding layout={1}>
                 <div className="w-full pb-3">
                   <div className="flex justify-between items-center gap-3 flex-wrap">
                     <span className="text-title text-primary font-pmedium uppercase">
@@ -948,20 +947,15 @@ const TasksViewDepartment = () => {
                   initialDateRange={selectedTaskRange}
                   onDateFilterChange={handlePendingTaskRangeChange}
                   hideTitle
+                  loading={departmentLoading}
                 />
-              </WidgetSection>
-            ) : (
-              <div className="h-72 flex items-center justify-center">
-                <CircularProgress />
-              </div>
-            )}
+            </WidgetSection>
           </div>
         </PageFrame>
 
         <PageFrame>
           <div>
-            {!departmentLoading ? (
-              <WidgetSection padding>
+            <WidgetSection padding>
                 <YearWiseTable
                   tableTitle={`COMPLETED TASK - ${completedMonthLabel}`}
                   exportData={true}
@@ -971,13 +965,9 @@ const TasksViewDepartment = () => {
                   columns={completedColumns}
                   initialDateRange={selectedCompletedTaskRange}
                   onDateFilterChange={handleCompletedTaskRangeChange}
+                  loading={completedTasksFetchPending}
                 />
-              </WidgetSection>
-            ) : (
-              <div className="h-72 flex items-center justify-center">
-                <CircularProgress />
-              </div>
-            )}
+            </WidgetSection>
           </div>
         </PageFrame>
       </div>

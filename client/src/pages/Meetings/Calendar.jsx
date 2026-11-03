@@ -11,6 +11,7 @@ import {
   CircularProgress,
   FormControlLabel,
   FormGroup,
+  Skeleton,
 } from "@mui/material";
 import dayjs from "dayjs";
 
@@ -18,13 +19,18 @@ import MuiModal from "../../components/MuiModal";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import humanDate from "../../utils/humanDateForamt";
 import { useSelector } from "react-redux";
 import { setMeetings } from "../../redux/slices/meetingSlice";
-import humanTime from "../../utils/humanTime";
 import useAuth from "../../hooks/useAuth";
 import { toUtcDayBoundary } from "../../utils/dateRange";
 import { getStatusColors } from "../../constants/statusColors";
+import {
+  hasValidMeetingExtension,
+  getMeetingDisplayStatus,
+  getNormalizedMeetingDisplayStatus,
+} from "../../utils/meetingStatus";
 const getMonthRange = (value = dayjs()) => ({
   startDate: value.startOf("month").toDate(),
   endDate: value.endOf("month").toDate(),
@@ -57,10 +63,9 @@ const normalize = (value) =>
     .trim()
     .toLowerCase();
 
-const getMeetingStatus = (meeting) => {
-  const status = normalize(meeting.meetingStatus);
-  return status === "canceled" ? "cancelled" : status;
-};
+const getMeetingStatus = getNormalizedMeetingDisplayStatus;
+const getMeetingCalendarColorStatus = (meeting) =>
+  hasValidMeetingExtension(meeting) ? "extended" : getMeetingStatus(meeting);
 
 const Calender = () => {
   const { auth } = useAuth();
@@ -286,6 +291,9 @@ const Calender = () => {
       const type = normalize(meeting.meetingType);
 
       if (status in counts) counts[status]++;
+      if (hasValidMeetingExtension(meeting) && status !== "extended") {
+        counts.extended++;
+      }
       if (type in counts) counts[type]++;
     });
 
@@ -294,8 +302,9 @@ const Calender = () => {
 
   const transformedMeetings = useMemo(() => {
     return visibleMeetings.map((meeting) => {
-      const status = getMeetingStatus(meeting);
-      const statusColors = getStatusColors(status);
+      const statusColors = getStatusColors(
+        getMeetingCalendarColorStatus(meeting),
+      );
 
       return {
         id: meeting._id,
@@ -327,7 +336,12 @@ const Calender = () => {
       const status = getMeetingStatus(event.extendedProps);
       const type = normalize(event.extendedProps.meetingType);
 
-      return selectedStatuses.includes(status) && selectedTypes.includes(type);
+      const matchesStatus =
+        selectedStatuses.includes(status) ||
+        (hasValidMeetingExtension(event.extendedProps) &&
+          selectedStatuses.includes("extended"));
+
+      return matchesStatus && selectedTypes.includes(type);
     });
   }, [transformedMeetings, eventFilter]);
 
@@ -347,8 +361,9 @@ const Calender = () => {
 
   const handleEventClick = (clickInfo) => {
     const event = clickInfo.event;
-    const status = getMeetingStatus(event.extendedProps);
-    const headerBackground = getStatusColors(status).backgroundColor;
+    const headerBackground = getStatusColors(
+      getMeetingCalendarColorStatus(event.extendedProps),
+    ).backgroundColor;
     // Fallback to empty if type doesn't match
 
     setSelectedEvent(event);
@@ -370,7 +385,7 @@ const Calender = () => {
   return (
     <div className="flex w-[70%] md:w-full">
       <div className="flex-1 p-4 bg-white">
-        {!isMeetingsLoading ? (
+        {!isMeetingsLoading || isPlaceholderData ? (
           <>
             <div className="flex gap-4 relative w-full">
               <div className="flex flex-col gap-4 w-[25%]">
@@ -458,7 +473,10 @@ const Calender = () => {
                     {todaysEvents.length > 0 ? (
                       todaysEvents.map((event, index) => {
                         const statusColors = getStatusColors(
-                          getMeetingStatus(event.extendedProps),
+                          getMeetingCalendarColorStatus(event.extendedProps),
+                        );
+                        const meetingType = normalize(
+                          event.extendedProps.meetingType,
                         );
                         return (
                           <div
@@ -469,6 +487,8 @@ const Calender = () => {
                               className="w-3 h-3 rounded-full mr-2"
                               style={{
                                 backgroundColor: statusColors.color,
+                                border: `2px solid ${FILTER_COLORS[meetingType] || "transparent"}`,
+                                boxSizing: "border-box",
                               }}
                             ></div>
                             <div className="flex flex-col">
@@ -528,8 +548,12 @@ const Calender = () => {
             </div>
           </>
         ) : (
-          <div className="h-72 flex justify-center items-center">
-            <CircularProgress />
+          <div className="flex w-full gap-4">
+            <div className="w-1/4 space-y-4">
+              <Skeleton variant="rounded" height={240} />
+              <Skeleton variant="rounded" height={110} />
+            </div>
+            <Skeleton className="flex-1" variant="rounded" height={560} />
           </div>
         )}
 
@@ -551,19 +575,15 @@ const Calender = () => {
                 title="Date"
                 detail={humanDate(selectedEvent.start)}
               />
-              <DetalisFormatted
-                title="Time"
-                detail={`${humanTime(selectedEvent.start)} - ${humanTime(
-                  selectedEvent.end,
-                )}`}
-              />
-              <DetalisFormatted
-                title="Duration"
-                detail={selectedEvent.extendedProps.duration}
+              <MeetingTimeDetails
+                startTime={selectedEvent.start}
+                endTime={selectedEvent.extendedProps.endTime}
+                extendTime={selectedEvent.extendedProps.extendTime}
+                duration={selectedEvent.extendedProps.duration}
               />
               <DetalisFormatted
                 title="Status"
-                detail={selectedEvent.extendedProps.meetingStatus}
+                detail={getMeetingDisplayStatus(selectedEvent.extendedProps)}
               />
               <DetalisFormatted
                 title="Type"

@@ -13,8 +13,8 @@ import {
   IconButton,
   AvatarGroup,
   Avatar,
-  CircularProgress,
   Autocomplete,
+  CircularProgress,
 } from "@mui/material";
 import AgTable from "../../components/AgTable";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -24,10 +24,12 @@ import PrimaryButton from "../../components/PrimaryButton";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
 import { getMeetingDepartmentLabel } from "../../utils/meetingDepartment";
+import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
@@ -39,6 +41,20 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
+
+const defaultChecklist = [
+  { name: "Desk is cleaned", checked: false },
+  { name: "Chairs are clean and neatly arranged", checked: false },
+  { name: "AC is cooling", checked: false },
+  {
+    name: "TV, HDMI cable, LAN cable are available and active",
+    checked: false,
+  },
+  { name: "TV & AC remotes in place", checked: false },
+  { name: "Air freshener sprayed", checked: false },
+  { name: "Water bottle & glass placed", checked: false },
+  { name: "Tissue placed on the table", checked: false },
+];
 
 const ManageMeetings = ({ financeView = false }) => {
   const axios = useAxiosPrivate();
@@ -145,6 +161,7 @@ const ManageMeetings = ({ financeView = false }) => {
     Upcoming: { bg: "#E3F2FD", text: "#1565C0" }, // Light Blue
     Ongoing: { bg: "#FFF3E0", text: "#E65100" }, // Light Orange
     Completed: { bg: "#E8F5E9", text: "#1B5E20" }, // Light Green
+    Extended: { bg: "#EDE9FE", text: "#6D28D9" }, // Light Purple
     Cancelled: { bg: "#FFEBEE", text: "#B71C1C" }, // Light Red
     Available: { bg: "#E3F2FD", text: "#0D47A1" },
     Occupied: { bg: "#ECEFF1", text: "#37474F" },
@@ -153,19 +170,6 @@ const ManageMeetings = ({ financeView = false }) => {
     "In Progress": { bg: "#FBE9E7", text: "#BF360C" },
   };
 
-  const defaultChecklist = [
-    { name: "Desk is cleaned", checked: false },
-    { name: "Chairs are clean and neatly arranged", checked: false },
-    { name: "AC is cooling", checked: false },
-    {
-      name: "TV, HDMI cable, LAN cable are available and active",
-      checked: false,
-    },
-    { name: "TV & AC remotes in place", checked: false },
-    { name: "Air freshener sprayed", checked: false },
-    { name: "Water bottle & glass placed", checked: false },
-    { name: "Tissue placed on the table", checked: false },
-  ];
   // const meetings = useSelector((state) => state.meetings?.data);
 
   useEffect(() => {
@@ -355,7 +359,7 @@ const ManageMeetings = ({ financeView = false }) => {
       setEditValue("internalParticipants", formattedInternal);
       setEditValue("clientParticipants", formattedExternal);
     }
-  }, [selectedMeeting]);
+  }, [selectedMeeting, setEditValue]);
 
   //-----------------------------Form--------------------------------//
 
@@ -454,7 +458,9 @@ const ManageMeetings = ({ financeView = false }) => {
       ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
       : meeting.clientBookedBy?.employeeName || "Unknown",
     bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
+    displayMeetingStatus: getMeetingDisplayStatus(meeting),
     startTime: meeting.startTime,
+    scheduledEndTime: meeting.endTime,
     endTime:
       meeting.extendTime > meeting.endTime
         ? meeting.extendTime
@@ -797,7 +803,7 @@ const ManageMeetings = ({ financeView = false }) => {
     //   cellRenderer: (params) => humanTime(params.value) || "-",
     // },
     {
-      field: "meetingStatus",
+      field: "displayMeetingStatus",
       headerName: "Meeting Status",
       sort: "desc",
       cellRenderer: (params) => (
@@ -870,6 +876,9 @@ const ManageMeetings = ({ financeView = false }) => {
         const isCompleted = status === "Completed";
         const isHousekeepingPending = housekeepingStatus === "Pending";
         const isHousekeepingCompleted = housekeepingStatus === "Completed";
+        const meetingStartTime = dayjs(params.data.startTime);
+        const hasReachedStartTime =
+          meetingStartTime.isValid() && !currentTime.isBefore(meetingStartTime);
         const isEditAllowed = canEditMeeting(params.data);
         const editMenuItem = {
           label: "Edit",
@@ -887,6 +896,7 @@ const ManageMeetings = ({ financeView = false }) => {
                 },
               isEditAllowed && editMenuItem,
               !isOngoing &&
+                hasReachedStartTime &&
                 !isHousekeepingPending && {
                   label: "Mark As Ongoing",
                   onClick: () => handleOngoing("ongoing", params.data._id),
@@ -926,18 +936,17 @@ const ManageMeetings = ({ financeView = false }) => {
   ];
 
   return (
-    <div className="flex flex-col gap-4">
-      <PageFrame>
-        {isMeetingsLoading && meetings.length === 0 ? (
-          <CircularProgress />
-        ) : (
-          <YearWiseTable
+    <div className="flex min-w-0 w-full max-w-full flex-col gap-4">
+      <PageFrame className="min-w-0 w-full max-w-full">
+        <div className="min-w-0 w-full max-w-full overflow-x-auto">
+        <YearWiseTable
             search
             dateColumn={"date"}
             initialDateRange={initialMeetingDateRange}
             onDateFilterChange={handleMeetingDateFilterChange}
             tableTitle={"Manage Meetings"}
             data={transformedMeetings || []}
+            loading={isMeetingsLoading && meetings.length === 0}
             columns={columns}
             serverPagination
             pageSizeOptions={PAGE_SIZE_OPTIONS}
@@ -958,7 +967,7 @@ const ManageMeetings = ({ financeView = false }) => {
             searchValue={meetingSearch}
             onSearchChange={handleMeetingSearchChange}
           />
-        )}
+        </div>
       </PageFrame>
 
       {/* Checklist Modal */}
@@ -1099,19 +1108,17 @@ const ManageMeetings = ({ financeView = false }) => {
               detail={selectedMeeting.agenda || "N/A"}
             />
             <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
-            <DetalisFormatted
-              title="Time"
-              detail={`${humanTime(selectedMeeting.startTime)} - ${humanTime(
-                selectedMeeting.endTime,
-              )}`}
-            />
-            <DetalisFormatted
-              title="Duration"
-              detail={getDisplayDuration(selectedMeeting)}
+            <MeetingTimeDetails
+              startTime={selectedMeeting.startTime}
+              endTime={
+                selectedMeeting.scheduledEndTime || selectedMeeting.endTime
+              }
+              extendTime={selectedMeeting.extendTime}
+              duration={getDisplayDuration(selectedMeeting)}
             />
             <DetalisFormatted
               title="Status"
-              detail={selectedMeeting.meetingStatus || "N/A"}
+              detail={selectedMeeting.displayMeetingStatus || "N/A"}
             />
             <DetalisFormatted
               title="Type"

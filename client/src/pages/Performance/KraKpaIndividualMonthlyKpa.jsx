@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Autocomplete,
   Chip,
-  CircularProgress,
   MenuItem,
   Popover,
   TextField,
@@ -37,6 +36,8 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import useUserPermissions from "../../hooks/useUserPermissions";
+import { PERMISSIONS } from "../../constants/permissions";
 import {
   getCurrentFiscalYear,
   getFiscalMonthKey,
@@ -183,6 +184,7 @@ const KpaActionCell = ({
 const KraKpaIndividualMonthlyKpa = () => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
+  const { hasPermission } = useUserPermissions();
   const location = useLocation();
   const isSelfKra = location.pathname.toLowerCase().endsWith("/self-kra");
   const { auth } = useAuth();
@@ -210,6 +212,12 @@ const KraKpaIndividualMonthlyKpa = () => {
   const employeeId = isEmployeeRoute
     ? auth?.user?._id
     : member?.memberId || auth?.user?._id;
+  const bulkKpaFileInputRef = useRef(null);
+  const canBulkUploadSelfKpa =
+    !isSelfKra &&
+    Boolean(auth?.user?._id && departmentId) &&
+    String(employeeId) === String(auth?.user?._id) &&
+    hasPermission(PERMISSIONS.KRAKPA_SELF_KPA_BULK_UPLOAD.value);
   const employeeName =
     member?.memberName ||
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
@@ -314,6 +322,54 @@ const KraKpaIndividualMonthlyKpa = () => {
     queryClient.invalidateQueries({
       queryKey: ["performanceMemberWiseKraKpa"],
     });
+  };
+
+  const bulkUploadSelfKpa = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("department", departmentId);
+      const response = await axios.post(
+        "/api/kra-kpa/individual-monthly-kpa/bulk-upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      refreshKpaQueries();
+      toast.success(`${data.count} Self KPA row${data.count === 1 ? "" : "s"} uploaded and sent for approval.`);
+    },
+    onError: (error) => {
+      const responseData = error?.response?.data;
+      const firstRowError = responseData?.errors?.[0];
+      toast.error(
+        firstRowError
+          ? `Row ${firstRowError.row}${
+              firstRowError.field === "Deadline" &&
+              firstRowError.message === "Deadline is required."
+                ? ":"
+                : `, ${firstRowError.field}:`
+            } ${firstRowError.message}`
+          : responseData?.message || "Unable to upload Self KPAs.",
+      );
+    },
+    onSettled: () => {
+      if (bulkKpaFileInputRef.current) bulkKpaFileInputRef.current.value = "";
+    },
+  });
+
+  const downloadSelfKpaTemplate = () => {
+    const csv =
+      String.fromCharCode(65279) +
+      ["KPA,Deadline", "Example KPA,2026-11-30", ""].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "self-kpa-bulk-upload-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
   };
 
   const { data: records = [], isLoading } = useQuery({
@@ -1218,16 +1274,41 @@ const KraKpaIndividualMonthlyKpa = () => {
 
   return (
     <div>
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
         <PageFrame>
         <WidgetSection padding>
         <AgTable
+          loading={isLoading}
           titleRightContent={(
             <div className="flex flex-wrap items-center justify-end gap-3">
+              {canBulkUploadSelfKpa && (
+                <>
+                  <input
+                    ref={bulkKpaFileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    aria-label="Choose Self KPA CSV file"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) bulkUploadSelfKpa.mutate(file);
+                    }}
+                  />
+                  <SecondaryButton
+                    type="button"
+                    title="Template"
+                    handleSubmit={downloadSelfKpaTemplate}
+                    externalStyles="!px-4"
+                  />
+                  <PrimaryButton
+                    type="button"
+                    title="Bulk Upload KPA"
+                    handleSubmit={() => bulkKpaFileInputRef.current?.click()}
+                    disabled={bulkUploadSelfKpa.isPending}
+                    isLoading={bulkUploadSelfKpa.isPending}
+                    externalStyles="!px-4"
+                  />
+                </>
+              )}
               {isSelfKra ? (
                 <>
                   {canAddKraKpa && <PrimaryButton type="button" title="Add KRA" handleSubmit={openCreate} />}
@@ -1337,12 +1418,12 @@ const KraKpaIndividualMonthlyKpa = () => {
         />
         </WidgetSection>
         </PageFrame>
-      )}
 
       <div className="mt-6">
         <PageFrame>
         <WidgetSection padding>
         <AgTable
+          loading={isLoading}
           showDateControls={false}
           data={completedTableData}
           columns={completedColumns}

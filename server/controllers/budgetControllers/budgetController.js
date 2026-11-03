@@ -607,19 +607,24 @@ const updateBudget = async (req, res, next) => {
     }
 
     if (Object.hasOwn(filteredFields, "vendor")) {
-      if (!mongoose.Types.ObjectId.isValid(filteredFields.vendor)) {
+      const vendorId = String(filteredFields.vendor ?? "").trim();
+      if (!vendorId) {
+        filteredFields.vendor = null;
+      } else if (!mongoose.Types.ObjectId.isValid(vendorId)) {
         return res.status(400).json({ message: "Invalid vendor" });
-      }
-      const vendorExists = await Vendor.exists({
-        _id: filteredFields.vendor,
-        company,
-        departmentId: budgetDepartmentId,
-        status: "Active",
-      });
-      if (!vendorExists) {
-        return res.status(400).json({
-          message: "Select an active vendor from this department",
+      } else {
+        const vendorExists = await Vendor.exists({
+          _id: vendorId,
+          company,
+          departmentId: budgetDepartmentId,
+          status: "Active",
         });
+        if (!vendorExists) {
+          return res.status(400).json({
+            message: "Select an active vendor from this department",
+          });
+        }
+        filteredFields.vendor = vendorId;
       }
     }
 
@@ -706,6 +711,10 @@ const updateFinanceAmount = async (req, res, next) => {
         .json({ message: "Finance amount must be a valid positive number" });
     }
 
+    if (amount === 0) {
+      return res.status(400).json({ message: "Paid amount must be greater than zero" });
+    }
+
     const foundBudget = await Budget.findOne({ _id: budgetId, company });
 
     if (!foundBudget) {
@@ -713,8 +722,22 @@ const updateFinanceAmount = async (req, res, next) => {
     }
 
     const previousFinanceAmount = foundBudget.financeAmount ?? 0;
-    foundBudget.financeAmount = amount;
+    const actualAmount = Number(foundBudget.actualAmount || 0);
+    if (amount > Math.max(actualAmount - previousFinanceAmount, 0)) {
+      return res.status(400).json({
+        message: "Paid amount cannot exceed the remaining amount",
+      });
+    }
+    const totalPaidAmount = previousFinanceAmount + amount;
+    foundBudget.financeAmountHistory.push({
+      previousAmount: previousFinanceAmount,
+      amount: totalPaidAmount,
+      changedAt: new Date(),
+      changedBy: user,
+    });
+    foundBudget.financeAmount = totalPaidAmount;
     foundBudget.financeAmountDate = new Date();
+    foundBudget.isPaid = totalPaidAmount >= actualAmount ? "Paid" : "Unpaid";
 
     const updatedBudget = await foundBudget.save({ validateModifiedOnly: true });
 
@@ -800,7 +823,7 @@ const updateFinanceAmount = async (req, res, next) => {
 
 const fetchBudget = async (req, res, next) => {
   try {
-    const { departmentId, view, includeDeleted } = req.query;
+    const { departmentId, view, includeDeleted, invoiceUploaded } = req.query;
     const { company } = req;
     const user = await User.findById(req.user)
       .populate("departments", "name")
@@ -863,6 +886,7 @@ const fetchBudget = async (req, res, next) => {
       dashboardView: view === "dashboard",
       profitLossView: view === "profit-loss",
       includeDeleted: canViewDeleted,
+      invoiceUploadedOnly: invoiceUploaded === "true",
     });
 
     const approver = await fetchBudgetApprover(req.user);
@@ -1006,6 +1030,7 @@ const fetchPendingApprovals = async (req, res, next) => {
     })
       .populate([
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
       ])
       .lean()
@@ -1043,6 +1068,7 @@ const fetchApprovedbudgets = async (req, res, next) => {
     const budgets = await Budget.find({ company, status: "Approved" })
       .populate([
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
       ])
       .lean()

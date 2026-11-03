@@ -654,12 +654,8 @@ const RaiseTicket = () => {
           <div className="text-[20px]">My Tickets</div>
         </div>
         <div className=" w-full">
-          {ticketsLoading ? (
-            <div className="w-full h-full flex justify-center items-center">
-              <CircularProgress color="black" />
-            </div>
-          ) : (
-            <YearWiseTable
+          <YearWiseTable
+              loading={ticketsLoading}
               dateColumn="raisedAt"
               preserveCurrentMonthRange
               showEmptyTable
@@ -704,7 +700,6 @@ const RaiseTicket = () => {
               columns={recievedTicketsColumns}
               paginationPageSize={10}
             />
-          )}
         </div>
       </div>
       <MuiModal

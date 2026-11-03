@@ -4,7 +4,7 @@ import YearWiseTable from "../../components/Tables/YearWiseTable";
 import useAuth from "../../hooks/useAuth";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
 
 export default function HrCommonAttandenceRequests() {
   const axios = useAxiosPrivate();
@@ -32,6 +32,10 @@ export default function HrCommonAttandenceRequests() {
     { field: "outTime", headerName: "Corrected Out Time" },
     { field: "originalInTime", headerName: "Original In Time" },
     { field: "originalOutTime", headerName: "Original Out Time" },
+    { field: "originalBreakStart", headerName: "Original Break Start" },
+    { field: "originalBreakEnd", headerName: "Original Break End" },
+    { field: "correctedBreakStart", headerName: "Corrected Break Start" },
+    { field: "correctedBreakEnd", headerName: "Corrected Break End" },
     { field: "reason", headerName: "Reason" },
 
     { field: "date", headerName: "Requested On", width: 150 },
@@ -77,6 +81,10 @@ export default function HrCommonAttandenceRequests() {
     outTime: req.outTime ? humanTime(req.outTime) : "-",
     originalInTime: req.originalInTime ? humanTime(req.originalInTime) : "-",
     originalOutTime: req.originalOutTime ? humanTime(req.originalOutTime) : "-",
+    originalBreakStart: req.originalBreaks?.[0]?.startBreak ? humanTime(req.originalBreaks[0].startBreak) : "-",
+    originalBreakEnd: req.originalBreaks?.[0]?.endBreak ? humanTime(req.originalBreaks[0].endBreak) : "-",
+    correctedBreakStart: req.correctedBreaks?.[0]?.startBreak ? humanTime(req.correctedBreaks[0].startBreak) : "-",
+    correctedBreakEnd: req.correctedBreaks?.[0]?.endBreak ? humanTime(req.correctedBreaks[0].endBreak) : "-",
     reason: req.reason,
     status: req.status,
     date: req.createdAt,
@@ -85,13 +93,9 @@ export default function HrCommonAttandenceRequests() {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        {isLoading ? (
-          <div>
-            <CircularProgress color="#1E3D73" />
-          </div>
-        ) : (
-          <div>
+        <div>
             <YearWiseTable
+              loading={isLoading}
               compactToolbar
               tableTitle="Attendance Correction Requests"
               search={true}
@@ -100,7 +104,6 @@ export default function HrCommonAttandenceRequests() {
               columns={columns}
             />
           </div>
-        )}
       </div>
     </div>
   );

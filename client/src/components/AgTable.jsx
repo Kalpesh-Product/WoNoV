@@ -18,6 +18,7 @@ import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
 import { IoFilter } from "react-icons/io5";
 import TableDateFilter from "./TableDateFilter";
+import TableLoadingSkeleton from "./Tables/TableLoadingSkeleton";
 import {
   TableHeaderBorderContext,
   shouldHideTableHeaderDivider,
@@ -92,6 +93,8 @@ const AgTableComponent = React.memo(
     onSearchChange,
     headerBottomContent,
     processExportCell,
+    loading = false,
+    skeletonRowCount = 6,
   }) => {
     const borderedSectionTitle = useContext(TableHeaderBorderContext);
     const hideToolbarDivider = shouldHideTableHeaderDivider(
@@ -186,6 +189,7 @@ const AgTableComponent = React.memo(
       advancedFilterAction,
       exportAction,
       exportData,
+      loading,
     ]);
 
     const hasCustomDateControls = toolbarDateControls !== undefined;
@@ -461,7 +465,7 @@ const AgTableComponent = React.memo(
 
     return (
       <div
-        className={`border-b-[1px] border-borderGray ${
+        className={`w-full min-w-0 max-w-full border-b-[1px] border-borderGray ${
           fillAvailableHeight ? "flex flex-col flex-1 min-h-0" : ""
         }`}
       >
@@ -511,7 +515,7 @@ const AgTableComponent = React.memo(
             ref={toolbarRef}
             data-stacked={stackToolbar || undefined}
             data-compact={compactToolbar || undefined}
-            className={`table-toolbar grid items-center py-2 ${compactToolbar ? "gap-2" : "gap-3"}`}
+            className={`table-toolbar grid w-full min-w-0 max-w-full items-center py-2 ${compactToolbar ? "gap-2" : "gap-3"}`}
           >
             {showTableControls && search ? (
               <div className="table-toolbar-search flex min-w-0 flex-wrap items-center gap-3">
@@ -568,7 +572,7 @@ const AgTableComponent = React.memo(
               )}
             <div
               ref={toolbarActionsRef}
-              className={`table-toolbar-actions flex w-max flex-nowrap items-center justify-end justify-self-end ${compactToolbar ? "gap-2" : "gap-4"}`}
+              className={`table-toolbar-actions flex w-max min-w-0 max-w-full flex-wrap items-center justify-end justify-self-end ${compactToolbar ? "gap-2" : "gap-4"}`}
             >
               {buttonTitle && (
                 <PrimaryButton
@@ -687,6 +691,12 @@ const AgTableComponent = React.memo(
           }`}
           style={fillAvailableHeight ? undefined : { height: gridHeight }}
         >
+          {loading ? (
+            <TableLoadingSkeleton
+              columns={modifiedColumns}
+              rowCount={skeletonRowCount}
+            />
+          ) : (
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
@@ -714,6 +724,7 @@ const AgTableComponent = React.memo(
             suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
             suppressScrollOnNewData
           />
+          )}
         </div>
         {serverPagination && paginationTotal > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">

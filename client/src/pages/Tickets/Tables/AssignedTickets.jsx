@@ -565,6 +565,7 @@ const AssignedTickets = ({
       <div className="w-full">
         {!isClosingTicket ? (
           <AgTable
+            loading={isLoading}
             dateColumn="assignedAt"
             key={rows.length}
             data={rows}

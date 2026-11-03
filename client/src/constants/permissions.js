@@ -411,6 +411,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/kra-kpa/department-KPA/member-wise-KPA/individual-Monthly-KPA",
   },
+  KRAKPA_SELF_KPA_BULK_UPLOAD: {
+    value: "kra_kpa_self_kpa_bulk_upload",
+    title: "SELF KPA BULK UPLOAD",
+    type: "create",
+    route: "/app/kra-kpa/individual/kra-kpa/individual-Monthly-KPA",
+  },
   KRAKPA_SELF_KRA: {
     value: "kra_kpa_self_kra",
     title: "SELF KRA",
@@ -574,9 +580,9 @@ export const PERMISSIONS = {
   },
   VISITORS_MIX_BAG_REPEAT_DAY_PASS: {
     value: "visitors_mix_bag_repeat_day_pass",
-    title: "VISITORS MIX BAG REPEAT BOOKING",
+    title: "VISITORS MIX BAG REPEAT BOOKINGS",
     type: "read",
-    route: "/app/visitors/mix-bag/repeat-booking",
+    route: "/app/visitors/mix-bag/repeat-bookings",
   },
   VISITORS_MIX_BAG_VISITORS_TO_CLIENT: {
     value: "visitors_mix_bag_visitors_to_client",

@@ -9,16 +9,17 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import humanDate from "../../utils/humanDateForamt";
-import humanTime from "../../utils/humanTime";
 import StatusChip from "../../components/StatusChip";
 import { inrFormat } from "../../utils/currencyFormat";
 import { useSearchParams } from "react-router-dom";
 import { toLocalDayBoundary } from "../../utils/dateRange";
+import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
@@ -357,7 +358,7 @@ const MeetingReports = () => {
     },
     { field: "paymentProofUrl", headerName: "Payment Proof", hide: true },
     {
-      field: "meetingStatus",
+      field: "displayMeetingStatus",
       headerName: "Status",
       cellRenderer: (params) => <StatusChip status={params.value} />,
     },
@@ -391,8 +392,7 @@ const MeetingReports = () => {
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
         <div>
-          {!isMeetingsPending ? (
-            <YearWiseTable
+          <YearWiseTable
               search={true}
               exportData
               taskExportDateTimeFormatting
@@ -437,9 +437,12 @@ const MeetingReports = () => {
                     housekeepingStatus: item.housekeepingStatus,
                     date: item.date,
                     startTime: item.startTime,
+                    scheduledEndTime: item.endTime,
                     endTime: getEffectiveEndTime(item),
+                    extendTime: item.extendTime,
                     duration: getDisplayDuration(item),
                     meetingStatus: item.meetingStatus,
+                    displayMeetingStatus: getMeetingDisplayStatus(item),
                     agenda: item.agenda,
                     subject: item.subject,
                     housekeepingChecklist: item.housekeepingChecklist,
@@ -473,6 +476,7 @@ const MeetingReports = () => {
                   };
                 }),
               ]}
+              loading={isMeetingsPending && meetings.length === 0}
               columns={meetingReportsColumn}
               serverPagination
               pageSizeOptions={PAGE_SIZE_OPTIONS}
@@ -493,9 +497,6 @@ const MeetingReports = () => {
               searchValue={meetingSearch}
               onSearchChange={handleMeetingSearchChange}
             />
-          ) : (
-            <CircularProgress />
-          )}
         </div>
       </PageFrame>
 
@@ -524,19 +525,17 @@ const MeetingReports = () => {
               title="Date"
               detail={selectedMeeting?.date ? selectedMeeting?.date : "N/A"}
             />
-            <DetalisFormatted
-              title="Time"
-              detail={`${humanTime(selectedMeeting?.startTime)} - ${humanTime(
-                selectedMeeting?.endTime,
-              )}`}
-            />
-            <DetalisFormatted
-              title="Duration"
-              detail={getDisplayDuration(selectedMeeting)}
+            <MeetingTimeDetails
+              startTime={selectedMeeting?.startTime}
+              endTime={
+                selectedMeeting?.scheduledEndTime || selectedMeeting?.endTime
+              }
+              extendTime={selectedMeeting?.extendTime}
+              duration={getDisplayDuration(selectedMeeting)}
             />
             <DetalisFormatted
               title="Meeting Status"
-              detail={selectedMeeting?.meetingStatus || "N/A"}
+              detail={selectedMeeting?.displayMeetingStatus || "N/A"}
             />
             <DetalisFormatted
               title="Housekeeping Status"

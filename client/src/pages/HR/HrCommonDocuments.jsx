@@ -72,6 +72,7 @@ const HrCommonDocuments = () => {
     <div>
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           compactToolbar
           dateColumn={"uploadedDate"}
           key={data.length}

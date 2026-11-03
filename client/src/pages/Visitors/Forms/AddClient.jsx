@@ -142,7 +142,7 @@ const AddClient = () => {
     existingVisitor?.visitorFlag === "Client" ||
     existingVisitor?.visitorRoles?.includes("Client");
   const existingVisitorRoute = existingVisitorIsClient
-    ? "/app/visitors/mix-bag/repeat-booking"
+    ? "/app/visitors/mix-bag/repeat-bookings"
     : "/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors";
 
   const handleStateSelect = (stateCode) => {

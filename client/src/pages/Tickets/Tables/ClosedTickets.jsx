@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import dayjs from "dayjs";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../components/MuiModal";
@@ -180,12 +180,8 @@ const ClosedTickets = ({
   return (
     <div className="p-4 border-default border-borderGray rounded-md">
       <div className="w-full">
-        {isLoading ? (
-          <div className="w-full h-full flex justify-center items-center">
-            <CircularProgress color="black" />
-          </div>
-        ) : (
           <YearWiseTable
+            loading={isLoading}
             tableTitle={title}
             data={rows}
             columns={recievedTicketsColumns}
@@ -195,7 +191,6 @@ const ClosedTickets = ({
             showEmptyTable
             search
           />
-        )}
       </div>
 
       {/* Ticket Details Modal */}

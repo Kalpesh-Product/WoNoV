@@ -4,7 +4,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import humanDate from "../../utils/humanDateForamt";
 import useAuth from "../../hooks/useAuth";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import humanTime from "../../utils/humanTime";
 import dayjs from "dayjs";
 import { formatDuration } from "../../utils/dateFormat";
@@ -28,17 +28,25 @@ const HrCommonAttendance = () => {
   const { auth } = useAuth();
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
+  const getTodayIsoString = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString();
+  };
 
   const {
     control,
     reset,
     handleSubmit,
+    getValues,
     formState: { errors },
   } = useForm({
     defaultValues: {
-      targetedDay: null,
+      targetedDay: getTodayIsoString(),
       inTime: null,
       outTime: null,
+      startBreak: null,
+      endBreak: null,
       reason: "",
     },
   });
@@ -107,18 +115,22 @@ const HrCommonAttendance = () => {
   return (
     <div className="flex flex-col gap-8">
       <div>
-        {isLoading ? (
-          <div className="flex justify-center items-center">
-            <CircularProgress color="#1E3D73" />
-          </div>
-        ) : (
-          <YearWiseTable
+        <YearWiseTable
+            loading={isLoading}
             compactToolbar
             tableTitle={`Attendance Table`}
             dateColumn={"date"}
             columns={attendanceColumns}
             buttonTitle={"Correction Request"}
             handleSubmit={() => {
+              reset({
+                targetedDay: getTodayIsoString(),
+                inTime: null,
+                outTime: null,
+                startBreak: null,
+                endBreak: null,
+                reason: "",
+              });
               setOpenModal(true);
             }}
             data={
@@ -153,7 +165,6 @@ const HrCommonAttendance = () => {
                   ]
             }
           />
-        )}
       </div>
 
       <MuiModal
@@ -218,6 +229,72 @@ const HrCommonAttendance = () => {
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(time) => {
                       field.onChange(time ? time.toISOString() : null);
+                    }}
+                  />
+                )}
+              />
+            </LocalizationProvider>
+          </AttendanceCorrectionTimeRow>
+          <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="startBreak">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name="startBreak"
+                control={control}
+                deps={["endBreak"]}
+                rules={{
+                  validate: (value) =>
+                    (!value && !getValues("endBreak")) ||
+                    (!!value && !!getValues("endBreak")) ||
+                    "Enter both corrected break start and end times",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
+                    label="Corrected Break Start"
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(time) => field.onChange(time ? time.toISOString() : null)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!errors.startBreak,
+                        helperText: errors.startBreak?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+            </LocalizationProvider>
+          </AttendanceCorrectionTimeRow>
+          <AttendanceCorrectionTimeRow control={control} attendance={attendance} type="endBreak">
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name="endBreak"
+                control={control}
+                deps={["startBreak"]}
+                rules={{
+                  validate: (value) =>
+                    (!value && !getValues("startBreak")) ||
+                    (!!value && !!getValues("startBreak")) ||
+                    "Enter both corrected break start and end times",
+                }}
+                render={({ field }) => (
+                  <TimePicker
+                    {...field}
+                    timeSteps={{ minutes: 1 }}
+                    minutesStep={1}
+                    label="Corrected Break End"
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(time) => field.onChange(time ? time.toISOString() : null)}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!errors.endBreak,
+                        helperText: errors.endBreak?.message,
+                      },
                     }}
                   />
                 )}

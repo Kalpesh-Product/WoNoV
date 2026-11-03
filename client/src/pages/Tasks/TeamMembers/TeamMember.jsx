@@ -277,6 +277,7 @@ const TeamMember = () => {
             }
             columns={teamMembersColumn}
             onDateFilterChange={handleMonthRangeChange}
+            loading={isLoading}
           />
         </div>
       </PageFrame>

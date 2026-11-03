@@ -8,7 +8,7 @@ import { setSelectedDepartment } from "../../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
-import { CircularProgress, Popover } from "@mui/material";
+import { Popover, Skeleton } from "@mui/material";
 import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import { DateRangePicker } from "react-date-range";
@@ -124,8 +124,12 @@ const DepartmentTasks = () => {
       <PageFrame>
         <WidgetSection layout={1} padding>
           {departmentLoading ? (
-            <div className="flex justify-center items-center py-20">
-              <CircularProgress />
+            <div className="space-y-4 py-3">
+              <Skeleton variant="text" width="40%" height={36} />
+              <Skeleton variant="rounded" height={38} />
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} variant="rounded" height={42} />
+              ))}
             </div>
           ) : (
             <>
@@ -192,6 +196,7 @@ const DepartmentTasks = () => {
                 search={false}
                 hideTitle
                 hideFilter
+                loading={departmentLoading}
               />
             </>
           )}

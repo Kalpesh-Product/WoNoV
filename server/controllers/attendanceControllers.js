@@ -705,9 +705,9 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    if (!inTime && !outTime) {
+    if (!inTime && !outTime && !startBreak && !endBreak) {
       throw new CustomError(
-        "Provide the time to be corrected",
+        "Provide at least one attendance time to be corrected",
         logPath,
         logAction,
         logSourceKey
@@ -864,10 +864,26 @@ const correctAttendance = async (req, res, next) => {
       );
     }
 
-    const correctedBreaks =
-      breakStart && breakEnd ? [{ startBreak: breakStart, endBreak: breakEnd }] : [];
-
-    const originalBreaks = foundDate.breaks || [];
+    const originalBreaks = (foundDate.breaks || []).map((breakEntry) =>
+      typeof breakEntry?.toObject === "function"
+        ? breakEntry.toObject()
+        : { ...breakEntry },
+    );
+    const correctedBreaks = originalBreaks.map((breakEntry) => ({ ...breakEntry }));
+    if (breakStart && breakEnd) {
+      const correctedBreakEntry = {
+        startBreak: breakStart,
+        endBreak: breakEnd,
+      };
+      if (correctedBreaks.length > 0) {
+        correctedBreaks[0] = {
+          ...correctedBreaks[0],
+          ...correctedBreakEntry,
+        };
+      } else {
+        correctedBreaks.push(correctedBreakEntry);
+      }
+    }
 
     const newRequest = new AttendanceCorrection({
       inTime: clockIn,

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import dayjs from "dayjs";
@@ -7,6 +7,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PaidAmountHistory from "../../../../components/PaidAmountHistory";
 import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -18,6 +19,7 @@ import humanDate from "../../../../utils/humanDateForamt";
 import { queryClient } from "../../../../main";
 
 const getManageBudgetsRowId = ({ data }) => String(data._id);
+const MemoizedYearWiseTable = memo(YearWiseTable);
 
 const BudgetViewDetail = ({ detail, ...props }) => {
   const isMissing =
@@ -29,7 +31,8 @@ const BudgetViewDetail = ({ detail, ...props }) => {
 
 const ManageBudgets = () => {
   const axios = useAxiosPrivate();
-  const [viewDetails, setViewDetails] = useState(null);
+  const [viewDetailsId, setViewDetailsId] = useState(null);
+  const [viewDetailsSrNo, setViewDetailsSrNo] = useState(null);
   const [editRow, setEditRow] = useState(null);
 
   const {
@@ -46,7 +49,7 @@ const ManageBudgets = () => {
   const financeAmountValue = useWatch({ control, name: "financeAmount" });
 
   const { data: budgetHistory = [], isPending: isBudgetLoading } = useQuery({
-    queryKey: ["budgetHistory"],
+    queryKey: ["manageBudgets"],
     queryFn: async () => {
       try {
         const response = await axios.get("/api/budget/company-budget");
@@ -73,7 +76,7 @@ const ManageBudgets = () => {
         toast.success(data.message || "Finance amount updated successfully");
         setEditRow(null);
         reset({ financeAmount: "" });
-        queryClient.invalidateQueries({ queryKey: ["budgetHistory"] });
+        queryClient.invalidateQueries({ queryKey: ["manageBudgets"] });
         queryClient.invalidateQueries({ queryKey: ["allBudgets"] });
       },
       onError: (error) => {
@@ -85,15 +88,10 @@ const ManageBudgets = () => {
       },
     });
 
-  const handleOpenEdit = (row) => {
+  const handleOpenEdit = useCallback((row) => {
     setEditRow(row);
-    reset({
-      financeAmount:
-        row.financeAmountRaw === 0 || row.financeAmountRaw == null
-          ? ""
-          : row.financeAmountRaw,
-    });
-  };
+    reset({ financeAmount: "" });
+  }, [reset]);
 
   const handleCloseEdit = () => {
     setEditRow(null);
@@ -109,9 +107,11 @@ const ManageBudgets = () => {
   };
 
   const remainingPreview =
-    Number(editRow?.projectedAmountRaw || 0) - Number(financeAmountValue || 0);
+    Number(editRow?.actualAmountRaw || 0) -
+    Number(editRow?.financeAmountRaw || 0) -
+    Number(financeAmountValue || 0);
 
-  const columns = [
+  const columns = useMemo(() => [
     {
       field: "srNo",
       headerName: "Sr No",
@@ -120,6 +120,7 @@ const ManageBudgets = () => {
       valueGetter: (params) =>
         params.node?.rowIndex == null ? "" : params.node.rowIndex + 1,
     },
+    { field: "vendorName", headerName: "Vendor", flex: 1.2 },
     { field: "expanseName", headerName: "Expense Name", flex: 1.5 },
     { field: "expanseType", headerName: "Expense Type", flex: 1.2 },
     { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
@@ -130,12 +131,12 @@ const ManageBudgets = () => {
     },
     {
       field: "financeAmount",
-      headerName: "Approved Budget",
+      headerName: "Paid Amount",
       flex: 1.6,
     },
     {
       field: "remainingAmount",
-      headerName: "Available Balance",
+      headerName: "Remaining Amount",
       flex: 1.6,
     },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1.2 },
@@ -184,15 +185,14 @@ const ManageBudgets = () => {
             className="text-subtitle text-primary cursor-pointer"
             title="View budget details"
             aria-label="View budget details"
-            onClick={() =>
-              setViewDetails({
-                ...params.data,
-                srNo:
-                  params.node?.rowIndex == null
-                    ? params.data.srNo
-                    : params.node.rowIndex + 1,
-              })
-            }
+            onClick={() => {
+              setViewDetailsId(String(params.data?._id || ""));
+              setViewDetailsSrNo(
+                params.node?.rowIndex == null
+                  ? params.data.srNo
+                  : params.node.rowIndex + 1,
+              );
+            }}
           >
             <MdOutlineRemoveRedEye />
           </button>
@@ -209,31 +209,10 @@ const ManageBudgets = () => {
         </div>
       ),
     },
-  ];
+  ], [handleOpenEdit]);
 
-  const tableData = budgetHistory
-    .filter((item) => {
-      const hasBudgetShape =
-        item?.expanseName || item?.expanseType || item?.projectedAmount;
-      const hasVoucherData =
-        item?.finance?.voucher?.name ||
-        item?.finance?.voucher?.link ||
-        item?.voucher?.name ||
-        item?.voucher?.link;
-
-      const normalizedStatus = String(item?.status || "").toLowerCase();
-      const isApprovedOrRejected =
-        normalizedStatus === "approved" || normalizedStatus === "rejected";
-      const isExtraBudget = item?.isExtraBudget === true;
-      const isBulkBudget = item?.isExtraBudget === false;
-
-      return (
-        hasBudgetShape &&
-        !hasVoucherData &&
-        isApprovedOrRejected &&
-        (isExtraBudget || isBulkBudget)
-      );
-    })
+  const tableData = useMemo(() => budgetHistory
+    .filter((item) => String(item?.status || "").toLowerCase() === "approved")
     .map((item) => {
       const invoice = item?.invoice || {};
       const unit = item?.unit || {};
@@ -252,7 +231,9 @@ const ManageBudgets = () => {
         financeAmountRaw,
         projectedAmount: inrFormat(projectedAmountRaw),
         financeAmount: inrFormat(financeAmountRaw),
-        remainingAmount: inrFormat(projectedAmountRaw - financeAmountRaw),
+        remainingAmount: inrFormat(
+          Number(item?.actualAmount || 0) - financeAmountRaw,
+        ),
         actualAmount: inrFormat(item?.actualAmount || 0),
         dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
         dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
@@ -262,7 +243,19 @@ const ManageBudgets = () => {
         status: item?.status || "-",
         isPaid: item?.status === "Approved" ? "Paid" : "Unpaid",
       };
-    });
+    }), [budgetHistory]);
+
+  const selectedBudget = viewDetailsId
+    ? tableData.find((item) => String(item?._id) === viewDetailsId)
+    : null;
+  const viewDetails = selectedBudget
+    ? { ...selectedBudget, srNo: viewDetailsSrNo ?? selectedBudget.srNo }
+    : null;
+
+  const closeViewDetails = () => {
+    setViewDetailsId(null);
+    setViewDetailsSrNo(null);
+  };
 
   const invoiceFiles = viewDetails
     ? (viewDetails?.invoices?.length
@@ -302,7 +295,7 @@ const ManageBudgets = () => {
 
   return (
     <PageFrame>
-      <YearWiseTable
+      <MemoizedYearWiseTable
         data={tableData}
         columns={columns}
         dateColumn="dueDateRaw"
@@ -317,7 +310,7 @@ const ManageBudgets = () => {
       <MuiModal
         open={Boolean(editRow)}
         onClose={handleCloseEdit}
-        title="Edit Request Budget"
+        title="Manage Budget"
       >
         <form onSubmit={handleSubmit(onEditSubmit)} className="space-y-4">
           <TextField
@@ -392,41 +385,58 @@ const ManageBudgets = () => {
             disabled
           />
 
-          <Controller
-            name="financeAmount"
-            control={control}
-            rules={{
-              required: "Finance amount is required",
-              validate: (value) => {
-                if (value === "" || value === null || value === undefined) {
-                  return "Finance amount is required";
-                }
-                const amount = Number(value);
-                if (Number.isNaN(amount)) return "Enter a valid amount";
-                if (amount < 0) return "Amount cannot be negative";
-                return true;
-              },
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Approved Budget"
-                type="number"
-                fullWidth
-                size="small"
-                inputProps={{ min: 0, step: "0.01" }}
-                error={Boolean(errors.financeAmount)}
-                helperText={errors.financeAmount?.message}
-              />
-            )}
-          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <TextField
+              label="Total Paid Amount"
+              value={inrFormat(editRow?.financeAmountRaw || 0)}
+              fullWidth
+              size="small"
+              disabled
+            />
 
-          <p className="text-sm text-primary">
-            Available Balance: INR{" "}
-            {inrFormat(
-              Number.isFinite(remainingPreview) ? remainingPreview : 0,
-            )}
-          </p>
+            <Controller
+              name="financeAmount"
+              control={control}
+              rules={{
+                required: "Paid amount is required",
+                validate: (value) => {
+                  if (value === "" || value === null || value === undefined) {
+                    return "Paid amount is required";
+                  }
+                  const amount = Number(value);
+                  if (Number.isNaN(amount)) return "Enter a valid amount";
+                  if (amount <= 0) return "Amount must be greater than zero";
+                  const availableAmount =
+                    Number(editRow?.actualAmountRaw || 0) -
+                    Number(editRow?.financeAmountRaw || 0);
+                  if (amount > Math.max(availableAmount, 0)) {
+                    return "Paid amount cannot exceed the remaining amount";
+                  }
+                  return true;
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  label="Paid Amount"
+                  type="number"
+                  fullWidth
+                  size="small"
+                  inputProps={{ min: 0.01, step: "0.01" }}
+                  error={Boolean(errors.financeAmount)}
+                  helperText={errors.financeAmount?.message}
+                />
+              )}
+            />
+          </div>
+
+          <TextField
+            label="Remaining Amount"
+            value={`INR ${inrFormat(Math.max(Number.isFinite(remainingPreview) ? remainingPreview : 0, 0))}`}
+            fullWidth
+            size="small"
+            disabled
+          />
 
           <div className="flex justify-center">
             <PrimaryButton
@@ -443,7 +453,7 @@ const ManageBudgets = () => {
       {viewDetails && (
         <MuiModal
           open={Boolean(viewDetails)}
-          onClose={() => setViewDetails(null)}
+          onClose={closeViewDetails}
           title={
             <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
               Department-Invoice Approval Budget Summary
@@ -465,6 +475,10 @@ const ManageBudgets = () => {
               detail={viewDetails.expanseType || "-"}
             />
             <BudgetViewDetail
+              title="Vendor"
+              detail={viewDetails.vendorName || "-"}
+            />
+            <BudgetViewDetail
               title="Payment Type"
               detail={viewDetails.paymentType || "-"}
             />
@@ -473,13 +487,23 @@ const ManageBudgets = () => {
               detail={`INR ${Number(viewDetails.projectedAmountRaw || 0).toLocaleString("en-IN")}`}
             />
             <BudgetViewDetail
-              title="Approved Budget"
+              title="Paid Amount"
               detail={`INR ${Number(viewDetails.financeAmountRaw || 0).toLocaleString("en-IN")}`}
             />
             <BudgetViewDetail
-              title="Available Balance"
+              title="Paid Amount History"
+              detail={
+                <PaidAmountHistory
+                  history={viewDetails.financeAmountHistory}
+                  currentAmount={viewDetails.financeAmountRaw}
+                  currentDate={viewDetails.financeAmountDate}
+                />
+              }
+            />
+            <BudgetViewDetail
+              title="Remaining Amount"
               detail={`INR ${Number(
-                Number(viewDetails.projectedAmountRaw || 0) -
+                Number(viewDetails.actualAmountRaw || 0) -
                   Number(viewDetails.financeAmountRaw || 0),
               ).toLocaleString("en-IN")}`}
             />

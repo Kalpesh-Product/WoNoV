@@ -33,8 +33,8 @@ const VisitorMixBag = ({
 
   const mixBagCards = [
     {
-      title: "REPEAT BOOKING",
-      route: "/app/visitors/mix-bag/repeat-booking",
+      title: "REPEAT BOOKINGS",
+      route: "/app/visitors/mix-bag/repeat-bookings",
       permission: PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS.value,
     },
     {

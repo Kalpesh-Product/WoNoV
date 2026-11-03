@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -164,10 +164,6 @@ const DepartmentTicketSettings = () => {
     );
   }
 
-  if (isLoading) {
-    return <div className="flex justify-center p-20"><CircularProgress /></div>;
-  }
-
   const departmentRows = accessibleDepartments.map((item, index) => ({
     id: item.department?._id,
     srNo: index + 1,
@@ -204,6 +200,7 @@ const DepartmentTicketSettings = () => {
             </div>
           </div>}
           <AgTable
+            loading={isLoading}
             key={departmentId || "departments"}
             data={selectedDepartment ? issueRows : departmentRows}
             columns={selectedDepartment ? issueColumns : departmentColumns}

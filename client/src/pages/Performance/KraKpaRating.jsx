@@ -2,7 +2,7 @@ import { Fragment, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { Chip, CircularProgress, Popover, Tabs, Tab } from "@mui/material";
+import { Chip, Popover, Tabs, Tab } from "@mui/material";
 import { DateRangePicker } from "react-date-range";
 import { MdCalendarToday } from "react-icons/md";
 import ReactApexChart from "react-apexcharts";
@@ -15,6 +15,7 @@ import WidgetSection from "../../components/WidgetSection";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogTypeChip from "./DailyLogTypeChip";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import { PERMISSIONS } from "../../constants/permissions";
 
 const formatUserName = (user) =>
@@ -556,12 +557,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
         </h1>
       </div>
       {navigationTabs}
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
-        <>
+      <>
           {isKpaRating && (
             <div className="mb-6">
               <WidgetSection
@@ -584,12 +580,12 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                   </div>
                 }
               >
-                <ReactApexChart
+                {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[360px]" /> : <ReactApexChart
                   options={kpaChartOptions}
                   series={kpaChartSeries}
                   type="bar"
                   height={360}
-                />
+                />}
               </WidgetSection>
             </div>
           )}
@@ -600,12 +596,12 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                   border
                   title="Daily Tasks Assigned, Closed and Carried Forward"
                 >
-                  <ReactApexChart
+                  {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[330px]" /> : <ReactApexChart
                     type="bar"
                     height={330}
                     options={dailyLogChartOptions}
                     series={dailyLogChartSeries}
-                  />
+                  />}
                 </WidgetSection>
               </div>
             </>
@@ -618,6 +614,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
               </div>
             }>
             <AgTable
+              loading={isLoading}
               showDateControls={false}
               toolbarDateControls={
                 <>
@@ -671,6 +668,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
           ) : (
             <WidgetSection border title="Daily Logs Rating">
             <AgTable
+              loading={isLoading}
               showDateControls={false}
               toolbarDateControls={<div className="mb-1 flex justify-center">
                 <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -777,8 +775,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
               )}
             />
           </MuiModal>
-        </>
-      )}
+      </>
     </Fragment>
   );
 };

@@ -3027,6 +3027,9 @@ const updateMeetingDetails = async (req, res, next) => {
     const creditDifference = Number(
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
+    const hasMeetingTimingChanged =
+      startTimeObj.getTime() !== meetingStartTime.getTime() ||
+      endTimeObj.getTime() !== meetingEndTime.getTime();
 
     const isCreditApplicable = !isExternal;
 
@@ -3117,8 +3120,8 @@ const updateMeetingDetails = async (req, res, next) => {
           }
         : {}),
       startTime: startTimeObj,
-      endTime: endTimeObj,
-      extendTime: null,
+      endTime: hasMeetingTimingChanged ? endTimeObj : meeting.endTime,
+      extendTime: hasMeetingTimingChanged ? null : meeting.extendTime || null,
       // creditsUsed: externalParticipants ? newCreditsUsed : 0,
       creditsUsed: isExternal ? 0 : newCreditsUsed,
       internalParticipants: internalUsers,

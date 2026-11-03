@@ -869,8 +869,10 @@ const ListOfAssets = () => {
   //-----------------------Table Data----------------------//
 
   return (
-    <PageFrame>
+    <PageFrame className="min-w-0 w-full max-w-full">
+      <div className="min-w-0 w-full max-w-full overflow-x-auto">
       <YearWiseTable
+        loading={isAssetsListPending}
         search={true}
         // dateColumn={"purchaseDate"}
         // tableTitle={"List of Assets"}
@@ -911,6 +913,7 @@ const ListOfAssets = () => {
             : null
         }
       />
+      </div>
 
       <MuiModal
         open={isModalOpen}

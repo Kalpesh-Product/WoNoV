@@ -33,7 +33,7 @@ const VisitorReviews = () => {
   });
   const { auth } = useAuth();
 
-  const { data: reviews = [] } = useQuery({
+  const { data: reviews = [], isLoading: isReviewsLoading } = useQuery({
     queryKey: ["reviews"],
     queryFn: async () => {
       try {
@@ -172,11 +172,13 @@ const VisitorReviews = () => {
             data={reviews.length}
             title="Total"
             description="Reviews Count"
+            loading={isReviewsLoading}
           />
           <DataCard
             data={`${averageRatings} ⭐`}
             title="Average"
             description=" Ratings"
+            loading={isReviewsLoading}
           />
         </WidgetSection>
 
@@ -197,6 +199,7 @@ const VisitorReviews = () => {
                 })),
               ]}
               columns={departmentsColumn}
+              loading={isReviewsLoading}
             />
           </PageFrame>
         </div>

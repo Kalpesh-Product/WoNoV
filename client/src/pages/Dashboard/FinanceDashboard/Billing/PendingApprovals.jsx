@@ -245,6 +245,10 @@ const PendingApprovals = () => {
                 title="Department"
                 detail={selectedBudget.department}
               />
+              <DetalisFormatted
+                title="Vendor"
+                detail={selectedBudget.vendor?.companyName || selectedBudget.vendor?.name || "-"}
+              />
 
               <DetalisFormatted title="Unit" detail={selectedBudget.unitName} />
               <DetalisFormatted

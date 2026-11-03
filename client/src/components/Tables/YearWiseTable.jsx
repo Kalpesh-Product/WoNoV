@@ -79,6 +79,7 @@ const YearWiseTable = ({
   onSearchChange,
   getRowStyle,
   compactToolbar = false,
+  loading = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -585,6 +586,7 @@ const YearWiseTable = ({
 
       <>
         <AgTable
+            loading={loading}
             toolbarDateControls={dateControls}
             showTableControls={showTableControls}
             toolbarActions={operationControls}

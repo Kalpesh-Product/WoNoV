@@ -14,6 +14,7 @@ import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
 import KraKpaDepartmentWidgets from "./KraKpaDepartmentWidgets";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 
 const SHOW_DEPARTMENT_PERFORMANCE_WIDGETS = false;
 
@@ -125,7 +126,7 @@ const PerformanceHome = ({
     userPermissions.includes(permission.value);
   const currentMonthLabel = currentDateInfo.monthName;
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
       queryKey: ["performanceDepartments", currentDateInfo.monthName],
     enabled: !onlyFirstTwoCards,
     refetchInterval: 5 * 60 * 1000,
@@ -137,7 +138,7 @@ const PerformanceHome = ({
     },
   });
 
-  const { data: kpaTasksRaw = [] } = useQuery({
+  const { data: kpaTasksRaw = [], isLoading: isKpaTasksLoading } = useQuery({
     queryKey: [onlyFirstTwoCards ? "kraKpaKpaOverview" : "performanceKpaTasks"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-kpa-tasks");
@@ -198,7 +199,10 @@ const PerformanceHome = ({
   ]);
 
 
-  const { data: departmentDailyKraStats = [] } = useQuery({
+  const {
+    data: departmentDailyKraStats = [],
+    isLoading: isDepartmentDailyKraStatsLoading,
+  } = useQuery({
     queryKey: [
       "performanceDepartmentDailyKraStats",
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
@@ -631,7 +635,11 @@ const PerformanceHome = ({
       {(onlyFirstTwoCards
         ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
         : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) && (
-        <YearlyGraph
+        isKpaTasksLoading ? (
+          <WidgetSection border title="ANNUAL KPA VS ACHIEVEMENTS">
+            <PerformanceChartSkeleton variant="bar" height="h-[26rem]" />
+          </WidgetSection>
+        ) : <YearlyGraph
           data={annualKpaGraphData}
           options={annualKpaChartOptions}
           title="ANNUAL KPA VS ACHIEVEMENTS"
@@ -681,11 +689,13 @@ const PerformanceHome = ({
             border
             title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
           >
-            <PieChartMui
+            {isDepartmentDailyKraStatsLoading || isDepartmentsLoading ? (
+              <PerformanceChartSkeleton variant="donut" />
+            ) : <PieChartMui
               data={kraPieData}
               options={pieOptions(kraPieData.map((item) => item.label))}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )}
 
@@ -696,11 +706,13 @@ const PerformanceHome = ({
             border
             title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
           >
-            <PieChartMui
+            {isKpaTasksLoading ? (
+              <PerformanceChartSkeleton variant="donut" />
+            ) : <PieChartMui
               data={kpaPieData}
               options={pieOptions(kpaPieData.map((item) => item.label))}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )}
       </div>

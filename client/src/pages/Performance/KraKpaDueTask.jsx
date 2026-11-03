@@ -4,7 +4,6 @@ import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Chip,
-  CircularProgress,
   MenuItem,
   Popover,
   TextField,
@@ -654,12 +653,8 @@ const KraKpaDueTask = () => {
         </div>}
       </div>
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
         <AgTable
+          loading={isLoading}
           toolbarDateControls={
             <>
               <div className="flex items-center justify-center gap-2">
@@ -703,7 +698,6 @@ const KraKpaDueTask = () => {
           processExportCell={({ value }) => value ?? ""}
           tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
         />
-      )}
 
       <MuiModal
         open={Boolean(viewRecord)}

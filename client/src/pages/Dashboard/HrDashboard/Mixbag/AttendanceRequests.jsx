@@ -92,6 +92,10 @@ const AttendanceRequests = () => {
     { field: "outTime", headerName: "Corrected Out Time" },
     { field: "originalInTime", headerName: "Original In Time",hide:true },
     { field: "originalOutTime", headerName: "Original Out Time",hide:true },
+    { field: "originalBreakStart", headerName: "Original Break Start", hide: true },
+    { field: "originalBreakEnd", headerName: "Original Break End", hide: true },
+    { field: "correctedBreakStart", headerName: "Corrected Break Start", hide: true },
+    { field: "correctedBreakEnd", headerName: "Corrected Break End", hide: true },
     { field: "status", headerName: "Status", flex: 1, cellRenderer: (params) => <StatusChip status={params?.value} /> },
     {
       field: "actions",
@@ -141,6 +145,10 @@ const AttendanceRequests = () => {
         outTime: item.outTime ? humanTime(item.outTime) : "-",
         originalInTime: item.originalInTime ? humanTime(item.originalInTime) : "-",
         originalOutTime: item.originalOutTime ? humanTime(item.originalOutTime) : "-",
+        originalBreakStart: item.originalBreaks?.[0]?.startBreak ? humanTime(item.originalBreaks[0].startBreak) : "-",
+        originalBreakEnd: item.originalBreaks?.[0]?.endBreak ? humanTime(item.originalBreaks[0].endBreak) : "-",
+        correctedBreakStart: item.correctedBreaks?.[0]?.startBreak ? humanTime(item.correctedBreaks[0].startBreak) : "-",
+        correctedBreakEnd: item.correctedBreaks?.[0]?.endBreak ? humanTime(item.correctedBreaks[0].endBreak) : "-",
         createdDate: item.createdDate,
         status: item.status,
       }));
@@ -227,6 +235,10 @@ const AttendanceRequests = () => {
                   <DetalisFormatted title="Corrected In Time" detail={selectedRequest?.inTime} />
                   <DetalisFormatted title="Original Out Time" detail={selectedRequest?.originalOutTime} />
                   <DetalisFormatted title="Corrected Out Time" detail={selectedRequest?.outTime} />
+                  <DetalisFormatted title="Original Break Start" detail={selectedRequest?.originalBreakStart || "-"} />
+                  <DetalisFormatted title="Corrected Break Start" detail={selectedRequest?.correctedBreakStart || "-"} />
+                  <DetalisFormatted title="Original Break End" detail={selectedRequest?.originalBreakEnd || "-"} />
+                  <DetalisFormatted title="Corrected Break End" detail={selectedRequest?.correctedBreakEnd || "-"} />
                 </div>
               
               </div>

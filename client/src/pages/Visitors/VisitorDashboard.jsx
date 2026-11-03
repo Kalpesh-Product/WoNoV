@@ -11,7 +11,7 @@ import PieChartMui from "../../components/graphs/PieChartMui";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanTime from "../../utils/humanTime";
-import { CircularProgress } from "@mui/material";
+import { Skeleton } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import LazyDashboardWidget from "../../components/Optimization/LazyDashboardWidget";
 import dayjs from "dayjs";
@@ -907,14 +907,20 @@ const VisitorDashboard = () => {
       layout: 1,
       widgets: [
         ...allowedVisitorGraphs.map((item) => (
-          <FyBarGraphCount
-            key={item.key}
-            data={item.data}
-            chartOptions={item.chartOptions}
-            dateKey={item.dateKey}
-            graphTitle={item.graphTitle}
-            groupKey="visitorType"
-          />
+          isVisitorsData ? (
+            <WidgetSection key={item.key} title={item.graphTitle} border>
+              <Skeleton variant="rounded" width="100%" height={320} />
+            </WidgetSection>
+          ) : (
+            <FyBarGraphCount
+              key={item.key}
+              data={item.data}
+              chartOptions={item.chartOptions}
+              dateKey={item.dateKey}
+              graphTitle={item.graphTitle}
+              groupKey="visitorType"
+            />
+          )
         )),
       ],
     },
@@ -939,6 +945,7 @@ const VisitorDashboard = () => {
             title={card.title}
             data={card.data}
             description={card.description}
+            loading={isVisitorsData}
           />
         )),
     },
@@ -952,6 +959,7 @@ const VisitorDashboard = () => {
             title={card.title}
             data={card.data}
             description={card.description}
+            loading={isVisitorsData}
           />
         )),
     },
@@ -1030,12 +1038,12 @@ const VisitorDashboard = () => {
             titleLabel={item.titleLabel}
             border={item.border}
           >
-            <PieChartMui
+            {isVisitorsData ? <Skeleton variant="rounded" width="100%" height={320} /> : <PieChartMui
               data={item.data}
               options={item.options}
               width={item.width}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )),
 
@@ -1046,12 +1054,12 @@ const VisitorDashboard = () => {
             titleLabel={item.titleLabel}
             border={item.border}
           >
-            <PieChartMui
+            {isVisitorsData ? <Skeleton variant="rounded" width="100%" height={320} /> : <PieChartMui
               data={item.data}
               options={item.options}
               width={item.width}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )),
 
@@ -1062,13 +1070,13 @@ const VisitorDashboard = () => {
             titleLabel={item.titleLabel}
             border={item.border}
           >
-            <DonutChart
+            {isVisitorsData ? <Skeleton variant="circular" width={240} height={240} className="mx-auto" /> : <DonutChart
               centerLabel={item.centerLabel}
               labels={item.labels}
               colors={item.colors}
               series={item.series}
               tooltipValue={item.tooltipValue}
-            />
+            />}
           </WidgetSection>
         )),
 
@@ -1079,13 +1087,13 @@ const VisitorDashboard = () => {
             titleLabel={item.titleLabel}
             border={item.border}
           >
-            <DonutChart
+            {isVisitorsData ? <Skeleton variant="circular" width={240} height={240} className="mx-auto" /> : <DonutChart
               centerLabel={item.centerLabel}
               labels={item.labels}
               colors={item.colors}
               series={item.series}
               tooltipValue={item.tooltipValue}
-            />
+            />}
           </WidgetSection>
         )),
       ],
@@ -1135,7 +1143,7 @@ const VisitorDashboard = () => {
           titleLabel={item.titleLabel}
           border={item.border}
         >
-          <PieChartMui
+          {isVisitorsData ? <Skeleton variant="rounded" width="100%" height={320} /> : <PieChartMui
             percent={item.percent}
             title={item.title}
             data={item.data}
@@ -1143,7 +1151,7 @@ const VisitorDashboard = () => {
             width={item.width}
             height={item.height}
             centerAlign
-          />
+          />}
         </WidgetSection>
       )),
     },
@@ -1152,8 +1160,7 @@ const VisitorDashboard = () => {
       widgets: [
         ...allowedVisitorsTodayTables.map((item) => (
           <WidgetSection key={item.key} layout={item.layout} padding>
-            {!isVisitorsData ? (
-              <MuiTable showTableControls={false}
+            <MuiTable showTableControls={false}
                 Title={item.title}
                 columns={item.columns}
                 rows={item.rows}
@@ -1161,10 +1168,8 @@ const VisitorDashboard = () => {
                 rowsToDisplay={item.rowsToDisplay}
                 scroll={item.scroll}
                 className={item.className}
+                loading={isVisitorsData}
               />
-            ) : (
-              <CircularProgress />
-            )}
           </WidgetSection>
         )),
       ],

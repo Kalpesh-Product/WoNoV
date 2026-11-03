@@ -11,6 +11,7 @@ const TicketCard = ({
   fontFamily,
   titleColor,
   route,
+  loading = false,
 }) => {
   const navigate = useNavigate();
   return (
@@ -23,15 +24,24 @@ const TicketCard = ({
         height: height || "",
       }}
     >
-      <div
-        style={{ fontFamily: fontFamily || "" }}
-        className="flex items-center justify-center text-4xl mb-4"
-      >
-        {icon || data}
-      </div>
-      <span style={{ color: titleColor || "black" }} className="text-center">
-        {title}
-      </span>
+      {loading ? (
+        <>
+          <div className="mb-4 h-10 w-16 animate-pulse rounded bg-gray-200" />
+          <div className="h-4 w-24 max-w-full animate-pulse rounded bg-gray-200" />
+        </>
+      ) : (
+        <>
+          <div
+            style={{ fontFamily: fontFamily || "" }}
+            className="flex items-center justify-center text-4xl mb-4"
+          >
+            {icon || data}
+          </div>
+          <span style={{ color: titleColor || "black" }} className="text-center">
+            {title}
+          </span>
+        </>
+      )}
     </div>
   );
 };

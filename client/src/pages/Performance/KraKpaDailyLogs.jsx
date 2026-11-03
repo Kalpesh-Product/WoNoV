@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Autocomplete, Chip, CircularProgress, TextField } from "@mui/material";
+import { Autocomplete, Chip, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { MdChevronLeft, MdChevronRight, MdDeleteForever, MdHistory } from "react-icons/md";
@@ -574,15 +574,11 @@ const KraKpaDailyLogs = () => {
     <div>
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
 
-      {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
-      ) : (
-        <>
+      <>
           <PageFrame>
           <WidgetSection padding>
           <AgTable
+            loading={isLoading}
             titleRightContent={
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <Chip label={`Total: ${summaryCounts.total}`} sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }} />
@@ -653,6 +649,7 @@ const KraKpaDailyLogs = () => {
             <PageFrame>
             <WidgetSection padding>
             <AgTable
+              loading={isLoading}
               data={completedRows}
               columns={completedColumns}
               tableTitle="COMPLETED DAILY LOGS"
@@ -668,8 +665,7 @@ const KraKpaDailyLogs = () => {
             </WidgetSection>
             </PageFrame>
           </div>
-        </>
-      )}
+      </>
 
       <MuiModal
         open={Boolean(viewRecord)}

@@ -320,6 +320,7 @@ const AssetsSubCategories = () => {
   return (
     <PageFrame>
       <AgTable
+        loading={isSubCategoriesPending || isCategoriesPending}
         key={tableData._id}
         search={true}
         tableTitle="Assets Sub-Categories"

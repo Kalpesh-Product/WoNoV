@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { HiPencilSquare } from "react-icons/hi2";
@@ -295,12 +295,9 @@ const KraKpaPendingApprovals = () => {
       </div>
       {isError ? (
         <p role="alert" className="py-6 text-red-600">{error?.response?.data?.message || "Unable to load pending approvals"}</p>
-      ) : isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <CircularProgress />
-        </div>
       ) : (
         <AgTable
+          loading={isLoading}
           showDateControls={false}
           toolbarDateControls={<TableDateFilter
             fields={[{ field: "month", label: "KPA Month" }]}

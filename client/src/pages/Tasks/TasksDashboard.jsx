@@ -18,6 +18,7 @@ import { PERMISSIONS } from "../../constants/permissions";
 import useAuth from "../../hooks/useAuth";
 import { configYearlyGrpah, filterPermissions } from "../../utils/accessConfig";
 import { isTodayForUser } from "../../utils/date";
+import { Skeleton } from "@mui/material";
 
 const TasksDashboard = () => {
   const axios = useAxiosPrivate();
@@ -953,16 +954,23 @@ const TasksDashboard = () => {
     {
       layout: allowedGraph.length,
       widgets: allowedGraph.map((config) => (
-        <YearlyGraph
-          key={config.key}
-          data={series}
-          responsiveResize
-          chartId={config.chartId}
-          options={taskGraphOptions}
-          title={config.title}
-          titleAmount={`${config.titleAmountLabel} : ${totalTasksForYear || 0}`}
-          onYearChange={handleYearChange}
-        />
+        allTasksQuery.isLoading ? (
+          <div key={config.key} className="w-full rounded-lg border border-gray-200 p-4">
+            <Skeleton variant="text" width="35%" height={32} />
+            <Skeleton variant="rounded" width="100%" height={280} />
+          </div>
+        ) : (
+          <YearlyGraph
+            key={config.key}
+            data={series}
+            responsiveResize
+            chartId={config.chartId}
+            options={taskGraphOptions}
+            title={config.title}
+            titleAmount={`${config.titleAmountLabel} : ${totalTasksForYear || 0}`}
+            onYearChange={handleYearChange}
+          />
+        )
       )),
     },
     {
@@ -988,6 +996,7 @@ const TasksDashboard = () => {
           data={getTaskCardCount(config.dataType)}
           description={config.description}
           route={config.route}
+          loading={allTasksQuery.isLoading || myPendingTasksQuery.isLoading || myCompletedTasksQuery.isLoading}
         />
       )),
     },
@@ -1000,6 +1009,7 @@ const TasksDashboard = () => {
           data={getTaskCardCount(config.dataType)}
           description={config.description}
           route={config.route}
+          loading={allTasksQuery.isLoading}
         />
       )),
 
@@ -1008,12 +1018,16 @@ const TasksDashboard = () => {
       layout: allowedPieCharts.length,
       widgets: allowedPieCharts.map((config) => (
         <WidgetSection key={config.key} border title={config.title}>
-          <PieChartMui
-            data={pieChartDataMap[config.dataKey]}
-            options={pieChartOptionsMap[config.optionsKey]}
-            height={325}
-            centerAlign
-          />
+          {allTasksQuery.isLoading ? (
+            <Skeleton variant="rounded" width="100%" height={325} />
+          ) : (
+            <PieChartMui
+              data={pieChartDataMap[config.dataKey]}
+              options={pieChartOptionsMap[config.optionsKey]}
+              height={325}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },
@@ -1037,6 +1051,7 @@ const TasksDashboard = () => {
             rowsToDisplay={10}
             scroll={true}
             className="h-full"
+            loading={allTasksQuery.isLoading}
           />
 
           <MuiTable showTableControls={false}
@@ -1047,6 +1062,7 @@ const TasksDashboard = () => {
             rowsToDisplay={10}
             scroll={true}
             className="h-full"
+            loading={meetingsQuery.isLoading}
           />
         </WidgetSection>
       )),

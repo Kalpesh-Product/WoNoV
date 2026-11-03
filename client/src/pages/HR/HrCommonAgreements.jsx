@@ -105,6 +105,7 @@ const HrCommonAgreements = () => {
     <div className="flex flex-col gap-8">
       <div>
         <YearWiseTable
+          loading={isLoading}
           compactToolbar
           search={true}
           tableTitle={`${name}'s Agreement List`}

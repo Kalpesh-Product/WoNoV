@@ -62,6 +62,7 @@ const VisitorTeamMembers = () => {
                 ]
             }
             columns={teamMembersColumn}
+            loading={isLoading}
           />
         </div>
       </PageFrame>

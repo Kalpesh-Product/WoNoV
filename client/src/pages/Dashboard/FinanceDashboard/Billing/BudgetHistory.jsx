@@ -7,6 +7,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { toast } from "sonner";
 
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import PaidAmountHistory from "../../../../components/PaidAmountHistory";
 import MuiModal from "../../../../components/MuiModal";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
@@ -24,13 +25,16 @@ const isTechDepartmentUser = (user) =>
   (Array.isArray(user?.departments) ? user.departments : []).some(
     (department) =>
       String(department?._id || department) === TECH_DEPARTMENT_ID ||
-      String(department?.name || "").trim().toLowerCase() ===
-        "tech department",
+      String(department?.name || "")
+        .trim()
+        .toLowerCase() === "tech department",
   );
 
 const BudgetViewDetail = ({ detail, ...props }) => {
-  const isMissing = detail == null ||
-    (typeof detail === "string" && ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
+  const isMissing =
+    detail == null ||
+    (typeof detail === "string" &&
+      ["", "-", "--", "\u2013", "\u2014"].includes(detail.trim()));
   return <DetalisFormatted {...props} detail={isMissing ? "\u2014" : detail} />;
 };
 
@@ -129,17 +133,25 @@ const BudgetHistory = () => {
     },
     { field: "expanseName", headerName: "Expense Name", flex: 1.5 },
     { field: "expanseType", headerName: "Expense Type", flex: 1.2 },
-     { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
-    { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1.2 },
-    { field: "financeAmount", headerName: "Approved Budget (INR)", flex: 1.2 },
-    { field: "remainingAmount", headerName: "Available Balance (INR)", flex: 1.2 },
+    { field: "paymentType", headerName: "Payment Type", flex: 1.2 },
+    {
+      field: "projectedAmount",
+      headerName: "Projected Amount (INR)",
+      flex: 1.2,
+    },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1.2 },
+    { field: "financeAmount", headerName: "Paid Amount (INR)", flex: 1.2 },
+    {
+      field: "remainingAmount",
+      headerName: "Remaining Amount (INR)",
+      flex: 1.2,
+    },
     { field: "dueDate", headerName: "Due Date", flex: 1.1 },
     {
       field: "status",
       headerName: "Approval Status",
       flex: 1,
-       pinned: "right",
+      pinned: "right",
       cellRenderer: (params) => {
         const status = String(params?.value || "-");
         const normalizedStatus = status.toLowerCase();
@@ -183,7 +195,15 @@ const BudgetHistory = () => {
               className="text-subtitle text-primary cursor-pointer"
               title="View budget details"
               aria-label="View budget details"
-              onClick={() => setViewDetails({ ...params.data, srNo: params.node?.rowIndex == null ? params.data.srNo : params.node.rowIndex + 1 })}
+              onClick={() =>
+                setViewDetails({
+                  ...params.data,
+                  srNo:
+                    params.node?.rowIndex == null
+                      ? params.data.srNo
+                      : params.node.rowIndex + 1,
+                })
+              }
             >
               <MdOutlineRemoveRedEye />
             </button>
@@ -225,7 +245,9 @@ const BudgetHistory = () => {
       const isBulkBudget = item?.isExtraBudget === false;
 
       return (
-        hasBudgetShape && !hasVoucherData && isApprovedOrRejected &&
+        hasBudgetShape &&
+        !hasVoucherData &&
+        isApprovedOrRejected &&
         (isExtraBudget || isBulkBudget)
       );
     })
@@ -244,10 +266,12 @@ const BudgetHistory = () => {
         projectedAmountRaw,
         actualAmountRaw: item?.actualAmount || 0,
         financeAmountRaw,
-        availableBalanceRaw: projectedAmountRaw - financeAmountRaw,
+        remainingAmountRaw: Number(item?.actualAmount || 0) - financeAmountRaw,
         projectedAmount: inrFormat(projectedAmountRaw),
         financeAmount: inrFormat(financeAmountRaw),
-        remainingAmount: inrFormat(projectedAmountRaw - financeAmountRaw),
+        remainingAmount: inrFormat(
+          Number(item?.actualAmount || 0) - financeAmountRaw,
+        ),
         actualAmount: inrFormat(item?.actualAmount || 0),
         dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
         dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
@@ -352,6 +376,14 @@ const BudgetHistory = () => {
               detail={viewDetails.expanseType || "-"}
             />
             <BudgetViewDetail
+              title="Vendor"
+              detail={
+                viewDetails.vendor?.companyName ||
+                viewDetails.vendor?.name ||
+                "-"
+              }
+            />
+            <BudgetViewDetail
               title="Payment Type"
               detail={viewDetails.paymentType || "-"}
             />
@@ -360,24 +392,44 @@ const BudgetHistory = () => {
               detail={`INR ${Number(viewDetails.projectedAmountRaw || 0).toLocaleString("en-IN")}`}
             />
             <BudgetViewDetail
-              title="Approved Budget"
-              detail={`INR ${Number(viewDetails.financeAmountRaw || 0).toLocaleString("en-IN")}`}
-            />
-            <BudgetViewDetail
-              title="Available Balance"
-              detail={`INR ${Number(viewDetails.availableBalanceRaw || 0).toLocaleString("en-IN")}`}
-            />
-            <BudgetViewDetail
               title="Actual Amount"
               detail={`INR ${Number(viewDetails.actualAmountRaw || 0).toLocaleString("en-IN")}`}
             />
-            <BudgetViewDetail title="Unit" detail={viewDetails.unitName || "-"} />
-            <BudgetViewDetail title="Unit No" detail={viewDetails.unitNo || "-"} />
+            <BudgetViewDetail
+              title="Paid Amount"
+              detail={`INR ${Number(viewDetails.financeAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+            <BudgetViewDetail
+              title="Paid Amount History"
+              detail={
+                <PaidAmountHistory
+                  history={viewDetails.financeAmountHistory}
+                  currentAmount={viewDetails.financeAmountRaw}
+                  currentDate={viewDetails.financeAmountDate}
+                />
+              }
+            />
+            <BudgetViewDetail
+              title="Remaining Amount"
+              detail={`INR ${Number(viewDetails.remainingAmountRaw || 0).toLocaleString("en-IN")}`}
+            />
+
+            <BudgetViewDetail
+              title="Unit"
+              detail={viewDetails.unitName || "-"}
+            />
+            <BudgetViewDetail
+              title="Unit No"
+              detail={viewDetails.unitNo || "-"}
+            />
             <BudgetViewDetail
               title="Building"
               detail={viewDetails.buildingName || "-"}
             />
-            <BudgetViewDetail title="Due Date" detail={viewDetails.dueDate || "-"} />
+            <BudgetViewDetail
+              title="Due Date"
+              detail={viewDetails.dueDate || "-"}
+            />
             <BudgetViewDetail
               title="Invoice Name"
               detail={`${invoiceFiles.length} ${invoiceFiles.length === 1 ? "file" : "files"} uploaded`}
@@ -391,17 +443,30 @@ const BudgetHistory = () => {
               detail={viewDetails.status || "-"}
             />
             {viewDetails.status === "Rejected" && (
-              <BudgetViewDetail title="Rejected By" detail={viewDetails.rejectedByName} />
+              <BudgetViewDetail
+                title="Rejected By"
+                detail={viewDetails.rejectedByName}
+              />
             )}
             {viewDetails.status === "Approved" && (
-              <BudgetViewDetail title="Approver Name" detail={viewDetails.approverName || viewDetails.requiredApprover || "\u2014"} />
+              <BudgetViewDetail
+                title="Approver Name"
+                detail={
+                  viewDetails.approverName ||
+                  viewDetails.requiredApprover ||
+                  "\u2014"
+                }
+              />
             )}
             <BudgetViewDetail
               title="Paid Status"
               detail={viewDetails.isPaid || "Unpaid"}
             />
             <BudgetViewDetail title="Invoice File" detail={invoiceChips} />
-            <BudgetViewDetail title="Level" detail={viewDetails.approvalLevel || "\u2014"} />
+            <BudgetViewDetail
+              title="Level"
+              detail={viewDetails.approvalLevel || "\u2014"}
+            />
           </div>
         </MuiModal>
       )}
@@ -410,8 +475,6 @@ const BudgetHistory = () => {
 };
 
 export default BudgetHistory;
-
-
 
 // import { useQuery } from "@tanstack/react-query";
 // import dayjs from "dayjs";
@@ -490,7 +553,6 @@ export default BudgetHistory;
 // };
 
 // export default BudgetHistory;
-
 
 // import dayjs from "dayjs";
 // import { useQuery } from "@tanstack/react-query";
