@@ -263,6 +263,13 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
         const chart = chartDefinitions[key];
         const data = chartData[key];
         const hasChartData = data.some((item) => item.value > 0);
+        const totalBookings =
+          key === "booking"
+            ? data.reduce((total, item) => total + Number(item.value || 0), 0)
+            : 0;
+        const overallPaid =
+          chartData.paymentStatus.find((item) => item.label === "Paid")
+            ?.taxableAmount || 0;
 
         return (
           <WidgetSection
@@ -277,6 +284,32 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
             borderColor="#1E3D73"
             bodyBorderColor="#9FB2CF"
             autoHeight
+            headerRightContent={
+              key === "booking" ? (
+                <span
+                  className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]"
+                  style={{
+                    backgroundColor: "#dbe4ff",
+                    borderColor: "#aec6fb",
+                  }}
+                >
+                  Total Bookings: {totalBookings.toLocaleString("en-IN")}
+                </span>
+              ) : key === "paymentStatus" ? (
+                <span
+                  className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]"
+                  style={{
+                    backgroundColor: "#dbe4ff",
+                    borderColor: "#aec6fb",
+                  }}
+                >
+                  Overall Paid: INR{" "}
+                  {Number(overallPaid).toLocaleString("en-IN", {
+                    maximumFractionDigits: 2,
+                  })}
+                </span>
+              ) : null
+            }
           >
             {!isLoading && hasChartData ? (
               <PieChartMui
@@ -351,18 +384,6 @@ const DayPassClientDetailsToday = () => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const currentMonth = dayjs().startOf("month");
-  const { data: currentMonthRevenueRows = [] } = useQuery({
-    queryKey: ["day-pass-current-month-paid-revenue", currentMonth.format("YYYY-MM")],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/simple-consolidated-revenue");
-      return Array.isArray(response.data?.meetingRevenue)
-        ? response.data.meetingRevenue
-        : [];
-    },
-    refetchInterval: 30000,
-    refetchOnWindowFocus: true,
-  });
   const rows = useMemo(
     () =>
       visitors.flatMap((visitor) =>
@@ -418,18 +439,6 @@ const DayPassClientDetailsToday = () => {
         : total,
     0,
   );
-  const overallPaidRevenue = currentMonthRevenueRows.reduce((total, row) => {
-    const rowDate = dayjs(row?.date || row?.createdAt);
-    if (
-      row?.source !== "day-pass" ||
-      !rowDate.isValid() ||
-      !rowDate.isSame(currentMonth, "month") ||
-      String(row?.status || "").trim().toLowerCase() !== "paid"
-    ) {
-      return total;
-    }
-    return total + (Number(row?.taxable ?? row?.taxableAmount ?? 0) || 0);
-  }, 0);
   const formatRevenue = (amount) =>
     Number(amount || 0).toLocaleString("en-IN", {
       maximumFractionDigits: 2,
@@ -561,15 +570,6 @@ const DayPassClientDetailsToday = () => {
         autoHeight
         headerRightContent={
           <>
-            <span
-              className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]"
-              style={{
-                backgroundColor: "#dbe4ff",
-                borderColor: "#aec6fb",
-              }}
-            >
-              Overall Paid: INR {formatRevenue(overallPaidRevenue)}
-            </span>
             <span
               className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#176b3a]"
               style={{
@@ -1029,8 +1029,8 @@ const DayPassDashboard = ({
       openRoute: "/app/dashboard/sales-dashboard/day-pass/mix-bag",
       items: [
         {
-          label: "Repeat Day Pass",
-          description: "Create another visit for an existing Day Pass client.",
+          label: "Repeat Booking",
+          description: "Create another booking for an existing Day Pass client.",
           icon: MdEventAvailable,
           route: "/app/dashboard/sales-dashboard/day-pass/mix-bag/repeat-day-pass/repeat-external-companies",
         },
@@ -1048,8 +1048,8 @@ const DayPassDashboard = ({
       permission: PERMISSIONS.SALES_VERTICAL_DAY_PASS_REPORTS_MENU.value,
       items: [
         {
-          label: "Visitor Report",
-          description: "View visitor reports for Day Pass entries.",
+          label: "Day Pass Report",
+          description: "View Day Pass reports.",
           icon: MdBarChart,
           route: "/app/dashboard/sales-dashboard/day-pass/reports",
         },

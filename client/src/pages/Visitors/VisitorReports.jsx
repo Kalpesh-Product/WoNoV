@@ -159,6 +159,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
       pagination.limit,
       debouncedVisitorSearch,
       activeTab,
+      dayPassOnly,
     ],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors", {
@@ -168,6 +169,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
           limit: pagination.limit,
           search: debouncedVisitorSearch || undefined,
           searchContext: "visitor-reports",
+          type: dayPassOnly ? "day-pass" : undefined,
           visitScope: activeTab === 1 ? "meeting" : undefined,
         },
       });
@@ -585,38 +587,40 @@ const VisitorReports = ({ dayPassOnly = false }) => {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <Tabs
-        value={activeTab}
-        onChange={(_, value) => {
-          setActiveTab(value);
-          setPagination((current) => ({ ...current, page: 1, total: 0 }));
-        }}
-        variant="fullWidth"
-        TabIndicatorProps={{ style: { display: "none" } }}
-        sx={{
-          backgroundColor: "white",
-          borderRadius: 2,
-          border: "1px solid #d1d5db",
-          overflow: "hidden",
-          "& .MuiTab-root": {
-            textTransform: "none",
-            fontWeight: 500,
-            padding: "12px 16px",
-            color: "#1E3D73",
-            borderRight: "1px solid #d1d5db",
-          },
-          "& .MuiTab-root:last-of-type": {
-            borderRight: "none",
-          },
-          "& .Mui-selected": {
-            backgroundColor: "#1E3D73",
-            color: "white !important",
-          },
-        }}
-      >
-        <Tab label="All Visits" />
-        <Tab label="Meeting Visits" />
-      </Tabs>
+      {!dayPassOnly && (
+        <Tabs
+          value={activeTab}
+          onChange={(_, value) => {
+            setActiveTab(value);
+            setPagination((current) => ({ ...current, page: 1, total: 0 }));
+          }}
+          variant="fullWidth"
+          TabIndicatorProps={{ style: { display: "none" } }}
+          sx={{
+            backgroundColor: "white",
+            borderRadius: 2,
+            border: "1px solid #d1d5db",
+            overflow: "hidden",
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 500,
+              padding: "12px 16px",
+              color: "#1E3D73",
+              borderRight: "1px solid #d1d5db",
+            },
+            "& .MuiTab-root:last-of-type": {
+              borderRight: "none",
+            },
+            "& .Mui-selected": {
+              backgroundColor: "#1E3D73",
+              color: "white !important",
+            },
+          }}
+        >
+          <Tab label="All Visits" />
+          <Tab label="Meeting Visits" />
+        </Tabs>
+      )}
 
       <PageFrame>
         <div>
@@ -628,7 +632,11 @@ const VisitorReports = ({ dayPassOnly = false }) => {
             onDateFilterChange={handleVisitorDateFilterChange}
             search={true}
             searchColumn={"name"}
-            tableTitle={activeTab === 0 ? "All Visits" : "Meeting Visits"}
+            tableTitle={
+              activeTab === 0
+                  ? "All Visits"
+                  : "Meeting Visits"
+            }
             data={rows}
             columns={
               activeTab === 0 ? meetingReportsColumn : meetingVisitsColumns

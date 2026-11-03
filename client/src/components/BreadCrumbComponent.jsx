@@ -26,6 +26,10 @@ const BreadCrumbComponent = () => {
       return "KRA & KPA";
     }
 
+    if (value.toLowerCase() === "repeat-day-pass") {
+      return "Repeat Booking";
+    }
+
     if (
       value.toLowerCase() === "individual-monthly-kpa" &&
       location.pathname.toLowerCase().startsWith("/app/kra-kpa")
