@@ -36,6 +36,7 @@ import AgTable from "../../../../components/AgTable";
 import StatusChip from "../../../../components/StatusChip";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
+import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
 import InvestorOperationalCharts from "../../InvestorDashboard/InvestorOperationalCharts";
 import LeadsLayout from "../ViewClients/LeadsLayout";
@@ -152,6 +153,9 @@ const isActiveRenewalClient = (client) => {
 };
 
 const isInactiveRenewalClient = (client) => {
+  if (typeof client?.isActive === "boolean") return !client.isActive;
+  if (typeof client?.clientStatus === "boolean") return !client.clientStatus;
+
   const activeValue = client?.isActive ?? client?.clientStatus;
   const normalizedActiveValue = String(activeValue ?? "")
     .trim()
@@ -525,7 +529,7 @@ const VirtualOfficeUniqueClientsGraph = ({ revenueRows }) => {
 };
 
 const getClientDetailValue = (value) => {
-  if (value === 0) return 0;
+  if (value === 0) return "0";
   if (value === true) return "Active";
   if (value === false) return "Inactive";
   return value || "—";
@@ -533,24 +537,6 @@ const getClientDetailValue = (value) => {
 
 const getClientMoneyValue = (value) =>
   `INR ${inrFormat(Number(value) || 0)}`;
-
-const RenewalClientDetailSection = ({ title, rows }) => (
-  <section className="space-y-2">
-    <h3 className="text-lg font-pmedium text-[#1E3D73]">{title}</h3>
-    <div>
-      {rows.map((row) => (
-        <div
-          key={row.label}
-          className="grid grid-cols-[220px_16px_1fr] gap-2 text-sm leading-7"
-        >
-          <span>{row.label}</span>
-          <span>:</span>
-          <span className="break-words">{getClientDetailValue(row.value)}</span>
-        </div>
-      ))}
-    </div>
-  </section>
-);
 
 const VirtualOfficeRenewalClientView = ({ client }) => {
   if (!client) return null;
@@ -572,115 +558,64 @@ const VirtualOfficeRenewalClientView = ({ client }) => {
       ? client.isActive
       : Boolean(client.clientStatus);
 
-  const sections = [
-    {
-      title: "Customer Details",
-      rows: [
-        { label: "Client Name", value: client.clientName },
-        { label: "Sector", value: client.sector },
-        { label: "City", value: client.city || client.hoCity },
-        { label: "State", value: client.state || client.hoState },
-        { label: "Booking Type", value: client.bookingType || "Direct" },
-        { label: "Revenue", value: getClientMoneyValue(revenue) },
-        {
-          label: "Sourcing",
-          value: client.channel || client.sourcing,
-        },
-        {
-          label: "Current Status",
-          value: client.currentStatus || "In Progress",
-        },
-      ],
-    },
-    {
-      title: "Company Details",
-      rows: [
-        { label: "Building Name", value: buildingName },
-        { label: "Unit No", value: unitNo },
-        {
-          label: "Security Deposit",
-          value: getClientMoneyValue(client.securityDeposit),
-        },
-        { label: "Billing Frequency", value: client.billingFrequency },
-        { label: "Open Desks", value: client.openDesks },
-        {
-          label: "Open Desk Rate",
-          value: getClientMoneyValue(client.openDeskRate),
-        },
-        { label: "No. of Desks", value: totalDesks },
-        { label: "Current Rate", value: getClientMoneyValue(currentRate) },
-        { label: "Company Status", value: isActive },
-      ],
-    },
-    {
-      title: "Agreement Details",
-      rows: [
-        {
-          label: "Annual Increment",
-          value: `${Number(client.annualIncrement) || 0}%`,
-        },
-        {
-          label: "Per Desk Meeting Credits",
-          value: client.perDeskMeetingCredits,
-        },
-        { label: "Total Meeting Credits", value: client.totalMeetingCredits },
-        { label: "Start Date", value: startDate ? humanDate(startDate) : "—" },
-        { label: "End Date", value: endDate ? humanDate(endDate) : "—" },
-        {
-          label: "Lock-in Period",
-          value: `${Number(client.lockInPeriodMonths || client.lockinPeriod) || 0} months`,
-        },
-        {
-          label: "Rent Date",
-          value: client.rentDate ? humanDate(client.rentDate) : "—",
-        },
-        {
-          label: "Next Increment",
-          value:
-            client.nextIncrementDate || client.nextIncrement
-              ? humanDate(client.nextIncrementDate || client.nextIncrement)
-              : "—",
-        },
-        { label: "Total Term", value: client.term || "0 Months" },
-        { label: "Agreement Expiry", value: client.expiry },
-      ],
-    },
-    {
-      title: "POC Details",
-      rows: [
-        {
-          label: "Local POC Name",
-          value: client.localPoc?.name || client.localPocName,
-        },
-        {
-          label: "Local POC Email",
-          value: client.localPoc?.email || client.localPocEmail,
-        },
-        {
-          label: "Local POC Phone",
-          value: client.localPoc?.phone || client.localPocPhone,
-        },
-        {
-          label: "HO POC Name",
-          value: client.hoPoc?.name || client.hOPocName,
-        },
-        {
-          label: "HO POC Email",
-          value: client.hoPoc?.email || client.hOPocEmail,
-        },
-        {
-          label: "HO POC Phone",
-          value: client.hoPoc?.phone || client.hOPocPhone,
-        },
-      ],
-    },
-  ];
-
   return (
-    <div className="flex flex-col gap-6">
-      {sections.map((section) => (
-        <RenewalClientDetailSection key={section.title} {...section} />
-      ))}
+    <div className="flex flex-col gap-6 text-[#1E3D73]">
+      <section className="space-y-2">
+        <h3 className="text-lg font-pmedium">Customer Details</h3>
+        <div className="space-y-1">
+          <DetalisFormatted title="Client Name" detail={getClientDetailValue(client.clientName)} />
+          <DetalisFormatted title="Sector" detail={getClientDetailValue(client.sector)} />
+          <DetalisFormatted title="City" detail={getClientDetailValue(client.city || client.hoCity)} />
+          <DetalisFormatted title="State" detail={getClientDetailValue(client.state || client.hoState)} />
+          <DetalisFormatted title="Booking Type" detail={getClientDetailValue(client.bookingType || "Direct")} />
+          <DetalisFormatted title="Revenue" detail={getClientMoneyValue(revenue)} />
+          <DetalisFormatted title="Sourcing" detail={getClientDetailValue(client.channel || client.sourcing)} />
+          <DetalisFormatted title="Current Status" detail={getClientDetailValue(client.currentStatus || "In Progress")} />
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="text-lg font-pmedium">Company Details</h3>
+        <div className="space-y-1">
+          <DetalisFormatted title="Building Name" detail={getClientDetailValue(buildingName)} />
+          <DetalisFormatted title="Unit No" detail={getClientDetailValue(unitNo)} />
+          <DetalisFormatted title="Security Deposit" detail={getClientMoneyValue(client.securityDeposit)} />
+          <DetalisFormatted title="Billing Frequency" detail={getClientDetailValue(client.billingFrequency)} />
+          <DetalisFormatted title="Open Desks" detail={getClientDetailValue(client.openDesks)} />
+          <DetalisFormatted title="Open Desk Rate" detail={getClientMoneyValue(client.openDeskRate)} />
+          <DetalisFormatted title="No. of Desks" detail={getClientDetailValue(totalDesks)} />
+          <DetalisFormatted title="Current Rate" detail={getClientMoneyValue(currentRate)} />
+          <DetalisFormatted title="Company Status" detail={getClientDetailValue(isActive)} />
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="text-lg font-pmedium">Agreement Details</h3>
+        <div className="space-y-1">
+          <DetalisFormatted title="Annual Increment" detail={`${Number(client.annualIncrement) || 0}%`} />
+          <DetalisFormatted title="Per Desk Meeting Credits" detail={getClientDetailValue(client.perDeskMeetingCredits)} />
+          <DetalisFormatted title="Total Meeting Credits" detail={getClientDetailValue(client.totalMeetingCredits)} />
+          <DetalisFormatted title="Start Date" detail={startDate ? humanDate(startDate) : "—"} />
+          <DetalisFormatted title="End Date" detail={endDate ? humanDate(endDate) : "—"} />
+          <DetalisFormatted title="Lock-in Period" detail={`${Number(client.lockInPeriodMonths || client.lockinPeriod) || 0} months`} />
+          <DetalisFormatted title="Rent Date" detail={client.rentDate ? humanDate(client.rentDate) : "—"} />
+          <DetalisFormatted title="Next Increment" detail={client.nextIncrementDate || client.nextIncrement ? humanDate(client.nextIncrementDate || client.nextIncrement) : "—"} />
+          <DetalisFormatted title="Total Term" detail={client.term || "0 Months"} />
+          <DetalisFormatted title="Agreement Expiry" detail={getClientDetailValue(client.expiry)} />
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h3 className="text-lg font-pmedium">POC Details</h3>
+        <div className="space-y-1">
+          <DetalisFormatted title="Local POC Name" detail={getClientDetailValue(client.localPoc?.name || client.localPocName)} />
+          <DetalisFormatted title="Local POC Email" detail={getClientDetailValue(client.localPoc?.email || client.localPocEmail)} />
+          <DetalisFormatted title="Local POC Phone" detail={getClientDetailValue(client.localPoc?.phone || client.localPocPhone)} />
+          <DetalisFormatted title="HO POC Name" detail={getClientDetailValue(client.hoPoc?.name || client.hOPocName)} />
+          <DetalisFormatted title="HO POC Email" detail={getClientDetailValue(client.hoPoc?.email || client.hOPocEmail)} />
+          <DetalisFormatted title="HO POC Phone" detail={getClientDetailValue(client.hoPoc?.phone || client.hOPocPhone)} />
+        </div>
+      </section>
     </div>
   );
 };
@@ -1156,6 +1091,9 @@ const VirtualOfficeDashboard = ({
     },
     staleTime: 0,
     refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+    refetchIntervalInBackground: true,
   });
 
   const summary = useMemo(() => {
@@ -1225,31 +1163,27 @@ const VirtualOfficeDashboard = ({
         )
       );
     }).length;
-    const renewalPeriodStart = dayjs()
-      .year(fiscalYearStart)
-      .month(3)
-      .startOf("month");
-    const renewalPeriodEnd = liveCurrentMonth.endOf("month");
+    const renewalEndMonth = liveCurrentMonth.startOf("month");
+    const renewalStartMonth = renewalEndMonth.subtract(1, "month");
     const renewalClients = virtualOfficeClients.filter((client) => {
       const renewalDate = dayjs(client?.termEnd || client?.endDate);
+      const isPreviousMonth =
+        renewalDate.isValid() && renewalDate.isSame(renewalStartMonth, "month");
+      const isCurrentMonth =
+        renewalDate.isValid() && renewalDate.isSame(renewalEndMonth, "month");
+      const renewalMonth = isPreviousMonth
+        ? renewalStartMonth
+        : renewalEndMonth;
 
       return (
         isActiveRenewalClient(client) &&
-        renewalDate.isValid() &&
-        !renewalDate.isBefore(renewalPeriodStart, "day") &&
-        !renewalDate.isAfter(renewalPeriodEnd, "day")
+        (isPreviousMonth || isCurrentMonth) &&
+        !hasPaidRenewal(virtualOfficeRevenue, client, renewalMonth)
       );
     }).length;
-    const deadUniqueClients = virtualOfficeClients.filter((client) => {
-      const endDate = dayjs(client?.termEnd || client?.endDate);
-
-      return (
-        isInactiveRenewalClient(client) &&
-        endDate.isValid() &&
-        !endDate.isBefore(renewalPeriodStart, "day") &&
-        !endDate.isAfter(renewalPeriodEnd, "day")
-      );
-    }).length;
+    const deadUniqueClients = virtualOfficeClients.filter(
+      isInactiveRenewalClient,
+    ).length;
 
     return {
       actualIncome,
