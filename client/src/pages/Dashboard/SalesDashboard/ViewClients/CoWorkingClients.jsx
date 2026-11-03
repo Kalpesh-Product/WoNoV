@@ -74,8 +74,11 @@ const CoWorkingClients = () => {
     const isRevenueBasePath =
       location.pathname.endsWith("/co-working") ||
       location.pathname.endsWith("/co-working/");
+    const isCoworkingSummaryPath = location.pathname.endsWith(
+      "/co-working/client-details",
+    );
 
-    if (isMixBag && isRevenueBasePath) {
+    if ((isMixBag && isRevenueBasePath) || isCoworkingSummaryPath) {
       navigate(
         `/app/dashboard/sales-dashboard/mix-bag/clients/co-working/${clientData.clientName}`,
         { replace: true },

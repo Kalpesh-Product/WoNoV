@@ -11,17 +11,25 @@ import PageFrame from "../../components/Pages/PageFrame";
 import PrimaryButton from "../../components/PrimaryButton";
 import ThreeDotMenu from "../../components/ThreeDotMenu";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
 import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
 
-const RepeatExternalCompaanies = () => {
+const RepeatExternalCompaanies = ({
+  returnRoute = "/app/visitors/manage-visitors/external-clients",
+}) => {
   const { auth } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const axios = useAxiosPrivate();
+  const resolvedReturnRoute = location.pathname.startsWith(
+    "/app/dashboard/sales-dashboard/day-pass",
+  )
+    ? "/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+    : returnRoute;
   const [loading, setLoading] = useState(true);
   const [repeatExternalCompanies, setRepeatExternalCompanies] = useState([]);
   const [openModal, setOpenModal] = useState(false);
@@ -238,7 +246,7 @@ const RepeatExternalCompaanies = () => {
       setOpenModal(false);
       setSelectedRow(null);
       reset();
-      navigate("/app/visitors/manage-visitors/external-clients");
+      navigate(resolvedReturnRoute, { replace: true });
     } catch (error) {
       const responseData = error?.response?.data;
       const conflict = responseData?.conflict;
@@ -252,8 +260,10 @@ const RepeatExternalCompaanies = () => {
                 if (conflict.checkIn) {
                   params.set("lastVisitedAt", conflict.checkIn);
                 }
+                const query = params.toString();
                 navigate(
-                  `/app/visitors/manage-visitors/external-clients?${params.toString()}`,
+                  `${resolvedReturnRoute}${query ? `?${query}` : ""}`,
+                  { replace: true },
                 );
               },
             },

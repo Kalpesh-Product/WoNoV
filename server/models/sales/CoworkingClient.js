@@ -73,6 +73,15 @@ const clientSchema = new mongoose.Schema(
     hoState: {
       type: String,
     },
+    channel: {
+      type: String,
+      trim: true,
+    },
+    currentStatus: {
+      type: String,
+      enum: ["In Progress", "Yet to start", "On Hold"],
+      default: "In Progress",
+    },
     building: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Building",

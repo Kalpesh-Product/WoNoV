@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { Autocomplete, TextField, Select, MenuItem, CircularProgress } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { State, City } from "country-state-city";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -14,7 +14,13 @@ import { toast } from "sonner";
 import PageFrame from "../../../components/Pages/PageFrame";
 import useAuth from "../../../hooks/useAuth";
 
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
 const ClientOnboarding = () => {
+  const queryClient = useQueryClient();
   const {
     control,
     handleSubmit,
@@ -31,6 +37,7 @@ const ClientOnboarding = () => {
       sector: "",
       hoCity: "",
       hoState: "",
+      channel: "",
       building: "",
       unit: "",
       cabinDesks: "",
@@ -104,6 +111,51 @@ const ClientOnboarding = () => {
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
+  const canCreateSourcingOption = useMemo(() => {
+    const user = auth?.user;
+    const departments = Array.isArray(user?.departments) ? user.departments : [];
+    const roles = [
+      ...(Array.isArray(user?.role) ? user.role : []),
+      ...(Array.isArray(user?.roles) ? user.roles : []),
+    ];
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    return (
+      departments.some((department) => {
+        const name = normalize(department?.name || department?.departmentName || department);
+        const id = String(department?._id || department || "");
+        return (
+          SOURCING_MANAGER_DEPARTMENT_IDS.has(id) ||
+          ["top management", "tech", "tech department"].includes(name)
+        );
+      }) ||
+      roles.some((role) => {
+        const title = normalize(role?.roleTitle || role?.name || role);
+        return title.includes("top management") || title.includes("tech department");
+      })
+    );
+  }, [auth?.user]);
+  const [sourcingInput, setSourcingInput] = useState("");
+  const { data: sourcingOptions = [] } = useQuery({
+    queryKey: ["virtualOfficeSourcingOptions"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/virtual-office/sourcing-options");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+  const { mutate: saveSourcingOption } = useMutation({
+    mutationFn: async (option) => {
+      const response = await axios.post("/api/sales/virtual-office/sourcing-options", { option });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(
+        ["virtualOfficeSourcingOptions"],
+        data.options || [],
+      );
+      toast.success(data.message || "Sourcing added successfully");
+    },
+    onError: (error) => toast.error(error?.response?.data?.message || "Failed to add sourcing"),
+  });
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   useEffect(() => {
@@ -397,6 +449,86 @@ const ClientOnboarding = () => {
                       )}
                     />
                   </div>
+                  <Controller
+                    name="channel"
+                    control={control}
+                    rules={{ required: "Sourcing is required" }}
+                    render={({ field }) => (
+                      <Autocomplete
+                        freeSolo={canCreateSourcingOption}
+                        selectOnFocus
+                        clearOnBlur={false}
+                        handleHomeEndKeys
+                        options={sourcingOptions}
+                        value={field.value || null}
+                        inputValue={sourcingInput}
+                        onInputChange={(_event, value, reason) => {
+                          if (reason !== "reset") setSourcingInput(value);
+                        }}
+                        onChange={(_event, value) => {
+                          const selected = String(
+                            typeof value === "object" ? value.inputValue : value || "",
+                          ).trim();
+                          field.onChange(selected);
+                          setSourcingInput(selected);
+                          if (
+                            canCreateSourcingOption &&
+                            selected &&
+                            !sourcingOptions.some(
+                              (option) => option.toLowerCase() === selected.toLowerCase(),
+                            )
+                          ) {
+                            saveSourcingOption(selected);
+                          }
+                        }}
+                        filterOptions={(options, params) => {
+                          const typedValue = params.inputValue.trim();
+                          const filteredOptions = options.filter((option) =>
+                            option.toLowerCase().includes(typedValue.toLowerCase()),
+                          );
+                          const alreadyExists = options.some(
+                            (option) => option.toLowerCase() === typedValue.toLowerCase(),
+                          );
+                          if (canCreateSourcingOption && typedValue && !alreadyExists) {
+                            filteredOptions.push({
+                              inputValue: typedValue,
+                              label: `+ Add "${typedValue}"`,
+                            });
+                          }
+                          return filteredOptions;
+                        }}
+                        getOptionLabel={(option) =>
+                          typeof option === "string" ? option : option.label || ""
+                        }
+                        renderOption={(props, option) => (
+                          <li {...props} key={option.inputValue || option}>
+                            {typeof option === "string" ? (
+                              option
+                            ) : (
+                              <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                {option.label}
+                              </span>
+                            )}
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Sourcing"
+                            placeholder={
+                              canCreateSourcingOption
+                                ? "Select or Add Source"
+                                : "Select Source"
+                            }
+                            error={!!errors.channel}
+                            helperText={errors.channel?.message}
+                            fullWidth
+                          />
+                        )}
+                      />
+                    )}
+                  />
                 </div>
               </div>
               <div className="col-span-2">

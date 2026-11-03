@@ -2897,6 +2897,230 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
+                        path: "co-working/client-onboarding",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <ClientOnboarding />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/client-details",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <CoWorkingClients />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/client/:clientName",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <ViewClientLayout />
+                          </SidebarDropdown>
+                        ),
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <ClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <Desks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <ClientRevenue />,
+                          },
+                          {
+                            path: "members",
+                            element: <ClientMembers />,
+                          },
+                          {
+                            path: "members/view-member/:id",
+                            element: <MemberDetails />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "co-working/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <></>
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/data",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <VendorTable />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/data/vendor-onboard",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <Vendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/data/:id",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <ViewVendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard revenueOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/sector-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_SECTOR_WISE_OCCUPANCY_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard occupancyView="sector" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/desk-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_DESK_WISE_OCCUPANCY_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard occupancyView="desk" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/active-vs-inactive-client",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_ACTIVE_VS_INACTIVE_CLIENT_CHART
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard businessView="activeStatus" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/client-type",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_CLIENT_TYPE_CHART
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard businessView="clientType" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working/pipeline-renewal",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_COWORKING_PIPELINE_RENEWAL_TABLE
+                                .value,
+                            ]}
+                          >
+                            <CoWorkingDashboard pipelineRenewalOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
                         path: "meeting-room",
                         element: (
                           <SidebarDropdown
@@ -3083,18 +3307,18 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
-                        path: "day-pass/external-clients",
+                        path: "day-pass/paid-vs-unpaid-clients",
                         element: (
                           <SidebarDropdown
                             permissions={[
                               PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
                               PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
                               PERMISSIONS
-                                .SALES_VERTICAL_DAY_PASS_EXTERNAL_CLIENTS_GRAPH
+                                .SALES_VERTICAL_DAY_PASS_PAID_VS_UNPAID_CLIENTS_GRAPH
                                 .value,
                             ]}
                           >
-                            <DayPassDashboard dayPassChartView="externalClients" />
+                            <DayPassDashboard dayPassChartView="paymentStatus" />
                           </SidebarDropdown>
                         ),
                       },
@@ -3223,7 +3447,9 @@ export const routes = createBrowserRouter([
                               PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
                             ]}
                           >
-                            <RepeatExternalCompaanies />
+                            <RepeatExternalCompaanies
+                              returnRoute="/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+                            />
                           </SidebarDropdown>
                         ),
                       },
@@ -3254,7 +3480,9 @@ export const routes = createBrowserRouter([
                               PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
                             ]}
                           >
-                            <ConvertInternalVisitors />
+                            <ConvertInternalVisitors
+                              returnRoute="/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+                            />
                           </SidebarDropdown>
                         ),
                       },

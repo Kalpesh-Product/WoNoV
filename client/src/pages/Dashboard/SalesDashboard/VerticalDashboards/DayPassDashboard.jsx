@@ -23,6 +23,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import WidgetSection from "../../../../components/WidgetSection";
 import PieChartMui from "../../../../components/graphs/PieChartMui";
 import AgTable from "../../../../components/AgTable";
+import StatusChip from "../../../../components/StatusChip";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import humanDate from "../../../../utils/humanDateForamt";
@@ -196,15 +197,51 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
     const fullDayCount = actualDayPassRows.filter((row) =>
       String(row?.meetingType || "").toLowerCase().includes("full"),
     ).length;
-    const externalClientCount = actualDayPassRows.length;
+    const currentMonthDayPassRows = dayPassRows.filter((row) => {
+      const date = dayjs(row?.date || row?.createdAt);
+      return date.isValid() && date.isSame(currentMonth, "month");
+    });
+    const paidClients = new Set();
+    const unpaidClients = new Set();
+    let paidAmount = 0;
+    let unpaidAmount = 0;
+
+    currentMonthDayPassRows.forEach((row) => {
+      const clientKey = String(
+        row?.visitorDetails?.email ||
+          row?.visitorDetails?.phoneNumber ||
+          row?.clientName ||
+          row?.meetingCompanyName ||
+          row?.id ||
+          row?._id ||
+          "",
+      )
+        .trim()
+        .toLowerCase();
+
+      if (!clientKey) return;
+
+      const taxableAmount = Number(
+        row?.taxable ?? row?.taxableAmount ?? row?.amount ?? 0,
+      ) || 0;
+      if (String(row?.status || "").trim().toLowerCase() === "paid") {
+        paidClients.add(clientKey);
+        paidAmount += taxableAmount;
+      } else {
+        unpaidClients.add(clientKey);
+        unpaidAmount += taxableAmount;
+      }
+    });
 
     return {
       booking: [
         { label: "Half Day Pass", value: halfDayCount },
         { label: "Full Day Pass", value: fullDayCount },
       ],
-      externalClientCount,
-      externalClients: [{ label: "External Clients", value: externalClientCount }],
+      paymentStatus: [
+        { label: "Paid", value: paidClients.size, taxableAmount: paidAmount },
+        { label: "Unpaid", value: unpaidClients.size, taxableAmount: unpaidAmount },
+      ],
     };
   }, [fiscalYear, revenueRows]);
   const chartDefinitions = {
@@ -212,12 +249,12 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
       title: "DAY PASS BOOKINGS",
       colors: ["#0878f9", "#ff9f0a"],
     },
-    externalClients: {
-      title: "DAY PASS EXTERNAL CLIENTS",
-      colors: ["#0878f9", "#d9e4f5"],
+    paymentStatus: {
+      title: "DAY PASS PAID VS UNPAID CLIENTS",
+      colors: ["#3cb371", "#ef4444"],
     },
   };
-  const visibleCharts = (requestedCharts || (chartView ? [chartView] : ["booking", "externalClients"]))
+  const visibleCharts = (requestedCharts || (chartView ? [chartView] : ["booking", "paymentStatus"]))
     .filter((key) => chartDefinitions[key]);
 
   return (
@@ -233,7 +270,7 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
             title={
               <span className="inline-flex items-baseline gap-2 whitespace-nowrap text-[#1E3D73]">
                 <BiznestTitle />
-                <span>{chart.title} - FY {fiscalYear.label}</span>
+                <span>{chart.title}</span>
               </span>
             }
             border
@@ -250,19 +287,25 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
                   colors: chart.colors,
                   legend: { show: true, labels: { colors: "#1E3D73" } },
                   dataLabels: {
-                    formatter: (percentage) =>
-                      key === "externalClients"
-                        ? String(chartData.externalClientCount)
-                        : `${percentage.toFixed(1)}%`,
+                    formatter: (percentage) => `${percentage.toFixed(1)}%`,
                   },
-                  tooltip: {
-                    y: {
-                      formatter: (value) =>
-                        key === "externalClients"
-                          ? `${chartData.externalClientCount} clients`
-                          : String(value),
-                    },
-                  },
+                  tooltip:
+                    key === "paymentStatus"
+                      ? {
+                          custom: ({ series, seriesIndex, w }) => {
+                            const item = data[seriesIndex] || {};
+                            const count = Number(item.value ?? series?.[seriesIndex] ?? 0);
+                            const amount = Number(item.taxableAmount || 0).toLocaleString("en-IN", {
+                              maximumFractionDigits: 2,
+                            });
+                            const tooltipLabel = `${String(item.label || "")} Client`;
+                            const color = w?.globals?.colors?.[seriesIndex] || chart.colors[seriesIndex];
+                            return `<div style="padding:8px 10px;background:${color};color:#fff;border-radius:4px;font-size:12px;">${tooltipLabel} = ${count} = ₹${amount}</div>`;
+                          },
+                        }
+                      : {
+                          y: { formatter: (value) => String(value) },
+                        },
                 }}
                 width={500}
                 height={350}
@@ -308,6 +351,18 @@ const DayPassClientDetailsToday = () => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
+  const currentMonth = dayjs().startOf("month");
+  const { data: currentMonthRevenueRows = [] } = useQuery({
+    queryKey: ["day-pass-current-month-paid-revenue", currentMonth.format("YYYY-MM")],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/simple-consolidated-revenue");
+      return Array.isArray(response.data?.meetingRevenue)
+        ? response.data.meetingRevenue
+        : [];
+    },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
   const rows = useMemo(
     () =>
       visitors.flatMap((visitor) =>
@@ -336,14 +391,49 @@ const DayPassClientDetailsToday = () => {
             dateOfVisit: visit?.dateOfVisit ? humanDate(new Date(visit.dateOfVisit)) : "N/A",
             checkIn: humanTime(visit?.checkIn),
             checked: humanTime(visit?.checkOut),
+            revenue: Math.max(
+              Number(visit?.amount || 0) - Number(visit?.discount || 0),
+              0,
+            ),
+            paymentStatus:
+              (visit?.paymentStatus ?? visitor?.paymentStatus) === true ||
+              String(visit?.paymentStatus ?? visitor?.paymentStatus)
+                .trim()
+                .toLowerCase() === "paid"
+                ? "Paid"
+                : "Unpaid",
           })),
       ),
     [visitors],
   );
-  const checkedInCount = rows.filter(
-    (row) => Boolean(row.visitRecord?.checkIn) && !row.visitRecord?.checkOut,
-  ).length;
-  const checkedOutCount = rows.filter((row) => Boolean(row.visitRecord?.checkOut)).length;
+  const paidRevenue = rows.reduce(
+    (total, row) =>
+      row.paymentStatus === "Paid" ? total + Number(row.revenue || 0) : total,
+    0,
+  );
+  const unpaidRevenue = rows.reduce(
+    (total, row) =>
+      row.paymentStatus === "Unpaid"
+        ? total + Number(row.revenue || 0)
+        : total,
+    0,
+  );
+  const overallPaidRevenue = currentMonthRevenueRows.reduce((total, row) => {
+    const rowDate = dayjs(row?.date || row?.createdAt);
+    if (
+      row?.source !== "day-pass" ||
+      !rowDate.isValid() ||
+      !rowDate.isSame(currentMonth, "month") ||
+      String(row?.status || "").trim().toLowerCase() !== "paid"
+    ) {
+      return total;
+    }
+    return total + (Number(row?.taxable ?? row?.taxableAmount ?? 0) || 0);
+  }, 0);
+  const formatRevenue = (amount) =>
+    Number(amount || 0).toLocaleString("en-IN", {
+      maximumFractionDigits: 2,
+    });
   const columns = [
     { field: "srNo", headerName: "S.No", width: 78, valueGetter: (params) => params.node.rowIndex + 1 },
     { field: "visitorType", headerName: "Visitor Type", minWidth: 130 },
@@ -355,6 +445,23 @@ const DayPassClientDetailsToday = () => {
     { field: "dateOfVisit", headerName: "Date of Visit", minWidth: 130 },
     { field: "checkIn", headerName: "Check In", minWidth: 110 },
     { field: "checked", headerName: "Checked", minWidth: 110 },
+    {
+      field: "revenue",
+      headerName: "Revenue (INR)",
+      minWidth: 140,
+      pinned: "right",
+      valueFormatter: ({ value }) =>
+        Number(value || 0).toLocaleString("en-IN", {
+          maximumFractionDigits: 2,
+        }),
+    },
+    {
+      field: "paymentStatus",
+      headerName: "Payment Status",
+      pinned: "right",
+      minWidth: 145,
+      cellRenderer: ({ value }) => <StatusChip status={value} />,
+    },
     {
       field: "actions",
       headerName: "Action",
@@ -455,13 +562,22 @@ const DayPassClientDetailsToday = () => {
         headerRightContent={
           <>
             <span
+              className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]"
+              style={{
+                backgroundColor: "#dbe4ff",
+                borderColor: "#aec6fb",
+              }}
+            >
+              Overall Paid: INR {formatRevenue(overallPaidRevenue)}
+            </span>
+            <span
               className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#176b3a]"
               style={{
                 backgroundImage: "linear-gradient(to right, #3cb37180, #3cb37145)",
                 borderColor: "#3cb37180",
               }}
             >
-              Check-In: {checkedInCount}
+              Paid: INR {formatRevenue(paidRevenue)}
             </span>
             <span
               className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#9e0000]"
@@ -470,7 +586,7 @@ const DayPassClientDetailsToday = () => {
                 borderColor: "#ff000080",
               }}
             >
-              Check-Out: {checkedOutCount}
+              Unpaid: INR {formatRevenue(unpaidRevenue)}
             </span>
           </>
         }
@@ -643,9 +759,6 @@ const DAY_PASS_CARDS = [
     key: "overallBookings",
     title: "Overall Day Pass Bookings",
     value: "—",
-    bookingBreakdown: [
-      { label: "External", value: "—", className: "text-[#FF7A1A]" },
-    ],
     icon: MdEventAvailable,
     tone: "bg-[#eaf4ff] text-[#3F6291]",
     valueTone: "text-[#1E3D73]",
@@ -794,14 +907,12 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
       dayPassBookings: summary.dayPassBookings.toLocaleString("en-IN"),
       averageMonthlySurplus: `${formatMoney(Math.abs(summary.averageShortfallSurplus))} ${summary.averageShortfallSurplus > 0 ? "Surplus" : summary.averageShortfallSurplus < 0 ? "Shortfall" : "On Target"}`,
     };
-    const bookingBreakdown = card.key === "overallBookings"
-      ? [{ ...card.bookingBreakdown[0], value: summary.overallBookings.toLocaleString("en-IN") }]
-      : card.key === "dayPassBookings"
-        ? [
-            { ...card.bookingBreakdown[0], value: summary.halfDayBookings.toLocaleString("en-IN") },
-            { ...card.bookingBreakdown[1], value: summary.fullDayBookings.toLocaleString("en-IN") },
-          ]
-        : card.bookingBreakdown;
+    const bookingBreakdown = card.key === "dayPassBookings"
+      ? [
+          { ...card.bookingBreakdown[0], value: summary.halfDayBookings.toLocaleString("en-IN") },
+          { ...card.bookingBreakdown[1], value: summary.fullDayBookings.toLocaleString("en-IN") },
+        ]
+      : card.bookingBreakdown;
     return {
       ...card,
       value: isLoading ? "—" : values[card.key],
@@ -1041,14 +1152,20 @@ const DayPassDashboard = ({
         ) && <DayPassUniqueClientsGraph />}
       {!cardView &&
         (hasPermission(PERMISSIONS.SALES_VERTICAL_DAY_PASS_BOOKING_BREAKDOWN_GRAPH.value) ||
-          hasPermission(PERMISSIONS.SALES_VERTICAL_DAY_PASS_EXTERNAL_CLIENTS_GRAPH.value)) && (
+          hasPermission(
+            PERMISSIONS.SALES_VERTICAL_DAY_PASS_PAID_VS_UNPAID_CLIENTS_GRAPH
+              .value,
+          )) && (
           <DayPassOperationalCharts
             visibleCharts={[
               ...(hasPermission(PERMISSIONS.SALES_VERTICAL_DAY_PASS_BOOKING_BREAKDOWN_GRAPH.value)
                 ? ["booking"]
                 : []),
-              ...(hasPermission(PERMISSIONS.SALES_VERTICAL_DAY_PASS_EXTERNAL_CLIENTS_GRAPH.value)
-                ? ["externalClients"]
+              ...(hasPermission(
+                PERMISSIONS.SALES_VERTICAL_DAY_PASS_PAID_VS_UNPAID_CLIENTS_GRAPH
+                  .value,
+              )
+                ? ["paymentStatus"]
                 : []),
             ]}
           />

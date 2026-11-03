@@ -32,6 +32,8 @@ const createCoworkingClient = async (req, res, next) => {
       phone,
       brandName,
       sector,
+      channel,
+      currentStatus,
       hoCity,
       hoState,
       building,
@@ -141,6 +143,7 @@ const createCoworkingClient = async (req, res, next) => {
     if (
       !clientName ||
       !sector ||
+      !channel ||
       !hoCity ||
       !hoState ||
       !building ||
@@ -217,6 +220,8 @@ const createCoworkingClient = async (req, res, next) => {
       brandName,
       service: coworkingService._id,
       sector,
+      channel,
+      currentStatus,
       hoCity,
       building: unitExists.building,
       hoState,
@@ -434,6 +439,8 @@ const updateCoworkingClient = async (req, res, next) => {
       ratePerOpenDesk,
       ratePerCabinDesk,
       annualIncrement,
+      channel,
+      currentStatus,
       startDate,
       endDate,
       hOPocName,
@@ -463,6 +470,15 @@ const updateCoworkingClient = async (req, res, next) => {
     ) {
       return res.status(400).json({
         message: "Client type must be Annual Client or Flexy Desk Client",
+      });
+    }
+
+    if (
+      currentStatus !== undefined &&
+      !["In Progress", "Yet to start", "On Hold"].includes(currentStatus)
+    ) {
+      return res.status(400).json({
+        message: "Invalid current status",
       });
     }
 
@@ -631,6 +647,8 @@ const updateCoworkingClient = async (req, res, next) => {
       "phone",
       "service",
       "sector",
+      "channel",
+      "currentStatus",
       "hoCity",
       "hoState",
       "unit",

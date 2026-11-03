@@ -1,6 +1,6 @@
-import { Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
+import { Autocomplete, Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -15,9 +15,13 @@ import DetalisFormatted from "../../../../components/DetalisFormatted";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
-import { useParams } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
 const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
 const normalizeBookingType = (bookingType) =>
   String(bookingType || "")
     .trim()
@@ -152,6 +156,47 @@ const ClientDetails = () => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const { auth } = useAuth();
+  const queryClient = useQueryClient();
+  const [sourcingInput, setSourcingInput] = useState("");
+  const canCreateSourcingOption = useMemo(() => {
+    const user = auth?.user;
+    const normalize = (value) => String(value || "").trim().toLowerCase();
+    const departments = Array.isArray(user?.departments) ? user.departments : [];
+    const roles = [
+      ...(Array.isArray(user?.role) ? user.role : []),
+      ...(Array.isArray(user?.roles) ? user.roles : []),
+    ];
+    return (
+      departments.some((department) => {
+        const name = normalize(department?.name || department?.departmentName || department);
+        const id = String(department?._id || department || "");
+        return SOURCING_MANAGER_DEPARTMENT_IDS.has(id) || ["top management", "tech", "tech department"].includes(name);
+      }) ||
+      roles.some((role) => {
+        const title = normalize(role?.roleTitle || role?.name || role);
+        return title.includes("top management") || title.includes("tech department");
+      })
+    );
+  }, [auth?.user]);
+  const { data: sourcingOptions = [] } = useQuery({
+    queryKey: ["virtualOfficeSourcingOptions"],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/virtual-office/sourcing-options");
+      return Array.isArray(response.data) ? response.data : [];
+    },
+  });
+  const { mutate: saveSourcingOption } = useMutation({
+    mutationFn: async (option) => {
+      const response = await axios.post("/api/sales/virtual-office/sourcing-options", { option });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(["virtualOfficeSourcingOptions"], data.options || []);
+      toast.success(data.message || "Sourcing added successfully");
+    },
+    onError: (error) => toast.error(error?.response?.data?.message || "Failed to add sourcing"),
+  });
+  const location = useLocation();
   const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
@@ -165,6 +210,8 @@ const ClientDetails = () => {
       serviceName: "",
       serviceDescription: "",
       sector: "",
+      channel: "",
+      currentStatus: "In Progress",
       hoCity: "",
       hoState: "",
       unitName: "",
@@ -265,7 +312,9 @@ const ClientDetails = () => {
   });
 
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(
+    () => location.state?.editMode === true,
+  );
 
   const selectedBuilding = useWatch({ control, name: "building" });
   const watchedCabinDesks = useWatch({ control, name: "cabinDesks" });
@@ -382,6 +431,8 @@ const ClientDetails = () => {
         serviceName: selectedClient.service?.serviceName || "",
         serviceDescription: selectedClient.service?.description || "",
         sector: selectedClient.sector,
+        channel: selectedClient.channel || selectedClient.sourcing || "",
+        currentStatus: selectedClient.currentStatus || "In Progress",
         hoCity: selectedClient.hoCity,
         hoState: selectedClient.hoState,
         building: selectedUnitDetails?.building?._id || "",
@@ -426,6 +477,7 @@ const ClientDetails = () => {
         createdAt: selectedClient.createdAt,
         updatedAt: selectedClient.updatedAt,
       });
+      setSourcingInput(selectedClient.channel || selectedClient.sourcing || "");
     }
   }, [computedRentDate, reset, selectedClient, selectedUnitDetails]);
   const filteredUnits = useMemo(() => {
@@ -476,6 +528,8 @@ const ClientDetails = () => {
     const payload = {
       clientName: data.clientName,
       sector: data.sector,
+      channel: data.channel,
+      currentStatus: data.currentStatus,
       hoCity: data.hoCity,
       hoState: data.hoState,
       isActive: data.isActive === true || data.isActive === "true",
@@ -649,6 +703,8 @@ const ClientDetails = () => {
                     "hoState",
                     "bookingType",
                     "revenue",
+                    "channel",
+                    "currentStatus",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -681,6 +737,78 @@ const ClientDetails = () => {
                                 label="Revenue"
                                 fullWidth
                               />
+                            ) : fieldKey === "channel" ? (
+                              <Autocomplete
+                                freeSolo={canCreateSourcingOption}
+                                selectOnFocus
+                                clearOnBlur={false}
+                                handleHomeEndKeys
+                                options={sourcingOptions}
+                                value={field.value || null}
+                                inputValue={sourcingInput}
+                                onInputChange={(_event, value, reason) => {
+                                  if (reason !== "reset") setSourcingInput(value);
+                                }}
+                                onChange={(_event, value) => {
+                                  const selected = String(
+                                    typeof value === "object" ? value.inputValue : value || "",
+                                  ).trim();
+                                  field.onChange(selected);
+                                  setSourcingInput(selected);
+                                  if (
+                                    canCreateSourcingOption &&
+                                    selected &&
+                                    !sourcingOptions.some(
+                                      (option) => option.toLowerCase() === selected.toLowerCase(),
+                                    )
+                                  ) {
+                                    saveSourcingOption(selected);
+                                  }
+                                }}
+                                filterOptions={(options, params) => {
+                                  const typedValue = params.inputValue.trim();
+                                  const filteredOptions = options.filter((option) =>
+                                    option.toLowerCase().includes(typedValue.toLowerCase()),
+                                  );
+                                  const alreadyExists = options.some(
+                                    (option) => option.toLowerCase() === typedValue.toLowerCase(),
+                                  );
+                                  if (canCreateSourcingOption && typedValue && !alreadyExists) {
+                                    filteredOptions.push({
+                                      inputValue: typedValue,
+                                      label: `+ Add "${typedValue}"`,
+                                    });
+                                  }
+                                  return filteredOptions;
+                                }}
+                                getOptionLabel={(option) =>
+                                  typeof option === "string" ? option : option.label || ""
+                                }
+                                renderOption={(props, option) => (
+                                  <li {...props} key={option.inputValue || option}>
+                                    {typeof option === "string" ? option : option.label}
+                                  </li>
+                                )}
+                                renderInput={(params) => (
+                                  <TextField
+                                    {...params}
+                                    size="small"
+                                    label="Sourcing"
+                                    placeholder={canCreateSourcingOption ? "Select or Add Source" : "Select Source"}
+                                    fullWidth
+                                  />
+                                )}
+                              />
+                            ) : fieldKey === "currentStatus" ? (
+                              <TextField {...field} select size="small" label="Current Status" fullWidth>
+                                {[
+                                  "In Progress",
+                                  "Yet to start",
+                                  "On Hold",
+                                ].map((option) => (
+                                  <MenuItem key={option} value={option}>{option}</MenuItem>
+                                ))}
+                              </TextField>
                             ) : (
                               <TextField
                                 {...field}
@@ -697,9 +825,13 @@ const ClientDetails = () => {
                         <div className="py-2 flex justify-between items-center gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                              {fieldKey === "currentStatus"
+                                ? "Current Status"
+                                : fieldKey === "channel"
+                                  ? "Sourcing"
+                                  : fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -709,6 +841,10 @@ const ClientDetails = () => {
                             <span className="text-gray-500">
                               {fieldKey === "revenue"
                                 ? formatExactNumber(computedRevenue)
+                                : fieldKey === "channel"
+                                  ? control._defaultValues.channel || "N/A"
+                                  : fieldKey === "currentStatus"
+                                    ? control._defaultValues.currentStatus || "In Progress"
                                 : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
@@ -820,7 +956,7 @@ const ClientDetails = () => {
                                 ))}
                               </TextField>
                             ) : fieldKey === "isActive" ? (
-                              <TextField {...field} select size="small" label="Status" fullWidth>
+                              <TextField {...field} select size="small" label="Company Status" fullWidth>
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
@@ -874,7 +1010,7 @@ const ClientDetails = () => {
                         <div className="w-[100%] justify-start flex">
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "isActive"
-                              ? "Status"
+                              ? "Company Status"
                               : fieldKey === "noOfDesks"
                                 ? "No of Desk"
                                 : fieldKey === "currentRate"

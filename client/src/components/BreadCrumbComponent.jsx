@@ -80,18 +80,19 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isVirtualOfficeClientPath =
-      pathSegments.includes("virtual-office") &&
+    const isSalesVerticalClientPath =
+      (pathSegments.includes("virtual-office") ||
+        pathSegments.includes("co-working")) &&
       pathSegments.includes("client");
     const isClientIdSegment =
-      isVirtualOfficeClientPath &&
+      isSalesVerticalClientPath &&
       pathSegments[index - 1] === "client" &&
-      ["client-details", "desks", "revenue"].includes(
+      ["client-details", "desks", "revenue", "members"].includes(
         pathSegments[index + 1],
       );
     const isNonNavigableSegment =
       segment === "visitor-history" ||
-      (isVirtualOfficeClientPath && segment === "client");
+      (isSalesVerticalClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       !isDayPassSalesHistoryPath &&
