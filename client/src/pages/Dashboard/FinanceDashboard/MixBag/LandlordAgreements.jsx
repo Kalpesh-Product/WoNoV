@@ -315,17 +315,11 @@ const LandlordAgreements = () => {
   return (
     <div className="p-4 space-y-4">
       <PageFrame>
-        <div className="flex justify-end pb-4">
-          <PrimaryButton
-            title="Add New Landlord"
-            handleSubmit={() => { setEditingLandlord(null); reset({ name: "" }); setOpenModal(true); }}
-            className="!w-auto"
-            padding="px-4 py-2"
-          />
-        </div>
 
         {!isLoading ? (
           <AgTable
+            buttonTitle="Add New Landlord"
+            handleClick={() => { setEditingLandlord(null); reset({ name: "" }); setOpenModal(true); }}
             columns={columns}
             data={tableData}
             tableTitle="Landlord Agreements"

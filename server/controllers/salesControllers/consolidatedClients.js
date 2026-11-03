@@ -4,6 +4,7 @@ const Visitor = require("../../models/visitor/Visitor");
 
 const getConsolidatedClients = async (req, res, next) => {
   try {
+    const { company } = req;
     const coworkingClients = await CoworkingClient.find()
       .populate([
         {
@@ -19,7 +20,9 @@ const getConsolidatedClients = async (req, res, next) => {
       .lean()
       .exec();
 
-    const virtualOfficeClients = await VirtualOfficeClient.find().lean().exec();
+    const virtualOfficeClients = await VirtualOfficeClient.find({ company })
+      .lean()
+      .exec();
     const meetingClients = await Visitor.find({ visitorFlag: "Client" })
       .lean()
       .exec();

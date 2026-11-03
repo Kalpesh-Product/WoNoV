@@ -240,6 +240,7 @@ const MyTaskReports = () => {
                 }))
           }
           columns={myTaskReportsColumns}
+          loading={isLoading}
           onDateFilterChange={handleTaskRangeChange}
           serverPagination
           pageSizeOptions={PAGE_SIZE_OPTIONS}

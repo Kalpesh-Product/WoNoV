@@ -8,10 +8,8 @@ const validateTaskSchedule = (date, tasks, now = new Date()) => {
   for (const task of tasks) {
     const deadline = task.deadline && toCalendarKey(task.deadline);
     if (!deadline) return "Every selected task must have a valid deadline";
-    if (deadline < today) {
-      return "Overdue tasks cannot be scheduled. Update the task deadline first";
-    }
-    if (selectedDate > deadline) {
+    // Overdue work can be scheduled without moving its original deadline.
+    if (deadline >= today && selectedDate > deadline) {
       return "Schedule Date cannot be after a selected task deadline";
     }
   }

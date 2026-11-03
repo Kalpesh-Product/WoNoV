@@ -506,18 +506,17 @@ const ActualBusinessRevenue = () => {
             summaryChipVariant="ticket"
           >
             <AgTable
-              hideFilter
+              hideFilter={false}
               tableHeight={300}
               columns={[
-                { headerName: "Sr No", field: "id", width: 100 },
-                // { headerName: "Vertical", field: "vertical", flex: 1 },
-                 {
+                { headerName: "Sr No", field: "id", flex: 1 },
+                {
                   headerName: "Vertical",
                   field: "vertical",
                   flex: 1,
                   cellRenderer: verticalLinkRenderer,
                 },
-                { headerName: "Revenue (INR)", field: "revenue", width: 400 },
+                { headerName: "Revenue (INR)", field: "revenue", flex: 1 },
               ]}
               data={tableData}
               exportData

@@ -748,6 +748,7 @@ const UniqueLeads = () => {
       >
         <div>
           <AgTable
+            showDateControls={false}
             data={filteredLeads.map((item, index) => ({
               ...item,
               _id: item._id,

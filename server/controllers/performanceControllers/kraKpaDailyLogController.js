@@ -12,6 +12,7 @@ const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
 const {
   calculateDelayedWorkingDays,
+  calculateDailyLogDelay,
   toCalendarKey,
 } = require("../../utils/kraKpaDelayedDays");
 
@@ -314,6 +315,108 @@ const syncSelfKpasForDeadline = async ({
   );
 };
 
+const syncKpaTasksForDeadline = async ({
+  req,
+  department,
+  employee,
+  date,
+}) => {
+  const nextDate = new Date(date);
+  nextDate.setUTCDate(nextDate.getUTCDate() + 1);
+  const tasks = await DueTask.find({
+    company: req.company,
+    department,
+    employee,
+    parentKpa: { $type: "objectId" },
+    deadline: { $gte: date, $lt: nextDate },
+    isDeleted: { $ne: true },
+  })
+    .select("dueTaskName deadline status closureDate createdBy")
+    .lean();
+  if (tasks.length === 0) return;
+
+  const taskIds = tasks.map((task) => task._id);
+  const existingLogs = await DailyLog.find({
+    company: req.company,
+    sourceDueTask: { $in: taskIds },
+    isDeleted: { $ne: true },
+  })
+    .select("sourceDueTask date")
+    .lean();
+  const logsByTask = existingLogs.reduce((map, log) => {
+    const taskId = String(log.sourceDueTask);
+    const logs = map.get(taskId) || [];
+    logs.push(log);
+    map.set(taskId, logs);
+    return map;
+  }, new Map());
+
+  const operations = tasks.flatMap((task) => {
+    const taskLogs = logsByTask.get(String(task._id)) || [];
+    const deadlineLog = taskLogs.find(
+      (log) => toCalendarKey(log.date) === toCalendarKey(date),
+    );
+    const isCompleted = task.status === "Closed";
+    const currentValues = {
+      dayTaskName: task.dueTaskName,
+      deadline: task.deadline,
+      status: isCompleted ? "Done" : "Due",
+      completedAt: isCompleted ? task.closureDate || null : null,
+      updatedBy: req.user,
+    };
+
+    if (deadlineLog) {
+      return [{
+        updateOne: {
+          filter: { _id: deadlineLog._id },
+          update: { $set: currentValues },
+        },
+      }];
+    }
+
+    // A manually scheduled or carried-forward log already represents this task.
+    if (taskLogs.length > 0) return [];
+
+    return [{
+      updateOne: {
+        filter: {
+          company: req.company,
+          sourceDueTask: task._id,
+          date,
+          isDeleted: false,
+        },
+        update: {
+          $setOnInsert: {
+            company: req.company,
+            department,
+            employee,
+            sourceDueTask: task._id,
+            date,
+            isCarryForward: false,
+            type: "KPA",
+            kpaSlot: "",
+            reasonForCarryForward: "",
+            resourceComment: "",
+            managerComments: "",
+            hrComments: "",
+            reviewerComments: "",
+            startTime: null,
+            endTime: null,
+            createdBy: task.createdBy || employee,
+            isDeleted: false,
+          },
+          $set: currentValues,
+        },
+        upsert: true,
+      },
+    }];
+  });
+
+  if (operations.length > 0) {
+    await DailyLog.bulkWrite(operations);
+  }
+};
+
 const syncPendingCarryForwardsForToday = async ({
   req,
   department,
@@ -565,6 +668,12 @@ const listDailyLogs = async (req, res, next) => {
         employee,
         date: occurrenceDate,
       });
+      await syncKpaTasksForDeadline({
+        req,
+        department,
+        employee,
+        date: occurrenceDate,
+      });
     }
     const records = await DailyLog.find({
       ...getScopedFilter(req, access),
@@ -580,7 +689,18 @@ const listDailyLogs = async (req, res, next) => {
       .sort({ date: -1, createdAt: -1 })
       .populate(POPULATION)
       .lean();
-    return res.json(records.map((record) => hideRestrictedComments(record, access)));
+    const holidays = records.length
+      ? await Event.find({
+          company: req.company,
+          type: { $regex: /^holidays?$/i },
+          active: { $ne: false },
+        }).select("start end").lean()
+      : [];
+    const now = new Date();
+    return res.json(records.map((record) => hideRestrictedComments({
+      ...record,
+      delayedDays: calculateDailyLogDelay(record, holidays, now),
+    }, access)));
   } catch (error) {
     return next(error);
   }

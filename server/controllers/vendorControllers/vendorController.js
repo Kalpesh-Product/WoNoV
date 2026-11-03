@@ -9,6 +9,137 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 //const Role = require("../../models/roles/Roles");
 
+const DEFAULT_VENDOR_TYPE_OPTIONS = [
+  "Manufacturer",
+  "Wholesaler",
+  "Distributor",
+  "Retailer",
+  "Service Provider",
+  "Contractor / Subcontractor",
+  "Consultant",
+  "Freelancer",
+];
+const VENDOR_TYPE_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const canCreateVendorTypeOption = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .populate("role", "roleTitle")
+    .select("departments role")
+    .lean();
+  const hasAllowedDepartment = (user?.departments || []).some((department) => {
+    const departmentId = String(department?._id || department);
+    const departmentName = String(department?.name || "")
+      .trim()
+      .toLowerCase();
+    return (
+      VENDOR_TYPE_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+      ["top management", "tech", "tech department"].includes(departmentName)
+    );
+  });
+  const hasAllowedRole = (user?.role || []).some((role) => {
+    const roleTitle = String(role?.roleTitle || role || "")
+      .trim()
+      .toLowerCase();
+    return (
+      roleTitle.includes("top management") ||
+      roleTitle.includes("tech department")
+    );
+  });
+
+  return hasAllowedDepartment || hasAllowedRole;
+};
+
+const normalizeVendorTypeOptions = (options = []) => {
+  const uniqueOptions = new Map();
+
+  [...DEFAULT_VENDOR_TYPE_OPTIONS, ...options].forEach((option) => {
+    const normalizedOption = String(option || "").trim();
+    if (!normalizedOption) return;
+    uniqueOptions.set(normalizedOption.toLowerCase(), normalizedOption);
+  });
+
+  return Array.from(uniqueOptions.values()).sort((first, second) =>
+    first.localeCompare(second, undefined, { sensitivity: "base" }),
+  );
+};
+
+const getVendorTypeOptions = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.company)
+      .select("vendorTypeOptions")
+      .lean();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    return res
+      .status(200)
+      .json(normalizeVendorTypeOptions(company.vendorTypeOptions));
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addVendorTypeOption = async (req, res, next) => {
+  try {
+    if (!(await canCreateVendorTypeOption(req.user))) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department or Top Management can add vendor types",
+      });
+    }
+
+    const option = String(req.body?.option || "").trim();
+
+    if (!option) {
+      return res.status(400).json({ message: "Vendor type is required" });
+    }
+
+    if (option.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "Vendor type cannot exceed 60 characters" });
+    }
+
+    const company = await Company.findById(req.company).select(
+      "vendorTypeOptions",
+    );
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const currentOptions = normalizeVendorTypeOptions(
+      company.vendorTypeOptions,
+    );
+    const existingOption = currentOptions.find(
+      (item) => item.toLowerCase() === option.toLowerCase(),
+    );
+    const selectedOption = existingOption || option;
+
+    company.vendorTypeOptions = normalizeVendorTypeOptions([
+      ...currentOptions,
+      selectedOption,
+    ]);
+    await company.save();
+
+    return res.status(existingOption ? 200 : 201).json({
+      message: existingOption
+        ? "Vendor type already available"
+        : "Vendor type added successfully",
+      option: selectedOption,
+      options: company.vendorTypeOptions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const onboardVendor = async (req, res, next) => {
   const logPath = "hr/HrLog";
   const logAction = "Onboard Vendor";
@@ -29,6 +160,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
+      vendorType,
       ifscCode,
       bankName,
       branchName,
@@ -134,6 +266,7 @@ const onboardVendor = async (req, res, next) => {
       panIdNo,
       gstIn,
       partyType,
+      vendorType,
       ifscCode,
       bankName,
       branchName,
@@ -345,6 +478,7 @@ const updateVendor = async (req, res, next) => {
     "panIdNo",
     "gstIn",
     "partyType",
+    "vendorType",
     "ifscCode",
     "bankName",
     "branchName",
@@ -498,13 +632,17 @@ const updateVendor = async (req, res, next) => {
 };
 
 async function fetchVendors(req, res) {
+  const departmentId = req.params.departmentId;
+  if (!mongoose.isValidObjectId(departmentId)) {
+    return res.status(400).json({ message: "Invalid department ID" });
+  }
   const payload = await fetchVendorReportService({
-    departmentId: req.body?.departmentId,
+    departmentId,
     departments: req.body?.departments || req?.departments || [],
     roles: req?.roles || [],
     company: req?.company || null,
     user: req?.user || null,
-    query: req.body?.departmentId ? { department: req.body?.departmentId } : {},
+    query: { ...req.query, departmentId },
   });
 
   return res.status(200).json(payload);
@@ -613,4 +751,6 @@ module.exports = {
   fetchVendors,
   updateVendor,
   bulkInsertVendors,
+  getVendorTypeOptions,
+  addVendorTypeOption,
 };

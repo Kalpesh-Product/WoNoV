@@ -586,7 +586,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           totalTitle="Total"
           summaryChipVariant="ticket"
          preserveCurrentMonthRange={showInvoiceProjections}
-          showCalendarWhenEmpty={showInvoiceProjections}
+          showCalendarWhenEmpty
           getMissingRangeData={
             showInvoiceProjections
               // ? (selectedDate) =>

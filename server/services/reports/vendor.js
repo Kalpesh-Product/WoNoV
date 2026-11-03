@@ -9,7 +9,8 @@ const fetchVendorReportService = async ({
   user,
   query,
 }) => {
-  let queryObj = {};
+  if (!company) return [];
+  let queryObj = { company };
   if (query && query.departmentId) {
     queryObj.departmentId = query.departmentId;
   }
@@ -24,11 +25,7 @@ const fetchVendorReportService = async ({
     .lean()
     .exec();
 
-  if (!vendors) {
-    return res.status(200).json([]);
-  }
-
-  return vendors;
+  return vendors || [];
 };
 
 module.exports = {

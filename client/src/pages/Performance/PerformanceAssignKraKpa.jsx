@@ -4,13 +4,16 @@ import { useNavigate } from "react-router-dom";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
+import { getVisibleDepartments } from "../../utils/departmentMemberVisibility";
 import {
   setSelectedDepartment,
   setSelectedDepartmentName,
   setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 
-const PerformanceAssignKraKpa = () => {
+const PerformanceAssignKraKpa = ({
+  memberDestination = "/app/performance/assign-KRA-KPA/team-Daily-KRA",
+}) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -55,7 +58,7 @@ const PerformanceAssignKraKpa = () => {
     },
   });
 
-  const sortedDepartments = [...departmentMembers].sort((a, b) => {
+  const sortedDepartments = getVisibleDepartments(departmentMembers).sort((a, b) => {
     const countA = a?.employees?.length || 0;
     const countB = b?.employees?.length || 0;
     return countB - countA;
@@ -78,8 +81,10 @@ const PerformanceAssignKraKpa = () => {
       }),
     );
 
-    navigate("/app/performance/assign-KRA-KPA/team-Daily-KRA", {
+    navigate(memberDestination, {
       state: {
+        selectedDepartment: department?._id,
+        selectedDepartmentName: department?.name,
         selectedMember: {
           memberId: member?._id?.toString?.() || "",
           memberName,

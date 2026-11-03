@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
+const checkRequestBudgetPermission = require("../middlewares/checkRequestBudgetPermission");
 
 const {
   requestBudget,
@@ -13,6 +14,7 @@ const {
   approveFinanceBudget,
   fetchApprovedbudgets,
   updateBudget,
+  updateFinanceAmount,
   deleteBudget,
   restoreBudget,
   unapproveBudget,
@@ -20,6 +22,7 @@ const {
 
 router.post(
   "/request-budget/:departmentId",
+  checkRequestBudgetPermission,
   upload.fields([
     { name: "invoice", maxCount: 1 },
     { name: "voucher", maxCount: 1 },
@@ -33,6 +36,7 @@ router.patch("/approve-budget", upload.single("voucher"), approveFinanceBudget);
 router.patch("/unapprove-budget/:budgetId", unapproveBudget);
 router.patch("/reject-budget/:budgetId", rejectBudget);
 router.patch("/update-budget/:budgetId", updateBudget);
+router.patch("/update-finance-amount/:budgetId", updateFinanceAmount);
 router.delete("/:budgetId", deleteBudget);
 router.patch("/:budgetId/restore", restoreBudget);
 router.patch(

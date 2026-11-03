@@ -6,9 +6,9 @@ import AgTable from "../AgTable";
 import PrimaryButton from "../PrimaryButton";
 import humanDate from "../../utils/humanDateForamt";
 import { IconButton, MenuItem, Popover, TextField } from "@mui/material";
-import { filterTableRows, parseTableDate } from "../../utils/tableFilters";
+import { filterTableRows, parseTableDate, getCurrentMonthDateRange } from "../../utils/tableFilters";
 import { DatePicker } from "@mui/x-date-pickers";
-import { MdCalendarToday, MdChevronLeft, MdChevronRight, MdClose } from "react-icons/md";
+import { MdCalendarToday, MdChevronLeft, MdChevronRight } from "react-icons/md";
 import "react-date-range/dist/styles.css";
 import "react-date-range/dist/theme/default.css";
 
@@ -30,7 +30,9 @@ const YearWiseTable = ({
   middleButtonTitle,
   middleButtonDisabled,
   handleMiddleSubmit,
+  titleRightContent,
   headerActions,
+  summaryContent,
   checkbox,
   checkAll,
   key,
@@ -39,9 +41,13 @@ const YearWiseTable = ({
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
+  batchButtonPosition = "left",
   isRowSelectable,
+  getRowId,
   hideTitle = true,
   search = true,
+  hideFilter = false,
+  showTableControls = true,
   showEmptyTable = false,
   onMonthChange,
   onDateFilterChange,
@@ -72,6 +78,8 @@ const YearWiseTable = ({
   searchValue = "",
   onSearchChange,
   getRowStyle,
+  compactToolbar = false,
+  loading = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -140,7 +148,7 @@ const YearWiseTable = ({
     }
 
     if (!data.length) {
-      setDateRange([]);
+      setDateRange([getCurrentMonthDateRange()]);
       return;
     }
 
@@ -217,6 +225,7 @@ const YearWiseTable = ({
   const filteredData = useMemo(() => {
     if (
       serverPagination ||
+      !showTableControls ||
       (dateRangePlaceholders && !isUserChangedRange) ||
       showDateNavigator ||
       !activeDateField ||
@@ -227,7 +236,7 @@ const YearWiseTable = ({
     //if (!dateColumn || dateRange.length === 0 || !dateRange[0]) return data;
 
     return filterTableRows(data, { dateRange: dateRange[0], dateField: activeDateField });
-  }, [data, activeDateField, dateRange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange]);
+  }, [data, activeDateField, dateRange, serverPagination, showDateNavigator, dateRangePlaceholders, isUserChangedRange, showTableControls]);
   // }, [data, dateColumn, dateRange]);
 
   useEffect(() => {
@@ -387,22 +396,22 @@ const YearWiseTable = ({
         !showDateNavigator &&
         dateRange.length > 0 &&
         dateRange[0] && (
-          <div className={`flex justify-center items-center gap-2 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
+          <div className={`flex w-max shrink-0 items-center justify-center ${compactToolbar ? "gap-1.5" : "gap-2"}`}>
             {dateRangePlaceholders && dateFilterOptions.length > 1 && (
-              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: 130 }}>
+              <TextField select size="small" label="Filter date" value={activeDateField} onChange={(event) => setSelectedDateField(event.target.value)} sx={{ minWidth: compactToolbar ? 115 : 130 }}>
                 {dateFilterOptions.map((option) => <MenuItem key={option.field} value={option.field}>{option.label}</MenuItem>)}
               </TextField>
             )}
             {/* Date information here */}
 
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+            <div className={`flex flex-nowrap items-center ${compactToolbar ? "gap-1.5" : "gap-2"}`}>
+              <div className={`whitespace-nowrap rounded-md border-[1px] border-primary py-1 ${compactToolbar ? "px-3" : "px-6"}`}>
                 <span className="text-gray-600 text-content font-pregular">
                   {dateRangePlaceholders && !isUserChangedRange ? "Start date" : dayjs(dateRange[0].startDate).format("DD MMM YYYY")}
                 </span>{" "}
               </div>
 
-              <div className="whitespace-nowrap px-6 py-1 rounded-md border-primary border-[1px]">
+              <div className={`whitespace-nowrap rounded-md border-[1px] border-primary py-1 ${compactToolbar ? "px-3" : "px-6"}`}>
                 <span className="text-gray-600 text-content font-pregular">
                   {dateRangePlaceholders && !isUserChangedRange ? "End date" : dayjs(dateRange[0].endDate).format("DD MMM YYYY")}
                 </span>
@@ -414,11 +423,6 @@ const YearWiseTable = ({
             >
               <MdCalendarToday size={19} />
             </div>
-            {dateRangePlaceholders && isUserChangedRange && (
-              <IconButton aria-label="Clear date filter" title="Show all dates" size="small" onClick={() => setIsUserChangedRange(false)}>
-                <MdClose />
-              </IconButton>
-            )}
           </div>
         )}
 {!hideDateControls && showDateNavigator && (
@@ -431,7 +435,7 @@ const YearWiseTable = ({
         //   </div>
         //   <PrimaryButton title=">" handleSubmit={onNextDay} />
         // </div>
-        <div className={`flex justify-center items-center gap-3 xl:col-start-2 ${tableTitle || !exportData ? "xl:row-start-2" : "xl:row-start-1"}`}>
+        <div className="flex w-max shrink-0 justify-center items-center gap-3">
           {/* Previous Button */}
           <button
             type="button"
@@ -546,36 +550,31 @@ const YearWiseTable = ({
             </Popover>
           )}
   </>);
-  const exportControls = (<>
-{customExportTitle && handleCustomExport && (
+  const operationControls = (<>
+    {secondaryButtonTitle && <PrimaryButton title={secondaryButtonTitle} handleSubmit={handleSecondarySubmit} disabled={secondaryButtonDisabled} />}
+    {middleButtonTitle && <PrimaryButton title={middleButtonTitle} handleSubmit={handleMiddleSubmit} disabled={middleButtonDisabled} />}
+  </>);
+  const exportControls = customExportTitle && handleCustomExport ? (
             <PrimaryButton
               title={customExportTitle}
               handleSubmit={handleCustomExport}
               disabled={customExportDisabled}
             />
-          )}
-{exportData && (
+          ) : exportData ? (
             <PrimaryButton
               title={exportButtonTitle}
               handleSubmit={handleExportPass}
               padding="px-4 py-2"
               className="shrink-0 whitespace-nowrap"
             />
-          )}
-  </>);
+          ) : undefined;
 
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
-{(tableTitle || headerActions || secondaryButtonTitle || middleButtonTitle || buttonTitle) && (
+{tableTitle && (
         <div className="flex flex-wrap items-center justify-between gap-3">
           {tableTitle && <span className="text-title text-primary font-pmedium uppercase">{tableTitle}</span>}
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
-            {headerActions}
-            {secondaryButtonTitle && <PrimaryButton title={secondaryButtonTitle} handleSubmit={handleSecondarySubmit} disabled={secondaryButtonDisabled} />}
-            {middleButtonTitle && <PrimaryButton title={middleButtonTitle} handleSubmit={handleMiddleSubmit} disabled={middleButtonDisabled} />}
-            {buttonTitle && <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} disabled={buttonDisabled} />}
-          </div>
         </div>
       )}
       {/* 
@@ -587,8 +586,18 @@ const YearWiseTable = ({
 
       <>
         <AgTable
+            loading={loading}
             toolbarDateControls={dateControls}
-            toolbarActions={exportControls}
+            showTableControls={showTableControls}
+            toolbarActions={operationControls}
+            compactToolbar={compactToolbar}
+            exportAction={exportControls}
+            titleRightContent={titleRightContent}
+            headerActions={headerActions}
+            summaryContent={summaryContent}
+            buttonTitle={buttonTitle}
+            handleClick={handleSubmit}
+            disabled={buttonDisabled}
             key={key}
             enableCheckbox={checkbox}
             tableRef={agGridRef}
@@ -599,8 +608,8 @@ const YearWiseTable = ({
             tableHeight={tableHeight || 300}
             columns={formattedColumns}
             data={finalTableData}
-            hideFilter={false}
-            showDateControls={hideDateControls}
+            hideFilter={hideFilter}
+            showDateControls={false}
             search={search}
             searchRowActions={
               batchButton && selectedRows.length > 0 ? (
@@ -610,11 +619,14 @@ const YearWiseTable = ({
                 />
               ) : null
             }
+            searchRowActionsPosition={batchButtonPosition}
             dateColumn={dateColumn}
             isRowSelectable={isRowSelectable}
+            getRowId={getRowId}
             onSelectionChange={(rows) => setSelectedRows(rows)}
             batchButton={batchButton}
             hideTitle={hideTitle}
+            hideHeaderDivider={tableTitle ? false : undefined}
             isPagination={serverPagination}
             serverPagination={serverPagination}
             paginationPageSize={paginationPageSize}

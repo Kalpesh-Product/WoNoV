@@ -375,6 +375,7 @@ const fetchMeetingReportService = async ({
   isReport = false,
   type,
   completed,
+  calendar = false,
   includeTotal = false,
   includeReviews = false,
   page,
@@ -457,11 +458,18 @@ const fetchMeetingReportService = async ({
     const userDepartments = foundUser?.departments?.length
       ? foundUser.departments
       : departments;
-    const canViewAllMeetings = (userDepartments || []).some((department) =>
-      ["Administration", "Top Management", "Finance"].includes(
-        department?.name,
-      ),
+    const hasTopManagementRole = (roles || []).some((role) =>
+      String(role?.roleTitle || role)
+        .trim()
+        .toLowerCase()
+        .includes("top management"),
     );
+    const canViewAllMeetings =
+      (userDepartments || []).some((department) =>
+        ["Administration", "Top Management", "Finance"].includes(
+          department?.name,
+        ),
+      ) || (calendar && hasTopManagementRole);
 
     if (!canViewAllMeetings && !currentUserId) {
       total = 0;
@@ -475,13 +483,25 @@ const fetchMeetingReportService = async ({
       .trim()
       .toLowerCase();
     const shouldHideCompleted = normalizedCompletedFilter === "false";
+    const shouldIncludeCompleted = normalizedCompletedFilter === "true";
     const searchConditions = await buildMeetingSearchConditions({
       company,
       search,
       searchContext,
     });
-    const calendarVisibleStatusQuery =
-      includeTotal && !shouldPaginate
+    const calendarVisibleStatusQuery = calendar
+      ? {
+          status: {
+            $in: [
+              "Upcoming",
+              "Ongoing",
+              "Completed",
+              "Extended",
+              "Cancelled",
+            ],
+          },
+        }
+      : includeTotal && !shouldPaginate
         ? {
             status: {
               $in: ["Upcoming", "Completed"],
@@ -500,6 +520,9 @@ const fetchMeetingReportService = async ({
       ...calendarVisibleStatusQuery,
       ...(shouldHideCompleted && {
         status: { $nin: ["Completed", "Cancelled"] },
+      }),
+      ...(shouldIncludeCompleted && {
+        status: { $ne: "Cancelled" },
       }),
       ...(searchConditions.length && {
         $and: [{ $or: searchConditions }],

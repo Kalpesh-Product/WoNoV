@@ -322,8 +322,7 @@ const HrPayslips = () => {
         search
         exportData
         hideFilter
-        exportBeforeHeaderActions
-        headerActions={
+        advancedFilterAction={
           <Tooltip title="Filter payslips">
             <IconButton
               aria-label="Filter payslips"

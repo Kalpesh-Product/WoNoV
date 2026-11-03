@@ -9,6 +9,8 @@ const DateWiseTable = ({
   data = [],
   columns = [],
   dateColumn,
+  hideFilter = false,
+  search = true,
   checkbox,
   tableTitle,
   buttonTitle,
@@ -37,6 +39,7 @@ const DateWiseTable = ({
         dateSet.add(date.format("D-MMM-YYYY"));
       }
     });
+    if (!dateSet.size && dateColumn) dateSet.add(dayjs().format("D-MMM-YYYY"));
     return Array.from(dateSet).sort(
       (a, b) =>
         dayjs(a, "D-MMM-YYYY").toDate() - dayjs(b, "D-MMM-YYYY").toDate()
@@ -129,18 +132,15 @@ const DateWiseTable = ({
           {tableTitle}
         </span>
         <div className="flex items-center gap-4">
-          {buttonTitle && (
-            <div>
-              <PrimaryButton title={buttonTitle} handleSubmit={handleSubmit} />
-            </div>
-          )}
         </div>
       </div>
 
       <AgTable
         showDateControls={false}
         toolbarDateControls={dateControls}
-        toolbarActions={exportControls}
+        exportAction={exportControls}
+        buttonTitle={buttonTitle}
+        handleClick={handleSubmit}
         key={key}
         tableRef={agGridRef}
         tableHeight={350}
@@ -149,8 +149,8 @@ const DateWiseTable = ({
         checkAll={checkAll}
         columns={formattedColumns}
         data={filteredData.map((item, index) => ({ ...item, srno: index + 1 }))}
-        hideFilter={false}
-        search
+        hideFilter={hideFilter}
+        search={search}
       />
     </div>
   );

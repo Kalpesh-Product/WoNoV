@@ -276,6 +276,10 @@ const DepartmentInvoice = () => {
               title="Department"
               detail={viewDetails.department || "-"}
             />
+            <DetalisFormatted
+              title="Vendor"
+              detail={viewDetails.vendorName || viewDetails.vendor?.companyName || viewDetails.vendor?.name || "-"}
+            />
               <DetalisFormatted
               title="Unit"
               detail={viewDetails.unitName || "-"}

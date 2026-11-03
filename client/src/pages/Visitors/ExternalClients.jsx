@@ -1038,6 +1038,7 @@ const ExternalClients = ({
           dateColumn={"dateOfVisit"}
           initialDateRange={initialClientDateRange}
           onDateFilterChange={handleClientDateFilterChange}
+          loading={isVisitorsData}
           data={[
             ...(financeView
               ? visitorsData.filter((visitor) => hasRole(visitor, "Client"))

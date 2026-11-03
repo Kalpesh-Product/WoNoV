@@ -80,6 +80,7 @@ const PerformanceAnnual = () => {
           ]}
           dateColumn={"dueDate"}
           columns={departmentColumns}
+          loading={departmentLoading}
         />
       </WidgetSection>
     </div>

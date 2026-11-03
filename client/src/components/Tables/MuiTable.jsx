@@ -18,9 +18,12 @@ const MuiTable = ({
   rowsToDisplay,
   scroll = false,
   scrollHeight = 480,
+  showTableControls = true,
+  loading = false,
 }) => {
   const { filteredRows, toolbar } = useTableControls(rows, columns.map((column) => ({ field: column.id, headerName: column.label })));
-  const displayedRows = rowsToDisplay ? filteredRows.slice(0, rowsToDisplay) : filteredRows;
+  const visibleRows = showTableControls ? filteredRows : rows;
+  const displayedRows = rowsToDisplay ? visibleRows.slice(0, rowsToDisplay) : visibleRows;
   const shouldScroll = scroll && (Boolean(rowsToDisplay) || Boolean(scrollHeight));
 
   return (
@@ -29,7 +32,7 @@ const MuiTable = ({
         {Title}
       </div>
       <Paper>
-        {toolbar}
+        {showTableControls && toolbar}
         <TableContainer
           style={{
             height: shouldScroll ? scrollHeight : "none",
@@ -56,7 +59,15 @@ const MuiTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-            {displayedRows.map((row) => (
+            {loading ? Array.from({ length: rowsToDisplay || 6 }).map((_, rowIndex) => (
+              <TableRow key={`loading-${rowIndex}`}>
+                {columns.map((column) => (
+                  <TableCell key={column.id} align={column.align || "left"}>
+                    <div className="h-4 animate-pulse rounded bg-gray-200" />
+                  </TableCell>
+                ))}
+              </TableRow>
+            )) : displayedRows.map((row) => (
                 <TableRow key={row[rowKey]}>
                   {columns.map((column) => {
                     const value = column.renderCell

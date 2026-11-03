@@ -271,6 +271,7 @@ const AssetsCategories = () => {
   return (
     <PageFrame>
       <AgTable
+        loading={isCategoriesPending}
         key={tableData._id}
         search={true}
         searchColumn="Category Name"

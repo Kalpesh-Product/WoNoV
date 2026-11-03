@@ -4,7 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import PageFrame from "../../../components/Pages/PageFrame";
 import WidgetSection from "../../../components/WidgetSection";
-import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import AgTable from "../../../components/AgTable";
+import TableDateFilter from "../../../components/TableDateFilter";
+import { getCurrentMonthDateRange } from "../../../utils/tableFilters";
+import { getMaintenanceExpenseRows } from "../../../utils/maintenancePerSqFtExpense";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import SecondaryButton from "../../../components/SecondaryButton";
@@ -19,14 +22,6 @@ const formatCurrencyWithDecimals = (value = 0) =>
 const getCurrentFinancialYearLabel = () => {
   const today = dayjs();
   const startYear = today.month() < 3 ? today.year() - 1 : today.year();
-  return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
-};
-
-const getFinancialYear = (dateStr) => {
-  const date = dayjs(dateStr);
-  if (!date.isValid()) return null;
-
-  const startYear = date.month() < 3 ? date.year() - 1 : date.year();
   return `FY ${startYear}-${String((startYear + 1) % 100).padStart(2, "0")}`;
 };
 
@@ -50,6 +45,7 @@ const MaintenancePerSqFtExpense = () => {
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const [selectedFY, setSelectedFY] = useState(getCurrentFinancialYearLabel());
+  const [tableDateRange, setTableDateRange] = useState(getCurrentMonthDateRange);
   const MAINTENANCE_DEPARTMENT_ID = "6798bafbe469e809084e24a7";
   const activeDepartmentId = location.pathname.includes(
     "/maintenance-dashboard/"
@@ -57,7 +53,7 @@ const MaintenancePerSqFtExpense = () => {
     ? MAINTENANCE_DEPARTMENT_ID
     : department?._id;
 
-  const { data: maintenanceBudgets = [], isPending: isBudgetLoading } = useQuery({
+  const { data: maintenanceBudgets = [] } = useQuery({
     queryKey: ["departmentBudget", activeDepartmentId],
     queryFn: async () => {
       const response = await axios.get(
@@ -68,56 +64,17 @@ const MaintenancePerSqFtExpense = () => {
     enabled: !!activeDepartmentId,
   });
 
-  const tableData = useMemo(() => {
-    if (isBudgetLoading || !Array.isArray(maintenanceBudgets)) return [];
-
-    const selectedFYBudgets = maintenanceBudgets.filter(
-      (item) => getFinancialYear(item?.dueDate) === selectedFY
-    );
-
-    const groupedByUnits = selectedFYBudgets.reduce((acc, item) => {
-      const unit = item.unit;
-
-      if (!unit?._id) return acc;
-
-      const unitNo = unit.unitNo || "-";
-
-      if (!acc[unitNo]) {
-        acc[unitNo] = {
-          unitNo,
-          unitName: unit.unitName || "-",
-          unitId: unit._id,
-          buildingName: unit.building?.buildingName || "-",
-          sqft: Number(unit.sqft) || 0,
-          totalExpense: 0,
-        };
-      }
-
-      acc[unitNo].totalExpense += Number(item.actualAmount) || 0;
-
-      return acc;
-    }, {});
-
-    return Object.values(groupedByUnits)
-      .sort((a, b) =>
-        a.unitNo.localeCompare(b.unitNo, undefined, { numeric: true })
-      )
-      .map((group, index) => {
-        const expensePerSqFt = group.sqft ? group.totalExpense / group.sqft : 0;
-
-        return {
-          ...group,
-          srNo: index + 1,
-          expense: formatCurrencyWithDecimals(expensePerSqFt),
-          expensePerSqFt,
-        };
-      });
-  }, [maintenanceBudgets, isBudgetLoading, selectedFY]);
+  const graphData = useMemo(() =>
+    getMaintenanceExpenseRows(Array.isArray(maintenanceBudgets) ? maintenanceBudgets : [], { financialYear: selectedFY }),
+  [maintenanceBudgets, selectedFY]);
+  const tableData = useMemo(() =>
+    getMaintenanceExpenseRows(Array.isArray(maintenanceBudgets) ? maintenanceBudgets : [], { dateRange: tableDateRange }),
+  [maintenanceBudgets, tableDateRange]);
 
   const perSqFtTotals = useMemo(() => {
-    if (!tableData.length) return { totalSqFt: 0, totalExpense: 0 };
+    if (!graphData.length) return { totalSqFt: 0, totalExpense: 0 };
 
-    return tableData.reduce(
+    return graphData.reduce(
       (acc, item) => {
         acc.totalExpense += Number(item.totalExpense) || 0;
         acc.totalSqFt += Number(item.sqft) || 0;
@@ -125,7 +82,7 @@ const MaintenancePerSqFtExpense = () => {
       },
       { totalSqFt: 0, totalExpense: 0 }
     );
-  }, [tableData]);
+  }, [graphData]);
 
   const expensePerSqFtTotal =
     perSqFtTotals.totalSqFt > 0
@@ -143,7 +100,6 @@ const MaintenancePerSqFtExpense = () => {
     { headerName: "Expense (INR/sq.ft)", field: "expense",flex:1 },
   ];
 
-  const maxY = Math.max(...tableData.map((item) => item.expensePerSqFt), 0);
   // const roundedMax = Math.max(5, Math.ceil(maxY / 5) * 5);
 
   const expenseOptions = {
@@ -176,7 +132,7 @@ const MaintenancePerSqFtExpense = () => {
       },
     },
     xaxis: {
-      categories: tableData.map((item) => item.unitNo),
+      categories: graphData.map((item) => item.unitNo),
     },
     fill: {
       opacity: 1,
@@ -189,7 +145,7 @@ const MaintenancePerSqFtExpense = () => {
   const barGraphSeries = [
     {
       name: "Expense per Sq. Ft.",
-      data: tableData.map((item) => item.expensePerSqFt),
+      data: graphData.map((item) => item.expensePerSqFt),
     },
   ];
 
@@ -227,11 +183,18 @@ const MaintenancePerSqFtExpense = () => {
         </div>
       </WidgetSection>
       <PageFrame>
-        <YearWiseTable
+        <AgTable
           data={tableData}
           columns={columns}
           search
-          tableTitle={`maintenance expense per sq. ft ${selectedFY}`}
+          tableTitle="maintenance expense per sq. ft"
+          showDateControls={false}
+          toolbarDateControls={<TableDateFilter
+            fields={[{ field: "dueDate", label: "Due Date" }]}
+            field="dueDate"
+            range={tableDateRange}
+            onChange={setTableDateRange}
+          />}
           exportData
         />
       </PageFrame>

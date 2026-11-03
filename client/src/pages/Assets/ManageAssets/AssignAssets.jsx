@@ -321,6 +321,7 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
     <div className="flex flex-col gap-8">
       <PageFrame>
         <AgTable
+          loading={isLoading || isAssetsListPending}
           key={assetsList.length}
           search={true}
            tableTitle={tableTitle}

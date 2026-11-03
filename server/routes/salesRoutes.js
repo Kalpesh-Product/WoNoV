@@ -28,6 +28,8 @@ const {
   updateVirtualOfficeStatus,
   getVirtualOfficeClientsByMonth,
   bulkUpdateVirtualOfficeClients,
+  getVirtualOfficeSourcingOptions,
+  addVirtualOfficeSourcingOption,
 } = require("../controllers/salesControllers/virtualOfficeClientControllers");
 const {
   createLead,
@@ -142,6 +144,14 @@ router.post(
 
 //Virtual Office routes
 router.post("/onboard-virtual-office-client", createVirtualOfficeClient);
+router.get(
+  "/virtual-office/sourcing-options",
+  getVirtualOfficeSourcingOptions,
+);
+router.post(
+  "/virtual-office/sourcing-options",
+  addVirtualOfficeSourcingOption,
+);
 router.get("/virtual-office/clients", getVirtualOfficeClients);
 router.get("/virtual-office-clients", getVirtualOfficeClientsByMonth);
 router.patch("/virtual-office/:id", updateVirtualOfficeClient);

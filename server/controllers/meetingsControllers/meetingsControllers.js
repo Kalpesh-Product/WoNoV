@@ -1,4 +1,3 @@
-const { bookExternalMeetingVisit } = require("../../services/bookExternalMeetingVisit");
 const { fetchMeetingReportService } = require("../../services/reports/meeting");
 const Meeting = require("../../models/meetings/Meetings");
 const User = require("../../models/hr/UserData");
@@ -216,6 +215,30 @@ const addMeetings = async (req, res, next) => {
         logAction,
         logSourceKey,
       );
+    }
+
+    if (meetingType === "External") {
+      if (!mongoose.Types.ObjectId.isValid(externalCompany)) {
+        throw new CustomError(
+          "Invalid external visitor Id provided",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+
+      const externalVisitorExists = await Visitor.exists({
+        _id: externalCompany,
+        company,
+      });
+      if (!externalVisitorExists) {
+        throw new CustomError(
+          "External visitor not found in this company",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
     }
 
     if (!mongoose.Types.ObjectId.isValid(bookedRoom)) {
@@ -645,9 +668,7 @@ const addMeetings = async (req, res, next) => {
       externalParticipants: externalParticipants || [],
     });
 
-    const savedMeeting = meetingType === "External"
-      ? await bookExternalMeetingVisit(meeting, roomAvailable)
-      : await meeting.save();
+    const savedMeeting = await meeting.save();
     meetingWasSaved = true;
     // await Promise.all([
     //   meeting.save(),
@@ -859,6 +880,7 @@ async function getMeetings(req, res, next) {
     const { user, company, roles, departments = [] } = req;
     const type = req.query?.type || req.type || "";
     const completed = req.query?.completed;
+    const calendar = req.query?.calendar === "true";
     const includeTotal = req.query?.includeTotal === "true";
     const includeReviews = req.query?.includeReviews === "true";
 
@@ -884,6 +906,7 @@ async function getMeetings(req, res, next) {
       company,
       type,
       completed,
+      calendar,
       includeTotal,
       includeReviews,
       page: req.query?.page,
@@ -3004,6 +3027,9 @@ const updateMeetingDetails = async (req, res, next) => {
     const creditDifference = Number(
       (newCreditsUsed - oldCreditsUsed).toFixed(2),
     );
+    const hasMeetingTimingChanged =
+      startTimeObj.getTime() !== meetingStartTime.getTime() ||
+      endTimeObj.getTime() !== meetingEndTime.getTime();
 
     const isCreditApplicable = !isExternal;
 
@@ -3094,8 +3120,8 @@ const updateMeetingDetails = async (req, res, next) => {
           }
         : {}),
       startTime: startTimeObj,
-      endTime: endTimeObj,
-      extendTime: null,
+      endTime: hasMeetingTimingChanged ? endTimeObj : meeting.endTime,
+      extendTime: hasMeetingTimingChanged ? null : meeting.extendTime || null,
       // creditsUsed: externalParticipants ? newCreditsUsed : 0,
       creditsUsed: isExternal ? 0 : newCreditsUsed,
       internalParticipants: internalUsers,

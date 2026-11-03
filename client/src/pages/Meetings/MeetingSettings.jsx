@@ -5,6 +5,7 @@ import {
   CardContent,
   CardMedia,
   CircularProgress,
+  Skeleton,
   FormControl,
   InputLabel,
   MenuItem,
@@ -363,9 +364,20 @@ const MeetingSettings = () => {
                 </CardContent>
               </Card>
             ))
-          ) : (
-            <CircularProgress color="#1E3D73" />
-          )}
+          ) : Array.from({ length: 4 }).map((_, index) => (
+            <Card key={`room-skeleton-${index}`} className="overflow-hidden">
+              <Skeleton variant="rectangular" height={170} />
+              <CardContent>
+                <div className="mb-3 flex justify-between">
+                  <Skeleton width="45%" />
+                  <Skeleton width={70} />
+                </div>
+                <Skeleton width="35%" />
+                <Skeleton className="mt-3" width="65%" />
+                <Skeleton className="mt-4" variant="rounded" height={36} />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       </WidgetSection>
 

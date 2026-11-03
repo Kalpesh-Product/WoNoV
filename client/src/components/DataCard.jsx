@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { FaArrowRight } from "react-icons/fa";
 import { motion } from "motion/react";
 
-const DataCard = ({ title, description, data, route, onClick, statusSummary }) => {
+const DataCard = ({ title, description, data, route, onClick, statusSummary, loading = false }) => {
   const navigate = useNavigate();
 
   const handleCardAction = () => {
@@ -26,13 +26,17 @@ const DataCard = ({ title, description, data, route, onClick, statusSummary }) =
       <div className="flex flex-col md:flex-row justify-between items-center mb-4">
         <div className="text-title font-semibold text-black ">{title}</div>
         <div>
-          <div className="text-2xl font-bold text-black">{data}</div>
+        <div className="text-2xl font-bold text-black">
+          {loading ? <div className="h-7 w-14 animate-pulse rounded bg-gray-200" /> : data}
+        </div>
         </div>
       </div>
       <hr className="border-gray-300 mb-4" />
       <div className="flex items-center justify-between">
         <div className="flex flex-wrap items-center gap-2">
-          {statusSummary ? (
+          {loading ? (
+            <div className="h-4 w-28 animate-pulse rounded bg-gray-200" />
+          ) : statusSummary ? (
             <>
               <div className="rounded-lg border border-[#B7E4C7] bg-[#E8F7EA] px-3 py-1 text-[11px] font-semibold text-[#17803D]">
                 ACTIVE : {statusSummary.active ?? 0}

@@ -54,9 +54,93 @@ const PALETTE_CONFIG = {
     excludedRoutes: new Set(),
   },
 };
+const APP_MODULE_CONFIG = {
+  assets: {
+    label: "Assets",
+    root: "/app/assets",
+    permission: PERMISSIONS.SIDEBAR_ASSETS.value,
+  },
+  tickets: {
+    label: "Tickets",
+    root: "/app/tickets",
+    permission: PERMISSIONS.SIDEBAR_TICKETS.value,
+  },
+  meetings: {
+    label: "Meetings",
+    root: "/app/meetings",
+    permission: PERMISSIONS.SIDEBAR_MEETINGS.value,
+  },
+  tasks: {
+    label: "Tasks",
+    root: "/app/tasks",
+    permission: PERMISSIONS.SIDEBAR_TASKS.value,
+  },
+  performance: {
+    label: "Performance",
+    root: "/app/performance",
+    permission: PERMISSIONS.SIDEBAR_PERFORMANCE.value,
+  },
+  kraKpa: {
+    label: "KRA & KPA",
+    root: "/app/kra-kpa",
+    permission: PERMISSIONS.KRAKPA_MODULE_ACCESS.value,
+  },
+  visitors: {
+    label: "Visitors",
+    root: "/app/visitors",
+    permission: PERMISSIONS.SIDEBAR_VISITORS.value,
+  },
+  reports: {
+    label: "Reports",
+    root: "/app/reports",
+    permission: PERMISSIONS.SIDEBAR_REPORTS.value,
+  },
+  printouts: {
+    label: "Printout",
+    root: "/app/printouts",
+    permission: PERMISSIONS.SIDEBAR_PRINTOUTS.value,
+  },
+  calendar: {
+    label: "Calendar",
+    root: "/app/calendar",
+    permission: PERMISSIONS.SIDEBAR_CALENDAR.value,
+  },
+  access: {
+    label: "Access",
+    root: "/app/access",
+    permission: PERMISSIONS.SIDEBAR_ACCESS.value,
+  },
+  notifications: {
+    label: "Notifications",
+    root: "/app/notifications",
+    permission: PERMISSIONS.SIDEBAR_NOTIFICATIONS.value,
+  },
+  profile: {
+    label: "Account Profile",
+    root: "/app/profile/my-profile",
+    routePrefix: "/app/profile",
+    permission: PERMISSIONS.SIDEBAR_PROFILE.value,
+  },
+  logs: {
+    label: "Logs",
+    root: "/app/secret-logs",
+    permission: PERMISSIONS.SIDEBAR_LOGS.value,
+  },
+};
+const APP_ROUTE_OVERRIDES = {
+  "/app/tickets/settings": "/app/tickets/ticket-settings",
+  "/app/meetings/manage-meetings/external-meetings":
+    "/app/meetings/manage-meetings/external-clients",
+  "/app/kra-kpa/department-kpa/member-wise-kpa/individual-monthly-kpa":
+    "/app/kra-kpa/individual/kra-kpa/individual-Monthly-KPA",
+  "/app/kra-kpa/department-kpa/member-wise-kpa/self-kra":
+    "/app/kra-kpa/individual/kra-kpa/self-KRA",
+  "/app/profile/hr": "/app/profile/HR/attendance",
+  "/app/profile/assets": "/app/profile/my-assets",
+};
 const ACRONYMS = new Set(["HR", "KPA", "KRA", "SOP", "SOPS"]);
 const RECENT_HISTORY_LIMIT = 3;
-const RECENT_HISTORY_KEY_PREFIX = "wono:dashboard-palette:recent:";
+const RECENT_HISTORY_KEY_PREFIX = "wono:global-palette:recent:";
 
 const readRecentHistory = (storageKey) => {
   if (!storageKey) return [];
@@ -82,7 +166,7 @@ const writeRecentHistory = (storageKey, routes) => {
 
 const getMatchRank = (destination, query) => {
   const title = destination.title.toLowerCase();
-  const directory = `${destination.dashboardLabel} ${destination.section}`.toLowerCase();
+  const directory = `${destination.contextLabel} ${destination.section}`.toLowerCase();
   if (title === query) return 0;
   if (title.startsWith(query)) return 1;
   if (title.split(/\s+/).some((word) => word.startsWith(query))) return 2;
@@ -148,8 +232,84 @@ const buildDestinations = (config) => {
       route,
       section,
       dashboardLabel: config.label,
+      contextLabel: `${config.label} Dashboard`,
+      scope: "dashboard",
       permissions: [permission.value],
       searchText: `${permission.title} ${config.label} ${section}`.toLowerCase(),
+    });
+  });
+
+  return Array.from(destinationsByRoute.values()).sort((a, b) =>
+    a.title.localeCompare(b.title),
+  );
+};
+
+const getAppSection = (route, module) => {
+  const routePrefix = module.routePrefix || module.root;
+  const remainder = route.slice(routePrefix.length).split(/[?#]/)[0];
+  const segment = remainder.split("/").filter(Boolean)[0];
+  if (module.label === "KRA & KPA" && segment?.toLowerCase() === "individual") {
+    return "Employee KRA/KPA";
+  }
+  return segment ? formatTitle(segment.replaceAll("-", " ")) : module.label;
+};
+
+const buildAppDestinations = () => {
+  const destinationsByRoute = new Map();
+
+  Object.values(APP_MODULE_CONFIG).forEach((module) => {
+    destinationsByRoute.set(module.root, {
+      title: module.label,
+      route: module.root,
+      section: module.label,
+      contextLabel: "Apps",
+      moduleLabel: module.label,
+      modulePermission: module.permission,
+      permissions: [module.permission],
+      moduleLanding: true,
+      scope: "apps",
+      searchText: `${module.label} apps`.toLowerCase(),
+    });
+  });
+
+  Object.values(PERMISSIONS).forEach((permission) => {
+    const rawRoute = permission?.route;
+    if (
+      permission?.type !== "read" ||
+      typeof rawRoute !== "string" ||
+      !rawRoute.toLowerCase().startsWith("/app/") ||
+      rawRoute.toLowerCase().startsWith("/app/dashboard/") ||
+      rawRoute.includes(":")
+    ) {
+      return;
+    }
+
+    const route = APP_ROUTE_OVERRIDES[rawRoute.toLowerCase()] || rawRoute;
+    const normalizedRoute = route.toLowerCase();
+    const module = Object.values(APP_MODULE_CONFIG).find((item) => {
+      const prefix = (item.routePrefix || item.root).toLowerCase();
+      return normalizedRoute === prefix || normalizedRoute.startsWith(`${prefix}/`);
+    });
+    if (!module) return;
+
+    const existing = destinationsByRoute.get(route);
+    if (existing) {
+      existing.permissions.push(permission.value);
+      return;
+    }
+
+    const section = getAppSection(route, module);
+    destinationsByRoute.set(route, {
+      title: formatTitle(permission.title),
+      route,
+      section,
+      contextLabel: "Apps",
+      moduleLabel: module.label,
+      modulePermission: module.permission,
+      permissions: [permission.value],
+      moduleLanding: false,
+      scope: "apps",
+      searchText: `${permission.title} ${module.label} ${section} apps`.toLowerCase(),
     });
   });
 
@@ -164,6 +324,7 @@ const DASHBOARD_DESTINATIONS = Object.fromEntries(
     buildDestinations(config),
   ]),
 );
+const APP_DESTINATIONS = buildAppDestinations();
 
 const HrSearchPalette = () => {
   const { auth } = useAuth();
@@ -206,43 +367,76 @@ const HrSearchPalette = () => {
     [authorizedDestinationsByDashboard],
   );
 
+  const authorizedAppDestinations = useMemo(
+    () =>
+      APP_DESTINATIONS.filter((destination) => {
+        if (!userPermissions.has(destination.modulePermission)) return false;
+        return (
+          destination.moduleLanding ||
+          destination.permissions.some((permission) =>
+            userPermissions.has(permission),
+          )
+        );
+      }),
+    [userPermissions],
+  );
+
+  const allAuthorizedDestinations = useMemo(
+    () =>
+      [...authorizedDestinations, ...authorizedAppDestinations].sort(
+        (a, b) =>
+          a.title.localeCompare(b.title) ||
+          a.contextLabel.localeCompare(b.contextLabel),
+      ),
+    [authorizedAppDestinations, authorizedDestinations],
+  );
+
   useEffect(() => {
     if (!historyStorageKey || !Array.isArray(auth?.user?.permissions?.permissions)) {
       setHistoryState({ key: historyStorageKey, routes: [] });
       return;
     }
 
-    const authorizedRoutes = new Set(authorizedDestinations.map(({ route }) => route));
+    const authorizedRoutes = new Set(
+      allAuthorizedDestinations.map(({ route }) => route),
+    );
     const storedRoutes = readRecentHistory(historyStorageKey);
     const routes = storedRoutes.filter((route) => authorizedRoutes.has(route));
     if (routes.length !== storedRoutes.length) writeRecentHistory(historyStorageKey, routes);
     setHistoryState({ key: historyStorageKey, routes });
-  }, [auth?.user?.permissions?.permissions, authorizedDestinations, historyStorageKey]);
+  }, [
+    allAuthorizedDestinations,
+    auth?.user?.permissions?.permissions,
+    historyStorageKey,
+  ]);
 
   const recentDestinations = useMemo(() => {
     if (historyState.key !== historyStorageKey) return [];
     const destinationByRoute = new Map(
-      authorizedDestinations.map((destination) => [destination.route, destination]),
+      allAuthorizedDestinations.map((destination) => [
+        destination.route,
+        destination,
+      ]),
     );
     return historyState.routes
       .map((route) => destinationByRoute.get(route))
       .filter(Boolean);
-  }, [authorizedDestinations, historyState, historyStorageKey]);
+  }, [allAuthorizedDestinations, historyState, historyStorageKey]);
 
   const filteredDestinations = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return recentDestinations;
     const terms = query.split(/\s+/).filter(Boolean);
-    return authorizedDestinations
+    return allAuthorizedDestinations
       .filter((destination) =>
         terms.every((term) => destination.searchText.includes(term)),
       )
       .sort((a, b) =>
         getMatchRank(a, query) - getMatchRank(b, query) ||
         a.title.localeCompare(b.title) ||
-        a.dashboardLabel.localeCompare(b.dashboardLabel),
+        a.contextLabel.localeCompare(b.contextLabel),
       );
-  }, [authorizedDestinations, recentDestinations, search]);
+  }, [allAuthorizedDestinations, recentDestinations, search]);
 
   const closePalette = () => {
     setOpen(false);
@@ -251,7 +445,12 @@ const HrSearchPalette = () => {
   };
 
   const openDestination = (destination) => {
-    if (!destination || !authorizedDestinations.some(({ route }) => route === destination.route)) {
+    if (
+      !destination ||
+      !allAuthorizedDestinations.some(
+        ({ route }) => route === destination.route,
+      )
+    ) {
       return;
     }
     if (historyStorageKey) {
@@ -302,6 +501,7 @@ const HrSearchPalette = () => {
       closePalette();
       return;
     }
+    if (event.target !== inputRef.current) return;
     if (!filteredDestinations.length) return;
     if (event.key === "ArrowDown") {
       event.preventDefault();
@@ -328,21 +528,21 @@ const HrSearchPalette = () => {
       onKeyDown={handleKeyDown}
     >
       <form
-        id="dashboard-page-search-form"
+        id="global-page-search-form"
         role="search"
         autoComplete="off"
         onSubmit={(event) => event.preventDefault()}
-        className="relative flex h-10 min-w-0 flex-1 items-center"
+        className="relative flex h-10 min-w-0 flex-1 items-center rounded-md border border-borderGray bg-white px-1.5 transition-colors hover:border-primary focus-within:border-primary"
       >
         <IoIosSearch
-          className="pointer-events-none absolute left-4 z-10 text-primary"
-          size={20}
+          className="pointer-events-none ml-2.5 shrink-0 text-primary"
+          size={18}
         />
         <input
           ref={inputRef}
           type="search"
-          id="dashboard-page-search"
-          name="dashboard-page-search"
+          id="global-page-search"
+          name="global-page-search"
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
@@ -353,22 +553,22 @@ const HrSearchPalette = () => {
             setOpen(true);
           }}
           placeholder="Search pages..."
-          aria-label="Search authorized dashboard pages"
+          aria-label="Search authorized Dashboard and App pages"
           aria-expanded={open}
-          className="h-10 w-full rounded-md border border-borderGray bg-white pl-12 pr-20 text-content text-primary outline-none transition-colors placeholder:text-gray-500 hover:border-primary focus:border-primary"
+          className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 pr-16 text-content text-primary outline-none placeholder:text-gray-500"
         />
         {open ? (
           <button
             type="button"
             onClick={closePalette}
-            className="absolute right-3 flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-gray-100"
+            className="absolute right-2 flex h-8 w-8 items-center justify-center rounded-full text-black transition-colors hover:bg-gray-100"
             aria-label="Close search palette"
             title="Close"
           >
             <IoMdClose size={21} />
           </button>
         ) : (
-          <kbd className="pointer-events-none absolute right-3 rounded border border-borderGray bg-[#F7F8FA] px-2 py-0.5 text-xs text-primary">
+          <kbd className="pointer-events-none absolute right-2 rounded border border-borderGray bg-[#F7F8FA] px-2 py-0.5 text-xs text-primary">
             Ctrl K
           </kbd>
         )}
@@ -377,7 +577,7 @@ const HrSearchPalette = () => {
       {open && (
         <section
           role="dialog"
-          aria-label="Search authorized dashboard pages"
+          aria-label="Search authorized Dashboard and App pages"
           className="absolute left-0 right-0 top-full z-[1500] mt-2 overflow-hidden rounded-xl border border-borderGray bg-white shadow-xl"
         >
               <div className="max-h-[55vh] overflow-y-auto p-2">
@@ -408,7 +608,15 @@ const HrSearchPalette = () => {
                           {destination.title}
                         </span>
                         <span className="block text-xs text-gray-500">
-                          {destination.dashboardLabel} Dashboard &gt; {destination.section}
+                          {destination.contextLabel}
+                          {destination.scope === "apps" && destination.moduleLabel
+                            ? ` > ${destination.moduleLabel}`
+                            : ""}
+                          {destination.section &&
+                          destination.section !== destination.moduleLabel &&
+                          destination.section !== destination.dashboardLabel
+                            ? ` > ${destination.section}`
+                            : ""}
                         </span>
                       </span>
                       <IoIosArrowForward className="text-primary" />

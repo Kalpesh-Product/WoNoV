@@ -136,6 +136,7 @@ const DepartmentInvoiceBudget = () => {
       expanseName: item.expanseName || "-",
       expanseType: item.expanseType || "-",
       department: departmentName,
+      vendorName: item.vendor?.companyName || item.vendor?.name || "-",
       unitName: unit.unitName || "-",
       unitNo: unit.unitNo || "-",
       buildingName: building.buildingName || "-",
@@ -246,6 +247,10 @@ const DepartmentInvoiceBudget = () => {
             <BudgetViewDetail
               title="Expense Type"
               detail={viewDetails.expanseType || "-"}
+            />
+            <BudgetViewDetail
+              title="Vendor"
+              detail={viewDetails.vendorName || "-"}
             />
             <BudgetViewDetail
               title="Payment Type"

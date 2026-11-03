@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { FiArrowRight, FiChevronRight } from "react-icons/fi";
+import { FiChevronRight } from "react-icons/fi";
 import { FaFileInvoiceDollar, FaReceipt, FaWallet } from "react-icons/fa6";
 import Card from "../../../../components/Card";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -11,14 +11,14 @@ const BILLING_BASE_PATH = "/app/dashboard/finance-dashboard/billing";
 
 const BillingCardIcon = ({ type }) => {
   const icons = {
-    invoicing: <FaFileInvoiceDollar size={48} />,
-    voucher: <FaReceipt size={48} />,
-    budget: <FaWallet size={50} />,
+    invoicing: <FaFileInvoiceDollar className="h-[34px] w-[34px] min-[1800px]:h-10 min-[1800px]:w-10" />,
+    voucher: <FaReceipt className="h-9 w-9 min-[1800px]:h-[42px] min-[1800px]:w-[42px]" />,
+    budget: <FaWallet className="h-9 w-9 min-[1800px]:h-[42px] min-[1800px]:w-[42px]" />,
   };
 
   return (
     <span
-      className="relative inline-flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-[#1b4d80] text-white"
+      className="relative inline-flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[#1b4d80] text-white min-[1800px]:h-[88px] min-[1800px]:w-[88px]"
       aria-hidden="true"
     >
       {icons[type]}
@@ -46,16 +46,14 @@ const BillingsLayout = () => {
     () => [
       {
         title: "Client Invoicing",
-        description: "Create and manage client invoices.",
-        action: "View Invoices",
+        action: "View Invoice",
         icon: "invoicing",
         route: `${billingBasePath}/client-invoicing`,
         permission: PERMISSIONS.FINANCE_BILLING_CLIENT_INVOICE.value,
       },
       {
         title: "Voucher Request",
-        description: "Create and review voucher requests.",
-        action: "Manage Vouchers",
+        action: "View Voucher",
         icon: "voucher",
         route: `${billingBasePath}/voucher-request`,
         permission: [
@@ -67,8 +65,7 @@ const BillingsLayout = () => {
       },
       {
         title: "Budget Request",
-        description: "Submit and track budget requests.",
-        action: "Manage Budgets",
+        action: "View Budget",
         icon: "budget",
         route: `${billingBasePath}/budget-request`,
         permission: [
@@ -97,40 +94,39 @@ const BillingsLayout = () => {
   if (isFinanceDashboard1) {
     return (
       <div className="p-4 lg:p-6">
-        <div
-          className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3"
-          style={{ maxWidth: 1600 }}
-        >
+        <div className="flex w-full flex-wrap gap-5">
           {allowedCards.map((card) => (
             <button
               key={card.route}
               type="button"
               onClick={() => navigate(card.route)}
-              className="group relative flex min-h-[300px] w-full flex-col overflow-hidden rounded-[24px] border border-[#edf1f6] bg-white p-6 text-left shadow-[0_8px_30px_rgba(30,61,115,0.06)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(30,61,115,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73] focus-visible:ring-offset-2 lg:p-8"
+              className="group relative flex min-h-[150px] w-full grow basis-full overflow-hidden rounded-[24px] border border-[#dfe8f2] bg-white text-left shadow-[0_10px_24px_rgba(30,61,115,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(30,61,115,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73] focus-visible:ring-offset-2 md:basis-[calc(50%-0.625rem)] xl:basis-[calc(33.333%-0.833rem)] min-[1800px]:min-h-[185px] min-[1800px]:rounded-[28px] min-[1800px]:shadow-[0_12px_30px_rgba(30,61,115,0.08)] min-[1800px]:hover:shadow-[0_16px_36px_rgba(30,61,115,0.13)]"
             >
               <span
-                className="absolute right-6 top-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f8fc] text-[#071445] transition-colors duration-200 group-hover:bg-[#edf3fa] lg:right-7 lg:top-7"
+                className="absolute inset-y-0 left-0 z-10 w-2 bg-[#0d6eb8] min-[1800px]:w-2.5"
                 aria-hidden="true"
-              >
-                <FiChevronRight className="text-xl" />
-              </span>
+              />
 
-              <BillingCardIcon type={card.icon} />
+              <div className="flex w-[32%] min-w-[112px] shrink-0 items-center justify-center px-3 py-5 sm:min-w-[140px] sm:px-4 min-[1800px]:w-[36%] min-[1800px]:min-w-[165px] min-[1800px]:px-5">
+                <BillingCardIcon type={card.icon} />
+              </div>
 
-              <h2 className="mt-5 whitespace-nowrap text-base font-pbold uppercase leading-tight tracking-[-0.02em] text-[#1b4d80] sm:text-lg xl:text-base 2xl:text-lg">
-                {card.title}
-              </h2>
-              <p className="mt-2 max-w-[350px] text-sm font-pregular normal-case leading-6 text-[#53698f] lg:text-base">
-                {card.description}
-              </p>
-
-              <span className="mt-auto flex items-center gap-4 pt-6 text-base font-pmedium normal-case text-[#1b4d80]">
-                {card.action}
-                <FiArrowRight
-                  className="text-xl transition-transform duration-200 group-hover:translate-x-1"
-                  aria-hidden="true"
-                />
-              </span>
+              <div className="relative min-w-0 flex-1 px-4 sm:px-8">
+                <div className="absolute left-4 top-[39px] flex h-[72px] flex-col items-start justify-between sm:left-6 min-[1800px]:left-8 min-[1800px]:top-[49px] min-[1800px]:h-[88px]">
+                  <h2 className="whitespace-nowrap text-sm font-pbold uppercase leading-tight tracking-[-0.02em] text-[#073f77] min-[1800px]:text-lg">
+                    {card.title}
+                  </h2>
+                  <span className="flex items-center gap-2.5 whitespace-nowrap text-sm font-pmedium normal-case text-[#073f77] min-[1800px]:gap-3 min-[1800px]:text-base">
+                    {card.action}
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eff5fb] transition-all duration-200 group-hover:translate-x-1 group-hover:bg-[#e5eff9] min-[1800px]:h-7 min-[1800px]:w-7">
+                      <FiChevronRight
+                        className="text-sm min-[1800px]:text-base"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </span>
+                </div>
+              </div>
             </button>
           ))}
         </div>

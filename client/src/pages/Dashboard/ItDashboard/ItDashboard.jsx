@@ -1866,7 +1866,7 @@ const totalUtilised = useMemo(() => {
     {
       layout: allowedTables.length,
       widgets: allowedTables.map((config) => (
-        <MuiTable
+        <MuiTable showTableControls={false}
           key={config.key}
           scroll={config.scroll}
           rowsToDisplay={config.rowsToDisplay}

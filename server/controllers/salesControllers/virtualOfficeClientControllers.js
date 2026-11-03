@@ -6,7 +6,154 @@ const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
 const Unit = require("../../models/locations/Unit");
 const ClientService = require("../../models/sales/ClientService");
+const Company = require("../../models/hr/Company");
+const User = require("../../models/hr/UserData");
 const { default: mongoose } = require("mongoose");
+
+const DEFAULT_VIRTUAL_OFFICE_SOURCING_OPTIONS = [
+  "Google",
+  "LinkedIn",
+  "Referral",
+  "IPC",
+  "Walk-IN",
+  "WhatsApp",
+];
+const VIRTUAL_OFFICE_CURRENT_STATUSES = [
+  "In Progress",
+  "Yet to start",
+  "On Hold",
+];
+
+const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+
+const canCreateVirtualOfficeSourcingOption = async (userId) => {
+  const user = await User.findById(userId)
+    .populate("departments", "name")
+    .populate("role", "roleTitle")
+    .select("departments role")
+    .lean();
+
+  const hasAllowedDepartment = (user?.departments || []).some((department) => {
+    const departmentId = String(department?._id || department);
+    const departmentName = String(department?.name || "")
+      .trim()
+      .toLowerCase();
+
+    return (
+      SOURCING_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+      ["top management", "tech", "tech department"].includes(departmentName)
+    );
+  });
+
+  const hasAllowedRole = (user?.role || []).some((role) => {
+    const roleTitle = String(role?.roleTitle || role || "")
+      .trim()
+      .toLowerCase();
+    return (
+      roleTitle.includes("top management") ||
+      roleTitle.includes("tech department")
+    );
+  });
+
+  return hasAllowedDepartment || hasAllowedRole;
+};
+
+const normalizeSourcingOptions = (options = []) => {
+  const uniqueOptions = new Map();
+
+  [...DEFAULT_VIRTUAL_OFFICE_SOURCING_OPTIONS, ...options].forEach((option) => {
+    const normalizedOption = String(option || "").trim();
+    if (!normalizedOption) return;
+
+    const displayOption =
+      normalizedOption.toLowerCase() === "bfc" ? "IPC" : normalizedOption;
+    uniqueOptions.set(displayOption.toLowerCase(), displayOption);
+  });
+
+  return Array.from(uniqueOptions.values()).sort((first, second) =>
+    first.localeCompare(second, undefined, { sensitivity: "base" }),
+  );
+};
+
+const getVirtualOfficeSourcingOptions = async (req, res, next) => {
+  try {
+    const company = await Company.findById(req.company)
+      .select("virtualOfficeSourcingOptions")
+      .lean();
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const options = normalizeSourcingOptions(
+      company.virtualOfficeSourcingOptions,
+    );
+
+    return res.status(200).json(options);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addVirtualOfficeSourcingOption = async (req, res, next) => {
+  try {
+    if (!(await canCreateVirtualOfficeSourcingOption(req.user))) {
+      return res.status(403).json({
+        message:
+          "Only Tech Department or Top Management can add sourcing options",
+      });
+    }
+
+    const requestedOption = String(req.body?.option || "").trim();
+    const option =
+      requestedOption.toLowerCase() === "bfc" ? "IPC" : requestedOption;
+
+    if (!option) {
+      return res.status(400).json({ message: "Sourcing name is required" });
+    }
+
+    if (option.length > 60) {
+      return res
+        .status(400)
+        .json({ message: "Sourcing name cannot exceed 60 characters" });
+    }
+
+    const company = await Company.findById(req.company).select(
+      "virtualOfficeSourcingOptions",
+    );
+
+    if (!company) {
+      return res.status(404).json({ message: "Company not found" });
+    }
+
+    const currentOptions = normalizeSourcingOptions(
+      company.virtualOfficeSourcingOptions,
+    );
+    const existingOption = currentOptions.find(
+      (item) => item.toLowerCase() === option.toLowerCase(),
+    );
+    const selectedOption = existingOption || option;
+
+    company.virtualOfficeSourcingOptions = normalizeSourcingOptions([
+      ...currentOptions,
+      selectedOption,
+    ]);
+    await company.save();
+
+    return res.status(existingOption ? 200 : 201).json({
+      message: existingOption
+        ? "Sourcing already available"
+        : "Sourcing added successfully",
+      option: selectedOption,
+      options: company.virtualOfficeSourcingOptions,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 const {
   fetchVirtualOfficeClientsReportService,
@@ -22,6 +169,9 @@ const toDateOrNull = (v) => {
   const d = new Date(v);
   return Number.isNaN(d.getTime()) ? null : d;
 };
+
+const toUtcDayTimestamp = (date) =>
+  Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
 
 const calculateTotalTermMonths = (startDate, endDate) => {
   if (!startDate || !endDate) return 0;
@@ -141,7 +291,7 @@ const createVirtualOfficeClient = async (req, res) => {
       });
     }
 
-    if (rentDate < termStartDate) {
+    if (toUtcDayTimestamp(rentDate) < toUtcDayTimestamp(termStartDate)) {
       return res.status(400).json({
         message: "rentDate cannot be before termStartDate",
       });
@@ -504,6 +654,17 @@ const updateVirtualOfficeClient = async (req, res) => {
     const hasField = (key) =>
       Object.prototype.hasOwnProperty.call(updates, key);
 
+    if (hasField("channel")) {
+      updates.channel = String(updates.channel || "").trim();
+    }
+
+    if (
+      hasField("currentStatus") &&
+      !VIRTUAL_OFFICE_CURRENT_STATUSES.includes(updates.currentStatus)
+    ) {
+      return res.status(400).json({ message: "Invalid current status" });
+    }
+
     const existing = await VirtualOfficeClient.findById(id).lean();
     if (!existing) {
       return res
@@ -595,7 +756,7 @@ const updateVirtualOfficeClient = async (req, res) => {
         .json({ message: "termEnd must be after termStartDate" });
     }
 
-    if (rentDate < termStartDate) {
+    if (toUtcDayTimestamp(rentDate) < toUtcDayTimestamp(termStartDate)) {
       return res
         .status(400)
         .json({ message: "rentDate cannot be before termStartDate" });
@@ -1268,4 +1429,6 @@ module.exports = {
   updateVirtualOfficeStatus,
   bulkInsertVirtualOfficeClients,
   bulkUpdateVirtualOfficeClients,
+  getVirtualOfficeSourcingOptions,
+  addVirtualOfficeSourcingOption,
 };

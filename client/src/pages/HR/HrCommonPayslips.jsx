@@ -84,13 +84,16 @@ const HrCommonPayslips = () => {
     <div className="flex flex-col gap-8">
       <div>
         <YearWiseTable
-          key={tableData.length}
+          compactToolbar
           search={true}
           tableHeight={300}
           searchColumn={"month"}
           tableTitle={"Payslips"}
           data={tableData}
           columns={payslipColumns}
+          dateColumn="month"
+          exportData
+          hideFilter={false}
           isLoading={isLoading}
         />
       </div>

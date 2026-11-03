@@ -199,7 +199,7 @@ const ClientAgreementData = () => {
             columns={columns}
             data={tableData}
             tableTitle={`AGREEMENTS -  ${clientName.toUpperCase()}`}
-            hideFilter
+            hideFilter={false}
             buttonTitle="Add New Agreement"
             handleClick={openAddModal}
             disabled={!selectedClient}

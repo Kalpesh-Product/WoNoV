@@ -3,7 +3,6 @@ import AgTable from "../../components/AgTable";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
-import { CircularProgress } from "@mui/material";
 import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
 import { useSearchParams } from "react-router-dom";
@@ -93,9 +92,9 @@ const TeamMembers = () => {
         border
       >
         <div>
-          {!isTeamMembers ? (
-            <div className=" w-full">
+          <div className=" w-full">
               <AgTable
+                loading={isTeamMembers}
                 search={true}
                 searchColumn={"kra"}
                 data={teamMembersData.map((item, index) => ({
@@ -105,12 +104,7 @@ const TeamMembers = () => {
                 columns={laptopColumns}
                 paginationPageSize={10}
               />
-            </div>
-          ) : (
-            <div className="h-72 flex justify-center items-center">
-              <CircularProgress />
-            </div>
-          )}
+          </div>
         </div>
       </WidgetSection>
     </div>

@@ -14,11 +14,67 @@ const {
 } = require("../../config/s3Config");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const Vendor = require("../../models/hr/Vendor");
 const emitter = require("../../utils/eventEmitter");
 const { parseAmount } = require("../../utils/parseAmount");
 const { fetchBudgetVoucherService } = require("../../services/reports/finance");
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const normalizeAccessName = (value) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+const FINANCE_MANAGED_DEPARTMENT_PREFIXES = [
+  "finance",
+  "legal",
+  "cafe",
+  "cafeteria",
+  "admin",
+  "administration",
+];
+
+const isFinanceManager = (roles = []) =>
+  roles.some((role) => {
+    const roleTitle = normalizeAccessName(role?.roleTitle || role);
+    return (
+      roleTitle.includes("finance") &&
+      (roleTitle.includes("manager") || roleTitle.includes("admin"))
+    );
+  });
+
+const isFinanceDepartment = (department) =>
+  normalizeAccessName(department?.name).startsWith("finance");
+
+const isFinanceManagerUser = (user) => {
+  const roles = user?.role || [];
+  const hasManagerRole = roles.some((role) => {
+    const roleTitle = normalizeAccessName(role?.roleTitle || role);
+    return (
+      (roleTitle.includes("manager") || roleTitle.includes("admin")) &&
+      !roleTitle.includes("employee")
+    );
+  });
+
+  return (
+    isFinanceManager(roles) ||
+    (hasManagerRole && (user?.departments || []).some(isFinanceDepartment))
+  );
+};
+
+const isGlobalBudgetAdmin = (roles = []) =>
+  roles.some((role) =>
+    ["masteradmin", "superadmin"].includes(
+      normalizeAccessName(role?.roleTitle || role),
+    ),
+  );
+
+const isFinanceManagedDepartment = (department) =>
+  FINANCE_MANAGED_DEPARTMENT_PREFIXES.some((prefix) =>
+    normalizeAccessName(department?.name).startsWith(prefix),
+  );
+
 const getBudgetApprovalAccess = (budget, user) => {
   const amount = budget.particulars?.length
     ? budget.particulars.reduce((sum, item) => sum + Number(item.particularAmount || 0), 0)
@@ -37,7 +93,7 @@ const getBudgetApprovalAccess = (budget, user) => {
   return {
     approvalLevel: level,
     approvalDepartment: level === "Level 3" ? "Finance" : "Top Management",
-    requiredApprover: level === "Level 3" ? "Finance" : level === "Level 2" ? "Kashif" : "Abrar",
+    requiredApprover: level === "Level 3" ? "Narshiva Naik" : level === "Level 2" ? "Kashif Saikh" : "Abrar Shaikh",
     canApproveBudget: Number.isFinite(amount) && amount >= 0 && (tech || (level === "Level 3" ? finance || kashif || abrar : level === "Level 2" ? kashif || abrar : abrar)),
   };
 };
@@ -134,6 +190,7 @@ const requestBudget = async (req, res, next) => {
       srNo,
       particulars,
       gstIn,
+      vendor,
     } = req.body;
     const { departmentId } = req.params;
     const invoiceFile = req.files?.invoice?.[0];
@@ -259,11 +316,37 @@ const requestBudget = async (req, res, next) => {
       );
     }
 
+    if (vendor) {
+      if (!mongoose.Types.ObjectId.isValid(vendor)) {
+        throw new CustomError(
+          "Invalid vendor",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+      const vendorExists = await Vendor.exists({
+        _id: vendor,
+        company,
+        departmentId,
+        status: "Active",
+      });
+      if (!vendorExists) {
+        throw new CustomError(
+          "Select an active vendor from this department",
+          logPath,
+          logAction,
+          logSourceKey,
+        );
+      }
+    }
+
     const budgetData = {
       expanseName,
       projectedAmount: projectedAmount || 0,
       actualAmount: 0,
       department: departmentId,
+      vendor: vendor || null,
       company: company,
       dueDate: parsedDueDate,
       reimbursementDate: parsedReimbursementDate,
@@ -435,10 +518,8 @@ const updateBudget = async (req, res, next) => {
   try {
     const { budgetId } = req.params;
     const updateFields = req.body;
-    const { departments, roles } = req;
-
     // const allowedFields = ["gstIn", "expanseType", "actualAmount"]; // Add more fields here later
- const allowedFields = [
+    const allowedFields = [
       "gstIn",
       "expanseName",
       "expanseType",
@@ -446,6 +527,7 @@ const updateBudget = async (req, res, next) => {
       "unit",
       "dueDate",
       "actualAmount",
+      "vendor",
     ];
     // Filter only allowed fields from incoming data
     const filteredFields = Object.keys(updateFields).reduce((acc, key) => {
@@ -457,8 +539,8 @@ const updateBudget = async (req, res, next) => {
 
     if (Object.keys(filteredFields).length === 0) {
       return res.status(400).json({
-       message:
-          "Allowed fields include only: gstIn, expanseName, expanseType, paymentType, unit, dueDate, actualAmount",
+        message:
+          "Allowed fields include only: gstIn, expanseName, expanseType, paymentType, unit, dueDate, actualAmount, vendor",
         // message: "Allowed fields include only: gstIn, expanseType,actualAmount",
       });
     }
@@ -467,21 +549,47 @@ const updateBudget = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid budget ID provided" });
     }
 
-    const foundBudget = await Budget.findById(budgetId);
+    const [foundBudget, requestingUser] = await Promise.all([
+      Budget.findOne({ _id: budgetId, company }).populate(
+        "department",
+        "name",
+      ),
+      User.findById(user)
+        .select("departments role")
+        .populate("departments", "name")
+        .populate("role", "roleTitle")
+        .lean(),
+    ]);
     if (!foundBudget) {
       return res.status(400).json({ message: "Budget not found" });
     }
 
-    const departmentIds = (departments || []).map((department) =>
+    const userRoles = requestingUser?.role || req.roles || [];
+    const departmentIds = (
+      requestingUser?.departments ||
+      req.departments ||
+      []
+    ).map((department) =>
       typeof department === "string"
         ? department
         : department?._id?.toString?.() || department?.toString?.(),
     );
+    const budgetDepartmentId = String(
+      foundBudget.department?._id || foundBudget.department,
+    );
+    const hasFinanceManagerAccess =
+      isFinanceManagerUser(
+        requestingUser || {
+          role: userRoles,
+          departments: req.departments || [],
+        },
+      ) &&
+      isFinanceManagedDepartment(foundBudget.department);
 
     if (
-      !departmentIds.includes(foundBudget.department.toString()) &&
-      !roles.includes("Master Admin") &&
-      !roles.includes("Super Admin")
+      !departmentIds.includes(budgetDepartmentId) &&
+      !isGlobalBudgetAdmin(userRoles) &&
+      !hasFinanceManagerAccess
     ) {
       return res
         .status(403)
@@ -496,6 +604,28 @@ const updateBudget = async (req, res, next) => {
       return res.status(400).json({
         message: `Missing required fields: ${missingFields.join(", ")}`,
       });
+    }
+
+    if (Object.hasOwn(filteredFields, "vendor")) {
+      const vendorId = String(filteredFields.vendor ?? "").trim();
+      if (!vendorId) {
+        filteredFields.vendor = null;
+      } else if (!mongoose.Types.ObjectId.isValid(vendorId)) {
+        return res.status(400).json({ message: "Invalid vendor" });
+      } else {
+        const vendorExists = await Vendor.exists({
+          _id: vendorId,
+          company,
+          departmentId: budgetDepartmentId,
+          status: "Active",
+        });
+        if (!vendorExists) {
+          return res.status(400).json({
+            message: "Select an active vendor from this department",
+          });
+        }
+        filteredFields.vendor = vendorId;
+      }
     }
 
     const originalData = foundBudget.toObject();
@@ -540,6 +670,95 @@ const updateBudget = async (req, res, next) => {
 
     return res.status(200).json({
       message: "Budget updated successfully",
+      updatedBudget,
+    });
+  } catch (error) {
+    next(
+      error instanceof CustomError
+        ? error
+        : new CustomError(error.message, logPath, logAction, logSourceKey, 500),
+    );
+  }
+};
+
+const updateFinanceAmount = async (req, res, next) => {
+  const logPath = "/budget/BudgetLog";
+  const logAction = "Update Finance Amount";
+  const logSourceKey = "budget";
+  const { user, ip, company } = req;
+
+  try {
+    const { budgetId } = req.params;
+    const { financeAmount } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(budgetId)) {
+      return res.status(400).json({ message: "Invalid budget ID provided" });
+    }
+
+    if (
+      financeAmount === undefined ||
+      financeAmount === null ||
+      String(financeAmount).trim() === ""
+    ) {
+      return res.status(400).json({ message: "Finance amount is required" });
+    }
+
+    const amount = Number(financeAmount);
+
+    if (Number.isNaN(amount) || amount < 0) {
+      return res
+        .status(400)
+        .json({ message: "Finance amount must be a valid positive number" });
+    }
+
+    if (amount === 0) {
+      return res.status(400).json({ message: "Paid amount must be greater than zero" });
+    }
+
+    const foundBudget = await Budget.findOne({ _id: budgetId, company });
+
+    if (!foundBudget) {
+      return res.status(404).json({ message: "Budget not found" });
+    }
+
+    const previousFinanceAmount = foundBudget.financeAmount ?? 0;
+    const actualAmount = Number(foundBudget.actualAmount || 0);
+    if (amount > Math.max(actualAmount - previousFinanceAmount, 0)) {
+      return res.status(400).json({
+        message: "Paid amount cannot exceed the remaining amount",
+      });
+    }
+    const totalPaidAmount = previousFinanceAmount + amount;
+    foundBudget.financeAmountHistory.push({
+      previousAmount: previousFinanceAmount,
+      amount: totalPaidAmount,
+      changedAt: new Date(),
+      changedBy: user,
+    });
+    foundBudget.financeAmount = totalPaidAmount;
+    foundBudget.financeAmountDate = new Date();
+    foundBudget.isPaid = totalPaidAmount >= actualAmount ? "Paid" : "Unpaid";
+
+    const updatedBudget = await foundBudget.save({ validateModifiedOnly: true });
+
+    await createLog({
+      path: logPath,
+      action: logAction,
+      remarks: `Finance amount updated for budget: ${budgetId}`,
+      status: "Success",
+      user,
+      ip,
+      company,
+      sourceKey: logSourceKey,
+      sourceId: updatedBudget._id,
+      changes: {
+        before: { financeAmount: previousFinanceAmount },
+        after: { financeAmount: updatedBudget.financeAmount },
+      },
+    });
+
+    return res.status(200).json({
+      message: "Finance amount updated successfully",
       updatedBudget,
     });
   } catch (error) {
@@ -604,16 +823,39 @@ const updateBudget = async (req, res, next) => {
 
 const fetchBudget = async (req, res, next) => {
   try {
-    const { departmentId, view, includeDeleted } = req.query;
+    const { departmentId, view, includeDeleted, invoiceUploaded } = req.query;
     const { company } = req;
     const user = await User.findById(req.user)
       .populate("departments", "name")
+      .populate("role", "roleTitle")
       .lean()
       .exec();
     const canViewDeleted =
       includeDeleted === "true" &&
       belongsToPermanentDeleteDepartment(user?.departments);
 
+
+    let scopedDepartmentIds = departmentId ? [departmentId] : [];
+    if (departmentId && isFinanceManagerUser(user)) {
+      const requestedDepartment = await Department.findById(departmentId)
+        .select("name")
+        .lean();
+
+      if (
+        isFinanceDepartment(requestedDepartment)
+      ) {
+        const managedDepartments = await Department.find()
+          .select("name")
+          .lean();
+        scopedDepartmentIds = managedDepartments
+          .filter(isFinanceManagedDepartment)
+          .map((managedDepartment) => managedDepartment._id);
+      }
+    }
+
+    const departmentFilter = scopedDepartmentIds.length
+      ? { $in: scopedDepartmentIds }
+      : undefined;
 
     const currentMonthStart = new Date();
     currentMonthStart.setUTCHours(0, 0, 0, 0);
@@ -624,7 +866,7 @@ const fetchBudget = async (req, res, next) => {
     await Budget.updateMany(
       {
         company,
-        ...(departmentId ? { department: departmentId } : {}),
+        ...(departmentFilter ? { department: departmentFilter } : {}),
         isExtraBudget: false,
         status: "Approved",
         "finance.approvedAt": null,
@@ -640,9 +882,11 @@ const fetchBudget = async (req, res, next) => {
     const result = await fetchBudgetVoucherService({
       company: company,
       departmentId,
+      departmentIds: scopedDepartmentIds,
       dashboardView: view === "dashboard",
       profitLossView: view === "profit-loss",
       includeDeleted: canViewDeleted,
+      invoiceUploadedOnly: invoiceUploaded === "true",
     });
 
     const approver = await fetchBudgetApprover(req.user);
@@ -786,6 +1030,7 @@ const fetchPendingApprovals = async (req, res, next) => {
     })
       .populate([
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
       ])
       .lean()
@@ -823,6 +1068,7 @@ const fetchApprovedbudgets = async (req, res, next) => {
     const budgets = await Budget.find({ company, status: "Approved" })
       .populate([
         { path: "department", select: "name" },
+        { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
       ])
       .lean()
@@ -1751,6 +1997,7 @@ module.exports = {
   approveBudget,
   rejectBudget,
   updateBudget,
+  updateFinanceAmount,
   deleteBudget,
   restoreBudget,
   fetchBudget,

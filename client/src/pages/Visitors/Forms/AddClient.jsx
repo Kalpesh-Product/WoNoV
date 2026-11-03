@@ -142,7 +142,7 @@ const AddClient = () => {
     existingVisitor?.visitorFlag === "Client" ||
     existingVisitor?.visitorRoles?.includes("Client");
   const existingVisitorRoute = existingVisitorIsClient
-    ? "/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies"
+    ? "/app/visitors/mix-bag/repeat-bookings"
     : "/app/visitors/mix-bag/visitors-to-client/convert-internal-visitors";
 
   const handleStateSelect = (stateCode) => {
@@ -261,7 +261,7 @@ const AddClient = () => {
     if (existingVisitor) {
       toast.error(
         existingVisitorIsClient
-          ? "Client already exists. Continue from Repeat Day Pass in Mix Bag."
+          ? "Client already exists. Continue from Repeat Booking in Mix Bag."
           : "Visitor already exists. Continue from Visitors to Client in Mix Bag.",
       );
       return;
@@ -975,6 +975,7 @@ const AddClient = () => {
                       <MenuItem value="drivingLicense">
                         Driving License
                       </MenuItem>
+                      <MenuItem value="passport">Passport</MenuItem>
                     </TextField>
                   )}
                 />

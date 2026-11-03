@@ -14,6 +14,7 @@ import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
 import KraKpaDepartmentWidgets from "./KraKpaDepartmentWidgets";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 
 const SHOW_DEPARTMENT_PERFORMANCE_WIDGETS = false;
 
@@ -125,7 +126,7 @@ const PerformanceHome = ({
     userPermissions.includes(permission.value);
   const currentMonthLabel = currentDateInfo.monthName;
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
       queryKey: ["performanceDepartments", currentDateInfo.monthName],
     enabled: !onlyFirstTwoCards,
     refetchInterval: 5 * 60 * 1000,
@@ -137,7 +138,7 @@ const PerformanceHome = ({
     },
   });
 
-  const { data: kpaTasksRaw = [] } = useQuery({
+  const { data: kpaTasksRaw = [], isLoading: isKpaTasksLoading } = useQuery({
     queryKey: [onlyFirstTwoCards ? "kraKpaKpaOverview" : "performanceKpaTasks"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-kpa-tasks");
@@ -198,7 +199,10 @@ const PerformanceHome = ({
   ]);
 
 
-  const { data: departmentDailyKraStats = [] } = useQuery({
+  const {
+    data: departmentDailyKraStats = [],
+    isLoading: isDepartmentDailyKraStatsLoading,
+  } = useQuery({
     queryKey: [
       "performanceDepartmentDailyKraStats",
       fetchedDepartments.map((item) => item?.department?._id).filter(Boolean),
@@ -515,9 +519,32 @@ const PerformanceHome = ({
   const canAccessEmployeeKraKpaCard =
     hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
 
+  const kraKpaWorkAccess = [
+    PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+    PERMISSIONS.KRAKPA_SELF_KRA,
+    PERMISSIONS.KRAKPA_DUE_TASK,
+    PERMISSIONS.KRAKPA_DAILY_LOGS,
+  ].some(hasPermission);
+  const kraKpaScoreAccess = [
+    PERMISSIONS.KRAKPA_KPA_RATING,
+    PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
+  ].some(hasPermission);
+  const defaultKraKpaWorkPath = hasPermission(
+    PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+  )
+    ? "individual-Monthly-KPA"
+    : hasPermission(PERMISSIONS.KRAKPA_SELF_KRA)
+      ? "self-KRA"
+      : hasPermission(PERMISSIONS.KRAKPA_DUE_TASK)
+        ? "due-task"
+        : "daily-logs";
+  const defaultKraKpaScorePath = hasPermission(PERMISSIONS.KRAKPA_KPA_RATING)
+    ? "kpa-rating"
+    : "daily-logs-rating";
+
   const standardPerformanceCards = [
     {
-      title: "DEPARTMENT MONTHLY KPA",
+      title: "DEPARTMENT KRA/KPA",
       route: `${modulePath}/department-KPA`,
       hasAccess: canAccessDepartmentKpaCard,
     },
@@ -545,28 +572,47 @@ const PerformanceHome = ({
 
   const kraKpaDashboardCards = [
     {
-      title: "INDIVIDUAL",
+      title: "EMPLOYEE KRA/KPA",
       route: employeeDashboard
-        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
-        : `${modulePath}/individual/kra-kpa/individual-Monthly-KPA`,
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/${defaultKraKpaWorkPath}`
+        : `${modulePath}/individual/kra-kpa/${defaultKraKpaWorkPath}`,
       icon: <FaUser />,
-      hasAccess: true,
+      hasAccess: kraKpaWorkAccess,
     },
     {
       title: "DAILY SCORE",
       route: employeeDashboard
-        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/daily-score/kpa-rating`
-        : `${modulePath}/individual/daily-score/kpa-rating`,
+        ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/daily-score/${defaultKraKpaScorePath}`
+        : `${modulePath}/individual/daily-score/${defaultKraKpaScorePath}`,
       icon: <FaChartLine />,
-      hasAccess: true,
+      hasAccess: kraKpaScoreAccess,
     },
     {
-      title: "DEPARTMENT MONTHLY KPA",
+      title: "DEPARTMENT KRA/KPA",
       route: `${modulePath}/department-KPA`,
       icon: <CgWebsite />,
       hasAccess:
         !employeeDashboard &&
-        (isManager || isHr || isTopManagement),
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA),
+    },
+    {
+      title: "PENDING APPROVALS",
+      route: `${modulePath}/pending-approvals`,
+      icon: <CgWebsite />,
+      hasAccess:
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS),
+    },
+    {
+      title: "DEPARTMENT",
+      route: `${modulePath}/departments`,
+      icon: <CgWebsite />,
+      hasAccess:
+        !employeeDashboard &&
+        (isManager || isHr || isTopManagement) &&
+        hasPermission(PERMISSIONS.KRAKPA_DEPARTMENTS),
     },
   ];
 
@@ -574,13 +620,7 @@ const PerformanceHome = ({
     onlyFirstTwoCards ? kraKpaDashboardCards : standardPerformanceCards
   ).filter((card) => card.hasAccess);
 
-  const cardGridClass = onlyFirstTwoCards
-    ? performanceCards.length >= 3
-      ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
-      : performanceCards.length === 2
-        ? "grid-cols-1 md:grid-cols-2"
-        : "grid-cols-1"
-    : performanceCards.length >= 5
+  const cardGridClass = performanceCards.length >= 5
       ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-5"
       : performanceCards.length === 4
         ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
@@ -595,7 +635,11 @@ const PerformanceHome = ({
       {(onlyFirstTwoCards
         ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
         : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) && (
-        <YearlyGraph
+        isKpaTasksLoading ? (
+          <WidgetSection border title="ANNUAL KPA VS ACHIEVEMENTS">
+            <PerformanceChartSkeleton variant="bar" height="h-[26rem]" />
+          </WidgetSection>
+        ) : <YearlyGraph
           data={annualKpaGraphData}
           options={annualKpaChartOptions}
           title="ANNUAL KPA VS ACHIEVEMENTS"
@@ -617,7 +661,7 @@ const PerformanceHome = ({
           {performanceCards.map((card) => (
             <div key={card.route} className="h-full">
               <Card
-                icon={card.icon || <CgWebsite />}
+                icon={employeeDashboard ? card.icon || <CgWebsite /> : <CgWebsite />}
                 title={card.title}
                 route={card.route}
                 navigationState={employeeDashboard ? location.state : undefined}
@@ -645,11 +689,13 @@ const PerformanceHome = ({
             border
             title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
           >
-            <PieChartMui
+            {isDepartmentDailyKraStatsLoading || isDepartmentsLoading ? (
+              <PerformanceChartSkeleton variant="donut" />
+            ) : <PieChartMui
               data={kraPieData}
               options={pieOptions(kraPieData.map((item) => item.label))}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )}
 
@@ -660,11 +706,13 @@ const PerformanceHome = ({
             border
             title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
           >
-            <PieChartMui
+            {isKpaTasksLoading ? (
+              <PerformanceChartSkeleton variant="donut" />
+            ) : <PieChartMui
               data={kpaPieData}
               options={pieOptions(kpaPieData.map((item) => item.label))}
               centerAlign
-            />
+            />}
           </WidgetSection>
         )}
       </div>

@@ -279,25 +279,25 @@ const YearwiseEnergyBilling = ({
           title={graphTitle}
           titleClassName={
             embedded
-              ? "whitespace-nowrap text-left"
+              ? "min-w-0 max-w-full whitespace-normal break-words text-left"
               : ""
           }
           titleStyle={
             embedded
               ? {
-                  whiteSpace: "nowrap",
+                  whiteSpace: "normal",
                   fontSize: "14px",
                   lineHeight: "20px",
-                  flexShrink: 0,
+                  flexShrink: 1,
                 }
               : undefined
           }
           headerContentClassName={
-            embedded ? "!flex-row !flex-nowrap !gap-2" : ""
+            embedded ? "min-w-0 !flex-row !flex-nowrap !gap-2" : "min-w-0 !flex-wrap"
           }
           border
           headerRightContent={
-            <div className="flex flex-nowrap items-center gap-2">
+            <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
               <Chip
                 label={`CONSUMPTION : ${formatNumber(totalConsumption)}`}
                 sx={{
@@ -305,13 +305,17 @@ const YearwiseEnergyBilling = ({
                   color: "#1f3f7a",
                   border: "1px solid #b8cbff",
                   fontWeight: 800,
-                  fontSize: embedded ? "0.72rem" : "0.84rem",
-                  height: embedded ? "32px" : "36px",
+                  fontSize: embedded ? "0.625rem" : "0.75rem",
+                  flexShrink: 0,
+                  height: "auto",
+                  minHeight: embedded ? "32px" : "36px",
                   borderRadius: "8px",
                   px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
+                    py: 0.75,
                     fontWeight: 800,
+                    whiteSpace: "nowrap",
                   },
                 }}
               />
@@ -323,13 +327,17 @@ const YearwiseEnergyBilling = ({
                   color: "#17693a",
                   border: "1px solid #c7e6d0",
                   fontWeight: 800,
-                  fontSize: embedded ? "0.72rem" : "0.84rem",
-                  height: embedded ? "32px" : "36px",
+                  fontSize: embedded ? "0.625rem" : "0.75rem",
+                  flexShrink: 0,
+                  height: "auto",
+                  minHeight: embedded ? "32px" : "36px",
                   borderRadius: "8px",
                   px: embedded ? 0.5 : 1.15,
                   "& .MuiChip-label": {
                     px: 0.9,
+                    py: 0.75,
                     fontWeight: 800,
+                    whiteSpace: "nowrap",
                   },
                 }}
               />
@@ -377,7 +385,7 @@ const YearwiseEnergyBilling = ({
               columns={columns}
               tableTitle={`${graphTitle} - ${selectedFYLabel}`}
               tableHeight={500}
-              hideFilter
+              hideFilter={false}
               exportData
             />
           </PageFrame>

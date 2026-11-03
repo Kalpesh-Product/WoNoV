@@ -36,6 +36,11 @@ const virtualOfficeSchema = new mongoose.Schema(
     totalDesks: { type: Number, default: 0 },
 
     channel: { type: String, trim: true },
+    currentStatus: {
+      type: String,
+      enum: ["In Progress", "Yet to start", "On Hold"],
+      default: "In Progress",
+    },
     // Space & Desks
     building: {
       type: mongoose.Schema.Types.ObjectId,

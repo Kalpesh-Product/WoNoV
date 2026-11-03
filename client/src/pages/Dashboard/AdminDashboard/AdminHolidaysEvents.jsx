@@ -91,14 +91,12 @@ const AdminHolidaysEvents = () => {
             <span className="text-title font-pmedium text-primary">
               {`HOLIDAYS & EVENT LIST`}
             </span>
-            <PrimaryButton
-              title={"Add Holiday - Event"}
-              handleSubmit={() => setModalOpen(true)}
-            />
           </div>
 
           <div>
             <AgTable
+              buttonTitle="Add Holiday - Event"
+              handleClick={() => setModalOpen(true)}
               key={holdiayEvents.length}
               search={true}
               searchColumn={"Holiday - Event Name"}

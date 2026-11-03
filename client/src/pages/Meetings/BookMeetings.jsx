@@ -25,6 +25,7 @@ import ConfirmationModal from "../../components/ConfirmationModal";
 import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
+import MeetingTimeDetails from "../../components/MeetingTimeDetails";
 import humanDate from "../../utils/humanDateForamt";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
@@ -33,8 +34,11 @@ import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { IoMdClose } from "react-icons/io";
 import StatusChip from "../../components/StatusChip";
+import { getMeetingDisplayStatus } from "../../utils/meetingStatus";
 
-const BookMeetings = () => {
+const BookMeetings = ({
+  bookingBasePath = "/app/meetings/book-meeting",
+}) => {
   // ------------------------------Initializations ------------------------------------//
   const navigate = useNavigate();
   const locationState = useLocation();
@@ -366,7 +370,7 @@ const BookMeetings = () => {
     const selectedLocationId = selectedLocation.location?.building?._id;
     const selectedRoomId = selectedRoom._id;
     navigate(
-      `/app/meetings/book-meeting/schedule-meeting?location=${selectedLocationName}&meetingRoom=${selectedRoomName}`,
+      `${bookingBasePath}/schedule-meeting?location=${selectedLocationName}&meetingRoom=${selectedRoomName}`,
       {
         state: {
           meetingRoomId: selectedRoomId,
@@ -485,11 +489,11 @@ const BookMeetings = () => {
       </div>
 
       <div>
-        {!isMyMeetingsPending ? (
           <div className="border-default border-borderGray rounded-md p-4">
             <YearWiseTable
               tableTitle={"My Meetings"}
               dateColumn={"date"}
+              loading={isMyMeetingsPending}
               // data={[
               //   ...myMeetings.map((meeting, index) => ({
               //     ...meeting,
@@ -516,7 +520,7 @@ const BookMeetings = () => {
                   date: meeting.date,
                   roomName: meeting.roomName,
                   buildingName: meeting.location?.building?.buildingName,
-                  status: meeting.meetingStatus,
+                  status: getMeetingDisplayStatus(meeting),
                   review: meeting.reviews?.review,
                   reply: meeting.reviews?.reply?.text,
                   locationDisplay: meeting.location
@@ -527,14 +531,6 @@ const BookMeetings = () => {
               search
             />
           </div>
-        ) : (
-          <LinearProgress
-            sx={{
-              backgroundColor: "black",
-              "& .MuiLinearProgress-bar": { backgroundColor: "black" },
-            }}
-          />
-        )}
       </div>
 
       {modalMode === "edit" && (
@@ -760,23 +756,15 @@ const BookMeetings = () => {
                 title="Date"
                 detail={selectedMeeting?.date || "N/A"}
               />
-              <DetalisFormatted
-                title="Time"
-                detail={
-                  selectedMeeting?.startTime && selectedMeeting?.endTime
-                    ? `${dayjs(selectedMeeting.startTime).format("hh:mm A")} - ${dayjs(
-                        selectedMeeting.endTime,
-                      ).format("hh:mm A")}`
-                    : "N/A"
-                }
-              />
-              <DetalisFormatted
-                title="Duration"
-                detail={selectedMeeting?.duration || "N/A"}
+              <MeetingTimeDetails
+                startTime={selectedMeeting?.startTime}
+                endTime={selectedMeeting?.endTime}
+                extendTime={selectedMeeting?.extendTime}
+                duration={selectedMeeting?.duration || "N/A"}
               />
               <DetalisFormatted
                 title="Status"
-                detail={selectedMeeting?.meetingStatus || "N/A"}
+                detail={getMeetingDisplayStatus(selectedMeeting)}
               />
               <DetalisFormatted
                 title="Type"

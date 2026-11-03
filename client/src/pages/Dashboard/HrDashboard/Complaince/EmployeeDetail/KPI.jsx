@@ -123,6 +123,7 @@ const KPI = () => {
         <div>
           {!isLoading ? (
             <AgTable
+              dateColumn="targetDate"
               search={true}
               buttonTitle="Add KPA"
               searchColumn="KPAs"

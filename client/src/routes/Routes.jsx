@@ -70,7 +70,6 @@ import Payslip from "../pages/Dashboard/HrDashboard/Complaince/EmployeeDetail/Pa
 import HolidaysEvents from "../pages/Dashboard/HrDashboard/Complaince/HoildaysEvents";
 import ViewVendors from "../pages/Dashboard/HrDashboard/Complaince/ViewVendors";
 import HrPayroll from "../pages/Dashboard/HrDashboard/Finance/HrPayroll";
-import ViewPayroll from "../pages/Dashboard/HrDashboard/Finance/ViewPayroll";
 import PayrollSummary from "../pages/Dashboard/HrDashboard/Finance/PayrollSummary";
 import PayrollEntry from "../pages/Dashboard/HrDashboard/Finance/PayrollEntry";
 import MonthlyAttendanceSummary from "../pages/Dashboard/HrDashboard/Mixbag/MonthlyAttendanceSummary";
@@ -135,6 +134,13 @@ import AssignedTaskReports from "../pages/Tasks/TaskReports.jsx/AssignedTaskRepo
 import DepartmentTaskReports from "../pages/Tasks/TaskReports.jsx/DepartmentTaskReports";
 import SalesDashboardLayout from "../pages/Dashboard/SalesDashboard/SalesDashboardLayout";
 import SalesDashboard from "../pages/Dashboard/SalesDashboard/SalesDashboard";
+import VirtualOfficeDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/VirtualOfficeDashboard";
+import CoWorkingDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/CoWorkingDashboard";
+import MeetingRoomDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/MeetingRoomDashboard";
+import DayPassDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/DayPassDashboard";
+import WorkationDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/WorkationDashboard";
+import AlternateChannelDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/AlternateChannelDashboard";
+import SidebarDropdown from "../components/SidebarDropdown";
 import TotalRevenueLayout from "../pages/Dashboard/SalesDashboard/TotalRevenueLayout";
 import TotalRevenue from "../pages/Dashboard/SalesDashboard/TotalRevenue";
 import ViewTemplate from "../pages/Dashboard/HrDashboard/Data/ViewTemplate";
@@ -329,6 +335,7 @@ import BillingsLayout from "../pages/Dashboard/FinanceDashboard/Billing/Billings
 import VoucherRequest from "../pages/Dashboard/FinanceDashboard/Billing/VoucherRequest";
 import BudgetRequest from "../pages/Dashboard/FinanceDashboard/Billing/BudgetRequest";
 import BudgetHistory from "../pages/Dashboard/FinanceDashboard/Billing/BudgetHistory";
+import ManageBudgets from "../pages/Dashboard/FinanceDashboard/Billing/ManageBudgets";
 import FinanceBudgetLayout from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudgetLayout";
 import FinanceBudget from "../pages/Dashboard/FinanceDashboard/Finance/FinanceBudget";
 import DeptWiseBudget from "../pages/Dashboard/FinanceDashboard/Finance/DeptWiseBudget";
@@ -726,10 +733,6 @@ export const routes = createBrowserRouter([
                     element: <FinanceLayout />,
                     children: [
 {
-                    path: "finance-3-years-snapshot",
-                    element: <FinanceDashboard1 />,
-                  },
-{
                     path: "biznest-3-years-snapshot",
                     element: <FinanceDashboard1 />,
                   },
@@ -1114,6 +1117,10 @@ export const routes = createBrowserRouter([
                                 element: <BudgetHistory />,
                               },
                               {
+                                path: "manage-budgets",
+                                element: <ManageBudgets />,
+                              },
+                              {
                                 path: "pending-approvals-budget/review-request",
                                 element: <ReviewRequest />,
                               },
@@ -1277,7 +1284,7 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "virtual-office",
-                            element: <VirtualOffice useTaxableAmountForGraph />,
+                            element: <VirtualOffice />,
                           },
                           {
                             path: "workation",
@@ -1597,6 +1604,10 @@ export const routes = createBrowserRouter([
                               {
                                 path: "budget-history",
                                 element: <BudgetHistory />,
+                              },
+                              {
+                                path: "manage-budgets",
+                                element: <ManageBudgets />,
                               },
                               {
                                 path: "pending-approvals-budget/review-request",
@@ -2631,6 +2642,990 @@ export const routes = createBrowserRouter([
                       {
                         path: "",
                         element: <SalesDashboard />,
+                      },
+                      {
+                        path: "virtual-office",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client-onboarding",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_ADD_CLIENT_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeForm />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <VirtualOffice graphOnly dashboardProjectionMode />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client-details",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeClients />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard emptyView />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <VendorTable />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data/vendor-onboard",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <Vendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/data/:id",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DATA_CARD.value,
+                            ]}
+                          >
+                            <ViewVendor />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/client/:clientId",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_CLIENT_DETAILS_CARD
+                                .value,
+                            ]}
+                          >
+                            <ViewClientLayout />
+                          </SidebarDropdown>
+                        ),
+                        children: [
+                          {
+                            path: "client-details",
+                            element: <VirtualOfficeClientDetails />,
+                          },
+                          {
+                            path: "desks",
+                            element: <VirtualOfficeClientDesks />,
+                          },
+                          {
+                            path: "revenue",
+                            element: <VirtualOfficeClientRevenue />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "virtual-office/india-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard occupancyView="india" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/sector-wise-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_SECTOR_WISE_OCCUPANCY
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard occupancyView="sector" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/sourcing-channels",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard channelView="sourcing" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/direct-vs-paid",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard channelView="directPaid" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "virtual-office/pipeline-renewal",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_TABLE
+                                .value,
+                            ]}
+                          >
+                            <VirtualOfficeDashboard pipelineRenewalOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "co-working",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_COWORKING.value,
+                            ]}
+                          >
+                            <CoWorkingDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                            ]}
+                          >
+                            <DayPassDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/annual-revenue-target",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_ANNUAL_REVENUE_TARGET_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="annualRevenueTarget" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/revenues-booked",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_REVENUES_BOOKED_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="revenuesBooked" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/revenue-due",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REVENUE_DUE_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="revenueDue" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/average-day-pass-price",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_AVERAGE_PRICE_CARD
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard cardView="averagePrice" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      ...[
+                        {
+                          path: "active-unique-client",
+                          cardView: "activeUniqueClient",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_ACTIVE_UNIQUE_CLIENT_CARD
+                              .value,
+                        },
+                        {
+                          path: "overall-bookings",
+                          cardView: "overallBookings",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_OVERALL_BOOKINGS_CARD
+                              .value,
+                        },
+                        {
+                          path: "day-pass-bookings",
+                          cardView: "dayPassBookings",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_DAY_PASS_MTD_BOOKINGS_CARD
+                              .value,
+                        },
+                        {
+                          path: "average-monthly-surplus",
+                          cardView: "averageMonthlySurplus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_DAY_PASS_AVERAGE_MONTHLY_SURPLUS_CARD
+                              .value,
+                        },
+                      ].map(({ path, cardView, permission }) => ({
+                        path: `day-pass/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              permission,
+                            ]}
+                          >
+                            <DayPassDashboard cardView={cardView} />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "day-pass/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRevenue
+                              graphOnly
+                              dashboardView
+                              dashboardTitle="DAY PASS REVENUES"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/booking-breakdown",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_BOOKING_BREAKDOWN_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard dayPassChartView="booking" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/external-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_EXTERNAL_CLIENTS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard dayPassChartView="externalClients" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/client-details-today",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_DAY_PASS_CLIENT_DETAILS_TODAY_TABLE
+                                .value,
+                            ]}
+                          >
+                            <DayPassDashboard clientDetailsTodayOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/add-client",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_ADD_CLIENT_MENU.value,
+                            ]}
+                          >
+                            <AddClient />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass/external-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <ExternalClients
+                              tableTitle="Day Pass External Clients"
+                              filterToDayPass={true}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/manage-day-pass/external-clients/visitor-history/:visitorId",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MANAGE_DAY_PASS_MENU.value,
+                            ]}
+                          >
+                            <VisitorHistory />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <VisitorMixBag
+                              basePath="/app/dashboard/sales-dashboard/day-pass/mix-bag"
+                              ignoreCardPermissions
+                              financeCardStyle
+                              closeRoute="/app/dashboard/sales-dashboard/day-pass"
+                              allowedCardTypes={["dayPass", "convert"]}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/repeat-day-pass",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/mix-bag/repeat-day-pass/repeat-external-companies"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/repeat-day-pass/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <RepeatExternalCompaanies />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/visitors-to-client",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <Navigate
+                              to="/app/dashboard/sales-dashboard/day-pass/mix-bag/visitors-to-client/convert-internal-visitors"
+                              replace
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/mix-bag/visitors-to-client/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_MIX_BAG_MENU.value,
+                            ]}
+                          >
+                            <ConvertInternalVisitors />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "day-pass/reports",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS.value,
+                              PERMISSIONS.SALES_VERTICAL_DAY_PASS_REPORTS_MENU.value,
+                            ]}
+                          >
+                            <VisitorReports dayPassOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_REVENUES_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRevenue graphOnly dashboardView />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/monthly-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_INTERNAL_COMMITMENT_UTILIZATION_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="internalCommitmentUtilization" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/internal-external-bookings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_INTERNAL_EXTERNAL_BOOKINGS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="internalExternalBookings" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/booked-hours-cancelled",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_BOOKED_HOURS_CANCELLED_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="bookedHoursCancelled" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/meeting-duration-breakdown",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MEETING_DURATION_BREAKDOWN_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingChartView="meetingDurationBreakdown" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/external-guests",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_EXTERNAL_GUESTS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="externalGuests" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/average-occupancy",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_AVERAGE_OCCUPANCY_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="averageOccupancy" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/availability-status",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_AVAILABILITY_STATUS_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="availabilityStatus" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/busy-time-week",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_BUSY_TIME_WEEK_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard operationalChartView="busyTimeWeek" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/ongoing-upcoming-meetings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_ONGOING_UPCOMING_TABLE
+                                .value,
+                            ]}
+                          >
+                            <MeetingRoomDashboard meetingsTableOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/book-meeting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD
+                                .value,
+                            ]}
+                          >
+                            <BookMeetings
+                              bookingBasePath="/app/dashboard/sales-dashboard/meeting-room/book-meeting"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/book-meeting/schedule-meeting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_BOOK_CARD
+                                .value,
+                            ]}
+                          >
+                            <MeetingFormLayout
+                              calendarRoute="/app/dashboard/sales-dashboard/meeting-room/calendar"
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/manage-bookings",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MANAGE_BOOKINGS_CARD
+                                .value,
+                            ]}
+                          >
+                            <ManageMeetingsLayout
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/manage-bookings"
+                              ignoreTabPermissions
+                            />
+                          </SidebarDropdown>
+                        ),
+                        children: [
+                          {
+                            path: "internal-meetings",
+                            element: <ManageMeetings />,
+                          },
+                          {
+                            path: "external-clients",
+                            element: <ExternalMeetingClients />,
+                          },
+                        ],
+                      },
+                      {
+                        path: "meeting-room/calendar",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_CALENDAR_CARD.value,
+                            ]}
+                          >
+                            <MeetingCalendar />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/mix-bag",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_MIX_BAG_CARD.value,
+                            ]}
+                          >
+                            <VisitorMixBag
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/mix-bag"
+                              ignoreCardPermissions
+                              financeCardStyle
+                              hideAllCards
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/data/*",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM_DATA_CARD
+                                .value,
+                            ]}
+                          >
+                            <Reviews
+                              basePath="/app/dashboard/sales-dashboard/meeting-room/data"
+                              ignoreTabPermissions
+                            />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/reports",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_MEETING_ROOM_REPORTS_CARD.value,
+                            ]}
+                          >
+                            <MeetingReports />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "meeting-room/setting",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_MEETING_ROOM.value,
+                            ]}
+                          >
+                            <MeetingSettings />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "workation",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                            ]}
+                          >
+                            <WorkationDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "alternate-channel",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard />
+                          </SidebarDropdown>
+                        ),
                       },
                       {
                         path: "turnover",
@@ -3785,14 +4780,6 @@ export const routes = createBrowserRouter([
                           {
                             path: "voucher-history",
                             element: <DepartmentVoucherHistory />,
-                          },
-                          {
-                            path: "payroll",
-                            element: <HrPayroll />,
-                          },
-                          {
-                            path: "payroll/:id",
-                            element: <ViewPayroll />,
                           },
                         ],
                       },
@@ -5031,6 +6018,26 @@ export const routes = createBrowserRouter([
                         ),
                       },
                       {
+                        path: "pending-approvals",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.KRAKPA_PENDING_APPROVALS]}
+                            element={<KraKpaPendingApprovals />}
+                          />
+                        ),
+                      },
+                      {
+                        path: "departments",
+                        element: (
+                          <PerformancePermissionRoute
+                            permissions={[PERMISSIONS.KRAKPA_DEPARTMENTS]}
+                            element={<PerformanceAssignKraKpa
+                              memberDestination="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard"
+                            />}
+                          />
+                        ),
+                      },
+                      {
                         path: "individual",
                         children: [
                           {
@@ -5049,12 +6056,14 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
+                                  PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                 ]}
                                 mode="any"
                                 element={
                                   <KraKpaIndividualLayout
                                     section="kra-kpa"
-                                    showPendingApprovals
                                   />
                                 }
                               />
@@ -5084,7 +6093,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -5093,7 +6102,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -5103,7 +6112,7 @@ export const routes = createBrowserRouter([
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
                                   />
@@ -5116,8 +6125,8 @@ export const routes = createBrowserRouter([
                             element: (
                               <PerformancePermissionRoute
                                 permissions={[
-                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={
@@ -5129,20 +6138,24 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
@@ -5178,11 +6191,25 @@ export const routes = createBrowserRouter([
                             children: [
                               {
                                 path: "employee-dashboard",
-                                element: <KraKpaEmployeeDashboard />,
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_EMPLOYEE_DASHBOARD,
+                                    ]}
+                                    element={<KraKpaEmployeeDashboard />}
+                                  />
+                                ),
                               },
                               {
                                 path: "member-pending-approvals",
-                                element: <KraKpaPendingApprovals />,
+                                element: (
+                                  <PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
+                                    ]}
+                                    element={<KraKpaPendingApprovals />}
+                                  />
+                                ),
                               },
                             ],
                           },
@@ -5193,6 +6220,8 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
                                 ]}
                                 mode="any"
                                 element={
@@ -5228,7 +6257,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -5237,7 +6266,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -5249,8 +6278,8 @@ export const routes = createBrowserRouter([
                             element: (
                               <PerformancePermissionRoute
                                 permissions={[
-                                  PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
-                                  PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={
@@ -5265,20 +6294,24 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
@@ -5290,6 +6323,11 @@ export const routes = createBrowserRouter([
                                 permissions={[
                                   PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
                                   PERMISSIONS.KRAKPA_SELF_KRA,
+                                  PERMISSIONS.KRAKPA_DUE_TASK,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS,
+                                  PERMISSIONS.KRAKPA_PENDING_APPROVALS,
+                                  PERMISSIONS.KRAKPA_KPA_RATING,
+                                  PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
                                 ]}
                                 mode="any"
                                 element={<DepartmentPerformanceLayout />}
@@ -5320,7 +6358,7 @@ export const routes = createBrowserRouter([
                                 path: "due-task",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DUE_TASK]}
                                     element={<KraKpaDueTask />}
                                   />
                                 ),
@@ -5329,7 +6367,7 @@ export const routes = createBrowserRouter([
                                 path: "daily-logs",
                                 element: (
                                   <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
+                                    permissions={[PERMISSIONS.KRAKPA_DAILY_LOGS]}
                                     element={<KraKpaDailyLogs />}
                                   />
                                 ),
@@ -5339,7 +6377,7 @@ export const routes = createBrowserRouter([
                                 element: (
                                   <PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_PENDING_APPROVALS,
                                     ]}
                                     element={<KraKpaPendingApprovals />}
                                   />
@@ -5348,20 +6386,24 @@ export const routes = createBrowserRouter([
                               {
                                 path: "kpa-rating",
                                 element: (
-                                  <PerformancePermissionRoute
+<PerformancePermissionRoute
                                     permissions={[
-                                      PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+                                      PERMISSIONS.KRAKPA_KPA_RATING,
                                     ]}
-                                    element={<KraKpaRating type="kpa" />}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
                               {
                                 path: "daily-logs-rating",
                                 element: (
-                                  <PerformancePermissionRoute
-                                    permissions={[PERMISSIONS.KRAKPA_SELF_KRA]}
-                                    element={<KraKpaRating type="daily-logs" />}
+<PerformancePermissionRoute
+                                    permissions={[
+                                      PERMISSIONS.KRAKPA_DAILY_LOGS_RATING,
+                                    ]}
+                                    mode="any"
+                                    element={<KraKpaRating />}
                                   />
                                 ),
                               },
@@ -5606,10 +6648,30 @@ export const routes = createBrowserRouter([
                     ),
                   },
                   {
+                    path: "mix-bag/repeat-bookings",
+                    element: (
+                      <PerformancePermissionRoute
+                        element={<RepeatExternalCompaanies />}
+                        permissions={[
+                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
+                        ]}
+                      />
+                    ),
+                  },
+                  {
+                    path: "mix-bag/repeat-booking",
+                    element: (
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-bookings"
+                        replace
+                      />
+                    ),
+                  },
+                  {
                     path: "mix-bag/repeat-day-pass",
                     element: (
                       <Navigate
-                        to="/app/visitors/mix-bag/repeat-day-pass/repeat-external-companies"
+                        to="/app/visitors/mix-bag/repeat-bookings"
                         replace
                       />
                     ),
@@ -5617,11 +6679,9 @@ export const routes = createBrowserRouter([
                   {
                     path: "mix-bag/repeat-day-pass/repeat-external-companies",
                     element: (
-                      <PerformancePermissionRoute
-                        element={<RepeatExternalCompaanies />}
-                        permissions={[
-                          PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS,
-                        ]}
+                      <Navigate
+                        to="/app/visitors/mix-bag/repeat-bookings"
+                        replace
                       />
                     ),
                   },

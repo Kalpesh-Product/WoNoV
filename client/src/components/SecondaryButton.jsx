@@ -13,6 +13,7 @@ const SecondaryButton = ({
 }) => {
   return (
     <motion.button
+      data-ui-action="text"
       whileHover={{scale:1.050}}
       whileTap={{scale:0.9}}
       disabled={disabled || isLoading} // Disable if loading

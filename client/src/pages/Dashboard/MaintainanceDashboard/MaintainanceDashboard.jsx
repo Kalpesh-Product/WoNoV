@@ -1677,7 +1677,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
       layout: 2,
       widgets: allowedMaintenanceTables.map((config) => (
 
-        <MuiTable
+        <MuiTable showTableControls={false}
           {...config}
         />
       ))

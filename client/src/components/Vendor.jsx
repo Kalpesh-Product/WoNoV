@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Chip, MenuItem, Select, TextField } from "@mui/material";
+import { Autocomplete, Chip, MenuItem, Select, TextField } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PrimaryButton from "./PrimaryButton";
 import SecondaryButton from "./SecondaryButton";
@@ -15,7 +15,6 @@ import useAuth from "../hooks/useAuth";
 import MuiModal from "./MuiModal";
 import DetalisFormatted from "./DetalisFormatted";
 import PageFrame from "./Pages/PageFrame";
-import { useQueryClient } from "@tanstack/react-query";
 import humanDate from "../utils/humanDateForamt";
 import {
   isAlphanumeric,
@@ -28,12 +27,48 @@ import {
 
 const optionalValidation = (validator) => (value) => !value || validator(value);
 
+const VENDOR_TYPE_MANAGER_DEPARTMENT_IDS = new Set([
+  "67b2cf85b9b6ed5cedeb9a2e",
+  "6798ba9de469e809084e2494",
+]);
+const canCreateVendorTypeOption = (user) => {
+  const departments = Array.isArray(user?.departments) ? user.departments : [];
+  const roles = [
+    ...(Array.isArray(user?.role) ? user.role : []),
+    ...(Array.isArray(user?.roles) ? user.roles : []),
+  ];
+  const normalize = (value) => String(value || "").trim().toLowerCase();
+
+  return (
+    departments.some((department) => {
+      const departmentId = String(department?._id || department || "");
+      const departmentName = normalize(
+        department?.name || department?.departmentName,
+      );
+      return (
+        VENDOR_TYPE_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
+        ["top management", "tech", "tech department"].includes(
+          departmentName,
+        )
+      );
+    }) ||
+    roles.some((role) => {
+      const roleTitle = normalize(role?.roleTitle || role?.name || role);
+      return (
+        roleTitle.includes("top management") ||
+        roleTitle.includes("tech department")
+      );
+    })
+  );
+};
+
 const Vendor = () => {
   const { auth } = useAuth();
+  const canCreateVendorType = canCreateVendorTypeOption(auth?.user);
   const navigate = useNavigate();
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
-  const { control, handleSubmit, reset } = useForm({
+  const { control, handleSubmit, reset, setValue } = useForm({
     mode: "onChange",
   });
   const [countries, setCountries] = useState([]);
@@ -42,6 +77,69 @@ const Vendor = () => {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [selectedCity, setSelectedCity] = useState("");
+  const [vendorTypeOptions, setVendorTypeOptions] = useState([]);
+  const [vendorTypeInput, setVendorTypeInput] = useState("");
+
+  const { data: savedVendorTypeOptions = [] } = useQuery({
+    queryKey: ["vendorTypeOptions"],
+    queryFn: async () => {
+      const response = await axios.get("/api/vendors/vendor-type-options");
+      return response.data;
+    },
+  });
+
+  useEffect(() => {
+    setVendorTypeOptions(savedVendorTypeOptions);
+  }, [savedVendorTypeOptions]);
+
+  const { mutate: saveVendorTypeOption, isPending: isSavingVendorTypeOption } =
+    useMutation({
+      mutationFn: async (option) => {
+        const response = await axios.post("/api/vendors/vendor-type-options", {
+          option,
+        });
+        return response.data;
+      },
+      onSuccess: (data) => {
+        setVendorTypeOptions(data.options);
+        queryClient.setQueryData(["vendorTypeOptions"], data.options);
+        toast.success(data.message);
+      },
+      onError: (error) => {
+        toast.error(
+          error?.response?.data?.message ||
+            error?.message ||
+            "Failed to add vendor type",
+        );
+      },
+    });
+
+  const handleAddVendorType = (option = vendorTypeInput) => {
+    if (!canCreateVendorType) return;
+
+    const nextOption = String(option || "").trim();
+    if (!nextOption) return;
+
+    const existingOption = vendorTypeOptions.find(
+      (item) => item.toLowerCase() === nextOption.toLowerCase(),
+    );
+    const selectedOption = existingOption || nextOption;
+
+    if (!existingOption) {
+      setVendorTypeOptions((options) =>
+        [...options, nextOption].sort((first, second) =>
+          first.localeCompare(second, undefined, { sensitivity: "base" }),
+        ),
+      );
+      saveVendorTypeOption(nextOption);
+    }
+
+    setValue("vendorType", selectedOption, {
+      shouldDirty: true,
+      shouldValidate: true,
+    });
+    setVendorTypeInput(selectedOption);
+  };
 
 
   useEffect(() => {
@@ -83,6 +181,7 @@ const Vendor = () => {
     },
     onSuccess: function (data) {
       reset();
+      setVendorTypeInput("");
       toast.success(data.message);
       queryClient.invalidateQueries({
         queryKey: ["vendors", department._id],
@@ -105,6 +204,7 @@ const Vendor = () => {
 
   const handleReset = () => {
     reset();
+    setVendorTypeInput("");
   };
    const validateOptional = (validator) => (value) =>
     !value || validator(value);
@@ -397,7 +497,7 @@ const Vendor = () => {
                     Other Information
                   </span>
                 </div>
-               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-2 gap-4 py-4">
+               <div className="grid grid-cols sm:grid-cols-1 md:grid-cols-3 gap-4 py-4">
                   {/* <Controller
                   name="assesseeOfOtherTerritory"
                   control={control}
@@ -482,6 +582,104 @@ const Vendor = () => {
                         <MenuItem value="Domestic">Domestic</MenuItem>
                         <MenuItem value="International">International</MenuItem>
                       </Select>
+                    )}
+                  />
+                  <Controller
+                    name="vendorType"
+                    control={control}
+                    defaultValue=""
+                    rules={{ required: "Type Of Vendor is required" }}
+                    render={({ field, fieldState: { error } }) => (
+                      <Autocomplete
+                        freeSolo={canCreateVendorType}
+                        selectOnFocus
+                        clearOnBlur={false}
+                        handleHomeEndKeys
+                        options={vendorTypeOptions}
+                        value={field.value || null}
+                        inputValue={vendorTypeInput}
+                        loading={isSavingVendorTypeOption}
+                        onInputChange={(_event, value, reason) => {
+                          if (reason !== "reset") {
+                            setVendorTypeInput(value);
+                          }
+                        }}
+                        onChange={(_event, value) => {
+                          if (value && typeof value === "object") {
+                            handleAddVendorType(value.inputValue);
+                            return;
+                          }
+
+                          if (
+                            value &&
+                            !vendorTypeOptions.some(
+                              (option) =>
+                                option.toLowerCase() === value.toLowerCase(),
+                            )
+                          ) {
+                            handleAddVendorType(value);
+                            return;
+                          }
+
+                          field.onChange(value || "");
+                          setVendorTypeInput(value || "");
+                        }}
+                        filterOptions={(options, params) => {
+                          const typedValue = params.inputValue.trim();
+                          const filteredOptions = options.filter((option) =>
+                            option
+                              .toLowerCase()
+                              .includes(typedValue.toLowerCase()),
+                          );
+                          const alreadyExists = options.some(
+                            (option) =>
+                              option.toLowerCase() === typedValue.toLowerCase(),
+                          );
+
+                          if (
+                            canCreateVendorType &&
+                            typedValue &&
+                            !alreadyExists
+                          ) {
+                            filteredOptions.push({
+                              inputValue: typedValue,
+                              label: `+ Add "${typedValue}"`,
+                            });
+                          }
+
+                          return filteredOptions;
+                        }}
+                        getOptionLabel={(option) =>
+                          typeof option === "string"
+                            ? option
+                            : option.label || ""
+                        }
+                        renderOption={(props, option) => (
+                          <li {...props} key={option.inputValue || option}>
+                            {typeof option === "string" ? (
+                              option
+                            ) : (
+                              <span className="w-full px-1 py-1 text-sm font-pmedium text-[#1E3D73]">
+                                {option.label}
+                              </span>
+                            )}
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            size="small"
+                            label="Type Of Vendor"
+                            placeholder={
+                              canCreateVendorType
+                                ? "Select or Add Vendor Type"
+                                : "Select Vendor Type"
+                            }
+                            error={!!error}
+                            helperText={error?.message}
+                          />
+                        )}
+                      />
                     )}
                   />
                   <Controller

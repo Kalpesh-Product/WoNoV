@@ -194,6 +194,24 @@ input {
   z-index: 999;
 }
 
+/* Keep event labels inside their calendar cell. */
+.fc .fc-event,
+.fc .fc-event-main,
+.fc .fc-event-main-frame,
+.fc .fc-event-title-container {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.fc .fc-event-title {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* time grid changes  */
 
 .fc-theme-standard td, .fc-theme-standard th {

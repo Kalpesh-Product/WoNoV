@@ -12,6 +12,7 @@ import {
   setSelectedDepartmentName,
 } from "../../redux/slices/performanceSlice";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useEffect, useMemo, useState } from "react";
@@ -103,7 +104,7 @@ const PerformanceDepartmentWiseKra = () => {
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["fetchedDepartmentsKra"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks");
@@ -126,7 +127,7 @@ const PerformanceDepartmentWiseKra = () => {
   const isSameSelectedDate = (dateValue) =>
     toLocalIsoDate(dateValue) === selectedDate;
 
-  const { data: departmentWiseKraStats = [] } = useQuery({
+  const { data: departmentWiseKraStats = [], isLoading: isDepartmentStatsLoading } = useQuery({
     queryKey: ["departmentWiseKraStats", selectedDate, visibleDepartmentIds],
     enabled: visibleDepartmentIds.length > 0,
     queryFn: async () => {
@@ -400,12 +401,14 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
         redTitle="KRA "
         TitleAmountRed={totalPendingKra}
       >
-        <NormalBarGraph
+        {isDepartmentsLoading || isDepartmentStatsLoading ? (
+          <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
+        ) : <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={400}
-        />
+        />}
 
         <div className="flex justify-center items-center pb-4">
           {/* <div className="flex items-center"> */}
@@ -442,6 +445,7 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
       <PageFrame>
         <WidgetSection layout={1} padding>
           <AgTable
+           loading={isDepartmentsLoading || isDepartmentStatsLoading}
            data={departmentWiseKraStats.map((item, index) => ({
               srNo: index + 1,
               mongoId: item.departmentId,
@@ -453,6 +457,7 @@ const visibleDepartmentColumns = departmentColumns.filter((column) => {
               teamDailyKra: item.teamDailyKra,
             }))}
             columns={visibleDepartmentColumns}
+            search={false}
             tableTitle={`DEPARTMENT-WISE PENDING KRA - ${formatReadableDate(selectedDate)}`}
             hideFilter
           />

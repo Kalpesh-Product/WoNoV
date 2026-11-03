@@ -200,7 +200,8 @@ const AssignedTickets = ({
               : ticket.ticket?.acceptedBy
                 ? "Accepted Ticket"
                 : "N/A",
-          assignedAt: ticket.assignedAt || "N/A",
+          assignedAt: mostRecentAssignment?.assignedAt || ticket.assignedAt || "N/A",
+          assignedAtRaw: mostRecentAssignment?.assignedAt || ticket.assignedAt || null,
           status: ticket.status || "Pending",
           image: ticket.image?.url || null,
           attachments: ticket.attachments || [],
@@ -564,6 +565,8 @@ const AssignedTickets = ({
       <div className="w-full">
         {!isClosingTicket ? (
           <AgTable
+            loading={isLoading}
+            dateColumn="assignedAt"
             key={rows.length}
             data={rows}
             columns={recievedTicketsColumns}

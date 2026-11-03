@@ -21,6 +21,7 @@ import {
     toIndividualKpaTask,
 } from "./kraKpaIndividualKpaAdapter";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 
@@ -201,7 +202,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
         (month) => month.toLowerCase() === selectedMonth.toLowerCase()
     );
 
-    const { data: memberWiseData = [] } = useQuery({
+    const { data: memberWiseData = [], isLoading: isMemberWiseLoading } = useQuery({
         // Added selectedMonth in queryKey so data refetches on month change
         queryKey: [
             "performanceMemberWiseKraKpa",
@@ -946,7 +947,9 @@ tooltip: {
                 redTitle="KPA"
                 TitleAmountRed={totalPendingKpa}
             >
-                <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+                {isMemberWiseLoading ? (
+                  <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
+                ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />}
                 
                 {/* Dynamic Month Navigation Buttons */}
                 <div className="flex justify-center items-center pb-4">
@@ -981,6 +984,7 @@ tooltip: {
             <PageFrame>
                 <WidgetSection layout={1} padding>
                     <AgTable
+                        loading={isMemberWiseLoading}
                          data={visibleRowData}
                         columns={columns}
                         tableTitle={`${activeDepartmentDisplayName} - MEMBER WISE PENDING KRA & KPA`}

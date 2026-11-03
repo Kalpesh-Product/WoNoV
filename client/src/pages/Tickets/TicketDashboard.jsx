@@ -11,7 +11,6 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import useAuth from "../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import FinanceCard from "../../components/FinanceCard";
-import { CircularProgress } from "@mui/material";
 import { useState } from "react";
 import dayjs from "dayjs";
 import Permissions from "../../components/Permissions/Permissions";
@@ -477,8 +476,16 @@ const TicketDashboard = () => {
               onDateLabelChange={setDateLabel}
             />
           ) : (
-            <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
+            <div className="h-72 animate-pulse rounded-lg bg-gray-100 p-5" aria-label="Loading ticket graph">
+              <div className="mb-5 flex justify-end gap-2">
+                <div className="h-8 w-20 rounded bg-gray-200" />
+                <div className="h-8 w-28 rounded bg-gray-200" />
+              </div>
+              <div className="flex h-[calc(100%-3.25rem)] items-end gap-3 border-b border-l border-gray-300 px-4">
+                {[38, 62, 47, 78, 56, 88, 68, 94, 58, 73, 44, 82].map((height, index) => (
+                  <div key={index} className="flex-1 rounded-t bg-gray-200" style={{ height: `${height}%` }} />
+                ))}
+              </div>
             </div>
           )}
         </WidgetSection>
@@ -569,8 +576,10 @@ const TicketDashboard = () => {
               // isMonetary={item.isMonetary}
             />
           ) : (
-            <div className="h-80 flex items-center justify-center">
-              <CircularProgress />
+            <div className="flex h-80 items-center justify-center" aria-label="Loading ticket chart">
+              <div className="h-52 w-52 animate-pulse rounded-full bg-[conic-gradient(#e5e7eb_0_25%,#f3f4f6_25%_50%,#e5e7eb_50%_75%,#f3f4f6_75%_100%)] p-10">
+                <div className="h-full w-full rounded-full bg-white" />
+              </div>
             </div>
           )}
         </WidgetSection>
@@ -588,6 +597,7 @@ const TicketDashboard = () => {
           highlightNegativePositive={item.highlightNegativePositive}
           disableColorChange={item.disableColorChange}
           descriptionData={item.descriptionData}
+          loading={isLoading}
         />
       )),
     },

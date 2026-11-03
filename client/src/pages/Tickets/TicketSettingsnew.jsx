@@ -14,6 +14,7 @@ import {
   Select,
   MenuItem,
   TextField,
+  Skeleton,
 } from "@mui/material";
 import { IoIosArrowDown } from "react-icons/io";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -196,7 +197,7 @@ const TicketSettingsNew = () => {
   const axios = useAxiosPrivate();
   const [department, setDepartment] = useState(auth.user.departments[0]._id);
 
-  const { data: ticketsData = [], ticketsDataIsLoading } = useQuery({
+  const { data: ticketsData = [], isLoading: ticketsDataIsLoading } = useQuery({
     queryKey: ["other-tickets"],
     queryFn: async () => {
       try {
@@ -282,7 +283,17 @@ const TicketSettingsNew = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {ticketsData.map((row, index) => (
+              {ticketsDataIsLoading
+                ? Array.from({ length: 5 }).map((_, index) => (
+                    <TableRow key={`loading-${index}`}>
+                      {Array.from({ length: 7 }).map((__, cellIndex) => (
+                        <TableCell key={cellIndex} align="center">
+                          <Skeleton variant="text" />
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                : ticketsData.map((row, index) => (
                 <Row
                   key={index}
                   row={{
@@ -294,7 +305,7 @@ const TicketSettingsNew = () => {
                   onApprove={approveTicketMutation.mutate}
                   onReject={rejectTicketMutation.mutate}
                 />
-              ))}
+                ))}
             </TableBody>
           </Table>
         </TableContainer>

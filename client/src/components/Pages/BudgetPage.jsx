@@ -12,7 +12,10 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../utils/currencyFormat";
-import { formatBudgetAmount, sumBudgetAmounts } from "../../utils/budgetAmounts";
+import {
+  formatBudgetAmount,
+  sumBudgetAmounts,
+} from "../../utils/budgetAmounts";
 import { transformBudgetData } from "../../utils/transformBudgetData";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
@@ -76,6 +79,38 @@ const BudgetPage = () => {
   );
   const location = useLocation();
   const department = usePageDepartment();
+  const userRoles = auth?.user?.role || [];
+  const hasFinanceManagerRole = userRoles.some((role) => {
+    const roleTitle = String(role?.roleTitle || role)
+      .trim()
+      .toLowerCase();
+    return (
+      roleTitle.includes("finance") &&
+      (roleTitle.includes("manager") || roleTitle.includes("admin"))
+    );
+  });
+  const hasManagerRole = userRoles.some((role) => {
+    const roleTitle = String(role?.roleTitle || role)
+      .trim()
+      .toLowerCase();
+    return (
+      (roleTitle.includes("manager") || roleTitle.includes("admin")) &&
+      !roleTitle.includes("employee")
+    );
+  });
+  const belongsToFinance = (auth?.user?.departments || []).some((item) =>
+    String(item?.name || "")
+      .trim()
+      .toLowerCase()
+      .startsWith("finance"),
+  );
+  const isFinanceManager =
+    hasFinanceManagerRole || (hasManagerRole && belongsToFinance);
+  const isFinanceBudgetPage = String(department?.name || "")
+    .trim()
+    .toLowerCase()
+    .startsWith("finance");
+  const showManagedDepartment = isFinanceManager && isFinanceBudgetPage;
   const queryClient = useQueryClient();
   const fyFromQuery = useMemo(
     () => new URLSearchParams(location.search).get("fy"),
@@ -84,7 +119,7 @@ const BudgetPage = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(
     fyFromQuery || getCurrentFinancialYearLabel(),
   );
- 
+
   const requestBudgetPermissionByDepartment = {
     "6798bab0e469e809084e249a": PERMISSIONS.FINANCE_REQUEST_BUDGET_BUTTON.value,
     "6798bab9e469e809084e249e": PERMISSIONS.HR_REQUEST_BUDGET_BUTTON.value,
@@ -98,16 +133,15 @@ const BudgetPage = () => {
   };
 
   const requestBudgetPermission =
-    //requestBudgetPermissionByDepartment[department?._id];
-     requestBudgetPermissionByDepartment[department?._id] ||
+    requestBudgetPermissionByDepartment[department?._id] ||
     (department?.name?.toLowerCase() === "cafe"
       ? PERMISSIONS.CAFE_REQUEST_BUDGET_BUTTON.value
       : department?.name?.toLowerCase() === "legal"
-      ? PERMISSIONS.LEGAL_REQUEST_BUDGET_BUTTON.value
-      : undefined);
+        ? PERMISSIONS.LEGAL_REQUEST_BUDGET_BUTTON.value
+        : undefined);
   const canRequestBudget = requestBudgetPermission
     ? hasPermission(requestBudgetPermission)
-    : true;
+    : false;
 
   const [openModal, setOpenModal] = useState(false);
   const { control, handleSubmit, reset, watch } = useForm({
@@ -115,6 +149,7 @@ const BudgetPage = () => {
       expanseName: "",
       expanseType: "",
       paymentType: "",
+      vendor: "",
       building: "",
       unitId: "",
       // projectedAmount: null,
@@ -125,6 +160,19 @@ const BudgetPage = () => {
   });
 
   const selectedBuilding = watch("building");
+
+  const { data: departmentVendors = [], isLoading: vendorsLoading } = useQuery({
+    queryKey: ["budgetVendors", department?._id],
+    enabled: Boolean(department?._id),
+    queryFn: async () => {
+      const response = await axios.get(
+        `/api/vendors/get-vendors/${department._id}`,
+      );
+      return Array.isArray(response.data)
+        ? response.data.filter((vendor) => vendor?.status === "Active")
+        : [];
+    },
+  });
 
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["departmentBudget", department?._id, canManageDeletedBudgets],
@@ -139,11 +187,13 @@ const BudgetPage = () => {
   });
 
   const availableFiscalYears = useMemo(() => {
-    return [...new Set(
-      (hrFinance || [])
-        .map((item) => getFinancialYearLabel(item?.dueDate))
-        .filter(Boolean),
-    )].sort(
+    return [
+      ...new Set(
+        (hrFinance || [])
+          .map((item) => getFinancialYearLabel(item?.dueDate))
+          .filter(Boolean),
+      ),
+    ].sort(
       (fyA, fyB) =>
         Number(fyA.match(/\d{4}/)?.[0] || 0) -
         Number(fyB.match(/\d{4}/)?.[0] || 0),
@@ -236,17 +286,29 @@ const BudgetPage = () => {
           rows: [],
           columns: [
             { field: "expanseName", headerName: "Expense Name", flex: 1 },
-            // { field: "department", headerName: "Department", flex: 200 },
+            ...(showManagedDepartment
+              ? [{ field: "department", headerName: "Department", flex: 1 }]
+              : []),
             { field: "expanseType", headerName: "Expense Type", flex: 1 },
-           // { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
-             { field: "projectedAmount", headerName: "Projected Amount(INR)",  flex: 1,valueFormatter: (params) => inrFormat(params.value), },
+            // { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+            {
+              field: "projectedAmount",
+              headerName: "Projected Amount(INR)",
+              flex: 1,
+              valueFormatter: (params) => inrFormat(params.value),
+            },
             {
               field: "actualAmount",
               headerName: "Actual Amount (INR)",
               flex: 1,
             },
             { field: "dueDate", headerName: "Due Date", flex: 1 },
-            { field: "status", headerName: " Finance Approval Status", flex: 1, pinned: "right", },
+            {
+              field: "status",
+              headerName: " Finance Approval Status",
+              flex: 1,
+              pinned: "right",
+            },
             {
               field: "invoiceStatus",
               headerName: "Invoice Status",
@@ -261,8 +323,12 @@ const BudgetPage = () => {
     // acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      createdAt: item.createdAt,
       expanseName: item.expanseName,
-      department: item.department,
+      departmentId: item.department?._id || department?._id || "",
+      department: item.department?.name || "-",
+      vendorId: item.vendor?._id || "",
+      vendorName: item.vendor?.companyName || item.vendor?.name || "-",
       expanseType: item.expanseType,
       paymentType: item.paymentType || "",
       buildingId: item?.unit?.building?._id || "",
@@ -274,12 +340,17 @@ const BudgetPage = () => {
       projectedAmount: normalizeAmount(item?.projectedAmount),
       actualAmount: normalizeAmount(item?.actualAmount),
       actualAmountRaw: item?.actualAmount ?? "",
+      financeAmountRaw: Number(item?.financeAmount || 0),
+      financeAmountHistory: item?.financeAmountHistory || [],
+      financeAmountDate: item?.financeAmountDate || null,
+      remainingAmountRaw:
+        Number(item?.actualAmount || 0) - Number(item?.financeAmount || 0),
       dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
       dueDateRaw: item?.dueDate,
       status: item.status,
       invoiceAttached: item.invoiceAttached,
       invoiceStatus: item.invoiceAttached ? "Uploaded" : "Not Uploaded",
-       invoiceLinks: item?.invoices?.length
+      invoiceLinks: item?.invoices?.length
         ? item.invoices.map((invoice) => invoice.link).filter(Boolean)
         : item?.invoice?.link
           ? [item.invoice.link]
@@ -326,6 +397,10 @@ const BudgetPage = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   const onSubmit = (data) => {
+    if (!canRequestBudget) {
+      toast.error("You do not have permission to request budget");
+      return;
+    }
     requestBudget(data);
     setOpenModal(false);
     reset();
@@ -333,12 +408,12 @@ const BudgetPage = () => {
 
   // BUDGET NEW START
 
- const [isReady, setIsReady] = useState(false);
+  const [isReady, setIsReady] = useState(false);
 
-const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
-  actual: false,
-  projected: false,
-});
+  const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
+    actual: false,
+    projected: false,
+  });
 
   // const [openModal, setOpenModal] = useState(false);
 
@@ -371,13 +446,16 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
 
       const fiscalYearStart = getFiscalYearStart(date);
       const fiscalYearLabel = getFiscalYearLabel(fiscalYearStart);
-      const bucketIndex = date.month() >= 3 ? date.month() - 3 : date.month() + 9;
+      const bucketIndex =
+        date.month() >= 3 ? date.month() - 3 : date.month() + 9;
 
       if (!fyData[fiscalYearLabel]) {
         fyData[fiscalYearLabel] = Array(12).fill(0);
       }
 
-      fyData[fiscalYearLabel][bucketIndex] += normalizeAmount(item.actualAmount);
+      fyData[fiscalYearLabel][bucketIndex] += normalizeAmount(
+        item.actualAmount,
+      );
     });
 
     return Object.keys(fyData)
@@ -426,70 +504,57 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
       entry.projectedAmount += projectedAmount;
     });
 
-  return Array.from(monthlySummary.values()).flatMap((entry) => {
-  const hasActualAmount = entry.actualAmount > 0;
+    return Array.from(monthlySummary.values()).flatMap((entry) => {
+      const hasActualAmount = entry.actualAmount > 0;
 
-  const actualHidden = hiddenBudgetSeries.actual;
-  const projectedHidden = hiddenBudgetSeries.projected;
+      const actualHidden = hiddenBudgetSeries.actual;
+      const projectedHidden = hiddenBudgetSeries.projected;
 
-  let actualSeriesAmount = 0;
-  let projectedSeriesAmount = 0;
+      let actualSeriesAmount = 0;
+      let projectedSeriesAmount = 0;
 
- 
-  if (!actualHidden && !projectedHidden) {
-    actualSeriesAmount = hasActualAmount
-      ? entry.actualAmount
-      : 0;
+      if (!actualHidden && !projectedHidden) {
+        actualSeriesAmount = hasActualAmount ? entry.actualAmount : 0;
 
-    projectedSeriesAmount = hasActualAmount
-      ? 0
-      : entry.projectedAmount;
-  }
+        projectedSeriesAmount = hasActualAmount ? 0 : entry.projectedAmount;
+      } else if (actualHidden && !projectedHidden) {
+        actualSeriesAmount = 0;
+        projectedSeriesAmount = entry.projectedAmount;
+      } else if (!actualHidden && projectedHidden) {
+        actualSeriesAmount = hasActualAmount ? entry.actualAmount : 0;
 
- 
-  else if (actualHidden && !projectedHidden) {
-    actualSeriesAmount = 0;
-    projectedSeriesAmount = entry.projectedAmount;
-  }
+        projectedSeriesAmount = 0;
+      }
 
-  else if (!actualHidden && projectedHidden) {
-    actualSeriesAmount = hasActualAmount
-      ? entry.actualAmount
-      : 0;
-
-    projectedSeriesAmount = 0;
-  }
-
-
-  return [
-    {
-      dueDate: entry.dueDate,
-      amount: actualSeriesAmount,
-      actualAmount: entry.actualAmount,
-      projectedAmount: entry.projectedAmount,
-      displayAmount: actualSeriesAmount,
-      vertical: "Actual Amount",
-      fiscalYearLabel: entry.fiscalYearLabel,
-      bucketIndex: entry.bucketIndex,
-    },
-    {
-      dueDate: entry.dueDate,
-      amount: projectedSeriesAmount,
-      actualAmount: entry.actualAmount,
-      projectedAmount: entry.projectedAmount,
-      displayAmount: projectedSeriesAmount,
-      vertical: "Projected Amount",
-      fiscalYearLabel: entry.fiscalYearLabel,
-      bucketIndex: entry.bucketIndex,
-    },
-  ];
-});
-}, [
-  hrFinance,
-  department?.name,
-  hiddenBudgetSeries.actual,
-  hiddenBudgetSeries.projected,
-]);
+      return [
+        {
+          dueDate: entry.dueDate,
+          amount: actualSeriesAmount,
+          actualAmount: entry.actualAmount,
+          projectedAmount: entry.projectedAmount,
+          displayAmount: actualSeriesAmount,
+          vertical: "Actual Amount",
+          fiscalYearLabel: entry.fiscalYearLabel,
+          bucketIndex: entry.bucketIndex,
+        },
+        {
+          dueDate: entry.dueDate,
+          amount: projectedSeriesAmount,
+          actualAmount: entry.actualAmount,
+          projectedAmount: entry.projectedAmount,
+          displayAmount: projectedSeriesAmount,
+          vertical: "Projected Amount",
+          fiscalYearLabel: entry.fiscalYearLabel,
+          bucketIndex: entry.bucketIndex,
+        },
+      ];
+    });
+  }, [
+    hrFinance,
+    department?.name,
+    hiddenBudgetSeries.actual,
+    hiddenBudgetSeries.projected,
+  ]);
 
   // const { roundedMax, tickAmount } = useMemo(() => {
   //   const monthlyTotals = budgetGraphData.reduce((acc, item) => {
@@ -526,105 +591,93 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
   // }, [budgetGraphData]);
 
   const { roundedMax, tickAmount } = useMemo(() => {
- 
-  const selectedFYGraphData = budgetGraphData.filter(
-    (item) => item?.fiscalYearLabel === selectedFiscalYear,
-  );
+    const selectedFYGraphData = budgetGraphData.filter(
+      (item) => item?.fiscalYearLabel === selectedFiscalYear,
+    );
 
-  const monthlyTotals = selectedFYGraphData.reduce((acc, item) => {
-    const monthIndex = Number(item?.bucketIndex);
+    const monthlyTotals = selectedFYGraphData.reduce((acc, item) => {
+      const monthIndex = Number(item?.bucketIndex);
 
-    if (!Number.isInteger(monthIndex)) {
+      if (!Number.isInteger(monthIndex)) {
+        return acc;
+      }
+
+      acc[monthIndex] = (acc[monthIndex] || 0) + Number(item?.amount || 0);
+
       return acc;
+    }, {});
+
+    const maxExpenseValue = Math.max(...Object.values(monthlyTotals), 0);
+
+    if (maxExpenseValue <= 0) {
+      return {
+        roundedMax: 10000,
+        tickAmount: 1,
+      };
     }
 
-    acc[monthIndex] =
-      (acc[monthIndex] || 0) + Number(item?.amount || 0);
+    const bufferedMax = maxExpenseValue * 1.1;
 
-    return acc;
-  }, {});
+    const roughStep = bufferedMax / 6;
 
-  const maxExpenseValue = Math.max(
-    ...Object.values(monthlyTotals),
-    0,
-  );
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
 
-  if (maxExpenseValue <= 0) {
+    const normalizedStep = roughStep / magnitude;
+
+    let step;
+
+    if (normalizedStep <= 1) {
+      step = magnitude;
+    } else if (normalizedStep <= 2) {
+      step = 2 * magnitude;
+    } else if (normalizedStep <= 5) {
+      step = 5 * magnitude;
+    } else {
+      step = 10 * magnitude;
+    }
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
+    const safeTickAmount = Math.max(Math.round(safeRoundedMax / step), 1);
+
     return {
-      roundedMax: 10000,
-      tickAmount: 1,
+      roundedMax: safeRoundedMax,
+      tickAmount: safeTickAmount,
     };
-  }
-
- 
-  const bufferedMax = maxExpenseValue * 1.1;
-
-  
-  const roughStep = bufferedMax / 6;
-
-  const magnitude =
-    10 ** Math.floor(Math.log10(roughStep));
-
-  const normalizedStep = roughStep / magnitude;
-
-  let step;
-
-  if (normalizedStep <= 1) {
-    step = magnitude;
-  } else if (normalizedStep <= 2) {
-    step = 2 * magnitude;
-  } else if (normalizedStep <= 5) {
-    step = 5 * magnitude;
-  } else {
-    step = 10 * magnitude;
-  }
-
-  const safeRoundedMax =
-    Math.ceil(bufferedMax / step) * step;
-
-  const safeTickAmount = Math.max(
-    Math.round(safeRoundedMax / step),
-    1,
-  );
-
-  return {
-    roundedMax: safeRoundedMax,
-    tickAmount: safeTickAmount,
-  };
-}, [budgetGraphData, selectedFiscalYear]);
+  }, [budgetGraphData, selectedFiscalYear]);
 
   const expenseOptions = {
-   chart: {
-  type: "bar",
-  toolbar: { show: false },
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
 
-  events: {
-  legendClick: (_chartContext, seriesIndex) => {
-    setHiddenBudgetSeries((currentState) => {
-      // Series index 0 = Actual Amount
-      if (seriesIndex === 0) {
-        return {
-          ...currentState,
-          actual: !currentState.actual,
-        };
-      }
+      events: {
+        legendClick: (_chartContext, seriesIndex) => {
+          setHiddenBudgetSeries((currentState) => {
+            // Series index 0 = Actual Amount
+            if (seriesIndex === 0) {
+              return {
+                ...currentState,
+                actual: !currentState.actual,
+              };
+            }
 
-      // Series index 1 = Projected Amount
-      if (seriesIndex === 1) {
-        return {
-          ...currentState,
-          projected: !currentState.projected,
-        };
-      }
+            // Series index 1 = Projected Amount
+            if (seriesIndex === 1) {
+              return {
+                ...currentState,
+                projected: !currentState.projected,
+              };
+            }
 
-      return currentState;
-    });
-  },
-},
+            return currentState;
+          });
+        },
+      },
 
-  stacked: true,
-  fontFamily: "Poppins-Regular, Arial, sans-serif",
-},
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+    },
     colors: ["#54C4A7", "#C4C4C4"],
     plotOptions: {
       bar: {
@@ -651,19 +704,18 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
             //   return inrFormat(Number(total || 0));
             // },
             formatter: (_, config) => {
-  const total =
-    Number(
-      config?.w?.globals?.stackedSeriesTotals?.[
-        config?.dataPointIndex
-      ] || 0,
-    );
+              const total = Number(
+                config?.w?.globals?.stackedSeriesTotals?.[
+                  config?.dataPointIndex
+                ] || 0,
+              );
 
-  if (total <= 0) {
-    return "";
-  }
+              if (total <= 0) {
+                return "";
+              }
 
-  return inrFormat(total);
-},
+              return inrFormat(total);
+            },
           },
         },
       },
@@ -696,51 +748,43 @@ const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
         },
       },
     },
-//   legend: {
-//   show: true,
-//   position: "top",
+    //   legend: {
+    //   show: true,
+    //   position: "top",
 
-//   // ApexCharts ka default series hide/show band karo.
-//   // Hum custom state se graph switch kar rahe hain.
-//   onItemClick: {
-//     toggleDataSeries: false,
-//   },
-// },
-legend: {
-  show: true,
-  position: "top",
-  onItemClick: {
-    toggleDataSeries: false,
-  },
+    //   // ApexCharts ka default series hide/show band karo.
+    //   // Hum custom state se graph switch kar rahe hain.
+    //   onItemClick: {
+    //     toggleDataSeries: false,
+    //   },
+    // },
+    legend: {
+      show: true,
+      position: "top",
+      onItemClick: {
+        toggleDataSeries: false,
+      },
 
-  labels: {
-    colors: [
-      // Actual legend text
-      hiddenBudgetSeries.actual
-        ? "#D5D5D5"
-        : "#4B4B4B",
+      labels: {
+        colors: [
+          // Actual legend text
+          hiddenBudgetSeries.actual ? "#D5D5D5" : "#4B4B4B",
 
-      // Projected legend text
-      hiddenBudgetSeries.projected
-        ? "#D5D5D5"
-        : "#4B4B4B",
-    ],
-  },
+          // Projected legend text
+          hiddenBudgetSeries.projected ? "#D5D5D5" : "#4B4B4B",
+        ],
+      },
 
-  markers: {
-    fillColors: [
-      // Actual marker
-      hiddenBudgetSeries.actual
-        ? "#E1F5EF"
-        : "#54C4A7",
+      markers: {
+        fillColors: [
+          // Actual marker
+          hiddenBudgetSeries.actual ? "#E1F5EF" : "#54C4A7",
 
-      // Projected marker
-      hiddenBudgetSeries.projected
-        ? "#E2E2E2"
-        : "#C4C4C4",
-    ],
-  },
-},
+          // Projected marker
+          hiddenBudgetSeries.projected ? "#E2E2E2" : "#C4C4C4",
+        ],
+      },
+    },
     tooltip: {
       enabled: true,
       shared: true,
@@ -760,31 +804,30 @@ legend: {
 
   const selectedFYActualAmount = useMemo(
     () =>
-      sumBudgetAmounts((hrFinance || []).filter(
-        (item) => getFinancialYearLabel(item?.dueDate) === selectedFiscalYear,
-      )),
+      sumBudgetAmounts(
+        (hrFinance || []).filter(
+          (item) => getFinancialYearLabel(item?.dueDate) === selectedFiscalYear,
+        ),
+      ),
     [hrFinance, selectedFiscalYear],
   );
 
   const selectedFYProjectedAmount = useMemo(
     () =>
-      (hrFinance || []).reduce(
-        (acc, item) => {
-          if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
-            return acc;
-          }
+      (hrFinance || []).reduce((acc, item) => {
+        if (getFinancialYearLabel(item?.dueDate) !== selectedFiscalYear) {
+          return acc;
+        }
 
-          const projectedAmount =
-            normalizeAmount(item?.projectedAmount) ||
-            (department?.name?.toLowerCase() === "cafe"
-              ? sumParticularAmounts(item?.particulars) ||
-                sumParticularAmounts(item?.finance?.particulars)
-              : 0);
+        const projectedAmount =
+          normalizeAmount(item?.projectedAmount) ||
+          (department?.name?.toLowerCase() === "cafe"
+            ? sumParticularAmounts(item?.particulars) ||
+              sumParticularAmounts(item?.finance?.particulars)
+            : 0);
 
-          return acc + projectedAmount;
-        },
-        0,
-      ),
+        return acc + projectedAmount;
+      }, 0),
     [hrFinance, selectedFiscalYear, department?.name],
   );
 
@@ -814,12 +857,15 @@ legend: {
 
       <AllocatedBudget
         financialData={financialData}
+        sortRowsByCreatedAt
         noInvoice={false}
         enableActionMenu
         filterApprovedAndPendingOnly
         newTitle="BIZ Nest EXPENSE DETAILS"
         exportData
-        onRequestBudget={canRequestBudget ? () => setOpenModal(true) : undefined}
+        onRequestBudget={
+          canRequestBudget ? () => setOpenModal(true) : undefined
+        }
       />
       <MuiModal
         title="Request Budget"
@@ -886,6 +932,30 @@ legend: {
                   </MenuItem>
                   <MenuItem value="One Time">One Time</MenuItem>
                   {/* <MenuItem value="Recurring">Recurring</MenuItem> */}
+                </Select>
+              </FormControl>
+            )}
+          />
+
+          <Controller
+            name="vendor"
+            control={control}
+            render={({ field, fieldState }) => (
+              <FormControl fullWidth error={!!fieldState.error}>
+                <Select
+                  {...field}
+                  size="small"
+                  displayEmpty
+                  disabled={vendorsLoading}
+                >
+                  <MenuItem value="">
+                    {vendorsLoading ? "Loading Vendors..." : "Vendor"}
+                  </MenuItem>
+                  {departmentVendors.map((vendor) => (
+                    <MenuItem key={vendor._id} value={vendor._id}>
+                      {vendor.companyName || vendor.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             )}

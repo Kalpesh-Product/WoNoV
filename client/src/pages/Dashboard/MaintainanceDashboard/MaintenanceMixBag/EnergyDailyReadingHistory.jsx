@@ -72,7 +72,7 @@ const EnergyDailyReadingHistory = () => {
           columns={columns}
           search
           exportData
-          hideFilter
+          hideFilter={false}
           tableTitle={`${selectedUnitName} - ENERGY READING HISTORY`}
         />
       </PageFrame>

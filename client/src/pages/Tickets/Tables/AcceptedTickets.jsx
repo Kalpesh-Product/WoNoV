@@ -4,8 +4,6 @@ import {
   Checkbox,
   FormControlLabel,
   Chip,
-  CircularProgress,
-  LinearProgress,
   MenuItem,
   TextField,
   Typography,
@@ -389,13 +387,9 @@ const AcceptedTickets = ({
         </span>
       </div>
       <div className="w-full">
-        {isLoading && (
-          <div className="flex justify-center">
-            <LinearProgress color="black" />
-          </div>
-        )}
-        {!isLoading ? (
-          <AgTable
+        <AgTable
+            loading={isLoading}
+            dateColumn="acceptedAt"
             key={acceptedTickets.length}
             search
             // hideFilter
@@ -441,9 +435,6 @@ const AcceptedTickets = ({
             ]}
             columns={recievedTicketsColumns}
           />
-        ) : (
-          []
-        )}
       </div>
 
       <MuiModal

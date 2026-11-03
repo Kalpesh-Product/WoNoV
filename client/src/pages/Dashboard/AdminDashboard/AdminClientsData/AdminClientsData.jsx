@@ -276,7 +276,7 @@ const AdminClientsData = () => {
               })),
             ]}
             columns={[...viewEmployeeColumns, ...hiddenClientDetailColumns]}
-            headerActions={
+            summaryContent={
               <div className="flex items-center gap-2 flex-wrap">
                 <StatusChip status="Total" count={clientStats.total} variant="count" />
                 <StatusChip status="Active" count={clientStats.active} variant="count" />

@@ -1,14 +1,20 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Chip } from "@mui/material";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import dayjs from "dayjs";
 import PageFrame from "./PageFrame";
 import YearWiseTable from "../Tables/YearWiseTable";
+import DetalisFormatted from "../DetalisFormatted";
+import MuiModal from "../MuiModal";
+import PaidAmountHistory from "../PaidAmountHistory";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
 import { inrFormat } from "../../utils/currencyFormat";
 import humanDate from "../../utils/humanDateForamt";
 
 const DepartmentBudgetHistory = () => {
+  const [viewDetails, setViewDetails] = useState(null);
   const axios = useAxiosPrivate();
   const department = usePageDepartment();
   const departmentTitle = department?.name || "Department";
@@ -38,6 +44,8 @@ const DepartmentBudgetHistory = () => {
     { field: "expanseType", headerName: "Expense Type", flex: 1 },
     { field: "paymentType", headerName: "Payment Type", flex: 1 },
     { field: "projectedAmount", headerName: "Projected Amount (INR)", flex: 1 },
+    { field: "financeAmount", headerName: "Paid Amount (INR)", flex: 1 },
+    { field: "remainingAmount", headerName: "Remaining Amount (INR)", flex: 1 },
     { field: "actualAmount", headerName: "Actual Amount (INR)", flex: 1 },
     { field: "dueDate", headerName: "Due Date", flex: 1 },
     {
@@ -72,6 +80,32 @@ const DepartmentBudgetHistory = () => {
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      width: 80,
+      sortable: false,
+      cellRenderer: (params) => (
+        <button
+          type="button"
+          className="text-subtitle text-primary cursor-pointer"
+          title="View budget details"
+          aria-label="View budget details"
+          onClick={() =>
+            setViewDetails({
+              ...params.data,
+              srNo:
+                params.node?.rowIndex == null
+                  ? params.data.srNo
+                  : params.node.rowIndex + 1,
+            })
+          }
+        >
+          <MdOutlineRemoveRedEye />
+        </button>
+      ),
+    },
   ];
 
   const tableData = budgetHistory
@@ -95,14 +129,25 @@ const DepartmentBudgetHistory = () => {
       //   hasBudgetShape && !hasVoucherData && isApprovedOrRejected && isExtraBudget
       // );
     })
-    .map((item) => ({
-      ...item,
-      projectedAmount: inrFormat(item?.projectedAmount || 0),
-      actualAmount: inrFormat(item?.actualAmount || 0),
-      dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
-      dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
-      status: item?.status || "-",
-    }));
+    .map((item) => {
+      const projectedAmount = Number(item?.projectedAmount || 0);
+      const financeAmount = Number(item?.financeAmount || 0);
+      const actualAmount = Number(item?.actualAmount || 0);
+
+      return {
+        ...item,
+        financeAmountRaw: financeAmount,
+        actualAmountRaw: actualAmount,
+        remainingAmountRaw: actualAmount - financeAmount,
+        projectedAmount: inrFormat(projectedAmount),
+        financeAmount: inrFormat(financeAmount),
+        remainingAmount: inrFormat(actualAmount - financeAmount),
+        actualAmount: inrFormat(actualAmount),
+        dueDate: item?.dueDate ? humanDate(item.dueDate) : "-",
+        dueDateRaw: item?.dueDate ? dayjs(item.dueDate).toISOString() : null,
+        status: item?.status || "-",
+      };
+    });
 
   return (
     <PageFrame>
@@ -116,6 +161,39 @@ const DepartmentBudgetHistory = () => {
         isLoading={isBudgetLoading}
         exportData
       />
+      {viewDetails && (
+        <MuiModal
+          open={Boolean(viewDetails)}
+          onClose={() => setViewDetails(null)}
+          title={
+            <span className="text-subtitle font-pmedium text-primary my-4 uppercase">
+              Budget Details
+            </span>
+          }
+        >
+          <div className="space-y-3">
+            <DetalisFormatted title="Sr No" detail={viewDetails.srNo} />
+            <DetalisFormatted title="Expense Name" detail={viewDetails.expanseName || "-"} />
+            <DetalisFormatted title="Expense Type" detail={viewDetails.expanseType || "-"} />
+            <DetalisFormatted title="Vendor" detail={viewDetails.vendor?.companyName || viewDetails.vendor?.name || "-"} />
+            <DetalisFormatted title="Paid Amount" detail={`INR ${inrFormat(viewDetails.financeAmountRaw || 0)}`} />
+            <DetalisFormatted
+              title="Paid Amount History"
+              detail={
+                <PaidAmountHistory
+                  history={viewDetails.financeAmountHistory}
+                  currentAmount={viewDetails.financeAmountRaw}
+                  currentDate={viewDetails.financeAmountDate}
+                />
+              }
+            />
+            <DetalisFormatted title="Remaining Amount" detail={`INR ${inrFormat(viewDetails.remainingAmountRaw ?? (Number(viewDetails.actualAmountRaw || 0) - Number(viewDetails.financeAmountRaw || 0)))}`} />
+            <DetalisFormatted title="Actual Amount" detail={`INR ${inrFormat(viewDetails.actualAmountRaw || 0)}`} />
+            <DetalisFormatted title="Due Date" detail={viewDetails.dueDate || "-"} />
+            <DetalisFormatted title="Approval Status" detail={viewDetails.status || "-"} />
+          </div>
+        </MuiModal>
+      )}
     </PageFrame>
   );
 };

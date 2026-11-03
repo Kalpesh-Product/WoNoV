@@ -12,6 +12,7 @@ import {
   setSelectedDepartmentName,
 } from "../../redux/slices/performanceSlice";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useMemo, useState } from "react";
@@ -75,7 +76,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["fetchedDepartments", selectedMonth],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks", {
@@ -120,7 +121,10 @@ const PerformanceDepartmentWiseKraKpa = () => {
     .filter(Boolean)
     .sort();
 
-  const { data: departmentWiseDepartmentKpaStats = [] } = useQuery({
+  const {
+    data: departmentWiseDepartmentKpaStats = [],
+    isLoading: isDepartmentStatsLoading,
+  } = useQuery({
     queryKey: [
       "departmentWiseDepartmentKpaStats",
       modulePath,
@@ -455,12 +459,14 @@ tooltip: {
         redTitle="KPA "
         TitleAmountRed={totalPendingKpa}
       >
-        <NormalBarGraph
+        {isDepartmentsLoading || isDepartmentStatsLoading ? (
+          <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
+        ) : <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={400}
-        />
+        />}
 
         <div className="flex justify-center items-center pb-4">
           {/* <div className="flex items-center"> */}
@@ -498,6 +504,7 @@ tooltip: {
       <PageFrame>
         <WidgetSection layout={1} padding>
           <AgTable
+              loading={isDepartmentsLoading || isDepartmentStatsLoading}
               data={visibleDepartments.map((item, index) => ({
               srNo: index + 1,
               mongoId: item.department?._id,
@@ -510,6 +517,7 @@ tooltip: {
                   ?.pendingKraCount || 0,
             }))}
             columns={departmentColumns}
+            search={false}
             tableTitle="DEPARTMENT-WISE PENDING KPA & KRA"
             hideFilter
           />

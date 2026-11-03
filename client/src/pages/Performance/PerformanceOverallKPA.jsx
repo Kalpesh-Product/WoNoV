@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../components/WidgetSection";
 import NormalBarGraph from "../../components/graphs/NormalBarGraph";
+import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import AgTable from "../../components/AgTable";
 import SecondaryButton from "../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
@@ -31,7 +32,7 @@ const PerformanceOverallKPA = () => {
     const clickedMonth = location.state?.month;
     const [selectedMonth, setSelectedMonth] = useState(clickedMonth || fiscalMonths[0]);
 
-    const { data: kpaTasksRaw = [] } = useQuery({
+    const { data: kpaTasksRaw = [], isLoading: isKpaTasksLoading } = useQuery({
         queryKey: ["performanceKpaTasks"],
         queryFn: async () => {
             const response = await axios.get("/api/performance/get-kpa-tasks");
@@ -223,7 +224,9 @@ const PerformanceOverallKPA = () => {
                 redTitle="remaining"
                 TitleAmountRed={totalRemaining}
             >
-                <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />
+                {isKpaTasksLoading ? (
+                    <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
+                ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />}
 
                 <div className="flex justify-center items-center pb-4">
                     <div className="flex items-center">
@@ -254,6 +257,7 @@ const PerformanceOverallKPA = () => {
                 TitleAmount={`TOTAL Tasks : ${tableData.reduce((sum, item) => sum + item.totalTasks, 0)}`}
             >
                 <AgTable
+                    loading={isKpaTasksLoading}
                     columns={[
                         {
                             headerName: "Sr No",
@@ -281,6 +285,7 @@ const PerformanceOverallKPA = () => {
                         { field: "shortFall", headerName: "Shortfall (%)", flex: 1 },
                     ]}
                     data={tableData}
+                    search={false}
                     tableHeight={300}
                     hideFilter
                 />

@@ -89,6 +89,7 @@ const VendorTable = () => {
      {field: "city", headerName: "City", flex: 1,hide: true},
      {field: "gstIn", headerName: "GSTIN", flex: 1,hide: true},
      {field: "partyType", headerName: "Party Type", flex: 1,hide: true},
+     {field: "vendorType", headerName: "Type Of Vendor", flex: 1,hide: true},
      {field: "ifscCode", headerName: "IFSC Code", flex: 1,hide: true},
      {field: "bankName", headerName: "Bank Name", flex: 1,hide: true},
      {field: "branchName", headerName: "Branch Name", flex: 1,hide: true},
@@ -153,6 +154,7 @@ const VendorTable = () => {
       country: getCountryName(vendor.country),
       countryCode: vendor.country,
       partyType: vendor?.partyType,
+      vendorType: vendor?.vendorType,
       status: vendor.status,
       departmentId: vendor.departmentId,
       company: vendor.company,
@@ -160,6 +162,7 @@ const VendorTable = () => {
       mobile: vendor.mobile,
       companyName: vendor.companyName,
       onboardingDate: humanDate(vendor.onboardingDate),
+      onboardingDateRaw: vendor.onboardingDate || null,
       city: vendor.city,
       pinCode: vendor.pinCode,
       panIdNo: vendor.panIdNo,
@@ -187,6 +190,8 @@ const VendorTable = () => {
       <PageFrame>
         <div className="h-[65vh] overflow-y-auto pr-2 sm:pr-4">
           <AgTable
+            loading={isVendorFetchingPending}
+            dateColumn="onboardingDate"
             search={true}
             searchColumn={"Vendor"}
             tableTitle={"List of Vendors"}
@@ -233,6 +238,10 @@ const VendorTable = () => {
             <DetalisFormatted
               title="Party Type"
               detail={selectedVendor?.partyType}
+            />
+            <DetalisFormatted
+              title="Type Of Vendor"
+              detail={selectedVendor?.vendorType}
             />
             <DetalisFormatted title="Status" detail={selectedVendor?.status} />
             {/* <DetalisFormatted

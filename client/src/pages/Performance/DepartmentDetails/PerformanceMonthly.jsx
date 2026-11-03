@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, CircularProgress, TextField } from "@mui/material";
+import { Chip, TextField } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -17,6 +17,7 @@ import dayjs from "dayjs";
 import { useEffect, useMemo, useRef, useState } from "react";
 // import { FaCheck } from "react-icons/fa6";
 import { queryClient } from "../../../main";
+import PerformanceTableSkeleton from "../PerformanceTableSkeleton";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
@@ -757,7 +758,7 @@ const PerformanceMonthly = () => {
             </WidgetSection>
           ) : (
             <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
+              <PerformanceTableSkeleton />
             </div>
           )}
         </PageFrame>
@@ -798,7 +799,7 @@ const PerformanceMonthly = () => {
             </WidgetSection>
           ) : (
             <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
+                <PerformanceTableSkeleton />
             </div>
           )}
         </PageFrame>

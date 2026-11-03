@@ -79,27 +79,25 @@ const PaidUnpaidLeaveReport = () => {
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-title font-pmedium uppercase text-primary">Paid &amp; Unpaid Leave Report</h1>
-          <div className="flex items-center gap-3">
-            <PrimaryButton
-              title="Export"
-              handleSubmit={() =>
-                tableRef.current?.api?.exportDataAsCsv({
-                  fileName: "Paid & Unpaid Leave Report.csv",
-                })
-              }
-            />
-            <button
+        </div>
+        {isLoading && !rows.length ? <Skeleton width="100%" height={420} /> : (
+          <AgTable
+            advancedFilterAction={<button
               type="button"
               onClick={() => setFilterOpen(true)}
               className="rounded-full border border-borderGray p-2.5 text-primary hover:bg-gray-100"
               aria-label="Open advanced report filters"
             >
               <IoFilter size={19} />
-            </button>
-          </div>
-        </div>
-        {isLoading && !rows.length ? <Skeleton width="100%" height={420} /> : (
-          <AgTable
+            </button>}
+            exportAction={<PrimaryButton
+              title="Export"
+              handleSubmit={() =>
+                tableRef.current?.api?.exportDataAsCsv({
+                  fileName: "Paid & Unpaid Leave Report.csv",
+                })
+              }
+            />}
             data={rows}
             columns={columns}
             tableRef={tableRef}

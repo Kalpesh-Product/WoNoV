@@ -699,6 +699,7 @@ const fetchMeetingRevenueReportService = async ({
       meetingAgenda: item.meeting?.agenda || "",
       meetingStartTime: item.meeting?.startTime || null,
       meetingEndTime: item.meeting?.endTime || null,
+      meetingExtendTime: item.meeting?.extendTime || null,
       meetingStatus: item.meeting?.status || "N/A",
       meetingTypeRaw: item.meeting?.meetingType || item.meetingType || "N/A",
       meetingHousekeepingStatus: item.meeting?.houeskeepingStatus || "N/A",

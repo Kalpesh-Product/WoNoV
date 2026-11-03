@@ -170,6 +170,7 @@ const RepeatDayPass = () => {
           tableTitle="Repeat Day Pass"
           data={repeatDayPassRows}
           columns={columns}
+          loading={isPending}
         />
       </PageFrame>
 
@@ -286,9 +287,6 @@ const RepeatDayPass = () => {
         </form>
       </MuiModal>
 
-      {isPending && (
-        <p className="px-2 text-sm text-gray-500">Loading data...</p>
-      )}
     </div>
   );
 };

@@ -1,4 +1,21 @@
 const mongoose = require("mongoose");
+const attendanceImageSchema = new mongoose.Schema(
+  {
+    url: String,
+    publicId: String,
+  },
+  { _id: false },
+);
+
+const breakCorrectionSchema = new mongoose.Schema(
+  {
+    startBreak: Date,
+    endBreak: Date,
+    startImage: attendanceImageSchema,
+    endImage: attendanceImageSchema,
+  },
+  { _id: false },
+);
 
 const attendanceCorrectionSchema = new mongoose.Schema(
   {
@@ -8,16 +25,7 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     outTime: {
       type: Date,
     },
-    correctedBreaks: [
-      {
-        startBreak: {
-          type: Date,
-        },
-        endBreak: {
-          type: Date,
-        },
-      },
-    ],
+    correctedBreaks: [breakCorrectionSchema],
     //original times
     originalInTime: {
       type: Date,
@@ -25,16 +33,7 @@ const attendanceCorrectionSchema = new mongoose.Schema(
     originalOutTime: {
       type: Date,
     },
-    originalBreaks: [
-      {
-        startBreak: {
-          type: Date,
-        },
-        endBreak: {
-          type: Date,
-        },
-      },
-    ],
+    originalBreaks: [breakCorrectionSchema],
     reason: {
       type: String,
     },

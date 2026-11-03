@@ -11,6 +11,11 @@ const budgetSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Department",
     },
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Vendor",
+      default: null,
+    },
     expanseName: {
       type: String,
     },
@@ -33,6 +38,25 @@ const budgetSchema = new mongoose.Schema(
     actualAmountDate: {
       type: Date,
       default: null,
+    },
+    financeAmount: {
+      type: Number,
+      default: 0,
+    },
+    financeAmountDate: {
+      type: Date,
+      default: null,
+    },
+    financeAmountHistory: {
+      type: [
+        {
+          previousAmount: { type: Number, default: 0 },
+          amount: { type: Number, required: true },
+          changedAt: { type: Date, default: Date.now },
+          changedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData" },
+        },
+      ],
+      default: [],
     },
     unit: {
       type: mongoose.Schema.Types.ObjectId,

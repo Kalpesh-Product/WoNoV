@@ -6,7 +6,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import humanTime from "../../../utils/humanTime";
 import humanDate from "../../../utils/humanDateForamt";
-import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
 import PrimaryButton from "../../../components/PrimaryButton";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import PageFrame from "../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
+import PerformanceTableSkeleton from "../PerformanceTableSkeleton";
 import { isAlphanumeric, noOnlyWhitespace } from "../../../utils/validators";
 import {
     setSelectedDepartment,
@@ -989,7 +990,7 @@ const PerformanceIndividualKpa = () => {
                         </WidgetSection>
                     ) : (
                         <div className="h-72 flex items-center justify-center">
-                            <CircularProgress />
+                            <PerformanceTableSkeleton />
                         </div>
                     )}
                 </PageFrame>
@@ -1027,7 +1028,7 @@ const PerformanceIndividualKpa = () => {
                         </WidgetSection>
                     ) : (
                         <div className="h-72 flex items-center justify-center">
-                            <CircularProgress />
+                            <PerformanceTableSkeleton />
                         </div>
                     )}
                 </PageFrame>

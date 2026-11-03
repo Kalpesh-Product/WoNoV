@@ -326,8 +326,8 @@ const ComplianceData = () => {
           tableTitle={`Compliance Documents`}
           buttonTitle="Add Document"
           // tableHeight={300}
-          hideFilter
-          search={fileRows.length >= 10}
+          hideFilter={false}
+          search
           loading={isLoading}
           handleClick={openAddModal}
         />

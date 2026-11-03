@@ -2353,7 +2353,7 @@ const totalUtilised = useMemo(() => {
 
     {
       layout: 2,
-      widgets: allowedTables.map((config) => <MuiTable {...config} />),
+      widgets: allowedTables.map((config) => <MuiTable showTableControls={false} {...config} />),
     },
     {
       layout: 2,
@@ -2440,7 +2440,7 @@ const totalUtilised = useMemo(() => {
     // },
     {
       layout: 1,
-      widgets: allowedTables2.map((config) => <MuiTable {...config} />),
+      widgets: allowedTables2.map((config) => <MuiTable showTableControls={false} {...config} />),
     },
   ];
 

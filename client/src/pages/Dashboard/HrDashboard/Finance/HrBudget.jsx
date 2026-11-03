@@ -269,17 +269,10 @@ const HrBudget = () => {
           </Suspense>
         </div>
 
-        <div className="flex justify-end">
-          <PrimaryButton
-            title={"Request Budget"}
-            padding="px-5 py-2"
-            fontSize="text-base"
-            handleSubmit={() => setOpenModal(true)}
-          />
-        </div>
 
         {!isHrLoading ? (
           <AllocatedBudget
+            onRequestBudget={() => setOpenModal(true)}
             financialData={financialData}
             isLoading={isHrLoading}
             variant={"fullWidth"}

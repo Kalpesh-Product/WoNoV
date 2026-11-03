@@ -4,6 +4,7 @@ import React, {
   useCallback,
   useRef,
   useEffect,
+  useContext,
 } from "react";
 import { AgGridReact } from "ag-grid-react";
 import { createPortal } from "react-dom";
@@ -17,7 +18,18 @@ import { MdFilterAlt, MdFilterAltOff } from "react-icons/md";
 import { IoIosSearch } from "react-icons/io";
 import { IoFilter } from "react-icons/io5";
 import TableDateFilter from "./TableDateFilter";
-import { filterTableRows, getTableDateFields } from "../utils/tableFilters";
+import TableLoadingSkeleton from "./Tables/TableLoadingSkeleton";
+import {
+  TableHeaderBorderContext,
+  shouldHideTableHeaderDivider,
+} from "./TableHeaderBorderContext";
+import { shouldStackTableToolbar } from "../utils/tableToolbarSizing";
+import {
+  filterTableRows,
+  getTableDateFields,
+  getAdvancedFilterColumns,
+  shouldShowTableDateFilter,
+} from "../utils/tableFilters";
 const AgTableComponent = React.memo(
   ({
     data = [],
@@ -25,19 +37,28 @@ const AgTableComponent = React.memo(
     dropdownColumns = [],
     paginationPageSize,
     exportData,
+    exportAction,
     exportButtonContainer,
+    exportInTitleRow = false,
     hideFilter,
+    advancedFilterAction,
     rowSelection,
     search = true,
+    showTableControls = true,
     dateColumn,
-    showDateControls = true,
+    showDateControls,
     toolbarDateControls,
     toolbarActions,
+    compactToolbar = false,
     dateRangePlaceholders = false,
     tableTitle,
+    titleCenterContent,
+    titleRightContent,
     handleClick,
     buttonTitle,
+    exportButtonExternalStyles,
     headerActions,
+    summaryContent,
     exportBeforeHeaderActions = false,
     searchRowActions,
     searchRowActionsPosition = "left",
@@ -47,16 +68,19 @@ const AgTableComponent = React.memo(
     fillAvailableHeight = false,
     enableCheckbox, // ✅ New prop to enable checkboxes
     getRowStyle,
+    getRowId,
     checkAll,
     disabled,
     handleBatchAction,
     isRowSelectable,
     showDisabledCheckboxes = false,
+    checkboxTooltip,
     batchButton,
     hideTitle,
     hideHeaderDivider,
     tableRef,
     onSelectionChange,
+    selectionResetKey,
     isPagination = false,
     serverPagination,
     paginationPage = 1,
@@ -69,26 +93,131 @@ const AgTableComponent = React.memo(
     onSearchChange,
     headerBottomContent,
     processExportCell,
+    loading = false,
+    skeletonRowCount = 6,
   }) => {
+    const borderedSectionTitle = useContext(TableHeaderBorderContext);
+    const hideToolbarDivider = shouldHideTableHeaderDivider(
+      hideHeaderDivider,
+      borderedSectionTitle,
+      Boolean(!hideTitle && tableTitle),
+    );
     const [searchQuery, setSearchQuery] = useState("");
     const [tableDateRange, setTableDateRange] = useState(null);
     const [chosenDateField, setChosenDateField] = useState("");
-    const dateFields = useMemo(() => getTableDateFields(columns, data, dateColumn), [columns, data, dateColumn]);
-    const effectiveDateField = dateFields.some((entry) => entry.field === chosenDateField)
-      ? chosenDateField : dateFields.find((entry) => entry.field === dateColumn)?.field || dateFields[0]?.field || "";
+    const dateFields = useMemo(
+      () => getTableDateFields(columns, data, dateColumn),
+      [columns, data, dateColumn],
+    );
+    const dateControlsEnabled = shouldShowTableDateFilter(
+      columns,
+      dateColumn,
+      showDateControls,
+    );
+    const effectiveDateField = dateFields.some(
+      (entry) => entry.field === chosenDateField,
+    )
+      ? chosenDateField
+      : dateFields.find((entry) => entry.field === dateColumn)?.field ||
+        dateFields[0]?.field ||
+        "";
     const [filters, setFilters] = useState({});
     const [appliedFilters, setAppliedFilters] = useState({});
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
     const gridRef = useRef(null);
+    const toolbarRef = useRef(null);
+    const toolbarDateRef = useRef(null);
+    const toolbarActionsRef = useRef(null);
+    const [stackToolbar, setStackToolbar] = useState(false);
     const previousServerPageRef = useRef(paginationPage);
+    const previousSelectionResetKeyRef = useRef(selectionResetKey);
 
-    const filteredData = useMemo(() => filterTableRows(data || [], {
-      search: serverSearch ? "" : searchQuery,
-      filters: appliedFilters,
-      dateRange: showDateControls && toolbarDateControls === undefined ? tableDateRange : null,
-      dateField: effectiveDateField,
-    }), [data, searchQuery, serverSearch, appliedFilters, tableDateRange, effectiveDateField, showDateControls, toolbarDateControls]);
+    useEffect(() => {
+      if (previousSelectionResetKeyRef.current === selectionResetKey) return;
+      previousSelectionResetKeyRef.current = selectionResetKey;
+      gridRef.current?.api?.deselectAll();
+    }, [selectionResetKey]);
+
+    useEffect(() => {
+      if (!toolbarRef.current || typeof ResizeObserver === "undefined") return;
+      const measure = () => {
+        if (!toolbarRef.current) return;
+        const actions = toolbarActionsRef.current;
+        const buttons = Array.from(actions?.querySelectorAll("button") || []);
+        const buttonWidth = buttons.reduce(
+          (total, button) => total + button.getBoundingClientRect().width,
+          0,
+        );
+        const actionsWidth = Math.max(
+          buttonWidth + Math.max(0, buttons.length - 1) * 16,
+          ...Array.from(actions?.children || []).map(
+            (child) => child.scrollWidth,
+          ),
+        );
+        const dateWidth = Math.max(
+          0,
+          ...Array.from(toolbarDateRef.current?.children || []).map(
+            (child) => child.scrollWidth,
+          ),
+        );
+        setStackToolbar(
+          shouldStackTableToolbar({
+            width: toolbarRef.current.clientWidth,
+            searchWidth: showTableControls && search ? (compactToolbar ? 210 : 280) : 0,
+            dateWidth,
+            actionsWidth,
+            gap: compactToolbar ? 8 : 12,
+          }),
+        );
+      };
+      const observer = new ResizeObserver(measure);
+      [toolbarRef.current, toolbarDateRef.current, toolbarActionsRef.current]
+        .filter(Boolean)
+        .forEach((element) => observer.observe(element));
+      measure();
+      return () => observer.disconnect();
+    }, [
+      showTableControls,
+      search,
+      toolbarDateControls,
+      toolbarActions,
+      compactToolbar,
+      headerActions,
+      searchRowActions,
+      buttonTitle,
+      advancedFilterAction,
+      exportAction,
+      exportData,
+      loading,
+    ]);
+
+    const hasCustomDateControls = toolbarDateControls !== undefined;
+    const filteredData = useMemo(
+      () =>
+        filterTableRows(data || [], {
+          search:
+            showTableControls && search && !serverSearch ? searchQuery : "",
+          filters: showTableControls ? appliedFilters : {},
+          dateRange:
+            showTableControls && dateControlsEnabled && !hasCustomDateControls
+              ? tableDateRange
+              : null,
+          dateField: effectiveDateField,
+        }),
+      [
+        data,
+        searchQuery,
+        search,
+        serverSearch,
+        appliedFilters,
+        tableDateRange,
+        effectiveDateField,
+        dateControlsEnabled,
+        hasCustomDateControls,
+        showTableControls,
+      ],
+    );
 
     useEffect(() => {
       if (serverSearch) setSearchQuery(searchValue || "");
@@ -113,11 +242,14 @@ const AgTableComponent = React.memo(
       return () => cancelAnimationFrame(frameId);
     }, [paginationPage, serverPagination]);
 
-    const defaultColDef = {
-      resizable: true,
-      sortable: true,
-      autoHeight: true,
-    };
+    const defaultColDef = useMemo(
+      () => ({
+        resizable: true,
+        sortable: true,
+        autoHeight: true,
+      }),
+      [],
+    );
 
     // Get unique values for dropdown columns
     const columnOptions = useMemo(() => {
@@ -216,33 +348,39 @@ const AgTableComponent = React.memo(
       handleBatchAction(selectedRows);
     };
 
-    const formatExportCell = useCallback((params) => {
-      const field = params?.column?.getColDef?.()?.field || "";
-      const value = params?.value;
+    const formatExportCell = useCallback(
+      (params) => {
+        const field = params?.column?.getColDef?.()?.field || "";
+        const value = params?.value;
 
-      const pageFormattedValue = processExportCell?.(params);
-      if (pageFormattedValue !== undefined) return pageFormattedValue;
+        const pageFormattedValue = processExportCell?.(params);
+        if (pageFormattedValue !== undefined) return pageFormattedValue;
 
-      if (value === null || value === undefined) return "";
+        if (value === null || value === undefined) return "";
 
-      const normalizedField = field.toLowerCase();
-      const shouldPreserveAsText =
-        normalizedField.includes("date") ||
-        normalizedField.includes("time") ||
-        /(at)$/i.test(field);
+        const normalizedField = field.toLowerCase();
+        const shouldPreserveAsText =
+          normalizedField.includes("date") ||
+          normalizedField.includes("time") ||
+          /(at)$/i.test(field);
 
-      const stringValue = String(value);
+        const stringValue = String(value);
 
-      if (!shouldPreserveAsText) return stringValue;
+        if (!shouldPreserveAsText) return stringValue;
 
-      // Prefix with an apostrophe so Excel keeps the literal date/time text.
-      return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
-    }, [processExportCell]);
+        // Prefix with an apostrophe so Excel keeps the literal date/time text.
+        return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+      },
+      [processExportCell],
+    );
 
     const renderExportButton = () =>
-      exportData ? (
+      exportAction !== undefined ? (
+        exportAction
+      ) : exportData ? (
         <PrimaryButton
           title={"Export"}
+          externalStyles={exportButtonExternalStyles}
           handleSubmit={() => {
             if (gridRef.current) {
               gridRef.current.api.exportDataAsCsv({
@@ -280,11 +418,7 @@ const AgTableComponent = React.memo(
     }, []);
 
     const filterableColumns = useMemo(
-      () =>
-        columns.filter((column) => {
-          const fieldName = column.field?.toString().toLowerCase();
-          return fieldName && !fieldName.includes("action");
-        }),
+      () => getAdvancedFilterColumns(columns),
       [columns],
     );
 
@@ -314,134 +448,155 @@ const AgTableComponent = React.memo(
           headerCheckboxSelection: checkAll, // ✅ Only allow header checkbox when checkAll is true
           checkboxSelection: true,
           showDisabledCheckboxes,
+          tooltipValueGetter: checkboxTooltip,
           width: 50,
         },
         ...stateSafeColumns,
       ];
-    }, [stateSafeColumns, enableCheckbox, checkAll, showDisabledCheckboxes]);
+    }, [
+      stateSafeColumns,
+      enableCheckbox,
+      checkAll,
+      showDisabledCheckboxes,
+      checkboxTooltip,
+    ]);
 
     const effectivePageSize = paginationPageSize || pageSizeOptions?.[0] || 1;
 
     return (
-      <div className={`border-b-[1px] border-borderGray ${
-        fillAvailableHeight ? "flex flex-col flex-1 min-h-0" : ""
-      }`}>
-        <div className=" flex gap-4 items-center">
-          <div
-            className={`flex items-center ${
-              tableTitle
-                ? "justify-between w-full items-center"
-                : "justify-end w-full"
-            } `}
-          >
-            {!hideTitle && (
-              <div className="flex items-center justify-between pb-4">
-                <span className="font-pmedium text-title text-primary uppercase">
-                  {tableTitle}
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-4">
-              {/* {buttonTitle ? (
-                <PrimaryButton
-                  title={buttonTitle}
-                  handleSubmit={handleClick}
-                  disabled={disabled}
-                />
-              ) : (
-                ""
-              )} */}
-              {buttonTitle ? (
-                <PrimaryButton
-                  title={buttonTitle}
-                  handleSubmit={handleClick}
-                  disabled={disabled}
-                />
-              ) : (
-                ""
-              )}
-              {headerActions ? headerActions : ""}
-
-              {/* {buttonTitle ? (
-                <PrimaryButton
-                  title={buttonTitle}
-                  handleSubmit={handleClick}
-                  disabled={disabled}
-                />
-              ) : (
-                ""
-              )} */}
-              {/* {headerActions ? headerActions : ""} */}
-
-              {/* {batchButton ? (
-                <div cla>
-                  <PrimaryButton
-                    title={batchButton || ""}
-                    handleSubmit={handleActionClick}
-                    disabled={!selectedRows.length > 0}
-                  />
-                </>
-              ) : (
-                ""
-              )} */}
+      <div
+        className={`w-full min-w-0 max-w-full border-b-[1px] border-borderGray ${
+          fillAvailableHeight ? "flex flex-col flex-1 min-h-0" : ""
+        }`}
+      >
+        {!hideTitle && tableTitle && (
+          titleCenterContent ? (
+            <div className="grid grid-cols-1 items-center gap-3 pb-4 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <span className="font-pmedium text-title uppercase text-primary">
+                {tableTitle}
+              </span>
+              <div className="justify-self-center">{titleCenterContent}</div>
+              <div className="justify-self-end">{titleRightContent}</div>
             </div>
-          </div>
-        </div>
+          ) : (
+            <div className="flex flex-wrap items-center justify-between gap-3 pb-4">
+              <span className="font-pmedium text-title uppercase text-primary">
+                {tableTitle}
+              </span>
+              {titleRightContent}
+            </div>
+          )
+        )}
 
-        {exportButtonContainer && createPortal(renderExportButton(), exportButtonContainer)}
+        {exportButtonContainer &&
+          createPortal(renderExportButton(), exportButtonContainer)}
 
-          {/* Custom content below title/actions */}
+        {/* Custom content below title/actions */}
         {headerBottomContent && (
-          <div className="w-full">
-            {headerBottomContent}
+          <div className="w-full">{headerBottomContent}</div>
+        )}
+
+        {!hideToolbarDivider && <hr className="my-2" />}
+
+        {summaryContent && (
+          <div className="table-toolbar-summary flex flex-wrap items-center justify-end gap-2 pb-3">
+            {summaryContent}
           </div>
         )}
 
-
-        {!hideHeaderDivider && <hr className="my-2" />}
-
-        <div
-          className="grid grid-cols-1 items-center gap-3 py-2 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
-        >
-          {search ? (
-            <div className="flex min-w-0 flex-wrap items-center gap-3 xl:col-start-1">
-              <TextField
-                label="Search"
-                variant="outlined"
-                size="small"
-                value={searchQuery}
-                onChange={handleSearch}
-                placeholder="Search"
-                sx={{ width: "100%", maxWidth: 280, minWidth: 0 }}
-                InputProps={{
-                  startAdornment: (
-                    <IoIosSearch size={20} style={{ marginRight: 8 }} />
-                  ),
-                }}
-              />
-              {searchRowActionsPosition === "left" && searchRowActions
+        {(showTableControls ||
+          exportData ||
+          exportAction ||
+          toolbarActions ||
+          searchRowActions ||
+          buttonTitle ||
+          headerActions) && (
+          <div
+            ref={toolbarRef}
+            data-stacked={stackToolbar || undefined}
+            data-compact={compactToolbar || undefined}
+            className={`table-toolbar grid w-full min-w-0 max-w-full items-center py-2 ${compactToolbar ? "gap-2" : "gap-3"}`}
+          >
+            {showTableControls && search ? (
+              <div className="table-toolbar-search flex min-w-0 flex-wrap items-center gap-3">
+                <TextField
+                  label="Search"
+                  variant="outlined"
+                  size="small"
+                  value={searchQuery}
+                  onChange={handleSearch}
+                  placeholder="Search"
+                  sx={{
+                    width: "100%",
+                    maxWidth: compactToolbar ? 210 : 280,
+                    minWidth: 0,
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <IoIosSearch size={20} style={{ marginRight: 8 }} />
+                    ),
+                  }}
+                />
+                {searchRowActionsPosition === "left" && searchRowActions
+                  ? searchRowActions
+                  : ""}
+              </div>
+            ) : (
+              <></>
+            )}
+            {showTableControls &&
+              (toolbarDateControls !== undefined || dateControlsEnabled) && (
+                <div
+                  ref={toolbarDateRef}
+                  className="table-toolbar-dates flex w-max min-w-0 items-center justify-center justify-self-center"
+                  title={
+                    toolbarDateControls === undefined && serverPagination
+                      ? "Date filter applies to currently loaded rows"
+                      : undefined
+                  }
+                >
+                  {toolbarDateControls !== undefined ? (
+                    toolbarDateControls
+                  ) : (
+                    <TableDateFilter
+                      fields={dateFields}
+                      field={effectiveDateField}
+                      onFieldChange={setChosenDateField}
+                      range={tableDateRange}
+                      onChange={setTableDateRange}
+                      showPlaceholders={dateRangePlaceholders}
+                      showFieldSelector={dateRangePlaceholders}
+                    />
+                  )}
+                </div>
+              )}
+            <div
+              ref={toolbarActionsRef}
+              className={`table-toolbar-actions flex w-max min-w-0 max-w-full flex-wrap items-center justify-end justify-self-end ${compactToolbar ? "gap-2" : "gap-4"}`}
+            >
+              {buttonTitle && (
+                <PrimaryButton
+                  title={buttonTitle}
+                  handleSubmit={handleClick}
+                  disabled={disabled}
+                />
+              )}
+              {headerActions}
+              {searchRowActionsPosition === "right" && searchRowActions
                 ? searchRowActions
                 : ""}
-            </div>
-          ) : (
-            <></>
-          )}
-          {(toolbarDateControls !== undefined || showDateControls) && (
-            <div className="flex min-w-0 items-center justify-center xl:col-start-2" title={toolbarDateControls === undefined && serverPagination ? "Date filter applies to currently loaded rows" : undefined}>
-              {toolbarDateControls !== undefined ? toolbarDateControls : <TableDateFilter fields={dateFields} field={effectiveDateField} onFieldChange={setChosenDateField} range={tableDateRange} onChange={setTableDateRange} showPlaceholders={dateRangePlaceholders} showFieldSelector={dateRangePlaceholders} />}
-            </div>
-          )}
-          <div className="flex flex-wrap items-center justify-end gap-4 xl:col-start-3">
-            {searchRowActionsPosition === "right" && searchRowActions
-              ? searchRowActions
-              : ""}
-            {searchRowActionsPosition === "aboveFilter" ? searchRowActions : null}
-            {toolbarActions}
-            {!exportButtonContainer && renderExportButton()}
-            {hideFilter ? (
-              ""
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
+              {searchRowActionsPosition === "aboveFilter"
+                ? searchRowActions
+                : null}
+              {toolbarActions}
+              {!exportButtonContainer && renderExportButton()}
+              {showTableControls && advancedFilterAction}
+              {!showTableControls ||
+              hideFilter ||
+              advancedFilterAction ||
+              !filterableColumns.length ? (
+                ""
+              ) : (
                 <button
                   type="button"
                   aria-label="Advanced filter"
@@ -450,26 +605,32 @@ const AgTableComponent = React.memo(
                 >
                   <IoFilter />
                 </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-        {serverPagination && ((showDateControls && tableDateRange) || Object.values(appliedFilters).some(Boolean)) && (
-          <p className="pb-2 text-xs text-gray-500">Date and advanced filters apply to loaded rows on this page.</p>
         )}
+        {showTableControls &&
+          serverPagination &&
+          ((dateControlsEnabled && tableDateRange) ||
+            Object.values(appliedFilters).some(Boolean)) && (
+            <p className="pb-2 text-xs text-gray-500">
+              Date and advanced filters apply to loaded rows on this page.
+            </p>
+          )}
         {searchBottomContent ? (
           <div className="w-full pb-3">{searchBottomContent}</div>
         ) : null}
         <div className="flex gap-2">
-          {Object.keys(appliedFilters).map((field) =>
-            appliedFilters[field] ? (
-              <Chip
-                key={field}
-                label={`${field}: ${appliedFilters[field]}`}
-                onDelete={() => removeFilter(field)}
-              />
-            ) : null,
-          )}
+          {showTableControls &&
+            Object.keys(appliedFilters).map((field) =>
+              appliedFilters[field] ? (
+                <Chip
+                  key={field}
+                  label={`${field}: ${appliedFilters[field]}`}
+                  onDelete={() => removeFilter(field)}
+                />
+              ) : null,
+            )}
         </div>
 
         <MuiAside
@@ -530,13 +691,21 @@ const AgTableComponent = React.memo(
           }`}
           style={fillAvailableHeight ? undefined : { height: gridHeight }}
         >
+          {loading ? (
+            <TableLoadingSkeleton
+              columns={modifiedColumns}
+              rowCount={skeletonRowCount}
+            />
+          ) : (
           <AgGridReact
             ref={gridRef}
             rowData={filteredData}
+            getRowId={getRowId}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes
             defaultColDef={defaultColDef}
             pagination={isPagination && !serverPagination}
             isRowSelectable={isRowSelectable}
+            tooltipShowDelay={checkboxTooltip ? 300 : undefined}
             paginationPageSize={paginationPageSize}
             // paginationPageSize={false}
             suppressCellSelection={false}
@@ -555,6 +724,7 @@ const AgTableComponent = React.memo(
             suppressColumnVirtualisation={false} // ✅ Ensures column virtualization is active
             suppressScrollOnNewData
           />
+          )}
         </div>
         {serverPagination && paginationTotal > 0 && (
           <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">

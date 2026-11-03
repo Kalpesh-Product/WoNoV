@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -164,10 +164,6 @@ const DepartmentTicketSettings = () => {
     );
   }
 
-  if (isLoading) {
-    return <div className="flex justify-center p-20"><CircularProgress /></div>;
-  }
-
   const departmentRows = accessibleDepartments.map((item, index) => ({
     id: item.department?._id,
     srNo: index + 1,
@@ -204,6 +200,7 @@ const DepartmentTicketSettings = () => {
             </div>
           </div>}
           <AgTable
+            loading={isLoading}
             key={departmentId || "departments"}
             data={selectedDepartment ? issueRows : departmentRows}
             columns={selectedDepartment ? issueColumns : departmentColumns}
@@ -212,14 +209,14 @@ const DepartmentTicketSettings = () => {
               : "Department Wise Tickets Issues"}
             hideTitle={!selectedDepartment}
             search={Boolean(selectedDepartment)}
-            headerActions={selectedDepartment ? (
-              <>
+            titleRightContent={selectedDepartment ? (
                 <div className="flex gap-1 justify-center items-center uppercase bg-[#dbe4ff] text-sm text-[#274784] font-pmedium px-3 py-1.5 rounded-lg border border-[#aec6fb]">
                   <span>Total Issues :</span>
                   <span>{totalIssues}</span>
                 </div>
-                <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
-              </>
+            ) : undefined}
+            headerActions={selectedDepartment ? (
+              <PrimaryButton title="Add Ticket Issues" handleSubmit={() => openForm("add")} />
             ) : undefined}
             exportData={Boolean(selectedDepartment)}
             fillAvailableHeight={Boolean(selectedDepartment)}

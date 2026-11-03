@@ -66,7 +66,7 @@ const InvestorHeaderLogo = () => (
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>&nbsp;NEST</span>
+    <span>&nbsp;N<span className="lowercase">est</span></span>
   </span>
 );
 
@@ -85,6 +85,14 @@ const navyLegendFormatter = (seriesName) =>
 const singleLineNavyLegendFormatter = (seriesName) =>
   `<span title="${seriesName}" style="display:inline-block;white-space:nowrap;vertical-align:bottom;font-size:12px;line-height:1.2;color:#1E3D73;">${seriesName}</span>`;
 
+const escapeTooltipText = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
 const pieOptions = (
   labels,
   suffix,
@@ -93,6 +101,10 @@ const pieOptions = (
   blueLegend = false,
   navyLegend = false,
   compactLegend = false,
+  companyTooltip = false,
+  otherStates = [],
+  sectorTooltip = false,
+  otherSectors = [],
 ) => ({
   chart: { type: "pie", fontFamily: "Poppins-Regular" },
   labels,
@@ -131,7 +143,36 @@ const pieOptions = (
         ? singleLineLegendFormatter
         : legendFormatter,
   },
-  tooltip: { y: { formatter: (value) => `${value} ${suffix}` } },
+  tooltip: companyTooltip || sectorTooltip
+    ? {
+        custom: ({ series, seriesIndex, w }) => {
+          const label = w?.globals?.labels?.[seriesIndex] || "";
+          const value = series?.[seriesIndex] || 0;
+          const color = w?.globals?.colors?.[seriesIndex] || "#1E3D73";
+          const detailList = companyTooltip
+            ? otherStates
+            : otherSectors.slice(0, 10);
+          const detailName = companyTooltip ? "Company" : "Client";
+          const remainingSectors = sectorTooltip
+            ? Math.max(otherSectors.length - 10, 0)
+            : 0;
+          const groupedList =
+            label === "Other" && detailList.length
+              ? `<div class="interactive-other-tooltip-list" style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.45);font-weight:400;line-height:1.55;max-height:180px;overflow-y:auto;">${detailList
+                  .map(
+                    (item, index) =>
+                      `${index + 1}. ${escapeTooltipText(item.label)} = ${item.value} ${detailName}`,
+                  )
+                  .join("<br/>")}${
+                    remainingSectors > 0
+                      ? `<br/><strong>${remainingSectors}+ more</strong>`
+                      : ""
+                  }</div>`
+              : "";
+          return `<div style="padding:8px 10px;font-family:Poppins-Regular;font-size:12px;font-weight:600;color:#fff;background:${color};border-radius:6px;box-shadow:0 2px 8px rgba(15,23,42,.22);overflow:hidden;">${escapeTooltipText(label)} = ${value} ${detailName}${groupedList}</div>`;
+        },
+      }
+    : { y: { formatter: (value) => `${value} ${suffix}` } },
 });
 
 const InvestorDonutChart = ({
@@ -237,6 +278,11 @@ const InvestorOperationalCharts = ({
   flushLayout = false,
   investorInventoryStyle = false,
   noOuterPadding = false,
+  clientsOverride,
+  occupancyChartsClickable = false,
+  titleOverrides = {},
+  indiaCompanyTooltip = false,
+  sectorOtherTooltip = false,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -247,7 +293,8 @@ const InvestorOperationalCharts = ({
     ["visitorCategory", "visitorClientType", "visitorGender"].includes(key),
   );
 
-  const { data: clients = [], isPending: clientsPending } = useQuery({
+  const hasClientsOverride = Array.isArray(clientsOverride);
+  const { data: fetchedClients = [], isPending: clientsPending } = useQuery({
     queryKey: ["investor-operational-coworking-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
@@ -255,8 +302,9 @@ const InvestorOperationalCharts = ({
         ? response.data.filter((client) => client.isActive)
         : [];
     },
-    enabled: needsClients,
+    enabled: needsClients && !hasClientsOverride,
   });
+  const clients = hasClientsOverride ? clientsOverride : fetchedClients;
   const showGenderDetails =
     showDetails && visibleCharts.length === 1 && visibleCharts[0] === "gender";
   const showAgeDetails =
@@ -300,13 +348,28 @@ const InvestorOperationalCharts = ({
         }, {}),
       ).map(([label, value]) => ({ label, value }));
 
-    const sectors = topWithOther(
-      countBy(clients, (client) => client.sector, { skipUnknown: true }),
-      5,
-      true,
+    const sectorEntries = countBy(clients, (client) => client.sector, {
+      skipUnknown: true,
+    });
+    const sortedSectorEntries = [...sectorEntries].sort(
+      (a, b) => b.value - a.value,
     );
-    const states = topWithOther(
-      countBy(clients, (client) => client.hostate?.trim() || client.hoState?.trim()),
+    const otherSectors = sortedSectorEntries.slice(5);
+    const sectors = topWithOther([...sectorEntries], 5, true).map((item) =>
+      item.label === "Other" ? { ...item, sectors: otherSectors } : item,
+    );
+    const getClientState = (client) =>
+      client.hostate?.trim() ||
+      client.hoState?.trim() ||
+      client.state?.trim() ||
+      "Unknown";
+    const stateEntries = countBy(clients, getClientState);
+    const sortedStateEntries = [...stateEntries].sort(
+      (a, b) => b.value - a.value,
+    );
+    const otherStates = sortedStateEntries.slice(6);
+    const states = topWithOther([...stateEntries]).map((item) =>
+      item.label === "Other" ? { ...item, states: otherStates } : item,
     );
     const members = clients.flatMap((client) =>
       Array.isArray(client.members) ? client.members : [],
@@ -399,11 +462,15 @@ const InvestorOperationalCharts = ({
   }, [clients, visitors]);
 
   const isLoading =
-    (needsClients && clientsPending) || (needsVisitors && visitorsPending);
+    (needsClients && !hasClientsOverride && clientsPending) ||
+    (needsVisitors && visitorsPending);
 
   const renderChart = (key) => {
     const chart = chartData[key];
-    const isClickable = !nonClickableOccupancyCharts.has(key) && routes?.[key];
+    const chartTitle = titleOverrides[key] || chart.title;
+    const isClickable =
+      routes?.[key] &&
+      (occupancyChartsClickable || !nonClickableOccupancyCharts.has(key));
     const labels = chart.data.map((item) => item.label);
     const series = chart.data.map((item) => item.value);
     const chartColors = chart.colors || palette;
@@ -463,11 +530,13 @@ const InvestorOperationalCharts = ({
                 useNavyText ? "text-[#1E3D73]" : "text-[#1234c9]"
               }`}
             >
-              {useNavyText ? <InvestorHeaderLogo /> : null}
-              <span>{chart.title}</span>
+              {useNavyText ? (
+                <InvestorHeaderLogo />
+              ) : null}
+              <span>{chartTitle}</span>
             </span>
           ) : (
-            chart.title
+            chartTitle
           )
         }
         border
@@ -480,7 +549,7 @@ const InvestorOperationalCharts = ({
             ? {
                 role: "button",
                 tabIndex: 0,
-                "aria-label": `View ${chart.title}`,
+                "aria-label": `View ${chartTitle}`,
                 onClick: () => navigate(routes[key]),
                 onKeyDown: (event) => {
                   if (event.key === "Enter" || event.key === " ") {
@@ -504,25 +573,38 @@ const InvestorOperationalCharts = ({
               legendFormatter={legendFormatter}
             />
           ) : (
-            <PieChartMui
-              data={chart.data}
-              options={pieOptions(
-                labels,
-                chart.suffix,
-                chartColors,
-                hasScrollableLegend,
-                useBlueText,
-                useNavyText,
-                key === "age",
-              )}
-              width={500}
-              height={350}
-              customLegend={customChartLegend}
-              customChartAreaHeight={
-                key === "age" || key === "gender" ? 302 : undefined
+            <div
+              className={
+                (key === "india" && indiaCompanyTooltip) ||
+                (key === "sector" && sectorOtherTooltip)
+                  ? "virtual-office-company-tooltip w-full"
+                  : "w-full"
               }
-              centerAlign
-            />
+            >
+              <PieChartMui
+                data={chart.data}
+                options={pieOptions(
+                  labels,
+                  chart.suffix,
+                  chartColors,
+                  hasScrollableLegend,
+                  useBlueText,
+                  useNavyText,
+                  key === "age",
+                  key === "india" && indiaCompanyTooltip,
+                  chart.data.find((item) => item.label === "Other")?.states || [],
+                  key === "sector" && sectorOtherTooltip,
+                  chart.data.find((item) => item.label === "Other")?.sectors || [],
+                )}
+                width={500}
+                height={350}
+                customLegend={customChartLegend}
+                customChartAreaHeight={
+                  key === "age" || key === "gender" ? 302 : undefined
+                }
+                centerAlign
+              />
+            </div>
           )}
         </div>
       </WidgetSection>
@@ -569,7 +651,10 @@ const InvestorOperationalCharts = ({
   const indiaDetailsData = useMemo(() => {
     const stateCounts = clients.reduce((counts, client) => {
       const state = String(
-        client.hostate?.trim() || client.hoState?.trim() || "",
+        client.hostate?.trim() ||
+          client.hoState?.trim() ||
+          client.state?.trim() ||
+          "",
       );
       if (!state || state.toLowerCase() === "unknown") return counts;
       counts[state] = (counts[state] || 0) + 1;

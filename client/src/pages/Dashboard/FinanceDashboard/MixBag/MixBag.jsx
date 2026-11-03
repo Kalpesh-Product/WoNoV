@@ -1,4 +1,4 @@
-import { FiArrowRight, FiChevronRight } from "react-icons/fi";
+import { FiChevronRight } from "react-icons/fi";
 import { useLocation } from "react-router-dom";
 import {
   FaArrowTrendUp,
@@ -188,16 +188,11 @@ const FinanceCardIcon = ({ type }) => {
 
   return (
     <span
-      className="relative inline-flex items-center justify-center self-start rounded-full bg-[#1b4d80]"
-      style={{
-        width: 88,
-        height: 88,
-        minWidth: 88,
-        minHeight: 88,
-        flex: "0 0 88px",
-      }}
+      className="relative inline-flex h-[72px] w-[72px] shrink-0 items-center justify-center rounded-full bg-[#1b4d80] min-[1800px]:h-[88px] min-[1800px]:w-[88px]"
     >
-      {icons[type]}
+      <span className="relative flex h-[88px] w-[88px] shrink-0 scale-[0.82] items-center justify-center min-[1800px]:scale-100">
+        {icons[type]}
+      </span>
     </span>
   );
 };
@@ -234,43 +229,41 @@ const MixBag = () => {
   }
 
   return (
-    <div className="p-4 lg:p-6">
-      <div
-        className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4"
-        style={{ maxWidth: 1600 }}
-      >
+    <div className="p-4 lg:p-5 min-[1800px]:p-6">
+      <div className="flex w-full flex-wrap gap-4 min-[1800px]:gap-5">
         {allowedRoutes.map((route) => {
           return (
             <button
               key={route.route}
               type="button"
               onClick={() => navigate(route.route)}
-              className="group relative flex w-full flex-col overflow-hidden rounded-[24px] border border-[#edf1f6] bg-white p-6 text-left shadow-[0_8px_30px_rgba(30,61,115,0.06)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_34px_rgba(30,61,115,0.11)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73] focus-visible:ring-offset-2 lg:p-8"
-              style={{ minHeight: 300 }}
+              className="group relative flex min-h-[150px] w-full grow basis-full overflow-hidden rounded-[24px] border border-[#dfe8f2] bg-white text-left shadow-[0_10px_24px_rgba(30,61,115,0.08)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_14px_30px_rgba(30,61,115,0.13)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73] focus-visible:ring-offset-2 md:basis-[calc(50%-0.625rem)] xl:basis-[calc(25%-0.9375rem)] min-[1800px]:min-h-[185px] min-[1800px]:rounded-[28px] min-[1800px]:shadow-[0_12px_30px_rgba(30,61,115,0.08)] min-[1800px]:hover:shadow-[0_16px_36px_rgba(30,61,115,0.13)]"
             >
               <span
-                className="absolute right-6 top-6 inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#f5f8fc] text-[#071445] transition-colors duration-200 group-hover:bg-[#edf3fa] lg:right-7 lg:top-7"
+                className="absolute inset-y-0 left-0 z-10 w-2 bg-[#0d6eb8] min-[1800px]:w-2.5"
                 aria-hidden="true"
-              >
-                <FiChevronRight className="text-xl" />
-              </span>
+              />
 
-              <FinanceCardIcon type={route.icon} />
+              <div className="flex w-[30%] min-w-[90px] shrink-0 items-center justify-center px-2 py-5 sm:min-w-[100px] sm:px-3 min-[1800px]:min-w-[120px] min-[1800px]:px-4">
+                <FinanceCardIcon type={route.icon} />
+              </div>
 
-              <h2 className="mt-5 whitespace-nowrap text-base font-pbold uppercase leading-tight tracking-[-0.02em] text-[#1b4d80] sm:text-lg xl:text-base 2xl:text-lg">
-                {route.title}
-              </h2>
-              <p className="mt-2 max-w-[350px] text-sm font-pregular normal-case leading-6 text-[#53698f] lg:text-base">
-                {route.description}
-              </p>
-
-              <span className="mt-auto flex items-center gap-4 pt-6 text-base font-pmedium normal-case text-[#1b4d80]">
-                {route.action}
-                <FiArrowRight
-                  className="text-xl transition-transform duration-200 group-hover:translate-x-1"
-                  aria-hidden="true"
-                />
-              </span>
+              <div className="relative min-w-0 flex-1 px-3 sm:px-4">
+                <div className="absolute left-3 right-2 top-[39px] flex h-[72px] flex-col items-start justify-between sm:left-4 sm:right-3 min-[1800px]:left-5 min-[1800px]:right-4 min-[1800px]:top-[49px] min-[1800px]:h-[88px]">
+                  <h2 className="max-w-full whitespace-normal break-words text-xs font-pbold uppercase leading-tight tracking-[-0.02em] text-[#073f77] sm:text-[13px] min-[1800px]:text-base">
+                    {route.title}
+                  </h2>
+                  <span className="flex items-center gap-2 whitespace-nowrap text-xs font-pmedium normal-case text-[#073f77] sm:text-[13px] min-[1800px]:gap-2.5 min-[1800px]:text-base">
+                    {route.action}
+                    <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eff5fb] transition-all duration-200 group-hover:translate-x-1 group-hover:bg-[#e5eff9] min-[1800px]:h-7 min-[1800px]:w-7">
+                      <FiChevronRight
+                        className="text-sm min-[1800px]:text-base"
+                        aria-hidden="true"
+                      />
+                    </span>
+                  </span>
+                </div>
+              </div>
             </button>
           );
         })}

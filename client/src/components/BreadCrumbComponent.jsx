@@ -2,14 +2,42 @@ import React from "react";
 import { Breadcrumbs, Typography, Link } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import CurrencySelector from "./CurrencySelector";
+import { useSelector } from "react-redux";
+import useAuth from "../hooks/useAuth";
 
 const BreadCrumbComponent = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { auth } = useAuth();
+  const selectedMember = useSelector((state) => state.performance.selectedMember);
+  const isEmployeeKraKpaPage =
+    /\/(individual-Monthly-KPA|self-KRA)$/.test(location.pathname);
+  const isOwnEmployeePage =
+    location.pathname.includes("/employee-KRA-KPA") ||
+    location.pathname.includes("/kra-kpa/individual/");
+  const memberName = isOwnEmployeePage
+    ? [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+        .filter(Boolean)
+        .join(" ")
+    : (location.state?.selectedMember || selectedMember)?.memberName;
 
   const formatLabel = (value) => {
     if (value.toLowerCase() === "kra-kpa") {
       return "KRA & KPA";
+    }
+
+    if (
+      value.toLowerCase() === "individual-monthly-kpa" &&
+      location.pathname.toLowerCase().startsWith("/app/kra-kpa")
+    ) {
+      return "Self KPA";
+    }
+
+    if (
+      value.toLowerCase() === "individual" &&
+      location.pathname.toLowerCase().startsWith("/app/kra-kpa")
+    ) {
+      return "Employee KRA/KPA";
     }
 
     const acronymMap = {
@@ -48,10 +76,15 @@ const BreadCrumbComponent = () => {
         );
 
   const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
+  const isDayPassSalesHistoryPath =
+    basePathSegments.includes("sales-dashboard") &&
+    basePathSegments.includes("day-pass") &&
+    basePathSegments.includes("manage-day-pass") &&
+    basePathSegments.includes("external-clients");
   const historyType = searchParams.get("type");
   const pathSegments = [...basePathSegments];
 
-  if (isVisitorHistoryPath && historyType) {
+  if (isVisitorHistoryPath && historyType && !isDayPassSalesHistoryPath) {
     const historyIndex = pathSegments.indexOf("visitor-history");
     const historyTab =
       historyType === "internal" ? "internal-visitors" : "external-clients";
@@ -61,11 +94,22 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const breadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isNonNavigableSegment = segment === "visitor-history";
+    const isVirtualOfficeClientPath =
+      pathSegments.includes("virtual-office") &&
+      pathSegments.includes("client");
+    const isClientIdSegment =
+      isVirtualOfficeClientPath &&
+      pathSegments[index - 1] === "client" &&
+      ["client-details", "desks", "revenue"].includes(
+        pathSegments[index + 1],
+      );
+    const isNonNavigableSegment =
+      segment === "visitor-history" ||
+      (isVirtualOfficeClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
+      !isDayPassSalesHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
-
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
@@ -87,6 +131,8 @@ const BreadCrumbComponent = () => {
         ? location.state.breadcrumbLabel
         : formatLabel(segment);
 
+    if (isClientIdSegment) return null;
+
     return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">
         {displayText}
@@ -103,6 +149,14 @@ const BreadCrumbComponent = () => {
       </Link>
     );
   });
+
+  if (isEmployeeKraKpaPage && memberName) {
+    breadcrumbs.push(
+      <Typography key="employee-member" color="text.primary">
+        {memberName}
+      </Typography>
+    );
+  }
 
   // Append query parameters dynamically to the breadcrumb
   queryParamEntries.forEach(([key, value], index) => {
