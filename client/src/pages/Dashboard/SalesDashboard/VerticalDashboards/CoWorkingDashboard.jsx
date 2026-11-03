@@ -730,8 +730,8 @@ const CoworkingBusinessCharts = ({
     [clients],
   );
   const activeStatusData = [
-    { label: "Active Client", value: activeStatusCounts.active },
-    { label: "Inactive Client", value: activeStatusCounts.inactive },
+    { label: "Active", value: activeStatusCounts.active },
+    { label: "Inactive", value: activeStatusCounts.inactive },
   ];
   const activeStatusOptions = {
     chart: { type: "pie", fontFamily: "Poppins-Regular", toolbar: false },
@@ -747,7 +747,12 @@ const CoworkingBusinessCharts = ({
     },
     tooltip: {
       fillSeriesColor: false,
-      custom: createPieTooltip("Clients"),
+      custom: ({ series = [], seriesIndex = 0, w }) => {
+        const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+        const value = Math.round(Number(series[seriesIndex]) || 0);
+        const color = w?.globals?.colors?.[seriesIndex] || "#1E3D73";
+        return `<div style="padding:8px 10px;background:${color};color:#fff;border-radius:6px;font-family:Poppins-Regular;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(15,23,42,.22);white-space:nowrap;">${escapeTooltipText(label)} Client: ${value}</div>`;
+      },
     },
     stroke: { show: false },
   };
