@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
 import PrimaryButton from "../../components/PrimaryButton";
 import {
   Card,
@@ -106,8 +107,14 @@ const RoomImageCarousel = ({ room }) => {
 
 const MeetingSettings = () => {
   const axios = useAxiosPrivate();
+  const { auth } = useAuth();
   const queryClient = useQueryClient(); // React Query client to refetch rooms
   const [openModal, setOpenModal] = useState(false);
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [viewRoom, setViewRoom] = useState(null);
+  const isTechDepartment = auth?.user?.departments?.some(
+    (dept) => dept?.name?.trim().toLowerCase() === "tech",
+  );
   const {
     control,
     reset,
@@ -132,7 +139,7 @@ const MeetingSettings = () => {
   const watchLocation = watch("location"); // 👈 Add this
   const perHourPrice = watch("perHourPrice");
   const gstBreakdown = calculateGstBreakdown(perHourPrice);
-  const { auth } = useAuth();
+
   const [openEditModal, setOpenEditModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const {
@@ -159,6 +166,16 @@ const MeetingSettings = () => {
   const editLocation = editWatch("location");
   const editPerHourPrice = editWatch("perHourPrice");
   const editGstBreakdown = calculateGstBreakdown(editPerHourPrice);
+
+  const handleOpenViewModal = (room) => {
+    setViewRoom(room);
+    setOpenViewModal(true);
+  };
+
+  const handleCloseViewModal = () => {
+    setOpenViewModal(false);
+    setViewRoom(null);
+  };
 
   useEffect(() => {
     if (selectedRoom) {
@@ -298,9 +315,7 @@ const MeetingSettings = () => {
     formData.append("perHourPrice", data.perHourPrice);
     formData.append("perHourGstPrice", totalWithGst);
     formData.append("isActive", data.isActive === "true");
-    (data.roomImages || []).forEach((image) =>
-      formData.append("rooms", image),
-    );
+    (data.roomImages || []).forEach((image) => formData.append("rooms", image));
 
     createRoomMutation.mutate(formData);
   };
@@ -324,60 +339,78 @@ const MeetingSettings = () => {
         handleClick={handleOpenModal}
       >
         <div className="grid grid-cols-4 gap-4">
-          {!isMeetingRoomsLoading ? (
-            meetingRooms.map((room) => (
-              <Card
-                key={room._id}
-                className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
-              >
-                <RoomImageCarousel room={room} />
-                <CardContent>
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-content">{room.name}</span>
-                    <span
-                      className={`px-4 py-1 text-small font-pregular rounded-full ${
-                        room.isActive
-                          ? "bg-green-100 text-green-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {room.isActive ? "Active" : "Inactive"}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2 mb-4 text-gray-500">
-                    <FiWifi />
-                    <FiSun />
-                    <FiMonitor />
-                  </div>
-                  <p className="mb-2 text-sm font-medium text-gray-800">
-                    <span role="img" aria-label="person">
-                      👥
-                    </span>{" "}
-                    Fits {room.seats} people
-                  </p>
-                  <div className="mt-4">
-                    <PrimaryButton
-                      title={"Edit Room"}
-                      handleSubmit={() => handleOpenEditModal(room)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          ) : Array.from({ length: 4 }).map((_, index) => (
-            <Card key={`room-skeleton-${index}`} className="overflow-hidden">
-              <Skeleton variant="rectangular" height={170} />
-              <CardContent>
-                <div className="mb-3 flex justify-between">
-                  <Skeleton width="45%" />
-                  <Skeleton width={70} />
-                </div>
-                <Skeleton width="35%" />
-                <Skeleton className="mt-3" width="65%" />
-                <Skeleton className="mt-4" variant="rounded" height={36} />
-              </CardContent>
-            </Card>
-          ))}
+          {!isMeetingRoomsLoading
+            ? meetingRooms.map((room) => (
+                <Card
+                  key={room._id}
+                  className="shadow-md hover:shadow-lg transition-shadow border border-gray-200"
+                >
+                  <RoomImageCarousel room={room} />
+                  <CardContent>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-content">{room.name}</span>
+
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`px-4 py-1 text-small font-pregular rounded-full ${
+                            room.isActive
+                              ? "bg-green-100 text-green-600"
+                              : "bg-red-100 text-red-600"
+                          }`}
+                        >
+                          {room.isActive ? "Active" : "Inactive"}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenViewModal(room)}
+                          className="p-1 rounded-full text-gray-500 hover:bg-gray-200 transition-all"
+                          title="View Room"
+                          aria-label={`View ${room.name} details`}
+                        >
+                          <MdOutlineRemoveRedEye size={20} />
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 mb-4 text-gray-500">
+                      <FiWifi />
+                      <FiSun />
+                      <FiMonitor />
+                    </div>
+                    <p className="mb-2 text-sm font-medium text-gray-800">
+                      <span role="img" aria-label="person">
+                        👥
+                      </span>{" "}
+                      Fits {room.seats} people
+                    </p>
+                    {isTechDepartment && (
+                      <div className="mt-4">
+                        <PrimaryButton
+                          title="Edit Room"
+                          handleSubmit={() => handleOpenEditModal(room)}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))
+            : Array.from({ length: 4 }).map((_, index) => (
+                <Card
+                  key={`room-skeleton-${index}`}
+                  className="overflow-hidden"
+                >
+                  <Skeleton variant="rectangular" height={170} />
+                  <CardContent>
+                    <div className="mb-3 flex justify-between">
+                      <Skeleton width="45%" />
+                      <Skeleton width={70} />
+                    </div>
+                    <Skeleton width="35%" />
+                    <Skeleton className="mt-3" width="65%" />
+                    <Skeleton className="mt-4" variant="rounded" height={36} />
+                  </CardContent>
+                </Card>
+              ))}
         </div>
       </WidgetSection>
 
@@ -415,7 +448,11 @@ const MeetingSettings = () => {
                   control={control}
                   rules={{ required: "Location is required" }}
                   render={({ field }) => (
-                    <FormControl size="small" fullWidth error={!!errors.location}>
+                    <FormControl
+                      size="small"
+                      fullWidth
+                      error={!!errors.location}
+                    >
                       <InputLabel>Location</InputLabel>
                       <Select {...field} label="Location">
                         <MenuItem value="">Select Location</MenuItem>
@@ -455,7 +492,9 @@ const MeetingSettings = () => {
                         </MenuItem>
                       ) : (
                         unitsData
-                          .filter((item) => item.building?._id === watchLocation)
+                          .filter(
+                            (item) => item.building?._id === watchLocation,
+                          )
                           .map((item) => (
                             <MenuItem key={item._id} value={item._id}>
                               {item.unitNo}
@@ -503,7 +542,13 @@ const MeetingSettings = () => {
                   name="isActive"
                   control={control}
                   render={({ field }) => (
-                    <TextField {...field} select fullWidth size="small" label="Status">
+                    <TextField
+                      {...field}
+                      select
+                      fullWidth
+                      size="small"
+                      label="Status"
+                    >
                       <MenuItem value="true">Active</MenuItem>
                       <MenuItem value="false">Inactive</MenuItem>
                     </TextField>
@@ -853,6 +898,82 @@ const MeetingSettings = () => {
             </div>
           </form>
         </div>
+      </MuiModal>
+
+      <MuiModal
+        open={openViewModal}
+        onClose={handleCloseViewModal}
+        title="Meeting Room Details"
+      >
+        {viewRoom && (
+          <div className="flex flex-col gap-5 w-full">
+            {[
+              ["Room Name", viewRoom.name],
+              [
+                "Location",
+                viewRoom.location?.building?.buildingName ||
+                  auth?.user?.company?.workLocations?.find(
+                    (loc) =>
+                      loc._id ===
+                      (viewRoom.location?.building?._id ||
+                        viewRoom.location?.building),
+                  )?.buildingName,
+              ],
+              [
+                "Unit",
+                viewRoom.location?.unitNo ||
+                  unitsData.find((unit) => unit._id === viewRoom.location?._id)
+                    ?.unitNo,
+              ],
+              ["Seats", viewRoom.seats],
+              ["Per Hour Credit", viewRoom.perHourCredit],
+              ["Status", viewRoom.isActive ? "Active" : "Inactive"],
+              ["Price", viewRoom.perHourPrice],
+              ["GST (%)", "18%"],
+              [
+                "Total Amount",
+                calculateGstBreakdown(viewRoom.perHourPrice).totalWithGst,
+              ],
+              ["Description", viewRoom.description],
+            ].map(([label, value]) => (
+              <div
+                key={label}
+                className="grid grid-cols-[220px_12px_1fr] items-start gap-4 text-content"
+              >
+                <span>{label}</span>
+                <span>:</span>
+                <span className="break-words">
+                  {value !== null && value !== undefined && value !== ""
+                    ? value
+                    : "N/A"}
+                </span>
+              </div>
+            ))}
+
+            <div className="grid grid-cols-[220px_12px_1fr] items-start gap-4 text-content">
+              <span>Room Images</span>
+              <span>:</span>
+
+              <div className="flex flex-wrap gap-3">
+                {getExistingRoomImages(viewRoom).filter((image) => image?.url)
+                  .length > 0 ? (
+                  getExistingRoomImages(viewRoom)
+                    .filter((image) => image?.url)
+                    .map((image, index) => (
+                      <img
+                        key={image._id || image.url || index}
+                        src={image.url}
+                        alt={`${viewRoom.name} - ${index + 1}`}
+                        className="h-24 w-28 rounded-md border object-cover"
+                      />
+                    ))
+                ) : (
+                  <span>N/A</span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </MuiModal>
     </div>
   );
