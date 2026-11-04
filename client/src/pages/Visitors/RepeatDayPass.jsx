@@ -167,7 +167,7 @@ const RepeatDayPass = () => {
       <PageFrame>
         <AgTable
           search
-          tableTitle="Repeat Day Pass"
+          tableTitle="Repeat Bookings"
           data={repeatDayPassRows}
           columns={columns}
           loading={isPending}

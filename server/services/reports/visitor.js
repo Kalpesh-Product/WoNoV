@@ -502,6 +502,7 @@ const fetchVisitorReportVisits = async ({
   companyId,
   dateFilter,
   search,
+  type = "",
   meetingOnly = false,
   shouldPaginate,
   parsedPage,
@@ -520,32 +521,9 @@ const fetchVisitorReportVisits = async ({
   };
 
   if (type === "day-pass") {
-    visitFilter.$and = [
-      {
-        $or: [
-          {
-            visitorType: {
-              $in: [
-                "Full-Day Pass",
-                "Half-Day Pass",
-                "Full Day Pass",
-                "Half Day Pass",
-              ],
-            },
-          },
-          {
-            purposeOfVisit: {
-              $in: [
-                "Full-Day Pass",
-                "Half-Day Pass",
-                "Full Day Pass",
-                "Half Day Pass",
-              ],
-            },
-          },
-        ],
-      },
-    ];
+    visitFilter.visitorType = {
+      $in: ["Full-Day Pass", "Half-Day Pass"],
+    };
   }
 
   if (searchRegex) {
@@ -853,6 +831,7 @@ const fetchVisitorReportService = async ({
         companyId,
         dateFilter,
         search: normalizedSearch,
+        type,
         meetingOnly: false,
         shouldPaginate,
         parsedPage,

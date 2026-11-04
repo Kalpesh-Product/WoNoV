@@ -9,9 +9,12 @@ const BreadCrumbComponent = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { auth } = useAuth();
-  const selectedMember = useSelector((state) => state.performance.selectedMember);
-  const isEmployeeKraKpaPage =
-    /\/(individual-Monthly-KPA|self-KRA)$/.test(location.pathname);
+  const selectedMember = useSelector(
+    (state) => state.performance.selectedMember,
+  );
+  const isEmployeeKraKpaPage = /\/(individual-Monthly-KPA|self-KRA)$/.test(
+    location.pathname,
+  );
   const isEmployeeDashboardContext = location.pathname.includes(
     "/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard",
   );
@@ -27,6 +30,10 @@ const BreadCrumbComponent = () => {
   const formatLabel = (value) => {
     if (value.toLowerCase() === "kra-kpa") {
       return "KRA & KPA";
+    }
+
+    if (value.toLowerCase() === "repeat-day-pass") {
+      return "Repeat Booking";
     }
 
     if (
@@ -73,10 +80,11 @@ const BreadCrumbComponent = () => {
     location.pathname === "/app/dashboard"
       ? ["dashboard"]
       : location.pathname
-        .split("/")
-        .filter(
-          (segment) => segment && segment !== "app" && segment !== "dashboard"
-        );
+          .split("/")
+          .filter(
+            (segment) =>
+              segment && segment !== "app" && segment !== "dashboard",
+          );
 
   const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
   const isDayPassSalesHistoryPath =
@@ -103,20 +111,19 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const pathBreadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
-    const isVirtualOfficeClientPath =
-      pathSegments.includes("virtual-office") &&
+    const isSalesVerticalClientPath =
+      (pathSegments.includes("virtual-office") ||
+        pathSegments.includes("co-working")) &&
       pathSegments.includes("client");
     const isClientIdSegment =
-      isVirtualOfficeClientPath &&
+      isSalesVerticalClientPath &&
       pathSegments[index - 1] === "client" &&
-      ["client-details", "desks", "revenue"].includes(
+      ["client-details", "desks", "revenue", "members"].includes(
         pathSegments[index + 1],
       );
     const isNonNavigableSegment =
       segment === "visitor-history" ||
-      (isVirtualOfficeClientPath && segment === "client");
-    const isTeamMembersCrumb =
-      segment === "team-members" && isPendingApprovalsMemberView;
+      (isSalesVerticalClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       !isDayPassSalesHistoryPath &&
@@ -129,10 +136,10 @@ const BreadCrumbComponent = () => {
     const fullPath = isTeamMembersCrumb
       ? "/app/kra-kpa/pending-approvals"
       : isHistoryTabSegment
-      ? `/app/visitors/manage-visitors/${segment}`
-      : isDirectAppPath
-        ? `/app/${path}`
-        : `/app/dashboard/${path}`;
+        ? `/app/visitors/manage-visitors/${segment}`
+        : isDirectAppPath
+          ? `/app/${path}`
+          : `/app/dashboard/${path}`;
 
     // Capitalize for display
     // const displayText = decodeURIComponent(segment)
@@ -183,7 +190,7 @@ const BreadCrumbComponent = () => {
     breadcrumbs.push(
       <Typography key="employee-member" color="text.primary">
         {memberName}
-      </Typography>
+      </Typography>,
     );
   }
 
@@ -194,7 +201,7 @@ const BreadCrumbComponent = () => {
     breadcrumbs.push(
       <Typography key={`param-${index}`} color="text.primary">
         {formatLabel(value)}
-      </Typography>
+      </Typography>,
     );
   });
 

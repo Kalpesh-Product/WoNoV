@@ -23,6 +23,7 @@ import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
 } from "../../constants/pagination";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const PURPOSE_OPTIONS = ["Meeting", "Full Day Pass", "Half Day Pass"];
 
@@ -137,8 +138,15 @@ const resolveUnitName = (visitor = {}, units = []) => {
   return "N/A";
 };
 
-const ConvertInternalVisitors = () => {
+const ConvertInternalVisitors = ({ returnRoute = null }) => {
   const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const resolvedReturnRoute = location.pathname.startsWith(
+    "/app/dashboard/sales-dashboard/day-pass",
+  )
+    ? "/app/dashboard/sales-dashboard/day-pass/manage-day-pass/external-clients"
+    : returnRoute;
   const { auth } = useAuth();
   const locationOptions = auth?.user?.company?.workLocations || [];
 
@@ -351,6 +359,9 @@ const ConvertInternalVisitors = () => {
       queryClient.invalidateQueries({ queryKey: ["visitors"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       reset();
+      if (resolvedReturnRoute) {
+        navigate(resolvedReturnRoute, { replace: true });
+      }
     },
     onError: (error) => {
       toast.error(
