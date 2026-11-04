@@ -26,7 +26,15 @@ const runUpdate = async ({ user = "employee", status = "Open", deadline = "2026-
       },
     },
     "../../models/performances/KraKpaIndividualMonthlyKpa": {
-      findOne: () => ({ select: async () => ({ _id: "parent", deadline: new Date("2026-10-31") }) }),
+      findOne: () => ({
+        select: () => {
+          const parent = { _id: "parent", deadline: new Date("2026-10-31") };
+          return {
+            lean: async () => parent,
+            then: (resolve, reject) => Promise.resolve(parent).then(resolve, reject),
+          };
+        },
+      }),
     },
     "../../models/performances/KraKpaDailyLog": { updateMany: async () => {} },
     "../../utils/kraKpaDepartmentManager": async () => false,

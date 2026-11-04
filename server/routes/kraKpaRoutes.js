@@ -3,6 +3,7 @@ const upload = require("../config/multerConfig");
 const {
   listIndividualMonthlyKpa,
   listPendingKpaApprovals,
+  listPendingKpaApprovalMembers,
   getIndividualMonthlyKpaReviewAccess,
   getKraKpaDeleteAccess,
   createIndividualMonthlyKpa,
@@ -25,6 +26,7 @@ const {
   listDueTaskUsers,
   listDueTasks,
   createDueTask,
+  bulkUploadDueTasks,
   updateDueTask,
   addDueTaskToDailyLogs,
   addDueTasksToDailyLogs,
@@ -47,11 +49,19 @@ const {
   bulkUploadSelfKpa,
   requireSelfKpaBulkUploadPermission,
 } = require("../controllers/performanceControllers/kraKpaBulkUploadController");
+const {
+  bulkUploadSelfKra,
+  requireSelfKraBulkUploadPermission,
+} = require("../controllers/performanceControllers/kraKpaSelfKraBulkUploadController");
 
 router.get("/individual-monthly-kpa", listIndividualMonthlyKpa);
 router.get(
   "/individual-monthly-kpa/pending-approvals",
   listPendingKpaApprovals,
+);
+router.get(
+  "/individual-monthly-kpa/pending-approvals/members",
+  listPendingKpaApprovalMembers,
 );
 router.get(
   "/individual-monthly-kpa/review-access",
@@ -76,6 +86,12 @@ router.patch(
 );
 router.patch("/individual-monthly-kpa/:id", updateIndividualMonthlyKpa);
 router.delete("/individual-monthly-kpa/:id", deleteIndividualMonthlyKpa);
+router.post(
+  "/self-kra/bulk-upload",
+  requireSelfKraBulkUploadPermission,
+  upload.single("file"),
+  bulkUploadSelfKra,
+);
 router.get("/self-kra", listSelfKra);
 router.get("/self-kra/lead-options", listSelfKraLeadOptions);
 router.post("/self-kra/daily-log", addSelfKrasToDailyLogs);
@@ -87,6 +103,7 @@ router.get("/self-kra-categories", listKraCategories);
 router.post("/self-kra-categories", createKraCategory);
 router.get("/due-task/users", listDueTaskUsers);
 router.get("/due-task", listDueTasks);
+router.post("/due-task/bulk-upload", upload.single("file"), bulkUploadDueTasks);
 router.post("/due-task", createDueTask);
 router.post("/due-task/daily-log", addDueTasksToDailyLogs);
 router.post("/due-task/:id/daily-log", addDueTaskToDailyLogs);

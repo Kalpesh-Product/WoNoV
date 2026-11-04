@@ -417,6 +417,12 @@ export const PERMISSIONS = {
     type: "create",
     route: "/app/kra-kpa/individual/kra-kpa/individual-Monthly-KPA",
   },
+  KRAKPA_SELF_KRA_BULK_UPLOAD: {
+    value: "kra_kpa_self_kra_bulk_upload",
+    title: "SELF KRA BULK UPLOAD",
+    type: "create",
+    route: "/app/kra-kpa/department-KPA/member-wise-KPA/self-KRA",
+  },
   KRAKPA_SELF_KRA: {
     value: "kra_kpa_self_kra",
     title: "SELF KRA",

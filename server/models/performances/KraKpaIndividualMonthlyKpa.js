@@ -54,6 +54,7 @@ const individualMonthlyKpaSchema = new mongoose.Schema(
       default: "Pending",
       required: true,
     },
+    isActive: { type: Boolean, default: true },
     closingDate: { type: Date, default: null },
     resourceComment: { type: String, trim: true, default: "" },
     completionHistory: {

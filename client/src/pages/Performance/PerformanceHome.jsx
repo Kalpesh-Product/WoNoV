@@ -75,6 +75,15 @@ const PerformanceHome = ({
   );
   const selectedMember =
     location.state?.selectedMember || storedSelectedMember;
+  const employeeDashboardName =
+    selectedMember?.memberName ||
+    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+      .filter(Boolean)
+      .join(" ");
+  const employeeDashboardTitleSuffix =
+    employeeDashboard && employeeDashboardName
+      ? ` - ${employeeDashboardName.toUpperCase()}`
+      : "";
   const selectedEmployeeId = employeeDashboard
     ? selectedMember?.memberId?.toString()
     : null;
@@ -333,10 +342,14 @@ const PerformanceHome = ({
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
             config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
-            navigate(`${modulePath}/department-KPA`, {
+          const destination = employeeDashboard
+            ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
+            : `${modulePath}/department-KPA`;
+          navigate(destination, {
 
             //navigate("/app/performance/department-wise/overall-department-kpa", {
             state: {
+              ...location.state,
               month: clickedMonth,
               ...(onlyFirstTwoCards && { fiscalYear: selectedFiscalYear }),
             },
@@ -636,13 +649,13 @@ const PerformanceHome = ({
         ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
         : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) && (
         isKpaTasksLoading ? (
-          <WidgetSection border title="ANNUAL KPA VS ACHIEVEMENTS">
+          <WidgetSection border title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}>
             <PerformanceChartSkeleton variant="bar" height="h-[26rem]" />
           </WidgetSection>
         ) : <YearlyGraph
           data={annualKpaGraphData}
           options={annualKpaChartOptions}
-          title="ANNUAL KPA VS ACHIEVEMENTS"
+          title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}
           titleAmount=""
           TitleAmountTotal={annualKpaTotal}
           TitleAmountGreen={annualKpaYearlyTotals.completed}
@@ -664,6 +677,7 @@ const PerformanceHome = ({
                 icon={employeeDashboard ? card.icon || <CgWebsite /> : <CgWebsite />}
                 title={card.title}
                 route={card.route}
+                hoverScale={employeeDashboard ? 1 : undefined}
                 navigationState={employeeDashboard ? location.state : undefined}
               />
             </div>
@@ -704,7 +718,7 @@ const PerformanceHome = ({
           : hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED)) && (
            <WidgetSection
             border
-            title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
+            title={`KPA - Pending vs Completed - ${currentMonthLabel}${employeeDashboardTitleSuffix}`}
           >
             {isKpaTasksLoading ? (
               <PerformanceChartSkeleton variant="donut" />

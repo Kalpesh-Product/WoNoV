@@ -63,9 +63,6 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment,
   );
-  const selectedDepartmentName = useSelector(
-    (state) => state.performance.selectedDepartmentName,
-  );
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
@@ -80,19 +77,15 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
     : location.state?.selectedDepartment ||
       selectedDepartment ||
       auth?.user?.departments?.[0]?._id;
-  const departmentName = isIndividualRoute
-    ? auth?.user?.departments?.[0]?.name
-    : location.state?.selectedDepartmentName ||
-      selectedDepartmentName ||
-      auth?.user?.departments?.find(
-        (department) => String(department?._id) === String(departmentId),
-      )?.name;
   const employeeId = member?.memberId || auth?.user?._id;
   const employeeName =
     member?.memberName ||
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
       .filter(Boolean)
       .join(" ");
+  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
+  const employeeTitleSuffix =
+    isEmployeeDashboardRoute && employeeName ? ` - ${employeeName}` : "";
   const isKpaRating = type === "kpa";
   const [dateRange, setDateRange] = useState(initialDateRange);
   const [calendarAnchor, setCalendarAnchor] = useState(null);
@@ -111,6 +104,15 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
           : "/api/kra-kpa/daily-log",
         { params: { department: departmentId, employee: employeeId } },
       );
+      return response.data || [];
+    },
+  });
+
+  const { data: holidays = [], isLoading: isHolidaysLoading } = useQuery({
+    queryKey: ["kraKpaRatingWorkingDayHolidays"],
+    enabled: isKpaRating,
+    queryFn: async () => {
+      const response = await axios.get("/api/events/get-holidays");
       return response.data || [];
     },
   });
@@ -153,33 +155,53 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
     const categories = [];
     const completed = [];
     const pending = [];
-    let monthCursor = dayjs(dateRange.startDate).startOf("month");
-    const lastMonth = dayjs(dateRange.endDate).startOf("month");
+    const holidayDateKeys = new Set();
+    holidays.forEach((holiday) => {
+      if (!holiday?.start) return;
+      let holidayDay = dayjs(holiday.start).startOf("day");
+      const holidayEnd = dayjs(holiday.end || holiday.start).startOf("day");
+      while (holidayDay.isValid() && holidayEnd.isValid() && !holidayDay.isAfter(holidayEnd, "day")) {
+        holidayDateKeys.add(holidayDay.format("YYYY-MM-DD"));
+        holidayDay = holidayDay.add(1, "day");
+      }
+    });
 
-    while (monthCursor.valueOf() <= lastMonth.valueOf()) {
-      const monthKey = monthCursor.format("YYYY-MM");
-      const monthRecords = filteredRecords.filter(
-        (record) => record.month === monthKey,
-      );
-      const completedCount = monthRecords.filter(
-        (record) => record.status === "Completed",
-      ).length;
-      const total = monthRecords.length;
-      categories.push(monthCursor.format("MMM-YY"));
-      completed.push(total ? Number(((completedCount / total) * 100).toFixed(2)) : 0);
-      pending.push(
-        total ? Number((((total - completedCount) / total) * 100).toFixed(2)) : 0,
-      );
-      monthCursor = monthCursor.add(1, "month");
+    let dayCursor = dayjs(dateRange.startDate).startOf("day");
+    const lastDay = dayjs(dateRange.endDate).startOf("day");
+    while (!dayCursor.isAfter(lastDay, "day")) {
+      const dateKey = dayCursor.format("YYYY-MM-DD");
+      const isSunday = dayCursor.day() === 0;
+      if (!isSunday && !holidayDateKeys.has(dateKey)) {
+        const dailyCompleted = records.filter(
+          (record) =>
+            record.status === "Completed" &&
+            record.closingDate &&
+            dayjs(record.closingDate).format("YYYY-MM-DD") === dateKey,
+        ).length;
+        const dailyPending = records.filter(
+          (record) =>
+            record.status !== "Completed" &&
+            record.deadline &&
+            dayjs(record.deadline).format("YYYY-MM-DD") === dateKey,
+        ).length;
+        categories.push(dayCursor.format("DD MMM"));
+        completed.push(dailyCompleted);
+        pending.push(dailyPending);
+      }
+      dayCursor = dayCursor.add(1, "day");
     }
 
     return { categories, completed, pending };
-  }, [filteredRecords, isKpaRating, dateRange]);
+  }, [records, holidays, isKpaRating, dateRange]);
 
-  const completedKpaCount = filteredRecords.filter(
-    (record) => record.status === "Completed",
-  ).length;
-  const pendingKpaCount = filteredRecords.length - completedKpaCount;
+  const completedKpaCount = kpaChartData.completed.reduce(
+    (total, count) => total + count,
+    0,
+  );
+  const pendingKpaCount = kpaChartData.pending.reduce(
+    (total, count) => total + count,
+    0,
+  );
   const kpaRatingSummary = useMemo(() => {
     const totalKpas = filteredRecords.length;
     if (!totalKpas) {
@@ -215,7 +237,6 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
     chart: {
       type: "bar",
       stacked: true,
-      stackType: "100%",
       fontFamily: "Poppins-Regular",
       toolbar: { show: false },
       animations: { enabled: false },
@@ -224,23 +245,26 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: "38%",
+        columnWidth: "55%",
         borderRadius: 5,
         borderRadiusApplication: "end",
       },
     },
     dataLabels: { enabled: false },
     stroke: { show: true, width: 1, colors: ["#ffffff"] },
-    xaxis: { categories: kpaChartData.categories },
+    xaxis: {
+      categories: kpaChartData.categories,
+      title: { text: "Working Day" },
+      labels: { rotate: -45, hideOverlappingLabels: true },
+    },
     yaxis: {
       min: 0,
-      max: 100,
-      tickAmount: 5,
-      title: { text: "Completion (%)" },
-      labels: { formatter: (value) => `${Math.round(value)}%` },
+      forceNiceScale: true,
+      title: { text: "KPA Count" },
+      labels: { formatter: (value) => Math.round(value) },
     },
     legend: { position: "top", horizontalAlign: "center" },
-    tooltip: { y: { formatter: (value) => `${value.toFixed(2)}%` } },
+    tooltip: { y: { formatter: (value) => `${Math.round(value)} KPA${value === 1 ? "" : "s"}` } },
     grid: { borderColor: "#e5e7eb" },
   };
 
@@ -550,19 +574,13 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
 
   return (
     <Fragment>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-title font-pmedium uppercase text-primary">
-          {departmentName ? `${departmentName} - ` : ""}
-          {employeeName}
-        </h1>
-      </div>
       {navigationTabs}
       <>
           {isKpaRating && (
             <div className="mb-6">
               <WidgetSection
                 border
-                title="Monthly KPA Completion Overview"
+                title={`Daily Completed vs Pending KPAs - ${employeeName}`}
                 headerRightContent={
                   <div className="flex flex-wrap items-center gap-2">
                     <Chip
@@ -580,7 +598,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
                   </div>
                 }
               >
-                {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[360px]" /> : <ReactApexChart
+                {isLoading || isHolidaysLoading ? <PerformanceChartSkeleton variant="bar" height="h-[360px]" /> : <ReactApexChart
                   options={kpaChartOptions}
                   series={kpaChartSeries}
                   type="bar"
@@ -594,7 +612,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
               <div className="mb-6">
                 <WidgetSection
                   border
-                  title="Daily Tasks Assigned, Closed and Carried Forward"
+                  title={`Daily Tasks Assigned, Closed and Carried Forward - ${employeeName}`}
                 >
                   {isLoading ? <PerformanceChartSkeleton variant="bar" height="h-[330px]" /> : <ReactApexChart
                     type="bar"
@@ -607,7 +625,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
             </>
           )}
           {isKpaRating ? (
-            <WidgetSection border title="KPA Rating" headerRightContent={
+            <WidgetSection border title={`KPA Rating${employeeTitleSuffix}`} headerRightContent={
               <div className="flex flex-wrap items-center justify-end gap-3">
                 <Chip label={`Final KPA Rating: ${formatPercentage(kpaRatingSummary.finalRating)}%`} sx={{ backgroundColor: "#dbeafe", color: "#1d4ed8" }} />
                 <Chip label={`Pending Closure: ${kpaRatingSummary.yetToBeRated}`} sx={{ backgroundColor: "#fef3c7", color: "#b45309" }} />
@@ -666,7 +684,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
             />
             </WidgetSection>
           ) : (
-            <WidgetSection border title="Daily Logs Rating">
+            <WidgetSection border title={`Daily Logs Rating${employeeTitleSuffix}`}>
             <AgTable
               loading={isLoading}
               showDateControls={false}
@@ -705,7 +723,7 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
           )}
           {!isKpaRating && (
             <div className="mt-6">
-              <WidgetSection border title="Performance Rating">
+              <WidgetSection border title={`Performance Rating${employeeTitleSuffix}`}>
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[520px] border-collapse text-content">
                   <tbody>

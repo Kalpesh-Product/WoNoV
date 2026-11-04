@@ -38,10 +38,37 @@ const POPULATION = [
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
-  { path: "sourceDueTask", select: "dueTaskName deadline" },
+  {
+    path: "sourceDueTask",
+    select: "dueTaskName deadline parentKpa",
+    populate: { path: "parentKpa", select: "isActive isDeleted" },
+  },
   { path: "sourceSelfKra", select: "title description category lead startsOn" },
-  { path: "sourceSelfKpa", select: "target deadline status closingDate" },
+  { path: "sourceSelfKpa", select: "target deadline status closingDate isActive isDeleted" },
 ];
+
+const isInactiveKpaDailyLog = async (req, record) => {
+  let kpaId = record.sourceSelfKpa;
+  if (!kpaId && record.sourceDueTask) {
+    const dueTask = await DueTask.findOne({
+      _id: record.sourceDueTask,
+      company: req.company,
+      isDeleted: { $ne: true },
+    })
+      .select("parentKpa")
+      .lean();
+    kpaId = dueTask?.parentKpa;
+  }
+  if (!kpaId) return false;
+  const kpa = await SelfKpa.findOne({
+    _id: kpaId,
+    company: req.company,
+    isDeleted: { $ne: true },
+  })
+    .select("isActive")
+    .lean();
+  return !kpa || kpa.isActive === false;
+};
 
 const HISTORY_FIELDS = {
   date: "Log Date",
@@ -255,19 +282,6 @@ const syncSelfKpasForDeadline = async ({
     .select("target deadline status closingDate createdBy")
     .lean();
   const kpaIds = kpas.map((kpa) => kpa._id);
-  await DailyLog.updateMany(
-    {
-      company: req.company,
-      department,
-      employee,
-      date,
-      sourceSelfKpa: kpaIds.length
-        ? { $type: "objectId", $nin: kpaIds }
-        : { $type: "objectId" },
-      isDeleted: false,
-    },
-    { $set: { isDeleted: true, updatedBy: req.user } },
-  );
   if (kpas.length === 0) return;
 
   await DailyLog.bulkWrite(
@@ -331,11 +345,15 @@ const syncKpaTasksForDeadline = async ({
     deadline: { $gte: date, $lt: nextDate },
     isDeleted: { $ne: true },
   })
-    .select("dueTaskName deadline status closureDate createdBy")
+    .populate({ path: "parentKpa", select: "isActive isDeleted" })
+    .select("dueTaskName deadline status closureDate createdBy parentKpa")
     .lean();
-  if (tasks.length === 0) return;
+  const activeParentTasks = tasks.filter(
+    (task) => task.parentKpa && task.parentKpa.isActive !== false && !task.parentKpa.isDeleted,
+  );
+  if (activeParentTasks.length === 0) return;
 
-  const taskIds = tasks.map((task) => task._id);
+  const taskIds = activeParentTasks.map((task) => task._id);
   const existingLogs = await DailyLog.find({
     company: req.company,
     sourceDueTask: { $in: taskIds },
@@ -351,7 +369,7 @@ const syncKpaTasksForDeadline = async ({
     return map;
   }, new Map());
 
-  const operations = tasks.flatMap((task) => {
+  const operations = activeParentTasks.flatMap((task) => {
     const taskLogs = logsByTask.get(String(task._id)) || [];
     const deadlineLog = taskLogs.find(
       (log) => toCalendarKey(log.date) === toCalendarKey(date),
@@ -697,10 +715,20 @@ const listDailyLogs = async (req, res, next) => {
         }).select("start end").lean()
       : [];
     const now = new Date();
-    return res.json(records.map((record) => hideRestrictedComments({
-      ...record,
-      delayedDays: calculateDailyLogDelay(record, holidays, now),
-    }, access)));
+    return res.json(records.map((record) => {
+      const inactiveSelfKpa =
+        record.sourceSelfKpa &&
+        (record.sourceSelfKpa.isActive === false || record.sourceSelfKpa.isDeleted);
+      const inactiveParentKpa =
+        record.sourceDueTask?.parentKpa &&
+        (record.sourceDueTask.parentKpa.isActive === false ||
+          record.sourceDueTask.parentKpa.isDeleted);
+      return hideRestrictedComments({
+        ...record,
+        isKpaInactive: Boolean(inactiveSelfKpa || inactiveParentKpa),
+        delayedDays: calculateDailyLogDelay(record, holidays, now),
+      }, access);
+    }));
   } catch (error) {
     return next(error);
   }
@@ -802,6 +830,9 @@ const updateDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    if (await isInactiveKpaDailyLog(req, record)) {
+      return res.status(409).json({ message: "Daily Logs for an inactive KPA cannot be edited" });
+    }
     const canEditDailyLog = access.isHr || access.isTopManagement ||
       await isDepartmentManager(req, record.department, access);
     if (!canEditDailyLog) {
@@ -884,6 +915,9 @@ const completeDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    if (await isInactiveKpaDailyLog(req, record)) {
+      return res.status(409).json({ message: "Daily Logs for an inactive KPA cannot be completed" });
+    }
     if (record.status === "Done") {
       return res.status(409).json({ message: "Daily Log is already completed" });
     }
@@ -1047,6 +1081,9 @@ const deleteDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    if (await isInactiveKpaDailyLog(req, record)) {
+      return res.status(409).json({ message: "Daily Logs for an inactive KPA cannot be deleted" });
+    }
     if (!access.canManageOthers || String(record.employee) === String(req.user)) {
       return res.status(403).json({ message: "Employees cannot delete Daily Logs" });
     }

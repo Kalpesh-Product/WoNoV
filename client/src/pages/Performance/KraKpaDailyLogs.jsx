@@ -60,7 +60,7 @@ const DailyLogActionCell = ({
     return () => node.removeEventListener("rowSelected", syncSelection);
   }, [node]);
 
-  const disabled = !selected || isPending;
+  const disabled = !selected || isPending || data.isKpaInactive;
 
   return (
     <div className="flex h-full items-center gap-2">
@@ -121,12 +121,20 @@ const KraKpaDailyLogs = () => {
   const member = isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
+  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
   const departmentId = isIndividualRoute
     ? auth?.user?.departments?.[0]?._id
     : location.state?.selectedDepartment ||
       selectedDepartment ||
       auth?.user?.departments?.[0]?._id;
   const employeeId = member?.memberId || auth?.user?._id;
+  const employeeName =
+    member?.memberName ||
+    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+      .filter(Boolean)
+      .join(" ");
+  const employeeTitleSuffix =
+    isEmployeeDashboardRoute && employeeName ? ` - ${employeeName}` : "";
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const canManageOthers = roleTitles.some(
@@ -420,7 +428,9 @@ const KraKpaDailyLogs = () => {
     ).length,
   };
   const canCompleteRecord = (record) =>
-    record.sourceSelfKpa
+    record.isKpaInactive
+      ? false
+      : record.sourceSelfKpa
       ? false
       : record.sourceSelfKra
       ? dayjs(record.date).isSame(dayjs(), "day") &&
@@ -635,8 +645,15 @@ const KraKpaDailyLogs = () => {
             }
             data={dueRows}
             columns={dueColumns}
-            tableTitle="PENDING DAILY LOGS"
+            tableTitle={`PENDING DAILY LOGS${employeeTitleSuffix}`}
             enableCheckbox
+            isRowSelectable={({ data }) => !data?.isKpaInactive}
+            showDisabledCheckboxes
+            getRowStyle={({ data }) =>
+              data?.isKpaInactive
+                ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                : undefined
+            }
             search
             exportData
             hideFilter={false}
@@ -652,7 +669,12 @@ const KraKpaDailyLogs = () => {
               loading={isLoading}
               data={completedRows}
               columns={completedColumns}
-              tableTitle="COMPLETED DAILY LOGS"
+              tableTitle={`COMPLETED DAILY LOGS${employeeTitleSuffix}`}
+              getRowStyle={({ data }) =>
+                data?.isKpaInactive
+                  ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                  : undefined
+              }
               search
               exportData
               hideFilter={false}
