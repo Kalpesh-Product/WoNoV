@@ -30,6 +30,7 @@ const EDIT_HISTORY_FIELDS = {
   target: "KPA",
   deadline: "Deadline",
   status: "KPA Status",
+  isActive: "Active Status",
   closingDate: "Closing Date",
   managerComments: "Manager Comments",
   kpaRating: "Manager Rating",
@@ -51,14 +52,20 @@ const getEditHistorySnapshot = (record) =>
   Object.fromEntries(
     Object.keys(EDIT_HISTORY_FIELDS).map((field) => [
       field,
-      serializeHistoryValue(record[field]),
+      field === "isActive"
+        ? record.isActive === false ? "Inactive" : "Active"
+        : serializeHistoryValue(record[field]),
     ]),
   );
 
 const getEditHistoryChanges = (before, record) =>
   Object.entries(EDIT_HISTORY_FIELDS).flatMap(([field, label]) => {
     const oldValue = before[field];
-    const newValue = serializeHistoryValue(record[field]);
+    const newValue = field === "isActive"
+      ? record.isActive === false || record.isActive === "Inactive"
+        ? "Inactive"
+        : "Active"
+      : serializeHistoryValue(record[field]);
     return JSON.stringify(oldValue) === JSON.stringify(newValue)
       ? []
       : [{ field, label, oldValue, newValue }];
@@ -233,7 +240,15 @@ const validateFields = (body, { create = false } = {}) => {
 
 const listIndividualMonthlyKpa = async (req, res, next) => {
   try {
-    const { department, employee, fiscalYear, month, status } = req.query;
+    const {
+      department,
+      employee,
+      fiscalYear,
+      month,
+      status,
+      createdAtStart,
+      createdAtEnd,
+    } = req.query;
     if (department && !mongoose.isValidObjectId(department)) {
       return res.status(400).json({ message: "Invalid department ID" });
     }
@@ -248,6 +263,22 @@ const listIndividualMonthlyKpa = async (req, res, next) => {
     }
     if (status && !["Pending", "Completed"].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
+    }
+    if (Boolean(createdAtStart) !== Boolean(createdAtEnd)) {
+      return res.status(400).json({
+        message: "Both createdAtStart and createdAtEnd are required together",
+      });
+    }
+    const createdAtStartDate = createdAtStart ? parseDate(createdAtStart) : null;
+    const createdAtEndDate = createdAtEnd ? parseDate(createdAtEnd) : null;
+    if (
+      (createdAtStart && !createdAtStartDate) ||
+      (createdAtEnd && !createdAtEndDate) ||
+      (createdAtStartDate && createdAtEndDate && createdAtStartDate >= createdAtEndDate)
+    ) {
+      return res.status(400).json({
+        message: "Invalid createdAt date range",
+      });
     }
 
     const access = await getAccess(req);
@@ -266,6 +297,9 @@ const listIndividualMonthlyKpa = async (req, res, next) => {
       ...(fiscalYear && { fiscalYear }),
       ...(month && { month }),
       ...(status && { status }),
+      ...(createdAtStartDate && createdAtEndDate && {
+        createdAt: { $gte: createdAtStartDate, $lt: createdAtEndDate },
+      }),
     })
       .sort({ month: 1, deadline: 1, createdAt: 1 })
       .populate(DETAIL_POPULATION)
@@ -618,6 +652,11 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
         message: "Resource Comment can only be added when marking the KPA as done",
       });
     }
+    if (Object.hasOwn(req.body, "isActive") && typeof req.body.isActive !== "boolean") {
+      return res.status(400).json({
+        message: "Active Status must be Active or Inactive",
+      });
+    }
     const review = validateReviewFields(req.body);
     if (review.error) return res.status(400).json({ message: review.error });
     const verification = validateVerificationFields(req.body, record);
@@ -721,6 +760,7 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
       nextManagerComments !== previousManagerComments;
 
     Object.assign(record, validation.value, review.value || {}, {
+      ...(Object.hasOwn(req.body, "isActive") && { isActive: req.body.isActive }),
       updatedBy: req.user,
     });
     // Capture submitted fields before review processing resets related values.
@@ -801,9 +841,12 @@ const completeIndividualMonthlyKpa = async (req, res, next) => {
     const access = await getAccess(req);
     const scope = { _id: req.params.id, ...getScopedFilter(req, access) };
     const existing = await IndividualMonthlyKpa.findOne(scope)
-      .select("status createdBy employee verification approvalStatus")
+      .select("status createdBy employee verification approvalStatus isActive")
       .lean();
     if (!existing) return res.status(404).json({ message: "KPA not found" });
+    if (existing.isActive === false) {
+      return res.status(409).json({ message: "An inactive KPA cannot be completed" });
+    }
     if (existing.approvalStatus && existing.approvalStatus !== "Approved") {
       return res.status(409).json({
         message: "KPA must be approved before it can be marked as done",

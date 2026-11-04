@@ -60,7 +60,7 @@ const DailyLogActionCell = ({
     return () => node.removeEventListener("rowSelected", syncSelection);
   }, [node]);
 
-  const disabled = !selected || isPending;
+  const disabled = !selected || isPending || data.isKpaInactive;
 
   return (
     <div className="flex h-full items-center gap-2">
@@ -428,7 +428,9 @@ const KraKpaDailyLogs = () => {
     ).length,
   };
   const canCompleteRecord = (record) =>
-    record.sourceSelfKpa
+    record.isKpaInactive
+      ? false
+      : record.sourceSelfKpa
       ? false
       : record.sourceSelfKra
       ? dayjs(record.date).isSame(dayjs(), "day") &&
@@ -645,6 +647,13 @@ const KraKpaDailyLogs = () => {
             columns={dueColumns}
             tableTitle={`PENDING DAILY LOGS${employeeTitleSuffix}`}
             enableCheckbox
+            isRowSelectable={({ data }) => !data?.isKpaInactive}
+            showDisabledCheckboxes
+            getRowStyle={({ data }) =>
+              data?.isKpaInactive
+                ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                : undefined
+            }
             search
             exportData
             hideFilter={false}
@@ -661,6 +670,11 @@ const KraKpaDailyLogs = () => {
               data={completedRows}
               columns={completedColumns}
               tableTitle={`COMPLETED DAILY LOGS${employeeTitleSuffix}`}
+              getRowStyle={({ data }) =>
+                data?.isKpaInactive
+                  ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+                  : undefined
+              }
               search
               exportData
               hideFilter={false}
