@@ -26,6 +26,7 @@ const {
   listDueTaskUsers,
   listDueTasks,
   createDueTask,
+  bulkUploadDueTasks,
   updateDueTask,
   addDueTaskToDailyLogs,
   addDueTasksToDailyLogs,
@@ -102,6 +103,7 @@ router.get("/self-kra-categories", listKraCategories);
 router.post("/self-kra-categories", createKraCategory);
 router.get("/due-task/users", listDueTaskUsers);
 router.get("/due-task", listDueTasks);
+router.post("/due-task/bulk-upload", upload.single("file"), bulkUploadDueTasks);
 router.post("/due-task", createDueTask);
 router.post("/due-task/daily-log", addDueTasksToDailyLogs);
 router.post("/due-task/:id/daily-log", addDueTaskToDailyLogs);

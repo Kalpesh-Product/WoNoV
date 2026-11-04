@@ -9,5 +9,6 @@ export const isDueTaskOverdue = (record, today = dayjs()) =>
 
 export const isDueTaskRowSelectable = ({ data }) =>
   Boolean(data && data.status !== "Closed" && !data.isAddedToDailyLogs &&
+    !data.isInactiveParentKpa &&
     data.deadline && dayjs(data.deadline).isValid());
 

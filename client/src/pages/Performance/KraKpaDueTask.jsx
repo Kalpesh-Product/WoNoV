@@ -1,17 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Chip,
-  MenuItem,
-  Popover,
-  TextField,
-} from "@mui/material";
+import { Chip, MenuItem, Popover, TextField } from "@mui/material";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateRangePicker } from "react-date-range";
-import { MdCalendarToday, MdClose, MdDeleteForever, MdHistory } from "react-icons/md";
+import {
+  MdCalendarToday,
+  MdClose,
+  MdDeleteForever,
+  MdDescription,
+  MdHistory,
+} from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -25,7 +26,10 @@ import SecondaryButton from "../../components/SecondaryButton";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import DailyLogEditHistory from "./DailyLogEditHistory";
-import { getPerformanceRowId, isDueTaskRowSelectable } from "../../utils/performanceRowSelection";
+import {
+  getPerformanceRowId,
+  isDueTaskRowSelectable,
+} from "../../utils/performanceRowSelection";
 
 const formatDate = (value) =>
   value && dayjs(value).isValid() ? dayjs(value).format("DD-MM-YYYY") : "-";
@@ -73,11 +77,18 @@ const DueTaskActionCell = ({
     return () => node.removeEventListener("rowSelected", syncSelection);
   }, [node]);
 
-  const disabled = !selected || isPending;
+  const disabled = !selected || isPending || data.isInactiveParentKpa;
 
   return (
     <div className="flex h-full items-center gap-2">
-      <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dueTaskName}`} disabled={disabled} onClick={() => onHistory(data)} className="flex h-8 w-8 shrink-0 items-center justify-center disabled:cursor-not-allowed">
+      <button
+        type="button"
+        title="View Edit History"
+        aria-label={`View edit history for ${data.dueTaskName}`}
+        disabled={disabled}
+        onClick={() => onHistory(data)}
+        className="flex h-8 w-8 shrink-0 items-center justify-center disabled:cursor-not-allowed"
+      >
         <MdHistory size={25} color={disabled ? "#9ca3af" : "#111827"} />
       </button>
       {data.status !== "Closed" && canEdit && (
@@ -123,7 +134,9 @@ const KraKpaDueTask = () => {
     (state) => state.performance.selectedMember,
   );
   const isIndividualRoute = location.pathname.includes("/kra-kpa/individual/");
-  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
+  const isEmployeeDashboardRoute = location.pathname.includes(
+    "/employee-dashboard/",
+  );
   const member = isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
@@ -172,6 +185,11 @@ const KraKpaDueTask = () => {
   const [dailyLogErrors, setDailyLogErrors] = useState({});
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
+  const parentKpaFieldRef = useRef(null);
+  const [parentKpaMenuSize, setParentKpaMenuSize] = useState(null);
+  const bulkFileInputRef = useRef(null);
+  const [bulkUploadFile, setBulkUploadFile] = useState(null);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const selectedKpaMonth = form.identificationDate
     ? dayjs(form.identificationDate).format("YYYY-MM")
     : "";
@@ -234,13 +252,21 @@ const KraKpaDueTask = () => {
             params: {
               department: departmentId,
               employee: employeeId,
-              month: selectedKpaMonth,
+              createdAtStart: dayjs(`${selectedKpaMonth}-01`)
+                .startOf("month")
+                .format("YYYY-MM-DD"),
+              createdAtEnd: dayjs(`${selectedKpaMonth}-01`)
+                .add(1, "month")
+                .startOf("month")
+                .format("YYYY-MM-DD"),
             },
           },
         );
         return [...(response.data || [])]
           .filter(
-            (kpa) => !kpa.approvalStatus || kpa.approvalStatus === "Approved",
+            (kpa) =>
+              kpa.isActive !== false &&
+              (!kpa.approvalStatus || kpa.approvalStatus === "Approved"),
           )
           .sort((first, second) => {
             const firstDeadline = first.deadline
@@ -273,6 +299,88 @@ const KraKpaDueTask = () => {
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaDueTask"] });
   };
+
+  const getBulkRange = () => ({
+    createdAtStart: dayjs(dateRange.startDate).format("YYYY-MM-DD"),
+    createdAtEnd: dayjs(dateRange.endDate).format("YYYY-MM-DD"),
+  });
+
+  const downloadDueTaskTemplate = async () => {
+    setIsDownloadingTemplate(true);
+    try {
+      const range = getBulkRange();
+      const response = await axios.get("/api/kra-kpa/individual-monthly-kpa", {
+        params: {
+          department: departmentId,
+          employee: employeeId,
+          createdAtStart: range.createdAtStart,
+          createdAtEnd: dayjs(range.createdAtEnd).add(1, "day").format("YYYY-MM-DD"),
+        },
+      });
+      const kpas = (response.data || []).filter(
+        (kpa) =>
+          kpa.isActive !== false &&
+          kpa.deadline &&
+          (!kpa.approvalStatus || kpa.approvalStatus === "Approved"),
+      );
+      if (!kpas.length) {
+        toast.error("No active, approved KPAs were created in the selected date range.");
+        return;
+      }
+      const csvCell = (value) => {
+        const text = String(value ?? "");
+        const safeText = /^[\s]*[=+@-]/.test(text) ? `'${text}` : text;
+        return `"${safeText.replaceAll('"', '""')}"`;
+      };
+      const header = ["Main KPA", "KPA Task", "Identification Date", "Task Deadline"];
+      const rows = kpas.map((kpa) => [
+        kpa.target,
+        "",
+        "",
+        "",
+      ]);
+      const csv = `\uFEFF${[header, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}\r\n`;
+      const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `due-task-bulk-upload-${range.createdAtStart}-to-${range.createdAtEnd}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Unable to download Due Task CSV.");
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
+  };
+
+  const bulkUploadDueTasks = useMutation({
+    mutationFn: async ({ file, range }) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("department", departmentId);
+      formData.append("employee", employeeId);
+      formData.append("createdAtStart", range.createdAtStart);
+      formData.append("createdAtEnd", range.createdAtEnd);
+      const response = await axios.post("/api/kra-kpa/due-task/bulk-upload", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      refresh();
+      toast.success(`${data.count} Due Task${data.count === 1 ? "" : "s"} uploaded.`);
+    },
+    onError: (error) => {
+      const firstError = error?.response?.data?.errors?.[0];
+      toast.error(firstError
+        ? `Row ${firstError.row}, ${firstError.field}: ${firstError.message}`
+        : error?.response?.data?.message || "Unable to upload Due Tasks.");
+    },
+    onSettled: () => {
+      setBulkUploadFile(null);
+      if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
+    },
+  });
 
   const saveTask = useMutation({
     mutationFn: async (payload) => {
@@ -447,16 +555,20 @@ const KraKpaDueTask = () => {
           identifierName: formatUserName(record.taskIdentifier),
           parentKpaName: record.parentKpa?.target || "-",
           parentKpaDeadline: record.parentKpa?.deadline || null,
+          isInactiveParentKpa: Boolean(
+            record.isInactiveParentKpa || record.parentKpa?.isActive === false,
+          ),
         })),
     [records, dateRange],
   );
 
   const canEditRecord = (record) =>
-    canManageOthers ||
-    String(record.employee?._id || record.employee) ===
-      String(auth?.user?._id) ||
-    String(record.createdBy?._id || record.createdBy) ===
-      String(auth?.user?._id);
+    !record.isInactiveParentKpa &&
+    (canManageOthers ||
+      String(record.employee?._id || record.employee) ===
+        String(auth?.user?._id) ||
+      String(record.createdBy?._id || record.createdBy) ===
+        String(auth?.user?._id));
   const isTaskEmployee = (record) =>
     String(record?.employee?._id || record?.employee) ===
     String(auth?.user?._id);
@@ -465,10 +577,11 @@ const KraKpaDueTask = () => {
     canEditRecord(record) &&
     (isTaskEmployee(record) || Boolean(deadlineAccess?.canEditManagerReview));
   const canDeleteRecord = (record) =>
-    canManageOthers && !isTaskEmployee(record);
+    !record.isInactiveParentKpa && canManageOthers && !isTaskEmployee(record);
   const canCloseRecord = (record) =>
     String(record.lead?._id || record.lead) === String(auth?.user?._id);
   const canAddToDailyLogsRecord = (record) =>
+    !record.isInactiveParentKpa &&
     !record.isAddedToDailyLogs &&
     record.status !== "Closed" &&
     Boolean(record.deadline && dayjs(record.deadline).isValid()) &&
@@ -637,68 +750,143 @@ const KraKpaDueTask = () => {
 
   return (
     <PageFrame>
-      {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
+      {historyRecord && (
+        <DailyLogEditHistory
+          record={historyRecord}
+          onClose={() => setHistoryRecord(null)}
+        />
+      )}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
           {`Unscheduled Due Tasks${isEmployeeDashboardRoute && employeeName ? ` - ${employeeName}` : ""}`}
         </h1>
-        {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
-          {canAdd && <PrimaryButton type="button" title="Add Due Task" handleSubmit={openCreate} />}
-          <PrimaryButton
-            type="button"
-            title={`Add Daily Logs (${selectedDueTasks.length})`}
-            handleSubmit={openAddToDailyLogs}
-            disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
-            className="!w-[230px]"
-          />
-        </div>}
+        {!isLoading && (
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            {canAdd && (
+              <>
+                <input
+                  ref={bulkFileInputRef}
+                  type="file"
+                  accept=".csv,text/csv"
+                  aria-label="Choose Due Task CSV file"
+                  className="hidden"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) setBulkUploadFile({ file, range: getBulkRange() });
+                  }}
+                />
+                <button
+                  type="button"
+                  title="Download Due Task CSV for selected KPA date range"
+                  aria-label="Download Due Task CSV for selected KPA date range"
+                  onClick={downloadDueTaskTemplate}
+                  disabled={isDownloadingTemplate}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary text-primary transition-colors hover:bg-primary/10 disabled:opacity-50"
+                >
+                  <MdDescription size={22} />
+                </button>
+                <PrimaryButton
+                  type="button"
+                  title="Bulk Upload Due Tasks"
+                  handleSubmit={() => bulkFileInputRef.current?.click()}
+                  disabled={bulkUploadDueTasks.isPending}
+                  isLoading={bulkUploadDueTasks.isPending}
+                  externalStyles="!px-4"
+                />
+                <PrimaryButton
+                  type="button"
+                  title="Add Due Task"
+                  handleSubmit={openCreate}
+                />
+              </>
+            )}
+            <PrimaryButton
+              type="button"
+              title={`Add Daily Logs (${selectedDueTasks.length})`}
+              handleSubmit={openAddToDailyLogs}
+              disabled={!canAddSelectedTasks || addToDailyLogs.isPending}
+              className="!w-[230px]"
+            />
+          </div>
+        )}
       </div>
 
-        <AgTable
-          loading={isLoading}
-          toolbarDateControls={
-            <>
-              <div className="flex items-center justify-center gap-2">
-                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                      {dayjs(dateRange.startDate).format("DD MMM YYYY")}
-                    </div>
-                    <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
-                      {dayjs(dateRange.endDate).format("DD MMM YYYY")}
-                    </div>
-                    <button type="button" aria-label="Select date range" className="rounded-md bg-primary p-3 text-white" onClick={event => setCalendarAnchor(event.currentTarget)}>
-                      <MdCalendarToday size={20} />
-                    </button>
-                  </div>
-              <Popover open={Boolean(calendarAnchor)} anchorEl={calendarAnchor} onClose={() => setCalendarAnchor(null)} anchorOrigin={{
+      <ConfirmationModal
+        open={Boolean(bulkUploadFile)}
+        onClose={() => {
+          setBulkUploadFile(null);
+          if (bulkFileInputRef.current) bulkFileInputRef.current.value = "";
+        }}
+        onConfirm={() => bulkUploadFile && bulkUploadDueTasks.mutate(bulkUploadFile)}
+        title="Confirm Due Task Bulk Upload"
+        message={`Upload "${bulkUploadFile?.file?.name || "the selected CSV"}"? The department manager will be set as Task Identifier for every row. No rows will be imported if validation fails.`}
+        isLoading={bulkUploadDueTasks.isPending}
+      />
+
+      <AgTable
+        loading={isLoading}
+        toolbarDateControls={
+          <>
+            <div className="flex items-center justify-center gap-2">
+              <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                {dayjs(dateRange.startDate).format("DD MMM YYYY")}
+              </div>
+              <div className="min-w-40 rounded-md border border-primary px-6 py-2 text-center text-content text-gray-600">
+                {dayjs(dateRange.endDate).format("DD MMM YYYY")}
+              </div>
+              <button
+                type="button"
+                aria-label="Select date range"
+                className="rounded-md bg-primary p-3 text-white"
+                onClick={(event) => setCalendarAnchor(event.currentTarget)}
+              >
+                <MdCalendarToday size={20} />
+              </button>
+            </div>
+            <Popover
+              open={Boolean(calendarAnchor)}
+              anchorEl={calendarAnchor}
+              onClose={() => setCalendarAnchor(null)}
+              anchorOrigin={{
                 vertical: "bottom",
-                horizontal: "center"
-              }} transformOrigin={{
+                horizontal: "center",
+              }}
+              transformOrigin={{
                 vertical: "top",
-                horizontal: "center"
-              }}>
-                    <DateRangePicker ranges={[dateRange]} onChange={({
-                  selection
-                }) => setDateRange(selection)} moveRangeOnFirstSelection={false} direction="vertical" />
-                  </Popover>
-            </>
-          }
-          showDateControls={false}
-          data={tableData}
-          getRowId={getPerformanceRowId}
-          selectionResetKey={selectionResetKey}
-          columns={columns}
-          hideTitle
-          enableCheckbox
-          checkAll
-          isRowSelectable={isDueTaskRowSelectable}
-          showDisabledCheckboxes
-          search
-          onSelectionChange={setSelectedDueTasks}
-          exportData
-          hideFilter={false}
-          processExportCell={({ value }) => value ?? ""}
-          tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
-        />
+                horizontal: "center",
+              }}
+            >
+              <DateRangePicker
+                ranges={[dateRange]}
+                onChange={({ selection }) => setDateRange(selection)}
+                moveRangeOnFirstSelection={false}
+                direction="vertical"
+              />
+            </Popover>
+          </>
+        }
+        showDateControls={false}
+        data={tableData}
+        getRowId={getPerformanceRowId}
+        selectionResetKey={selectionResetKey}
+        columns={columns}
+        hideTitle
+        enableCheckbox
+        checkAll
+        getRowStyle={({ data }) =>
+          data?.isInactiveParentKpa
+            ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
+            : undefined
+        }
+        isRowSelectable={isDueTaskRowSelectable}
+        showDisabledCheckboxes
+        search
+        onSelectionChange={setSelectedDueTasks}
+        exportData
+        hideFilter={false}
+        processExportCell={({ value }) => value ?? ""}
+        tableHeight={Math.max(300, Math.min(650, tableData.length * 58 + 90))}
+      />
 
       <MuiModal
         open={Boolean(viewRecord)}
@@ -867,6 +1055,7 @@ const KraKpaDueTask = () => {
         <form className="grid gap-4" onSubmit={handleSubmit} noValidate>
           <div className="grid gap-4 md:grid-cols-2">
             <TextField
+              ref={parentKpaFieldRef}
               label={`${selectedKpaMonthLabel} KPA *`}
               select
               size="small"
@@ -876,6 +1065,19 @@ const KraKpaDueTask = () => {
               helperText={formErrors.parentKpa}
               disabled={!selectedKpaMonth || isLoadingParentKpas}
               SelectProps={{
+                onOpen: () => {
+                  const field = parentKpaFieldRef.current;
+                  const fieldBounds = field?.getBoundingClientRect();
+                  const formBounds = field?.closest("form")?.getBoundingClientRect();
+                  if (!fieldBounds || !formBounds) return;
+                  setParentKpaMenuSize({
+                    width: fieldBounds.width,
+                    maxHeight: Math.max(
+                      48,
+                      Math.min(240, formBounds.bottom - fieldBounds.bottom - 8),
+                    ),
+                  });
+                },
                 renderValue: (selected) => {
                   const selectedKpa = parentKpaOptions.find(
                     (kpa) => kpa._id === selected,
@@ -893,13 +1095,38 @@ const KraKpaDueTask = () => {
                   );
                 },
                 MenuProps: {
+                  anchorOrigin: {
+                    vertical: "bottom",
+                    horizontal: "left",
+                  },
+                  transformOrigin: {
+                    vertical: "top",
+                    horizontal: "left",
+                  },
+                  marginThreshold: 8,
                   PaperProps: {
+                    style: parentKpaMenuSize
+                      ? {
+                          width: parentKpaMenuSize.width,
+                          minWidth: parentKpaMenuSize.width,
+                          maxWidth: parentKpaMenuSize.width,
+                          maxHeight: parentKpaMenuSize.maxHeight,
+                        }
+                      : undefined,
                     sx: {
-                      maxHeight: 340,
+                      boxSizing: "border-box",
+                      overflowY: "auto",
+                      overflowX: "hidden",
                       mt: 1,
                       border: "1px solid #e5e7eb",
                       borderRadius: "10px",
                       boxShadow: "0 10px 30px rgba(15, 23, 42, 0.14)",
+                    },
+                  },
+                  MenuListProps: {
+                    sx: {
+                      boxSizing: "border-box",
+                      overflowX: "hidden",
                     },
                   },
                 },
@@ -910,7 +1137,7 @@ const KraKpaDueTask = () => {
                   ? "Loading KPAs..."
                   : parentKpaOptions.length
                     ? `Select ${selectedKpaMonthLabel} KPA`
-                    : `No KPAs available for ${selectedKpaMonthLabel}`}
+                    : `No Approved KPAs available for ${selectedKpaMonthLabel}`}
               </MenuItem>
               {parentKpaOptions.map((kpa) => (
                 <MenuItem
@@ -923,12 +1150,15 @@ const KraKpaDueTask = () => {
                     borderRadius: "8px",
                     py: 1.1,
                     whiteSpace: "normal",
+                    width: "calc(100% - 12px)",
+                    maxWidth: "calc(100% - 12px)",
+                    boxSizing: "border-box",
                     "&.Mui-selected": { backgroundColor: "#edf4ff" },
                     "&.Mui-selected:hover": { backgroundColor: "#e3edfc" },
                   }}
                 >
                   <div className="min-w-0">
-                    <div className="font-medium leading-5 text-primary">
+                    <div className="max-w-full break-words font-medium leading-5 text-primary [overflow-wrap:anywhere]">
                       {kpa.target}
                     </div>
                     <div className="mt-1 text-xs text-gray-500">

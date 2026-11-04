@@ -1,13 +1,21 @@
 const mongoose = require("mongoose");
+const csvParser = require("csv-parser");
+const { Readable } = require("stream");
 const Department = require("../../models/Departments");
+const Company = require("../../models/hr/Company");
 const UserData = require("../../models/hr/UserData");
 const DueTask = require("../../models/performances/KraKpaDueTask");
 const DailyLog = require("../../models/performances/KraKpaDailyLog");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
-const { buildLifecycleHistoryEntry } = require("../../utils/kraKpaLifecycleHistory");
-const { validateTaskSchedule, isOverdueSchedule } = require("../../utils/kraKpaTaskSchedule");
+const {
+  buildLifecycleHistoryEntry,
+} = require("../../utils/kraKpaLifecycleHistory");
+const {
+  validateTaskSchedule,
+  isOverdueSchedule,
+} = require("../../utils/kraKpaTaskSchedule");
 const {
   calculateDelayedWorkingDays,
 } = require("../../utils/kraKpaDelayedDays");
@@ -17,19 +25,110 @@ const POPULATION = [
   { path: "editHistory.editedBy", select: "firstName middleName lastName" },
   { path: "employee", select: "firstName middleName lastName empId" },
   { path: "department", select: "name" },
-  { path: "parentKpa", select: "target deadline month status" },
+  {
+    path: "parentKpa",
+    select: "target deadline month status isActive isDeleted",
+  },
   { path: "lead", select: "firstName middleName lastName empId" },
   { path: "taskIdentifier", select: "firstName middleName lastName empId" },
   { path: "assignedBy", select: "firstName middleName lastName empId" },
   { path: "createdBy", select: "firstName middleName lastName empId" },
 ];
 
+// const parseDate = (value) => {
+//   if (typeof value !== "string" || !DATE_PATTERN.test(value)) return undefined;
+//   const date = new Date(`${value}T00:00:00.000Z`);
+//   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
+//     ? date
+//     : undefined;
+// };
+
 const parseDate = (value) => {
-  if (typeof value !== "string" || !DATE_PATTERN.test(value)) return undefined;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
-    ? date
-    : undefined;
+  if (typeof value !== "string") return undefined;
+
+  const input = value.trim();
+
+  const months = {
+    jan: 1,
+    january: 1,
+    feb: 2,
+    february: 2,
+    mar: 3,
+    march: 3,
+    apr: 4,
+    april: 4,
+    may: 5,
+    jun: 6,
+    june: 6,
+    jul: 7,
+    july: 7,
+    aug: 8,
+    august: 8,
+    sep: 9,
+    september: 9,
+    oct: 10,
+    october: 10,
+    nov: 11,
+    november: 11,
+    dec: 12,
+    december: 12,
+  };
+
+  let day, month, year;
+
+  // YYYY-MM-DD (existing format)
+  if (DATE_PATTERN.test(input)) {
+    const [y, m, d] = input.split("-");
+    year = Number(y);
+    month = Number(m);
+    day = Number(d);
+  } else {
+    // DD-MM-YYYY, DD-MM-YY
+    // DD-MMM-YYYY, DD-MMM-YY
+    // DD-MMMM-YYYY, DD-MMMM-YY
+    const match = input.match(/^(\d{2})-(\d{2}|[A-Za-z]{3,9})-(\d{2}|\d{4})$/);
+
+    if (!match) return undefined;
+
+    day = Number(match[1]);
+
+    month = /^\d{2}$/.test(match[2])
+      ? Number(match[2])
+      : months[match[2].toLowerCase()];
+
+    year = Number(match[3]);
+
+    // Convert YY to 20YY
+    if (match[3].length === 2) {
+      year += 2000;
+    }
+  }
+
+  if (
+    !Number.isInteger(month) ||
+    month < 1 ||
+    month > 12 ||
+    year < 1 ||
+    year > 9999 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return undefined;
+  }
+
+  const date = new Date(Date.UTC(0, month - 1, day));
+  date.setUTCFullYear(year);
+
+  // Reject invalid calendar dates
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() + 1 !== month ||
+    date.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return date;
 };
 
 const getAccess = async (req) => {
@@ -42,10 +141,10 @@ const getAccess = async (req) => {
     roles.includes("top management") ||
     Boolean(
       departmentIds.length &&
-        (await Department.exists({
-          _id: { $in: departmentIds },
-          name: /^top management$/i,
-        })),
+      (await Department.exists({
+        _id: { $in: departmentIds },
+        name: /^top management$/i,
+      })),
     );
   const allDepartments =
     isHr ||
@@ -54,7 +153,13 @@ const getAccess = async (req) => {
   const canViewOthers =
     allDepartments ||
     roles.some((role) => role.includes("manager") || role.endsWith("admin"));
-  return { allDepartments, canViewOthers, departmentIds, isHr, isTopManagement };
+  return {
+    allDepartments,
+    canViewOthers,
+    departmentIds,
+    isHr,
+    isTopManagement,
+  };
 };
 
 const getScopedFilter = (req, access) => ({
@@ -65,11 +170,20 @@ const getScopedFilter = (req, access) => ({
 });
 
 const validateScope = async (req, department, employee) => {
-  if (!mongoose.isValidObjectId(department) || !mongoose.isValidObjectId(employee)) {
-    return { status: 400, message: "Valid department and employee IDs are required" };
+  if (
+    !mongoose.isValidObjectId(department) ||
+    !mongoose.isValidObjectId(employee)
+  ) {
+    return {
+      status: 400,
+      message: "Valid department and employee IDs are required",
+    };
   }
   const access = await getAccess(req);
-  if (!access.allDepartments && !access.departmentIds.includes(String(department))) {
+  if (
+    !access.allDepartments &&
+    !access.departmentIds.includes(String(department))
+  ) {
     return { status: 403, message: "Department access denied" };
   }
   if (!access.canViewOthers && String(employee) !== String(req.user)) {
@@ -82,7 +196,10 @@ const validateScope = async (req, department, employee) => {
     isActive: true,
   });
   if (!validEmployee) {
-    return { status: 400, message: "Employee is not active in this department" };
+    return {
+      status: 400,
+      message: "Employee is not active in this department",
+    };
   }
   return { access };
 };
@@ -108,14 +225,28 @@ const validateParentKpa = async ({
   if (!mongoose.isValidObjectId(parentKpa)) {
     return { error: "Main KPA is required" };
   }
-  const month = identificationDate.toISOString().slice(0, 7);
+  const monthStart = new Date(
+    Date.UTC(
+      identificationDate.getUTCFullYear(),
+      identificationDate.getUTCMonth(),
+      1,
+    ),
+  );
+  const monthEnd = new Date(
+    Date.UTC(
+      identificationDate.getUTCFullYear(),
+      identificationDate.getUTCMonth() + 1,
+      1,
+    ),
+  );
   const record = await IndividualMonthlyKpa.findOne({
     _id: parentKpa,
     company: req.company,
     department,
     employee,
-    month,
+    createdAt: { $gte: monthStart, $lt: monthEnd },
     isDeleted: { $ne: true },
+    isActive: { $ne: false },
     $or: [
       { approvalStatus: "Approved" },
       { approvalStatus: { $exists: false } },
@@ -128,6 +259,19 @@ const validateParentKpa = async ({
     return { error: "The selected KPA must have a deadline" };
   }
   return { value: record._id, deadline: record.deadline };
+};
+
+const hasInactiveParentKpa = async (req, record) => {
+  if (!record?.parentKpa) return false;
+  const parentKpa = await IndividualMonthlyKpa.findOne({
+    _id: record.parentKpa,
+    company: req.company,
+    isDeleted: { $ne: true },
+    isActive: { $ne: false },
+  })
+    .select("_id")
+    .lean();
+  return !parentKpa;
 };
 
 const validateTaskDates = (task, parentKpaDeadline) => {
@@ -144,10 +288,10 @@ const validateTaskDates = (task, parentKpaDeadline) => {
 };
 
 const validateTask = (body) => {
-  const dueTaskName = typeof body.dueTaskName === "string"
-    ? body.dueTaskName.trim()
-    : "";
-  const comments = typeof body.comments === "string" ? body.comments.trim() : "";
+  const dueTaskName =
+    typeof body.dueTaskName === "string" ? body.dueTaskName.trim() : "";
+  const comments =
+    typeof body.comments === "string" ? body.comments.trim() : "";
   const identificationDate = parseDate(body.identificationDate);
   const deadline = parseDate(body.deadline);
   if (!dueTaskName) return { error: "KPA Task is required" };
@@ -162,10 +306,15 @@ const listDueTaskUsers = async (req, res, next) => {
   try {
     const { department } = req.query;
     if (!mongoose.isValidObjectId(department)) {
-      return res.status(400).json({ message: "A valid department ID is required" });
+      return res
+        .status(400)
+        .json({ message: "A valid department ID is required" });
     }
     const access = await getAccess(req);
-    if (!access.allDepartments && !access.departmentIds.includes(String(department))) {
+    if (
+      !access.allDepartments &&
+      !access.departmentIds.includes(String(department))
+    ) {
       return res.status(403).json({ message: "Department access denied" });
     }
     const users = await UserData.find({
@@ -232,6 +381,10 @@ const listDueTasks = async (req, res, next) => {
     return res.json(
       records.map((record) => ({
         ...record,
+        isInactiveParentKpa: Boolean(
+          record.parentKpa &&
+          (record.parentKpa.isActive === false || record.parentKpa.isDeleted),
+        ),
         delayedDays:
           record.status === "Closed"
             ? calculateDelayedWorkingDays(
@@ -251,10 +404,16 @@ const listDueTasks = async (req, res, next) => {
 
 const createDueTask = async (req, res, next) => {
   try {
-    const scope = await validateScope(req, req.body.department, req.body.employee);
-    if (scope.message) return res.status(scope.status).json({ message: scope.message });
+    const scope = await validateScope(
+      req,
+      req.body.department,
+      req.body.employee,
+    );
+    if (scope.message)
+      return res.status(scope.status).json({ message: scope.message });
     const validation = validateTask(req.body);
-    if (validation.error) return res.status(400).json({ message: validation.error });
+    if (validation.error)
+      return res.status(400).json({ message: validation.error });
     const parentKpaValidation = await validateParentKpa({
       req,
       parentKpa: req.body.parentKpa,
@@ -276,7 +435,8 @@ const createDueTask = async (req, res, next) => {
       req.body.department,
       "Task Identifier",
     );
-    if (identifierError) return res.status(400).json({ message: identifierError });
+    if (identifierError)
+      return res.status(400).json({ message: identifierError });
     const record = await DueTask.create({
       ...validation.value,
       company: req.company,
@@ -297,32 +457,256 @@ const createDueTask = async (req, res, next) => {
   }
 };
 
+const normalizeCsvHeader = (value) =>
+  String(value || "")
+    .replace(/^\uFEFF/, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s_-]+/g, "");
+const normalizeKpaName = (value) =>
+  String(value || "")
+    .replace(/^'(?=\s*[=+@-])/, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+
+const bulkUploadDueTasks = async (req, res, next) => {
+  try {
+    const { department, employee, createdAtStart, createdAtEnd } = req.body;
+    const scope = await validateScope(req, department, employee);
+    if (scope.message)
+      return res.status(scope.status).json({ message: scope.message });
+    if (!req.file || !/\.csv$/i.test(req.file.originalname || "")) {
+      return res.status(400).json({ message: "Please upload a CSV file." });
+    }
+    if (req.file.buffer.length > 2 * 1024 * 1024) {
+      return res.status(400).json({ message: "CSV file must be under 2 MB." });
+    }
+    const rangeStart = parseDate(createdAtStart);
+    const rangeEndDay = parseDate(createdAtEnd);
+    if (!rangeStart || !rangeEndDay || rangeStart > rangeEndDay) {
+      return res
+        .status(400)
+        .json({ message: "Select a valid KPA date range." });
+    }
+    const rangeEnd = new Date(rangeEndDay.getTime() + 24 * 60 * 60 * 1000);
+    const csv = req.file.buffer
+      .toString("utf8")
+      .replace(/^\uFEFF/, "")
+      .trim();
+    if (!csv)
+      return res.status(400).json({ message: "The CSV file is empty." });
+
+    let headers = [];
+    const rows = [];
+    await new Promise((resolve, reject) => {
+      Readable.from([csv])
+        .pipe(csvParser())
+        .on("headers", (values) => {
+          headers = values.map(normalizeCsvHeader);
+        })
+        .on("data", (row) => rows.push(row))
+        .on("end", resolve)
+        .on("error", reject);
+    });
+    const requiredHeaders = [
+      "mainkpa",
+      "kpatask",
+      "identificationdate",
+      "taskdeadline",
+    ];
+    if (requiredHeaders.some((header) => !headers.includes(header))) {
+      return res.status(400).json({
+        message:
+          "CSV must include Main KPA, KPA Task, Identification Date, and Task Deadline columns.",
+      });
+    }
+    const nonEmptyRows = rows.filter((row) =>
+      Object.values(row).some((value) => String(value ?? "").trim()),
+    );
+    if (!nonEmptyRows.length || nonEmptyRows.length > 500) {
+      return res
+        .status(400)
+        .json({ message: "Upload between 1 and 500 Due Task rows." });
+    }
+
+    const company = await Company.findById(req.company)
+      .select("selectedDepartments.department selectedDepartments.admin")
+      .lean();
+    const managerRole = company?.selectedDepartments?.find(
+      (assignment) => String(assignment.department) === String(department),
+    )?.admin;
+    const manager =
+      managerRole &&
+      (await UserData.findOne({
+        company: req.company,
+        departments: department,
+        role: managerRole,
+        isActive: true,
+      })
+        .select("_id")
+        .lean());
+    if (!manager) {
+      return res.status(400).json({
+        message:
+          "No active manager is assigned to this department. Due Tasks were not uploaded.",
+      });
+    }
+
+    const getCell = (row, header) => {
+      const key = Object.keys(row).find(
+        (name) => normalizeCsvHeader(name) === header,
+      );
+      return key ? String(row[key] ?? "").trim() : "";
+    };
+    const kpas = await IndividualMonthlyKpa.find({
+      company: req.company,
+      department,
+      employee,
+      createdAt: { $gte: rangeStart, $lt: rangeEnd },
+      isDeleted: { $ne: true },
+      isActive: { $ne: false },
+      $or: [
+        { approvalStatus: "Approved" },
+        { approvalStatus: { $exists: false } },
+      ],
+    })
+      .select("_id target deadline createdAt")
+      .lean();
+    const kpasByName = new Map();
+    kpas.forEach((kpa) => {
+      const name = normalizeKpaName(kpa.target);
+      kpasByName.set(name, [...(kpasByName.get(name) || []), kpa]);
+    });
+    const errors = [];
+    const records = nonEmptyRows.map((row, index) => {
+      const rowNumber = index + 2;
+      const parentKpaName = getCell(row, "mainkpa");
+      const task = validateTask({
+        dueTaskName: getCell(row, "kpatask"),
+        identificationDate: getCell(row, "identificationdate"),
+        deadline: getCell(row, "taskdeadline"),
+        comments: getCell(row, "comments"),
+      });
+      const identificationMonth = task.value?.identificationDate
+        .toISOString()
+        .slice(0, 7);
+      const matches = (
+        kpasByName.get(normalizeKpaName(parentKpaName)) || []
+      ).filter(
+        (kpa) =>
+          !identificationMonth ||
+          kpa.createdAt.toISOString().slice(0, 7) === identificationMonth,
+      );
+      const parentKpa = matches.length === 1 ? matches[0] : null;
+      if (!parentKpaName) {
+        errors.push({
+          row: rowNumber,
+          field: "Main KPA",
+          message: "Main KPA is required.",
+        });
+      } else if (matches.length > 1) {
+        errors.push({
+          row: rowNumber,
+          field: "Main KPA",
+          message:
+            "More than one KPA has this name in the identification month. Rename the KPAs to distinguish them before uploading.",
+        });
+      } else if (!parentKpa || !parentKpa.deadline) {
+        errors.push({
+          row: rowNumber,
+          field: "Main KPA",
+          message:
+            "Select an active, approved KPA from the downloaded date range and its creation month.",
+        });
+      }
+      if (task.error) {
+        const field = task.error.startsWith("Identification Date")
+          ? "Identification Date"
+          : task.error.startsWith("Deadline")
+            ? "Task Deadline"
+            : task.error.startsWith("Comments")
+              ? "Comments"
+              : "KPA Task";
+        errors.push({ row: rowNumber, field, message: task.error });
+      }
+      if (!parentKpa || task.error) return null;
+      const dateError = validateTaskDates(task.value, parentKpa.deadline);
+      if (dateError)
+        errors.push({
+          row: rowNumber,
+          field: "Task Deadline",
+          message: dateError,
+        });
+      return {
+        ...task.value,
+        company: req.company,
+        department,
+        employee,
+        parentKpa: parentKpa._id,
+        lead: employee,
+        taskIdentifier: manager._id,
+        status: "Pending",
+        assignedBy: req.user,
+        createdBy: req.user,
+        updatedBy: req.user,
+      };
+    });
+    if (errors.length) {
+      return res.status(400).json({
+        message: "Due Task CSV validation failed. No rows were imported.",
+        errors,
+      });
+    }
+    await DueTask.insertMany(records, { ordered: true });
+    return res
+      .status(201)
+      .json({
+        count: records.length,
+        message: "Due Tasks uploaded successfully.",
+      });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const updateDueTask = async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Due Task ID" });
     }
     const validation = validateTask(req.body);
-    if (validation.error) return res.status(400).json({ message: validation.error });
+    if (validation.error)
+      return res.status(400).json({ message: validation.error });
     const access = await getAccess(req);
     const record = await DueTask.findOne({
       _id: req.params.id,
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Due Task not found" });
+    if (await hasInactiveParentKpa(req, record)) {
+      return res.status(409).json({
+        message: "Tasks linked to an inactive KPA cannot be edited",
+      });
+    }
     if (record.status === "Closed") {
-      return res.status(409).json({ message: "A closed Due Task cannot be edited" });
+      return res
+        .status(409)
+        .json({ message: "A closed Due Task cannot be edited" });
     }
     if (
       validation.value.deadline.toISOString().slice(0, 10) !==
-        record.deadline.toISOString().slice(0, 10)
+      record.deadline.toISOString().slice(0, 10)
     ) {
-      const canEditDeadline = String(record.employee) === String(req.user) ||
-        access.isHr || access.isTopManagement ||
-        await isDepartmentManager(req, record.department, access);
+      const canEditDeadline =
+        String(record.employee) === String(req.user) ||
+        access.isHr ||
+        access.isTopManagement ||
+        (await isDepartmentManager(req, record.department, access));
       if (!canEditDeadline) {
         return res.status(403).json({
-          message: "Only the assigned employee, department manager, HR or Top Management can edit the Due Task deadline",
+          message:
+            "Only the assigned employee, department manager, HR or Top Management can edit the Due Task deadline",
         });
       }
     }
@@ -354,30 +738,60 @@ const updateDueTask = async (req, res, next) => {
       record.department,
       "Task Identifier",
     );
-    if (identifierError) return res.status(400).json({ message: identifierError });
+    if (identifierError)
+      return res.status(400).json({ message: identifierError });
     await record.populate([
       { path: "parentKpa", select: "target" },
       { path: "taskIdentifier", select: "firstName middleName lastName" },
     ]);
     const historyChanges = [];
     for (const [field, label] of Object.entries({
-      dueTaskName: "KPA Task", identificationDate: "Identification Date",
-      deadline: "KPA Task Deadline", comments: "Comments",
+      dueTaskName: "KPA Task",
+      identificationDate: "Identification Date",
+      deadline: "KPA Task Deadline",
+      comments: "Comments",
     })) {
       if (!Object.hasOwn(req.body, field)) continue;
-      const serialize = (value) => value instanceof Date ? value.toISOString() : value || null;
+      const serialize = (value) =>
+        value instanceof Date ? value.toISOString() : value || null;
       const oldValue = serialize(record[field]);
       const newValue = serialize(validation.value[field]);
-      if (oldValue !== newValue) historyChanges.push({ field, label, oldValue, newValue });
+      if (oldValue !== newValue)
+        historyChanges.push({ field, label, oldValue, newValue });
     }
-    if (String(record.parentKpa?._id || record.parentKpa) !== String(parentKpaValidation.value)) {
-      const parent = await IndividualMonthlyKpa.findById(parentKpaValidation.value).select("target").lean();
-      historyChanges.push({ field: "parentKpa", label: "Main KPA", oldValue: record.parentKpa?.target || null, newValue: parent?.target || null });
+    if (
+      String(record.parentKpa?._id || record.parentKpa) !==
+      String(parentKpaValidation.value)
+    ) {
+      const parent = await IndividualMonthlyKpa.findById(
+        parentKpaValidation.value,
+      )
+        .select("target")
+        .lean();
+      historyChanges.push({
+        field: "parentKpa",
+        label: "Main KPA",
+        oldValue: record.parentKpa?.target || null,
+        newValue: parent?.target || null,
+      });
     }
-    if (String(record.taskIdentifier?._id || record.taskIdentifier) !== String(req.body.taskIdentifier)) {
-      const identifier = await UserData.findById(req.body.taskIdentifier).select("firstName middleName lastName").lean();
-      const name = (user) => [user?.firstName, user?.middleName, user?.lastName].filter(Boolean).join(" ") || null;
-      historyChanges.push({ field: "taskIdentifier", label: "Task Identifier", oldValue: name(record.taskIdentifier), newValue: name(identifier) });
+    if (
+      String(record.taskIdentifier?._id || record.taskIdentifier) !==
+      String(req.body.taskIdentifier)
+    ) {
+      const identifier = await UserData.findById(req.body.taskIdentifier)
+        .select("firstName middleName lastName")
+        .lean();
+      const name = (user) =>
+        [user?.firstName, user?.middleName, user?.lastName]
+          .filter(Boolean)
+          .join(" ") || null;
+      historyChanges.push({
+        field: "taskIdentifier",
+        label: "Task Identifier",
+        oldValue: name(record.taskIdentifier),
+        newValue: name(identifier),
+      });
     }
     Object.assign(record, validation.value, {
       parentKpa: parentKpaValidation.value,
@@ -387,7 +801,11 @@ const updateDueTask = async (req, res, next) => {
     });
     if (historyChanges.length) {
       if (!Array.isArray(record.editHistory)) record.editHistory = [];
-      record.editHistory.push({ editedBy: req.user, editedAt: new Date(), changes: historyChanges });
+      record.editHistory.push({
+        editedBy: req.user,
+        editedAt: new Date(),
+        changes: historyChanges,
+      });
     }
     await record.save();
     await DailyLog.updateMany(
@@ -413,12 +831,12 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Due Task ID" });
     }
     const date = parseDate(req.body?.date);
-    const type = typeof req.body?.type === "string"
-      ? req.body.type.trim().toUpperCase()
-      : "";
-    const kpaSlot = typeof req.body?.kpaSlot === "string"
-      ? req.body.kpaSlot.trim()
-      : "";
+    const type =
+      typeof req.body?.type === "string"
+        ? req.body.type.trim().toUpperCase()
+        : "";
+    const kpaSlot =
+      typeof req.body?.kpaSlot === "string" ? req.body.kpaSlot.trim() : "";
     if (!date) return res.status(400).json({ message: "Date is required" });
     if (!["KRA", "KPA"].includes(type)) {
       return res.status(400).json({ message: "Type must be KRA or KPA" });
@@ -435,12 +853,19 @@ const addDueTaskToDailyLogs = async (req, res, next) => {
       ...getScopedFilter(req, access),
     }).lean();
     if (!record) return res.status(404).json({ message: "Due Task not found" });
+    if (await hasInactiveParentKpa(req, record)) {
+      return res.status(409).json({
+        message:
+          "Tasks linked to an inactive KPA cannot be added to Daily Logs",
+      });
+    }
     const canAdd =
       String(record.employee) === String(req.user) ||
       String(record.lead) === String(req.user);
     if (!canAdd) {
       return res.status(403).json({
-        message: "Only the employee or assigned lead can add this task to Daily Logs",
+        message:
+          "Only the employee or assigned lead can add this task to Daily Logs",
       });
     }
     if (record.status === "Closed") {
@@ -519,6 +944,15 @@ const addDueTasksToDailyLogs = async (req, res, next) => {
         message: "One or more selected Due Tasks were not found",
       });
     }
+    const hasInactiveParent = await Promise.all(
+      records.map((record) => hasInactiveParentKpa(req, record)),
+    );
+    if (hasInactiveParent.some(Boolean)) {
+      return res.status(409).json({
+        message:
+          "Tasks linked to an inactive KPA cannot be added to Daily Logs",
+      });
+    }
     if (
       records.some(
         (record) =>
@@ -593,6 +1027,11 @@ const closeDueTask = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Due Task not found" });
+    if (await hasInactiveParentKpa(req, record)) {
+      return res.status(409).json({
+        message: "Tasks linked to an inactive KPA cannot be closed",
+      });
+    }
     if (String(record.lead) !== String(req.user)) {
       return res.status(403).json({
         message: "Only the assigned lead can close this Due Task",
@@ -616,10 +1055,16 @@ const closeDueTask = async (req, res, next) => {
     );
     record.status = "Closed";
     if (!Array.isArray(record.editHistory)) record.editHistory = [];
-    record.editHistory.push(buildLifecycleHistoryEntry({
-      user: req.user, at: closureDate, field: "status", label: "Task Status",
-      oldValue: "Pending", newValue: "Closed",
-    }));
+    record.editHistory.push(
+      buildLifecycleHistoryEntry({
+        user: req.user,
+        at: closureDate,
+        field: "status",
+        label: "Task Status",
+        oldValue: "Pending",
+        newValue: "Closed",
+      }),
+    );
     record.closureDate = closureDate;
     record.delayedDays = delayedDays;
     record.updatedBy = req.user;
@@ -642,6 +1087,11 @@ const deleteDueTask = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Due Task not found" });
+    if (await hasInactiveParentKpa(req, record)) {
+      return res.status(409).json({
+        message: "Tasks linked to an inactive KPA cannot be deleted",
+      });
+    }
     if (String(record.employee) === String(req.user)) {
       return res.status(403).json({
         message: "Employees cannot delete Due Tasks",
@@ -660,6 +1110,7 @@ module.exports = {
   listDueTaskUsers,
   listDueTasks,
   createDueTask,
+  bulkUploadDueTasks,
   updateDueTask,
   addDueTaskToDailyLogs,
   addDueTasksToDailyLogs,

@@ -92,6 +92,7 @@ const emptyForm = () => ({
   month: currentMonth(),
   target: "",
   deadline: "",
+  isActive: true,
   managerComments: "",
   kpaRating: "",
   managerRatingDate: "",
@@ -225,6 +226,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const canBulkUploadSelfKra =
     isSelfKra &&
     Boolean(auth?.user?._id && departmentId && employeeId) &&
+    String(employeeId) === String(auth?.user?._id) &&
     hasPermission(PERMISSIONS.KRAKPA_SELF_KRA_BULK_UPLOAD.value);
   const employeeName =
     member?.memberName ||
@@ -316,6 +318,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const isSelectedSelfKraToday = selectedSelfKraDate.isSame(dayjs(), "day");
   const canCompleteRecord = (record) =>
     !isSelfKra &&
+    record?.isActive !== false &&
     (!record?.approvalStatus || record.approvalStatus === "Approved") &&
     isAssignedToLoggedInUser(record);
   const hasDueLinkedTasks = (record) =>
@@ -327,6 +330,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaSelfKra"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
+    queryClient.invalidateQueries({ queryKey: ["kraKpaDueTask"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaKpaOverview"] });
     queryClient.invalidateQueries({
       queryKey: ["departmentWiseDepartmentKpaStats"],
@@ -746,6 +750,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       deadline: record.deadline
         ? dayjs(record.deadline).format("YYYY-MM-DD")
         : "",
+      isActive: record.isActive !== false,
       managerComments: record.managerComments || "",
       kpaRating:
         record.kpaRating === null || record.kpaRating === undefined
@@ -864,11 +869,12 @@ const KraKpaIndividualMonthlyKpa = () => {
           }),
         }
       : hideKpaCoreFields
-        ? {}
+        ? (editingRecord ? { isActive: form.isActive } : {})
         : {
             month: form.month,
             target: form.target.trim(),
             deadline: form.deadline,
+            ...(editingRecord && { isActive: form.isActive }),
           };
     if (editingRecord && !isSelfKra) {
       if (canEditManagerReview) {
@@ -1141,6 +1147,7 @@ const KraKpaIndividualMonthlyKpa = () => {
       ),
     },
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
+    { headerName: "Active Status", field: "activeStatus", width: 150 },
     approvalStatusColumn,
     statusColumn,
     reviewStatusColumn,
@@ -1252,6 +1259,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           ),
         },
         { headerName: "Deadline", field: "deadlineLabel", width: 165 },
+        { headerName: "Active Status", field: "activeStatus", width: 150 },
         approvalStatusColumn,
         {
           headerName: "Completed Date",
@@ -1516,8 +1524,15 @@ const KraKpaIndividualMonthlyKpa = () => {
           tableTitle={`PENDING ${isSelfKra ? "SELF KRA" : "SELF KPA"}${employeeTitleSuffix}`}
           enableCheckbox
           checkAll={isSelfKra}
+          isRowSelectable={({ data }) =>
+            isSelfKra
+              ? data?.isActive !== false && !data?.isScheduled
+              : true
+          }
+          showDisabledCheckboxes
           getRowStyle={({ data }) =>
-            isSelfKra && (data?.isActive === false || data?.isScheduled)
+            (isSelfKra && (data?.isActive === false || data?.isScheduled)) ||
+            (!isSelfKra && data?.isActive === false)
               ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
               : undefined
           }
@@ -1547,7 +1562,8 @@ const KraKpaIndividualMonthlyKpa = () => {
           exportData
           hideFilter={false}
           getRowStyle={({ data }) =>
-            isSelfKra && (data?.isActive === false || data?.isScheduled)
+            (isSelfKra && (data?.isActive === false || data?.isScheduled)) ||
+            (!isSelfKra && data?.isActive === false)
               ? { backgroundColor: "#f3f4f6", color: "#9ca3af" }
               : undefined
           }
@@ -1730,6 +1746,10 @@ const KraKpaIndividualMonthlyKpa = () => {
                 <DetalisFormatted
                   title="KPA"
                   detail={viewRecord.target}
+                />
+                <DetalisFormatted
+                  title="Active Status"
+                  detail={viewRecord.activeStatus}
                 />
                 <DetalisFormatted
                   title="Assigned By"
@@ -2215,6 +2235,23 @@ const KraKpaIndividualMonthlyKpa = () => {
                     />
                   </LocalizationProvider>
                 </>
+              )}
+              {editingRecord && (
+                <TextField
+                  label="Active Status *"
+                  select
+                  size="small"
+                  value={form.isActive ? "active" : "inactive"}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      isActive: event.target.value === "active",
+                    }))
+                  }
+                >
+                  <MenuItem value="active">Active</MenuItem>
+                  <MenuItem value="inactive">Inactive</MenuItem>
+                </TextField>
               )}
             </section>
           )}
