@@ -175,7 +175,7 @@ const LeadsLayout = ({
       const domainCounts = {
         "Coworking": 0,
         "Co-Living": 0,
-        "Workations": 0,
+        "Workation": 0,
         "Virtualoffice": 0,
         "External Meetings": 0,
         "Open Desk": 0,
@@ -220,6 +220,9 @@ const LeadsLayout = ({
         (total, item) =>
           total +
           (item["Coworking"] || 0) +
+          (focusedActualSeries === "Workation"
+            ? item["Workation"] || 0
+            : 0) +
           (item["Virtualoffice"] || 0) +
           (item["External Meetings"] || 0) +
           (item["Open Desk"] || 0),
@@ -231,6 +234,7 @@ const LeadsLayout = ({
       investorBlueStyle,
       transformedData,
       actualMonthLag,
+      focusedActualSeries,
     ],
   );
 
@@ -279,10 +283,12 @@ const LeadsLayout = ({
     //   name: "Co-Living",
     //   data: transformedData.map((item) => item["Co-Living"] || 0),
     // },
-    // {
-    //   name: "Workations",
-    //   data: transformedData.map((item) => item["Workations"] || 0),
-    // },
+      {
+        name: "Workation",
+        data: transformedData.map((item, monthIndex) =>
+          getActualValue(item, monthIndex, "Workation")
+        ),
+      },
       {
         name: "Virtual Office",
         data: transformedData.map((item, monthIndex) =>
@@ -303,7 +309,13 @@ const LeadsLayout = ({
       },
     ];
 
-    if (!investorBlueStyle) return actualSeries;
+    if (!investorBlueStyle) {
+      return singleSeriesOnly
+        ? actualSeries
+        : actualSeries.filter((series) =>
+            ACTUAL_UNIQUE_CLIENT_SERIES.includes(series.name),
+          );
+    }
 
     const elapsedMonths = transformedData.reduce(
       (count, _item, monthIndex) =>
@@ -313,17 +325,24 @@ const LeadsLayout = ({
     const actualSeriesByName = new Map(
       actualSeries.map((series) => [series.name, series]),
     );
-    const investorActualSeries = [
-      actualSeries[1],
-      actualSeries[0],
-      actualSeries[2],
-      actualSeries[3],
-    ].sort(
-      (a, b) =>
-        b.data.reduce((sum, value) => sum + value, 0) -
-        a.data.reduce((sum, value) => sum + value, 0),
-    );
-    const projectedSeries = PROJECTED_UNIQUE_CLIENT_SERIES.map((seriesName) => ({
+    const investorActualSeriesNames =
+      singleSeriesOnly && focusedActualSeries === "Workation"
+        ? [...ACTUAL_UNIQUE_CLIENT_SERIES, "Workation"]
+        : ACTUAL_UNIQUE_CLIENT_SERIES;
+    const investorActualSeries = investorActualSeriesNames.map(
+      (seriesName) => actualSeriesByName.get(seriesName),
+    )
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          b.data.reduce((sum, value) => sum + value, 0) -
+          a.data.reduce((sum, value) => sum + value, 0),
+      );
+    const projectedSeriesNames =
+      singleSeriesOnly && focusedActualSeries === "Workation"
+        ? [...PROJECTED_UNIQUE_CLIENT_SERIES, "Projected Workation"]
+        : PROJECTED_UNIQUE_CLIENT_SERIES;
+    const projectedSeries = projectedSeriesNames.map((seriesName) => ({
       name: seriesName,
       data: transformedData.map((_, monthIndex) => {
         const monthDate = getMonthDate(monthIndex);
@@ -337,8 +356,9 @@ const LeadsLayout = ({
         );
 
         if (
-          virtualOfficeOnly &&
-          actualSeriesName === "Virtual Office" &&
+          singleSeriesOnly &&
+          actualSeriesName === focusedActualSeries &&
+          virtualOfficeProjectedClientCount != null &&
           Number.isFinite(Number(virtualOfficeProjectedClientCount))
         ) {
           return Number(virtualOfficeProjectedClientCount);
@@ -360,7 +380,8 @@ const LeadsLayout = ({
     investorBlueStyle,
     transformedData,
     actualMonthLag,
-    virtualOfficeOnly,
+    focusedActualSeries,
+    singleSeriesOnly,
     virtualOfficeProjectedClientCount,
   ]);
   const scopedUniqueClientsData = useMemo(() => {
@@ -799,7 +820,7 @@ const LeadsLayout = ({
                   data={data.clients.map((client) => ({
                     ...client,
                     date: dayjs(client.date).format("DD-MM-YYYY"),
-                    paymentStatus: "Paid",
+                    paymentStatus: client.paymentStatus || "Paid",
                   }))}
                   columns={tableColumns}
                   tableHeight={250}

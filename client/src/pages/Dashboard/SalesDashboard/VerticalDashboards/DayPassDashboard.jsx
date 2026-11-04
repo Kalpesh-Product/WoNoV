@@ -20,6 +20,7 @@ import dayPassBanner from "../../../../assets/day-pass-banner.png";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useBannerMenuAlignment from "../../../../hooks/useBannerMenuAlignment";
 import WidgetSection from "../../../../components/WidgetSection";
 import PieChartMui from "../../../../components/graphs/PieChartMui";
 import AgTable from "../../../../components/AgTable";
@@ -284,6 +285,12 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
             borderColor="#1E3D73"
             bodyBorderColor="#9FB2CF"
             autoHeight
+            headerContentClassName="lg:!h-10"
+            titleClassName={
+              key === "paymentStatus"
+                ? "!text-[17px] min-[1700px]:!text-widgetTitle"
+                : ""
+            }
             headerRightContent={
               key === "booking" ? (
                 <span
@@ -297,7 +304,7 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
                 </span>
               ) : key === "paymentStatus" ? (
                 <span
-                  className="rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]"
+                  className="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-pmedium uppercase leading-none text-[#274784]"
                   style={{
                     backgroundColor: "#dbe4ff",
                     borderColor: "#aec6fb",
@@ -993,6 +1000,8 @@ const DayPassDashboard = ({
   clientDetailsTodayOnly = false,
   emptyView = false,
 }) => {
+  const { headingRef, navigationRef, navigationStyle } =
+    useBannerMenuAlignment();
   const { hasPermission } = useUserPermissions();
   const navigate = useNavigate();
   const menuCards = [
@@ -1102,20 +1111,24 @@ const DayPassDashboard = ({
                 "linear-gradient(to right, black 0%, black 84%, transparent 100%)",
             }}
           />
-          <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col px-3 py-4 sm:px-4 sm:py-6">
+          <div className="absolute inset-y-0 left-0 flex w-[48%] flex-col px-1 py-4 sm:py-6">
             <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base lg:text-[15px] min-[1700px]:text-base min-[1900px]:text-lg">
               Day Pass Dashboard
             </p>
             <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-4xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[42px] xl:text-[46px] min-[1700px]:text-[50px] min-[1900px]:scale-x-100 min-[1900px]:text-[54px]">
-              DAY PASS <span className="text-[#E64B4B]">DASHBOARD</span>
+              <span ref={headingRef} className="inline-block whitespace-nowrap">
+                DAY PASS <span className="text-[#E64B4B]">DASHBOARD</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">
               Day Pass Customers
             </p>
           </div>
           <nav
+            ref={navigationRef}
             aria-label="Day Pass dashboard navigation"
-            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-full items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:w-[46%] lg:max-w-none lg:justify-between lg:gap-0 lg:overflow-visible"
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-full items-end gap-6 overflow-x-auto px-1 sm:gap-8 lg:w-[44.5%] lg:max-w-none lg:justify-between lg:gap-0 lg:overflow-visible"
+            style={navigationStyle}
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
