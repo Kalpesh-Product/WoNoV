@@ -13,13 +13,14 @@ const Card = ({
   fullHeight,
   route,
   navigationState,
+  hoverScale = 1.03,
 }) => {
   const navigate = useNavigate();
 
   const cardVariants = {
     rest: { scale: 1 },
     hover: {
-      scale: 1.03,
+      scale: hoverScale,
       transition: { duration: 0.2, ease: "easeOut" },
     },
   };
