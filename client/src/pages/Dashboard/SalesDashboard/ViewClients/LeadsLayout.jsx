@@ -11,12 +11,14 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 const PROJECTED_UNIQUE_CLIENT_SERIES = [
   "Projected Virtual Office",
   "Projected Co-Working",
+  "Projected Workation",
   "Projected External Meetings",
   "Projected Open Desk",
 ];
 const ACTUAL_UNIQUE_CLIENT_SERIES = [
   "Virtual Office",
   "Co-Working",
+  "Workation",
   "External Meetings",
   "Open Desk",
 ];
@@ -28,11 +30,13 @@ const PROJECTED_UNIQUE_CLIENT_COLORS = [
 ];
 const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Co-Working": "#1E3D73",
+  "Workation": "#3cb371",
   "Virtual Office": "#80BF01",
   "External Meetings": "#FFC300",
   "Open Desk": "#00C8D7",
   "Projected Co-Working": PROJECTED_UNIQUE_CLIENT_COLORS[0],
   "Projected Virtual Office": PROJECTED_UNIQUE_CLIENT_COLORS[1],
+  "Projected Workation": PROJECTED_UNIQUE_CLIENT_COLORS[2],
   "Projected External Meetings": PROJECTED_UNIQUE_CLIENT_COLORS[2],
   "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
 };
@@ -175,7 +179,7 @@ const LeadsLayout = ({
       const domainCounts = {
         "Coworking": 0,
         "Co-Living": 0,
-        "Workations": 0,
+        "Workation": 0,
         "Virtualoffice": 0,
         "External Meetings": 0,
         "Open Desk": 0,
@@ -220,6 +224,7 @@ const LeadsLayout = ({
         (total, item) =>
           total +
           (item["Coworking"] || 0) +
+          (item["Workation"] || 0) +
           (item["Virtualoffice"] || 0) +
           (item["External Meetings"] || 0) +
           (item["Open Desk"] || 0),
@@ -279,10 +284,12 @@ const LeadsLayout = ({
     //   name: "Co-Living",
     //   data: transformedData.map((item) => item["Co-Living"] || 0),
     // },
-    // {
-    //   name: "Workations",
-    //   data: transformedData.map((item) => item["Workations"] || 0),
-    // },
+      {
+        name: "Workation",
+        data: transformedData.map((item, monthIndex) =>
+          getActualValue(item, monthIndex, "Workation")
+        ),
+      },
       {
         name: "Virtual Office",
         data: transformedData.map((item, monthIndex) =>
@@ -318,6 +325,7 @@ const LeadsLayout = ({
       actualSeries[0],
       actualSeries[2],
       actualSeries[3],
+      actualSeries[4],
     ].sort(
       (a, b) =>
         b.data.reduce((sum, value) => sum + value, 0) -
@@ -337,8 +345,8 @@ const LeadsLayout = ({
         );
 
         if (
-          virtualOfficeOnly &&
-          actualSeriesName === "Virtual Office" &&
+          singleSeriesOnly &&
+          actualSeriesName === focusedActualSeries &&
           Number.isFinite(Number(virtualOfficeProjectedClientCount))
         ) {
           return Number(virtualOfficeProjectedClientCount);
@@ -360,7 +368,8 @@ const LeadsLayout = ({
     investorBlueStyle,
     transformedData,
     actualMonthLag,
-    virtualOfficeOnly,
+    focusedActualSeries,
+    singleSeriesOnly,
     virtualOfficeProjectedClientCount,
   ]);
   const scopedUniqueClientsData = useMemo(() => {
@@ -799,7 +808,7 @@ const LeadsLayout = ({
                   data={data.clients.map((client) => ({
                     ...client,
                     date: dayjs(client.date).format("DD-MM-YYYY"),
-                    paymentStatus: "Paid",
+                    paymentStatus: client.paymentStatus || "Paid",
                   }))}
                   columns={tableColumns}
                   tableHeight={250}

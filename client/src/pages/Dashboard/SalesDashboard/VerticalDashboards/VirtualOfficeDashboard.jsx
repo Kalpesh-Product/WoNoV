@@ -27,6 +27,7 @@ import {
 import { SiGoogleadsense } from "react-icons/si";
 import virtualOfficeBanner from "../../../../assets/virtual-office-banner.png";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useBannerMenuAlignment from "../../../../hooks/useBannerMenuAlignment";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import { inrFormat } from "../../../../utils/currencyFormat";
@@ -991,6 +992,8 @@ const VirtualOfficeDashboard = ({
   pipelineRenewalOnly = false,
   emptyView = false,
 }) => {
+  const { headingRef, navigationRef, navigationStyle } =
+    useBannerMenuAlignment();
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
   const liveCurrentMonth = useLiveCurrentMonth();
@@ -1306,28 +1309,32 @@ const VirtualOfficeDashboard = ({
                 "linear-gradient(to right, black 0%, black 84%, transparent 100%)",
             }}
           />
-          <div className="absolute inset-y-0 left-0 flex w-[55%] flex-col px-3 py-4 sm:px-4 sm:py-6">
+          <div className="absolute inset-y-0 left-0 flex w-[55%] flex-col px-1 py-4 sm:py-6">
             <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base lg:text-[15px] min-[1700px]:text-base min-[1900px]:text-lg">
               Virtual Office Dashboard
             </p>
             <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px] min-[1700px]:text-[46px] min-[1900px]:scale-x-100 min-[1900px]:text-[50px]">
-              VIRTUAL OFFICE{" "}
-              <span className="text-[#E64B4B]">DASHBOARD</span>
+              <span ref={headingRef} className="inline-block whitespace-nowrap">
+                VIRTUAL OFFICE{" "}
+                <span className="text-[#E64B4B]">DASHBOARD</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">
               Virtual Office Customers
             </p>
           </div>
           <nav
+            ref={navigationRef}
             aria-label="Virtual Office dashboard navigation"
-            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-1 sm:gap-8 lg:w-[52.5%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:gap-10"
+            style={navigationStyle}
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
                 <Link
                   key={item}
                   to=""
-                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm min-[1700px]:text-base"
                 >
                   {item}
                   <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100" />

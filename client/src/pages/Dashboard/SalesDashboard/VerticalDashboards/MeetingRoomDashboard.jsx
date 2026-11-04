@@ -37,6 +37,7 @@ import meetingRoomBanner from "../../../../assets/meeting-room-banner.png";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useBannerMenuAlignment from "../../../../hooks/useBannerMenuAlignment";
 import MeetingRevenue from "../MeetingRevenue";
 import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
 import LeadsLayout from "../ViewClients/LeadsLayout";
@@ -1126,12 +1127,18 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
             borderColor="#1E3D73"
             bodyBorderColor="#9FB2CF"
             titleClassName={
-              chartKey === "internalExternalBookings"
+              [
+                "internalExternalBookings",
+                "internalCommitmentUtilization",
+              ].includes(chartKey)
                 ? "!text-[17px] min-[1700px]:!text-widgetTitle"
                 : ""
             }
             headerContentClassName={
-              chartKey === "internalExternalBookings"
+              [
+                "internalExternalBookings",
+                "internalCommitmentUtilization",
+              ].includes(chartKey)
                 ? "lg:!h-10 !gap-2"
                 : "lg:!h-10"
             }
@@ -1665,17 +1672,17 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
             bodyBorderColor="#9FB2CF"
             titleClassName={
               chartKey === "averageOccupancy"
-                ? "!text-lg min-[1700px]:!text-widgetTitle"
+                ? "!text-[16px] min-[1700px]:!text-widgetTitle"
                 : ""
             }
             headerContentClassName={
               chartKey === "averageOccupancy"
-                ? "lg:!h-10 !gap-2"
+                ? "lg:!h-10 !justify-start !gap-2 min-[1700px]:!justify-between"
                 : "lg:!h-10"
             }
             headerRightContent={
               chartKey === "averageOccupancy" ? (
-                <div className="flex items-center justify-center gap-0.5 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-1.5 py-1 text-[10px] font-pmedium uppercase text-[#274784] min-[1700px]:gap-1.5 min-[1700px]:px-2.5 min-[1700px]:py-1.5 min-[1700px]:text-sm">
+                <div className="flex shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-1.5 py-1 text-[10px] font-pmedium uppercase text-[#274784] min-[1700px]:gap-1.5 min-[1700px]:px-2.5 min-[1700px]:py-1.5 min-[1700px]:text-sm">
                   <span>Utilisation:</span>
                   <span>{averageRoomUtilisation.toFixed(1)}%</span>
                 </div>
@@ -2126,6 +2133,8 @@ const MeetingRoomDashboard = ({
   operationalChartView = null,
   meetingsTableOnly = false,
 }) => {
+  const { headingRef, navigationRef, navigationStyle } =
+    useBannerMenuAlignment();
   const { hasPermission } = useUserPermissions();
   const navigate = useNavigate();
   const [activeUniqueClientCount, setActiveUniqueClientCount] = useState(0);
@@ -2334,22 +2343,26 @@ const MeetingRoomDashboard = ({
               Meeting Room Dashboard
             </p>
             <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px] min-[1700px]:text-[46px] min-[1900px]:scale-x-100 min-[1900px]:text-[50px]">
-              MEETING ROOM <span className="text-[#E64B4B]">DASHBOARD</span>
+              <span ref={headingRef} className="inline-block whitespace-nowrap">
+                MEETING ROOM <span className="text-[#E64B4B]">DASHBOARD</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">
               Meeting Room Customers
             </p>
           </div>
           <nav
+            ref={navigationRef}
             aria-label="Meeting Room dashboard navigation"
-            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:w-[51.5%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:gap-10"
+            style={navigationStyle}
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
                 <Link
                   key={item}
                   to=""
-                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm min-[1700px]:text-base"
                 >
                   {item}
                   <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100" />
