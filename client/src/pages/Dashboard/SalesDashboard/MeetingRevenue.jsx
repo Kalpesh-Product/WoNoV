@@ -920,6 +920,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
       ...dashboardGraphData.map((item) => getNumericAmount(item.taxable)),
     );
 
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
     if (highestValue >= 100000) {
       return { divisor: 100000, title: "Amount In Lakhs (INR)" };
     }

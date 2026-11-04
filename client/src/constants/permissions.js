@@ -2443,6 +2443,147 @@ export const PERMISSIONS = {
     access: "page",
     route: "/app/dashboard/sales-dashboard/alternate-channel",
   },
+  SALES_VERTICAL_ALTERNATE_ONBOARD_CUSTOMERS_CARD: {
+    value: "sales_vertical_alternate_onboard_customers_card",
+    title: "ALTERNATE ONBOARD NEW CUSTOMERS CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/onboard-new-customers",
+  },
+  SALES_VERTICAL_ALTERNATE_OVERALL_SUMMARY_CARD: {
+    value: "sales_vertical_alternate_overall_summary_card",
+    title: "ALTERNATE OVERALL SUMMARY CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/overall-summary",
+  },
+  SALES_VERTICAL_ALTERNATE_MIX_BAG_CARD: {
+    value: "sales_vertical_alternate_mix_bag_card",
+    title: "ALTERNATE MIX BAG CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/mix-bag",
+  },
+  SALES_VERTICAL_ALTERNATE_DATA_CARD: {
+    value: "sales_vertical_alternate_data_card",
+    title: "ALTERNATE DATA CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/data",
+  },
+  SALES_VERTICAL_ALTERNATE_ANNUAL_REVENUE_TARGET_CARD: {
+    value: "sales_vertical_alternate_annual_revenue_target_card",
+    title: "ALTERNATE ANNUAL REVENUE TARGET CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/annual-revenue-target",
+  },
+  SALES_VERTICAL_ALTERNATE_REVENUE_BOOKED_CARD: {
+    value: "sales_vertical_alternate_revenue_booked_card",
+    title: "ALTERNATE REVENUE BOOKED CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/revenue-booked",
+  },
+  SALES_VERTICAL_ALTERNATE_REVENUE_DUE_CARD: {
+    value: "sales_vertical_alternate_revenue_due_card",
+    title: "ALTERNATE REVENUE DUE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/revenue-due",
+  },
+  SALES_VERTICAL_ALTERNATE_AVERAGE_PRICE_CARD: {
+    value: "sales_vertical_alternate_average_price_card",
+    title: "ALTERNATE AVERAGE PRICE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/average-price",
+  },
+  SALES_VERTICAL_ALTERNATE_ACTIVE_UNIQUE_CUSTOMERS_CARD: {
+    value: "sales_vertical_alternate_active_unique_customers_card",
+    title: "ALTERNATE ACTIVE UNIQUE CUSTOMERS CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/active-unique-customers",
+  },
+  SALES_VERTICAL_ALTERNATE_REPEAT_CLIENT_CARD: {
+    value: "sales_vertical_alternate_repeat_client_card",
+    title: "ALTERNATE REPEAT CLIENT CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/repeat-client",
+  },
+  SALES_VERTICAL_ALTERNATE_DEAD_UNIQUE_CLIENTS_CARD: {
+    value: "sales_vertical_alternate_dead_unique_clients_card",
+    title: "ALTERNATE DEAD UNIQUE CLIENTS CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/dead-unique-clients",
+  },
+  SALES_VERTICAL_ALTERNATE_AVERAGE_SHORTFALL_SURPLUS_CARD: {
+    value: "sales_vertical_alternate_average_shortfall_surplus_card",
+    title: "ALTERNATE AVERAGE SHORTFALL / SURPLUS CARD",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/average-shortfall-surplus",
+  },
+  SALES_VERTICAL_ALTERNATE_REVENUES_GRAPH: {
+    value: "sales_vertical_alternate_revenues_graph",
+    title: "ALTERNATE REVENUES GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/revenues",
+  },
+  SALES_VERTICAL_ALTERNATE_UNIQUE_CLIENT_COUNT_GRAPH: {
+    value: "sales_vertical_alternate_unique_client_count_graph",
+    title: "ALTERNATE UNIQUE CLIENT COUNT GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/unique-client-count",
+  },
+  SALES_VERTICAL_ALTERNATE_NEW_VS_REPEAT_CLIENTS_GRAPH: {
+    value: "sales_vertical_alternate_new_vs_repeat_clients_graph",
+    title: "ALTERNATE NEW VS REPEAT CLIENTS GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/new-vs-repeat-clients",
+  },
+  SALES_VERTICAL_ALTERNATE_PAYMENT_STATUS_GRAPH: {
+    value: "sales_vertical_alternate_payment_status_graph",
+    title: "ALTERNATE PAYMENT STATUS GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/payment-status",
+  },
+  SALES_VERTICAL_ALTERNATE_SECTOR_WISE_CLIENTS_GRAPH: {
+    value: "sales_vertical_alternate_sector_wise_clients_graph",
+    title: "ALTERNATE SECTOR-WISE CLIENTS GRAPH",
+    type: "read",
+    access: "page",
+    route:
+      "/app/dashboard/sales-dashboard/alternate-channel/sector-wise-clients",
+  },
+  SALES_VERTICAL_ALTERNATE_BOOKING_SOURCE_GRAPH: {
+    value: "sales_vertical_alternate_booking_source_graph",
+    title: "ALTERNATE BOOKING SOURCE GRAPH",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/booking-source",
+  },
+  SALES_VERTICAL_ALTERNATE_UNPAID_INVOICES_TABLE: {
+    value: "sales_vertical_alternate_unpaid_invoices_table",
+    title: "ALTERNATE UNPAID INVOICES TABLE",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard/alternate-channel/unpaid-invoices",
+  },
 
   SALES_TURNOVER: {
     value: "sales_turnover_card",

@@ -344,6 +344,22 @@ const CoworkingRevenueGraph = ({
 
     return { max, tickAmount: Math.round(max / step) };
   }, [graphData]);
+  const amountScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...graphData.map((item) => getAmount(item?.reportingAmount)),
+    );
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
+    if (highestValue >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (highestValue >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [graphData]);
   const monthlyClientCounts = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
     const fiscalMonths = Array.from({ length: 12 }, (_, index) =>
@@ -395,7 +411,9 @@ const CoworkingRevenueGraph = ({
       dataLabels: {
         enabled: true,
         formatter: (value) =>
-          (Math.floor((Number(value) / 100000) * 100) / 100).toFixed(2),
+          Number(value / amountScale.divisor).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          }),
         style: {
           fontSize: "10px",
           fontWeight: "bold",
@@ -408,12 +426,12 @@ const CoworkingRevenueGraph = ({
         max: axisScale.max,
         tickAmount: axisScale.tickAmount,
         forceNiceScale: false,
-        title: { text: "Amount In Lakhs (INR)", style: { color: "#1E3D73" } },
+        title: { text: amountScale.title, style: { color: "#1E3D73" } },
         labels: {
           style: { colors: "#1E3D73" },
           formatter: (value) =>
-            Number(value / 100000).toLocaleString("en-IN", {
-              maximumFractionDigits: 1,
+            Number(value / amountScale.divisor).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
             }),
         },
       },
@@ -443,7 +461,7 @@ const CoworkingRevenueGraph = ({
       legend: { labels: { colors: "#1E3D73" } },
       colors: ["#3cb37180", "#787878"],
     }),
-    [axisScale, monthlyClientCounts],
+    [amountScale, axisScale, monthlyClientCounts],
   );
 
   if (isLoading) return <Skeleton height={500} width="100%" />;

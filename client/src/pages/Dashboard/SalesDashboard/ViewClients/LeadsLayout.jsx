@@ -11,14 +11,12 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 const PROJECTED_UNIQUE_CLIENT_SERIES = [
   "Projected Virtual Office",
   "Projected Co-Working",
-  "Projected Workation",
   "Projected External Meetings",
   "Projected Open Desk",
 ];
 const ACTUAL_UNIQUE_CLIENT_SERIES = [
   "Virtual Office",
   "Co-Working",
-  "Workation",
   "External Meetings",
   "Open Desk",
 ];
@@ -30,13 +28,11 @@ const PROJECTED_UNIQUE_CLIENT_COLORS = [
 ];
 const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Co-Working": "#1E3D73",
-  "Workation": "#3cb371",
   "Virtual Office": "#80BF01",
   "External Meetings": "#FFC300",
   "Open Desk": "#00C8D7",
   "Projected Co-Working": PROJECTED_UNIQUE_CLIENT_COLORS[0],
   "Projected Virtual Office": PROJECTED_UNIQUE_CLIENT_COLORS[1],
-  "Projected Workation": PROJECTED_UNIQUE_CLIENT_COLORS[2],
   "Projected External Meetings": PROJECTED_UNIQUE_CLIENT_COLORS[2],
   "Projected Open Desk": PROJECTED_UNIQUE_CLIENT_COLORS[3],
 };
@@ -224,7 +220,9 @@ const LeadsLayout = ({
         (total, item) =>
           total +
           (item["Coworking"] || 0) +
-          (item["Workation"] || 0) +
+          (focusedActualSeries === "Workation"
+            ? item["Workation"] || 0
+            : 0) +
           (item["Virtualoffice"] || 0) +
           (item["External Meetings"] || 0) +
           (item["Open Desk"] || 0),
@@ -236,6 +234,7 @@ const LeadsLayout = ({
       investorBlueStyle,
       transformedData,
       actualMonthLag,
+      focusedActualSeries,
     ],
   );
 
@@ -310,7 +309,13 @@ const LeadsLayout = ({
       },
     ];
 
-    if (!investorBlueStyle) return actualSeries;
+    if (!investorBlueStyle) {
+      return singleSeriesOnly
+        ? actualSeries
+        : actualSeries.filter((series) =>
+            ACTUAL_UNIQUE_CLIENT_SERIES.includes(series.name),
+          );
+    }
 
     const elapsedMonths = transformedData.reduce(
       (count, _item, monthIndex) =>
@@ -320,18 +325,24 @@ const LeadsLayout = ({
     const actualSeriesByName = new Map(
       actualSeries.map((series) => [series.name, series]),
     );
-    const investorActualSeries = [
-      actualSeries[1],
-      actualSeries[0],
-      actualSeries[2],
-      actualSeries[3],
-      actualSeries[4],
-    ].sort(
-      (a, b) =>
-        b.data.reduce((sum, value) => sum + value, 0) -
-        a.data.reduce((sum, value) => sum + value, 0),
-    );
-    const projectedSeries = PROJECTED_UNIQUE_CLIENT_SERIES.map((seriesName) => ({
+    const investorActualSeriesNames =
+      singleSeriesOnly && focusedActualSeries === "Workation"
+        ? [...ACTUAL_UNIQUE_CLIENT_SERIES, "Workation"]
+        : ACTUAL_UNIQUE_CLIENT_SERIES;
+    const investorActualSeries = investorActualSeriesNames.map(
+      (seriesName) => actualSeriesByName.get(seriesName),
+    )
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          b.data.reduce((sum, value) => sum + value, 0) -
+          a.data.reduce((sum, value) => sum + value, 0),
+      );
+    const projectedSeriesNames =
+      singleSeriesOnly && focusedActualSeries === "Workation"
+        ? [...PROJECTED_UNIQUE_CLIENT_SERIES, "Projected Workation"]
+        : PROJECTED_UNIQUE_CLIENT_SERIES;
+    const projectedSeries = projectedSeriesNames.map((seriesName) => ({
       name: seriesName,
       data: transformedData.map((_, monthIndex) => {
         const monthDate = getMonthDate(monthIndex);
@@ -347,6 +358,7 @@ const LeadsLayout = ({
         if (
           singleSeriesOnly &&
           actualSeriesName === focusedActualSeries &&
+          virtualOfficeProjectedClientCount != null &&
           Number.isFinite(Number(virtualOfficeProjectedClientCount))
         ) {
           return Number(virtualOfficeProjectedClientCount);

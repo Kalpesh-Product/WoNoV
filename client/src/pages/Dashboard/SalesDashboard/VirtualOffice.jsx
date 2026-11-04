@@ -857,6 +857,24 @@ const getUserDisplayName = (user) => {
 
     return { max, step, tickAmount: Math.round(max / step) };
   }, [dashboardGraphData]);
+  const dashboardAmountScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...dashboardGraphData.map((item) =>
+        getNumericAmount(item.reportingAmount),
+      ),
+    );
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
+    if (highestValue >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (highestValue >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [dashboardGraphData]);
 
   const maxVirtualOfficeAmount = useMemo(
     () =>
@@ -866,6 +884,18 @@ const getUserDisplayName = (user) => {
       ),
     [selectedFiscalYearRevenue],
   );
+  const amountScale = useMemo(() => {
+    if (maxVirtualOfficeAmount >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
+    if (maxVirtualOfficeAmount >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (maxVirtualOfficeAmount >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [maxVirtualOfficeAmount]);
 
   const revenueTableColumns = [
     {
@@ -1178,14 +1208,15 @@ const getUserDisplayName = (user) => {
     return revenueTableColumns.filter((column) => !hiddenFields.has(column.field));
   };
 
-  const useLakhsScale = maxVirtualOfficeAmount >= 100000;
-
   const options = useMemo(() => {
     if (!dashboardProjectionMode) {
       return {
         dataLabels: {
           enabled: true,
-          formatter: (val) => `${inrFormat(val)}`,
+          formatter: (val) =>
+            Number(val / amountScale.divisor).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
+            }),
           style: {
             fontSize: "10px",
             fontWeight: "bold",
@@ -1196,17 +1227,13 @@ const getUserDisplayName = (user) => {
         yaxis: {
           min: 0,
           title: {
-            text: useLakhsScale ? "Amount In Lakhs (INR)" : "Amount (INR)",
+            text: amountScale.title,
           },
           labels: {
             formatter: (val) =>
-              useLakhsScale
-                ? `${Number(val / 100000).toLocaleString("en-IN", {
-                    maximumFractionDigits: 1,
-                  })}`
-                : `${Number(val).toLocaleString("en-IN", {
-                    maximumFractionDigits: 0,
-                  })}`,
+              Number(val / amountScale.divisor).toLocaleString("en-IN", {
+                maximumFractionDigits: 2,
+              }),
           },
         },
         tooltip: {
@@ -1254,10 +1281,10 @@ const getUserDisplayName = (user) => {
     return {
       dataLabels: {
         enabled: true,
-        formatter: function (val) {
-          const truncatedLakhs = Math.floor((Number(val) / 100000) * 100) / 100;
-          return truncatedLakhs.toFixed(2);
-        },
+        formatter: (val) =>
+          Number(val / dashboardAmountScale.divisor).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          }),
         style: {
           fontSize: "10px",
           fontWeight: "bold",
@@ -1271,15 +1298,16 @@ const getUserDisplayName = (user) => {
         tickAmount: dashboardAxisScale.tickAmount,
         forceNiceScale: false,
         title: {
-          text: "Amount In Lakhs (INR)",
+          text: dashboardAmountScale.title,
           style: { color: "#1E3D73" },
         },
         labels: {
           style: { colors: "#1E3D73" },
           formatter: (val) =>
-            `${Number(val / 100000).toLocaleString("en-IN", {
-              maximumFractionDigits: 1,
-            })}`,
+            Number(val / dashboardAmountScale.divisor).toLocaleString(
+              "en-IN",
+              { maximumFractionDigits: 2 },
+            ),
         },
       },
       xaxis: {
@@ -1345,10 +1373,11 @@ const getUserDisplayName = (user) => {
       colors: ["#3cb37180", "#787878"],
     };
   }, [
+    amountScale,
+    dashboardAmountScale,
     dashboardAxisScale,
     dashboardMonthlyClientCounts,
     dashboardProjectionMode,
-    useLakhsScale,
   ]);
 
   const revenueChart = !isLoadingVirtualOfficeRevenue ? (

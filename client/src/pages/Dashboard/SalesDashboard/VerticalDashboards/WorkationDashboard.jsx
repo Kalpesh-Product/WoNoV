@@ -188,19 +188,37 @@ const WorkationRevenueGraph = ({
 
     return { max, tickAmount: Math.round(max / step) };
   }, [graphData]);
+  const amountScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...graphData.map((item) => getAmount(item?.reportingAmount)),
+    );
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
+    if (highestValue >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (highestValue >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [graphData]);
   const monthlyClientCounts = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
     const fiscalMonths = Array.from({ length: 12 }, (_, index) =>
       fiscalYear.start.add(index, "month"),
     );
-    const actualCountsByMonth = new Map(
-      fiscalMonths.map((month) => [month.format("YYYY-MM"), 0]),
+    const actualClientsByMonth = new Map(
+      fiscalMonths.map((month) => [month.format("YYYY-MM"), new Set()]),
     );
 
     revenueRows.forEach((row) => {
       const revenueDate = dayjs(row?.date);
+      const clientName = normalizeClientName(row);
       if (
         String(row?.status || "").trim().toLowerCase() !== "paid" ||
+        !clientName ||
         !revenueDate.isValid() ||
         revenueDate.isBefore(fiscalYear.start) ||
         !revenueDate.isBefore(fiscalYear.end)
@@ -209,10 +227,7 @@ const WorkationRevenueGraph = ({
       }
 
       const monthKey = revenueDate.format("YYYY-MM");
-      actualCountsByMonth.set(
-        monthKey,
-        (actualCountsByMonth.get(monthKey) || 0) + 1,
-      );
+      actualClientsByMonth.get(monthKey)?.add(clientName);
     });
 
     const isActualMonthAvailable = (month) =>
@@ -221,17 +236,19 @@ const WorkationRevenueGraph = ({
     const totalActualClients = fiscalMonths.reduce(
       (total, month) =>
         isActualMonthAvailable(month)
-          ? total + (actualCountsByMonth.get(month.format("YYYY-MM")) || 0)
+          ? total +
+            (actualClientsByMonth.get(month.format("YYYY-MM"))?.size || 0)
           : total,
       0,
     );
-    const projectedClientCount = elapsedMonths
-      ? Math.round(totalActualClients / elapsedMonths)
-      : 0;
+    const projectedClientCount =
+      elapsedMonths && totalActualClients
+        ? Math.max(1, Math.round(totalActualClients / elapsedMonths))
+        : 0;
 
     return fiscalMonths.map((month) =>
       isActualMonthAvailable(month)
-        ? actualCountsByMonth.get(month.format("YYYY-MM")) || 0
+        ? actualClientsByMonth.get(month.format("YYYY-MM"))?.size || 0
         : projectedClientCount,
     );
   }, [fiscalYear.end, fiscalYear.start, revenueRows]);
@@ -240,7 +257,9 @@ const WorkationRevenueGraph = ({
       dataLabels: {
         enabled: true,
         formatter: (value) =>
-          (Math.floor((Number(value) / 100000) * 100) / 100).toFixed(2),
+          Number(value / amountScale.divisor).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          }),
         style: {
           fontSize: "10px",
           fontWeight: "bold",
@@ -253,12 +272,12 @@ const WorkationRevenueGraph = ({
         max: axisScale.max,
         tickAmount: axisScale.tickAmount,
         forceNiceScale: false,
-        title: { text: "Amount In Lakhs (INR)", style: { color: "#1E3D73" } },
+        title: { text: amountScale.title, style: { color: "#1E3D73" } },
         labels: {
           style: { colors: "#1E3D73" },
           formatter: (value) =>
-            Number(value / 100000).toLocaleString("en-IN", {
-              maximumFractionDigits: 1,
+            Number(value / amountScale.divisor).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
             }),
         },
       },
@@ -292,7 +311,7 @@ const WorkationRevenueGraph = ({
       legend: { labels: { colors: "#1E3D73" } },
       colors: ["#3cb37180", "#787878"],
     }),
-    [axisScale, monthlyClientCounts],
+    [amountScale, axisScale, monthlyClientCounts],
   );
 
   if (isLoading) return <Skeleton height={500} width="100%" />;
@@ -303,7 +322,7 @@ const WorkationRevenueGraph = ({
       graphTitle={
         <div className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
           <BiznestTitle />
-          <span>WORKATION REVENUES</span>
+          <span>WORKATION REVENUES - {fiscalYear.label}</span>
         </div>
       }
       data={graphData}
@@ -428,7 +447,7 @@ const WorkationUniqueClientsGraph = ({ revenueRows }) => {
       title={
         <div className="inline-flex items-baseline gap-2 whitespace-nowrap leading-none text-[#1E3D73]">
           <BiznestTitle />
-          <span>WORKATION UNIQUE CLIENT COUNT</span>
+          <span>WORKATION UNIQUE CLIENT COUNT - {fiscalYear.label}</span>
         </div>
       }
       titleAmount={({ count }) =>
@@ -457,7 +476,12 @@ const WorkationOperationalCharts = ({
   fiscalYear,
   visibleCharts = ["newRepeat", "paymentStatus", "sector", "bookingSource"],
 }) => {
+  const actualCutoffLabel = dayjs()
+    .startOf("month")
+    .subtract(2, "month")
+    .format("MMM-YY");
   const chartData = useMemo(() => {
+    const currentMonth = dayjs().startOf("month");
     const financialYearRows = revenueRows.filter((row) => {
       const revenueDate = dayjs(row?.date);
       return (
@@ -466,14 +490,18 @@ const WorkationOperationalCharts = ({
         revenueDate.isBefore(fiscalYear.end)
       );
     });
-    const paidAmount = financialYearRows.reduce(
+    const actualRows = financialYearRows.filter((row) => {
+      const revenueMonth = dayjs(row?.date).startOf("month");
+      return !currentMonth.isBefore(revenueMonth.add(2, "month"), "month");
+    });
+    const paidAmount = actualRows.reduce(
       (total, row) =>
         String(row?.status || "").trim().toLowerCase() === "paid"
           ? total + getAmount(row?.taxableAmount)
           : total,
       0,
     );
-    const unpaidAmount = financialYearRows.reduce(
+    const unpaidAmount = actualRows.reduce(
       (total, row) =>
         String(row?.status || "").trim().toLowerCase() !== "paid"
           ? total + getAmount(row?.taxableAmount)
@@ -482,7 +510,7 @@ const WorkationOperationalCharts = ({
     );
     const clientBookings = new Map();
 
-    financialYearRows.forEach((row) => {
+    actualRows.forEach((row) => {
       const clientName = normalizeClientName(row);
       if (!clientName) return;
       clientBookings.set(clientName, (clientBookings.get(clientName) || 0) + 1);
@@ -595,8 +623,10 @@ const WorkationOperationalCharts = ({
                 y: {
                   formatter: (value) =>
                     key === "paymentStatus"
-                      ? `INR ${inrFormat(value)}`
-                      : `${value} Clients`,
+                      ? `INR ${inrFormat(value)} (Till ${actualCutoffLabel})`
+                      : key === "newRepeat"
+                        ? `${value} Clients (Till ${actualCutoffLabel})`
+                        : `${value} Clients`,
                 },
               },
             }}
@@ -678,12 +708,12 @@ const WorkationUnpaidInvoices = ({ revenueRows, fiscalYear, isLoading }) => {
   const getInvoiceTotal = (row) =>
     getAmount(row?.totalAmount) ||
     getAmount(row?.taxableAmount) + getAmount(row?.gst);
-  const octoberTotal = unpaidRows
+  const octoberTaxableTotal = unpaidRows
     .filter((row) => dayjs(row?.date).isSame(october, "month"))
-    .reduce((total, row) => total + getInvoiceTotal(row), 0);
-  const novemberTotal = unpaidRows
+    .reduce((total, row) => total + getAmount(row?.taxableAmount), 0);
+  const novemberTaxableTotal = unpaidRows
     .filter((row) => dayjs(row?.date).isSame(november, "month"))
-    .reduce((total, row) => total + getInvoiceTotal(row), 0);
+    .reduce((total, row) => total + getAmount(row?.taxableAmount), 0);
   const columns = [
     { field: "srNo", headerName: "Sr.No", width: 90 },
     { field: "clientName", headerName: "Client Name", flex: 1.1 },
@@ -765,10 +795,10 @@ const WorkationUnpaidInvoices = ({ revenueRows, fiscalYear, isLoading }) => {
         headerRightContent={
           <div className="flex flex-wrap items-center justify-end gap-3 text-sm font-pmedium uppercase">
             <span className="rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-2 text-[#16784d]">
-              OCT: {inrFormat(octoberTotal)}
+              OCT: {inrFormat(octoberTaxableTotal)}
             </span>
             <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-[#274784]">
-              NOV: {inrFormat(novemberTotal)}
+              NOV: {inrFormat(novemberTaxableTotal)}
             </span>
           </div>
         }
