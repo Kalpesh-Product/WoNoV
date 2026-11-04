@@ -141,7 +141,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const departmentName = item?.department?.name;
           if (!departmentId || !departmentName) return null;
 
-  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse, kraResponse] =
+  const [assignedResponse, completedResponse, individualAssignedResponse, teamAssignedResponse, kraResponse, teamCompletedResponse] =
             await Promise.allSettled([
               axios.get(
                 `/api/performance/get-tasks?dept=${departmentId}&type=KPA&duration=Monthly`,
@@ -172,6 +172,9 @@ const PerformanceDepartmentWiseKraKpa = () => {
                 : axios.get(
                     `/api/performance/get-tasks?dept=${departmentId}&type=KRA`,
                   ),
+              axios.get(
+                `/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKPA`,
+              ),
             ]);
 
           const assignedTasks =
@@ -196,11 +199,18 @@ const PerformanceDepartmentWiseKraKpa = () => {
             kraResponse?.status === "fulfilled"
               ? kraResponse.value?.data || []
               : [];
+          const completedTeamTasks =
+            teamCompletedResponse?.status === "fulfilled"
+              ? teamCompletedResponse.value?.data || []
+              : [];
 
           const monthlyAssignedCount = assignedTasks.filter((task) =>
             isSameSelectedMonth(task?.assignedDate),
           ).length;
           const monthlyCompletedCount = completedTasks.filter((task) =>
+            isSameSelectedMonth(task?.completionDate),
+          ).length;
+          const teamMonthlyCompletedCount = completedTeamTasks.filter((task) =>
             isSameSelectedMonth(task?.completionDate),
           ).length;
           const monthlyPendingCount = assignedTasks.filter(
@@ -241,6 +251,7 @@ const PerformanceDepartmentWiseKraKpa = () => {
             departmentName,
             monthlyAssignedCount,
             monthlyCompletedCount: monthlyCompletedCount +
+              teamMonthlyCompletedCount +
               (modulePath === "/app/kra-kpa" ? individualMonthlyCompletedCount : 0),
             monthlyPendingCount: monthlyPendingCount +
               (modulePath === "/app/kra-kpa"
@@ -441,8 +452,8 @@ tooltip: {
       width: 220,
     },
     {
-      headerName: "Pending KRA",
-      field: "pendingKra",
+      headerName: "Completed KPA",
+      field: "completedKpa",
       width: 220,
     },
   ];
@@ -468,9 +479,8 @@ tooltip: {
           height={400}
         />}
 
-        <div className="flex justify-center items-center pb-4">
-          {/* <div className="flex items-center"> */}
-           <div className="flex items-center mt-2">
+        <div className="flex items-center justify-center pb-4 pt-2">
+          <div className="flex items-center justify-center gap-3">
             <SecondaryButton
               title={<MdNavigateBefore />}
               disabled={false}
@@ -482,8 +492,7 @@ tooltip: {
                 setSelectedMonth(fiscalMonths[prevIndex]);
               }}
             />
-            {/* <div className="text-sm min-w-[120px] text-center"> */}
-             <div className="text-primary text-content font-semibold min-w-[70px] text-center">
+            <div className="min-w-[120px] px-2 text-center text-content font-semibold text-primary">
               {selectedMonth}
             </div>
             <SecondaryButton
@@ -512,9 +521,9 @@ tooltip: {
               pendingKpa:
                 departmentMonthlyStatsById[item.department?._id?.toString()]
                   ?.monthlyPendingCount || 0,
-              pendingKra:
+              completedKpa:
                 departmentMonthlyStatsById[item.department?._id?.toString()]
-                  ?.pendingKraCount || 0,
+                  ?.monthlyCompletedCount || 0,
             }))}
             columns={departmentColumns}
             search={false}

@@ -20,6 +20,7 @@ import {
   MdDeleteForever,
   MdErrorOutline,
   MdHistory,
+  MdDescription,
 } from "react-icons/md";
 import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
@@ -201,6 +202,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     "/kra-kpa/individual/",
   );
   const isEmployeeRoute = location.pathname.includes("/employee-KRA-KPA");
+  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
   const member = isEmployeeRoute || isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
@@ -213,16 +215,26 @@ const KraKpaIndividualMonthlyKpa = () => {
     ? auth?.user?._id
     : member?.memberId || auth?.user?._id;
   const bulkKpaFileInputRef = useRef(null);
+  const bulkKraFileInputRef = useRef(null);
+  const [bulkUploadConfirmation, setBulkUploadConfirmation] = useState(null);
   const canBulkUploadSelfKpa =
     !isSelfKra &&
     Boolean(auth?.user?._id && departmentId) &&
     String(employeeId) === String(auth?.user?._id) &&
     hasPermission(PERMISSIONS.KRAKPA_SELF_KPA_BULK_UPLOAD.value);
+  const canBulkUploadSelfKra =
+    isSelfKra &&
+    Boolean(auth?.user?._id && departmentId && employeeId) &&
+    hasPermission(PERMISSIONS.KRAKPA_SELF_KRA_BULK_UPLOAD.value);
   const employeeName =
     member?.memberName ||
     [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
       .filter(Boolean)
       .join(" ");
+  const employeeTitleSuffix =
+    (isEmployeeRoute || isEmployeeDashboardRoute) && employeeName
+      ? ` - ${employeeName}`
+      : "";
   const departmentName = isEmployeeRoute || isIndividualRoute
     ? auth?.user?.departments?.[0]?.name
     : location.state?.selectedDepartmentName ||
@@ -356,6 +368,39 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onSettled: () => {
       if (bulkKpaFileInputRef.current) bulkKpaFileInputRef.current.value = "";
+      setBulkUploadConfirmation(null);
+    },
+  });
+
+  const bulkUploadSelfKra = useMutation({
+    mutationFn: async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("department", departmentId);
+      formData.append("employee", employeeId);
+      const response = await axios.post(
+        "/api/kra-kpa/self-kra/bulk-upload",
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } },
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      refreshKpaQueries();
+      toast.success(`${data.count} Self KRA row${data.count === 1 ? "" : "s"} uploaded.`);
+    },
+    onError: (error) => {
+      const responseData = error?.response?.data;
+      const firstRowError = responseData?.errors?.[0];
+      toast.error(
+        firstRowError
+          ? `Row ${firstRowError.row}, ${firstRowError.field}: ${firstRowError.message}`
+          : responseData?.message || "Unable to upload Self KRAs.",
+      );
+    },
+    onSettled: () => {
+      if (bulkKraFileInputRef.current) bulkKraFileInputRef.current.value = "";
+      setBulkUploadConfirmation(null);
     },
   });
 
@@ -370,6 +415,38 @@ const KraKpaIndividualMonthlyKpa = () => {
     link.download = "self-kpa-bulk-upload-template.csv";
     link.click();
     URL.revokeObjectURL(url);
+  };
+
+  const downloadSelfKraTemplate = () => {
+    const csv =
+      String.fromCharCode(65279) +
+      ["KRA,Category", ""].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "self-kra-bulk-upload-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const cancelBulkUpload = () => {
+    setBulkUploadConfirmation(null);
+    if (bulkUploadConfirmation?.type === "kra" && bulkKraFileInputRef.current) {
+      bulkKraFileInputRef.current.value = "";
+    }
+    if (bulkUploadConfirmation?.type === "kpa" && bulkKpaFileInputRef.current) {
+      bulkKpaFileInputRef.current.value = "";
+    }
+  };
+
+  const confirmBulkUpload = () => {
+    if (!bulkUploadConfirmation?.file) return;
+    if (bulkUploadConfirmation.type === "kra") {
+      bulkUploadSelfKra.mutate(bulkUploadConfirmation.file);
+    } else {
+      bulkUploadSelfKpa.mutate(bulkUploadConfirmation.file);
+    }
   };
 
   const { data: records = [], isLoading } = useQuery({
@@ -1085,7 +1162,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const selfKraColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
     {
-      headerName: "KRA Title",
+      headerName: "KRA",
       field: "title",
       minWidth: 240,
       flex: 1,
@@ -1122,7 +1199,7 @@ const KraKpaIndividualMonthlyKpa = () => {
     ? [
         { headerName: "Sr No", field: "srNo", width: 85 },
         {
-          headerName: "KRA Title",
+          headerName: "KRA",
           field: "title",
           minWidth: 240,
           flex: 1,
@@ -1290,21 +1367,56 @@ const KraKpaIndividualMonthlyKpa = () => {
                     className="hidden"
                     onChange={(event) => {
                       const file = event.target.files?.[0];
-                      if (file) bulkUploadSelfKpa.mutate(file);
+                      if (file) setBulkUploadConfirmation({ type: "kpa", file });
                     }}
                   />
-                  <SecondaryButton
+                  <button
                     type="button"
-                    title="Template"
-                    handleSubmit={downloadSelfKpaTemplate}
-                    externalStyles="!px-4"
-                  />
+                    title="Download Self KPA CSV template"
+                    aria-label="Download Self KPA CSV template"
+                    onClick={downloadSelfKpaTemplate}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <MdDescription size={22} />
+                  </button>
                   <PrimaryButton
                     type="button"
                     title="Bulk Upload KPA"
                     handleSubmit={() => bulkKpaFileInputRef.current?.click()}
                     disabled={bulkUploadSelfKpa.isPending}
                     isLoading={bulkUploadSelfKpa.isPending}
+                    externalStyles="!px-4"
+                  />
+                </>
+              )}
+              {canBulkUploadSelfKra && (
+                <>
+                  <input
+                    ref={bulkKraFileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    aria-label="Choose Self KRA CSV file"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) setBulkUploadConfirmation({ type: "kra", file });
+                    }}
+                  />
+                  <button
+                    type="button"
+                    title="Download Self KRA CSV template"
+                    aria-label="Download Self KRA CSV template"
+                    onClick={downloadSelfKraTemplate}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-primary text-primary transition-colors hover:bg-primary/10"
+                  >
+                    <MdDescription size={22} />
+                  </button>
+                  <PrimaryButton
+                    type="button"
+                    title="Bulk Upload KRA"
+                    handleSubmit={() => bulkKraFileInputRef.current?.click()}
+                    disabled={bulkUploadSelfKra.isPending}
+                    isLoading={bulkUploadSelfKra.isPending}
                     externalStyles="!px-4"
                   />
                 </>
@@ -1398,7 +1510,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           getRowId={getPerformanceRowId}
           selectionResetKey={selectionResetKey}
           columns={columns}
-          tableTitle={`PENDING ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
+          tableTitle={`PENDING ${isSelfKra ? "SELF KRA" : "SELF KPA"}${employeeTitleSuffix}`}
           enableCheckbox
           checkAll={isSelfKra}
           getRowStyle={({ data }) =>
@@ -1427,7 +1539,7 @@ const KraKpaIndividualMonthlyKpa = () => {
           showDateControls={false}
           data={completedTableData}
           columns={completedColumns}
-          tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}`}
+          tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}${employeeTitleSuffix}`}
           search
           exportData
           hideFilter={false}
@@ -1889,6 +2001,19 @@ const KraKpaIndividualMonthlyKpa = () => {
           </>
         )}
       </ConfirmationModal>
+
+      <ConfirmationModal
+        open={Boolean(bulkUploadConfirmation)}
+        onClose={cancelBulkUpload}
+        onConfirm={confirmBulkUpload}
+        title={`Confirm Self ${bulkUploadConfirmation?.type === "kra" ? "KRA" : "KPA"} Bulk Upload`}
+        message={`Upload "${bulkUploadConfirmation?.file?.name || "the selected CSV"}"? ${bulkUploadConfirmation?.type === "kra" ? "Each KRA must have a category that already exists in this department. Lead and Assigned By will be set to your account; other fields use their defaults." : "The uploaded KPAs will be assigned to your account and submitted with the default pending approval status."}`}
+        confirmText="Upload"
+        cancelText="Cancel"
+        isLoading={bulkUploadConfirmation?.type === "kra"
+          ? bulkUploadSelfKra.isPending
+          : bulkUploadSelfKpa.isPending}
+      />
 
       <MuiModal
         open={modalOpen}

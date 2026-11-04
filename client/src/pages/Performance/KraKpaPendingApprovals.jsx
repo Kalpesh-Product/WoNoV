@@ -34,7 +34,14 @@ const formatDateTime = (date) =>
     ? dayjs(date).format("DD-MM-YYYY, hh:mm A")
     : "-";
 
-const PendingApprovalActions = ({ data, node, onEdit, onApprove, onReject, isPending }) => {
+const PendingApprovalActions = ({
+  data,
+  node,
+  onEdit,
+  onApprove,
+  onReject,
+  isPending,
+}) => {
   const [selected, setSelected] = useState(() => Boolean(node.isSelected()));
   useEffect(() => {
     const syncSelection = () => setSelected(Boolean(node.isSelected()));
@@ -80,7 +87,8 @@ const KraKpaPendingApprovals = () => {
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
-  const isOverview = location.pathname.replace(/\/$/, "") === "/app/kra-kpa/pending-approvals";
+  const isOverview =
+    location.pathname.replace(/\/$/, "") === "/app/kra-kpa/pending-approvals";
   const { auth } = useAuth();
   const selectedDepartment = useSelector(
     (state) => state.performance.selectedDepartment,
@@ -91,30 +99,63 @@ const KraKpaPendingApprovals = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const member = isOverview ? null : location.state?.selectedMember || selectedMember;
-  const departmentId =
-    isOverview ? undefined : location.state?.selectedDepartment ||
-    selectedDepartment ||
-    auth?.user?.departments?.[0]?._id;
-  const departmentName =
-    location.state?.selectedDepartmentName ||
-    selectedDepartmentName ||
-    auth?.user?.departments?.find(
-      (department) => String(department?._id) === String(departmentId),
-    )?.name;
+  const activeApprovalMember = isOverview
+    ? location.state?.pendingApprovalMember || null
+    : null;
+  const member = isOverview
+    ? activeApprovalMember
+    : location.state?.selectedMember || selectedMember;
+  const departmentId = isOverview
+    ? activeApprovalMember?.departmentId
+    : location.state?.selectedDepartment ||
+      selectedDepartment ||
+      auth?.user?.departments?.[0]?._id;
+  const departmentName = isOverview
+    ? activeApprovalMember?.departmentName
+    : location.state?.selectedDepartmentName ||
+      selectedDepartmentName ||
+      auth?.user?.departments?.find(
+        (department) => String(department?._id) === String(departmentId),
+      )?.name;
   const employeeId = member?.memberId;
   const employeeName = member?.memberName || "Selected Member";
 
-  const [dateRange, setDateRange] = useState(() => isOverview ? null : initialDateRange());
+  const [dateRange, setDateRange] = useState(() =>
+    isOverview ? null : initialDateRange(),
+  );
   const [editingRecord, setEditingRecord] = useState(null);
   const [approvalRecord, setApprovalRecord] = useState(null);
   const [rejectionRecord, setRejectionRecord] = useState(null);
   const [form, setForm] = useState({ month: "", target: "", deadline: "" });
   const [errors, setErrors] = useState({});
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [selectionResetKey, setSelectionResetKey] = useState(0);
+  const [bulkActionConfirmation, setBulkActionConfirmation] = useState(null);
 
-  const { data: records = [], isLoading, isError, error } = useQuery({
+  const {
+    data: teamMembers = [],
+    isLoading: isLoadingTeamMembers,
+    isError: isTeamMembersError,
+    error: teamMembersError,
+  } = useQuery({
+    queryKey: ["kraKpaPendingApprovalMembers"],
+    enabled: isOverview,
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa/pending-approvals/members",
+      );
+      return response.data || [];
+    },
+  });
+
+  const {
+    data: records = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
     queryKey: ["kraKpaPendingApprovals", departmentId, employeeId],
-    enabled: isOverview || Boolean(departmentId && employeeId),
+    enabled: Boolean(departmentId && employeeId),
     queryFn: async () => {
       const response = await axios.get(
         "/api/kra-kpa/individual-monthly-kpa/pending-approvals",
@@ -126,6 +167,9 @@ const KraKpaPendingApprovals = () => {
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaPendingApprovals"] });
+    queryClient.invalidateQueries({
+      queryKey: ["kraKpaPendingApprovalMembers"],
+    });
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaDueTaskParentKpas"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaDailyLogs"] });
@@ -195,6 +239,44 @@ const KraKpaPendingApprovals = () => {
     },
   });
 
+  const bulkDecision = useMutation({
+    mutationFn: async ({ type, records: selected }) => {
+      const results = await Promise.allSettled(
+        selected.map((record) =>
+          axios.patch(
+            `/api/kra-kpa/individual-monthly-kpa/${record._id}/${type}`,
+          ),
+        ),
+      );
+      return {
+        succeeded: results.filter((result) => result.status === "fulfilled")
+          .length,
+        failed: results.filter((result) => result.status === "rejected").length,
+        type,
+      };
+    },
+    onSuccess: ({ succeeded, failed, type }) => {
+      refresh();
+      setSelectedRows([]);
+      setSelectionResetKey((current) => current + 1);
+      setBulkActionConfirmation(null);
+      if (failed) {
+        toast.warning(
+          `${succeeded} KPA${succeeded === 1 ? "" : "s"} ${type === "approve" ? "approved" : "rejected"}; ${failed} could not be processed.`,
+        );
+      } else {
+        toast.success(
+          `${succeeded} KPA${succeeded === 1 ? "" : "s"} ${type === "approve" ? "approved" : "rejected"}.`,
+        );
+      }
+    },
+    onError: (error) => {
+      toast.error(
+        error?.response?.data?.message || "Unable to process selected KPAs.",
+      );
+    },
+  });
+
   const submitEdit = (event) => {
     event.preventDefault();
     const nextErrors = {};
@@ -223,43 +305,29 @@ const KraKpaPendingApprovals = () => {
           );
         })
         .map((record, index) => ({
-        ...record,
-        srNo: index + 1,
-        employeeName: formatUserName(record.employee),
-        departmentName: record.department?.name || "-",
-        assignedByName: formatUserName(record.createdBy),
-        deadlineLabel:
-          record.deadline && dayjs(record.deadline).isValid()
-            ? dayjs(record.deadline).format("DD-MM-YYYY")
-            : "-",
-      })),
+          ...record,
+          srNo: index + 1,
+          employeeName: formatUserName(record.employee),
+          departmentName: record.department?.name || "-",
+          assignedByName: formatUserName(record.createdBy),
+          deadlineLabel:
+            record.deadline && dayjs(record.deadline).isValid()
+              ? dayjs(record.deadline).format("DD-MM-YYYY")
+              : "-",
+        })),
     [records, dateRange],
   );
 
   const columns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
-    ...(isOverview ? [
-      {
-        headerName: "Member", field: "employeeName", minWidth: 180, flex: 1,
-        valueGetter: ({ data }) => formatUserName(data.employee),
-        cellRenderer: ({ data }) => <button
-          type="button"
-          className="text-primary underline cursor-pointer"
-          disabled={!data.employee?._id || !data.department?._id}
-          onClick={() => navigate("/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard", {
-            state: {
-              selectedMember: { memberId: data.employee?._id, memberName: formatUserName(data.employee), memberRole: "Employee" },
-              selectedDepartment: data.department?._id,
-              selectedDepartmentName: data.department?.name,
-            },
-          })}
-        >{formatUserName(data.employee)}</button>,
-      },
-      { headerName: "Department", field: "departmentName", minWidth: 170, valueGetter: ({ data }) => data.department?.name || "-" },
-    ] : []),
     { headerName: "KPA", field: "target", minWidth: 280, flex: 2 },
     { headerName: "Deadline", field: "deadlineLabel", width: 155 },
-    { headerName: "Assigned By", field: "assignedByName", minWidth: 180, flex: 1 },
+    {
+      headerName: "Assigned By",
+      field: "assignedByName",
+      minWidth: 180,
+      flex: 1,
+    },
     {
       headerName: "Assigned On",
       field: "createdAt",
@@ -280,35 +348,136 @@ const KraKpaPendingApprovals = () => {
           onEdit={openEdit}
           onApprove={setApprovalRecord}
           onReject={setRejectionRecord}
-          isPending={saveKpa.isPending || approveKpa.isPending || rejectKpa.isPending}
+          isPending={
+            saveKpa.isPending || approveKpa.isPending || rejectKpa.isPending
+          }
         />
       ),
     },
   ];
 
+  const memberColumns = [
+    { headerName: "Sr No", field: "srNo", width: 85 },
+    {
+      headerName: "Team Member",
+      field: "memberName",
+      minWidth: 220,
+      flex: 1,
+      cellRenderer: ({ data }) => (
+        <button
+          type="button"
+          className="cursor-pointer text-left text-primary hover:underline"
+          onClick={() => {
+            navigate(location.pathname, {
+              replace: true,
+              state: { ...location.state, pendingApprovalMember: data },
+            });
+            setSelectedRows([]);
+            setSelectionResetKey((current) => current + 1);
+          }}
+        >
+          {data.memberName}
+        </button>
+      ),
+    },
+    {
+      headerName: "Department",
+      field: "departmentName",
+      minWidth: 180,
+      flex: 1,
+    },
+    {
+      headerName: "Pending KPAs",
+      field: "pendingCount",
+      width: 150,
+      sort: "desc",
+    },
+  ];
+  const displayedTeamMembers = useMemo(
+    () => teamMembers.map((item, index) => ({ ...item, srNo: index + 1 })),
+    [teamMembers],
+  );
+  const bulkToolbarActions =
+    selectedRows.length > 0 ? (
+      <div className="flex items-center gap-2">
+        <PrimaryButton
+          type="button"
+          title={`Approve (${selectedRows.length})`}
+          handleSubmit={() =>
+            setBulkActionConfirmation({
+              type: "approve",
+              records: selectedRows,
+            })
+          }
+          disabled={bulkDecision.isPending}
+        />
+        <button
+          type="button"
+          className="h-10 rounded-md border border-red-600 px-4 text-sm text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={() =>
+            setBulkActionConfirmation({ type: "reject", records: selectedRows })
+          }
+          disabled={bulkDecision.isPending}
+        >
+          Reject ({selectedRows.length})
+        </button>
+      </div>
+    ) : null;
+
   return (
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {isOverview ? "Pending KPA Approvals" : `${departmentName ? `${departmentName} - ` : ""}${employeeName}`}
+          {isOverview && !activeApprovalMember
+            ? "Pending KPA Approvals - Team Members"
+            : `${departmentName ? `${departmentName} - ` : ""}${employeeName} - Pending Approvals`}
         </h1>
       </div>
-      {isError ? (
-        <p role="alert" className="py-6 text-red-600">{error?.response?.data?.message || "Unable to load pending approvals"}</p>
+      {isOverview && !activeApprovalMember ? (
+        isTeamMembersError ? (
+          <p role="alert" className="py-6 text-red-600">
+            {teamMembersError?.response?.data?.message ||
+              "Unable to load team members"}
+          </p>
+        ) : (
+          <AgTable
+            loading={isLoadingTeamMembers}
+            showDateControls={false}
+            data={displayedTeamMembers}
+            columns={memberColumns}
+            hideTitle
+            search
+            hideFilter
+            tableHeight={Math.max(
+              300,
+              Math.min(650, displayedTeamMembers.length * 58 + 90),
+            )}
+          />
+        )
+      ) : isError ? (
+        <p role="alert" className="py-6 text-red-600">
+          {error?.response?.data?.message || "Unable to load pending approvals"}
+        </p>
       ) : (
         <AgTable
           loading={isLoading}
           showDateControls={false}
-          toolbarDateControls={<TableDateFilter
-            fields={[{ field: "month", label: "KPA Month" }]}
-            field="month"
-            range={dateRange}
-            onChange={setDateRange}
-          />}
+          toolbarDateControls={
+            <TableDateFilter
+              fields={[{ field: "month", label: "KPA Month" }]}
+              field="month"
+              range={dateRange}
+              onChange={setDateRange}
+            />
+          }
           data={tableData}
           columns={columns}
           hideTitle
           enableCheckbox
+          checkAll
+          onSelectionChange={setSelectedRows}
+          selectionResetKey={selectionResetKey}
+          toolbarActions={bulkToolbarActions}
           search
           exportData
           hideFilter={false}
@@ -338,7 +507,10 @@ const KraKpaPendingApprovals = () => {
             size="small"
             value={form.target}
             onChange={(event) => {
-              setForm((current) => ({ ...current, target: event.target.value }));
+              setForm((current) => ({
+                ...current,
+                target: event.target.value,
+              }));
               setErrors((current) => ({ ...current, target: "" }));
             }}
             error={Boolean(errors.target)}
@@ -356,6 +528,7 @@ const KraKpaPendingApprovals = () => {
               onChange={(date) => {
                 setForm((current) => ({
                   ...current,
+                  ...(date?.isValid() && { month: date.format("YYYY-MM") }),
                   deadline: date?.isValid() ? date.format("YYYY-MM-DD") : "",
                 }));
                 setErrors((current) => ({ ...current, deadline: "" }));
@@ -407,6 +580,25 @@ const KraKpaPendingApprovals = () => {
         cancelText="Cancel"
         cancelFirst
         isLoading={rejectKpa.isPending}
+      />
+      <ConfirmationModal
+        open={Boolean(bulkActionConfirmation)}
+        onClose={() =>
+          !bulkDecision.isPending && setBulkActionConfirmation(null)
+        }
+        onConfirm={() =>
+          bulkActionConfirmation && bulkDecision.mutate(bulkActionConfirmation)
+        }
+        title={`${bulkActionConfirmation?.type === "approve" ? "Approve" : "Reject"} Selected KPAs`}
+        message={`Are you sure you want to ${bulkActionConfirmation?.type || "process"} ${bulkActionConfirmation?.records?.length || 0} selected KPA${bulkActionConfirmation?.records?.length === 1 ? "" : "s"}?`}
+        confirmText={
+          bulkActionConfirmation?.type === "approve"
+            ? "Approve All"
+            : "Reject All"
+        }
+        cancelText="Cancel"
+        cancelFirst
+        isLoading={bulkDecision.isPending}
       />
     </PageFrame>
   );

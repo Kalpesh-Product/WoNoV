@@ -12,6 +12,9 @@ const BreadCrumbComponent = () => {
   const selectedMember = useSelector((state) => state.performance.selectedMember);
   const isEmployeeKraKpaPage =
     /\/(individual-Monthly-KPA|self-KRA)$/.test(location.pathname);
+  const isEmployeeDashboardContext = location.pathname.includes(
+    "/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard",
+  );
   const isOwnEmployeePage =
     location.pathname.includes("/employee-KRA-KPA") ||
     location.pathname.includes("/kra-kpa/individual/");
@@ -78,6 +81,12 @@ const BreadCrumbComponent = () => {
   const isVisitorHistoryPath = basePathSegments.includes("visitor-history");
   const historyType = searchParams.get("type");
   const pathSegments = [...basePathSegments];
+  const isPendingApprovalsMemberView =
+    location.pathname.replace(/\/$/, "") === "/app/kra-kpa/pending-approvals" &&
+    Boolean(location.state?.pendingApprovalMember);
+  if (isPendingApprovalsMemberView) {
+    pathSegments.splice(pathSegments.length - 1, 0, "team-members");
+  }
 
   if (isVisitorHistoryPath && historyType) {
     const historyIndex = pathSegments.indexOf("visitor-history");
@@ -87,7 +96,7 @@ const BreadCrumbComponent = () => {
   }
 
   // Generate breadcrumb links
-  const breadcrumbs = pathSegments.map((segment, index) => {
+  const pathBreadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
     const isVirtualOfficeClientPath =
       pathSegments.includes("virtual-office") &&
@@ -101,6 +110,8 @@ const BreadCrumbComponent = () => {
     const isNonNavigableSegment =
       segment === "visitor-history" ||
       (isVirtualOfficeClientPath && segment === "client");
+    const isTeamMembersCrumb =
+      segment === "team-members" && isPendingApprovalsMemberView;
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
@@ -109,7 +120,9 @@ const BreadCrumbComponent = () => {
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isHistoryTabSegment
+    const fullPath = isTeamMembersCrumb
+      ? "/app/kra-kpa/pending-approvals"
+      : isHistoryTabSegment
       ? `/app/visitors/manage-visitors/${segment}`
       : isDirectAppPath
         ? `/app/${path}`
@@ -136,15 +149,31 @@ const BreadCrumbComponent = () => {
         key={index}
         underline="hover"
         color="inherit"
-        onClick={() => navigate(fullPath)}
+        onClick={() =>
+          isTeamMembersCrumb
+            ? navigate(fullPath, {
+                replace: true,
+                state: { ...location.state, pendingApprovalMember: null },
+              })
+            : navigate(fullPath)
+        }
         style={{ cursor: "pointer" }}
       >
         {displayText}
       </Link>
     );
   });
+  const breadcrumbs = [];
+  breadcrumbs.push(...pathBreadcrumbs);
+  if (isEmployeeDashboardContext && memberName) {
+    breadcrumbs.push(
+      <Typography key="employee-dashboard-member" color="text.primary">
+        {memberName}
+      </Typography>,
+    );
+  }
 
-  if (isEmployeeKraKpaPage && memberName) {
+  if (isEmployeeKraKpaPage && memberName && !isEmployeeDashboardContext) {
     breadcrumbs.push(
       <Typography key="employee-member" color="text.primary">
         {memberName}
