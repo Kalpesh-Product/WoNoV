@@ -123,6 +123,7 @@ const KraKpaDueTask = () => {
     (state) => state.performance.selectedMember,
   );
   const isIndividualRoute = location.pathname.includes("/kra-kpa/individual/");
+  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
   const member = isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
@@ -639,7 +640,7 @@ const KraKpaDueTask = () => {
       {historyRecord && <DailyLogEditHistory record={historyRecord} onClose={() => setHistoryRecord(null)} />}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          Unscheduled Due Tasks
+          {`Unscheduled Due Tasks${isEmployeeDashboardRoute && employeeName ? ` - ${employeeName}` : ""}`}
         </h1>
         {!isLoading && <div className="flex flex-wrap items-center justify-end gap-3">
           {canAdd && <PrimaryButton type="button" title="Add Due Task" handleSubmit={openCreate} />}

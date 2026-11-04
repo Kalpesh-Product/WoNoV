@@ -834,7 +834,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
             },
         },
         { headerName: "Pending KPA", field: "pendingKpa", width: 220 },
-        { headerName: "Pending KRA", field: "pendingKra", width: 220 },
+        { headerName: "Completed KPA", field: "completedKpa", width: 220 },
     ];
 
     const graphData = [
@@ -952,9 +952,8 @@ tooltip: {
                 ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />}
                 
                 {/* Dynamic Month Navigation Buttons */}
-                <div className="flex justify-center items-center pb-4">
-                    {/* <div className="flex items-center"> */}
-                      <div className="flex items-center mt-2">
+                <div className="flex items-center justify-center pb-4 pt-2">
+                    <div className="flex items-center justify-center gap-3">
                         <SecondaryButton
                             title={<MdNavigateBefore />}
                             disabled={false}
@@ -965,8 +964,7 @@ tooltip: {
                                 setSelectedMonth(fiscalMonths[prevIndex]);
                             }}
                         />
-                        {/* <div className="text-sm min-w-[120px] text-center">{selectedMonth}</div> */}
-                         <div className="text-primary text-content font-semibold min-w-[70px] text-center">{selectedMonth}</div>
+                        <div className="min-w-[120px] px-2 text-center text-content font-semibold text-primary">{selectedMonth}</div>
                         <SecondaryButton
                             title={<MdNavigateNext />}
                             disabled={false}

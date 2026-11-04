@@ -121,12 +121,20 @@ const KraKpaDailyLogs = () => {
   const member = isIndividualRoute
     ? null
     : location.state?.selectedMember || selectedMember;
+  const isEmployeeDashboardRoute = location.pathname.includes("/employee-dashboard/");
   const departmentId = isIndividualRoute
     ? auth?.user?.departments?.[0]?._id
     : location.state?.selectedDepartment ||
       selectedDepartment ||
       auth?.user?.departments?.[0]?._id;
   const employeeId = member?.memberId || auth?.user?._id;
+  const employeeName =
+    member?.memberName ||
+    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+      .filter(Boolean)
+      .join(" ");
+  const employeeTitleSuffix =
+    isEmployeeDashboardRoute && employeeName ? ` - ${employeeName}` : "";
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
   const canManageOthers = roleTitles.some(
@@ -635,7 +643,7 @@ const KraKpaDailyLogs = () => {
             }
             data={dueRows}
             columns={dueColumns}
-            tableTitle="PENDING DAILY LOGS"
+            tableTitle={`PENDING DAILY LOGS${employeeTitleSuffix}`}
             enableCheckbox
             search
             exportData
@@ -652,7 +660,7 @@ const KraKpaDailyLogs = () => {
               loading={isLoading}
               data={completedRows}
               columns={completedColumns}
-              tableTitle="COMPLETED DAILY LOGS"
+              tableTitle={`COMPLETED DAILY LOGS${employeeTitleSuffix}`}
               search
               exportData
               hideFilter={false}

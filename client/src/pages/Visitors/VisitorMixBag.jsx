@@ -36,7 +36,10 @@ const VisitorMixBag = ({
   const mixBagCards = [
     {
       title: "REPEAT BOOKINGS",
-      route: "/app/visitors/mix-bag/repeat-bookings",
+      description: "Create another booking for an existing client.",
+      action: "View Repeat Bookings",
+      icon: "dayPass",
+      route: `${basePath}/repeat-day-pass/repeat-external-companies`,
       permission: PERMISSIONS.VISITORS_MIX_BAG_REPEAT_DAY_PASS.value,
     },
     {
