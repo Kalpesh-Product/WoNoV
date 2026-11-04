@@ -387,6 +387,9 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onSuccess: (data) => {
       refreshKpaQueries();
+      queryClient.invalidateQueries({
+        queryKey: ["kraCategories", departmentId],
+      });
       toast.success(`${data.count} Self KRA row${data.count === 1 ? "" : "s"} uploaded.`);
     },
     onError: (error) => {
@@ -2007,7 +2010,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         onClose={cancelBulkUpload}
         onConfirm={confirmBulkUpload}
         title={`Confirm Self ${bulkUploadConfirmation?.type === "kra" ? "KRA" : "KPA"} Bulk Upload`}
-        message={`Upload "${bulkUploadConfirmation?.file?.name || "the selected CSV"}"? ${bulkUploadConfirmation?.type === "kra" ? "Each KRA must have a category that already exists in this department. Lead and Assigned By will be set to your account; other fields use their defaults." : "The uploaded KPAs will be assigned to your account and submitted with the default pending approval status."}`}
+        message={`Upload "${bulkUploadConfirmation?.file?.name || "the selected CSV"}"? ${bulkUploadConfirmation?.type === "kra" ? "Categories in the sheet that are missing from this department will be added automatically. Lead and Assigned By will be set to your account; other fields use their defaults." : "The uploaded KPAs will be assigned to your account and submitted with the default pending approval status."}`}
         confirmText="Upload"
         cancelText="Cancel"
         isLoading={bulkUploadConfirmation?.type === "kra"

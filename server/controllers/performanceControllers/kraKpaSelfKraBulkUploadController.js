@@ -174,7 +174,7 @@ const bulkUploadSelfKra = async (req, res, next) => {
       }
     }
 
-    const categories = await KraCategory.find({
+    let categories = await KraCategory.find({
       company: req.company,
       department: departmentId,
       isActive: true,
@@ -182,20 +182,12 @@ const bulkUploadSelfKra = async (req, res, next) => {
     })
       .select("categoryName normalizedName")
       .lean();
-    const categoryByName = new Map(
-      categories.map((category) => [
-        normalizeCategoryName(category.normalizedName || category.categoryName),
-        category,
-      ]),
-    );
-
     const validationErrors = [];
-    const kraRecords = nonEmptyRows.flatMap((row, index) => {
+    const parsedRows = nonEmptyRows.map((row, index) => {
       const rowNumber = index + 2;
       const title = getCell(row, ["KRA", "KRA Title"]);
       const categoryName = getCell(row, ["Category"]);
       const errors = [];
-      let category;
 
       if (!title) {
         errors.push({ row: rowNumber, field: "KRA", message: "KRA is required." });
@@ -212,38 +204,16 @@ const bulkUploadSelfKra = async (req, res, next) => {
           field: "Category",
           message: "Category is required.",
         });
-      } else {
-        category = categoryByName.get(normalizeCategoryName(categoryName));
-        if (!category) {
-          errors.push({
-            row: rowNumber,
-            field: "Category",
-            message: `“${categoryName}” is not an active category in the selected department.`,
-          });
-        }
+      } else if (categoryName.length > 200) {
+        errors.push({
+          row: rowNumber,
+          field: "Category",
+          message: "Category must be at most 200 characters.",
+        });
       }
 
       validationErrors.push(...errors);
-      if (errors.length) return [];
-
-      return [
-        {
-          company: req.company,
-          department: departmentId,
-          employee: employeeId,
-          title,
-          description: "",
-          category: category._id,
-          lead: req.user,
-          status: "Pending",
-          closingDate: null,
-          startsOn: getTodayDate(),
-          isActive: true,
-          isDeleted: false,
-          createdBy: req.user,
-          updatedBy: req.user,
-        },
-      ];
+      return errors.length ? null : { title, categoryName };
     });
 
     if (validationErrors.length) {
@@ -252,6 +222,85 @@ const bulkUploadSelfKra = async (req, res, next) => {
         errors: validationErrors,
       });
     }
+
+    const categoryByName = new Map(
+      categories.map((category) => [
+        normalizeCategoryName(category.normalizedName || category.categoryName),
+        category,
+      ]),
+    );
+    const missingCategories = new Map();
+    parsedRows.forEach(({ categoryName }) => {
+      const normalizedName = normalizeCategoryName(categoryName);
+      if (!categoryByName.has(normalizedName) && !missingCategories.has(normalizedName)) {
+        missingCategories.set(normalizedName, categoryName.trim().replace(/\s+/g, " "));
+      }
+    });
+
+    if (missingCategories.size) {
+      const categoryOperations = [...missingCategories.entries()].map(
+        ([normalizedName, categoryName]) => ({
+          updateOne: {
+            filter: {
+              company: req.company,
+              department: departmentId,
+              normalizedName,
+            },
+            update: {
+              $set: { isActive: true, updatedBy: req.user },
+              $setOnInsert: {
+                company: req.company,
+                department: departmentId,
+                categoryName,
+                normalizedName,
+                isDeleted: false,
+                createdBy: req.user,
+              },
+            },
+            upsert: true,
+          },
+        }),
+      );
+
+      try {
+        await KraCategory.bulkWrite(categoryOperations, { ordered: true });
+      } catch (error) {
+        // A concurrent upload may have inserted the same unique category.
+        if (error?.code !== 11000) throw error;
+      }
+
+      categories = await KraCategory.find({
+        company: req.company,
+        department: departmentId,
+        isActive: true,
+        isDeleted: { $ne: true },
+      })
+        .select("categoryName normalizedName")
+        .lean();
+      categories.forEach((category) =>
+        categoryByName.set(
+          normalizeCategoryName(category.normalizedName || category.categoryName),
+          category,
+        ),
+      );
+    }
+
+    const kraRecords = parsedRows.map(({ title, categoryName }) => ({
+      company: req.company,
+      department: departmentId,
+      employee: employeeId,
+      title,
+      description: "",
+      category: categoryByName.get(normalizeCategoryName(categoryName))._id,
+      lead: req.user,
+      status: "Pending",
+      closingDate: null,
+      startsOn: getTodayDate(),
+      isActive: true,
+      isDeleted: false,
+      createdBy: req.user,
+      updatedBy: req.user,
+    }));
 
     await SelfKra.insertMany(kraRecords, { ordered: true });
     return res.status(201).json({

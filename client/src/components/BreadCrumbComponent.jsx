@@ -128,12 +128,14 @@ const BreadCrumbComponent = () => {
       isVisitorHistoryPath &&
       !isDayPassSalesHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
+    const isPendingTeamMembersBreadcrumb =
+      isPendingApprovalsMemberView && segment === "team-members";
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isTeamMembersCrumb
+    const fullPath = isPendingTeamMembersBreadcrumb
       ? "/app/kra-kpa/pending-approvals"
       : isHistoryTabSegment
         ? `/app/visitors/manage-visitors/${segment}`
@@ -163,7 +165,7 @@ const BreadCrumbComponent = () => {
         underline="hover"
         color="inherit"
         onClick={() =>
-          isTeamMembersCrumb
+          isPendingTeamMembersBreadcrumb
             ? navigate(fullPath, {
                 replace: true,
                 state: { ...location.state, pendingApprovalMember: null },
