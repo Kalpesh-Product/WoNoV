@@ -265,6 +265,8 @@ const VirtualOfficeClientDetails = () => {
       totalDesks: 0,
       bookingType: DEFAULT_BOOKING_TYPE,
       openDeskRate: 0,
+      brokerage: 0,
+      internalLead: "",
       receivedAmount: 0,
       totalReceivedAmount: 0,
       cabinDeskRate: 0,
@@ -282,6 +284,7 @@ const VirtualOfficeClientDetails = () => {
       hoPocName: "",
       hoPocEmail: "",
       hoPocPhone: "",
+      hoPocAddress: "",
       clientStatus: true,
       channel: "",
       currentStatus: "In Progress",
@@ -577,6 +580,8 @@ const VirtualOfficeClientDetails = () => {
           Number(selectedClient.cabinDesks || 0) +
           Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
+        brokerage: selectedClient.brokerage || 0,
+        internalLead: selectedClient.internalLead || "",
         receivedAmount: selectedClient.receivedAmount || 0,
         totalReceivedAmount:
           selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
@@ -598,6 +603,7 @@ const VirtualOfficeClientDetails = () => {
         hoPocName: selectedClient.hoPoc?.name || "",
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
+        hoPocAddress: selectedClient.hoPoc?.address || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         channel: selectedClient.channel || "",
         currentStatus: selectedClient.currentStatus || "In Progress",
@@ -657,6 +663,8 @@ const VirtualOfficeClientDetails = () => {
       openDesks: Number(data.openDesks) || 0,
       cabinDeskRate: Number(data.cabinDeskRate) || 0,
       openDeskRate: Number(data.openDeskRate) || 0,
+      brokerage: Number(data.brokerage) || 0,
+      internalLead: data.internalLead || "",
       receivedAmount: Number(data.receivedAmount) || 0,
       totalReceivedAmount:
         Number(data.totalReceivedAmount) || Number(data.receivedAmount) || 0,
@@ -678,6 +686,7 @@ const VirtualOfficeClientDetails = () => {
         name: data.hoPocName,
         email: data.hoPocEmail,
         phone: data.hoPocPhone,
+        address: data.hoPocAddress,
       },
     };
 
@@ -725,6 +734,7 @@ const VirtualOfficeClientDetails = () => {
         hoPocName: payload.hoPoc.name,
         hoPocEmail: payload.hoPoc.email,
         hoPocPhone: payload.hoPoc.phone,
+        hoPocAddress: payload.hoPoc.address,
         // Map other potentially renamed fields back for UI compatibility
         hoCity: serverData.city || serverData.hoCity || data.hoCity,
         hoState: serverData.state || serverData.hoState || data.hoState,
@@ -828,6 +838,8 @@ const VirtualOfficeClientDetails = () => {
           Number(selectedClient.cabinDesks || 0) +
           Number(selectedClient.openDesks || 0),
         openDeskRate: selectedClient.openDeskRate || 0,
+        brokerage: selectedClient.brokerage || 0,
+        internalLead: selectedClient.internalLead || "",
         receivedAmount: selectedClient.receivedAmount || 0,
         totalReceivedAmount:
           selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
@@ -849,6 +861,7 @@ const VirtualOfficeClientDetails = () => {
         hoPocName: selectedClient.hoPoc?.name || "",
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
+        hoPocAddress: selectedClient.hoPoc?.address || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         channel: selectedClient.channel || "",
         currentStatus: selectedClient.currentStatus || "In Progress",
@@ -1279,6 +1292,8 @@ const VirtualOfficeClientDetails = () => {
                         "openDeskRate",
                         "totalDesks",
                         "currentRate",
+                        "brokerage",
+                        "internalLead",
                         "clientStatus",
                       ].map((fieldKey) => (
                         <Controller
@@ -1293,6 +1308,15 @@ const VirtualOfficeClientDetails = () => {
                               </TextField>
                             ) : fieldKey === "totalDesks" ? (
                               <TextField {...field} disabled size="small" label="No Of Desk" fullWidth />
+                            ) : fieldKey === "brokerage" ? (
+                              <TextField
+                                {...field}
+                                type="number"
+                                inputProps={{ min: 0 }}
+                                size="small"
+                                label="Brokerage"
+                                fullWidth
+                              />
                             ) : fieldKey === "currentRate" ? (
                               <TextField
                                 {...field}
@@ -1328,6 +1352,8 @@ const VirtualOfficeClientDetails = () => {
                       "openDeskRate",
                       "totalDesks",
                       "currentRate",
+                      "brokerage",
+                      "internalLead",
                       "clientStatus",
                     ].map((fieldKey) => (
                       <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
@@ -1355,6 +1381,8 @@ const VirtualOfficeClientDetails = () => {
                                 : "Inactive"
                               : fieldKey === "currentRate"
                                 ? formatCurrency(computedCurrentRate)
+                              : fieldKey === "brokerage"
+                                ? formatCurrency(selectedClient?.brokerage || 0)
                               : fieldKey === "buildingName"
                                 ? selectedUnitDetails?.building?.buildingName ||
                                   selectedClient?.unit?.building?.buildingName ||
@@ -1799,6 +1827,7 @@ const VirtualOfficeClientDetails = () => {
                     "hoPocName",
                     "hoPocEmail",
                     "hoPocPhone",
+                    "hoPocAddress",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -1842,6 +1871,8 @@ const VirtualOfficeClientDetails = () => {
                                         ? selectedClient?.hoPoc?.email
                                         : fieldKey === "hoPocPhone"
                                           ? selectedClient?.hoPoc?.phone
+                                          : fieldKey === "hoPocAddress"
+                                            ? selectedClient?.hoPoc?.address
                                           : ""}
                             </span>
                           </div>

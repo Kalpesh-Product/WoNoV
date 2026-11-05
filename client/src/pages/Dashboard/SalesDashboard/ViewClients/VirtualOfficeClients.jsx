@@ -6,8 +6,8 @@ import StatusChip from "../../../../components/StatusChip";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
-import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { toast } from "sonner";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -75,19 +75,43 @@ const VirtualOfficeClients = () => {
   });
   const verticalData = isLoading
     ? []
-    : data.virtualOfficeClients?.map((item, index) => ({
-        ...item,
-        srNo: index + 1,
-        totalTerm: item.totalTerm || 0,
-        agreementExpiry: calculateAgreementExpiry(
-          item.termStartDate || item.startDate,
-          item.termEnd || item.endDate,
-        ),
-        isActive:
-          typeof item?.isActive === "boolean"
-            ? item.isActive
-            : Boolean(item?.clientStatus),
-      })) || [];
+    : data.virtualOfficeClients
+        ?.slice()
+        .sort((firstClient, secondClient) => {
+          const firstIsActive =
+            typeof firstClient?.isActive === "boolean"
+              ? firstClient.isActive
+              : Boolean(firstClient?.clientStatus);
+          const secondIsActive =
+            typeof secondClient?.isActive === "boolean"
+              ? secondClient.isActive
+              : Boolean(secondClient?.clientStatus);
+
+          if (firstIsActive !== secondIsActive) {
+            return Number(secondIsActive) - Number(firstIsActive);
+          }
+
+          return String(firstClient?.clientName || "").localeCompare(
+            String(secondClient?.clientName || ""),
+            undefined,
+            { sensitivity: "base", numeric: true },
+          );
+        })
+        .map((item, index) => ({
+          ...item,
+          srNo: index + 1,
+          internalLead: item.internalLead || "-",
+          clientType: item.billingFrequency || "-",
+          totalTerm: item.totalTerm || 0,
+          agreementExpiry: calculateAgreementExpiry(
+            item.termStartDate || item.startDate,
+            item.termEnd || item.endDate,
+          ),
+          isActive:
+            typeof item?.isActive === "boolean"
+              ? item.isActive
+              : Boolean(item?.clientStatus),
+        })) || [];
 
   const { mutate: updateClientStatus, isPending: isStatusUpdating } = useMutation({
     mutationFn: async ({ id, isActive }) => {
@@ -159,12 +183,18 @@ const VirtualOfficeClients = () => {
         </span>
       ),
     },
+    { field: "clientType", headerName: "Client Type", flex: 0.5 },
     { field: "totalTerm", headerName: "Total Term" ,flex:0.5},
     { field: "agreementExpiry", headerName: "Agreement Expiry",flex:0.5},
     {
+      field: "internalLead",
+      headerName: "Internal Lead",
+      flex: 0.5,
+      pinned: "right",
+    },
+    {
       field: "rentStatus",
       headerName: "Status",
-      sort: "desc",
       pinned:"right",
       cellRenderer: (params) => {
         const status = params.data?.isActive ? "Active" : "Inactive";
@@ -175,22 +205,45 @@ const VirtualOfficeClients = () => {
       field: "actions",
       headerName: "Actions",
       pinned:"right",
-      cellRenderer: (params) => (
-        <ThreeDotMenu
-          rowId={params.data._id || params.data.srNo}
-          menuItems={[
-            {
-              label: "Edit Client Details",
-              onClick: () => handleViewClient(params.data),
-            },
-            {
-              label: params.data?.isActive ? "Mark As Inactive" : "Mark As Active",
-              onClick: () => handleToggleClientStatus(params.data),
-              disabled: isStatusUpdating,
-            },
-          ]}
-        />
-      ),
+      minWidth: 110,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => {
+        const isActive = Boolean(params.data?.isActive);
+
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleViewClient(params.data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              aria-label={`Edit ${params.data?.clientName || "client"}`}
+              title="Edit"
+            >
+              <HiPencilSquare size={26} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleClientStatus(params.data)}
+              disabled={isStatusUpdating}
+              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+                isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
+              role="switch"
+              aria-checked={isActive}
+              aria-label={`${isActive ? "Deactivate" : "Activate"} ${params.data?.clientName || "client"}`}
+              title={isActive ? "Mark As Inactive" : "Mark As Active"}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                  isActive ? "translate-x-5" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        );
+      },
     },
   ];
   //-------------------------Table Data-----------------------------//

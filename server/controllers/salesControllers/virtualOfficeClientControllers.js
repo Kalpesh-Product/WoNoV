@@ -310,6 +310,7 @@ const createVirtualOfficeClient = async (req, res) => {
     const cabinDeskRate = Number(data.cabinDeskRate || 0);
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
+    const brokerage = Number(data.brokerage || 0);
     const receivedAmount = Number(data.receivedAmount || 0);
     const totalReceivedAmount = Number(
       data.totalReceivedAmount !== undefined
@@ -325,6 +326,7 @@ const createVirtualOfficeClient = async (req, res) => {
       ["securityDeposit", securityDeposit],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
+      ["brokerage", brokerage],
       ["receivedAmount", receivedAmount],
       ["totalReceivedAmount", totalReceivedAmount],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
@@ -362,7 +364,9 @@ const createVirtualOfficeClient = async (req, res) => {
     }
 
     // If any hoPoc field provided, require name+email+phone to be valid
-    const hoProvided = Boolean(hoPoc.name || hoPoc.email || hoPoc.phone);
+    const hoProvided = Boolean(
+      hoPoc.name || hoPoc.email || hoPoc.phone || hoPoc.address,
+    );
     if (hoProvided) {
       if (!hoPoc.name || String(hoPoc.name).trim().length < 2) {
         return res
@@ -374,6 +378,9 @@ const createVirtualOfficeClient = async (req, res) => {
       }
       if (!hoPoc.phone || !isValidPhone(hoPoc.phone)) {
         return res.status(400).json({ message: "hoPoc.phone is invalid" });
+      }
+      if (!hoPoc.address || !String(hoPoc.address).trim()) {
+        return res.status(400).json({ message: "hoPoc.address is required" });
       }
     }
 
@@ -410,6 +417,8 @@ const createVirtualOfficeClient = async (req, res) => {
       openDesks,
       openDeskRate,
       openTotal,
+      brokerage,
+      internalLead: String(data.internalLead || "").trim(),
       receivedAmount,
       totalReceivedAmount,
       annualIncrement,
@@ -791,6 +800,10 @@ const updateVirtualOfficeClient = async (req, res) => {
         typeof incomingPoc.phone !== "undefined"
           ? incomingPoc.phone
           : existingPoc.phone,
+      address:
+        typeof incomingPoc.address !== "undefined"
+          ? incomingPoc.address
+          : existingPoc.address,
     });
 
     // Determine final POC objects (after merge), only if POC update requested
@@ -832,7 +845,8 @@ const updateVirtualOfficeClient = async (req, res) => {
       const hoProvided =
         Boolean(finalHo.name) ||
         Boolean(finalHo.email) ||
-        Boolean(finalHo.phone);
+        Boolean(finalHo.phone) ||
+        Boolean(finalHo.address);
 
       if (hoProvided) {
         if (!finalHo.name || String(finalHo.name).trim().length < 2) {
@@ -846,6 +860,9 @@ const updateVirtualOfficeClient = async (req, res) => {
         if (!finalHo.phone || !isValidPhone(finalHo.phone)) {
           return res.status(400).json({ message: "hoPoc.phone is invalid" });
         }
+        if (!finalHo.address || !String(finalHo.address).trim()) {
+          return res.status(400).json({ message: "hoPoc.address is required" });
+        }
       }
 
       updates.hoPoc = {
@@ -854,6 +871,7 @@ const updateVirtualOfficeClient = async (req, res) => {
           .trim()
           .toLowerCase(),
         phone: String(finalHo.phone || "").trim(),
+        address: String(finalHo.address || "").trim(),
       };
     }
 
@@ -883,6 +901,11 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.openDeskRate
         : existing.openDeskRate || 0,
     );
+    const brokerage = Number(
+      typeof updates.brokerage !== "undefined"
+        ? updates.brokerage
+        : existing.brokerage || 0,
+    );
     const receivedAmount = Number(
       typeof updates.receivedAmount !== "undefined"
         ? updates.receivedAmount
@@ -907,6 +930,7 @@ const updateVirtualOfficeClient = async (req, res) => {
       ["receivedAmount", receivedAmount],
       ["totalReceivedAmount", totalReceivedAmount],
       ["openDeskRate", openDeskRate],
+      ["brokerage", brokerage],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
     ];
 
@@ -923,6 +947,10 @@ const updateVirtualOfficeClient = async (req, res) => {
     updates.cabinDeskRate = cabinDeskRate;
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
+    updates.brokerage = brokerage;
+    if (hasField("internalLead")) {
+      updates.internalLead = String(updates.internalLead || "").trim();
+    }
     updates.receivedAmount = receivedAmount;
     updates.totalReceivedAmount = totalReceivedAmount;
     updates.perDeskMeetingCredits = perDeskMeetingCredits;

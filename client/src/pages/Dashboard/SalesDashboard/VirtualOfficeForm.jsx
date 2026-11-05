@@ -81,6 +81,8 @@ const VirtualOfficeForm = () => {
       ratePerCabinDesk: "10000",
       openDesks: "",
       ratePerOpenDesk: "8000",
+      brokerage: "",
+      internalLead: "",
       annualIncrement: "",
       perDeskMeetingCredits: "",
       totalMeetingCredits: "",
@@ -95,6 +97,7 @@ const VirtualOfficeForm = () => {
       hOPocName: "",
       hOPocEmail: "",
       hOPocPhone: "",
+      hOPocAddress: "",
     },
   });
   const { auth } = useAuth();
@@ -328,6 +331,8 @@ const VirtualOfficeForm = () => {
       cabinDeskRate: Number(data.ratePerCabinDesk) || 0,
       openDesks: Number(data.openDesks) || 0,
       openDeskRate: Number(data.ratePerOpenDesk) || 0,
+      brokerage: Number(data.brokerage) || 0,
+      internalLead: data.internalLead,
       perDeskMeetingCredits: Number(data.perDeskMeetingCredits) || 0,
       annualIncrement: Number(data.annualIncrement) || 0,
       localPoc: {
@@ -339,6 +344,7 @@ const VirtualOfficeForm = () => {
         name: data.hOPocName,
         email: data.hOPocEmail,
         phone: data.hOPocPhone,
+        address: data.hOPocAddress,
       },
     };
 
@@ -844,6 +850,34 @@ const VirtualOfficeForm = () => {
                       />
                     </div>
                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <Controller
+                      name="brokerage"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Brokerage"
+                          inputProps={{ min: 0 }}
+                          fullWidth
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="internalLead"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="Internal Lead"
+                          fullWidth
+                        />
+                      )}
+                    />
+                  </div>
                   <Controller
                     name="annualIncrement"
                     control={control}
@@ -1085,7 +1119,7 @@ const VirtualOfficeForm = () => {
                       />
                     )}
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Controller
                       name="hOPocEmail"
                       control={control}
@@ -1113,6 +1147,21 @@ const VirtualOfficeForm = () => {
                           type="text"
                           error={!!errors.hOPocPhone}
                           helperText={errors.hOPocPhone?.message}
+                          fullWidth
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="hOPocAddress"
+                      control={control}
+                      rules={{ required: "HO Address is required" }}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          label="HO Address"
+                          error={!!errors.hOPocAddress}
+                          helperText={errors.hOPocAddress?.message}
                           fullWidth
                         />
                       )}

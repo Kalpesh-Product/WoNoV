@@ -5,6 +5,7 @@ const pocSchema = new mongoose.Schema(
     name: { type: String, trim: true, default: "" },
     email: { type: String, trim: true, lowercase: true, default: "" },
     phone: { type: String, trim: true, default: "" },
+    address: { type: String, trim: true, default: "" },
   },
   { _id: false },
 );
@@ -74,6 +75,8 @@ const virtualOfficeSchema = new mongoose.Schema(
     openDesks: { type: Number, default: 0 },
     openDeskRate: { type: Number, default: 0 },
     openTotal: { type: Number, default: 0 },
+    brokerage: { type: Number, default: 0, min: 0 },
+    internalLead: { type: String, trim: true, default: "" },
     receivedAmount: { type: Number, required: true, default: 0, min: 0 },
     totalReceivedAmount: { type: Number, default: 0, min: 0 },
     perDeskMeetingCredits: { type: Number, default: 0 },
