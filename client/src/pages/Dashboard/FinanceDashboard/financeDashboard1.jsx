@@ -3982,13 +3982,13 @@ const FinanceDashboard1 = () => {
             {settingsCards.length > 0 && (
               <nav
                 aria-label="Finance dashboard navigation"
-                className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
+                className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:w-[50%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:justify-start min-[1700px]:gap-10"
               >
                 {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map((label) => (
                   <button
                     key={label}
                     type="button"
-                    className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm lg:text-base"
+                    className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm min-[1700px]:text-base"
                   >
                     {label}
                     <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />

@@ -28,6 +28,7 @@ import {
 import { SiGoogleadsense } from "react-icons/si";
 import coWorkingBanner from "../../../../assets/co-working-banner.png";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
+import useBannerMenuAlignment from "../../../../hooks/useBannerMenuAlignment";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import { inrFormat } from "../../../../utils/currencyFormat";
@@ -343,6 +344,22 @@ const CoworkingRevenueGraph = ({
 
     return { max, tickAmount: Math.round(max / step) };
   }, [graphData]);
+  const amountScale = useMemo(() => {
+    const highestValue = Math.max(
+      0,
+      ...graphData.map((item) => getAmount(item?.reportingAmount)),
+    );
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
+    if (highestValue >= 100000) {
+      return { divisor: 100000, title: "Amount In Lakhs (INR)" };
+    }
+    if (highestValue >= 1000) {
+      return { divisor: 1000, title: "Amount In Thousands (INR)" };
+    }
+    return { divisor: 1, title: "Amount (INR)" };
+  }, [graphData]);
   const monthlyClientCounts = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
     const fiscalMonths = Array.from({ length: 12 }, (_, index) =>
@@ -394,7 +411,9 @@ const CoworkingRevenueGraph = ({
       dataLabels: {
         enabled: true,
         formatter: (value) =>
-          (Math.floor((Number(value) / 100000) * 100) / 100).toFixed(2),
+          Number(value / amountScale.divisor).toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          }),
         style: {
           fontSize: "10px",
           fontWeight: "bold",
@@ -407,12 +426,12 @@ const CoworkingRevenueGraph = ({
         max: axisScale.max,
         tickAmount: axisScale.tickAmount,
         forceNiceScale: false,
-        title: { text: "Amount In Lakhs (INR)", style: { color: "#1E3D73" } },
+        title: { text: amountScale.title, style: { color: "#1E3D73" } },
         labels: {
           style: { colors: "#1E3D73" },
           formatter: (value) =>
-            Number(value / 100000).toLocaleString("en-IN", {
-              maximumFractionDigits: 1,
+            Number(value / amountScale.divisor).toLocaleString("en-IN", {
+              maximumFractionDigits: 2,
             }),
         },
       },
@@ -442,7 +461,7 @@ const CoworkingRevenueGraph = ({
       legend: { labels: { colors: "#1E3D73" } },
       colors: ["#3cb37180", "#787878"],
     }),
-    [axisScale, monthlyClientCounts],
+    [amountScale, axisScale, monthlyClientCounts],
   );
 
   if (isLoading) return <Skeleton height={500} width="100%" />;
@@ -1212,6 +1231,8 @@ const CoWorkingDashboard = ({
   businessView = null,
   pipelineRenewalOnly = false,
 }) => {
+  const { headingRef, navigationRef, navigationStyle } =
+    useBannerMenuAlignment();
   const axios = useAxiosPrivate();
   const { hasPermission } = useUserPermissions();
   const menuCards = [
@@ -1611,27 +1632,31 @@ const CoWorkingDashboard = ({
                 "linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.95) 86%, rgba(255,255,255,0) 100%)",
             }}
           />
-          <div className="absolute inset-y-0 left-0 flex w-[55%] flex-col px-3 py-4 sm:px-4 sm:py-6">
+          <div className="absolute inset-y-0 left-0 flex w-[55%] flex-col px-1 py-4 sm:py-6">
             <p className="font-pregular text-xs uppercase tracking-[0.02em] text-[#1E3D73] sm:text-base lg:text-[15px] min-[1700px]:text-base min-[1900px]:text-lg">
               Co-Working Dashboard
             </p>
             <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px] min-[1700px]:text-[46px] min-[1900px]:scale-x-100 min-[1900px]:text-[50px]">
-              CO-WORKING <span className="text-[#E64B4B]">DASHBOARD</span>
+              <span ref={headingRef} className="inline-block whitespace-nowrap">
+                CO-WORKING <span className="text-[#E64B4B]">DASHBOARD</span>
+              </span>
             </h1>
             <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">
               Co-Working Customers
             </p>
           </div>
           <nav
+            ref={navigationRef}
             aria-label="Co-Working dashboard navigation"
-            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:gap-10"
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-1 sm:gap-8 lg:w-[47.5%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:gap-10"
+            style={navigationStyle}
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
               (item) => (
                 <Link
                   key={item}
                   to=""
-                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm lg:text-base"
+                  className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] sm:text-sm min-[1700px]:text-base"
                 >
                   {item}
                   <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100" />
