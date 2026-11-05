@@ -41,6 +41,8 @@ const WidgetSection = ({
   borderColor,
   bodyBorderColor,
   autoHeight = false,
+  fillHeight = false,
+  flushBody = false,
 }) => {
   const inheritedTitleBorder = React.useContext(TableHeaderBorderContext);
   // Custom-colour headers use the body's top border as their divider.
@@ -79,7 +81,7 @@ const WidgetSection = ({
 
 
   return (
-    <div className={`py-0 motion-preset-slide-up-sm ${height ? height : ""}`}>
+    <div className={`py-0 motion-preset-slide-up-sm ${fillHeight ? "flex h-full min-h-0 flex-col" : ""} ${height ? height : ""}`}>
       {title && (
         <div
           style={
@@ -243,14 +245,14 @@ const WidgetSection = ({
               }
             : {}
         }
-        className={`${autoHeight ? "" : "h-full"} rounded-b-xl`}>
+        className={`${fillHeight ? "min-h-0 flex-1" : autoHeight ? "" : "h-full"} ${flushBody ? "overflow-hidden" : ""} rounded-b-xl`}>
         <div
-          style={{ padding: padding ? "0" : "1rem" }}
+          style={{ padding: padding || flushBody ? "0" : "1rem" }}
           // className={`w-full grid gap-4 ${gridClasses[layout]} h-full py-4`}>
           // {React.Children.map(children, (child) => (
           //   <div>{child}</div>
          
-           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} ${autoHeight ? "" : "h-full"} py-4`}>
+           className={`w-full grid ${gridGap} ${gridClasses[effectiveLayout]} ${fillHeight || !autoHeight ? "h-full" : ""} ${flushBody ? "py-0" : "py-4"}`}>
           <TableHeaderBorderContext.Provider value={hasBorderedTitle}>
             {visibleChildren.map((child, index) => (
               <div key={index}>{child}</div>

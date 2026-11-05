@@ -15,6 +15,7 @@ import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
 import KraKpaDepartmentWidgets from "./KraKpaDepartmentWidgets";
 import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
+import KraKpaEmployeeInsights from "./KraKpaEmployeeInsights";
 
 const SHOW_DEPARTMENT_PERFORMANCE_WIDGETS = false;
 
@@ -73,20 +74,9 @@ const PerformanceHome = ({
   const storedSelectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const selectedMember =
-    location.state?.selectedMember || storedSelectedMember;
-  const employeeDashboardName =
-    selectedMember?.memberName ||
-    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
-      .filter(Boolean)
-      .join(" ");
-  const employeeDashboardTitleSuffix =
-    employeeDashboard && employeeDashboardName
-      ? ` - ${employeeDashboardName.toUpperCase()}`
-      : "";
-  const selectedEmployeeId = employeeDashboard
-    ? selectedMember?.memberId?.toString()
-    : null;
+  const storedSelectedDepartment = useSelector(
+    (state) => state.performance.selectedDepartment,
+  );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const roleTitles =
     auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
@@ -103,14 +93,38 @@ const PerformanceHome = ({
   const hasOverallPerformanceAccess = roleTitles.some((roleTitle) =>
     ["master admin", "super admin"].includes(roleTitle),
   );
+  const selfDashboard = onlyFirstTwoCards && Boolean(auth?.user?._id) && !employeeDashboard &&
+    !isManager && !isHr && !isTopManagement && !hasOverallPerformanceAccess;
+  const showEmployeeDashboard = employeeDashboard || selfDashboard;
+  const selectedMember = selfDashboard
+    ? null
+    : location.state?.selectedMember || storedSelectedMember;
+  const employeeDashboardName =
+    selectedMember?.memberName ||
+    [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+      .filter(Boolean)
+      .join(" ");
+  const employeeDashboardTitleSuffix =
+    showEmployeeDashboard && employeeDashboardName
+      ? ` - ${employeeDashboardName.toUpperCase()}`
+      : "";
+  const selectedEmployeeId = selfDashboard
+    ? auth?.user?._id?.toString()
+    : employeeDashboard ? selectedMember?.memberId?.toString() : null;
+  const employeeInsightsDepartmentId = selfDashboard
+    ? auth?.user?.departments?.[0]?._id
+    : location.state?.selectedDepartment ||
+      storedSelectedDepartment ||
+      auth?.user?.departments?.[0]?._id;
   const [currentDateInfo, setCurrentDateInfo] = useState(getCurrentDateInfo);
-   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() => {
+  const [selectedFiscalYear, setSelectedFiscalYear] = useState(() => {
     const now = new Date();
-    const fyStartYear = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+    const fyStartYear =
+      now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
     return `FY ${fyStartYear}-${String(fyStartYear + 1).slice(-2)}`;
   });
 
-   useEffect(() => {
+  useEffect(() => {
     const now = new Date();
     const nextDayStart = new Date(
       now.getFullYear(),
@@ -122,9 +136,9 @@ const PerformanceHome = ({
       0,
     );
 
-      const timeoutMs = Math.max(nextDayStart.getTime() - now.getTime(), 1000);
+    const timeoutMs = Math.max(nextDayStart.getTime() - now.getTime(), 1000);
 
-        const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(() => {
       setCurrentDateInfo(getCurrentDateInfo());
     }, timeoutMs);
 
@@ -135,17 +149,18 @@ const PerformanceHome = ({
     userPermissions.includes(permission.value);
   const currentMonthLabel = currentDateInfo.monthName;
 
-  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } =
+    useQuery({
       queryKey: ["performanceDepartments", currentDateInfo.monthName],
-    enabled: !onlyFirstTwoCards,
-    refetchInterval: 5 * 60 * 1000,
-    queryFn: async () => {
-      const response = await axios.get("/api/performance/get-depts-tasks", {
-        params: { month: currentDateInfo.monthName },
-      });
-      return response.data || [];
-    },
-  });
+      enabled: !onlyFirstTwoCards,
+      refetchInterval: 5 * 60 * 1000,
+      queryFn: async () => {
+        const response = await axios.get("/api/performance/get-depts-tasks", {
+          params: { month: currentDateInfo.monthName },
+        });
+        return response.data || [];
+      },
+    });
 
   const { data: kpaTasksRaw = [], isLoading: isKpaTasksLoading } = useQuery({
     queryKey: [onlyFirstTwoCards ? "kraKpaKpaOverview" : "performanceKpaTasks"],
@@ -154,11 +169,15 @@ const PerformanceHome = ({
       const departmentTasks = response.data || [];
       if (!onlyFirstTwoCards) return departmentTasks;
 
-      const individualResponse = await axios.get("/api/kra-kpa/individual-monthly-kpa");
-      const groups = new Map(departmentTasks.map((group) => [
-        group.department,
-        { ...group, tasks: [...(group.tasks || [])] },
-      ]));
+      const individualResponse = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa",
+      );
+      const groups = new Map(
+        departmentTasks.map((group) => [
+          group.department,
+          { ...group, tasks: [...(group.tasks || [])] },
+        ]),
+      );
       (individualResponse.data || []).forEach((record) => {
         const departmentName = record.department?.name;
         if (!departmentName) return;
@@ -189,7 +208,7 @@ const PerformanceHome = ({
             allowedDepartmentNames.has(normalizeName(item?.department)),
           );
 
-    if (!employeeDashboard || !selectedEmployeeId) return departmentTasks;
+    if (!showEmployeeDashboard || !selectedEmployeeId) return departmentTasks;
 
     return departmentTasks
       .map((item) => ({
@@ -201,12 +220,11 @@ const PerformanceHome = ({
       .filter((item) => item.tasks.length > 0);
   }, [
     auth?.user?.departments,
-    employeeDashboard,
+    showEmployeeDashboard,
     hasOverallPerformanceAccess,
     kpaTasksRaw,
     selectedEmployeeId,
   ]);
-
 
   const {
     data: departmentDailyKraStats = [],
@@ -242,10 +260,12 @@ const PerformanceHome = ({
           ]);
 
           const todayPendingTasks = (pendingRes.data || []).filter(
-            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+            (task) =>
+              toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
           );
           const todayCompletedTasks = (completedRes.data || []).filter(
-            (task) => toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
+            (task) =>
+              toLocalIsoDate(task?.assignedDate) === currentDateInfo.dateKey,
           );
           const pending = todayPendingTasks.length;
           const completed = todayCompletedTasks.length;
@@ -256,11 +276,10 @@ const PerformanceHome = ({
             completed,
             pending,
           };
-        })
+        }),
       );
     },
   });
-
 
   const annualKpaGraphData = useMemo(() => {
     const fyTaskMap = {};
@@ -275,8 +294,10 @@ const PerformanceHome = ({
         const taskDate = new Date(task.assignedDate);
         if (Number.isNaN(taskDate.getTime())) return;
 
-                const fyStartYear =
-          taskDate.getMonth() >= 3 ? taskDate.getFullYear() : taskDate.getFullYear() - 1;
+        const fyStartYear =
+          taskDate.getMonth() >= 3
+            ? taskDate.getFullYear()
+            : taskDate.getFullYear() - 1;
         const fiscalMonthIndex = (taskDate.getMonth() + 9) % 12;
 
         if (!fyTaskMap[fyStartYear]) {
@@ -289,13 +310,15 @@ const PerformanceHome = ({
         fyTaskMap[fyStartYear].total[fiscalMonthIndex] += 1;
 
         if (task.status === "Completed") {
-            fyTaskMap[fyStartYear].achieved[fiscalMonthIndex] += 1;
+          fyTaskMap[fyStartYear].achieved[fiscalMonthIndex] += 1;
         }
       });
     });
 
-     const fyStartYears = Object.keys(fyTaskMap).length
-      ? Object.keys(fyTaskMap).map(Number).sort((a, b) => a - b)
+    const fyStartYears = Object.keys(fyTaskMap).length
+      ? Object.keys(fyTaskMap)
+          .map(Number)
+          .sort((a, b) => a - b)
       : [currentFyStartYear];
 
     return fyStartYears.flatMap((fyStartYear) => {
@@ -341,12 +364,15 @@ const PerformanceHome = ({
       events: {
         dataPointSelection: (event, chartContext, config) => {
           const clickedMonth =
-            config.w.config.series[config.seriesIndex].data[config.dataPointIndex].x;
+            config.w.config.series[config.seriesIndex].data[
+              config.dataPointIndex
+            ].x;
           const destination = employeeDashboard
             ? `${modulePath}/department-KPA/member-wise-KPA/employee-dashboard/kra-kpa/individual-Monthly-KPA`
-            : `${modulePath}/department-KPA`;
+            : selfDashboard
+              ? `${modulePath}/individual/kra-kpa/individual-Monthly-KPA`
+              : `${modulePath}/department-KPA`;
           navigate(destination, {
-
             //navigate("/app/performance/department-wise/overall-department-kpa", {
             state: {
               ...location.state,
@@ -380,7 +406,7 @@ const PerformanceHome = ({
       position: "top",
     },
     colors: PIE_COLORS,
-     tooltip: {
+    tooltip: {
       custom: ({ series, dataPointIndex, w }) => {
         const label =
           w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
@@ -439,15 +465,22 @@ const PerformanceHome = ({
     };
 
     return {
-      completed: selectedYearTotals.monthlyCompleted.reduce((sum, value) => sum + toCount(value), 0),
-      pending: selectedYearTotals.monthlyPending.reduce((sum, value) => sum + toCount(value), 0),
+      completed: selectedYearTotals.monthlyCompleted.reduce(
+        (sum, value) => sum + toCount(value),
+        0,
+      ),
+      pending: selectedYearTotals.monthlyPending.reduce(
+        (sum, value) => sum + toCount(value),
+        0,
+      ),
     };
   }, [annualKpaGraphData, selectedFiscalYear]);
   const annualKpaTotal =
-    toCount(annualKpaYearlyTotals.completed) + toCount(annualKpaYearlyTotals.pending);
+    toCount(annualKpaYearlyTotals.completed) +
+    toCount(annualKpaYearlyTotals.pending);
 
   const kpaPieData = useMemo(() => {
-     const hasMatchingAssignedMonth = (assignedDate) => {
+    const hasMatchingAssignedMonth = (assignedDate) => {
       if (!assignedDate) return false;
 
       const parsedDate = new Date(assignedDate);
@@ -455,7 +488,7 @@ const PerformanceHome = ({
 
       return (
         parsedDate.toLocaleString("en-US", { month: "long" }) ===
-            currentDateInfo.monthName &&
+          currentDateInfo.monthName &&
         parsedDate.getFullYear() === currentDateInfo.year
       );
     };
@@ -490,11 +523,11 @@ const PerformanceHome = ({
   const kraPieData = useMemo(() => {
     const completed = departmentDailyKraStats.reduce(
       (acc, departmentStats) => acc + toCount(departmentStats?.completed),
-      0
+      0,
     );
     const pending = departmentDailyKraStats.reduce(
       (acc, departmentStats) => acc + toCount(departmentStats?.pending),
-      0
+      0,
     );
 
     return [
@@ -521,16 +554,17 @@ const PerformanceHome = ({
     },
   });
 
-  const canAccessDepartmentKpaCard =
-    onlyFirstTwoCards
-      ? hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA)
-      : hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
+  const canAccessDepartmentKpaCard = onlyFirstTwoCards
+    ? hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA)
+    : hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KPA_CARD);
 
-  const canAccessDepartmentKraCard =
-    hasPermission(PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD);
+  const canAccessDepartmentKraCard = hasPermission(
+    PERMISSIONS.PERFORMANCE_DEPARTMENT_KRA_CARD,
+  );
 
-  const canAccessEmployeeKraKpaCard =
-    hasPermission(PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA);
+  const canAccessEmployeeKraKpaCard = hasPermission(
+    PERMISSIONS.PERFORMANCE_EMPLOYEE_KRA_KPA,
+  );
 
   const kraKpaWorkAccess = [
     PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
@@ -605,7 +639,7 @@ const PerformanceHome = ({
       route: `${modulePath}/department-KPA`,
       icon: <CgWebsite />,
       hasAccess:
-        !employeeDashboard &&
+        !showEmployeeDashboard &&
         (isManager || isHr || isTopManagement) &&
         hasPermission(PERMISSIONS.KRAKPA_DEPARTMENT_MONTHLY_KPA),
     },
@@ -614,7 +648,7 @@ const PerformanceHome = ({
       route: `${modulePath}/pending-approvals`,
       icon: <CgWebsite />,
       hasAccess:
-        !employeeDashboard &&
+        !showEmployeeDashboard &&
         (isManager || isHr || isTopManagement) &&
         hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS),
     },
@@ -623,7 +657,7 @@ const PerformanceHome = ({
       route: `${modulePath}/departments`,
       icon: <CgWebsite />,
       hasAccess:
-        !employeeDashboard &&
+        !showEmployeeDashboard &&
         (isManager || isHr || isTopManagement) &&
         hasPermission(PERMISSIONS.KRAKPA_DEPARTMENTS),
     },
@@ -633,7 +667,8 @@ const PerformanceHome = ({
     onlyFirstTwoCards ? kraKpaDashboardCards : standardPerformanceCards
   ).filter((card) => card.hasAccess);
 
-  const cardGridClass = performanceCards.length >= 5
+  const cardGridClass =
+    performanceCards.length >= 5
       ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-5"
       : performanceCards.length === 4
         ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-4"
@@ -647,37 +682,42 @@ const PerformanceHome = ({
     <div className="flex flex-col gap-4">
       {(onlyFirstTwoCards
         ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
-        : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) && (
-        isKpaTasksLoading ? (
-          <WidgetSection border title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}>
+        : hasPermission(PERMISSIONS.PERFORMANCE_ANNUAL_KPA_VS_ACHIEVEMENTS)) &&
+        (isKpaTasksLoading ? (
+          <WidgetSection
+            border
+            title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}
+          >
             <PerformanceChartSkeleton variant="bar" height="h-[26rem]" />
           </WidgetSection>
-        ) : <YearlyGraph
-          data={annualKpaGraphData}
-          options={annualKpaChartOptions}
-          title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}
-          titleAmount=""
-          TitleAmountTotal={annualKpaTotal}
-          TitleAmountGreen={annualKpaYearlyTotals.completed}
-          TitleAmountRed={annualKpaYearlyTotals.pending}
-          totalTitle="Total"
-          greenTitle="KPA"
-          redTitle="KPA"
-          secondParam
-          currentYear
-          onYearChange={setSelectedFiscalYear}
-
-        />
-        )}
+        ) : (
+          <YearlyGraph
+            data={annualKpaGraphData}
+            options={annualKpaChartOptions}
+            title={`ANNUAL KPA VS ACHIEVEMENTS${employeeDashboardTitleSuffix}`}
+            titleAmount=""
+            TitleAmountTotal={annualKpaTotal}
+            TitleAmountGreen={annualKpaYearlyTotals.completed}
+            TitleAmountRed={annualKpaYearlyTotals.pending}
+            totalTitle="Total"
+            greenTitle="KPA"
+            redTitle="KPA"
+            secondParam
+            currentYear
+            onYearChange={setSelectedFiscalYear}
+          />
+        ))}
       {performanceCards.length > 0 && (
         <div className={`grid ${cardGridClass} gap-4 auto-rows-fr`}>
           {performanceCards.map((card) => (
             <div key={card.route} className="h-full">
               <Card
-                icon={employeeDashboard ? card.icon || <CgWebsite /> : <CgWebsite />}
+                icon={
+                  showEmployeeDashboard ? card.icon || <CgWebsite /> : <CgWebsite />
+                }
                 title={card.title}
                 route={card.route}
-                hoverScale={employeeDashboard ? 1 : undefined}
+                hoverScale={showEmployeeDashboard ? 1 : undefined}
                 navigationState={employeeDashboard ? location.state : undefined}
               />
             </div>
@@ -687,7 +727,7 @@ const PerformanceHome = ({
 
       {SHOW_DEPARTMENT_PERFORMANCE_WIDGETS &&
         onlyFirstTwoCards &&
-        !employeeDashboard &&
+        !showEmployeeDashboard &&
         (isManager || isHr || isTopManagement) && (
           <KraKpaDepartmentWidgets
             fiscalYear={selectedFiscalYear}
@@ -699,39 +739,62 @@ const PerformanceHome = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {!onlyFirstTwoCards &&
           hasPermission(PERMISSIONS.PERFORMANCE_KRA_PENDING_VS_COMPLETED) && (
-         <WidgetSection
-            border
-            title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
-          >
-            {isDepartmentDailyKraStatsLoading || isDepartmentsLoading ? (
-              <PerformanceChartSkeleton variant="donut" />
-            ) : <PieChartMui
-              data={kraPieData}
-              options={pieOptions(kraPieData.map((item) => item.label))}
-              centerAlign
-            />}
-          </WidgetSection>
-        )}
+            <WidgetSection
+              border
+              title={`KRA - Pending vs Completed - ${currentDateInfo.dateLabel}`}
+            >
+              {isDepartmentDailyKraStatsLoading || isDepartmentsLoading ? (
+                <PerformanceChartSkeleton variant="donut" />
+              ) : (
+                <PieChartMui
+                  data={kraPieData}
+                  options={pieOptions(kraPieData.map((item) => item.label))}
+                  centerAlign
+                />
+              )}
+            </WidgetSection>
+          )}
 
         {(onlyFirstTwoCards
           ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
-          : hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED)) && (
-           <WidgetSection
+          : hasPermission(
+              PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED,
+            )) && (
+          <WidgetSection
             border
-            title={`KPA - Pending vs Completed - ${currentMonthLabel}${employeeDashboardTitleSuffix}`}
+            autoHeight={showEmployeeDashboard}
+            title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
           >
             {isKpaTasksLoading ? (
               <PerformanceChartSkeleton variant="donut" />
-            ) : <PieChartMui
-              data={kpaPieData}
-              options={pieOptions(kpaPieData.map((item) => item.label))}
-              centerAlign
-            />}
+            ) : (
+              <PieChartMui
+                data={kpaPieData}
+                options={pieOptions(kpaPieData.map((item) => item.label))}
+                centerAlign
+              />
+            )}
           </WidgetSection>
+        )}
+        {showEmployeeDashboard && (
+          <KraKpaEmployeeInsights
+            departmentId={employeeInsightsDepartmentId}
+            employeeId={selectedEmployeeId || auth?.user?._id}
+            employeeName={employeeDashboardName}
+            navigationState={employeeDashboard ? location.state : undefined}
+            selfDashboard={selfDashboard}
+            canViewApprovals={
+              (isManager || isHr || isTopManagement) &&
+              hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS)
+            }
+            canViewKpa={hasPermission(
+              PERMISSIONS.KRAKPA_INDIVIDUAL_MONTHLY_KPA,
+            )}
+            canViewRating={hasPermission(PERMISSIONS.KRAKPA_KPA_RATING)}
+          />
         )}
       </div>
     </div>
-
   );
 };
 
