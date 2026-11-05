@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useMutation } from "@tanstack/react-query";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -7,6 +8,8 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { Chip } from "@mui/material";
+import { HiPencilSquare } from "react-icons/hi2";
+import { toast } from "sonner";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -68,6 +71,47 @@ const CoWorkingClients = () => {
 
     fetchClients();
   }, [axios, dispatch]);
+
+  const {
+    mutate: updateClientStatus,
+    isPending: isStatusUpdating,
+    variables: statusVariables,
+  } = useMutation({
+    mutationFn: async ({ id, isActive }) => {
+      const response = await axios.patch(
+        `/api/sales/co-working-client/${id}/status`,
+        { isActive },
+      );
+      return response.data;
+    },
+    onMutate: ({ id, isActive }) => {
+      const previousClients = clientsData;
+      dispatch(
+        setClientData(
+          clientsData.map((client) =>
+            String(client?._id) === String(id)
+              ? { ...client, isActive }
+              : client,
+          ),
+        ),
+      );
+      return { previousClients };
+    },
+    onSuccess: (response) => {
+      toast.success(response?.message || "Client status updated successfully");
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousClients) {
+        dispatch(setClientData(context.previousClients));
+      }
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Failed to update client status",
+      );
+    },
+  });
+
   const handleClickRow = (clientData) => {
     dispatch(setSelectedClient(clientData));
     const isMixBag = location.pathname.includes("mix-bag");
@@ -88,6 +132,18 @@ const CoWorkingClients = () => {
         `/app/dashboard/sales-dashboard/clients/co-working/${clientData.clientName}`,
       );
     }
+  };
+
+  const handleToggleClientStatus = (clientData) => {
+    if (!clientData?._id) {
+      toast.error("Unable to find selected client");
+      return;
+    }
+
+    updateClientStatus({
+      id: clientData._id,
+      isActive: !clientData.isActive,
+    });
   };
   const viewEmployeeColumns = [
     { field: "id", headerName: "Sr No",width:150 },
@@ -120,7 +176,6 @@ const CoWorkingClients = () => {
      {
       field: "status",
       headerName: "Status",
-      sort: 'desc',
       flex: 1,
       pinned:"right",
       cellRenderer: (params) => {
@@ -143,13 +198,63 @@ const CoWorkingClients = () => {
         );
       },
     },
+    {
+      field: "actions",
+      headerName: "Actions",
+      pinned: "right",
+      minWidth: 110,
+      sortable: false,
+      filter: false,
+      cellRenderer: (params) => {
+        const isActive = Boolean(params.data?.isActive);
+        const isThisStatusUpdating =
+          isStatusUpdating &&
+          String(statusVariables?.id) === String(params.data?._id);
+
+        return (
+          <div className="flex h-full items-center gap-2">
+            <button
+              type="button"
+              onClick={() => handleClickRow(params.data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              aria-label={`Edit ${params.data?.clientName || "client"}`}
+              title="Edit"
+            >
+              <HiPencilSquare size={26} />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleToggleClientStatus(params.data)}
+              disabled={isThisStatusUpdating}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-wait disabled:opacity-80 ${
+                isActive ? "bg-green-500" : "bg-gray-300"
+              }`}
+              role="switch"
+              aria-checked={isActive}
+              aria-busy={isThisStatusUpdating}
+              aria-label={`${isActive ? "Deactivate" : "Activate"} ${params.data?.clientName || "client"}`}
+              title={isActive ? "Mark As Inactive" : "Mark As Active"}
+            >
+              <span
+                aria-hidden="true"
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                  isActive ? "translate-x-[18px]" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+          </div>
+        );
+      },
+    },
   ];
 
-  const sortedClients = [...clientsData].sort((a, b) => {
-    const desksA = Number(a.openDesks || 0) + Number(a.cabinDesks || 0);
-    const desksB = Number(b.openDesks || 0) + Number(b.cabinDesks || 0);
-    return desksB - desksA; // Descending
-  });
+  const sortedClients = [...clientsData].sort((firstClient, secondClient) =>
+    String(firstClient?.clientName || "").localeCompare(
+      String(secondClient?.clientName || ""),
+      undefined,
+      { sensitivity: "base", numeric: true },
+    ),
+  );
   const tableData = sortedClients.map((item, index) => ({
     ...item,
     id: index + 1,
@@ -199,6 +304,9 @@ const CoWorkingClients = () => {
     occupiedImage: item.occupiedImage?.imageUrl,
     members: item.members || [],
   }));
+  const totalClientCount = tableData.length;
+  const activeClientCount = tableData.filter((client) => client.isActive).length;
+  const inactiveClientCount = totalClientCount - activeClientCount;
 
   return (
     <div className="p-4">
@@ -207,6 +315,22 @@ const CoWorkingClients = () => {
           <AgTable
             search={true}
             tableTitle={"CO-WORKING CLIENT DETAILS"}
+            titleRightContent={
+              <div className="flex flex-wrap items-center justify-end gap-1.5">
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]">
+                  <div>Total :</div>
+                  <div>{totalClientCount}</div>
+                </div>
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-1.5 text-sm font-pmedium uppercase text-[#16784d]">
+                  <div>Active :</div>
+                  <div>{activeClientCount}</div>
+                </div>
+                <div className="flex items-center justify-center gap-1 rounded-lg border border-[#f3b7a8] bg-[#fce8e3] px-3 py-1.5 text-sm font-pmedium uppercase text-[#d96b4f]">
+                  <div>Inactive :</div>
+                  <div>{inactiveClientCount}</div>
+                </div>
+              </div>
+            }
             buttonTitle={"Add Client"}
             handleClick={() =>
               navigate(

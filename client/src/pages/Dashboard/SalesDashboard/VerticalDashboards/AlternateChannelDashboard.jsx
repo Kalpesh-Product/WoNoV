@@ -1276,10 +1276,10 @@ const AlternateChannelDashboard = ({
           />
           <div
             aria-hidden="true"
-            className="absolute inset-y-0 left-0 w-[56%]"
+            className="absolute inset-y-0 left-0 w-[52%]"
             style={{
               background:
-                "linear-gradient(to right, #fff 0%, #fff 74%, rgba(255,255,255,0.96) 80%, rgba(255,255,255,0.7) 88%, rgba(255,255,255,0.32) 95%, transparent 100%)",
+                "linear-gradient(to right, #fff 0%, #fff 76%, rgba(255,255,255,0.94) 82%, rgba(255,255,255,0.62) 89%, rgba(255,255,255,0.22) 95%, transparent 100%)",
             }}
           />
           <div className="absolute inset-y-0 left-0 flex w-[58%] flex-col px-1 py-4 sm:py-6">
@@ -1298,7 +1298,7 @@ const AlternateChannelDashboard = ({
           <nav
             ref={navigationRef}
             aria-label="Alternate Channel dashboard navigation"
-            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-1 sm:gap-8 lg:w-[54%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:gap-10"
+            className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-1 sm:gap-8 lg:w-[44%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:gap-10"
             style={navigationStyle}
           >
             {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
