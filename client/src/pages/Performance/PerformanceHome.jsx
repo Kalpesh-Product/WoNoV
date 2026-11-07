@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 //import PageFrame from "../../components/Pages/PageFrame";
 import WidgetSection from "../../components/WidgetSection";
@@ -10,14 +10,12 @@ import { useSelector } from "react-redux";
 import Card from "../../components/Card";
 import { CgWebsite } from "react-icons/cg";
 import { FaChartLine, FaUser } from "react-icons/fa";
+import { MdCheck, MdKeyboardArrowDown } from "react-icons/md";
 import useAuth from "../../hooks/useAuth";
 import { PERMISSIONS } from "../../constants/permissions";
 import { toIndividualKpaTask } from "./kraKpaIndividualKpaAdapter";
-import KraKpaDepartmentWidgets from "./KraKpaDepartmentWidgets";
 import PerformanceChartSkeleton from "./PerformanceChartSkeleton";
 import KraKpaEmployeeInsights from "./KraKpaEmployeeInsights";
-
-const SHOW_DEPARTMENT_PERFORMANCE_WIDGETS = false;
 
 const FISCAL_MONTHS = [
   "April",
@@ -79,10 +77,12 @@ const PerformanceHome = ({
   );
   const userPermissions = auth?.user?.permissions?.permissions || [];
   const roleTitles =
-    auth?.user?.role?.map((role) => role?.roleTitle?.toLowerCase()) || [];
+    auth?.user?.role?.map((role) => role?.roleTitle?.trim().toLowerCase()).filter(Boolean) || [];
   const isHr = roleTitles.some((roleTitle) => /^hr(?:\s|$)/.test(roleTitle));
   const isManager = roleTitles.some((roleTitle) =>
-    roleTitle.includes("manager"),
+    roleTitle.includes("manager") ||
+    (/^\S+\s+admin(?:\s|$)/.test(roleTitle) &&
+      !["master admin", "super admin"].includes(roleTitle)),
   );
   const isTopManagement =
     roleTitles.includes("top management") ||
@@ -96,7 +96,61 @@ const PerformanceHome = ({
   const selfDashboard = onlyFirstTwoCards && Boolean(auth?.user?._id) && !employeeDashboard &&
     !isManager && !isHr && !isTopManagement && !hasOverallPerformanceAccess;
   const showEmployeeDashboard = employeeDashboard || selfDashboard;
-  const selectedMember = selfDashboard
+  const showManagerDashboard = onlyFirstTwoCards && (isManager || isHr || isTopManagement) && !employeeDashboard;
+  const showInsightsDashboard = showEmployeeDashboard || showManagerDashboard;
+  const canUseIndividualView = !isHr && !isTopManagement;
+  const [managerView, setManagerView] = useState(() => canUseIndividualView ? "individual" : "department");
+  const [managerDepartmentChoice, setManagerDepartmentChoice] = useState("all");
+  const [isDepartmentMenuOpen, setIsDepartmentMenuOpen] = useState(false);
+  const departmentPickerRef = useRef(null);
+  const departmentButtonRef = useRef(null);
+  const { data: allDashboardDepartments = [] } = useQuery({
+    queryKey: ["kraKpaDashboardDepartments"],
+    enabled: showManagerDashboard && !canUseIndividualView,
+    queryFn: async () => {
+      const response = await axios.get("/api/departments/get-departments");
+      return response.data || [];
+    },
+  });
+  const companyDepartmentIds = new Set(
+    (auth?.user?.company?.selectedDepartments || [])
+      .map((department) => String(department?.department?._id || department?.department || department?._id || department))
+      .filter(Boolean),
+  );
+  const managerDepartments = (canUseIndividualView ? auth?.user?.departments || [] : allDashboardDepartments)
+    .map((department) => ({
+      id: String(typeof department === "string" ? department : department?._id || ""),
+      name: typeof department === "string" ? department : department?.name || "Department",
+    }))
+    .filter((department) => department.id && (canUseIndividualView || !companyDepartmentIds.size || companyDepartmentIds.has(department.id)))
+    .sort((first, second) => first.name.localeCompare(second.name));
+  const selectedManagerDepartment = managerDepartments.find(
+    (department) => department.id === managerDepartmentChoice,
+  );
+  const departmentView = showManagerDashboard && (!canUseIndividualView || managerView === "department");
+  useEffect(() => {
+    if (!isDepartmentMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!departmentPickerRef.current?.contains(event.target)) {
+        setIsDepartmentMenuOpen(false);
+      }
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsDepartmentMenuOpen(false);
+        departmentButtonRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [isDepartmentMenuOpen]);
+  const selectedMember = selfDashboard || showManagerDashboard
     ? null
     : location.state?.selectedMember || storedSelectedMember;
   const employeeDashboardName =
@@ -108,14 +162,20 @@ const PerformanceHome = ({
     showEmployeeDashboard && employeeDashboardName
       ? ` - ${employeeDashboardName.toUpperCase()}`
       : "";
-  const selectedEmployeeId = selfDashboard
+  const selectedEmployeeId = selfDashboard || showManagerDashboard
     ? auth?.user?._id?.toString()
     : employeeDashboard ? selectedMember?.memberId?.toString() : null;
-  const employeeInsightsDepartmentId = selfDashboard
-    ? auth?.user?.departments?.[0]?._id
+  const primaryDepartment = auth?.user?.departments?.[0];
+  const primaryDepartmentId = typeof primaryDepartment === "string"
+    ? primaryDepartment
+    : primaryDepartment?._id;
+  const employeeInsightsDepartmentId = showManagerDashboard
+    ? selectedManagerDepartment?.id || null
+    : selfDashboard
+    ? primaryDepartmentId
     : location.state?.selectedDepartment ||
       storedSelectedDepartment ||
-      auth?.user?.departments?.[0]?._id;
+      primaryDepartmentId;
   const [currentDateInfo, setCurrentDateInfo] = useState(getCurrentDateInfo);
   const [selectedFiscalYear, setSelectedFiscalYear] = useState(() => {
     const now = new Date();
@@ -148,6 +208,20 @@ const PerformanceHome = ({
   const hasPermission = (permission) =>
     userPermissions.includes(permission.value);
   const currentMonthLabel = currentDateInfo.monthName;
+  const { data: managerTeamMembers = [] } = useQuery({
+    queryKey: ["kraKpaManagerTeamMembers", departmentView ? managerDepartmentChoice : "individual", managerDepartments.map((department) => department.id)],
+    enabled: departmentView && canUseIndividualView && managerDepartments.length > 0,
+    queryFn: async () => {
+      const departmentIds = selectedManagerDepartment
+        ? [selectedManagerDepartment.id]
+        : managerDepartments.map((department) => department.id);
+      const responses = await Promise.all(departmentIds.map((deptId) =>
+        axios.get("/api/users/assignees", { params: { deptId } }),
+      ));
+      return [...new Map(responses.flatMap((response) => response.data || [])
+        .map((member) => [String(member.id), member])).values()];
+    },
+  });
 
   const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } =
     useQuery({
@@ -200,7 +274,7 @@ const PerformanceHome = ({
         .filter(Boolean),
     );
 
-    const departmentTasks = hasOverallPerformanceAccess
+    const departmentTasks = hasOverallPerformanceAccess || isHr || isTopManagement
       ? kpaTasksRaw || []
       : allowedDepartmentNames.size === 0
         ? []
@@ -208,19 +282,40 @@ const PerformanceHome = ({
             allowedDepartmentNames.has(normalizeName(item?.department)),
           );
 
-    if (!showEmployeeDashboard || !selectedEmployeeId) return departmentTasks;
+    const selectedDepartmentTasks = showManagerDashboard && selectedManagerDepartment?.name
+      ? departmentTasks.filter((item) =>
+          normalizeName(item?.department) === normalizeName(selectedManagerDepartment.name),
+        )
+      : departmentTasks;
 
-    return departmentTasks
+    if (!showInsightsDashboard || !selectedEmployeeId) return selectedDepartmentTasks;
+
+    if (showManagerDashboard && departmentView && !canUseIndividualView) {
+      return selectedDepartmentTasks;
+    }
+
+    const visibleEmployeeIds = showManagerDashboard && departmentView
+      ? new Set([selectedEmployeeId, ...managerTeamMembers.map((member) => String(member.id))])
+      : new Set([selectedEmployeeId]);
+
+    return selectedDepartmentTasks
       .map((item) => ({
         ...item,
         tasks: (item.tasks || []).filter(
-          (task) => task?.assignToId?.toString() === selectedEmployeeId,
+          (task) => visibleEmployeeIds.has(task?.assignToId?.toString()),
         ),
       }))
       .filter((item) => item.tasks.length > 0);
   }, [
     auth?.user?.departments,
-    showEmployeeDashboard,
+    showInsightsDashboard,
+    showManagerDashboard,
+    departmentView,
+    canUseIndividualView,
+    isHr,
+    isTopManagement,
+    selectedManagerDepartment?.name,
+    managerTeamMembers,
     hasOverallPerformanceAccess,
     kpaTasksRaw,
     selectedEmployeeId,
@@ -725,16 +820,98 @@ const PerformanceHome = ({
         </div>
       )}
 
-      {SHOW_DEPARTMENT_PERFORMANCE_WIDGETS &&
-        onlyFirstTwoCards &&
-        !showEmployeeDashboard &&
-        (isManager || isHr || isTopManagement) && (
-          <KraKpaDepartmentWidgets
-            fiscalYear={selectedFiscalYear}
-            canViewAllDepartments={isHr || isTopManagement}
-            userDepartments={auth?.user?.departments || []}
-          />
-        )}
+      {showManagerDashboard && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d0d5dd] bg-white p-4">
+          <h2 className="text-mobileTitle lg:text-widgetTitle font-pmedium uppercase text-primary">
+            Department Performance Widgets
+          </h2>
+          <div ref={departmentPickerRef} className="relative">
+            <div className="inline-flex rounded-lg border border-[#1e3d73]" role="group" aria-label="Dashboard view">
+              {canUseIndividualView && <button
+                type="button"
+                aria-pressed={managerView === "individual"}
+                onClick={() => {
+                  setManagerView("individual");
+                  setIsDepartmentMenuOpen(false);
+                }}
+                className={`rounded-l-md px-4 py-2 text-sm font-pmedium transition-colors ${managerView === "individual" ? "bg-[#1e3d73] text-white" : "bg-white text-[#1e3d73] hover:bg-[#eef3fb]"}`}
+              >
+                Individual
+              </button>}
+              <button
+                ref={departmentButtonRef}
+                type="button"
+                aria-pressed={departmentView}
+                aria-haspopup={managerDepartments.length > 0 ? "menu" : undefined}
+                aria-expanded={managerDepartments.length > 0 ? isDepartmentMenuOpen : undefined}
+                aria-controls={isDepartmentMenuOpen ? "manager-department-menu" : undefined}
+                onClick={() => {
+                  setManagerView("department");
+                  if (managerDepartments.length > 0) {
+                    setIsDepartmentMenuOpen((open) => !open);
+                  }
+                }}
+                className={`inline-flex items-center gap-1 px-4 py-2 text-sm font-pmedium transition-colors ${canUseIndividualView ? "rounded-r-md border-l border-[#1e3d73]" : "rounded-md"} ${departmentView ? "bg-[#1e3d73] text-white" : "bg-white text-[#1e3d73] hover:bg-[#eef3fb]"}`}
+              >
+                Department
+                {managerDepartments.length > 0 && (
+                  <MdKeyboardArrowDown aria-hidden="true" size={18} className={isDepartmentMenuOpen ? "rotate-180 transition-transform" : "transition-transform"} />
+                )}
+              </button>
+            </div>
+            {isDepartmentMenuOpen && managerDepartments.length > 0 && (
+              <div
+                id="manager-department-menu"
+                role="menu"
+                aria-label="Select department"
+                className="absolute right-0 top-full z-50 mt-2 min-w-[220px] max-w-[min(90vw,320px)] overflow-hidden rounded-xl border border-[#d8e0ec] bg-white py-1 shadow-[0_12px_32px_rgba(30,61,115,0.18)]"
+              >
+                <div className="border-b border-[#edf0f5] px-4 py-2 text-xs font-pmedium uppercase tracking-wide text-slate-500">
+                  Select department
+                </div>
+                <div className="max-h-64 overflow-y-auto py-1">
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={!selectedManagerDepartment}
+                    onClick={() => {
+                      setManagerDepartmentChoice("all");
+                      setManagerView("department");
+                      setIsDepartmentMenuOpen(false);
+                      departmentButtonRef.current?.focus();
+                    }}
+                    className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors ${!selectedManagerDepartment ? "bg-[#eef3fb] font-pmedium text-[#1e3d73]" : "text-slate-700 hover:bg-slate-50"}`}
+                  >
+                    <span>All</span>
+                    {!selectedManagerDepartment && <MdCheck aria-hidden="true" size={18} className="shrink-0 text-[#1e3d73]" />}
+                  </button>
+                  {managerDepartments.map((department) => {
+                    const selected = department.id === selectedManagerDepartment?.id;
+                    return (
+                      <button
+                        key={department.id}
+                        type="button"
+                        role="menuitemradio"
+                        aria-checked={selected}
+                        onClick={() => {
+                          setManagerDepartmentChoice(department.id);
+                          setManagerView("department");
+                          setIsDepartmentMenuOpen(false);
+                          departmentButtonRef.current?.focus();
+                        }}
+                        className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors ${selected ? "bg-[#eef3fb] font-pmedium text-[#1e3d73]" : "text-slate-700 hover:bg-slate-50"}`}
+                      >
+                        <span className="truncate">{department.name}</span>
+                        {selected && <MdCheck aria-hidden="true" size={18} className="shrink-0 text-[#1e3d73]" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {!onlyFirstTwoCards &&
@@ -762,7 +939,7 @@ const PerformanceHome = ({
             )) && (
           <WidgetSection
             border
-            autoHeight={showEmployeeDashboard}
+            autoHeight={showInsightsDashboard}
             title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
           >
             {isKpaTasksLoading ? (
@@ -776,13 +953,27 @@ const PerformanceHome = ({
             )}
           </WidgetSection>
         )}
-        {showEmployeeDashboard && (
+        {showInsightsDashboard && (
           <KraKpaEmployeeInsights
             departmentId={employeeInsightsDepartmentId}
             employeeId={selectedEmployeeId || auth?.user?._id}
             employeeName={employeeDashboardName}
-            navigationState={employeeDashboard ? location.state : undefined}
+            navigationState={showManagerDashboard
+              ? {
+                  selectedDepartment: selectedManagerDepartment?.id,
+                  selectedDepartmentName: selectedManagerDepartment?.name,
+                }
+              : employeeDashboard ? location.state : undefined}
             selfDashboard={selfDashboard}
+            managerDashboard={showManagerDashboard}
+            leadershipDashboard={showManagerDashboard || (onlyFirstTwoCards && (isHr || isTopManagement) && !employeeDashboard)}
+            teamMode={departmentView}
+            allDepartmentsAccess={showManagerDashboard && !canUseIndividualView}
+            departmentOptions={managerDepartments}
+            includeSelfInDepartment={(auth?.user?.departments || []).some((department) =>
+              String(department?._id || department) === String(employeeInsightsDepartmentId),
+            )}
+            canViewMemberWise={hasPermission(PERMISSIONS.KRAKPA_MEMBER_WISE_KPA)}
             canViewApprovals={
               (isManager || isHr || isTopManagement) &&
               hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS)

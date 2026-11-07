@@ -260,6 +260,8 @@ const VirtualOfficeClientDetails = () => {
       unitNo: "",
       cabinDesks: 0,
       securityDeposit: 0,
+      monthlyFee: 0,
+      deskRate: 0,
       billingFrequency: "Yearly",
       openDesks: 0,
       totalDesks: 0,
@@ -285,6 +287,8 @@ const VirtualOfficeClientDetails = () => {
       hoPocEmail: "",
       hoPocPhone: "",
       hoPocAddress: "",
+      alternateAdminName: "",
+      alternateAdminPhone: "",
       clientStatus: true,
       channel: "",
       currentStatus: "In Progress",
@@ -574,6 +578,8 @@ const VirtualOfficeClientDetails = () => {
           "",
         cabinDesks: selectedClient.cabinDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
+        monthlyFee: selectedClient.monthlyFee ?? 0,
+        deskRate: selectedClient.deskRate ?? 0,
         billingFrequency: selectedClient.billingFrequency || "Yearly",
         openDesks: selectedClient.openDesks || 0,
         totalDesks:
@@ -604,6 +610,8 @@ const VirtualOfficeClientDetails = () => {
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
         hoPocAddress: selectedClient.hoPoc?.address || "",
+        alternateAdminName: selectedClient.alternateAdmin?.name || "",
+        alternateAdminPhone: selectedClient.alternateAdmin?.phone || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         channel: selectedClient.channel || "",
         currentStatus: selectedClient.currentStatus || "In Progress",
@@ -659,6 +667,8 @@ const VirtualOfficeClientDetails = () => {
       unit: data.unit,
       cabinDesks: Number(data.cabinDesks) || 0,
       securityDeposit: Number(data.securityDeposit) || 0,
+      monthlyFee: Number(data.monthlyFee) || 0,
+      deskRate: Number(data.deskRate) || 0,
       billingFrequency: data.billingFrequency,
       openDesks: Number(data.openDesks) || 0,
       cabinDeskRate: Number(data.cabinDeskRate) || 0,
@@ -688,6 +698,10 @@ const VirtualOfficeClientDetails = () => {
         phone: data.hoPocPhone,
         address: data.hoPocAddress,
       },
+      alternateAdmin: {
+        name: data.alternateAdminName || "",
+        phone: data.alternateAdminPhone || "",
+      },
     };
 
     try {
@@ -710,6 +724,9 @@ const VirtualOfficeClientDetails = () => {
       const updatedClient = {
         ...selectedClient,
         ...serverData,
+        monthlyFee: serverData.monthlyFee ?? payload.monthlyFee,
+        deskRate: serverData.deskRate ?? payload.deskRate,
+        alternateAdmin: serverData.alternateAdmin ?? payload.alternateAdmin,
         building: submittedBuildingId,
         unit: submittedUnit || serverData.unit || data.unit,
         buildingName:
@@ -735,6 +752,8 @@ const VirtualOfficeClientDetails = () => {
         hoPocEmail: payload.hoPoc.email,
         hoPocPhone: payload.hoPoc.phone,
         hoPocAddress: payload.hoPoc.address,
+        alternateAdminName: payload.alternateAdmin.name,
+        alternateAdminPhone: payload.alternateAdmin.phone,
         // Map other potentially renamed fields back for UI compatibility
         hoCity: serverData.city || serverData.hoCity || data.hoCity,
         hoState: serverData.state || serverData.hoState || data.hoState,
@@ -834,6 +853,8 @@ const VirtualOfficeClientDetails = () => {
         cabinDesks: selectedClient.cabinDesks || 0,
         openDesks: selectedClient.openDesks || 0,
         securityDeposit: selectedClient.securityDeposit || 0,
+        monthlyFee: selectedClient.monthlyFee ?? 0,
+        deskRate: selectedClient.deskRate ?? 0,
         totalDesks:
           Number(selectedClient.cabinDesks || 0) +
           Number(selectedClient.openDesks || 0),
@@ -862,6 +883,8 @@ const VirtualOfficeClientDetails = () => {
         hoPocEmail: selectedClient.hoPoc?.email || "",
         hoPocPhone: selectedClient.hoPoc?.phone || "",
         hoPocAddress: selectedClient.hoPoc?.address || "",
+        alternateAdminName: selectedClient.alternateAdmin?.name || "",
+        alternateAdminPhone: selectedClient.alternateAdmin?.phone || "",
         clientStatus: selectedClient.clientStatus ?? selectedClient.isActive,
         channel: selectedClient.channel || "",
         currentStatus: selectedClient.currentStatus || "In Progress",
@@ -1283,6 +1306,34 @@ const VirtualOfficeClientDetails = () => {
                             </TextField>
                           )}
                         />
+                        <Controller
+                          name="monthlyFee"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              type="number"
+                              inputProps={{ min: 0, step: "any" }}
+                              size="small"
+                              label="Monthly Fee"
+                              fullWidth
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="deskRate"
+                          control={control}
+                          render={({ field }) => (
+                            <TextField
+                              {...field}
+                              type="number"
+                              inputProps={{ min: 0, step: "any" }}
+                              size="small"
+                              label="Desk Rate"
+                              fullWidth
+                            />
+                          )}
+                        />
                       </div>
                       {[
                         // "cabinDesks",
@@ -1346,7 +1397,9 @@ const VirtualOfficeClientDetails = () => {
                       "unitNo",
                       // "cabinDesks",
                       "securityDeposit",
-                       "billingFrequency",
+                      "billingFrequency",
+                      "deskRate",
+                      "monthlyFee",
                       // "cabinDeskRate",
                       "openDesks",
                       "openDeskRate",
@@ -1383,6 +1436,8 @@ const VirtualOfficeClientDetails = () => {
                                 ? formatCurrency(computedCurrentRate)
                               : fieldKey === "brokerage"
                                 ? formatCurrency(selectedClient?.brokerage || 0)
+                              : fieldKey === "monthlyFee" || fieldKey === "deskRate"
+                                ? formatCurrency(selectedClient?.[fieldKey] ?? 0)
                               : fieldKey === "buildingName"
                                 ? selectedUnitDetails?.building?.buildingName ||
                                   selectedClient?.unit?.building?.buildingName ||
@@ -1828,6 +1883,8 @@ const VirtualOfficeClientDetails = () => {
                     "hoPocEmail",
                     "hoPocPhone",
                     "hoPocAddress",
+                    "alternateAdminName",
+                    "alternateAdminPhone",
                   ].map((fieldKey) => (
                     <div key={fieldKey}>
                       {isEditing ? (
@@ -1837,8 +1894,9 @@ const VirtualOfficeClientDetails = () => {
                           render={({ field }) => (
                             <TextField
                               {...field}
+                              type={fieldKey === "alternateAdminPhone" ? "tel" : "text"}
                               size="small"
-                              label={fieldKey
+                              label={fieldKey === "alternateAdminPhone" ? "Alternate Admin Phone Number" : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
                               fullWidth
@@ -1849,7 +1907,7 @@ const VirtualOfficeClientDetails = () => {
                         <div className="py-2 flex justify-between items-start gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey
+                              {fieldKey === "alternateAdminPhone" ? "Alternate Admin Phone Number" : fieldKey
                                 .replace(/([A-Z])/g, " $1")
                                 .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
@@ -1873,6 +1931,10 @@ const VirtualOfficeClientDetails = () => {
                                           ? selectedClient?.hoPoc?.phone
                                           : fieldKey === "hoPocAddress"
                                             ? selectedClient?.hoPoc?.address
+                                          : fieldKey === "alternateAdminName"
+                                            ? selectedClient?.alternateAdmin?.name
+                                          : fieldKey === "alternateAdminPhone"
+                                            ? selectedClient?.alternateAdmin?.phone
                                           : ""}
                             </span>
                           </div>

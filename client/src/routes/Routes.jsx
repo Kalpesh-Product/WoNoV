@@ -1045,7 +1045,11 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "meeting-revenue-invoicing",
-                                element: <MeetingRevenue showChart={false} />,
+                                element: <MeetingRevenue showChart={false} revenueKind="meetings" />,
+                              },
+                              {
+                                path: "day-pass-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} revenueKind="day-pass" />,
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
@@ -1534,7 +1538,11 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "meeting-revenue-invoicing",
-                                element: <MeetingRevenue showChart={false} />,
+                                element: <MeetingRevenue showChart={false} revenueKind="meetings" />,
+                              },
+                              {
+                                path: "day-pass-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} revenueKind="day-pass" />,
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
@@ -4400,7 +4408,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",
@@ -4430,7 +4442,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",

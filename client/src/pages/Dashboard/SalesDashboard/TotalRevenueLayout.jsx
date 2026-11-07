@@ -88,6 +88,15 @@ const TotalRevenueLayout = () => {
       path: "meetings",
       permission: revenuePermissions.meetings.value,
     },
+    ...(!isFinanceRoute
+      ? [
+          {
+            label: "Day Pass",
+            path: "day-pass",
+            permission: revenuePermissions.meetings.value,
+          },
+        ]
+      : []),
     {
       label: "Virtual Office",
       path: "virtual-office",

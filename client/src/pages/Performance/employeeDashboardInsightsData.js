@@ -10,7 +10,7 @@ export const getTodayProgress = (logs, today) => {
   const todayLogs = logs.filter((log) => dateKey(log.date) === today);
   const completed = todayLogs.filter((log) => log.status === "Done").length;
   return {
-    kraScheduled: todayLogs.filter((log) => log.type === "KRA").length,
+    totalTasks: todayLogs.length,
     completed,
     pending: todayLogs.length - completed,
     carriedForward: todayLogs.filter((log) => log.isCarryForward).length,
@@ -44,6 +44,43 @@ export const getDailyScoreRows = (logs, today) => {
     };
   });
 };
+
+export const getTeamMonthlyScoreRows = (logs, members, today) => members.map((member) => {
+  const memberLogs = logs.filter((log) =>
+    String(log.employee?._id || log.employee) === String(member.id),
+  );
+  const completedDays = getDailyScoreRows(memberLogs, today).filter((row) => !row.future);
+  const assigned = completedDays.reduce((sum, row) => sum + row.assigned, 0);
+  const closed = completedDays.reduce((sum, row) => sum + row.closed, 0);
+  const carriedForward = completedDays.reduce((sum, row) => sum + row.carriedForward, 0);
+  return {
+    id: member.id,
+    name: member.name,
+    assigned,
+    closed,
+    carriedForward,
+    score: percent(closed, assigned),
+  };
+});
+
+export const getDepartmentMonthlyScoreRows = (logs, departments, today) =>
+  departments.map((department) => {
+    const departmentLogs = logs.filter((log) =>
+      String(log.department?._id || log.department) === String(department.id),
+    );
+    const completedDays = getDailyScoreRows(departmentLogs, today).filter((row) => !row.future);
+    const assigned = completedDays.reduce((sum, row) => sum + row.assigned, 0);
+    const closed = completedDays.reduce((sum, row) => sum + row.closed, 0);
+    const carriedForward = completedDays.reduce((sum, row) => sum + row.carriedForward, 0);
+    return {
+      id: department.id,
+      name: department.name,
+      assigned,
+      closed,
+      carriedForward,
+      score: percent(closed, assigned),
+    };
+  });
 
 export const getPendingActions = (kpas) => {
   const activeKpas = kpas.filter(isActiveKpa);
@@ -135,6 +172,8 @@ export const getUpcomingDeadlines = (kpas, today, holidays = []) => {
       return {
         id: kpa._id,
         target: kpa.target,
+        employeeName: [kpa.employee?.firstName, kpa.employee?.middleName, kpa.employee?.lastName]
+          .filter(Boolean).join(" "),
         deadline: kpa.deadline,
         workingDays,
         status: isOverdue ? "Overdue" : workingDays === 0 ? "Due Today" : workingDays <= 2 ? "Due Soon" : "On Track",

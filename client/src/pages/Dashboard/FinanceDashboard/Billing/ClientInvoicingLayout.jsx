@@ -16,6 +16,11 @@ const ClientInvoicingLayout = () => {
       permission: PERMISSIONS.FINANCE_BILLING_MEETING_REVENUE_INVOICING.value,
     },
     {
+      label: "Day Pass",
+      path: "day-pass-revenue-invoicing",
+      permission: PERMISSIONS.FINANCE_BILLING_MEETING_REVENUE_INVOICING.value,
+    },
+    {
       label: "Virtual Office ",
       path: "virtual-office-revenue-invoicing",
       permission:

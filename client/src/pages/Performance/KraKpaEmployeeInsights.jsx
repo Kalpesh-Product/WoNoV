@@ -20,6 +20,8 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import WidgetSection from "../../components/WidgetSection";
 import {
   getDailyScoreRows,
+  getDepartmentMonthlyScoreRows,
+  getTeamMonthlyScoreRows,
   getPendingActions,
   getPerformanceTrend,
   getTodayProgress,
@@ -34,7 +36,7 @@ const selfRatingPath = "/app/kra-kpa/individual/daily-score/kpa-rating";
 const approvalsPath = `${basePath}/member-pending-approvals`;
 
 const progressCards = [
-  { key: "kraScheduled", label: "KRAs Scheduled", icon: MdCalendarToday, className: "bg-[#eef3ff] text-[#4868ad]" },
+  { key: "totalTasks", label: "Total Tasks", icon: MdCalendarToday, className: "bg-[#eef3ff] text-[#4868ad]" },
   { key: "carriedForward", label: "Carried Forward", icon: MdReplay, className: "bg-[#fff0f2] text-[#e84459]" },
   { key: "completed", label: "Tasks Completed", icon: MdCheckCircleOutline, className: "bg-[#eafaf0] text-[#159654]" },
   { key: "pending", label: "Tasks Pending", icon: MdHistory, className: "bg-[#fff8e8] text-[#d78300]" },
@@ -63,9 +65,16 @@ const KraKpaEmployeeInsights = ({
   employeeName,
   navigationState,
   selfDashboard = false,
+  managerDashboard = false,
+  leadershipDashboard = false,
+  teamMode = false,
+  allDepartmentsAccess = false,
+  departmentOptions = [],
+  includeSelfInDepartment = false,
   canViewApprovals,
   canViewKpa,
   canViewRating,
+  canViewMemberWise,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -73,49 +82,82 @@ const KraKpaEmployeeInsights = ({
   const fiscalYearStart = dayjs(today).month() >= 3
     ? dayjs(today).month(3).startOf("month")
     : dayjs(today).subtract(1, "year").month(3).startOf("month");
-  const enabled = Boolean(departmentId && employeeId);
+  const allDepartmentsMode = teamMode && !departmentId;
+  const showDepartmentScores = allDepartmentsMode && allDepartmentsAccess;
+  const enabled = Boolean(employeeId && (!allDepartmentsMode || departmentOptions.length > 0));
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["kraKpaEmployeeInsights", departmentId, employeeId, today],
+    queryKey: ["kraKpaEmployeeInsights", departmentId, employeeId, today, teamMode, allDepartmentsAccess, departmentOptions.map((department) => department.id)],
     enabled,
     staleTime: 60_000,
     queryFn: async () => {
+      const memberDepartmentIds = allDepartmentsMode
+        ? departmentOptions.map((department) => department.id)
+        : departmentId ? [departmentId] : [];
+      const assignees = teamMode && !showDepartmentScores
+        ? (await Promise.all(memberDepartmentIds.map((deptId) =>
+            axios.get("/api/users/assignees", { params: { deptId } }),
+          ))).flatMap((response) => response.data || [])
+        : [];
+      const members = teamMode
+        ? [...new Map([
+            ...((!allDepartmentsAccess || includeSelfInDepartment)
+              ? [{ id: employeeId, name: employeeName || "Manager" }]
+              : []),
+            ...assignees,
+          ].map((member) => [String(member.id), member])).values()]
+        : [];
+      const params = teamMode
+        ? departmentId ? { department: departmentId } : {}
+        : { employee: employeeId, ...(departmentId && { department: departmentId }) };
       const [kpaResponse, logResponse, holidayResponse] = await Promise.all([
         axios.get("/api/kra-kpa/individual-monthly-kpa", {
-          params: { department: departmentId, employee: employeeId },
+          params,
         }),
         axios.get("/api/kra-kpa/daily-log", {
           params: {
-            department: departmentId,
-            employee: employeeId,
-            date: today,
+            ...params,
+            ...(!teamMode && { date: today }),
             startDate: fiscalYearStart.format("YYYY-MM-DD"),
             endDate: fiscalYearStart.add(1, "year").subtract(1, "day").format("YYYY-MM-DD"),
           },
         }),
         axios.get("/api/events/get-holidays"),
       ]);
+      const memberIds = new Set(members.map((member) => String(member.id)));
+      const inTeam = (record) => memberIds.has(String(record.employee?._id || record.employee));
+      const departmentIds = new Set(departmentOptions.map((department) => String(department.id)));
+      const inScope = (record) => showDepartmentScores
+        ? departmentIds.has(String(record.department?._id || record.department))
+        : inTeam(record);
       return {
-        kpas: kpaResponse.data || [],
-        logs: logResponse.data || [],
+        kpas: teamMode ? (kpaResponse.data || []).filter(inScope) : kpaResponse.data || [],
+        logs: teamMode ? (logResponse.data || []).filter(inScope) : logResponse.data || [],
         holidays: holidayResponse.data || [],
+        members,
       };
     },
   });
 
   const progress = useMemo(() => getTodayProgress(data?.logs || [], today), [data?.logs, today]);
-  const dailyScoreRows = useMemo(() => getDailyScoreRows(data?.logs || [], today), [data?.logs, today]);
+  const dailyScoreRows = useMemo(() => showDepartmentScores
+    ? getDepartmentMonthlyScoreRows(data?.logs || [], departmentOptions, today)
+    : teamMode
+      ? getTeamMonthlyScoreRows(data?.logs || [], data?.members || [], today)
+      : getDailyScoreRows(data?.logs || [], today), [data?.logs, data?.members, departmentOptions, today, teamMode, showDepartmentScores]);
   const actions = useMemo(() => getPendingActions(data?.kpas || []), [data?.kpas]);
   const trend = useMemo(() => getPerformanceTrend(data?.kpas || [], data?.logs || [], today), [data?.kpas, data?.logs, today]);
   const deadlines = useMemo(() => getUpcomingDeadlines(data?.kpas || [], today, data?.holidays || []), [data?.kpas, data?.holidays, today]);
 
   const goTo = (path) => navigate(path, { state: navigationState });
-  const kpaPath = selfDashboard ? selfKpaPath : memberKpaPath;
-  const ratingPath = selfDashboard ? selfRatingPath : memberRatingPath;
+  const kpaPath = selfDashboard || managerDashboard ? selfKpaPath : memberKpaPath;
+  const ratingPath = selfDashboard || managerDashboard ? selfRatingPath : memberRatingPath;
+  const detailPath = leadershipDashboard ? basePath : ratingPath;
+  const detailEnabled = leadershipDashboard ? canViewMemberWise : canViewRating;
   const pendingCards = [
-    { label: "KPA Approvals", count: actions.approvals, icon: MdAssignmentTurnedIn, className: "bg-[#fff8eb] text-[#da9200]", path: selfDashboard ? kpaPath : approvalsPath, enabled: selfDashboard ? canViewKpa : canViewApprovals },
-    { label: "Reviews Pending", count: actions.reviews, icon: MdOutlineRateReview, className: "bg-[#edf5ff] text-[#367bd6]", path: ratingPath, enabled: canViewRating },
-    { label: "Ratings Pending", count: actions.ratings, icon: MdOutlineAssessment, className: "bg-[#f5efff] text-[#9860dd]", path: ratingPath, enabled: canViewRating },
-    { label: "Changes Required", count: actions.changesRequired, icon: MdErrorOutline, className: "bg-[#fff0f0] text-[#e84e4e]", path: kpaPath, enabled: canViewKpa },
+    { label: "KPA Approvals", count: actions.approvals, icon: MdAssignmentTurnedIn, className: "bg-[#fff8eb] text-[#da9200]", path: leadershipDashboard ? "/app/kra-kpa/pending-approvals" : selfDashboard ? kpaPath : approvalsPath, enabled: leadershipDashboard ? canViewApprovals : selfDashboard ? canViewKpa : canViewApprovals },
+    { label: "Reviews Pending", count: actions.reviews, icon: MdOutlineRateReview, className: "bg-[#edf5ff] text-[#367bd6]", path: detailPath, enabled: detailEnabled && (leadershipDashboard || !teamMode) },
+    { label: "Ratings Pending", count: actions.ratings, icon: MdOutlineAssessment, className: "bg-[#f5efff] text-[#9860dd]", path: detailPath, enabled: detailEnabled && (leadershipDashboard || !teamMode) },
+    { label: "Changes Required", count: actions.changesRequired, icon: MdErrorOutline, className: "bg-[#fff0f0] text-[#e84e4e]", path: leadershipDashboard ? basePath : kpaPath, enabled: leadershipDashboard ? canViewMemberWise : !teamMode && canViewKpa },
   ];
 
   const chartOptions = {
@@ -149,7 +191,7 @@ const KraKpaEmployeeInsights = ({
             <table className="w-full min-w-[480px] border-collapse text-center text-xs text-primary">
               <thead className="sticky top-0 z-10 bg-[#eaf0f8] font-pmedium">
                 <tr>
-                  {["Day", "Assigned", "Closed", "Carry Forward", "Score"].map((heading) => (
+                  {[showDepartmentScores ? "Department" : teamMode ? "Member" : "Day", "Assigned", "Closed", "Carry Forward", "Score"].map((heading) => (
                     <th key={heading} className="border border-[#dce3ec] px-2 py-2 font-pmedium">{heading}</th>
                   ))}
                 </tr>
@@ -164,8 +206,8 @@ const KraKpaEmployeeInsights = ({
                         ? "bg-[#ffe071] text-[#654a00]"
                         : "bg-[#ff7777] text-white";
                   return (
-                    <tr key={row.date} className="odd:bg-white even:bg-[#f8fafc]">
-                      <td className="border border-[#e6eaf0] px-2 py-1.5 font-pmedium">{dayjs(row.date).format("DD MMM")}</td>
+                    <tr key={teamMode ? row.id : row.date} className="odd:bg-white even:bg-[#f8fafc]">
+                      <td className="border border-[#e6eaf0] px-2 py-1.5 font-pmedium">{teamMode ? row.name : dayjs(row.date).format("DD MMM")}</td>
                       <td className="border border-[#e6eaf0] px-2 py-1.5">{row.assigned}</td>
                       <td className="border border-[#e6eaf0] px-2 py-1.5">{row.closed}</td>
                       <td className="border border-[#e6eaf0] px-2 py-1.5">{row.carriedForward}</td>
@@ -173,6 +215,9 @@ const KraKpaEmployeeInsights = ({
                     </tr>
                   );
                 })}
+                {teamMode && dailyScoreRows.length === 0 && (
+                  <tr><td colSpan={5} className="px-5 py-8 text-center text-gray-500">{showDepartmentScores ? "No departments found" : "No team members found"}</td></tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -200,7 +245,7 @@ const KraKpaEmployeeInsights = ({
         )}
       </Section>
 
-      <Section title="Pending Actions" fillHeight action={canViewKpa && (
+      <Section title="Pending Actions" fillHeight action={!leadershipDashboard && !teamMode && canViewKpa && (
         <button type="button" className="text-sm text-blue-500 hover:underline" onClick={() => goTo(kpaPath)}>View All <span aria-hidden="true">›</span></button>
       )}>
         {isLoading ? <LoadingBlock height="h-full min-h-72" /> : (
@@ -261,7 +306,7 @@ const KraKpaEmployeeInsights = ({
                 {deadlines.length ? deadlines.map((record) => (
                   <tr key={record.id} className="border-t border-[#edf0f4] odd:bg-white even:bg-[#fafbfc]">
                     <td className="max-w-[320px] truncate px-5 py-3" title={record.target}>{record.target}</td>
-                    <td className="px-4 py-3">{employeeName}</td>
+                    <td className="px-4 py-3">{teamMode ? record.employeeName || "—" : employeeName}</td>
                     <td className="whitespace-nowrap px-4 py-3">{dayjs(record.deadline).format("DD MMM YYYY")}</td>
                     <td className="px-4 py-3">{record.workingDays}</td>
                     <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-pmedium ${statusClasses[record.status]}`}>● &nbsp;{record.status}</span></td>

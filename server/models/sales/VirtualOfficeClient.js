@@ -21,6 +21,7 @@ const virtualOfficeSchema = new mongoose.Schema(
     // Client Info
     clientName: { type: String, required: true, trim: true },
     brandName: { type: String, trim: true },
+    source: { type: String, trim: true, default: "" },
     bookingType: { type: String, trim: true },
     email: { type: String, trim: true, lowercase: true },
     phone: { type: String, trim: true },
@@ -71,6 +72,8 @@ const virtualOfficeSchema = new mongoose.Schema(
       default: "Yearly",
     },
     cabinDeskRate: { type: Number, default: 0 },
+    deskRate: { type: Number, default: 0, min: 0 },
+    monthlyFee: { type: Number, default: 0, min: 0 },
     cabinTotal: { type: Number, default: 0 },
     openDesks: { type: Number, default: 0 },
     openDeskRate: { type: Number, default: 0 },
@@ -95,6 +98,7 @@ const virtualOfficeSchema = new mongoose.Schema(
 
     localPoc: { type: pocSchema, default: () => ({}) },
     hoPoc: { type: pocSchema, default: () => ({}) },
+    alternateAdmin: { type: pocSchema, default: () => ({}) },
   },
   { timestamps: true },
 );
