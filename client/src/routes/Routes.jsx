@@ -1045,7 +1045,11 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "meeting-revenue-invoicing",
-                                element: <MeetingRevenue showChart={false} />,
+                                element: <MeetingRevenue showChart={false} revenueKind="meetings" />,
+                              },
+                              {
+                                path: "day-pass-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} revenueKind="day-pass" />,
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
@@ -1534,7 +1538,11 @@ export const routes = createBrowserRouter([
                               },
                               {
                                 path: "meeting-revenue-invoicing",
-                                element: <MeetingRevenue showChart={false} />,
+                                element: <MeetingRevenue showChart={false} revenueKind="meetings" />,
+                              },
+                              {
+                                path: "day-pass-revenue-invoicing",
+                                element: <MeetingRevenue showChart={false} revenueKind="day-pass" />,
                               },
                               {
                                 path: "virtual-office-revenue-invoicing",
@@ -3841,6 +3849,220 @@ export const routes = createBrowserRouter([
                           </SidebarDropdown>
                         ),
                       },
+                      ...[
+                        {
+                          path: "mix-bag",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_WORKATION_MIX_BAG_CARD
+                              .value,
+                        },
+                        {
+                          path: "onboard-new-customers",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_ONBOARD_CUSTOMERS_CARD
+                              .value,
+                        },
+                        {
+                          path: "overall-summary",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_OVERALL_SUMMARY_CARD
+                              .value,
+                        },
+                        {
+                          path: "data",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_WORKATION_DATA_CARD
+                              .value,
+                        },
+                      ].map(({ path, permission }) => ({
+                        path: `workation/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              permission,
+                            ]}
+                          >
+                            {null}
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      ...[
+                        {
+                          path: "annual-revenue-target",
+                          cardView: "annualRevenueTarget",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_ANNUAL_REVENUE_TARGET_CARD
+                              .value,
+                        },
+                        {
+                          path: "revenue-booked",
+                          cardView: "revenueBooked",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_REVENUE_BOOKED_CARD
+                              .value,
+                        },
+                        {
+                          path: "revenue-due",
+                          cardView: "revenueDue",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_REVENUE_DUE_CARD.value,
+                        },
+                        {
+                          path: "average-price",
+                          cardView: "averagePrice",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_AVERAGE_PRICE_CARD.value,
+                        },
+                        {
+                          path: "active-unique-customers",
+                          cardView: "activeUniqueCustomers",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_ACTIVE_UNIQUE_CUSTOMERS_CARD
+                              .value,
+                        },
+                        {
+                          path: "repeat-client",
+                          cardView: "repeatClients",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_REPEAT_CLIENT_CARD
+                              .value,
+                        },
+                        {
+                          path: "dead-unique-clients",
+                          cardView: "deadUniqueClients",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_DEAD_UNIQUE_CLIENTS_CARD
+                              .value,
+                        },
+                        {
+                          path: "average-shortfall-surplus",
+                          cardView: "averageShortfallSurplus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_AVERAGE_SHORTFALL_SURPLUS_CARD
+                              .value,
+                        },
+                      ].map(({ path, cardView, permission }) => ({
+                        path: `workation/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              permission,
+                            ]}
+                          >
+                            <WorkationDashboard cardView={cardView} />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "workation/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_WORKATION_REVENUES_GRAPH.value,
+                            ]}
+                          >
+                            <WorkationDashboard revenueOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "workation/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_WORKATION_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <WorkationDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      ...[
+                        {
+                          path: "payment-status",
+                          chartView: "paymentStatus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_PAYMENT_STATUS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "new-vs-repeat-clients",
+                          chartView: "newRepeat",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_NEW_VS_REPEAT_CLIENTS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "sector-wise-clients",
+                          chartView: "sector",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_SECTOR_WISE_CLIENTS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "booking-source",
+                          chartView: "bookingSource",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_WORKATION_BOOKING_SOURCE_GRAPH
+                              .value,
+                        },
+                      ].map(({ path, chartView, permission }) => ({
+                        path: `workation/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              permission,
+                            ]}
+                          >
+                            <WorkationDashboard
+                              operationalChartView={chartView}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "workation/unpaid-invoices",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS.SALES_VERTICAL_WORKATION.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_WORKATION_UNPAID_INVOICES_TABLE
+                                .value,
+                            ]}
+                          >
+                            <WorkationDashboard unpaidInvoicesOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
                       {
                         path: "alternate-channel",
                         element: (
@@ -3852,6 +4074,226 @@ export const routes = createBrowserRouter([
                             ]}
                           >
                             <AlternateChannelDashboard />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      ...[
+                        {
+                          path: "onboard-new-customers",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_ONBOARD_CUSTOMERS_CARD
+                              .value,
+                        },
+                        {
+                          path: "overall-summary",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_OVERALL_SUMMARY_CARD
+                              .value,
+                        },
+                        {
+                          path: "mix-bag",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_ALTERNATE_MIX_BAG_CARD
+                              .value,
+                        },
+                        {
+                          path: "data",
+                          permission:
+                            PERMISSIONS.SALES_VERTICAL_ALTERNATE_DATA_CARD
+                              .value,
+                        },
+                      ].map(({ path, permission }) => ({
+                        path: `alternate-channel/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              permission,
+                            ]}
+                          >
+                            {null}
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      ...[
+                        {
+                          path: "annual-revenue-target",
+                          cardView: "annualRevenueTarget",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_ANNUAL_REVENUE_TARGET_CARD
+                              .value,
+                        },
+                        {
+                          path: "revenue-booked",
+                          cardView: "revenueBooked",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_REVENUE_BOOKED_CARD
+                              .value,
+                        },
+                        {
+                          path: "revenue-due",
+                          cardView: "revenueDue",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_REVENUE_DUE_CARD.value,
+                        },
+                        {
+                          path: "average-price",
+                          cardView: "averagePrice",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_AVERAGE_PRICE_CARD
+                              .value,
+                        },
+                        {
+                          path: "active-unique-customers",
+                          cardView: "activeUniqueCustomers",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_ACTIVE_UNIQUE_CUSTOMERS_CARD
+                              .value,
+                        },
+                        {
+                          path: "repeat-client",
+                          cardView: "repeatClients",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_REPEAT_CLIENT_CARD
+                              .value,
+                        },
+                        {
+                          path: "dead-unique-clients",
+                          cardView: "deadUniqueClients",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_DEAD_UNIQUE_CLIENTS_CARD
+                              .value,
+                        },
+                        {
+                          path: "average-shortfall-surplus",
+                          cardView: "averageShortfallSurplus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_AVERAGE_SHORTFALL_SURPLUS_CARD
+                              .value,
+                        },
+                      ].map(({ path, cardView, permission }) => ({
+                        path: `alternate-channel/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              permission,
+                            ]}
+                          >
+                            <AlternateChannelDashboard cardView={cardView} />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "alternate-channel/revenues",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_REVENUES_GRAPH.value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard revenueOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "alternate-channel/unique-client-count",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_UNIQUE_CLIENT_COUNT_GRAPH
+                                .value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard uniqueClientsOnly />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      ...[
+                        {
+                          path: "new-vs-repeat-clients",
+                          chartView: "newRepeat",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_NEW_VS_REPEAT_CLIENTS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "sector-wise-clients",
+                          chartView: "sector",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_SECTOR_WISE_CLIENTS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "payment-status",
+                          chartView: "paymentStatus",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_PAYMENT_STATUS_GRAPH
+                              .value,
+                        },
+                        {
+                          path: "booking-source",
+                          chartView: "bookingSource",
+                          permission:
+                            PERMISSIONS
+                              .SALES_VERTICAL_ALTERNATE_BOOKING_SOURCE_GRAPH.value,
+                        },
+                      ].map(({ path, chartView, permission }) => ({
+                        path: `alternate-channel/${path}`,
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              permission,
+                            ]}
+                          >
+                            <AlternateChannelDashboard
+                              operationalChartView={chartView}
+                            />
+                          </SidebarDropdown>
+                        ),
+                      })),
+                      {
+                        path: "alternate-channel/unpaid-invoices",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_CHANNEL.value,
+                              PERMISSIONS
+                                .SALES_VERTICAL_ALTERNATE_UNPAID_INVOICES_TABLE
+                                .value,
+                            ]}
+                          >
+                            <AlternateChannelDashboard unpaidInvoicesOnly />
                           </SidebarDropdown>
                         ),
                       },
@@ -3966,7 +4408,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",
@@ -3996,7 +4442,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",

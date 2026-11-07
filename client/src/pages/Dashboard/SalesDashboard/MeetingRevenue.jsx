@@ -559,6 +559,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
     dashboardView = false,
     dashboardTitle = "MEETING ROOM REVENUES",
     dashboardClientLabel = "Meeting Room Client",
+    revenueKind = "all",
   }) => {
   const axios = useAxiosPrivate();
   const queryClient = useQueryClient();
@@ -616,7 +617,6 @@ const DayPassInvoiceFields = ({ revenue }) => {
     },
   });
 
-  const hasData = Array.isArray(meetingsData) && meetingsData.length > 0;
   const tableData = meetingsData.map((monthData) => ({
     revenue: monthData?.revenue?.map((client) => ({
       ...client,
@@ -675,14 +675,23 @@ const DayPassInvoiceFields = ({ revenue }) => {
 
   //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
   const allRevenueData = tableData.flatMap((month) => month.revenue);
+  const isSelectedRevenueKind = (item) =>
+    revenueKind === "all" ||
+    (revenueKind === "day-pass"
+      ? item?.source === "day-pass"
+      : item?.source !== "day-pass");
+  const selectedRevenueData = allRevenueData.filter(isSelectedRevenueKind);
+  const hasData = selectedRevenueData.length > 0;
   const isVerifiedFinanceRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
   const isPaidRow = (item) => item?.normalizedStatus === "paid";
   const isFinancePaidRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
-  const visibleRevenueData = showChart
-    ? allRevenueData.filter(isVerifiedFinanceRow)
-    : allRevenueData.filter(
+  const visibleRevenueData = revenueKind === "day-pass" && showChart
+    ? selectedRevenueData
+    : showChart
+    ? selectedRevenueData.filter(isVerifiedFinanceRow)
+    : selectedRevenueData.filter(
         (item) => item?.source !== "day-pass" || isPaidRow(item),
       );
   const updateInvoice = useMutation({
@@ -740,10 +749,10 @@ const DayPassInvoiceFields = ({ revenue }) => {
     if (isMeetingsLoading) return [];
 
     const isDayPassDashboard = dashboardTitle.toLowerCase().includes("day pass");
-    return allRevenueData
+    return selectedRevenueData
       .filter((item) => {
         if (!isVerifiedFinanceRow(item)) return false;
-        if (!isDayPassDashboard) return true;
+        if (!isDayPassDashboard || revenueKind !== "all") return true;
 
         const passType = String(item?.meetingType || item?.meetingTypeRaw || "")
           .trim()
@@ -759,9 +768,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
       .map((item) => ({
         date: item.date,
         taxable: getNumericAmount(item.taxable),
-        vertical: "Meeting",
+        vertical: revenueKind === "day-pass" ? "Day Pass" : "Meeting",
       }));
-  }, [allRevenueData, dashboardTitle, isMeetingsLoading]);
+  }, [selectedRevenueData, dashboardTitle, isMeetingsLoading, revenueKind]);
   const selectedFiscalYearRevenue = useMemo(
     () =>
       graphData.filter((item) => getFinancialYear(item.date) === selectedFY),
@@ -920,6 +929,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
       ...dashboardGraphData.map((item) => getNumericAmount(item.taxable)),
     );
 
+    if (highestValue >= 10000000) {
+      return { divisor: 10000000, title: "Amount In Crores (INR)" };
+    }
     if (highestValue >= 100000) {
       return { divisor: 100000, title: "Amount In Lakhs (INR)" };
     }
@@ -1102,7 +1114,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
         </div>
       ) : !hasData ? (
         <div className="text-gray-500 text-center py-8">
-          No meeting revenue data available.
+          {revenueKind === "day-pass"
+            ? "No day pass revenue data available."
+            : "No meeting revenue data available."}
         </div>
       ) : (
         <>
@@ -1120,12 +1134,12 @@ const DayPassInvoiceFields = ({ revenue }) => {
               key={
                 dashboardView
                   ? "meeting-room-dashboard-revenues"
-                  : "meeting-room-revenues"
+                  : `${revenueKind}-revenues`
               }
               chartId={
                 dashboardView
                   ? "meeting-room-dashboard-revenues"
-                  : "meeting-room-revenues"
+                  : `${revenueKind}-revenues`
               }
               data={dashboardView ? dashboardGraphData : graphData}
               dateKey="date"
@@ -1139,7 +1153,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
                     </span>
                   </span>
                 ) : (
-                  "ANNUAL MONTHLY MEETINGS REVENUES"
+                  revenueKind === "day-pass"
+                    ? "ANNUAL MONTHLY DAY PASS REVENUES"
+                    : "ANNUAL MONTHLY MEETINGS REVENUES"
                 )
               }
               chartOptions={dashboardView ? dashboardOptions : options}
@@ -1190,7 +1206,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
                 </div>
               ) : null
             }
-            headerActions={!showChart ? (
+            headerActions={!showChart && revenueKind !== "day-pass" ? (
               <PrimaryButton
                 title="Manage Meeting"
                 handleSubmit={() =>
@@ -1202,8 +1218,12 @@ const DayPassInvoiceFields = ({ revenue }) => {
             ) : null}
               tableTitle={
               showChart
-                ? "Monthly Revenue with Client Details"
-                : "Meeting Revenue Client Invoicing"
+                ? revenueKind === "day-pass"
+                  ? "Monthly Day Pass Revenue with Client Details"
+                  : "Monthly Revenue with Client Details"
+                : revenueKind === "day-pass"
+                  ? "Day Pass Revenue Client Invoicing"
+                  : "Meeting Revenue Client Invoicing"
             }
            // tableTitle={"Monthly Revenue with Client Details"}
             dateColumn={"date"}
@@ -1266,7 +1286,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
               // { headerName: "Particulars", field: "particulars", width: 200 },
               // { headerName: "Units / Hours", field: "unitsOrHours" },
               { headerName: "Client Name", field: "clientName" },
-              { headerName: "Meeting Type", field: "meetingType" },
+              ...(revenueKind === "meetings"
+                ? []
+                : [{ headerName: "Meeting Type", field: "meetingType" }]),
               {
                 headerName: "Taxable (INR)",
                 field: "taxable",

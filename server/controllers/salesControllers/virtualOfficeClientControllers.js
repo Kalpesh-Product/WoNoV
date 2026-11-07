@@ -310,6 +310,7 @@ const createVirtualOfficeClient = async (req, res) => {
     const cabinDeskRate = Number(data.cabinDeskRate || 0);
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
+    const brokerage = Number(data.brokerage || 0);
     const receivedAmount = Number(data.receivedAmount || 0);
     const totalReceivedAmount = Number(
       data.totalReceivedAmount !== undefined
@@ -325,6 +326,7 @@ const createVirtualOfficeClient = async (req, res) => {
       ["securityDeposit", securityDeposit],
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
+      ["brokerage", brokerage],
       ["receivedAmount", receivedAmount],
       ["totalReceivedAmount", totalReceivedAmount],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
@@ -362,7 +364,9 @@ const createVirtualOfficeClient = async (req, res) => {
     }
 
     // If any hoPoc field provided, require name+email+phone to be valid
-    const hoProvided = Boolean(hoPoc.name || hoPoc.email || hoPoc.phone);
+    const hoProvided = Boolean(
+      hoPoc.name || hoPoc.email || hoPoc.phone || hoPoc.address,
+    );
     if (hoProvided) {
       if (!hoPoc.name || String(hoPoc.name).trim().length < 2) {
         return res
@@ -374,6 +378,9 @@ const createVirtualOfficeClient = async (req, res) => {
       }
       if (!hoPoc.phone || !isValidPhone(hoPoc.phone)) {
         return res.status(400).json({ message: "hoPoc.phone is invalid" });
+      }
+      if (!hoPoc.address || !String(hoPoc.address).trim()) {
+        return res.status(400).json({ message: "hoPoc.address is required" });
       }
     }
 
@@ -410,6 +417,8 @@ const createVirtualOfficeClient = async (req, res) => {
       openDesks,
       openDeskRate,
       openTotal,
+      brokerage,
+      internalLead: String(data.internalLead || "").trim(),
       receivedAmount,
       totalReceivedAmount,
       annualIncrement,
@@ -777,6 +786,18 @@ const updateVirtualOfficeClient = async (req, res) => {
     const incomingLocalPoc = updates.localPoc;
     const incomingHoPoc = updates.hoPoc;
 
+    if (hasField("alternateAdmin")) {
+      const alternateAdmin = updates.alternateAdmin;
+      if (!alternateAdmin || typeof alternateAdmin !== "object" || Array.isArray(alternateAdmin)) {
+        return res.status(400).json({ message: "alternateAdmin must be an object" });
+      }
+      updates.alternateAdmin = {
+        ...(existing.alternateAdmin || {}),
+        name: String(alternateAdmin.name || "").trim(),
+        phone: String(alternateAdmin.phone || "").trim(),
+      };
+    }
+
     // Helper to merge partial nested updates safely
     const mergePoc = (existingPoc = {}, incomingPoc = {}) => ({
       name:
@@ -791,6 +812,10 @@ const updateVirtualOfficeClient = async (req, res) => {
         typeof incomingPoc.phone !== "undefined"
           ? incomingPoc.phone
           : existingPoc.phone,
+      address:
+        typeof incomingPoc.address !== "undefined"
+          ? incomingPoc.address
+          : existingPoc.address,
     });
 
     // Determine final POC objects (after merge), only if POC update requested
@@ -832,7 +857,8 @@ const updateVirtualOfficeClient = async (req, res) => {
       const hoProvided =
         Boolean(finalHo.name) ||
         Boolean(finalHo.email) ||
-        Boolean(finalHo.phone);
+        Boolean(finalHo.phone) ||
+        Boolean(finalHo.address);
 
       if (hoProvided) {
         if (!finalHo.name || String(finalHo.name).trim().length < 2) {
@@ -846,6 +872,9 @@ const updateVirtualOfficeClient = async (req, res) => {
         if (!finalHo.phone || !isValidPhone(finalHo.phone)) {
           return res.status(400).json({ message: "hoPoc.phone is invalid" });
         }
+        if (!finalHo.address || !String(finalHo.address).trim()) {
+          return res.status(400).json({ message: "hoPoc.address is required" });
+        }
       }
 
       updates.hoPoc = {
@@ -854,6 +883,7 @@ const updateVirtualOfficeClient = async (req, res) => {
           .trim()
           .toLowerCase(),
         phone: String(finalHo.phone || "").trim(),
+        address: String(finalHo.address || "").trim(),
       };
     }
 
@@ -883,6 +913,21 @@ const updateVirtualOfficeClient = async (req, res) => {
         ? updates.openDeskRate
         : existing.openDeskRate || 0,
     );
+    const brokerage = Number(
+      typeof updates.brokerage !== "undefined"
+        ? updates.brokerage
+        : existing.brokerage || 0,
+    );
+    const monthlyFee = Number(
+      typeof updates.monthlyFee !== "undefined"
+        ? updates.monthlyFee
+        : existing.monthlyFee || 0,
+    );
+    const deskRate = Number(
+      typeof updates.deskRate !== "undefined"
+        ? updates.deskRate
+        : existing.deskRate || 0,
+    );
     const receivedAmount = Number(
       typeof updates.receivedAmount !== "undefined"
         ? updates.receivedAmount
@@ -907,6 +952,9 @@ const updateVirtualOfficeClient = async (req, res) => {
       ["receivedAmount", receivedAmount],
       ["totalReceivedAmount", totalReceivedAmount],
       ["openDeskRate", openDeskRate],
+      ["brokerage", brokerage],
+      ["monthlyFee", monthlyFee],
+      ["deskRate", deskRate],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
     ];
 
@@ -923,6 +971,12 @@ const updateVirtualOfficeClient = async (req, res) => {
     updates.cabinDeskRate = cabinDeskRate;
     updates.openDesks = openDesks;
     updates.openDeskRate = openDeskRate;
+    updates.brokerage = brokerage;
+    updates.monthlyFee = monthlyFee;
+    updates.deskRate = deskRate;
+    if (hasField("internalLead")) {
+      updates.internalLead = String(updates.internalLead || "").trim();
+    }
     updates.receivedAmount = receivedAmount;
     updates.totalReceivedAmount = totalReceivedAmount;
     updates.perDeskMeetingCredits = perDeskMeetingCredits;
@@ -974,11 +1028,7 @@ const updateVirtualOfficeClient = async (req, res) => {
     });
 
     const now = new Date();
-    const currentMonthStart = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      1,
-    );
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     // Client changes affect current/future billing rows only.
     await VirtualOfficeRevenue.updateMany(
@@ -1139,288 +1189,809 @@ const bulkUpdateVirtualOfficeClients = async (req, res, next) => {
     const file = req.file;
     const company = req.company;
 
+    // ---------------- FILE VALIDATION ----------------
+
     if (!file) {
-      return res.status(400).json({ message: "Please provide a CSV file" });
+      return res.status(400).json({
+        message: "Please provide a CSV file",
+      });
     }
 
-    const stream = Readable.from(file.buffer.toString("utf-8").trim());
+    if (!/\.csv$/i.test(file.originalname || "")) {
+      return res.status(400).json({
+        message: "Only CSV files are allowed",
+      });
+    }
 
-    // Fetch units for unit mapping (optional, but usually required)
-    const units = await Unit.find({ company })
-      .select("_id unitNo unitName")
-      .lean();
-    const unitMap = new Map(units.map((u) => [`${u.unitNo}`.trim(), u._id]));
+    const csvContent = file.buffer
+      .toString("utf8")
+      .replace(/^\uFEFF/, "")
+      .trim();
 
-    // Fetch existing VO clients for matching (by clientName)
-    const existingClients = await VirtualOfficeClient.find({ company })
-      .select("_id clientName")
-      .lean();
+    if (!csvContent) {
+      return res.status(400).json({
+        message: "CSV file is empty",
+      });
+    }
 
-    const normalizeClient = (name) =>
-      name?.toLowerCase().replace(/\s+/g, "").trim();
+    // ---------------- HELPERS ----------------
 
-    const existingClientMap = new Map(
-      existingClients.map((c) => [normalizeClient(c.clientName), c._id]),
-    );
+    const normalizeHeader = (value) =>
+      String(value || "")
+        .replace(/^\uFEFF/, "")
+        .trim()
+        .toLowerCase()
+        .replace(/[\s_-]+/g, "");
+
+    const normalizeClient = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+
+    const hasValue = (value) =>
+      value !== undefined && value !== null && String(value).trim() !== "";
+
+    const getCell = (row, header) => {
+      const key = Object.keys(row).find(
+        (key) => normalizeHeader(key) === normalizeHeader(header),
+      );
+
+      return key ? String(row[key] ?? "").trim() : "";
+    };
+
+    const parseNumber = (value) => {
+      if (!hasValue(value)) return undefined;
+
+      const cleaned = String(value).trim().replace(/,/g, "");
+
+      if (!/^-?(?:\d+\.?\d*|\.\d+)$/.test(cleaned)) {
+        return null;
+      }
+
+      const number = Number(cleaned);
+
+      return Number.isFinite(number) ? number : null;
+    };
+
+    const parseBoolean = (value) => {
+      if (!hasValue(value)) return undefined;
+
+      const normalized = String(value).trim().toLowerCase();
+
+      if (["true", "yes", "1", "active"].includes(normalized)) {
+        return true;
+      }
+
+      if (["false", "no", "0", "inactive"].includes(normalized)) {
+        return false;
+      }
+
+      return null;
+    };
+
+    // ---------------- DATE PARSING ----------------
+
+    const monthMap = {
+      jan: 1,
+      january: 1,
+      feb: 2,
+      february: 2,
+      mar: 3,
+      march: 3,
+      apr: 4,
+      april: 4,
+      may: 5,
+      jun: 6,
+      june: 6,
+      jul: 7,
+      july: 7,
+      aug: 8,
+      august: 8,
+      sep: 9,
+      september: 9,
+      oct: 10,
+      october: 10,
+      nov: 11,
+      november: 11,
+      dec: 12,
+      december: 12,
+    };
+
+    const parseDate = (value) => {
+      if (!hasValue(value)) return undefined;
+
+      const input = String(value).trim();
+
+      let day;
+      let month;
+      let year;
+
+      // YYYY-MM-DD
+      const isoMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+      if (isoMatch) {
+        year = Number(isoMatch[1]);
+        month = Number(isoMatch[2]);
+        day = Number(isoMatch[3]);
+      } else {
+        // DD-MM-YYYY
+        // DD-MM-YY
+        // DD-MMM-YYYY
+        // DD-MMM-YY
+        // DD-MMMM-YYYY
+        // DD-MMMM-YY
+
+        const match = input.match(/^(\d{2})-(\d{2}|[A-Za-z]+)-(\d{2}|\d{4})$/);
+
+        if (!match) return null;
+
+        day = Number(match[1]);
+
+        month = /^\d{2}$/.test(match[2])
+          ? Number(match[2])
+          : monthMap[match[2].toLowerCase()];
+
+        year = Number(match[3]);
+
+        // YY is interpreted as 20YY
+        if (match[3].length === 2) {
+          year += 2000;
+        }
+      }
+
+      if (
+        !Number.isInteger(day) ||
+        !Number.isInteger(month) ||
+        !Number.isInteger(year) ||
+        day < 1 ||
+        day > 31 ||
+        month < 1 ||
+        month > 12 ||
+        year < 1 ||
+        year > 9999
+      ) {
+        return null;
+      }
+
+      const date = new Date(0);
+
+      date.setUTCHours(0, 0, 0, 0);
+      date.setUTCFullYear(year, month - 1, day);
+
+      // Reject invalid calendar dates
+      if (
+        date.getUTCFullYear() !== year ||
+        date.getUTCMonth() + 1 !== month ||
+        date.getUTCDate() !== day
+      ) {
+        return null;
+      }
+
+      return date;
+    };
+
+    // ---------------- PARSE CSV ----------------
+
+    const rows = [];
+
+    await new Promise((resolve, reject) => {
+      Readable.from([csvContent])
+        .pipe(csvParser())
+        .on("data", (row) => rows.push(row))
+        .on("end", resolve)
+        .on("error", reject);
+    });
+
+    if (!rows.length) {
+      return res.status(400).json({
+        message: "No records found in CSV",
+      });
+    }
+
+    // ---------------- FETCH EXISTING DATA ----------------
+
+    // No VirtualOfficeRevenue queries or updates.
+
+    const [units, existingClients] = await Promise.all([
+      Unit.find({ company }).select("_id unitNo unitName building").lean(),
+
+      VirtualOfficeClient.find({ company }).lean(),
+    ]);
+
+    // ---------------- UNIT MAPPING ----------------
+
+    const unitMap = new Map();
+
+    units.forEach((unit) => {
+      const key = String(unit.unitNo || "")
+        .trim()
+        .toLowerCase();
+
+      if (!key) return;
+
+      if (!unitMap.has(key)) {
+        unitMap.set(key, []);
+      }
+
+      unitMap.get(key).push(unit);
+    });
+
+    // ---------------- CLIENT MAPPING ----------------
+
+    const existingClientMap = new Map();
+
+    existingClients.forEach((client) => {
+      const key = normalizeClient(client.clientName);
+
+      if (!existingClientMap.has(key)) {
+        existingClientMap.set(key, []);
+      }
+
+      existingClientMap.get(key).push(client);
+    });
+
+    // ---------------- TRACK RESULTS ----------------
 
     const updates = [];
+
     const notFoundClients = [];
     const unknownUnits = [];
     const csvDuplicates = [];
+    const validationErrors = [];
+    const skippedRows = [];
 
-    stream
-      .pipe(csvParser())
-      .on("data", (row) => {
-        // Adjust column headers to match your CSV
-        const {
-          "Client Name": clientName,
-          Email: email,
-          Phone: phone,
-          Sector: sector,
-          State: state,
-          City: city,
-          "Unit No": unitNo,
+    const seenClients = new Set();
 
-          "Cabin Desks": cabinDesks,
-          "Cabin Desk Rate": cabinDeskRate,
-          "Open Desks": openDesks,
-          "Open Desk Rate": openDeskRate,
+    // ---------------- PROCESS CSV ----------------
 
-          "Per Desk Meeting Credits": perDeskMeetingCredits,
-          "Annual Increment": annualIncrement,
+    rows.forEach((row, index) => {
+      const rowNumber = index + 2;
 
-          "Term Start Date": termStartDate,
-          "Term End": termEnd,
-          "Lock In Period Months": lockInPeriodMonths,
+      // Ignore fully empty rows
+      const isEmptyRow = Object.values(row).every((value) => !hasValue(value));
 
-          "Rent Date": rentDate,
-          "Next Increment Date": nextIncrementDate,
+      if (isEmptyRow) return;
 
-          "Rent Status": rentStatus,
-          "Client Status": clientStatus,
+      const clientName = getCell(row, "Client Name");
 
-          "Local POC Name": localPocName,
-          "Local POC Email": localPocEmail,
-          "Local POC Phone": localPocPhone,
+      // ---------------- CLIENT NAME VALIDATION ----------------
 
-          "HO POC Name": hoPocName,
-          "HO POC Email": hoPocEmail,
-          "HO POC Phone": hoPocPhone,
-        } = row;
+      if (!clientName) {
+        skippedRows.push({
+          row: rowNumber,
+          clientName: "",
+          reason: "Client Name is required",
+        });
 
-        if (!clientName || String(clientName).trim() === "") return;
+        return;
+      }
 
-        const normalized = normalizeClient(clientName);
-        const clientId = existingClientMap.get(normalized);
+      const clientKey = normalizeClient(clientName);
 
-        if (!clientId) {
-          notFoundClients.push({
+      // ---------------- CSV DUPLICATE CHECK ----------------
+
+      if (seenClients.has(clientKey)) {
+        csvDuplicates.push({
+          row: rowNumber,
+          clientName,
+          reason: "Duplicate client in CSV",
+        });
+
+        return;
+      }
+
+      seenClients.add(clientKey);
+
+      // ---------------- FIND EXISTING CLIENT ----------------
+
+      const matches = existingClientMap.get(clientKey) || [];
+
+      if (!matches.length) {
+        notFoundClients.push({
+          row: rowNumber,
+          clientName,
+          reason: "Client not found in VirtualOfficeClient collection",
+        });
+
+        return;
+      }
+
+      // ---------------- DUPLICATE CLIENT HANDLING ----------------
+
+      let existingClient;
+
+      if (matches.length === 1) {
+        // Preserve existing behavior when there is
+        // only one matching database record.
+        existingClient = matches[0];
+      } else {
+        // Multiple clients have the same name.
+        // Find records with clientStatus === true.
+
+        const activeClients = matches.filter(
+          (client) => client.clientStatus === true,
+        );
+
+        if (activeClients.length === 1) {
+          // Exactly one active client.
+          // Update only that active record.
+          existingClient = activeClients[0];
+        } else if (activeClients.length > 1) {
+          // Multiple active clients.
+          // Cannot uniquely identify the correct one.
+
+          validationErrors.push({
+            row: rowNumber,
             clientName,
-            reason: "Client not found in database",
+            field: "Client Name",
+            message:
+              `Multiple active clients (${activeClients.length}) ` +
+              "have this name. Cannot determine which record to update.",
           });
+
+          return;
+        } else {
+          // Duplicate clients exist, but none is active.
+
+          validationErrors.push({
+            row: rowNumber,
+            clientName,
+            field: "Client Name",
+            message: "Multiple clients have this name, but none is active.",
+          });
+
+          return;
+        }
+      }
+
+      // ---------------- PREPARE UPDATE ----------------
+
+      const $set = {};
+      const rowErrors = [];
+
+      const addError = (field, message) => {
+        rowErrors.push({
+          row: rowNumber,
+          clientName,
+          field,
+          message,
+        });
+      };
+
+      // ---------------- STRING FIELDS ----------------
+
+      const stringFields = {
+        "Brand Name": "brandName",
+        Source: "source",
+        "Booking Type": "bookingType",
+        Email: "email",
+        Phone: "phone",
+        Sector: "sector",
+        State: "state",
+        City: "city",
+        Channel: "channel",
+        "Internal Lead": "internalLead",
+        "Rent Status": "rentStatus",
+        Location: "location",
+      };
+
+      Object.entries(stringFields).forEach(([csvHeader, schemaField]) => {
+        const value = getCell(row, csvHeader);
+
+        if (!hasValue(value)) return;
+
+        $set[schemaField] =
+          schemaField === "email" ? value.toLowerCase() : value;
+      });
+
+      // ---------------- ENUM FIELDS ----------------
+
+      const enumFields = {
+        "Current Status": {
+          field: "currentStatus",
+          options: ["In Progress", "Yet to start", "On Hold"],
+        },
+
+        "Billing Frequency": {
+          field: "billingFrequency",
+          options: ["Monthly", "Yearly"],
+        },
+      };
+
+      Object.entries(enumFields).forEach(([csvHeader, config]) => {
+        const value = getCell(row, csvHeader);
+
+        if (!hasValue(value)) return;
+
+        const matched = config.options.find(
+          (option) => option.toLowerCase() === value.toLowerCase(),
+        );
+
+        if (!matched) {
+          addError(csvHeader, `Must be one of: ${config.options.join(", ")}`);
+
           return;
         }
 
-        // Unit mapping (optional)
-        let unitId;
-        if (unitNo && String(unitNo).trim() !== "") {
-          unitId = unitMap.get(String(unitNo).trim());
-          if (!unitId) {
-            unknownUnits.push({
-              clientName,
-              unitNo,
-              reason: "Unit not found",
-            });
-            return;
-          }
+        $set[config.field] = matched;
+      });
+
+      // ---------------- NUMBER FIELDS ----------------
+
+      const numberFields = {
+        "Total Desks": "totalDesks",
+        "Cabin Desks": "cabinDesks",
+        "Cabin Desk Rate": "cabinDeskRate",
+        "Cabin Total": "cabinTotal",
+        "Open Desks": "openDesks",
+        "Open Desk Rate": "openDeskRate",
+        "Open Total": "openTotal",
+        "Desk Rate": "deskRate",
+        "Monthly Fee": "monthlyFee",
+        "Security Deposit": "securityDeposit",
+        Brokerage: "brokerage",
+        "Annual Increment": "annualIncrement",
+        "Total Term": "totalTerm",
+        "LockIn Periods": "lockInPeriodMonths",
+        "Lock In Period Months": "lockInPeriodMonths",
+        "Received Amount": "receivedAmount",
+        "Total Received Amount": "totalReceivedAmount",
+        "Per Desk Meeting Credits": "perDeskMeetingCredits",
+        "Total Meeting Credits": "totalMeetingCredits",
+      };
+
+      Object.entries(numberFields).forEach(([csvHeader, schemaField]) => {
+        const value = getCell(row, csvHeader);
+
+        if (!hasValue(value)) return;
+
+        const number = parseNumber(value);
+
+        if (number === null) {
+          addError(csvHeader, "Invalid numeric value");
+
+          return;
         }
 
-        // Build $set only with provided values
-        const $set = {};
-
-        // Basic fields
-        if (email?.trim()) $set.email = email.trim().toLowerCase();
-        if (phone?.trim()) $set.phone = phone.trim();
-        if (sector?.trim()) $set.sector = sector.trim();
-        if (state?.trim()) $set.state = state.trim();
-        if (city?.trim()) $set.city = city.trim();
-        if (unitId) $set.unit = unitId;
-
-        // Numbers (only if present)
-        const toNum = (v) => {
-          if (v === undefined || v === null) return undefined;
-          const s = String(v).trim();
-          if (!s) return undefined;
-          // remove commas and non-numeric except dot/minus
-          const cleaned = s.replace(/[^0-9.-]/g, "");
-          if (!cleaned) return undefined;
-          const n = Number(cleaned);
-          return Number.isFinite(n) ? n : undefined;
-        };
-
-        const cabinDesksN = toNum(cabinDesks);
-        const cabinDeskRateN = toNum(cabinDeskRate);
-        const openDesksN = toNum(openDesks);
-        const openDeskRateN = toNum(openDeskRate);
-        const perDeskCreditsN = toNum(perDeskMeetingCredits);
-        const annualIncrementN = toNum(annualIncrement);
-        const lockInN = toNum(lockInPeriodMonths);
-
-        if (cabinDesksN !== undefined) $set.cabinDesks = cabinDesksN;
-        if (cabinDeskRateN !== undefined) $set.cabinDeskRate = cabinDeskRateN;
-        if (openDesksN !== undefined) $set.openDesks = openDesksN;
-        if (openDeskRateN !== undefined) $set.openDeskRate = openDeskRateN;
-        if (perDeskCreditsN !== undefined)
-          $set.perDeskMeetingCredits = perDeskCreditsN;
-        if (annualIncrementN !== undefined)
-          $set.annualIncrement = annualIncrementN;
-        if (lockInN !== undefined) $set.lockInPeriodMonths = lockInN;
-
-        // Totals (only if we have enough inputs)
-        const nextCabinDesks =
-          cabinDesksN !== undefined ? cabinDesksN : undefined;
-        const nextCabinRate =
-          cabinDeskRateN !== undefined ? cabinDeskRateN : undefined;
-        const nextOpenDesks = openDesksN !== undefined ? openDesksN : undefined;
-        const nextOpenRate =
-          openDeskRateN !== undefined ? openDeskRateN : undefined;
-
-        if (nextCabinDesks !== undefined && nextCabinRate !== undefined) {
-          $set.cabinTotal = nextCabinDesks * nextCabinRate;
-        }
-        if (nextOpenDesks !== undefined && nextOpenRate !== undefined) {
-          $set.openTotal = nextOpenDesks * nextOpenRate;
-        }
-        // totalMeetingCredits if both desk counts + perDesk credits are present
         if (
-          (nextCabinDesks !== undefined || nextOpenDesks !== undefined) &&
-          perDeskCreditsN !== undefined
+          [
+            "brokerage",
+            "deskRate",
+            "monthlyFee",
+            "receivedAmount",
+            "totalReceivedAmount",
+          ].includes(schemaField) &&
+          number < 0
         ) {
-          const cd = nextCabinDesks ?? 0;
-          const od = nextOpenDesks ?? 0;
-          $set.totalMeetingCredits = (cd + od) * perDeskCreditsN;
+          addError(csvHeader, "Cannot be negative");
+
+          return;
         }
 
-        // Dates (only if present and valid)
-        const toDate = (v) => {
-          if (!v) return undefined;
-          const d = new Date(v);
-          return Number.isNaN(d.getTime()) ? undefined : d;
+        if (
+          schemaField === "lockInPeriodMonths" &&
+          (!Number.isInteger(number) || number < 1)
+        ) {
+          addError(csvHeader, "Must be a positive integer");
+
+          return;
+        }
+
+        if (
+          schemaField === "totalDesks" &&
+          (!Number.isInteger(number) || number < 0)
+        ) {
+          addError(csvHeader, "Total Desks must be a non-negative integer");
+
+          return;
+        }
+
+        $set[schemaField] = number;
+      });
+
+      // ---------------- DATE FIELDS ----------------
+
+      const dateFields = {
+        "Term Start Date": "termStartDate",
+        "Term End Date": "termEnd",
+        "Term End": "termEnd",
+        "Rent Date": "rentDate",
+        "Next Increment Date": "nextIncrementDate",
+      };
+
+      Object.entries(dateFields).forEach(([csvHeader, schemaField]) => {
+        const value = getCell(row, csvHeader);
+
+        if (!hasValue(value)) return;
+
+        const date = parseDate(value);
+
+        if (!date) {
+          addError(csvHeader, "Invalid date format or calendar date");
+
+          return;
+        }
+
+        $set[schemaField] = date;
+      });
+
+      // ---------------- CLIENT STATUS ----------------
+
+      const clientStatus = getCell(row, "Client Status");
+
+      if (hasValue(clientStatus)) {
+        const parsedStatus = parseBoolean(clientStatus);
+
+        if (parsedStatus === null) {
+          addError(
+            "Client Status",
+            "Must be true/false, yes/no, or active/inactive",
+          );
+        } else {
+          $set.clientStatus = parsedStatus;
+        }
+      }
+
+      // ---------------- UNIT + BUILDING ----------------
+
+      const unitNo = getCell(row, "Unit No");
+
+      if (hasValue(unitNo)) {
+        const matchedUnits = unitMap.get(unitNo.toLowerCase()) || [];
+
+        if (!matchedUnits.length) {
+          unknownUnits.push({
+            row: rowNumber,
+            clientName,
+            unitNo,
+            reason: "Unit not found",
+          });
+
+          return;
+        }
+
+        if (matchedUnits.length > 1) {
+          addError("Unit No", "Multiple units have this Unit No");
+        } else {
+          const unit = matchedUnits[0];
+
+          $set.unit = unit._id;
+
+          if (unit.building) {
+            $set.building = unit.building;
+          }
+        }
+      }
+
+      // ---------------- POC FIELDS ----------------
+
+      // Shared POC values apply to both Local and HO POC.
+      // Specific POC columns override shared values.
+
+      const pocName = getCell(row, "POC Name");
+      const pocNumber = getCell(row, "POC Number");
+
+      for (const schemaField of ["localPoc", "hoPoc"]) {
+        if (hasValue(pocName)) {
+          $set[`${schemaField}.name`] = pocName;
+        }
+
+        if (hasValue(pocNumber)) {
+          $set[`${schemaField}.phone`] = pocNumber;
+        }
+      }
+
+      const pocFields = [
+        {
+          prefix: "Local POC",
+          schemaField: "localPoc",
+        },
+        {
+          prefix: "HO POC",
+          schemaField: "hoPoc",
+        },
+      ];
+
+      pocFields.forEach(({ prefix, schemaField }) => {
+        const fields = {
+          Name: "name",
+          Email: "email",
+          Phone: "phone",
+          Address: "address",
         };
 
-        const termStartD = toDate(termStartDate);
-        const termEndD = toDate(termEnd);
-        const rentDateD = toDate(rentDate);
-        const nextIncD = toDate(nextIncrementDate);
+        Object.entries(fields).forEach(([csvSuffix, field]) => {
+          const value = getCell(row, `${prefix} ${csvSuffix}`);
 
-        if (termStartD) $set.termStartDate = termStartD;
-        if (termEndD) $set.termEnd = termEndD;
-        if (rentDateD) $set.rentDate = rentDateD;
-        if (nextIncD) $set.nextIncrementDate = nextIncD;
+          if (!hasValue(value)) return;
 
-        // Rent status
-        if (rentStatus?.trim()) $set.rentStatus = rentStatus.trim();
-
-        // Client status (boolean in schema)
-        if (clientStatus !== undefined && clientStatus !== null) {
-          const s = String(clientStatus).trim().toLowerCase();
-          if (s === "true" || s === "false") {
-            $set.clientStatus = s === "true";
-          }
-        }
-
-        // POCs (only set if at least one field present)
-        const localAny = localPocName || localPocEmail || localPocPhone;
-        if (localAny) {
-          $set.localPoc = {
-            name: localPocName ? String(localPocName).trim() : "",
-            email: localPocEmail
-              ? String(localPocEmail).trim().toLowerCase()
-              : "",
-            phone: localPocPhone ? String(localPocPhone).trim() : "",
-          };
-        }
-
-        const hoAny = hoPocName || hoPocEmail || hoPocPhone;
-        if (hoAny) {
-          $set.hoPoc = {
-            name: hoPocName ? String(hoPocName).trim() : "",
-            email: hoPocEmail ? String(hoPocEmail).trim().toLowerCase() : "",
-            phone: hoPocPhone ? String(hoPocPhone).trim() : "",
-          };
-        }
-
-        // If nothing to update, skip
-        if (Object.keys($set).length === 0) return;
-
-        updates.push({
-          key: normalized, // for CSV duplicate detection
-          clientId,
-          $set,
+          $set[`${schemaField}.${field}`] =
+            field === "email" ? value.toLowerCase() : value;
         });
-      })
-      .on("end", async () => {
-        try {
-          if (!updates.length) {
-            return res.status(400).json({
-              message: "No valid update records found",
-              notFoundClients,
-              unknownUnits,
-            });
-          }
+      });
 
-          // 1) Remove CSV duplicates (same clientName repeated)
-          const uniqueMap = new Map();
-          for (const u of updates) {
-            if (!uniqueMap.has(u.key)) uniqueMap.set(u.key, u);
-            else {
-              csvDuplicates.push({
-                clientName: u.key,
-                reason: "Duplicate client in CSV",
-              });
-            }
-          }
-          const uniqueUpdates = Array.from(uniqueMap.values());
+      const getFirstCell = (headers) =>
+        headers.map((header) => getCell(row, header)).find(hasValue) || "";
+      const alternateAdminName = getFirstCell([
+        "Alternate Admin Name",
+        "Alt Admin Name",
+        "Alt/Admin Name",
+      ]);
+      const alternateAdminPhone = getFirstCell([
+        "Alternate Admin Phone Number",
+        "Alternate Admin Phone",
+        "Alternate Admin Number",
+        "Alt Admin Phone Number",
+        "Alt/Admin Phone Number",
+        "Alt/Admin No",
+      ]);
 
-          // 2) Prepare bulkWrite operations
-          const bulkOps = uniqueUpdates.map((u) => ({
-            updateOne: {
-              filter: { _id: u.clientId, company },
-              update: { $set: u.$set },
-            },
-          }));
+      if (hasValue(alternateAdminName)) {
+        $set["alternateAdmin.name"] = alternateAdminName;
+      }
+      if (hasValue(alternateAdminPhone)) {
+        $set["alternateAdmin.phone"] = alternateAdminPhone;
+      }
 
-          let bulkResult = null;
-          if (bulkOps.length > 0) {
-            bulkResult = await VirtualOfficeClient.bulkWrite(bulkOps, {
-              ordered: false,
-            });
-          }
+      // ---------------- CALCULATED VALUES ----------------
 
-          const updatedCount =
-            bulkResult?.modifiedCount ?? bulkResult?.nModified ?? 0;
+      const cabinDesks = $set.cabinDesks ?? existingClient.cabinDesks ?? 0;
 
-          return res.status(200).json({
-            message: `${updatedCount} virtual office clients updated successfully`,
-            updatedCount,
-            attemptedUpdates: bulkOps.length,
-            skippedCount:
-              notFoundClients.length +
-              unknownUnits.length +
-              csvDuplicates.length,
-            notFoundClients,
-            unknownUnits,
-            csvDuplicates,
-          });
-        } catch (err) {
-          next(err);
-        }
-      })
-      .on("error", (err) => next(err));
+      const cabinRate = $set.cabinDeskRate ?? existingClient.cabinDeskRate ?? 0;
+
+      const openDesks = $set.openDesks ?? existingClient.openDesks ?? 0;
+
+      const openRate = $set.openDeskRate ?? existingClient.openDeskRate ?? 0;
+
+      const perDeskCredits =
+        $set.perDeskMeetingCredits ?? existingClient.perDeskMeetingCredits ?? 0;
+
+      // Recalculate cabin total
+      if ($set.cabinDesks !== undefined || $set.cabinDeskRate !== undefined) {
+        $set.cabinTotal = cabinDesks * cabinRate;
+      }
+
+      // Recalculate open desk total
+      if ($set.openDesks !== undefined || $set.openDeskRate !== undefined) {
+        $set.openTotal = openDesks * openRate;
+      }
+
+      // Recalculate meeting credits
+      if (
+        $set.cabinDesks !== undefined ||
+        $set.openDesks !== undefined ||
+        $set.perDeskMeetingCredits !== undefined
+      ) {
+        $set.totalMeetingCredits = (cabinDesks + openDesks) * perDeskCredits;
+      }
+
+      // Recalculate total desks
+      if ($set.cabinDesks !== undefined || $set.openDesks !== undefined) {
+        $set.totalDesks = cabinDesks + openDesks;
+      }
+
+      // ---------------- DATE RANGE VALIDATION ----------------
+
+      const finalTermStart = $set.termStartDate ?? existingClient.termStartDate;
+
+      const finalTermEnd = $set.termEnd ?? existingClient.termEnd;
+
+      if (
+        finalTermStart &&
+        finalTermEnd &&
+        new Date(finalTermStart) > new Date(finalTermEnd)
+      ) {
+        addError("Term End", "Term End cannot be before Term Start Date");
+      }
+
+      // ---------------- SKIP INVALID ROW ----------------
+
+      if (rowErrors.length) {
+        validationErrors.push(...rowErrors);
+        return;
+      }
+
+      if (Object.keys($set).length === 0) {
+        skippedRows.push({
+          row: rowNumber,
+          clientName,
+          reason: "No valid fields provided for update",
+        });
+
+        return;
+      }
+
+      // ---------------- PREPARE CLIENT UPDATE ----------------
+
+      updates.push({
+        clientId: existingClient._id,
+        clientName,
+        $set,
+      });
+    });
+
+    // ---------------- VALIDATION SUMMARY ----------------
+
+    const skippedCount =
+      notFoundClients.length +
+      unknownUnits.length +
+      csvDuplicates.length +
+      skippedRows.length +
+      new Set(validationErrors.map((error) => error.row)).size;
+
+    const unmatchedSummary = [
+      notFoundClients.length &&
+        `${notFoundClients.length} client(s) not found in VirtualOfficeClient`,
+    ]
+      .filter(Boolean)
+      .join("; ");
+
+    // ---------------- ALL-OR-NONE VALIDATION ----------------
+
+    if (skippedCount || !updates.length) {
+      return res.status(400).json({
+        message: skippedCount
+          ? `Bulk update cancelled: ${skippedCount} CSV row(s) could not be updated${
+              unmatchedSummary ? ` (${unmatchedSummary})` : ""
+            }. Fix all rows and upload again. No records were changed.`
+          : "No valid update records found. No records were changed.",
+
+        updatedCount: 0,
+        skippedCount,
+        notFoundClients,
+        unknownUnits,
+        csvDuplicates,
+        validationErrors,
+        skippedRows,
+      });
+    }
+
+    // ---------------- PREPARE BULK OPERATIONS ----------------
+
+    const bulkOps = updates.map((item) => ({
+      updateOne: {
+        filter: {
+          _id: item.clientId,
+          company,
+        },
+        update: {
+          $set: item.$set,
+        },
+      },
+    }));
+
+    // ---------------- BULK WRITE ----------------
+
+    // Only VirtualOfficeClient is updated.
+    // VirtualOfficeRevenue is not accessed.
+
+    const result = await VirtualOfficeClient.bulkWrite(bulkOps, {
+      ordered: false,
+    });
+
+    const updatedCount = result.modifiedCount || 0;
+    const matchedCount = result.matchedCount || 0;
+
+    // ---------------- SUCCESS RESPONSE ----------------
+
+    return res.status(200).json({
+      message: `${updatedCount} virtual office clients updated successfully`,
+      updatedCount,
+      matchedCount,
+      attemptedUpdates: bulkOps.length,
+      skippedCount: 0,
+      notFoundClients: [],
+      unknownUnits: [],
+      csvDuplicates: [],
+      validationErrors: [],
+      skippedRows: [],
+    });
   } catch (error) {
     next(error);
   }
 };
+
 module.exports = {
   createVirtualOfficeClient,
   getVirtualOfficeClients,

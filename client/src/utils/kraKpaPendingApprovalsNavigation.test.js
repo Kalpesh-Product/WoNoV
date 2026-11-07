@@ -38,10 +38,22 @@ test("member click opens the employee dashboard with the selected member and dep
 
 test("main KRA/KPA and Performance dashboards share count-based card layout and icon styling", () => {
   const source = read("pages/Performance/PerformanceHome.jsx");
-  assert.match(source, /const cardGridClass = performanceCards.length >= 5/);
+  assert.match(source, /const cardGridClass =\s*performanceCards.length >= 5/);
   assert.ok(source.includes('"grid-cols-1 md:grid-cols-2 xl:grid-cols-4"'));
-  assert.match(source, /icon=\{employeeDashboard \? card.icon \|\| <CgWebsite \/> : <CgWebsite \/>\}/);
+  assert.match(source, /icon=\{\s*showEmployeeDashboard \? card.icon \|\| <CgWebsite \/> : <CgWebsite \/>\s*\}/);
   assert.ok(source.includes('title: "PENDING APPROVALS"'), "Keep existing dashboard destinations");
+});
+
+test("employee-only KRA/KPA home shows self insights without using a selected teammate", () => {
+  const source = read("pages/Performance/PerformanceHome.jsx");
+  assert.match(source, /const selfDashboard = onlyFirstTwoCards && Boolean\(auth\?\.user\?\._id\) && !employeeDashboard/);
+  assert.match(source, /const selectedMember = selfDashboard\s*\? null/);
+  assert.match(source, /const selectedEmployeeId = selfDashboard\s*\? auth\?\.user\?\._id/);
+  assert.match(source, /\{showEmployeeDashboard && \(\s*<KraKpaEmployeeInsights/);
+  assert.match(source, /selfDashboard=\{selfDashboard\}/);
+  const insights = read("pages/Performance/KraKpaEmployeeInsights.jsx");
+  assert.match(insights, /const selfKpaPath = "\/app\/kra-kpa\/individual\/kra-kpa\/individual-Monthly-KPA"/);
+  assert.match(insights, /path: selfDashboard \? kpaPath : approvalsPath, enabled: selfDashboard \? canViewKpa : canViewApprovals/);
 });
 
 test("Department quick-access card stays in KRA/KPA and uses its module permission", () => {
