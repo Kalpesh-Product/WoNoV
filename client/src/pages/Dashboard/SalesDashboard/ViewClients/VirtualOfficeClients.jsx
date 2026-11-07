@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { toast } from "sonner";
 import { HiPencilSquare } from "react-icons/hi2";
+import { useState } from "react";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -60,6 +61,7 @@ const VirtualOfficeClients = () => {
   );
   const dispatch = useDispatch();
   const queryClient = useQueryClient();
+  const [statusOverrides, setStatusOverrides] = useState({});
 
   //-------------------------API-----------------------------//
   const { data = [], isLoading } = useQuery({
@@ -77,26 +79,13 @@ const VirtualOfficeClients = () => {
     ? []
     : data.virtualOfficeClients
         ?.slice()
-        .sort((firstClient, secondClient) => {
-          const firstIsActive =
-            typeof firstClient?.isActive === "boolean"
-              ? firstClient.isActive
-              : Boolean(firstClient?.clientStatus);
-          const secondIsActive =
-            typeof secondClient?.isActive === "boolean"
-              ? secondClient.isActive
-              : Boolean(secondClient?.clientStatus);
-
-          if (firstIsActive !== secondIsActive) {
-            return Number(secondIsActive) - Number(firstIsActive);
-          }
-
-          return String(firstClient?.clientName || "").localeCompare(
+        .sort((firstClient, secondClient) =>
+          String(firstClient?.clientName || "").localeCompare(
             String(secondClient?.clientName || ""),
             undefined,
             { sensitivity: "base", numeric: true },
-          );
-        })
+          ),
+        )
         .map((item, index) => ({
           ...item,
           srNo: index + 1,
@@ -112,19 +101,36 @@ const VirtualOfficeClients = () => {
               ? item.isActive
               : Boolean(item?.clientStatus),
         })) || [];
-
-  const { mutate: updateClientStatus, isPending: isStatusUpdating } = useMutation({
+  const { mutate: updateClientStatus } = useMutation({
     mutationFn: async ({ id, isActive }) => {
       const response = await axios.patch(`/api/sales/virtual-office/${id}/status`, {
         isActive,
       });
       return response.data;
     },
-    onSuccess: (response) => {
-      toast.success(response?.message || "Client status updated successfully");
-      queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
+    onMutate: ({ id, isActive }) => {
+      setStatusOverrides((currentOverrides) => ({
+        ...currentOverrides,
+        [String(id)]: isActive,
+      }));
     },
-    onError: (error) => {
+    onSuccess: (response, { id }) => {
+      toast.success(response?.message || "Client status updated successfully");
+      setTimeout(async () => {
+        await queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
+        setStatusOverrides((currentOverrides) => {
+          const nextOverrides = { ...currentOverrides };
+          delete nextOverrides[String(id)];
+          return nextOverrides;
+        });
+      }, 700);
+    },
+    onError: (error, { id }) => {
+      setStatusOverrides((currentOverrides) => {
+        const nextOverrides = { ...currentOverrides };
+        delete nextOverrides[String(id)];
+        return nextOverrides;
+      });
       toast.error(
         error?.response?.data?.message ||
         error?.message ||
@@ -132,6 +138,19 @@ const VirtualOfficeClients = () => {
       );
     },
   });
+
+  const getDisplayedClientStatus = (client) => {
+    const clientId = String(client?._id || "");
+
+    if (Object.prototype.hasOwnProperty.call(statusOverrides, clientId)) {
+      return statusOverrides[clientId];
+    }
+
+    return Boolean(client?.isActive);
+  };
+  const totalClientCount = verticalData.length;
+  const activeClientCount = verticalData.filter(getDisplayedClientStatus).length;
+  const inactiveClientCount = totalClientCount - activeClientCount;
 
 
   //-------------------------API-----------------------------//
@@ -197,7 +216,9 @@ const VirtualOfficeClients = () => {
       headerName: "Status",
       pinned:"right",
       cellRenderer: (params) => {
-        const status = params.data?.isActive ? "Active" : "Inactive";
+        const status = getDisplayedClientStatus(params.data)
+          ? "Active"
+          : "Inactive";
         return <StatusChip status={status} />;
       },
     },
@@ -209,7 +230,12 @@ const VirtualOfficeClients = () => {
       sortable: false,
       filter: false,
       cellRenderer: (params) => {
-        const isActive = Boolean(params.data?.isActive);
+        const clientId = String(params.data?._id || "");
+        const isActive = getDisplayedClientStatus(params.data);
+        const isThisStatusUpdating = Object.prototype.hasOwnProperty.call(
+          statusOverrides,
+          clientId,
+        );
 
         return (
           <div className="flex h-full items-center gap-2">
@@ -225,19 +251,20 @@ const VirtualOfficeClients = () => {
             <button
               type="button"
               onClick={() => handleToggleClientStatus(params.data)}
-              disabled={isStatusUpdating}
-              className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+              disabled={isThisStatusUpdating}
+              className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-wait disabled:opacity-80 ${
                 isActive ? "bg-green-500" : "bg-gray-300"
               }`}
               role="switch"
               aria-checked={isActive}
+              aria-busy={isThisStatusUpdating}
               aria-label={`${isActive ? "Deactivate" : "Activate"} ${params.data?.clientName || "client"}`}
               title={isActive ? "Mark As Inactive" : "Mark As Active"}
             >
               <span
                 aria-hidden="true"
-                className={`inline-block h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
-                  isActive ? "translate-x-5" : "translate-x-0.5"
+                className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-in-out ${
+                  isActive ? "translate-x-[18px]" : "translate-x-0.5"
                 }`}
               />
             </button>
@@ -255,6 +282,22 @@ const VirtualOfficeClients = () => {
           data={verticalData}
           columns={columns}
           tableTitle={"Virtual Office Clients"}
+          titleRightContent={
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]">
+                <div>Total :</div>
+                <div>{totalClientCount}</div>
+              </div>
+              <div className="flex items-center justify-center gap-1 rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-1.5 text-sm font-pmedium uppercase text-[#16784d]">
+                <div>Active :</div>
+                <div>{activeClientCount}</div>
+              </div>
+              <div className="flex items-center justify-center gap-1 rounded-lg border border-[#f3b7a8] bg-[#fce8e3] px-3 py-1.5 text-sm font-pmedium uppercase text-[#d96b4f]">
+                <div>Inactive :</div>
+                <div>{inactiveClientCount}</div>
+              </div>
+            </div>
+          }
           buttonTitle={isVerticalClientDetailsRoute ? undefined : "Add Client"}
           handleClick={
             isVerticalClientDetailsRoute
