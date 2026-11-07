@@ -32,6 +32,10 @@ const BreadCrumbComponent = () => {
       return "KRA & KPA";
     }
 
+    if (value.toLowerCase() === "sales-dashboard1") {
+      return "Sales Dashboard";
+    }
+
     if (value.toLowerCase() === "repeat-day-pass") {
       return "Repeat Booking";
     }

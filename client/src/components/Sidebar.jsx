@@ -46,7 +46,10 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
   const location = useLocation();
   const [expandedModule, setExpandedModule] = useState(0);
   const [expandedMenuItems, setExpandedMenuItems] = useState(() =>
-    location.pathname.startsWith("/app/dashboard/sales-dashboard")
+    (location.pathname === "/app/dashboard/sales-dashboard" ||
+      location.pathname.startsWith("/app/dashboard/sales-dashboard/") ||
+      location.pathname === "/app/dashboard/sales-dashboard1" ||
+      location.pathname.startsWith("/app/dashboard/sales-dashboard1/"))
       ? ["Sales Dashboard"]
       : [],
   );
@@ -226,6 +229,12 @@ const Sidebar = ({ drawerOpen, onCloseDrawer }) => {
           route: "/app/dashboard/sales-dashboard",
           permission: PERMISSIONS.SIDEBAR_SALES_DASHBOARD.value,
           submenus: [
+            {
+              id: 57,
+              title: "Sales Dashboard",
+              route: "/app/dashboard/sales-dashboard1",
+              permission: PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+            },
             {
               id: 51,
               title: "Virtual Office",

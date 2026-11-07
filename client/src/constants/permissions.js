@@ -1666,6 +1666,108 @@ export const PERMISSIONS = {
 
   // 🔷 Sales Dashboard
 
+  // Sales Dashboard 1 route access stays in the existing Sales group.
+  SALES_DASHBOARD1_ACCESS: {
+    value: "sidebar_sales_dashboard1",
+    title: "SALES DASHBOARD1",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1",
+  },
+
+  // Sales Dashboard 1 summary cards.
+  SALES1_ANNUAL_REVENUE_TARGET_CARD: {
+    value: "sales1_annual_revenue_target_card",
+    title: "ANNUAL REVENUE TARGET CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/annual-revenue-target",
+  },
+  SALES1_REVENUE_BOOKED_CARD: {
+    value: "sales1_revenue_booked_card",
+    title: "REVENUE BOOKED CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/revenue-booked",
+  },
+  SALES1_REVENUE_DUE_CARD: {
+    value: "sales1_revenue_due_card",
+    title: "REVENUE DUE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/revenue-due",
+  },
+  SALES1_AVERAGE_PRICE_CARD: {
+    value: "sales1_average_price_card",
+    title: "AVERAGE PRICE CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/average-price",
+  },
+  SALES1_AVERAGE_UNIQUE_CLIENTS_CARD: {
+    value: "sales1_average_unique_clients_card",
+    title: "AVERAGE UNIQUE CLIENTS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/average-unique-clients",
+  },
+  SALES1_TOTAL_INVENTORY_CARD: {
+    value: "sales1_total_inventory_card",
+    title: "TOTAL INVENTORY CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/total-inventory",
+  },
+  SALES1_OCCUPIED_INVENTORY_CARD: {
+    value: "sales1_occupied_inventory_card",
+    title: "OCCUPIED INVENTORY CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/occupied-inventory",
+  },
+  SALES1_PER_SQ_FT_CARD: {
+    value: "sales1_per_sq_ft_card",
+    title: "PER SQ. FT. CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/per-sq-ft",
+  },
+  SALES1_OCCUPIED_DESKS_CARD: {
+    value: "sales1_occupied_desks_card",
+    title: "OCCUPIED DESKS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/occupied-desks",
+  },
+  SALES1_CURRENT_FREE_DESKS_CARD: {
+    value: "sales1_current_free_desks_card",
+    title: "CURRENT FREE DESKS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/current-free-desks",
+  },
+  SALES1_LEADS_THIS_YEAR_CARD: {
+    value: "sales1_leads_this_year_card",
+    title: "LEADS THIS YEAR CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/leads-this-year",
+  },
+  SALES1_AVERAGE_SHORTFALL_SURPLUS_CARD: {
+    value: "sales1_average_shortfall_surplus_card",
+    title: "AVERAGE SHORTFALL / SURPLUS CARD",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/average-shortfall-surplus",
+  },
+  SALES1_MONTHLY_INCOME_BREAKDOWN_GRAPH: {
+    value: "sales1_monthly_income_breakdown_graph",
+    title: "MONTHLY INCOME BREAKDOWN DISTRIBUTION",
+    type: "read",
+    access: "page",
+    route: "/app/dashboard/sales-dashboard1/monthly-income-breakdown",
+  },
+
   SALES_VERTICAL_VIRTUAL_OFFICE: {
     value: "sales_vertical_virtual_office",
     title: "VIRTUAL OFFICE",

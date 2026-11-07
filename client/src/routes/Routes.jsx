@@ -134,6 +134,7 @@ import AssignedTaskReports from "../pages/Tasks/TaskReports.jsx/AssignedTaskRepo
 import DepartmentTaskReports from "../pages/Tasks/TaskReports.jsx/DepartmentTaskReports";
 import SalesDashboardLayout from "../pages/Dashboard/SalesDashboard/SalesDashboardLayout";
 import SalesDashboard from "../pages/Dashboard/SalesDashboard/SalesDashboard";
+import SalesDashboard1 from "../pages/Dashboard/SalesDashboard/SalesDashboard1";
 import VirtualOfficeDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/VirtualOfficeDashboard";
 import CoWorkingDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/CoWorkingDashboard";
 import MeetingRoomDashboard from "../pages/Dashboard/SalesDashboard/VerticalDashboards/MeetingRoomDashboard";
@@ -2632,6 +2633,185 @@ export const routes = createBrowserRouter([
                             element: <ItExpensesClear />,
                           },
                         ],
+                      },
+                    ],
+                  },
+                  {
+                    path: "sales-dashboard1",
+                    element: <SalesDashboardLayout />,
+                    children: [
+                      {
+                        path: "",
+                        element: <SalesDashboard1 />,
+                      },
+                      {
+                        path: "annual-revenue-target",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_ANNUAL_REVENUE_TARGET_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="annualRevenueTarget" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "revenue-booked",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_REVENUE_BOOKED_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="revenueBooked" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "revenue-due",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_REVENUE_DUE_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="revenueDue" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "average-price",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_AVERAGE_PRICE_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="averagePrice" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "average-unique-clients",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_AVERAGE_UNIQUE_CLIENTS_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="averageUniqueClients" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "total-inventory",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_TOTAL_INVENTORY_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="totalInventory" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "occupied-inventory",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_OCCUPIED_INVENTORY_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="occupiedInventory" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "per-sq-ft",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_PER_SQ_FT_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="perSqFt" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "occupied-desks",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_OCCUPIED_DESKS_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="occupiedDesks" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "current-free-desks",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_CURRENT_FREE_DESKS_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="currentFreeDesks" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "leads-this-year",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_LEADS_THIS_YEAR_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="leadsThisYear" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "average-shortfall-surplus",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_AVERAGE_SHORTFALL_SURPLUS_CARD.value,
+                            ]}
+                          >
+                            <SalesDashboard1 cardView="averageShortfallSurplus" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
+                        path: "monthly-income-breakdown",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_DASHBOARD1_ACCESS.value,
+                              PERMISSIONS.SALES1_MONTHLY_INCOME_BREAKDOWN_GRAPH.value,
+                            ]}
+                          >
+                            <SalesDashboard1 graphOnly />
+                          </SidebarDropdown>
+                        ),
                       },
                     ],
                   },
