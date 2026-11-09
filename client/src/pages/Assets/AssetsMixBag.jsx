@@ -66,6 +66,7 @@ const AssetsMixBag = () => {
               userPermissions.includes(route.permission) && (
                 <Card
                   fullHeight
+                  hoverScale={1.01}
                   key={index}
                   title={route.title}
                   route={route.route}

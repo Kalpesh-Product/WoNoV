@@ -228,7 +228,6 @@ const AssetsHome = () => {
     <div className="flex flex-col gap-4 p-4">
       <WidgetSection
         layout={1}
-        padding
         border
         // title={"DEPARTMENT WISE ASSETS"}
            title={tableTitle}

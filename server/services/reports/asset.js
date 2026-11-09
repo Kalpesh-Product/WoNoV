@@ -393,6 +393,8 @@ const fetchAssetReportService = async ({
     let assetsQuery = Asset.find(assetFilter)
       .populate([
         { path: "department", select: "name" },
+        { path: "Category", select: "categoryName" },
+        { path: "company", select: "companyId" },
         { path: "deletedBy", select: "firstName lastName" },
 
         {
@@ -449,6 +451,10 @@ const fetchAssetReportService = async ({
               select: "firstName lastName",
             },
             {
+              path: "revokedBy",
+              select: "firstName lastName",
+            },
+            {
               path: "location",
               select: "unitNo unitName",
               populate: {
@@ -489,13 +495,32 @@ const fetchAssetReportService = async ({
     ]);
 
     const assetIds = assets.map((asset) => asset._id);
-    const assignmentRequests = await AssignAsset.find({
-      asset: { $in: assetIds },
-      status: { $in: ["Pending", "Approved"] },
-    })
-      .select("asset status")
-      .lean()
-      .exec();
+    const [assignmentRequests, revokedAssignments] = await Promise.all([
+      AssignAsset.find({
+        asset: { $in: assetIds },
+        status: { $in: ["Pending", "Approved"] },
+      })
+        .select("asset status")
+        .lean()
+        .exec(),
+      AssignAsset.find({
+        asset: { $in: assetIds },
+        status: "Revoked",
+      })
+        .select("asset isRevoked revokedBy revokedAt")
+        .sort({ revokedAt: -1, updatedAt: -1, _id: -1 })
+        .populate("revokedBy", "firstName lastName")
+        .lean()
+        .exec(),
+    ]);
+
+    const latestRevocationByAsset = new Map();
+    for (const assignment of revokedAssignments) {
+      const assetId = assignment.asset?.toString();
+      if (assetId && !latestRevocationByAsset.has(assetId)) {
+        latestRevocationByAsset.set(assetId, assignment);
+      }
+    }
 
     const pendingAssetIds = new Set(
       assignmentRequests
@@ -508,6 +533,8 @@ const fetchAssetReportService = async ({
 
     const assetsWithAssignmentState = assets.map((asset) => {
       const parsedAsset = asset.toObject();
+      parsedAsset.latestRevocation =
+        latestRevocationByAsset.get(asset._id.toString()) || null;
       parsedAsset.assignmentState = pendingAssetIds.has(asset._id.toString())
         ? "Pending"
         : asset.isAssigned
@@ -591,16 +618,16 @@ const fetchAssetReportService = async ({
         vendor: asset.vendor
           ? {
               _id: asset.vendor._id,
-              vendorName: asset.vendor.vendorName,
+              vendorName: asset.vendor.name,
               departmentId: asset.vendor.departmentId || null,
             }
           : null,
 
         // Category
-        category: asset.subCategory.category
+        category: asset.subCategory?.category || asset.Category
           ? {
-              _id: asset.subCategory.category._id,
-              categoryName: asset.subCategory.category.categoryName,
+              _id: (asset.subCategory?.category || asset.Category)._id,
+              categoryName: (asset.subCategory?.category || asset.Category).categoryName,
             }
           : null,
 
@@ -628,6 +655,7 @@ const fetchAssetReportService = async ({
 
         // Assignment
         assignedAsset: asset.assignedAsset || null,
+        latestRevocation: asset.latestRevocation || null,
         // Assignment
         // assignedAsset: asset.assignedAsset
         //   ? (() => {

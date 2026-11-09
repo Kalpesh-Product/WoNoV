@@ -333,7 +333,7 @@ const YearWiseTable = ({
   //   }
   // };
   const handleExportPass = () => {
-    if (agGridRef.current) {
+    if (agGridRef.current?.api) {
       agGridRef.current.api.exportDataAsCsv({
         fileName: `${tableTitle || "data"}.csv`,
         allColumns: exportAllColumns,
@@ -564,6 +564,7 @@ const YearWiseTable = ({
             <PrimaryButton
               title={exportButtonTitle}
               handleSubmit={handleExportPass}
+              disabled={loading}
               padding="px-4 py-2"
               className="shrink-0 whitespace-nowrap"
             />

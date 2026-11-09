@@ -126,6 +126,10 @@ const AgTableComponent = React.memo(
     const [isFilterDrawerOpen, setFilterDrawerOpen] = useState(false);
     const [selectedRows, setSelectedRows] = useState([]); // ✅ Track selected rows
     const gridRef = useRef(null);
+    const setGridInstance = useCallback((instance) => {
+      gridRef.current = instance;
+      if (tableRef) tableRef.current = instance;
+    }, [tableRef]);
     const toolbarRef = useRef(null);
     const toolbarDateRef = useRef(null);
     const toolbarActionsRef = useRef(null);
@@ -222,12 +226,6 @@ const AgTableComponent = React.memo(
     useEffect(() => {
       if (serverSearch) setSearchQuery(searchValue || "");
     }, [searchValue, serverSearch]);
-
-    useEffect(() => {
-      if (tableRef && gridRef.current) {
-        tableRef.current = gridRef.current;
-      }
-    }, [gridRef, tableRef]);
 
     useEffect(() => {
       const previousPage = previousServerPageRef.current;
@@ -358,18 +356,15 @@ const AgTableComponent = React.memo(
 
         if (value === null || value === undefined) return "";
 
+        const stringValue = String(value);
         const normalizedField = field.toLowerCase();
-        const shouldPreserveAsText =
+        const isDateTimeField =
           normalizedField.includes("date") ||
           normalizedField.includes("time") ||
           /(at)$/i.test(field);
 
-        const stringValue = String(value);
-
-        if (!shouldPreserveAsText) return stringValue;
-
-        // Prefix with an apostrophe so Excel keeps the literal date/time text.
-        return stringValue.startsWith("'") ? stringValue : `'${stringValue}`;
+        // Export date cells as plain values, including empty strings.
+        return isDateTimeField ? stringValue.replace(/^'+/, "") : stringValue;
       },
       [processExportCell],
     );
@@ -685,7 +680,6 @@ const AgTableComponent = React.memo(
         </MuiAside>
 
         <div
-          ref={tableRef}
           className={`ag-theme-quartz border-none w-full font-pregular ${
             fillAvailableHeight ? "flex-1 min-h-0" : ""
           }`}
@@ -698,7 +692,7 @@ const AgTableComponent = React.memo(
             />
           ) : (
           <AgGridReact
-            ref={gridRef}
+            ref={setGridInstance}
             rowData={filteredData}
             getRowId={getRowId}
             columnDefs={modifiedColumns} // ✅ Use modified columns with checkboxes

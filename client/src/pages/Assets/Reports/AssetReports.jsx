@@ -8,6 +8,7 @@ import { useTopDepartment } from "../../../hooks/useTopDepartment";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import dayjs from "dayjs";
+import { assetExportColumns, assetExportValues } from "../assetDetails";
 import {
   DEFAULT_PAGE_SIZE,
   PAGE_SIZE_OPTIONS,
@@ -238,6 +239,7 @@ const AssetReports = () => {
         )
         .flatMap((departmentGroup) =>
           (departmentGroup?.assets || []).map((asset) => ({
+            ...assetExportValues(asset, { assignment: true }),
             assetNumber: asset?.assetId || "N/A",
             secondaryId: asset?.secondaryId || "N/A",
             assetName: asset?.name || "N/A",
@@ -269,7 +271,7 @@ const AssetReports = () => {
             warrantyMonths: asset?.warranty ?? "N/A",
             warrantyExpiryDate: asset?.warrantyExpiryDate || null,
             rentedExpirationDate: asset?.rentedExpirationDate || null,
-            category: asset?.subCategory?.category?.categoryName || "N/A",
+            category: asset?.subCategory?.category?.categoryName || asset?.Category?.categoryName || "N/A",
             subCategory: asset?.subCategory?.subCategoryName || "N/A",
             tangible: asset?.tangable ? "Yes" : "No",
             status: asset?.status || "N/A",
@@ -331,7 +333,7 @@ const AssetReports = () => {
           onDateFilterChange={handleDateFilterChange}
           tableTitle="Asset Reports"
           data={isLoading ? [] : reportData}
-          columns={assetReportsColumns}
+          columns={assetExportColumns(assetReportsColumns, { assignment: true })}
           dropdownColumns={[]}
           hideTitle={true}
           serverPagination
