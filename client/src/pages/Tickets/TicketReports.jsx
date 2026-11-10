@@ -6,8 +6,6 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import humanDate from "../../utils/humanDateForamt";
 import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../components/MuiModal";
-import TicketDetails from "../../components/TicketDetails";
-import { getTicketDetailFields } from "../../utils/ticketDetailFields";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import TicketAttachments from "../../components/TicketAttachments";
@@ -222,8 +220,9 @@ const TicketReports = () => {
     },
     { field: "priority", headerName: "Priority", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    //{ field: "company", headerName: "Company", hide: true },
+    { field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
+    { field: "assigneesExport", headerName: "Assignees", hide: true },
     { field: "assignedAtDate", headerName: "Assign At", hide: true },
     // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
@@ -242,6 +241,7 @@ const TicketReports = () => {
     // },
     { field: "escalatedTo", headerName: "Escalated To", hide: true },
     { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
+    { field: "reasonForEscalated", headerName: "Reason for Escalated", hide: true },
     {
       // field: "escalatedAtDate",
       field: "escalatedAt",
@@ -267,6 +267,9 @@ const TicketReports = () => {
       headerName: "Closing Remark",
       hide: true,
     },
+    { field: "closingCategoriesExport", headerName: "Categories", hide: true },
+    { field: "resolvedDateExport", headerName: "Resolved Date", hide: true },
+    { field: "attachmentsExport", headerName: "Attachments", hide: true },
     // {
     //   field: "closedAtTime",
     //   headerName: "Closed Time",
@@ -400,22 +403,6 @@ const TicketReports = () => {
     };
   };
 
-  const handleExportTickets = () => {
-    const fieldRows = ticketsData.map((ticket) => getTicketDetailFields(ticket));
-    const headers = getTicketDetailFields({}).map(({ label }) => label);
-    const escapeCsv = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
-    const csv = [
-      headers.map(escapeCsv).join(","),
-      ...fieldRows.map((fields) => fields.map(({ value }) => escapeCsv(value)).join(",")),
-    ].join("\r\n");
-    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "Ticket Reports.csv";
-    link.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-
   return (
     <div className="flex flex-col gap-8 p-4">
       <PageFrame>
@@ -423,15 +410,12 @@ const TicketReports = () => {
           <YearWiseTable
               loading={isLoading}
               search={true}
-              customExportTitle="Export"
-              handleCustomExport={handleExportTickets}
-              customExportDisabled={isLoading || ticketsData.length === 0}
+              exportData={true}
               tableTitle={"Ticket Reports"}
               hideFilter={false}
               data={[
                 ...ticketsData.map((item, index) => ({
                   ...item,
-                  sourceTicket: item,
                   srNo: (pagination.page - 1) * pagination.limit + index + 1,
                   ticket: item.ticket || "",
                   fromDepartment: getFromDepartment(item),
@@ -448,7 +432,7 @@ const TicketReports = () => {
                       (assignee) =>
                         `${assignee.firstName} ${assignee.lastName}`,
                     ) || "",
-                  company: item.company?.companyName,
+                  company: item.company?.companyName || "",
                   priority: item.priority || "",
                   raisedAt: formatDateTime(item.createdAt) || "",
                   updatedAt: item.updatedAt || "",
@@ -460,6 +444,16 @@ const TicketReports = () => {
                   closingCategories: Array.isArray(item.closingCategories)
                     ? item.closingCategories
                     : [],
+                  closingCategoriesExport: Array.isArray(item.closingCategories)
+                    ? item.closingCategories.join(", ")
+                    : "",
+                  resolvedDateExport: item.resolvedDate
+                    ? formatDateTime(item.resolvedDate)
+                    : "",
+                  attachmentsExport: [
+                    ...(item.attachments || []).map((attachment) => attachment.url),
+                    item.image?.url,
+                  ].filter(Boolean).filter((url, index, urls) => urls.indexOf(url) === index).join("; "),
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -486,6 +480,11 @@ const TicketReports = () => {
                     return {
                       assignedTo: assignedToDisplay,
                       assignedToDetails: assignmentDetails,
+                      assigneesExport: assignmentDetails
+                        .map(({ assigneeName, assignedAtFormatted }) =>
+                          [assigneeName, assignedAtFormatted].filter(Boolean).join(" - "),
+                        )
+                        .join("; "),
                     };
                   })(),
                   ...formatEscalation(item),
@@ -545,7 +544,159 @@ const TicketReports = () => {
         onClose={() => setDetailsModal(false)}
         title={"Ticket Details"}
       >
-        <TicketDetails ticket={selectedMeeting} />
+        {!isLoading && selectedMeeting ? (
+          <div className="w-full grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title={"Ticket Title"}
+              detail={selectedMeeting?.ticket || ""}
+            />
+            <DetalisFormatted
+              title={"Description"}
+              detail={selectedMeeting?.description || ""}
+            />
+            {selectedMeeting?.company && (
+              <DetalisFormatted title="Company" detail={selectedMeeting.company} />
+            )}
+            <DetalisFormatted
+              title={"From Department"}
+              detail={selectedMeeting?.fromDepartment || ""}
+            />
+            <DetalisFormatted
+              title={"Raised By"}
+              detail={`${selectedMeeting?.raisedBy}`}
+            />
+            <DetalisFormatted
+              title={"Raised At"}
+              detail={`${formatDateTime(selectedMeeting?.createdAt) || ""}`}
+            />
+            <DetalisFormatted
+              title={"Raised To Department"}
+              detail={selectedMeeting?.raisedToDepartment || ""}
+            />
+            <DetalisFormatted
+              title={"Priority"}
+              detail={selectedMeeting?.priority || ""}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={selectedMeeting?.status || ""}
+            />
+            {/* <DetalisFormatted
+              title={"Assignees"}
+              detail={
+                Array.isArray(selectedMeeting?.assignees) &&
+                selectedMeeting.assignees.length > 0
+                  ? selectedMeeting.assignees
+                      .map((assignee) => assignee)
+                      .join(", ")
+                  : "None"
+              }
+            /> */}
+            <DetalisFormatted
+              title={"Accepted By"}
+              detail={selectedMeeting.acceptedBy || ""}
+            />
+            <DetalisFormatted
+              title={"Accepted At"}
+              detail={formatDateTime(selectedMeeting?.acceptedAt) || ""}
+            />
+            {selectedMeeting?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedMeeting.assignedToDetails.map(
+                    (assignment, index) => (
+                      <div key={`${assignment.assigneeName}-${index}`}>
+                        <div className="font-medium">
+                          {assignment.assigneeName}
+                        </div>
+                        <div className="text-borderGray">
+                          {assignment.assignedAtFormatted || ""}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assignees"
+                detail={selectedMeeting?.assignedTo || ""}
+              />
+            )}
+            <DetalisFormatted
+              title={"Escalated To"}
+              detail={selectedMeeting?.escalatedTo || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated Status"}
+              detail={selectedMeeting?.escalatedStatus || ""}
+            />
+            <DetalisFormatted
+              title={"Escalated At"}
+              detail={selectedMeeting?.escalatedAt || ""}
+            />
+            <DetalisFormatted
+              title={"Reason for Escalated"}
+              detail={selectedMeeting?.reasonForEscalated || ""}
+            />
+            {selectedMeeting?.resolvedDate && (
+              <DetalisFormatted
+                title="Resolved Date"
+                detail={formatDateTime(selectedMeeting.resolvedDate)}
+              />
+            )}
+            <DetalisFormatted
+              title="Closed By"
+              detail={selectedMeeting?.closedBy || ""}
+            />
+            <DetalisFormatted
+              title="Closed At"
+              detail={formatDateTime(selectedMeeting?.closedAtRaw) || ""}
+            />
+            <DetalisFormatted
+              title="Closing Remark"
+              detail={selectedMeeting?.closingRemark || ""}
+            />
+              {["it", "tech"].includes(
+                selectedMeeting?.raisedToDepartment?.trim().toLowerCase(),
+              ) &&
+                Array.isArray(selectedMeeting?.closingCategories) &&
+                selectedMeeting.closingCategories.length > 0 && (
+              <DetalisFormatted
+                title="Categories"
+                detail={selectedMeeting.closingCategories.join(", ")}
+              />
+            )}
+            {selectedMeeting?.rejectedBy && (
+              <DetalisFormatted
+                title="Rejected By"
+                detail={selectedMeeting.rejectedBy}
+              />
+            )}
+            {selectedMeeting?.rejectedAt && (
+              <DetalisFormatted
+                title="Rejected At"
+                detail={selectedMeeting.rejectedAt}
+              />
+            )}
+            {selectedMeeting.reason ? (
+              <DetalisFormatted
+                title={"Reason"}
+                detail={selectedMeeting?.reason || ""}
+              />
+            ) : (
+              ""
+            )}
+            <TicketAttachments
+              attachments={selectedMeeting?.attachments}
+              legacyImage={selectedMeeting?.image}
+            />
+          </div>
+        ) : (
+          <CircularProgress />
+        )}
       </MuiModal>
     </div>
   );

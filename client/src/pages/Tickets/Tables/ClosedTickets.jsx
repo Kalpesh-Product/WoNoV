@@ -5,7 +5,6 @@ import { Chip } from "@mui/material";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import humanTime from "../../../utils/humanTime";
@@ -201,7 +200,122 @@ const ClosedTickets = ({
         onClose={() => setOpenModal(false)}
         title={"View Ticket Details"}
       >
-        <TicketDetails ticket={viewTicketDetails} />
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
+          <DetalisFormatted
+            title="Ticket Title"
+            detail={viewTicketDetails?.ticketTitle}
+          />
+          <DetalisFormatted
+            title="Description"
+            detail={viewTicketDetails?.description}
+          />
+          <DetalisFormatted
+            title="From Department"
+            detail={viewTicketDetails?.fromDepartment}
+          />
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy}
+          />
+          <DetalisFormatted
+            title="Raised At"
+            detail={formatDateTime(viewTicketDetails.createdAt)}
+          />
+
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails.raisedToDepartment || "N/A"}
+          />
+          <DetalisFormatted
+            title="Priority"
+            detail={viewTicketDetails?.priority}
+          />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Accepted By"
+            detail={viewTicketDetails?.acceptedBy}
+          />
+          <DetalisFormatted
+            title="Accepted At"
+            detail={formatDateTime(viewTicketDetails.sourceTicket?.acceptedAt)}
+          />
+
+          {viewTicketDetails?.assignedToDetails?.length ? (
+            <div className="text-content flex items-start w-full">
+              <span className="w-[50%]">Assignees</span>
+              <span>:</span>
+              <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                {viewTicketDetails.assignedToDetails.map(
+                  (assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ),
+                )}
+              </div>
+            </div>
+          ) : (
+            <DetalisFormatted
+              title="Assignees"
+              detail={viewTicketDetails?.assignees}
+            />
+          )}
+          <DetalisFormatted
+            title="Escalated To"
+            detail={viewTicketDetails?.escalatedTo || ""}
+          />
+          <DetalisFormatted
+            title="Escalated Status"
+            detail={viewTicketDetails?.escalatedStatus || ""}
+          />
+          <DetalisFormatted
+            title="Escalated At"
+            detail={viewTicketDetails?.escalatedAt || ""}
+          />
+          {viewTicketDetails?.sourceTicket?.escalatedTo?.at(-1)?.description && (
+            <DetalisFormatted
+              title="Reason for Escalated"
+              detail={viewTicketDetails.sourceTicket.escalatedTo.at(-1).description}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.resolvedDate && (
+            <DetalisFormatted
+              title="Resolved Date"
+              detail={formatDateTime(viewTicketDetails.sourceTicket.resolvedDate)}
+            />
+          )}
+          <DetalisFormatted
+            title="Closed By"
+            detail={viewTicketDetails?.closedBy}
+          />
+          <DetalisFormatted
+            title="Closed At"
+            detail={formatDateTime(viewTicketDetails.closedAtRaw)}
+          />
+          <DetalisFormatted
+            title="Closing Remark"
+            detail={viewTicketDetails?.closingRemark}
+          />
+           {(isItDepartment || isTechDepartment) &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={Array.isArray(viewTicketDetails?.closingCategories)
+                ? viewTicketDetails.closingCategories.join(", ")
+                : ""}
+            />
+          )}
+          <TicketAttachments
+            attachments={viewTicketDetails?.attachments}
+            legacyImage={viewTicketDetails?.image}
+          />
+        </div>
       </MuiModal>
     </div>
   );

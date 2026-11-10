@@ -17,7 +17,6 @@ import { Controller, useForm } from "react-hook-form";
 import { LuImageUp } from "react-icons/lu";
 import { MdDeleteForever, MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../components/MuiModal";
-import TicketDetails from "../../components/TicketDetails";
 import ConfirmationModal from "../../components/ConfirmationModal";
 import { queryClient } from "../../main";
 import DetalisFormatted from "../../components/DetalisFormatted";
@@ -158,6 +157,7 @@ const RaiseTicket = () => {
       escalatedTo: latest?.raisedToDepartment?.name || "",
       escalatedStatus: latest?.status || "",
       escalatedAt: latest?.createdAt ? formatDateTime(latest.createdAt) : "",
+      reasonForEscalated: latest?.description || "",
     };
   };
 
@@ -709,7 +709,115 @@ const RaiseTicket = () => {
         onClose={() => setViewDetails(false)}
         title={"Ticket Details"}
       >
-        <TicketDetails ticket={viewTicketDetails} />
+        <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4 overflow-y-auto max-h-[70vh]">
+          <DetalisFormatted
+            title="Ticket Title"
+            detail={viewTicketDetails?.ticketTitle}
+          />
+          <DetalisFormatted
+            title="Description"
+            detail={viewTicketDetails?.description}
+          />
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy}
+          />
+          <DetalisFormatted
+            title="Raised To Department"
+            detail={viewTicketDetails?.raisedTo}
+          />
+          <DetalisFormatted
+            title="Raised At"
+            detail={formatDateTime(viewTicketDetails?.raisedAt)}
+          />
+
+          <DetalisFormatted
+            title="Priority"
+            detail={viewTicketDetails?.priority}
+          />
+          <DetalisFormatted
+            title="Accepted By"
+            detail={viewTicketDetails?.acceptedBy}
+          />
+
+          <DetalisFormatted
+            title="Accepted At"
+            detail={formatDateTime(viewTicketDetails?.acceptedAt)}
+          />
+          <DetalisFormatted
+            title="Assigned To"
+            detail={viewTicketDetails?.assignedTo || ""}
+          />
+
+          {(viewTicketDetails?.escalatedTo || viewTicketDetails?.escalatedAt) && <>
+          <DetalisFormatted
+            title="Escalated To"
+            detail={viewTicketDetails?.escalatedTo || ""}
+          />
+          <DetalisFormatted
+            title="Escalated Status"
+            detail={viewTicketDetails?.escalatedStatus || ""}
+          />
+          <DetalisFormatted
+            title="Escalated At"
+            detail={viewTicketDetails?.escalatedAt || ""}
+          />
+          {viewTicketDetails?.reasonForEscalated && (
+            <DetalisFormatted
+              title="Reason for Escalated"
+              detail={viewTicketDetails.reasonForEscalated}
+            />
+          )}
+          </>}
+          <DetalisFormatted
+            title="Closed By"
+            detail={viewTicketDetails?.closedBy}
+          />
+          <DetalisFormatted
+            title="Closed At"
+            detail={formatDateTime(viewTicketDetails?.closedAt)}
+          />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Closing Remark"
+            detail={viewTicketDetails?.closingRemark}
+          />
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedBy && (
+            <DetalisFormatted
+              title="Rejected By"
+              detail={[
+                viewTicketDetails.sourceTicket.reject.rejectedBy.firstName,
+                viewTicketDetails.sourceTicket.reject.rejectedBy.lastName,
+              ].filter(Boolean).join(" ")}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedAt && (
+            <DetalisFormatted
+              title="Rejected At"
+              detail={formatDateTime(viewTicketDetails.sourceTicket.reject.rejectedAt)}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.reason && (
+            <DetalisFormatted
+              title="Reason"
+              detail={viewTicketDetails.sourceTicket.reject.reason}
+            />
+          )}
+           {viewTicketDetails?.isItDepartment &&
+            Array.isArray(viewTicketDetails?.closingCategories) &&
+            viewTicketDetails.closingCategories.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={Array.isArray(viewTicketDetails?.closingCategories)
+                ? viewTicketDetails.closingCategories.join(", ")
+                : ""}
+            />
+          )}
+          <TicketAttachments
+            attachments={viewTicketDetails.attachments}
+            legacyImage={viewTicketDetails.image}
+          />
+        </div>
       </MuiModal>
       <ConfirmationModal
         open={Boolean(ticketToDelete)}

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import {
   Autocomplete,
   Checkbox,
@@ -737,7 +736,85 @@ const AssignedTickets = ({
         onClose={() => setOpenView(false)}
         title="View Assigned Ticket"
       >
-        <TicketDetails ticket={selectedTicket} />
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Ticket Title"
+              detail={selectedTicket.ticketTitle || "N/A"}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description || "N/A"}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={
+                selectedTicket.selectedDepartment
+                  .map((item) => item)
+                  .join(", ") || "N/A"
+              }
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={formatDateTime(selectedTicket.raisedAt)}
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+            {selectedTicket?.sourceTicket?.acceptedBy && (
+              <DetalisFormatted
+                title="Accepted By"
+                detail={[
+                  selectedTicket.sourceTicket.acceptedBy.firstName,
+                  selectedTicket.sourceTicket.acceptedBy.lastName,
+                ].filter(Boolean).join(" ")}
+              />
+            )}
+            {selectedTicket?.sourceTicket?.acceptedAt && (
+              <DetalisFormatted
+                title="Accepted At"
+                detail={formatDateTime(selectedTicket.sourceTicket.acceptedAt)}
+              />
+            )}
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assignees</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assignees"
+                detail={selectedTicket?.assignees || "N/A"}
+              />
+            )}
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority || "N/A"}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
+          </div>
+        )}
       </MuiModal>
 
       {/* <MuiModal

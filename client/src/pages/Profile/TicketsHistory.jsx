@@ -6,10 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
-import TicketDetails from "../../components/TicketDetails";
+import TicketAttachments from "../../components/TicketAttachments";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
+import formatDateTime from "../../utils/formatDateTime";
 
 const TicketsHistory = ({ pageTitle }) => {
   const axios = useAxiosPrivate();
@@ -152,7 +153,73 @@ const TicketsHistory = ({ pageTitle }) => {
         onClose={() => setOpenModal(false)}
         title={"Ticket Details"}
       >
-        <TicketDetails ticket={viewTicketDetails} />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+          <DetalisFormatted
+            title="Raised By"
+            detail={viewTicketDetails?.raisedBy || "Unknown"}
+          />
+          <DetalisFormatted
+            title="Raised To"
+            detail={viewTicketDetails?.raisedTo || "N/A"}
+          />
+          <DetalisFormatted
+            title="Raised At"
+            detail={formatDateTime(viewTicketDetails?.raisedAt)}
+          />
+          <DetalisFormatted
+            title="Ticket Title"
+            detail={viewTicketDetails?.ticketTitle || "N/A"}
+          />
+          <DetalisFormatted
+            title="Description"
+            detail={viewTicketDetails?.description || "N/A"}
+          />
+          <DetalisFormatted title="Status" detail={viewTicketDetails?.status} />
+          <DetalisFormatted
+            title="Priority"
+            detail={viewTicketDetails?.priority}
+          />
+             <DetalisFormatted
+            title="Accepted by"
+            detail={viewTicketDetails?.acceptedBy || "Unknown"}
+          />
+          <DetalisFormatted
+            title="Accepted at"
+            detail={viewTicketDetails.acceptedAt ?humanTime(viewTicketDetails?.acceptedAt) : "N/A"}
+          />
+          <DetalisFormatted
+            title="Closed by"
+            detail={viewTicketDetails?.closedBy || "Unknown"}
+          />
+          {viewTicketDetails?.sourceTicket?.closedAt && (
+            <DetalisFormatted
+              title="Closed at"
+              detail={humanTime(viewTicketDetails.sourceTicket.closedAt)}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.closingRemark && (
+            <DetalisFormatted
+              title="Closing Remark"
+              detail={viewTicketDetails.sourceTicket.closingRemark}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.closingCategories?.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={viewTicketDetails.sourceTicket.closingCategories.join(", ")}
+            />
+          )}
+          <TicketAttachments attachments={viewTicketDetails?.sourceTicket?.attachments} />
+          {viewTicketDetails.image && (
+            <div className="lg:col-span-1">
+              <img
+                src={viewTicketDetails.image}
+                alt="Ticket Attachment"
+                className="max-w-full max-h-96 rounded border"
+              />
+            </div>
+          )}
+        </div>
       </MuiModal>
     </>
   );

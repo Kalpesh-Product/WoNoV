@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { toast } from "sonner";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -165,7 +164,6 @@ const RecievedTickets = ({ title, departmentId }) => {
       return [];
     }
     return tickets.map((ticket, index) => ({
-      sourceTicket: ticket,
       srNo: index + 1,
       id: ticket._id,
       raisedBy: ticket.raisedBy?.firstName || "Unknown",
@@ -324,7 +322,44 @@ const RecievedTickets = ({ title, departmentId }) => {
         onClose={handleCloseTicketView}
         title={"View Ticket"}
       >
-        <TicketDetails ticket={selectedTicket} />
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Ticket Title"
+              detail={selectedTicket.ticketTitle}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={selectedTicket.fromDepartment || "N/A"}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={`${selectedTicket.raisedBy}`}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={formatDateTime(selectedTicket.raisedDate)}
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket.priority}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
+          </div>
+        )}
       </MuiModal>
 
       <MuiModal open={open} onClose={handleClose} title="Assign Tickets">

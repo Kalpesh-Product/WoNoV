@@ -13,7 +13,6 @@ import { toast } from "sonner";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "../../../main";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import TicketAttachments from "../../../components/TicketAttachments";
 import { Controller, useForm } from "react-hook-form";
 import PrimaryButton from "../../../components/PrimaryButton";
@@ -397,7 +396,6 @@ const AcceptedTickets = ({
             data={[
               ...acceptedTickets.map((ticket, index) => ({
                 ...ticket,
-                sourceTicket: ticket,
                 srNo: index + 1,
                 id: ticket._id,
                 raisedUser: `${ticket.raisedBy?.firstName || ""} ${ticket.raisedBy?.lastName || ""
@@ -543,7 +541,84 @@ const AcceptedTickets = ({
         onClose={() => setOpenView(false)}
         title="View Accepted Ticket"
       >
-        <TicketDetails ticket={selectedTicket} />
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Ticket Title"
+              detail={selectedTicket.ticketTitle}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket.description || "N/A"}
+            />
+            <DetalisFormatted
+              title="From Department"
+              // detail={
+              //   Array.isArray(selectedTicket.selectedDepartment)
+              //     ? selectedTicket.selectedDepartment.join(", ")
+              //     : selectedTicket.selectedDepartment
+              // }
+              detail={selectedTicket?.raisedByDepartment}
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedUser}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              // detail={humanDate(selectedTicket.createdAt)}
+              detail={formatDateTime(selectedTicket.createdAt)}
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment || "N/A"}
+            />
+
+            <DetalisFormatted
+              title="Accepted By"
+              detail={selectedTicket?.acceptedBy}
+            />
+            <DetalisFormatted
+              title="Accepted At"
+              // detail={selectedTicket?.acceptedAt}
+              detail={formatDateTime(selectedTicket?.acceptedAt)}
+            />
+
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assigned At</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assigned At"
+                detail={selectedTicket?.assignees || ""}
+              />
+            )}
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
+            {/* <DetalisFormatted title="Assigned to" detail={selectedTicket?.assignees} /> */}
+          </div>
+        )}
       </MuiModal>
 
       {/* <MuiModal

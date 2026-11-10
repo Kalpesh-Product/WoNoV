@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import {
   Autocomplete,
   Checkbox,
@@ -150,7 +149,6 @@ const SupportTickets = ({
           const supportRequestedBy = `${ticket.user.firstName} ${ticket.user.lastName}`;
           const supportTicket = {
             ...ticket,
-            sourceTicket: ticket,
             id: ticket.ticket?._id,
             srno: index + 1,
             raisedBy:
@@ -693,7 +691,115 @@ const SupportTickets = ({
         onClose={() => setOpenView(false)}
         title="View Support Ticket"
       >
-        <TicketDetails ticket={selectedTicket} />
+        {selectedTicket && (
+          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+            <DetalisFormatted
+              title="Ticket Title"
+              detail={selectedTicket?.ticket?.ticket || ""}
+            />
+            <DetalisFormatted
+              title="Description"
+              detail={selectedTicket?.ticket?.description || ""}
+            />
+            <DetalisFormatted
+              title="From Department"
+              detail={
+                selectedTicket.selectedDepartment
+                  .map((item) => item)
+                  .join(", ") || ""
+              }
+            />
+            <DetalisFormatted
+              title="Raised By"
+              detail={selectedTicket.raisedBy || "Unknown"}
+            />
+            <DetalisFormatted
+              title="Raised At"
+              detail={selectedTicket.raisedDate}
+            />
+            <DetalisFormatted
+              title="Raised To Department"
+              detail={selectedTicket.raisedToDepartment}
+            />
+            <DetalisFormatted
+              title="Priority"
+              detail={selectedTicket?.priority || ""}
+            />
+            <DetalisFormatted title="Status" detail={selectedTicket.status} />
+            <TicketAttachments
+              attachments={selectedTicket?.attachments}
+              legacyImage={selectedTicket?.image}
+            />
+            <DetalisFormatted
+              title="Accepted By"
+              detail={selectedTicket?.acceptedBy || ""}
+            />
+            <DetalisFormatted
+              title="Accepted At"
+              detail={selectedTicket?.acceptedAt || ""}
+            />
+            {/* <DetalisFormatted
+                  title="Assigned To"
+                  detail={selectedTicket?.assignedTo || ""}
+                /> */}
+            {selectedTicket?.assignedToDetails?.length ? (
+              <div className="text-content flex items-start w-full">
+                <span className="w-[50%]">Assigned To</span>
+                <span>:</span>
+                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                  {selectedTicket.assignedToDetails.map((assignment, index) => (
+                    <div key={`${assignment.assigneeName}-${index}`}>
+                      <div className="font-medium">
+                        {assignment.assigneeName}
+                      </div>
+                      <div className="text-borderGray">
+                        {assignment.assignedAtFormatted || "N/A"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <DetalisFormatted
+                title="Assigned To"
+                detail={selectedTicket?.assignedAt || ""}
+              />
+            )}
+            <DetalisFormatted
+              title="Reason For Support"
+              detail={selectedTicket?.reason || ""}
+            />
+            <DetalisFormatted
+              title="Support requested By"
+              detail={selectedTicket?.supportRequestedBy || ""}
+            />
+            <DetalisFormatted
+              title="Support Requested At"
+              detail={selectedTicket?.supportRequestedAt || ""}
+            />
+
+            <DetalisFormatted
+              title="Closed By"
+              detail={selectedTicket?.closedBy || ""}
+            />
+            <DetalisFormatted
+              title="Closed At"
+              detail={selectedTicket?.closedAt || ""}
+            />
+            {selectedTicket?.ticket?.closingRemark && (
+              <DetalisFormatted
+                title="Closing Remark"
+                detail={selectedTicket.ticket.closingRemark}
+              />
+            )}
+            {selectedTicket?.ticket?.closingCategories?.length > 0 && (
+              <DetalisFormatted
+                title="Categories"
+                detail={selectedTicket.ticket.closingCategories.join(", ")}
+              />
+            )}
+          </div>
+        )}
       </MuiModal>
 
       <MuiModal

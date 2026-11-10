@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import MuiModal from "../../../components/MuiModal";
-import TicketDetails from "../../../components/TicketDetails";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import TicketAttachments from "../../../components/TicketAttachments";
 import { useState } from "react";
@@ -142,7 +141,6 @@ const { mutate, isPending: isClosingTicket } = useMutation({
           : "N/A";
 
         const escalatedTicket = {
-          sourceTicket: ticket,
           srno: index + 1,
           id: ticket._id,
           raisedBy: raisedBy || "Unknown",
@@ -344,7 +342,97 @@ const { mutate, isPending: isClosingTicket } = useMutation({
           onClose={() => setOpenView(false)}
           title="View Escalated Ticket"
         >
-        <TicketDetails ticket={selectedTicket} />
+          {selectedTicket && (
+            <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
+              <DetalisFormatted
+                title="Ticket Title"
+                detail={selectedTicket.ticketTitle || "N/A"}
+              />
+              <DetalisFormatted
+                title="Description"
+                detail={selectedTicket.description || "N/A"}
+              />
+              <DetalisFormatted
+                title="From Department"
+                detail={
+                  selectedTicket.selectedDepartment
+                    .map((item) => item)
+                    .join(", ") || "N/A"
+                }
+              />
+              <DetalisFormatted
+                title="Raised By"
+                detail={selectedTicket.raisedBy || "Unknown"}
+              />
+              <DetalisFormatted
+                title="Raised At"
+                detail={formatDateTime(selectedTicket.raisedAt)}
+              />
+              <DetalisFormatted
+                title="Raised To Department"
+                detail={selectedTicket.raisedToDepartment || "N/A"}
+              />
+              {/* <DetalisFormatted title="Status" detail={selectedTicket.status} /> */}
+              <DetalisFormatted
+                title="Priority"
+                detail={selectedTicket?.priority || "N/A"}
+              />
+              <DetalisFormatted
+                title="Accepted By"
+                detail={selectedTicket?.acceptedBy || ""}
+              />
+              <DetalisFormatted
+                title="Accepted At"
+                detail={formatDateTime(selectedTicket?.acceptedAt)}
+              />
+              {selectedTicket?.assignedToDetails?.length ? (
+                <div className="text-content flex items-start w-full">
+                  <span className="w-[50%]">Assignees</span>
+                  <span>:</span>
+                  <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
+                    {selectedTicket.assignedToDetails.map(
+                      (assignment, index) => (
+                        <div key={`${assignment.assigneeName}-${index}`}>
+                          <div className="font-medium">
+                            {assignment.assigneeName}
+                          </div>
+                          <div className="text-borderGray">
+                            {assignment.assignedAtFormatted || "N/A"}
+                          </div>
+                        </div>
+                      ),
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <DetalisFormatted
+                  title="Assignees"
+                  detail={selectedTicket?.assignees || ""}
+                />
+              )}
+              <DetalisFormatted
+                title="Escalated To"
+                detail={selectedTicket.escalatedTo || "N/A"}
+              />
+              <DetalisFormatted title="Status" detail={selectedTicket.status} />
+              <DetalisFormatted
+                title="Escalation Status"
+                detail={selectedTicket.escalatedStatus}
+              />
+              <DetalisFormatted
+                title="Escalated At"
+                detail={formatDateTime(selectedTicket?.escalatedAt)}
+              />
+              <DetalisFormatted
+                title="Reason for Escalated"
+                detail={selectedTicket?.reasonForEscalated || ""}
+              />
+              <TicketAttachments
+                attachments={selectedTicket?.attachments}
+                legacyImage={selectedTicket?.image}
+              />
+            </div>
+          )}
         </MuiModal>
          <MuiModal
           open={closeModal}
