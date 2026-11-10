@@ -11,7 +11,7 @@ import { Controller, useForm } from "react-hook-form";
 import { inrFormat } from "../../../utils/currencyFormat";
 import humanDate from "../../../utils/humanDateForamt";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
-import DetalisFormatted from "../../../components/DetalisFormatted";
+import AssetDetailsView, { assetExportColumns, assetExportValues } from "../assetDetails";
 import { toast } from "sonner";
 import { queryClient } from "../../../main";
 import StatusChip from "../../../components/StatusChip";
@@ -282,6 +282,7 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
       })
       .map((item, index) => ({
         ...item,
+        ...assetExportValues(item, { assignment: true }),
         srNo: index + 1,
         department: item?.department?.name || "N/A",
         subCategory: item?.subCategory?.subCategoryName || "N/A",
@@ -327,7 +328,7 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
            tableTitle={tableTitle}
           //tableTitle={"Assign Assets"}
           data={tableData}
-          columns={assetsColumns}
+          columns={assetExportColumns(assetsColumns, { assignment: true })}
           exportData
         />
       </PageFrame>
@@ -337,123 +338,7 @@ const AssignAssets = ({ availableOnly = false, tableTitle = "Overall Asset" }) =
         title={modalMode === "assign" ? "Assign Asset" : "View Asset"}
       >
         {modalMode === "view" && (
-          <div className="grid grid-cols-1 gap-4">
-            <DetalisFormatted
-              title={"Asset ID"}
-              detail={selectedAsset?.assetId || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Asset Name"}
-              detail={selectedAsset?.name || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Asset Type"}
-              detail={selectedAsset?.assetType || "N/A"}
-            />
-             <DetalisFormatted
-              title={"Secondary ID"}
-              detail={selectedAsset?.secondaryId || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Department Asset ID"}
-              detail={selectedAsset?.departmentAssetId || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Brand"}
-              detail={selectedAsset?.brand || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Department"}
-              detail={selectedAsset?.department || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Under Maintenance"}
-              detail={selectedAsset?.isUnderMaintenance ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title={"Building"}
-              detail={
-                selectedAsset?.location?.building?.buildingName ||
-                selectedAsset?.building ||
-                "N/A"
-              }
-            />
-            <DetalisFormatted
-              title={"UnitNo"}
-              detail={selectedAsset?.location?.unitNo || selectedAsset?.unit || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Ownership Type"}
-              detail={selectedAsset?.ownershipType || "N/A"}
-            />
-             <DetalisFormatted
-              title={"Rented Months"}
-              detail={selectedAsset?.rentedMonths ?? "N/A"}
-            />
-            <DetalisFormatted
-              title={"Rented Expiration Date"}
-              detail={
-                selectedAsset?.rentedExpirationDate
-                  ? humanDate(selectedAsset?.rentedExpirationDate)
-                  : "N/A"
-              }
-            />
-            <DetalisFormatted
-              title={"Price"}
-             // detail={inrFormat(selectedAsset?.price)}
-              detail={`INR ${inrFormat(selectedAsset?.price)}`}
-
-            />
-            <DetalisFormatted
-              title={"Purchase Date"}
-              detail={humanDate(selectedAsset?.purchaseDate)}
-            />
-            <DetalisFormatted
-              title={"Warranty (Months)"}
-              detail={selectedAsset?.warranty ?? "N/A"}
-            />
-            <DetalisFormatted
-              title={"Warranty Expiry Date"}
-              detail={
-                selectedAsset?.warrantyExpiryDate
-                  ? humanDate(selectedAsset?.warrantyExpiryDate)
-                  : "N/A"
-              }
-            />
-            <DetalisFormatted
-              title={"Serial Number"}
-              detail={selectedAsset?.serialNumber || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Description"}
-              detail={selectedAsset?.description || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Status"}
-              detail={selectedAsset?.status || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Sub Category"}
-              detail={selectedAsset?.subCategory || "N/A"}
-            />
-            <DetalisFormatted
-              title={"Tangable"}
-              detail={selectedAsset?.tangable ? "Yes" : "No"}
-            />
-             <DetalisFormatted
-              title={"Damaged"}
-              detail={selectedAsset?.isDamaged ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title={"Extra"}
-              detail={selectedAsset?.isExtra ? "Yes" : "No"}
-            />
-            <DetalisFormatted
-              title={"Assigned"}
-              detail={selectedAsset?.isAssigned ? "Yes" : "No"}
-            />
-            {/* <DetalisFormatted title={"Asset ID"} detail={selectedAsset?.status || "N/A"}/> */}
-          </div>
+          <AssetDetailsView asset={selectedAsset} assignment />
         )}
 
         {modalMode === "assign" && (

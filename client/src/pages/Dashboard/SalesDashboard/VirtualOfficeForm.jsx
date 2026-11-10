@@ -78,6 +78,8 @@ const VirtualOfficeForm = () => {
       cabinDesks: "",
       securityDeposit: "",
       billingFrequency: "Yearly",
+      deskRate: "",
+      monthlyFee: "",
       ratePerCabinDesk: "10000",
       openDesks: "",
       ratePerOpenDesk: "8000",
@@ -325,9 +327,14 @@ const VirtualOfficeForm = () => {
       rentDate: data.rentDate
         ? dayjs(data.rentDate).format("YYYY-MM-DD")
         : null,
+      nextIncrementDate: data.nextIncrement
+        ? dayjs(data.nextIncrement).format("YYYY-MM-DD")
+        : null,
       cabinDesks: Number(data.cabinDesks) || 0,
       securityDeposit: Number(data.securityDeposit) || 0,
       billingFrequency: data.billingFrequency,
+      deskRate: Number(data.deskRate) || 0,
+      monthlyFee: Number(data.monthlyFee) || 0,
       cabinDeskRate: Number(data.ratePerCabinDesk) || 0,
       openDesks: Number(data.openDesks) || 0,
       openDeskRate: Number(data.ratePerOpenDesk) || 0,
@@ -775,6 +782,36 @@ const VirtualOfficeForm = () => {
                           <MenuItem value="Monthly">Monthly</MenuItem>
                           <MenuItem value="Yearly">Yearly</MenuItem>
                         </TextField>
+                      )}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                    <Controller
+                      name="deskRate"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Desk Rate"
+                          inputProps={{ min: 0, step: "any" }}
+                          fullWidth
+                        />
+                      )}
+                    />
+                    <Controller
+                      name="monthlyFee"
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          size="small"
+                          type="number"
+                          label="Monthly Fee"
+                          inputProps={{ min: 0, step: "any" }}
+                          fullWidth
+                        />
                       )}
                     />
                   </div>

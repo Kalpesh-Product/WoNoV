@@ -46,6 +46,13 @@ const assignAssetSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    revokedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+    },
+    revokedAt: {
+      type: Date,
+    },
   },
   { timestamps: true }
 );

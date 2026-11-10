@@ -102,6 +102,13 @@ const KraKpaPendingApprovals = () => {
   const activeApprovalMember = isOverview
     ? location.state?.pendingApprovalMember || null
     : null;
+  const activeApprovalDepartment = isOverview
+    ? location.state?.pendingApprovalDepartment ||
+      (activeApprovalMember ? {
+        departmentId: activeApprovalMember.departmentId,
+        departmentName: activeApprovalMember.departmentName,
+      } : null)
+    : null;
   const member = isOverview
     ? activeApprovalMember
     : location.state?.selectedMember || selectedMember;
@@ -111,7 +118,7 @@ const KraKpaPendingApprovals = () => {
       selectedDepartment ||
       auth?.user?.departments?.[0]?._id;
   const departmentName = isOverview
-    ? activeApprovalMember?.departmentName
+    ? activeApprovalMember?.departmentName || activeApprovalDepartment?.departmentName
     : location.state?.selectedDepartmentName ||
       selectedDepartmentName ||
       auth?.user?.departments?.find(
@@ -133,13 +140,29 @@ const KraKpaPendingApprovals = () => {
   const [bulkActionConfirmation, setBulkActionConfirmation] = useState(null);
 
   const {
+    data: approvalDepartments = [],
+    isLoading: isLoadingDepartments,
+    isError: isDepartmentsError,
+    error: departmentsError,
+  } = useQuery({
+    queryKey: ["kraKpaPendingApprovalDepartments"],
+    enabled: isOverview,
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/kra-kpa/individual-monthly-kpa/pending-approvals/departments",
+      );
+      return response.data || [];
+    },
+  });
+
+  const {
     data: teamMembers = [],
     isLoading: isLoadingTeamMembers,
     isError: isTeamMembersError,
     error: teamMembersError,
   } = useQuery({
     queryKey: ["kraKpaPendingApprovalMembers"],
-    enabled: isOverview,
+    enabled: isOverview && Boolean(activeApprovalDepartment),
     queryFn: async () => {
       const response = await axios.get(
         "/api/kra-kpa/individual-monthly-kpa/pending-approvals/members",
@@ -169,6 +192,9 @@ const KraKpaPendingApprovals = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaPendingApprovals"] });
     queryClient.invalidateQueries({
       queryKey: ["kraKpaPendingApprovalMembers"],
+    });
+    queryClient.invalidateQueries({
+      queryKey: ["kraKpaPendingApprovalDepartments"],
     });
     queryClient.invalidateQueries({ queryKey: ["kraKpaIndividualMonthlyKpa"] });
     queryClient.invalidateQueries({ queryKey: ["kraKpaDueTaskParentKpas"] });
@@ -369,7 +395,6 @@ const KraKpaPendingApprovals = () => {
           className="cursor-pointer text-left text-primary hover:underline"
           onClick={() => {
             navigate(location.pathname, {
-              replace: true,
               state: { ...location.state, pendingApprovalMember: data },
             });
             setSelectedRows([]);
@@ -387,15 +412,57 @@ const KraKpaPendingApprovals = () => {
       flex: 1,
     },
     {
-      headerName: "Pending KPAs",
+      headerName: "Approved KPAs",
+      field: "approvedCount",
+      width: 160,
+    },
+    {
+      headerName: "Pending Approval KPAs",
       field: "pendingCount",
-      width: 150,
+      width: 210,
       sort: "desc",
     },
   ];
+  const departmentColumns = [
+    { headerName: "Sr No", field: "srNo", width: 85 },
+    {
+      headerName: "Department",
+      field: "departmentName",
+      minWidth: 220,
+      flex: 1,
+      cellRenderer: ({ data }) => (
+        <button
+          type="button"
+          className="cursor-pointer text-left text-primary hover:underline"
+          onClick={() => {
+            navigate(location.pathname, {
+              state: {
+                ...location.state,
+                pendingApprovalDepartment: {
+                  departmentId: data.departmentId,
+                  departmentName: data.departmentName,
+                },
+                pendingApprovalMember: null,
+              },
+            });
+          }}
+        >
+          {data.departmentName}
+        </button>
+      ),
+    },
+    { headerName: "Approved KPAs", field: "approvedCount", width: 180 },
+    { headerName: "Pending Approval KPAs", field: "pendingCount", width: 220, sort: "desc" },
+  ];
+  const displayedDepartments = useMemo(
+    () => approvalDepartments.map((item, index) => ({ ...item, srNo: index + 1 })),
+    [approvalDepartments],
+  );
   const displayedTeamMembers = useMemo(
-    () => teamMembers.map((item, index) => ({ ...item, srNo: index + 1 })),
-    [teamMembers],
+    () => teamMembers
+      .filter((item) => String(item.departmentId) === String(activeApprovalDepartment?.departmentId))
+      .map((item, index) => ({ ...item, srNo: index + 1 })),
+    [teamMembers, activeApprovalDepartment?.departmentId],
   );
   const bulkToolbarActions =
     selectedRows.length > 0 ? (
@@ -428,12 +495,31 @@ const KraKpaPendingApprovals = () => {
     <PageFrame>
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-title font-pmedium uppercase text-primary">
-          {isOverview && !activeApprovalMember
-            ? "Pending KPA Approvals - Team Members"
+          {isOverview && !activeApprovalDepartment
+            ? "Pending KPA Approvals - Departments"
+            : isOverview && !activeApprovalMember
+              ? `${departmentName} - Team Members`
             : `${departmentName ? `${departmentName} - ` : ""}${employeeName} - Pending Approvals`}
         </h1>
       </div>
-      {isOverview && !activeApprovalMember ? (
+      {isOverview && !activeApprovalDepartment ? (
+        isDepartmentsError ? (
+          <p role="alert" className="py-6 text-red-600">
+            {departmentsError?.response?.data?.message || "Unable to load departments"}
+          </p>
+        ) : (
+          <AgTable
+            loading={isLoadingDepartments}
+            showDateControls={false}
+            data={displayedDepartments}
+            columns={departmentColumns}
+            hideTitle
+            search
+            hideFilter
+            tableHeight={Math.max(300, Math.min(650, displayedDepartments.length * 58 + 90))}
+          />
+        )
+      ) : isOverview && !activeApprovalMember ? (
         isTeamMembersError ? (
           <p role="alert" className="py-6 text-red-600">
             {teamMembersError?.response?.data?.message ||

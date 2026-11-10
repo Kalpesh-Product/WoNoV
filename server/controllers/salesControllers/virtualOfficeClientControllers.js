@@ -311,6 +311,8 @@ const createVirtualOfficeClient = async (req, res) => {
     const openDesks = Number(data.openDesks || 0);
     const openDeskRate = Number(data.openDeskRate || 0);
     const brokerage = Number(data.brokerage || 0);
+    const deskRate = Number(data.deskRate || 0);
+    const monthlyFee = Number(data.monthlyFee || 0);
     const receivedAmount = Number(data.receivedAmount || 0);
     const totalReceivedAmount = Number(
       data.totalReceivedAmount !== undefined
@@ -327,6 +329,8 @@ const createVirtualOfficeClient = async (req, res) => {
       ["openDesks", openDesks],
       ["openDeskRate", openDeskRate],
       ["brokerage", brokerage],
+      ["deskRate", deskRate],
+      ["monthlyFee", monthlyFee],
       ["receivedAmount", receivedAmount],
       ["totalReceivedAmount", totalReceivedAmount],
       ["perDeskMeetingCredits", perDeskMeetingCredits],
@@ -418,6 +422,8 @@ const createVirtualOfficeClient = async (req, res) => {
       openDeskRate,
       openTotal,
       brokerage,
+      deskRate,
+      monthlyFee,
       internalLead: String(data.internalLead || "").trim(),
       receivedAmount,
       totalReceivedAmount,
@@ -871,9 +877,6 @@ const updateVirtualOfficeClient = async (req, res) => {
         }
         if (!finalHo.phone || !isValidPhone(finalHo.phone)) {
           return res.status(400).json({ message: "hoPoc.phone is invalid" });
-        }
-        if (!finalHo.address || !String(finalHo.address).trim()) {
-          return res.status(400).json({ message: "hoPoc.address is required" });
         }
       }
 

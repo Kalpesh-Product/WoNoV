@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
@@ -11,6 +11,7 @@ import {
   MdErrorOutline,
   MdHistory,
   MdOutlineAssessment,
+  MdOutlineRemoveRedEye,
   MdOutlineRateReview,
   MdPendingActions,
   MdReplay,
@@ -18,6 +19,8 @@ import {
 } from "react-icons/md";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import WidgetSection from "../../components/WidgetSection";
+import DetalisFormatted from "../../components/DetalisFormatted";
+import MuiModal from "../../components/MuiModal";
 import {
   getDailyScoreRows,
   getDepartmentMonthlyScoreRows,
@@ -49,6 +52,13 @@ const statusClasses = {
   "On Track": "bg-green-100 text-green-700",
 };
 
+const formatKpaDate = (value, withTime = false) => value && dayjs(value).isValid()
+  ? dayjs(value).format(withTime ? "DD-MM-YYYY, hh:mm A" : "DD-MM-YYYY")
+  : "-";
+const formatUserName = (user) => user && typeof user === "object"
+  ? [user.firstName, user.middleName, user.lastName].filter(Boolean).join(" ") || "-"
+  : "-";
+
 const LoadingBlock = ({ height = "h-40" }) => (
   <div className={`${height} animate-pulse rounded-xl bg-slate-100`} aria-label="Loading employee dashboard insights" />
 );
@@ -60,6 +70,7 @@ const Section = ({ title, children, action, fillHeight = false, flushBody = fals
 );
 
 const KraKpaEmployeeInsights = ({
+  monthlyWidget,
   departmentId,
   employeeId,
   employeeName,
@@ -70,14 +81,16 @@ const KraKpaEmployeeInsights = ({
   teamMode = false,
   allDepartmentsAccess = false,
   departmentOptions = [],
+  showDeadlineDepartment = false,
   includeSelfInDepartment = false,
   canViewApprovals,
   canViewKpa,
   canViewRating,
-  canViewMemberWise,
+  canViewDepartments,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
+  const [viewKpa, setViewKpa] = useState(null);
   const today = dayjs().format("YYYY-MM-DD");
   const fiscalYearStart = dayjs(today).month() >= 3
     ? dayjs(today).month(3).startOf("month")
@@ -151,13 +164,13 @@ const KraKpaEmployeeInsights = ({
   const goTo = (path) => navigate(path, { state: navigationState });
   const kpaPath = selfDashboard || managerDashboard ? selfKpaPath : memberKpaPath;
   const ratingPath = selfDashboard || managerDashboard ? selfRatingPath : memberRatingPath;
-  const detailPath = leadershipDashboard ? basePath : ratingPath;
-  const detailEnabled = leadershipDashboard ? canViewMemberWise : canViewRating;
+  const detailPath = leadershipDashboard ? "/app/kra-kpa/departments" : ratingPath;
+  const detailEnabled = leadershipDashboard ? canViewDepartments : canViewRating;
   const pendingCards = [
     { label: "KPA Approvals", count: actions.approvals, icon: MdAssignmentTurnedIn, className: "bg-[#fff8eb] text-[#da9200]", path: leadershipDashboard ? "/app/kra-kpa/pending-approvals" : selfDashboard ? kpaPath : approvalsPath, enabled: leadershipDashboard ? canViewApprovals : selfDashboard ? canViewKpa : canViewApprovals },
     { label: "Reviews Pending", count: actions.reviews, icon: MdOutlineRateReview, className: "bg-[#edf5ff] text-[#367bd6]", path: detailPath, enabled: detailEnabled && (leadershipDashboard || !teamMode) },
     { label: "Ratings Pending", count: actions.ratings, icon: MdOutlineAssessment, className: "bg-[#f5efff] text-[#9860dd]", path: detailPath, enabled: detailEnabled && (leadershipDashboard || !teamMode) },
-    { label: "Changes Required", count: actions.changesRequired, icon: MdErrorOutline, className: "bg-[#fff0f0] text-[#e84e4e]", path: leadershipDashboard ? basePath : kpaPath, enabled: leadershipDashboard ? canViewMemberWise : !teamMode && canViewKpa },
+    { label: "Changes Required", count: actions.changesRequired, icon: MdErrorOutline, className: "bg-[#fff0f0] text-[#e84e4e]", path: leadershipDashboard ? detailPath : kpaPath, enabled: leadershipDashboard ? detailEnabled : !teamMode && canViewKpa },
   ];
 
   const chartOptions = {
@@ -178,13 +191,36 @@ const KraKpaEmployeeInsights = ({
     { name: "Daily Logs", data: trend.points.map((point) => point.dailyLogs) },
   ];
 
-  if (!enabled) return null;
+  if (!enabled) return monthlyWidget || null;
   if (isError) {
-    return <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Unable to load employee dashboard insights. Please refresh to try again.</div>;
+    return <>{monthlyWidget}<div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700">Unable to load employee dashboard insights. Please refresh to try again.</div></>;
   }
 
   return (
     <>
+      <div className="lg:col-span-2">
+        <Section title="Performance Trend">
+          {isLoading ? <LoadingBlock height="h-72" /> : (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: `KPA Completion - ${dayjs(today).format("MMM")}`, value: trend.completion, icon: MdTrendingUp, className: "bg-[#eafaf0] text-[#159654]" },
+                  { label: `KPA Rating - ${dayjs(today).format("MMM")}`, value: trend.rating, icon: MdOutlineAssessment, className: "bg-[#eef3ff] text-[#4c77e6]" },
+                  { label: `Daily Logs - ${dayjs(today).format("MMM")}`, value: trend.dailyLogs, icon: MdAssignmentTurnedIn, className: "bg-[#f5efff] text-[#9860dd]" },
+                ].map(({ label, value, icon: Icon, className }) => (
+                  <div key={label} className={`flex min-w-0 items-center gap-2 rounded-lg p-3 ${className}`}>
+                    <Icon size={20} className="shrink-0" />
+                    <div className="min-w-0"><div className="truncate text-xs">{label}</div><div className="text-xl font-semibold">{value}%</div></div>
+                  </div>
+                ))}
+              </div>
+              <ReactApexChart type="line" options={chartOptions} series={chartSeries} height={245} />
+            </>
+          )}
+        </Section>
+      </div>
+
+      {monthlyWidget}
       <Section title={`Daily Score - ${dayjs(today).format("MMMM YYYY")}`} fillHeight flushBody>
         {isLoading ? <LoadingBlock height="h-full min-h-72" /> : (
           <div className="absolute inset-0 min-w-0 overflow-auto">
@@ -269,55 +305,80 @@ const KraKpaEmployeeInsights = ({
       </Section>
 
       <div className="lg:col-span-2">
-      <Section title="Performance Trend">
-        {isLoading ? <LoadingBlock height="h-72" /> : (
-          <>
-            <div className="grid grid-cols-3 gap-3">
-              {[
-                { label: `KPA Completion - ${dayjs(today).format("MMM")}`, value: trend.completion, icon: MdTrendingUp, className: "bg-[#eafaf0] text-[#159654]" },
-                { label: `KPA Rating - ${dayjs(today).format("MMM")}`, value: trend.rating, icon: MdOutlineAssessment, className: "bg-[#eef3ff] text-[#4c77e6]" },
-                { label: `Daily Logs - ${dayjs(today).format("MMM")}`, value: trend.dailyLogs, icon: MdAssignmentTurnedIn, className: "bg-[#f5efff] text-[#9860dd]" },
-              ].map(({ label, value, icon: Icon, className }) => (
-                <div key={label} className={`flex min-w-0 items-center gap-2 rounded-lg p-3 ${className}`}>
-                  <Icon size={20} className="shrink-0" />
-                  <div className="min-w-0"><div className="truncate text-xs">{label}</div><div className="text-xl font-semibold">{value}%</div></div>
-                </div>
-              ))}
-            </div>
-            <ReactApexChart type="line" options={chartOptions} series={chartSeries} height={245} />
-          </>
-        )}
-      </Section>
-      </div>
-
-      <div className="lg:col-span-2">
       <Section title="Upcoming Deadlines">
         {isLoading ? <div className="p-5"><LoadingBlock height="h-44" /></div> : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[560px] text-left text-sm">
+            <table className={`w-full ${showDeadlineDepartment ? "min-w-[800px]" : "min-w-[660px]"} text-left text-sm`}>
               <thead className="bg-[#f6f7fa] text-gray-700"><tr>
                 <th className="px-5 py-3 font-pmedium">KPA</th>
                 <th className="px-4 py-3 font-pmedium">Employee</th>
+                {showDeadlineDepartment && <th className="px-4 py-3 font-pmedium">Department</th>}
                 <th className="px-4 py-3 font-pmedium">Deadline</th>
                 <th className="px-4 py-3 font-pmedium">Working Days</th>
                 <th className="px-4 py-3 font-pmedium">Status</th>
+                <th className="px-4 py-3 font-pmedium">Action</th>
               </tr></thead>
               <tbody>
                 {deadlines.length ? deadlines.map((record) => (
                   <tr key={record.id} className="border-t border-[#edf0f4] odd:bg-white even:bg-[#fafbfc]">
                     <td className="max-w-[320px] truncate px-5 py-3" title={record.target}>{record.target}</td>
                     <td className="px-4 py-3">{teamMode ? record.employeeName || "—" : employeeName}</td>
+                    {showDeadlineDepartment && <td className="px-4 py-3">{record.departmentName || "—"}</td>}
                     <td className="whitespace-nowrap px-4 py-3">{dayjs(record.deadline).format("DD MMM YYYY")}</td>
                     <td className="px-4 py-3">{record.workingDays}</td>
                     <td className="px-4 py-3"><span className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-pmedium ${statusClasses[record.status]}`}>● &nbsp;{record.status}</span></td>
+                    <td className="px-4 py-3">
+                      <button
+                        type="button"
+                        title="View KPA details"
+                        aria-label={`View KPA details for ${record.target}`}
+                        onClick={() => {
+                          const kpa = data?.kpas?.find((item) => String(item._id) === String(record.id));
+                          if (kpa) setViewKpa({ ...kpa, workingDays: record.workingDays });
+                        }}
+                        className="text-lg text-primary hover:text-blue-600 focus-visible:rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                      >
+                        <MdOutlineRemoveRedEye aria-hidden="true" />
+                      </button>
+                    </td>
                   </tr>
-                )) : <tr><td colSpan={5} className="px-5 py-8 text-center text-gray-500">No pending KPA deadlines</td></tr>}
+                )) : <tr><td colSpan={showDeadlineDepartment ? 7 : 6} className="px-5 py-8 text-center text-gray-500">No pending KPA deadlines</td></tr>}
               </tbody>
             </table>
           </div>
         )}
       </Section>
       </div>
+      <MuiModal
+        open={Boolean(viewKpa)}
+        onClose={() => setViewKpa(null)}
+        title="KPA Details"
+        widthClass="w-[92vw] max-w-[680px]"
+      >
+        {viewKpa && (
+          <div className="space-y-2 py-2">
+            <DetalisFormatted title="KPA" detail={viewKpa.target} />
+            <DetalisFormatted title="Employee" detail={viewKpa.employee ? formatUserName(viewKpa.employee) : employeeName || "-"} />
+            <DetalisFormatted title="Department" detail={viewKpa.department?.name || "-"} />
+            <DetalisFormatted
+              title="Month"
+              detail={viewKpa.deadline ? dayjs(viewKpa.deadline).format("MMMM YYYY") : "-"}
+            />
+            <DetalisFormatted title="Active Status" detail={viewKpa.isActive === false ? "Inactive" : "Active"} />
+            <DetalisFormatted title="Assigned By" detail={formatUserName(viewKpa.createdBy)} />
+            <DetalisFormatted title="Assigned On" detail={formatKpaDate(viewKpa.createdAt, true)} />
+            <DetalisFormatted title="Deadline" detail={formatKpaDate(viewKpa.deadline)} />
+            <DetalisFormatted title="Working Days Remaining" detail={String(viewKpa.workingDays)} />
+            <DetalisFormatted title="Approval" detail={viewKpa.approvalStatus || "Approved"} />
+            <DetalisFormatted title="Approved By" detail={formatUserName(viewKpa.approvedBy)} />
+            <DetalisFormatted title="Approved On" detail={formatKpaDate(viewKpa.approvedAt, true)} />
+            <DetalisFormatted title="Status" detail={viewKpa.status} />
+            <DetalisFormatted title="Closing Date" detail={formatKpaDate(viewKpa.closingDate)} />
+            <DetalisFormatted title="Manager Comments" detail={viewKpa.managerComments || "-"} />
+            <DetalisFormatted title="HR Comments" detail={viewKpa.hrComments || "-"} />
+          </div>
+        )}
+      </MuiModal>
     </>
   );
 };

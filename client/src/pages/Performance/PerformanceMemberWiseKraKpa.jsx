@@ -546,11 +546,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                     return;
                 }
 
-                if (
-                    isKraKpaModule && task?.taskType === "INDIVIDUALKPA"
-                        ? task?.finalClosure === "Closed"
-                        : task?.status === "Completed"
-                ) return;
+                if (task?.status === "Completed") return;
 
                 const userId = resolveManagerAwareMemberId(task);
                 if (!userId) return;
@@ -592,7 +588,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                 .filter(
                     (task) =>
                         isTaskInSelectedMonth(task, selectedMonth) &&
-                        (!isKraKpaModule || task?.finalClosure !== "Closed"),
+                        (!isKraKpaModule || task?.status !== "Completed"),
                 )
                 .forEach((task) => upsert(task, "individualMonthlyKpa"));
             getResponseData(teamKraResponse)
@@ -641,7 +637,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                 if (
                     isKraKpaModule &&
                     task?.taskType === "INDIVIDUALKPA" &&
-                    task?.finalClosure !== "Closed"
+                    task?.status !== "Completed"
                 ) return;
                 const fiscalMonth = getFiscalMonthFromDate(
                     isKraKpaModule && task?.taskType === "INDIVIDUALKPA"

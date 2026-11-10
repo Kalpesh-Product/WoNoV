@@ -55,6 +55,10 @@ const getAssetRequests = async (req, res, next) => {
           // populate: { path: "subCategory", populate: "category" },
            populate: [
             { path: "subCategory", populate: "category" },
+            { path: "Category", select: "categoryName" },
+            { path: "department", select: "name" },
+            { path: "vendor", select: "name companyName" },
+            { path: "company", select: "companyId" },
             {
               path: "location",
               select: "unitName unitNo",
@@ -72,6 +76,8 @@ const getAssetRequests = async (req, res, next) => {
         { path: "assignee", select: "firstName lastName empId" },
         { path: "assignedBy", select: "firstName lastName empId" },
         { path: "approvedBy", select: "firstName lastName empId" },
+        { path: "rejectededBy", select: "firstName lastName empId" },
+        { path: "revokedBy", select: "firstName lastName empId" },
       ])
       .sort({ dateOfAssigning: -1 }); // Sort by latest assignments
 
@@ -488,6 +494,8 @@ const revokeAsset = async (req, res, next) => {
 
     assignedAsset.isRevoked = true;
     assignedAsset.status = "Revoked";
+    assignedAsset.revokedBy = user;
+    assignedAsset.revokedAt = new Date();
     const revokedAsset = await assignedAsset.save();
 
     if (!revokedAsset) {
