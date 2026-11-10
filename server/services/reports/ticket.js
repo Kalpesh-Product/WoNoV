@@ -319,9 +319,7 @@ const fetchTicketReportService = async ({
       { path: "assignedTo.assignee", select: "firstName lastName" },
       {
         path: "escalatedTo",
-        select: isReport
-          ? "status raisedToDepartment createdAt"
-          : "status raisedToDepartment createdAt description",
+        select: "status raisedToDepartment createdAt description",
         populate: {
           path: "raisedToDepartment",
           select: "name",

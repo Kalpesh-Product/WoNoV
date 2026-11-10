@@ -1,6 +1,7 @@
 import { useState } from "react";
 import AgTable from "../../../components/AgTable";
 import MuiModal from "../../../components/MuiModal";
+import TicketDetails from "../../../components/TicketDetails";
 import {
   Autocomplete,
   Checkbox,
@@ -163,6 +164,7 @@ const AssignedTickets = ({
               : "N/A";
 
         const supportTicket = {
+          sourceTicket: ticket,
           id: ticket._id,
           srno: index + 1,
           description: ticket.description,
@@ -735,70 +737,7 @@ const AssignedTickets = ({
         onClose={() => setOpenView(false)}
         title="View Assigned Ticket"
       >
-        {selectedTicket && (
-          <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
-            <DetalisFormatted
-              title="Ticket Title"
-              detail={selectedTicket.ticketTitle || "N/A"}
-            />
-            <DetalisFormatted
-              title="Description"
-              detail={selectedTicket.description || "N/A"}
-            />
-            <DetalisFormatted
-              title="From Department"
-              detail={
-                selectedTicket.selectedDepartment
-                  .map((item) => item)
-                  .join(", ") || "N/A"
-              }
-            />
-            <DetalisFormatted
-              title="Raised By"
-              detail={selectedTicket.raisedBy || "Unknown"}
-            />
-            <DetalisFormatted
-              title="Raised At"
-              detail={formatDateTime(selectedTicket.raisedAt)}
-            />
-            <DetalisFormatted
-              title="Raised To Department"
-              detail={selectedTicket.raisedToDepartment || "N/A"}
-            />
-            {selectedTicket?.assignedToDetails?.length ? (
-              <div className="text-content flex items-start w-full">
-                <span className="w-[50%]">Assignees</span>
-                <span>:</span>
-                <div className="text-content flex flex-col gap-2 items-start w-full justify-start pl-4">
-                  {selectedTicket.assignedToDetails.map((assignment, index) => (
-                    <div key={`${assignment.assigneeName}-${index}`}>
-                      <div className="font-medium">
-                        {assignment.assigneeName}
-                      </div>
-                      <div className="text-borderGray">
-                        {assignment.assignedAtFormatted || "N/A"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <DetalisFormatted
-                title="Assignees"
-                detail={selectedTicket?.assignees || "N/A"}
-              />
-            )}
-            <DetalisFormatted
-              title="Priority"
-              detail={selectedTicket?.priority || "N/A"}
-            />
-            <DetalisFormatted title="Status" detail={selectedTicket.status} />
-            <TicketAttachments
-              attachments={selectedTicket?.attachments}
-              legacyImage={selectedTicket?.image}
-            />
-          </div>
-        )}
+        <TicketDetails ticket={selectedTicket} />
       </MuiModal>
 
       {/* <MuiModal
