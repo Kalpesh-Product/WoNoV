@@ -786,6 +786,18 @@ const SupportTickets = ({
               title="Closed At"
               detail={selectedTicket?.closedAt || ""}
             />
+            {selectedTicket?.ticket?.closingRemark && (
+              <DetalisFormatted
+                title="Closing Remark"
+                detail={selectedTicket.ticket.closingRemark}
+              />
+            )}
+            {selectedTicket?.ticket?.closingCategories?.length > 0 && (
+              <DetalisFormatted
+                title="Categories"
+                detail={selectedTicket.ticket.closingCategories.join(", ")}
+              />
+            )}
           </div>
         )}
       </MuiModal>

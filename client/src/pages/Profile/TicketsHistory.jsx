@@ -6,9 +6,11 @@ import { useQuery } from "@tanstack/react-query";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MuiModal from "../../components/MuiModal";
+import TicketAttachments from "../../components/TicketAttachments";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import humanTime from "../../utils/humanTime";
+import formatDateTime from "../../utils/formatDateTime";
 
 const TicketsHistory = ({ pageTitle }) => {
   const axios = useAxiosPrivate();
@@ -120,6 +122,7 @@ const TicketsHistory = ({ pageTitle }) => {
               key={tickets?.length}
               search
               data={tickets?.map((ticket, index) => ({
+                sourceTicket: ticket,
                 srNo: index + 1,
                 raisedBy: ticket.raisedBy.firstName,
                 raisedTo: ticket.raisedToDepartment.name,
@@ -160,6 +163,10 @@ const TicketsHistory = ({ pageTitle }) => {
             detail={viewTicketDetails?.raisedTo || "N/A"}
           />
           <DetalisFormatted
+            title="Raised At"
+            detail={formatDateTime(viewTicketDetails?.raisedAt)}
+          />
+          <DetalisFormatted
             title="Ticket Title"
             detail={viewTicketDetails?.ticketTitle || "N/A"}
           />
@@ -184,6 +191,25 @@ const TicketsHistory = ({ pageTitle }) => {
             title="Closed by"
             detail={viewTicketDetails?.closedBy || "Unknown"}
           />
+          {viewTicketDetails?.sourceTicket?.closedAt && (
+            <DetalisFormatted
+              title="Closed at"
+              detail={humanTime(viewTicketDetails.sourceTicket.closedAt)}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.closingRemark && (
+            <DetalisFormatted
+              title="Closing Remark"
+              detail={viewTicketDetails.sourceTicket.closingRemark}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.closingCategories?.length > 0 && (
+            <DetalisFormatted
+              title="Categories"
+              detail={viewTicketDetails.sourceTicket.closingCategories.join(", ")}
+            />
+          )}
+          <TicketAttachments attachments={viewTicketDetails?.sourceTicket?.attachments} />
           {viewTicketDetails.image && (
             <div className="lg:col-span-1">
               <img

@@ -79,7 +79,7 @@ const getBudgetApprovalAccess = (budget, user) => {
   const amount = budget.particulars?.length
     ? budget.particulars.reduce((sum, item) => sum + Number(item.particularAmount || 0), 0)
     : Number(budget.projectedAmount);
-  const level = amount <= 10000 ? "Level 3" : amount <= 500000 ? "Level 2" : "Level 1";
+  const level = amount <= 10000 ? "Level 3" : amount <= 1000000 ? "Level 2" : "Level 1";
   const departments = user?.departments || [];
   const roles = (user?.role || []).map((role) => String(role.roleTitle || role).trim().toLowerCase());
   const inDepartment = (name) => departments.some((department) => String(department.name || "").trim().toLowerCase() === name);

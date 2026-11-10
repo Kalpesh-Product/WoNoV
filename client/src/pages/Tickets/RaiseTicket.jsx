@@ -157,6 +157,7 @@ const RaiseTicket = () => {
       escalatedTo: latest?.raisedToDepartment?.name || "",
       escalatedStatus: latest?.status || "",
       escalatedAt: latest?.createdAt ? formatDateTime(latest.createdAt) : "",
+      reasonForEscalated: latest?.description || "",
     };
   };
 
@@ -663,6 +664,7 @@ const RaiseTicket = () => {
               dropdownColumns={["status", "priority"]}
               data={tickets?.map((ticket, index) => {
                 return {
+                  sourceTicket: ticket,
                   raisedBy: ticket?.raisedBy?.firstName || "Unknown",
                   raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
                   id: ticket?._id,
@@ -716,10 +718,10 @@ const RaiseTicket = () => {
             title="Description"
             detail={viewTicketDetails?.description}
           />
-          {/* <DetalisFormatted
+          <DetalisFormatted
             title="Raised By"
             detail={viewTicketDetails?.raisedBy}
-          /> */}
+          />
           <DetalisFormatted
             title="Raised To Department"
             detail={viewTicketDetails?.raisedTo}
@@ -729,10 +731,10 @@ const RaiseTicket = () => {
             detail={formatDateTime(viewTicketDetails?.raisedAt)}
           />
 
-          {/* <DetalisFormatted
+          <DetalisFormatted
             title="Priority"
             detail={viewTicketDetails?.priority}
-          /> */}
+          />
           <DetalisFormatted
             title="Accepted By"
             detail={viewTicketDetails?.acceptedBy}
@@ -742,12 +744,13 @@ const RaiseTicket = () => {
             title="Accepted At"
             detail={formatDateTime(viewTicketDetails?.acceptedAt)}
           />
-          {/* <DetalisFormatted
+          <DetalisFormatted
             title="Assigned To"
             detail={viewTicketDetails?.assignedTo || ""}
-          /> */}
+          />
 
-          {/* <DetalisFormatted
+          {(viewTicketDetails?.escalatedTo || viewTicketDetails?.escalatedAt) && <>
+          <DetalisFormatted
             title="Escalated To"
             detail={viewTicketDetails?.escalatedTo || ""}
           />
@@ -758,7 +761,14 @@ const RaiseTicket = () => {
           <DetalisFormatted
             title="Escalated At"
             detail={viewTicketDetails?.escalatedAt || ""}
-          /> */}
+          />
+          {viewTicketDetails?.reasonForEscalated && (
+            <DetalisFormatted
+              title="Reason for Escalated"
+              detail={viewTicketDetails.reasonForEscalated}
+            />
+          )}
+          </>}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}
@@ -772,6 +782,27 @@ const RaiseTicket = () => {
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedBy && (
+            <DetalisFormatted
+              title="Rejected By"
+              detail={[
+                viewTicketDetails.sourceTicket.reject.rejectedBy.firstName,
+                viewTicketDetails.sourceTicket.reject.rejectedBy.lastName,
+              ].filter(Boolean).join(" ")}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedAt && (
+            <DetalisFormatted
+              title="Rejected At"
+              detail={formatDateTime(viewTicketDetails.sourceTicket.reject.rejectedAt)}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.reason && (
+            <DetalisFormatted
+              title="Reason"
+              detail={viewTicketDetails.sourceTicket.reject.reason}
+            />
+          )}
            {viewTicketDetails?.isItDepartment &&
             Array.isArray(viewTicketDetails?.closingCategories) &&
             viewTicketDetails.closingCategories.length > 0 && (

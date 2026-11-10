@@ -163,6 +163,7 @@ const AssignedTickets = ({
               : "N/A";
 
         const supportTicket = {
+          sourceTicket: ticket,
           id: ticket._id,
           srno: index + 1,
           description: ticket.description,
@@ -765,6 +766,21 @@ const AssignedTickets = ({
               title="Raised To Department"
               detail={selectedTicket.raisedToDepartment || "N/A"}
             />
+            {selectedTicket?.sourceTicket?.acceptedBy && (
+              <DetalisFormatted
+                title="Accepted By"
+                detail={[
+                  selectedTicket.sourceTicket.acceptedBy.firstName,
+                  selectedTicket.sourceTicket.acceptedBy.lastName,
+                ].filter(Boolean).join(" ")}
+              />
+            )}
+            {selectedTicket?.sourceTicket?.acceptedAt && (
+              <DetalisFormatted
+                title="Accepted At"
+                detail={formatDateTime(selectedTicket.sourceTicket.acceptedAt)}
+              />
+            )}
             {selectedTicket?.assignedToDetails?.length ? (
               <div className="text-content flex items-start w-full">
                 <span className="w-[50%]">Assignees</span>

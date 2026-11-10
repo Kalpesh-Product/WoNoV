@@ -90,6 +90,7 @@ const ClosedTickets = ({
       ? []
       : tickets.map((ticket) => ({
           ...ticket,
+          sourceTicket: ticket,
           id: ticket._id,
           raisedBy: ticket.raisedBy?.firstName || "Unknown",
 
@@ -223,7 +224,7 @@ const ClosedTickets = ({
 
           <DetalisFormatted
             title="Raised To Department"
-            detail={viewTicketDetails.raisedToDepartment?.name || "N/A"}
+            detail={viewTicketDetails.raisedToDepartment || "N/A"}
           />
           <DetalisFormatted
             title="Priority"
@@ -236,7 +237,7 @@ const ClosedTickets = ({
           />
           <DetalisFormatted
             title="Accepted At"
-            detail={formatDateTime(viewTicketDetails.createdAt)}
+            detail={formatDateTime(viewTicketDetails.sourceTicket?.acceptedAt)}
           />
 
           {viewTicketDetails?.assignedToDetails?.length ? (
@@ -276,6 +277,18 @@ const ClosedTickets = ({
             title="Escalated At"
             detail={viewTicketDetails?.escalatedAt || ""}
           />
+          {viewTicketDetails?.sourceTicket?.escalatedTo?.at(-1)?.description && (
+            <DetalisFormatted
+              title="Reason for Escalated"
+              detail={viewTicketDetails.sourceTicket.escalatedTo.at(-1).description}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.resolvedDate && (
+            <DetalisFormatted
+              title="Resolved Date"
+              detail={formatDateTime(viewTicketDetails.sourceTicket.resolvedDate)}
+            />
+          )}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}

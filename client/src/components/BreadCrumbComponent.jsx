@@ -12,11 +12,16 @@ const BreadCrumbComponent = () => {
   const selectedMember = useSelector(
     (state) => state.performance.selectedMember,
   );
-  const isEmployeeKraKpaPage = /\/(individual-Monthly-KPA|self-KRA)$/.test(
-    location.pathname,
-  );
+  const isEmployeeKraKpaPage =
+    location.pathname.startsWith("/app/kra-kpa/") &&
+    /\/(individual-Monthly-KPA|self-KRA|due-task|daily-logs)$/i.test(
+      location.pathname,
+    );
   const isEmployeeDashboardContext = location.pathname.includes(
     "/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard",
+  );
+  const isOwnDailyScorePage = location.pathname.startsWith(
+    "/app/kra-kpa/individual/daily-score/",
   );
   const isOwnEmployeePage =
     location.pathname.includes("/employee-KRA-KPA") ||
@@ -30,6 +35,13 @@ const BreadCrumbComponent = () => {
   const formatLabel = (value) => {
     if (value.toLowerCase() === "kra-kpa") {
       return "KRA & KPA";
+    }
+
+    if (
+      value.toLowerCase() === "departments" &&
+      location.pathname.toLowerCase().startsWith("/app/kra-kpa/")
+    ) {
+      return "Department";
     }
 
     if (value.toLowerCase() === "sales-dashboard1") {
@@ -112,6 +124,12 @@ const BreadCrumbComponent = () => {
   // Generate breadcrumb links
   const pathBreadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
+    const isDepartmentCardCrumb =
+      isEmployeeDashboardContext && segment.toLowerCase() === "department-kpa";
+    const isEmployeeWorkCrumb =
+      isEmployeeDashboardContext &&
+      segment.toLowerCase() === "kra-kpa" &&
+      pathSegments[index - 1]?.toLowerCase() === "employee-dashboard";
     const isSalesVerticalClientPath =
       (pathSegments.includes("virtual-office") ||
         pathSegments.includes("co-working")) &&
@@ -124,6 +142,8 @@ const BreadCrumbComponent = () => {
       );
     const isNonNavigableSegment =
       segment === "visitor-history" ||
+      isEmployeeWorkCrumb ||
+      (segment === "daily-score" && location.pathname.startsWith("/app/kra-kpa/")) ||
       (isSalesVerticalClientPath && segment === "client");
     const isHistoryTabSegment =
       isVisitorHistoryPath &&
@@ -134,7 +154,9 @@ const BreadCrumbComponent = () => {
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isHistoryTabSegment
+    const fullPath = isDepartmentCardCrumb
+      ? "/app/kra-kpa/departments"
+      : isHistoryTabSegment
         ? `/app/visitors/manage-visitors/${segment}`
         : isDirectAppPath
           ? `/app/${path}`
@@ -146,11 +168,24 @@ const BreadCrumbComponent = () => {
     // .replace(/\b\w/g, (char) => char.toUpperCase());
 
     const displayText =
-      isLast && location.state?.breadcrumbLabel
-        ? location.state.breadcrumbLabel
-        : formatLabel(segment);
+      isDepartmentCardCrumb
+        ? "Department"
+        : isEmployeeWorkCrumb
+          ? "Employee KRA/KPA"
+          : isLast && location.state?.breadcrumbLabel
+            ? location.state.breadcrumbLabel
+            : formatLabel(segment);
 
-    if (isClientIdSegment) return null;
+    // Keep the segment in the path for child links, but don't repeat the module label.
+    if (
+      isClientIdSegment ||
+      (isOwnDailyScorePage && segment === "individual") ||
+      (isEmployeeDashboardContext && segment.toLowerCase() === "member-wise-kpa") ||
+      (index > 0 &&
+        pathSegments[0]?.toLowerCase() === "kra-kpa" &&
+        segment.toLowerCase() === "kra-kpa" &&
+        !isEmployeeWorkCrumb)
+    ) return null;
 
     return isLast || isNonNavigableSegment ? (
       <Typography key={index} color="text.primary">
@@ -161,7 +196,14 @@ const BreadCrumbComponent = () => {
         key={index}
         underline="hover"
         color="inherit"
-        onClick={() => navigate(fullPath)}
+        onClick={() =>
+          navigate(
+            fullPath,
+            isEmployeeDashboardContext && segment === "employee-dashboard"
+              ? { state: location.state }
+              : undefined,
+          )
+        }
         style={{ cursor: "pointer" }}
       >
         {displayText}

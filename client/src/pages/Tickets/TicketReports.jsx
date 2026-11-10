@@ -220,8 +220,9 @@ const TicketReports = () => {
     },
     { field: "priority", headerName: "Priority", hide: true },
     { field: "description", headerName: "Description", hide: true },
-    //{ field: "company", headerName: "Company", hide: true },
+    { field: "company", headerName: "Company", hide: true },
     { field: "assignedTo", headerName: "Assigned To", hide: true },
+    { field: "assigneesExport", headerName: "Assignees", hide: true },
     { field: "assignedAtDate", headerName: "Assign At", hide: true },
     // { field: "acceptedBy", headerName: "Accepted By", hide: true },
     {
@@ -240,6 +241,7 @@ const TicketReports = () => {
     // },
     { field: "escalatedTo", headerName: "Escalated To", hide: true },
     { field: "escalatedStatus", headerName: "Escalated Status", hide: true },
+    { field: "reasonForEscalated", headerName: "Reason for Escalated", hide: true },
     {
       // field: "escalatedAtDate",
       field: "escalatedAt",
@@ -265,6 +267,9 @@ const TicketReports = () => {
       headerName: "Closing Remark",
       hide: true,
     },
+    { field: "closingCategoriesExport", headerName: "Categories", hide: true },
+    { field: "resolvedDateExport", headerName: "Resolved Date", hide: true },
+    { field: "attachmentsExport", headerName: "Attachments", hide: true },
     // {
     //   field: "closedAtTime",
     //   headerName: "Closed Time",
@@ -427,7 +432,7 @@ const TicketReports = () => {
                       (assignee) =>
                         `${assignee.firstName} ${assignee.lastName}`,
                     ) || "",
-                  company: item.company?.companyName,
+                  company: item.company?.companyName || "",
                   priority: item.priority || "",
                   raisedAt: formatDateTime(item.createdAt) || "",
                   updatedAt: item.updatedAt || "",
@@ -439,6 +444,16 @@ const TicketReports = () => {
                   closingCategories: Array.isArray(item.closingCategories)
                     ? item.closingCategories
                     : [],
+                  closingCategoriesExport: Array.isArray(item.closingCategories)
+                    ? item.closingCategories.join(", ")
+                    : "",
+                  resolvedDateExport: item.resolvedDate
+                    ? formatDateTime(item.resolvedDate)
+                    : "",
+                  attachmentsExport: [
+                    ...(item.attachments || []).map((attachment) => attachment.url),
+                    item.image?.url,
+                  ].filter(Boolean).filter((url, index, urls) => urls.indexOf(url) === index).join("; "),
                   closedAtDate: item.closedAt || "",
                   closedAtTime: item.closedAt || "",
                   rejectedBy: getFullName(getRejectedByUser(item)),
@@ -465,6 +480,11 @@ const TicketReports = () => {
                     return {
                       assignedTo: assignedToDisplay,
                       assignedToDetails: assignmentDetails,
+                      assigneesExport: assignmentDetails
+                        .map(({ assigneeName, assignedAtFormatted }) =>
+                          [assigneeName, assignedAtFormatted].filter(Boolean).join(" - "),
+                        )
+                        .join("; "),
                     };
                   })(),
                   ...formatEscalation(item),
@@ -534,6 +554,9 @@ const TicketReports = () => {
               title={"Description"}
               detail={selectedMeeting?.description || ""}
             />
+            {selectedMeeting?.company && (
+              <DetalisFormatted title="Company" detail={selectedMeeting.company} />
+            )}
             <DetalisFormatted
               title={"From Department"}
               detail={selectedMeeting?.fromDepartment || ""}
@@ -618,6 +641,12 @@ const TicketReports = () => {
               title={"Reason for Escalated"}
               detail={selectedMeeting?.reasonForEscalated || ""}
             />
+            {selectedMeeting?.resolvedDate && (
+              <DetalisFormatted
+                title="Resolved Date"
+                detail={formatDateTime(selectedMeeting.resolvedDate)}
+              />
+            )}
             <DetalisFormatted
               title="Closed By"
               detail={selectedMeeting?.closedBy || ""}
@@ -640,10 +669,18 @@ const TicketReports = () => {
                 detail={selectedMeeting.closingCategories.join(", ")}
               />
             )}
-            {/* <DetalisFormatted
-              title={"Rejected By"}
-              detail={selectedMeeting?.rejectedBy || "None"}
-            /> */}
+            {selectedMeeting?.rejectedBy && (
+              <DetalisFormatted
+                title="Rejected By"
+                detail={selectedMeeting.rejectedBy}
+              />
+            )}
+            {selectedMeeting?.rejectedAt && (
+              <DetalisFormatted
+                title="Rejected At"
+                detail={selectedMeeting.rejectedAt}
+              />
+            )}
             {selectedMeeting.reason ? (
               <DetalisFormatted
                 title={"Reason"}
