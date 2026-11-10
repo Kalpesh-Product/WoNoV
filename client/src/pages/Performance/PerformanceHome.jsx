@@ -106,7 +106,7 @@ const PerformanceHome = ({
   const departmentButtonRef = useRef(null);
   const { data: allDashboardDepartments = [] } = useQuery({
     queryKey: ["kraKpaDashboardDepartments"],
-    enabled: showManagerDashboard && !canUseIndividualView,
+    enabled: showManagerDashboard,
     queryFn: async () => {
       const response = await axios.get("/api/departments/get-departments");
       return response.data || [];
@@ -117,7 +117,14 @@ const PerformanceHome = ({
       .map((department) => String(department?.department?._id || department?.department || department?._id || department))
       .filter(Boolean),
   );
-  const managerDepartments = (canUseIndividualView ? auth?.user?.departments || [] : allDashboardDepartments)
+  const assignedDepartmentIds = new Set(
+    (auth?.user?.departments || [])
+      .map((department) => String(department?._id || department))
+      .filter(Boolean),
+  );
+  const managerDepartments = allDashboardDepartments
+    .filter((department) => department?.isActive !== false)
+    .filter((department) => !canUseIndividualView || assignedDepartmentIds.has(String(department?._id)))
     .map((department) => ({
       id: String(typeof department === "string" ? department : department?._id || ""),
       name: typeof department === "string" ? department : department?.name || "Department",
@@ -773,6 +780,26 @@ const PerformanceHome = ({
             ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-2"
             : "grid-cols-1";
 
+  const kpaOverviewWidget = (onlyFirstTwoCards
+    ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
+    : hasPermission(PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED)) && (
+    <WidgetSection
+      border
+      autoHeight={showInsightsDashboard}
+      title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
+    >
+      {isKpaTasksLoading ? (
+        <PerformanceChartSkeleton variant="donut" />
+      ) : (
+        <PieChartMui
+          data={kpaPieData}
+          options={pieOptions(kpaPieData.map((item) => item.label))}
+          centerAlign
+        />
+      )}
+    </WidgetSection>
+  );
+
   return (
     <div className="flex flex-col gap-4">
       {(onlyFirstTwoCards
@@ -932,29 +959,10 @@ const PerformanceHome = ({
             </WidgetSection>
           )}
 
-        {(onlyFirstTwoCards
-          ? hasPermission(PERMISSIONS.KRAKPA_DASHBOARD)
-          : hasPermission(
-              PERMISSIONS.PERFORMANCE_KPA_PENDING_VS_COMPLETED,
-            )) && (
-          <WidgetSection
-            border
-            autoHeight={showInsightsDashboard}
-            title={`KPA - Pending vs Completed - ${currentMonthLabel}`}
-          >
-            {isKpaTasksLoading ? (
-              <PerformanceChartSkeleton variant="donut" />
-            ) : (
-              <PieChartMui
-                data={kpaPieData}
-                options={pieOptions(kpaPieData.map((item) => item.label))}
-                centerAlign
-              />
-            )}
-          </WidgetSection>
-        )}
+        {!showInsightsDashboard && kpaOverviewWidget}
         {showInsightsDashboard && (
           <KraKpaEmployeeInsights
+            monthlyWidget={kpaOverviewWidget}
             departmentId={employeeInsightsDepartmentId}
             employeeId={selectedEmployeeId || auth?.user?._id}
             employeeName={employeeDashboardName}
@@ -970,10 +978,11 @@ const PerformanceHome = ({
             teamMode={departmentView}
             allDepartmentsAccess={showManagerDashboard && !canUseIndividualView}
             departmentOptions={managerDepartments}
+            showDeadlineDepartment={showManagerDashboard && (!canUseIndividualView || managerDepartments.length > 1)}
             includeSelfInDepartment={(auth?.user?.departments || []).some((department) =>
               String(department?._id || department) === String(employeeInsightsDepartmentId),
             )}
-            canViewMemberWise={hasPermission(PERMISSIONS.KRAKPA_MEMBER_WISE_KPA)}
+            canViewDepartments={hasPermission(PERMISSIONS.KRAKPA_DEPARTMENTS)}
             canViewApprovals={
               (isManager || isHr || isTopManagement) &&
               hasPermission(PERMISSIONS.KRAKPA_PENDING_APPROVALS)

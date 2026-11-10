@@ -226,16 +226,12 @@ const PerformanceDepartmentWiseKraKpa = () => {
           const individualMonthlyPendingCount = individualAssignedTasks.filter(
             (task) =>
               isSameSelectedMonth(task?.assignedDate) &&
-              (modulePath === "/app/kra-kpa"
-                ? task?.finalClosure !== "Closed"
-                : task?.status !== "Completed"),
+              task?.status !== "Completed",
           ).length;
           const individualMonthlyCompletedCount = individualAssignedTasks.filter(
             (task) =>
               isSameSelectedMonth(task?.assignedDate) &&
-              (modulePath === "/app/kra-kpa"
-                ? task?.finalClosure === "Closed"
-                : task?.status === "Completed"),
+              task?.status === "Completed",
           ).length;
           const pendingKraCount = kraTasks.filter(
             (task) =>
@@ -465,9 +461,9 @@ tooltip: {
         padding
         TitleAmountTotal={totalKpaCount}
         totalTitle="Total"
-        greenTitle="KPA "
+        greenTitle="Completed KPA "
         TitleAmountGreen={totalCompletedKpa}
-        redTitle="KPA "
+        redTitle="Pending KPA "
         TitleAmountRed={totalPendingKpa}
       >
         {isDepartmentsLoading || isDepartmentStatsLoading ? (

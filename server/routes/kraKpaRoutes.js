@@ -3,6 +3,7 @@ const upload = require("../config/multerConfig");
 const {
   listIndividualMonthlyKpa,
   listPendingKpaApprovals,
+  listPendingKpaApprovalDepartments,
   listPendingKpaApprovalMembers,
   getIndividualMonthlyKpaReviewAccess,
   getKraKpaDeleteAccess,
@@ -62,6 +63,10 @@ router.get(
 router.get(
   "/individual-monthly-kpa/pending-approvals/members",
   listPendingKpaApprovalMembers,
+);
+router.get(
+  "/individual-monthly-kpa/pending-approvals/departments",
+  listPendingKpaApprovalDepartments,
 );
 router.get(
   "/individual-monthly-kpa/review-access",

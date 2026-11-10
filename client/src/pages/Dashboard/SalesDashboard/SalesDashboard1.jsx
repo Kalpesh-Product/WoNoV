@@ -756,8 +756,8 @@ const SalesDashboard1 = ({ cardView = null, graphOnly = false }) => {
   );
 
   return (
-    <div className="flex flex-col gap-4 p-3 pt-3">
-      <div className="overflow-hidden rounded-lg">
+    <div className="flex min-w-0 flex-col gap-4 p-3 pt-3">
+      <div className="overflow-hidden rounded-r-lg">
         <div className="relative h-56 w-full bg-[#02172d] md:h-[17rem] xl:h-[19rem]">
           <img
             src={salesDashboardBanner}
@@ -804,14 +804,14 @@ const SalesDashboard1 = ({ cardView = null, graphOnly = false }) => {
         </div>
       </div>
       {visibleCards.length > 0 && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {visibleCards.map((card) => {
             const Icon = card.icon;
             return (
               <Link
                 key={card.key}
                 to={card.route}
-                className="relative flex min-h-[92px] items-center gap-4 rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73]"
+                className="relative flex min-h-[92px] min-w-0 items-center gap-4 rounded-lg border border-[#e8ecf4] bg-white px-5 py-4 text-left shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3D73]"
               >
                 <span
                   className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-full ${card.tone}`}
@@ -846,17 +846,18 @@ const SalesDashboard1 = ({ cardView = null, graphOnly = false }) => {
                     </span>
                   )}
                   {card.perSqFt ? (
-                    <span className="mt-1 flex items-center gap-2 whitespace-nowrap text-sm font-pmedium">
+                    <span className="mt-1 grid min-w-0 grid-cols-2 items-start text-sm font-pmedium">
                       {card.isLoading ? (
                         "—"
                       ) : (
                         <>
-                          <span className="text-[#12a573]">
-                            Revenue - ₹ {inrFormat(card.perSqFt.revenue)}
+                          <span className="min-w-0 pr-2 text-[#12a573]">
+                            <span className="block whitespace-nowrap text-xs">Revenue -</span>
+                            <span className="block break-words">₹ {inrFormat(card.perSqFt.revenue)}</span>
                           </span>
-                          <span className="h-4 w-px bg-[#d7dce8]" aria-hidden="true" />
-                          <span className="text-[#f04a4a]">
-                            Expense - ₹ {inrFormat(card.perSqFt.expense)}
+                          <span className="min-w-0 border-l border-[#d7dce8] pl-2 text-[#f04a4a]">
+                            <span className="block whitespace-nowrap text-xs">Expense -</span>
+                            <span className="block break-words">₹ {inrFormat(card.perSqFt.expense)}</span>
                           </span>
                         </>
                       )}

@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
+const Company = require("../../models/hr/Company");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
 const DueTask = require("../../models/performances/KraKpaDueTask");
 const Event = require("../../models/events/Events");
@@ -397,6 +398,59 @@ const listPendingKpaApprovals = async (req, res, next) => {
   }
 };
 
+const listPendingKpaApprovalDepartments = async (req, res, next) => {
+  try {
+    const access = await getAccess(req);
+    const company = await Company.findById(req.company)
+      .select("selectedDepartments.department")
+      .lean();
+    let departmentIds = (company?.selectedDepartments || [])
+      .map((entry) => String(entry?.department?._id || entry?.department || ""))
+      .filter((id) => mongoose.isValidObjectId(id));
+
+    if (!access.allDepartments) {
+      departmentIds = departmentIds.filter((id) => access.departmentIds.includes(id));
+      departmentIds = (await Promise.all(departmentIds.map(async (id) =>
+        await isDepartmentManager(req, id, access) ? id : null,
+      ))).filter(Boolean);
+    }
+
+    if (!departmentIds.length) {
+      return res.json([]);
+    }
+
+    const departments = await Department.find({
+      _id: { $in: departmentIds },
+      isActive: { $ne: false },
+    }).select("name").sort({ name: 1 }).lean();
+    const activeIds = departments.map((department) => department._id);
+    const counts = await IndividualMonthlyKpa.aggregate([
+      {
+        $match: {
+          company: new mongoose.Types.ObjectId(String(req.company)),
+          department: { $in: activeIds },
+          approvalStatus: { $in: ["Approved", "Pending Approval"] },
+          isDeleted: { $ne: true },
+        },
+      },
+      { $group: { _id: { department: "$department", status: "$approvalStatus" }, count: { $sum: 1 } } },
+    ]);
+    const countsByDepartment = new Map(counts.map((item) => [
+      `${item._id.department}:${item._id.status}`,
+      item.count,
+    ]));
+
+    return res.json(departments.map((department) => ({
+      departmentId: department._id,
+      departmentName: department.name,
+      approvedCount: countsByDepartment.get(`${department._id}:Approved`) || 0,
+      pendingCount: countsByDepartment.get(`${department._id}:Pending Approval`) || 0,
+    })));
+  } catch (error) {
+    return next(error);
+  }
+};
+
 const listPendingKpaApprovalMembers = async (req, res, next) => {
   try {
     const access = await getAccess(req);
@@ -425,7 +479,7 @@ const listPendingKpaApprovalMembers = async (req, res, next) => {
       });
     }
 
-    const [users, pendingCounts] = await Promise.all([
+    const [users, approvalCounts] = await Promise.all([
       UserData.find({
         company: req.company,
         isActive: true,
@@ -440,16 +494,16 @@ const listPendingKpaApprovalMembers = async (req, res, next) => {
           $match: {
             company: new mongoose.Types.ObjectId(String(req.company)),
             department: { $in: departmentIds.map((id) => new mongoose.Types.ObjectId(id)) },
-            approvalStatus: "Pending Approval",
+            approvalStatus: { $in: ["Approved", "Pending Approval"] },
             isDeleted: { $ne: true },
           },
         },
-        { $group: { _id: { employee: "$employee", department: "$department" }, count: { $sum: 1 } } },
+        { $group: { _id: { employee: "$employee", department: "$department", status: "$approvalStatus" }, count: { $sum: 1 } } },
       ]),
     ]);
-    const countByMemberDepartment = new Map(
-      pendingCounts.map((item) => [
-        `${item._id.employee}:${item._id.department}`,
+    const countByMemberDepartmentStatus = new Map(
+      approvalCounts.map((item) => [
+        `${item._id.employee}:${item._id.department}:${item._id.status}`,
         item.count,
       ]),
     );
@@ -464,8 +518,10 @@ const listPendingKpaApprovalMembers = async (req, res, next) => {
           empId: user.empId,
           departmentId: department._id,
           departmentName: department.name,
+          approvedCount:
+            countByMemberDepartmentStatus.get(`${user._id}:${department._id}:Approved`) || 0,
           pendingCount:
-            countByMemberDepartment.get(`${user._id}:${department._id}`) || 0,
+            countByMemberDepartmentStatus.get(`${user._id}:${department._id}:Pending Approval`) || 0,
         })),
     );
     return res.json(members);
@@ -956,6 +1012,7 @@ const deleteIndividualMonthlyKpa = async (req, res, next) => {
 module.exports = {
   listIndividualMonthlyKpa,
   listPendingKpaApprovals,
+  listPendingKpaApprovalDepartments,
   listPendingKpaApprovalMembers,
   getIndividualMonthlyKpaReviewAccess,
   getKraKpaDeleteAccess,

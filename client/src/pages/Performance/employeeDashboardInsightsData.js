@@ -174,6 +174,7 @@ export const getUpcomingDeadlines = (kpas, today, holidays = []) => {
         target: kpa.target,
         employeeName: [kpa.employee?.firstName, kpa.employee?.middleName, kpa.employee?.lastName]
           .filter(Boolean).join(" "),
+        departmentName: kpa.department?.name || "",
         deadline: kpa.deadline,
         workingDays,
         status: isOverdue ? "Overdue" : workingDays === 0 ? "Due Today" : workingDays <= 2 ? "Due Soon" : "On Track",

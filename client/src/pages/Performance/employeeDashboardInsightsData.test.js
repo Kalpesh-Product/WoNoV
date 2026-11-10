@@ -133,3 +133,16 @@ test("upcoming deadlines show overdue KPAs and exclude completed ones", () => {
     { id: "c", status: "Due Soon" },
   ]);
 });
+
+test("upcoming deadlines retain the populated department name", () => {
+  const deadlines = getUpcomingDeadlines([
+    {
+      _id: "a",
+      target: "Monthly report",
+      status: "Pending",
+      deadline: "2026-11-10",
+      department: { _id: "sales", name: "Sales" },
+    },
+  ], "2026-11-09");
+  assert.equal(deadlines[0].departmentName, "Sales");
+});

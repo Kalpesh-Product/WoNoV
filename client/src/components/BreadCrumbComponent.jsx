@@ -98,12 +98,9 @@ const BreadCrumbComponent = () => {
     basePathSegments.includes("external-clients");
   const historyType = searchParams.get("type");
   const pathSegments = [...basePathSegments];
-  const isPendingApprovalsMemberView =
+  const isPendingApprovalsDetailView =
     location.pathname.replace(/\/$/, "") === "/app/kra-kpa/pending-approvals" &&
-    Boolean(location.state?.pendingApprovalMember);
-  if (isPendingApprovalsMemberView) {
-    pathSegments.splice(pathSegments.length - 1, 0, "team-members");
-  }
+    Boolean(location.state?.pendingApprovalDepartment || location.state?.pendingApprovalMember);
 
   if (isVisitorHistoryPath && historyType && !isDayPassSalesHistoryPath) {
     const historyIndex = pathSegments.indexOf("visitor-history");
@@ -132,16 +129,12 @@ const BreadCrumbComponent = () => {
       isVisitorHistoryPath &&
       !isDayPassSalesHistoryPath &&
       (segment === "internal-visitors" || segment === "external-clients");
-    const isPendingTeamMembersBreadcrumb =
-      isPendingApprovalsMemberView && segment === "team-members";
     // Build the navigation path
     const path = pathSegments.slice(0, index + 1).join("/");
     const isDirectAppPath =
       location.pathname.startsWith(`/app/${path}`) &&
       !location.pathname.includes("/dashboard");
-    const fullPath = isPendingTeamMembersBreadcrumb
-      ? "/app/kra-kpa/pending-approvals"
-      : isHistoryTabSegment
+    const fullPath = isHistoryTabSegment
         ? `/app/visitors/manage-visitors/${segment}`
         : isDirectAppPath
           ? `/app/${path}`
@@ -168,14 +161,7 @@ const BreadCrumbComponent = () => {
         key={index}
         underline="hover"
         color="inherit"
-        onClick={() =>
-          isPendingTeamMembersBreadcrumb
-            ? navigate(fullPath, {
-                replace: true,
-                state: { ...location.state, pendingApprovalMember: null },
-              })
-            : navigate(fullPath)
-        }
+        onClick={() => navigate(fullPath)}
         style={{ cursor: "pointer" }}
       >
         {displayText}
@@ -183,7 +169,37 @@ const BreadCrumbComponent = () => {
     );
   });
   const breadcrumbs = [];
-  breadcrumbs.push(...pathBreadcrumbs);
+  if (isPendingApprovalsDetailView) {
+    const approvalDepartment = location.state.pendingApprovalDepartment || location.state.pendingApprovalMember;
+    const approvalMember = location.state.pendingApprovalMember;
+    breadcrumbs.push(
+      <Link key="kra-kpa" underline="hover" color="inherit" onClick={() => navigate("/app/kra-kpa")} sx={{ cursor: "pointer" }}>
+        KRA &amp; KPA
+      </Link>,
+      <Link key="pending-approvals" underline="hover" color="inherit" onClick={() => navigate("/app/kra-kpa/pending-approvals", { state: null })} sx={{ cursor: "pointer" }}>
+        Pending Approvals
+      </Link>,
+      <Typography key="approval-department" color="text.primary">
+        {approvalDepartment.departmentName}
+      </Typography>,
+      approvalMember ? (
+        <Link key="approval-team-members" underline="hover" color="inherit" onClick={() => navigate(location.pathname, { state: { ...location.state, pendingApprovalMember: null } })} sx={{ cursor: "pointer" }}>
+          Team Members
+        </Link>
+      ) : (
+        <Typography key="approval-team-members" color="text.primary">Team Members</Typography>
+      ),
+    );
+    if (approvalMember) {
+      breadcrumbs.push(
+        <Typography key="approval-member" color="text.primary">
+          {approvalMember.memberName}
+        </Typography>,
+      );
+    }
+  } else {
+    breadcrumbs.push(...pathBreadcrumbs);
+  }
   if (isEmployeeDashboardContext && memberName) {
     breadcrumbs.push(
       <Typography key="employee-dashboard-member" color="text.primary">
