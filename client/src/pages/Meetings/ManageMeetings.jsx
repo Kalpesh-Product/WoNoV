@@ -935,7 +935,7 @@ const ManageMeetings = ({ financeView = false }) => {
               </span>
             </div>
 
-            {!isCancelled && menuItems.length > 0 && (!isFinance || isCompleted) && (
+            {!financeView && !isFinance && !isCancelled && menuItems.length > 0 && (
               <ThreeDotMenu menuItems={menuItems} />
             )}
           </div>
