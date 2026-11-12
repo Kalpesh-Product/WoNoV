@@ -38,6 +38,8 @@ const emptyForm = () => ({
   type: "",
   managerComments: "",
   hrComments: "",
+  completedDate: "",
+  completedTime: "",
 });
 
 const DailyLogActionCell = ({
@@ -356,13 +358,15 @@ const KraKpaDailyLogs = () => {
   };
 
   const openEdit = (record) => {
-    if (!canEditDailyLog) return;
+    if (!canEditDailyLog || (record.status === "Done" && record.sourceSelfKpa)) return;
     setEditingRecord(record);
     setForm({
       dayTaskName: record.dayTaskName || "",
       type: record.type || "",
       managerComments: record.managerComments || record.reviewerComments || "",
       hrComments: record.hrComments || "",
+      completedDate: record.completedAt ? dayjs(record.completedAt).format("YYYY-MM-DD") : "",
+      completedTime: record.completedAt ? dayjs(record.completedAt).format("HH:mm") : "",
     });
     setFormErrors({});
     setModalOpen(true);
@@ -388,6 +392,15 @@ const KraKpaDailyLogs = () => {
       errors.dayTaskName = "Day Task Name is required";
     }
     if (editingRecord && !form.type) errors.type = "Type is required";
+    const completedDateTime = dayjs(`${form.completedDate}T${form.completedTime}:00`);
+    if (editingRecord?.status === "Done") {
+      if (!form.completedDate || !completedDateTime.isValid() || completedDateTime.isAfter(dayjs())) {
+        errors.completedDate = "Completed Date and Time must not be in the future";
+      }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.completedTime)) {
+        errors.completedTime = "Select a valid Completed Time";
+      }
+    }
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
     saveLog.mutate({
@@ -401,6 +414,11 @@ const KraKpaDailyLogs = () => {
       }),
       ...(editingRecord && canEditHrComments && {
         hrComments: form.hrComments.trim(),
+      }),
+      ...(editingRecord?.status === "Done" &&
+        (form.completedDate !== (editingRecord.completedAt ? dayjs(editingRecord.completedAt).format("YYYY-MM-DD") : "") ||
+          form.completedTime !== (editingRecord.completedAt ? dayjs(editingRecord.completedAt).format("HH:mm") : "")) && {
+        completedAt: completedDateTime.toISOString(),
       }),
     });
   };
@@ -564,18 +582,27 @@ const KraKpaDailyLogs = () => {
     },
   ];
 
-  const completedColumns = [...baseColumns, {
-    headerName: "History",
-    field: "history",
-    width: 100,
+  const completedColumns = [
+    ...baseColumns.slice(0, 4),
+    { headerName: "Completed Date", field: "completedAt", width: 170, valueFormatter: ({ value }) => formatDate(value) },
+    ...baseColumns.slice(4),
+    {
+    headerName: "Actions",
+    field: "actions",
+    width: canEditDailyLog ? 110 : 80,
     pinned: "right",
     sortable: false,
     filter: false,
     cellRenderer: ({ data }) => (
-      <div className="flex h-full items-center">
+      <div className="flex h-full items-center gap-2">
         <button type="button" title="View Edit History" aria-label={`View edit history for ${data.dayTaskName}`} onClick={() => setHistoryRecord(data)} className="flex h-8 w-8 items-center justify-center">
           <MdHistory size={25} color="#111827" />
         </button>
+        {canEditDailyLog && !data.isKpaInactive && !data.sourceSelfKpa && (
+          <button type="button" title="Edit" aria-label={`Edit ${data.dayTaskName}`} onClick={() => openEdit(data)} className="flex h-8 w-8 items-center justify-center">
+            <HiPencilSquare size={24} color="#111827" />
+          </button>
+        )}
       </div>
     ),
   }];
@@ -725,6 +752,8 @@ const KraKpaDailyLogs = () => {
               <DetalisFormatted title="KPA Slot" detail={viewRecord.kpaSlot || "-"} />
             )}
             <DetalisFormatted title="Status" detail={viewRecord.status} />
+            {viewRecord.status === "Done" && <DetalisFormatted title="Completed Date" detail={formatDate(viewRecord.completedAt)} />}
+            {viewRecord.status === "Done" && <DetalisFormatted title="Completed Time" detail={formatTime(viewRecord.completedAt)} />}
             <DetalisFormatted title="Start Time" detail={formatTime(viewRecord.startTime)} />
             <DetalisFormatted title="End Time" detail={formatTime(viewRecord.endTime)} />
             <DetalisFormatted
@@ -923,6 +952,33 @@ const KraKpaDailyLogs = () => {
                 inputProps={{ maxLength: 1000 }}
               />
             </>
+          )}
+          {editingRecord?.status === "Done" && (
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <DatePicker
+                label="Completed Date *"
+                format="DD-MM-YYYY"
+                value={form.completedDate ? dayjs(form.completedDate) : null}
+                minDate={editingRecord.date ? dayjs(editingRecord.date) : undefined}
+                maxDate={dayjs()}
+                onChange={(date) => {
+                  setForm((current) => ({ ...current, completedDate: date?.isValid() ? date.format("YYYY-MM-DD") : "" }));
+                  setFormErrors((current) => ({ ...current, completedDate: "" }));
+                }}
+                slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(formErrors.completedDate), helperText: formErrors.completedDate } }}
+              />
+              <TimePicker
+                label="Completed Time *"
+                value={form.completedTime ? dayjs(`2000-01-01T${form.completedTime}:00`) : null}
+                onChange={(time) => {
+                  setForm((current) => ({ ...current, completedTime: time?.isValid() ? time.format("HH:mm") : "" }));
+                  setFormErrors((current) => ({ ...current, completedTime: "", completedDate: "" }));
+                }}
+                slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(formErrors.completedTime), helperText: formErrors.completedTime } }}
+              />
+              </div>
+            </LocalizationProvider>
           )}
           {editingRecord && canEditManagerComments && (
             <TextField

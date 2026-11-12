@@ -810,6 +810,7 @@ const isTaskInSelectedMonth = (task, selectedMonth) => {
                 selectedDepartmentName: targetDepartmentName,
                 fiscalYear,
                 month: selectedMonth,
+                ...(isKraKpaModule && { breadcrumbOrigin: "member-wise-kpa" }),
               },
                     });
                 };

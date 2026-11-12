@@ -78,6 +78,40 @@ test("bulk upload assigns the department manager as Task Identifier", async () =
   assert.equal(String(inserted[0].taskIdentifier), managerId);
 });
 
+test("bulk upload accepts DD-MM-YY and DD-MMM-YY task dates", async () => {
+  const csv = [
+    "Main KPA,KPA Task,Identification Date,Task Deadline",
+    "Target,Prepare report,04-11-26,28-Nov-26",
+  ].join("\n");
+  const { res, inserted } = await runUpload(csv);
+  assert.equal(res.statusCode, 201);
+  assert.equal(inserted[0].identificationDate.toISOString().slice(0, 10), "2026-11-04");
+  assert.equal(inserted[0].deadline.toISOString().slice(0, 10), "2026-11-28");
+});
+
+test("bulk upload accepts an identification date before KPA creation and a task deadline after the KPA deadline", async () => {
+  const csv = [
+    "Main KPA,KPA Task,Identification Date,Task Deadline",
+    "Target,Finish follow-up,2026-10-17,2026-12-03",
+  ].join("\n");
+  const { res, inserted } = await runUpload(csv);
+  assert.equal(res.statusCode, 201);
+  assert.equal(inserted.length, 1);
+  assert.equal(inserted[0].identificationDate.toISOString().slice(0, 10), "2026-10-17");
+  assert.equal(inserted[0].deadline.toISOString().slice(0, 10), "2026-12-03");
+});
+
+test("bulk upload rejects a future identification date without importing", async () => {
+  const csv = [
+    "Main KPA,KPA Task,Identification Date,Task Deadline",
+    "Target,Future task,2099-10-17,2099-12-03",
+  ].join("\n");
+  const { res, inserted } = await runUpload(csv);
+  assert.equal(res.statusCode, 400);
+  assert.match(res.body.errors[0].message, /cannot be in the future/);
+  assert.equal(inserted, null);
+});
+
 test("bulk upload rejects all rows if one task is invalid", async () => {
   const csv = [
     "Main KPA,KPA Task,Identification Date,Task Deadline",
@@ -103,5 +137,19 @@ test("bulk upload rejects an ambiguous KPA name without importing", async () => 
   }]);
   assert.equal(res.statusCode, 400);
   assert.match(res.body.errors[0].message, /More than one KPA/);
+  assert.equal(inserted, null);
+});
+
+test("bulk upload reports every Main KPA mismatch without importing any rows", async () => {
+  const csv = [
+    "Main KPA,KPA Task,Identification Date,Task Deadline",
+    "Changed target,Prepare report,04-11-26,28-Nov-26",
+    "Target,Valid task,04-11-26,28-Nov-26",
+    "Old target,Review report,04-11-26,28-Nov-26",
+  ].join("\n");
+  const { res, inserted } = await runUpload(csv);
+  assert.equal(res.statusCode, 400);
+  assert.equal(res.body.code, "MAIN_KPA_MISMATCH");
+  assert.deepEqual(Array.from(res.body.mismatchRows), [2, 4]);
   assert.equal(inserted, null);
 });

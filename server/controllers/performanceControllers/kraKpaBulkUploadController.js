@@ -4,24 +4,10 @@ const { Readable } = require("stream");
 const Permission = require("../../models/Permissions");
 const UserData = require("../../models/hr/UserData");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
+const parseKraKpaBulkDate = require("../../utils/parseKraKpaBulkDate");
 
 const BULK_UPLOAD_PERMISSION = "kra_kpa_self_kpa_bulk_upload";
 const MAX_BULK_KPA_ROWS = 500;
-const ISO_DATE_PATTERN = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
-const MONTH_NAMES = [
-  ["jan", "january"],
-  ["feb", "february"],
-  ["mar", "march"],
-  ["apr", "april"],
-  ["may", "may"],
-  ["jun", "june"],
-  ["jul", "july"],
-  ["aug", "august"],
-  ["sep", "september"],
-  ["oct", "october"],
-  ["nov", "november"],
-  ["dec", "december"],
-];
 
 const normalizeHeader = (value = "") =>
   String(value)
@@ -36,36 +22,6 @@ const getCell = (row, acceptedHeaders) => {
     normalizedAccepted.has(normalizeHeader(header)),
   );
   return matchingHeader ? String(row[matchingHeader] ?? "").trim() : "";
-};
-
-const parseIsoDate = (value) => {
-  let year;
-  let month;
-  let day;
-
-  if (ISO_DATE_PATTERN.test(value)) {
-    [year, month, day] = value.split("-").map(Number);
-  } else {
-    const namedMonthMatch = value.match(/^(\d{2})-([A-Za-z]+)-(\d{2}|\d{4})$/);
-    if (!namedMonthMatch) return null;
-
-    day = Number(namedMonthMatch[1]);
-    const yearText = namedMonthMatch[3];
-    year = Number(yearText);
-    if (yearText.length === 2) year += 2000;
-    const monthName = namedMonthMatch[2].toLowerCase();
-    month = MONTH_NAMES.findIndex((names) => names.includes(monthName)) + 1;
-    if (!month) return null;
-  }
-
-  const date = new Date(0);
-  date.setUTCHours(0, 0, 0, 0);
-  date.setUTCFullYear(year, month - 1, day);
-  return date.getUTCFullYear() === year &&
-    date.getUTCMonth() === month - 1 &&
-    date.getUTCDate() === day
-    ? date
-    : null;
 };
 
 const getFiscalYear = (monthKey) => {
@@ -149,7 +105,7 @@ const bulkUploadSelfKpa = async (req, res, next) => {
       const rowNumber = index + 2;
       const target = getCell(row, ["KPA", "Target", "KPA Target"]);
       const deadlineText = getCell(row, ["Deadline"]);
-      const deadline = deadlineText ? parseIsoDate(deadlineText) : null;
+      const deadline = deadlineText ? parseKraKpaBulkDate(deadlineText) : null;
       const errors = [];
 
       if (!target) {
@@ -172,7 +128,7 @@ const bulkUploadSelfKpa = async (req, res, next) => {
           row: rowNumber,
           field: "Deadline",
           message:
-            "Use YYYY-MM-DD, DD-MMM-YY/YYYY, or DD-MMMM-YY/YYYY (for example, 2026-11-30, 01-Nov-26, 01-Nov-2026, or 01-November-2026).",
+            "Use YYYY-MM-DD, DD-MM-YY/YYYY, DD-MMM-YY/YYYY, or DD-MMMM-YY/YYYY (for example, 2026-11-30, 01-11-26, 01-Nov-26, or 01-Nov-2026).",
         });
       }
       validationErrors.push(...errors);

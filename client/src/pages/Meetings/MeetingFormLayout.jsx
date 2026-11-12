@@ -40,10 +40,10 @@ import useAuth from "../../hooks/useAuth";
 import { useFieldArray } from "react-hook-form";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
 import { inrFormat } from "../../utils/currencyFormat";
+import MeetingDateSelector from "./MeetingDateSelector";
+import { bookedSlotsForDay, dateKeysInRange } from "./meetingBookingDates";
 
-const MeetingFormLayout = ({
-  calendarRoute = "/app/meetings/calendar",
-}) => {
+const MeetingFormLayout = ({ calendarRoute = "/app/meetings/calendar" }) => {
   const { auth } = useAuth();
   const BIZNEST_COMPANY_ID = "6799f0cd6a01edbe1bc3fcea";
   const [open, setOpen] = useState(false);
@@ -55,6 +55,9 @@ const MeetingFormLayout = ({
   const repeatMeetingClient = locationState.state?.repeatMeetingClient;
   const { perHourCredit = 0, perHourPrice = 0 } = locationState.state || {};
   const [events, setEvents] = useState([]);
+  const [customDates, setCustomDates] = useState(false);
+  const [bookingPeriod, setBookingPeriod] = useState("Day");
+  const [selectedDateKeys, setSelectedDateKeys] = useState([]);
   const [currentTime, setCurrentTime] = useState(() => dayjs());
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -125,8 +128,8 @@ const MeetingFormLayout = ({
       building: "",
       location: "",
       meetingRoom: meetingRoomId,
-      startDate: null, // Ensure null
-      endDate: null, // Ensure null
+      startDate: dayjs().startOf("day"),
+      endDate: dayjs().startOf("day"),
       startTime: null, // Watch startTime dynamically
       endTime: null,
       subject: "",
@@ -146,6 +149,20 @@ const MeetingFormLayout = ({
   const isReceptionist = auth.user?.role?.some((item) =>
     item.roleTitle.startsWith("Administration"),
   );
+  const monthlyBookingUserIds = [
+    "67b83885daad0f7bab2f18a9",
+    "6961fcd737afa664ab215d0a",
+  ];
+  const canUseMonthlyBooking =
+    isReceptionist ||
+    roles.includes("Tech Admin") ||
+    monthlyBookingUserIds.includes(String(auth.user?._id || "")) ||
+    auth.user?.departments?.some(
+      (department) =>
+        String(department?.name || "")
+          .trim()
+          .toLowerCase() === "administration",
+    );
 
   // useEffect(() => {
   //   if (!isReceptionist) {
@@ -159,6 +176,11 @@ const MeetingFormLayout = ({
   const endDate = watch("endDate"); // Watch endDate
   const startTime = watch("startTime");
   const endTime = watch("endTime");
+  const rangeDateKeys = useMemo(
+    () => dateKeysInRange(startDate, endDate),
+    [startDate, endDate],
+  );
+  const bookingDateKeys = customDates ? selectedDateKeys : rangeDateKeys;
   const company = watch("company");
   const isBizNest = company === BIZNEST_COMPANY_ID;
   const externalCompany = watch("externalCompany");
@@ -245,15 +267,18 @@ const MeetingFormLayout = ({
   );
 
   const shouldCheckAvailability =
-    !!startDateTime && !!endDateTime && shouldFetchParticipants;
+    !!startDateTime &&
+    !!endDateTime &&
+    shouldFetchParticipants &&
+    bookingDateKeys.length === 1;
   //-------------------------------API-------------------------------//
   const { data: meetingRooms = [] } = useQuery({
-      queryKey: ["meetingRooms"],
-      queryFn: async () => {
-        const response = await axios.get("/api/meetings/get-rooms");
-        return response.data || [];
-      },
-    });
+    queryKey: ["meetingRooms"],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-rooms");
+      return response.data || [];
+    },
+  });
 
   const activeMeetingRooms = useMemo(
     () => meetingRooms.filter((room) => room?.isActive),
@@ -282,8 +307,7 @@ const MeetingFormLayout = ({
   }, [activeMeetingRooms, meetingRoomId, setValue]);
 
   const displayedLocationName =
-    selectedMeetingRoom?.location?.building?.buildingName ||
-    locationName;
+    selectedMeetingRoom?.location?.building?.buildingName || locationName;
   const displayedMeetingRoomName =
     selectedMeetingRoom?.name ||
     (selectedMeetingRoomId === meetingRoomId ? meetingRoomName : "");
@@ -299,12 +323,12 @@ const MeetingFormLayout = ({
     : displayedLocationName;
   const displayedPerHourCredit =
     selectedMeetingRoomId === meetingRoomId
-      ? selectedMeetingRoom?.perHourCredit ?? perHourCredit
-      : selectedMeetingRoom?.perHourCredit ?? 0;
+      ? (selectedMeetingRoom?.perHourCredit ?? perHourCredit)
+      : (selectedMeetingRoom?.perHourCredit ?? 0);
   const displayedPerHourPrice =
     selectedMeetingRoomId === meetingRoomId
-      ? selectedMeetingRoom?.perHourPrice ?? perHourPrice
-      : selectedMeetingRoom?.perHourPrice ?? 0;
+      ? (selectedMeetingRoom?.perHourPrice ?? perHourPrice)
+      : (selectedMeetingRoom?.perHourPrice ?? 0);
 
   const { data: clientsData = [], isPending: isClientsDataPending } = useQuery({
     queryKey: ["clientsData"],
@@ -323,7 +347,7 @@ const MeetingFormLayout = ({
     () => clientsData.find((item) => item._id === company),
     [clientsData, company],
   );
- const wonoClient = useMemo(
+  const wonoClient = useMemo(
     () =>
       clientsData.find((client) => {
         const names = [
@@ -393,32 +417,36 @@ const MeetingFormLayout = ({
   }, [company, selectedCreditMonth, selectedCreditOwner]);
   //-------------------------------API-------------------------------//
   const usedMeetingCredits = useMemo(() => {
-    if (
-      meetingType !== "Internal" ||
-      !startDateTime ||
-      !endDateTime ||
-      !endDateTime.isAfter(startDateTime)
-    ) {
+    if (meetingType !== "Internal" || !startTime || !endTime) {
       return 0;
     }
 
-    const durationInMinutes = endDateTime.diff(startDateTime, "minute", true);
+    const minutesPerDay =
+      dayjs(endTime).hour() * 60 +
+      dayjs(endTime).minute() -
+      (dayjs(startTime).hour() * 60 + dayjs(startTime).minute());
+    if (minutesPerDay <= 0) return 0;
     return Number(
-      ((durationInMinutes / 60) * Number(displayedPerHourCredit || 0)).toFixed(
-        2,
-      ),
+      (
+        (minutesPerDay / 60) *
+        bookingDateKeys.length *
+        Number(displayedPerHourCredit || 0)
+      ).toFixed(2),
     );
   }, [
     displayedPerHourCredit,
-    endDateTime,
+    endTime,
     meetingType,
-    startDateTime,
+    startTime,
+    bookingDateKeys,
   ]);
 
   const displayedRemainingCredits =
     remainingMeetingCredits === "-"
       ? "-"
-      : Number((Number(remainingMeetingCredits) - usedMeetingCredits).toFixed(2));
+      : Number(
+          (Number(remainingMeetingCredits) - usedMeetingCredits).toFixed(2),
+        );
 
   const isRemainingCreditsNegative = Number(displayedRemainingCredits) < 0;
 
@@ -457,26 +485,26 @@ const MeetingFormLayout = ({
     isFetching: isAvailableEmployees,
     refetch: refetchAvailableEmployees,
   } = useQuery({
-      queryKey: [
-        "available-participants",
-        company,
-        startDateTime?.toISOString?.(),
-        endDateTime?.toISOString?.(),
-      ],
-      queryFn: async () => {
-        const response = await axios.get("/api/meetings/get-available-users", {
-          params: {
-            startTime: startDateTime.toISOString(),
-            endTime: endDateTime.toISOString(),
-          },
-        });
-        return response.data;
-      },
-      enabled: shouldCheckAvailability,
-      staleTime: 0,
-      refetchOnMount: "always",
-      refetchOnWindowFocus: true,
-    });
+    queryKey: [
+      "available-participants",
+      company,
+      startDateTime?.toISOString?.(),
+      endDateTime?.toISOString?.(),
+    ],
+    queryFn: async () => {
+      const response = await axios.get("/api/meetings/get-available-users", {
+        params: {
+          startTime: startDateTime.toISOString(),
+          endTime: endDateTime.toISOString(),
+        },
+      });
+      return response.data;
+    },
+    enabled: shouldCheckAvailability,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+  });
 
   useEffect(() => {
     if (!shouldCheckAvailability) return;
@@ -512,10 +540,14 @@ const MeetingFormLayout = ({
       return participantOptions;
     }
 
-    const nonTechEmployees = biznestEmployees.filter((user) =>
-      !user.departments?.some((department) =>
-        String(department?.name || "").trim().toLowerCase() === "tech",
-      ),
+    const nonTechEmployees = biznestEmployees.filter(
+      (user) =>
+        !user.departments?.some(
+          (department) =>
+            String(department?.name || "")
+              .trim()
+              .toLowerCase() === "tech",
+        ),
     );
     const seen = new Set();
     return [...participantOptions, ...nonTechEmployees].filter((user) => {
@@ -547,9 +579,7 @@ const MeetingFormLayout = ({
     return employees.filter(
       (user) =>
         !user?.role?.some((role) =>
-          ["Tech Employee"].includes(
-            String(role?.roleTitle || "").trim(),
-          ),
+          ["Tech Employee"].includes(String(role?.roleTitle || "").trim()),
         ),
     );
   }, [employees, isBizNest, participantOptions]);
@@ -619,7 +649,7 @@ const MeetingFormLayout = ({
       });
     }
 
- if (isTechManager) {
+    if (isTechManager) {
       return opts.filter(
         (option) =>
           option.id === BIZNEST_COMPANY_ID || option.id === wonoClient?._id,
@@ -627,7 +657,7 @@ const MeetingFormLayout = ({
     }
 
     return opts;
-   }, [clientsData, BIZNEST_COMPANY_ID, isTechManager, wonoClient?._id]);
+  }, [clientsData, BIZNEST_COMPANY_ID, isTechManager, wonoClient?._id]);
 
   // useEffect(() => {
   //   if (isCurrentUserUnavailable) {
@@ -667,6 +697,9 @@ const MeetingFormLayout = ({
     setValue("endDate", selectedDate, { shouldDirty: true });
     setValue("startTime", dayjs(startTime), { shouldDirty: true });
     setValue("endTime", dayjs(endTime), { shouldDirty: true });
+    setCustomDates(false);
+    setSelectedDateKeys([]);
+    setBookingPeriod("Day");
 
     setOpen(true);
   };
@@ -688,6 +721,24 @@ const MeetingFormLayout = ({
       },
       enabled: !!selectedMeetingRoomId,
     });
+  const conflictingDateKeys = useMemo(() => {
+    if (!startTime || !endTime) return [];
+    return bookingDateKeys.filter((key) => {
+      const start = dayjs(key)
+        .hour(dayjs(startTime).hour())
+        .minute(dayjs(startTime).minute())
+        .second(0)
+        .millisecond(0);
+      const end = dayjs(key)
+        .hour(dayjs(endTime).hour())
+        .minute(dayjs(endTime).minute())
+        .second(0)
+        .millisecond(0);
+      return bookedSlotsForDay(key, checkAvailability).some(
+        (slot) => start.isBefore(slot.end) && end.isAfter(slot.start),
+      );
+    });
+  }, [bookingDateKeys, checkAvailability, endTime, startTime]);
   //-------------------------------API-------------------------------//
 
   // Transform data inside useEffect
@@ -701,16 +752,26 @@ const MeetingFormLayout = ({
       return bookingStatus.toLowerCase() !== "cancelled";
     });
 
-    const formattedEvents = activeBookings.map((booking) => ({
-      id: booking._id,
-      title: "Booked",
-      start: new Date(booking.startTime), // ⬅️ already full datetime
-      end: new Date(booking.endTime), // ⬅️ already full datetime
-      backgroundColor: "#d3d3d3",
-      borderColor: "#a9a9a9",
-      textColor: "#555",
-      editable: false,
-    }));
+    const formattedEvents = activeBookings.flatMap((booking) =>
+      (booking.bookingSlots?.length ? booking.bookingSlots : [booking]).map(
+        (slot, index) => ({
+          id: `${booking._id}-${index}`,
+          title: "Booked",
+          start: new Date(slot.startTime),
+          end: new Date(
+            !booking.bookingSlots?.length &&
+              booking.extendTime &&
+              new Date(booking.extendTime) > new Date(slot.endTime)
+              ? booking.extendTime
+              : slot.endTime,
+          ),
+          backgroundColor: "#d3d3d3",
+          borderColor: "#a9a9a9",
+          textColor: "#555",
+          editable: false,
+        }),
+      ),
+    );
 
     setEvents(formattedEvents);
   };
@@ -723,7 +784,9 @@ const MeetingFormLayout = ({
     mutationKey: ["createMeeting"],
     mutationFn: async (data) => {
       const normalizeText = (value) =>
-        String(value || "").trim().toLowerCase();
+        String(value || "")
+          .trim()
+          .toLowerCase();
 
       const currentUserEmail = normalizeText(auth.user?.email);
       const currentUserFullName = normalizeText(
@@ -790,7 +853,8 @@ const MeetingFormLayout = ({
 
         // Internal users can book meetings for WONO/client companies too.
         // Only attach clientBookedBy when the current user actually has a matching client-member profile.
-        if (currentClientMember?._id) clientBookedById = currentClientMember._id;
+        if (currentClientMember?._id)
+          clientBookedById = currentClientMember._id;
       }
 
       const internalParticipants = Array.from(
@@ -805,18 +869,33 @@ const MeetingFormLayout = ({
         ),
       );
 
-      await axios.post("/api/meetings/create-meeting", {
+      const slots = data.bookingDateKeys.map((key) => {
+        const day = dayjs(key).startOf("day");
+        return {
+          date: key,
+          startDate: day.toISOString(),
+          startTime: day
+            .hour(dayjs(data.startTime).hour())
+            .minute(dayjs(data.startTime).minute())
+            .toISOString(),
+          endTime: day
+            .hour(dayjs(data.endTime).hour())
+            .minute(dayjs(data.endTime).minute())
+            .toISOString(),
+        };
+      });
+      const bookingPayload = {
         bookedRoom: data.meetingRoom,
         meetingType: data.meetingType,
-        startDate: startDate,
-        endDate: endDate,
-        startTime: startDateTime,
-        endTime: endDateTime,
+        startDate: slots[0].startDate,
+        endDate: slots[0].startDate,
+        startTime: slots[0].startTime,
+        endTime: slots[0].endTime,
         client: data.company,
         subject: data.subject,
         agenda: data.agenda,
         internalParticipants,
-       // bookedBy: data.bookedBy || data.internalBooked,
+        // bookedBy: data.bookedBy || data.internalBooked,
         bookedBy: isClientBooking ? null : selectedBookingUserId,
         ...(isClientBooking && clientBookedById
           ? { clientBookedBy: clientBookedById }
@@ -827,7 +906,15 @@ const MeetingFormLayout = ({
         //   : { bookedBy: bookingUserId }),
         externalParticipants: data.externalParticipants,
         externalCompany: data.externalCompany,
-      });
+      };
+      if (slots.length > 1) {
+        await axios.post("/api/meetings/create-meeting-dates", {
+          ...bookingPayload,
+          slots,
+        });
+      } else {
+        await axios.post("/api/meetings/create-meeting", bookingPayload);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["meetings"] });
@@ -837,7 +924,7 @@ const MeetingFormLayout = ({
       navigate(calendarRoute);
     },
     onError: (error) => {
-        toast.error(error.response?.data?.message || error.message || "ERROR");
+      toast.error(error.response?.data?.message || error.message || "ERROR");
     },
   });
   //-------------------------------API POST-------------------------------//
@@ -916,8 +1003,23 @@ const MeetingFormLayout = ({
       ...(manualExternalParticipants || []),
     ];
 
+    if (!bookingDateKeys.length) {
+      toast.error("Select at least one meeting date.");
+      return;
+    }
+    if (bookingDateKeys.length > 100) {
+      toast.error("Select no more than 100 dates per booking.");
+      return;
+    }
+    if (conflictingDateKeys.length) {
+      toast.error(
+        `Room already booked on ${conflictingDateKeys.map((key) => dayjs(key).format("DD MMM")).join(", ")}.`,
+      );
+      return;
+    }
     createMeeting({
       ...restData,
+      bookingDateKeys,
       externalParticipants: combinedExternalParticipants,
     });
   };
@@ -987,6 +1089,7 @@ const MeetingFormLayout = ({
         open={open}
         onClose={() => setOpen(false)}
         title={`${meetingType} Meeting`}
+        widthClass="w-[min(96vw,800px)]"
       >
         <form
           onSubmit={handleSubmit(onSubmit)}
@@ -1020,7 +1123,8 @@ const MeetingFormLayout = ({
                   Per Hour Price : {`INR ${inrFormat(displayedPerHourPrice)}`}
                 </span>
                 <span className="text-content">
-                  Per Half Hour Price : {`INR  ${inrFormat(displayedPerHourPrice / 2)}`}
+                  Per Half Hour Price :{" "}
+                  {`INR  ${inrFormat(displayedPerHourPrice / 2)}`}
                 </span>
               </div>
             </div>
@@ -1037,7 +1141,7 @@ const MeetingFormLayout = ({
                 </p>
               </div>
             )}
-            <div className="col-span-2 sm:col-span-1 md:col-span-2">
+            <div className={canUseMonthlyBooking ? "col-span-1" : "col-span-2"}>
               <Controller
                 name="meetingType"
                 control={control}
@@ -1061,7 +1165,102 @@ const MeetingFormLayout = ({
                 )}
               />
             </div>
+            {canUseMonthlyBooking && (
+              <TextField
+                label="Booking Period"
+                select
+                fullWidth
+                size="small"
+                value={bookingPeriod}
+                onChange={(event) => {
+                  const period = event.target.value;
+                  setBookingPeriod(period);
+                  setCustomDates(false);
+                  setSelectedDateKeys([]);
+                  setValue(
+                    "endDate",
+                    period === "Day"
+                      ? startDate
+                      : dayjs(startDate).endOf("month"),
+                    { shouldValidate: true },
+                  );
+                }}
+              >
+                <MenuItem value="Day">One Day</MenuItem>
+                <MenuItem value="Month">Multiple Days</MenuItem>
+              </TextField>
+            )}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Controller
+                name="startDate"
+                control={control}
+                rules={{ required: "Start date is required" }}
+                render={({ field, fieldState }) => (
+                  <DatePicker
+                    {...field}
+                    label="Start Date"
+                    minDate={dayjs().startOf("day")}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      if (
+                        value &&
+                        (bookingPeriod === "Day" ||
+                          dayjs(endDate).isBefore(value, "day"))
+                      ) {
+                        setValue(
+                          "endDate",
+                          bookingPeriod === "Day"
+                            ? value
+                            : dayjs(value).endOf("month"),
+                          { shouldValidate: true },
+                        );
+                      }
+                      setSelectedDateKeys((dates) =>
+                        dates.filter(
+                          (key) => !dayjs(key).isBefore(value, "day"),
+                        ),
+                      );
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
+              <Controller
+                name="endDate"
+                control={control}
+                rules={{ required: "End date is required" }}
+                render={({ field, fieldState }) => (
+                  <DatePicker
+                    {...field}
+                    label="End Date"
+                    disabled={bookingPeriod === "Day"}
+                    minDate={dayjs(startDate || dayjs()).startOf("day")}
+                    onChange={(value) => {
+                      field.onChange(value);
+                      setSelectedDateKeys((dates) =>
+                        dates.filter(
+                          (key) => !dayjs(key).isAfter(value, "day"),
+                        ),
+                      );
+                    }}
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        fullWidth: true,
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                  />
+                )}
+              />
               <Controller
                 name="startTime"
                 control={control}
@@ -1108,7 +1307,7 @@ const MeetingFormLayout = ({
                     if (!value) return "End time is required";
 
                     const start = buildDateTime(startDate, startTime);
-                    const end = buildDateTime(endDate, value);
+                    const end = buildDateTime(startDate, value);
 
                     if (end <= start) {
                       return "End time must be after start time";
@@ -1131,10 +1330,54 @@ const MeetingFormLayout = ({
                   />
                 )}
               />
+              {canUseMonthlyBooking && bookingPeriod === "Month" && (
+                <div className="col-span-2 flex items-center gap-1">
+                  <Checkbox
+                    size="small"
+                    checked={customDates}
+                    onChange={(event) => {
+                      setCustomDates(event.target.checked);
+                      setSelectedDateKeys(
+                        event.target.checked ? rangeDateKeys : [],
+                      );
+                    }}
+                    sx={{ padding: "3px" }}
+                  />
+                  <span className="text-sm">
+                    Custom dates (choose individual days)
+                  </span>
+                </div>
+              )}
+              {canUseMonthlyBooking && customDates && (
+                <MeetingDateSelector
+                  startDate={startDate}
+                  endDate={endDate}
+                  selectedDateKeys={selectedDateKeys}
+                  onChange={setSelectedDateKeys}
+                  bookings={checkAvailability}
+                  startTime={startTime}
+                  endTime={endTime}
+                />
+              )}
             </LocalizationProvider>
+            {!customDates && rangeDateKeys.length > 1 && (
+              <div className="col-span-2 text-sm text-gray-600">
+                All {rangeDateKeys.length} days in the range will be booked at
+                the selected times. Use Custom dates to exclude days.
+              </div>
+            )}
+            {conflictingDateKeys.length > 0 && !customDates && (
+              <div className="col-span-2 text-sm text-red-600">
+                Booked at this time:{" "}
+                {conflictingDateKeys
+                  .map((key) => dayjs(key).format("DD MMM"))
+                  .join(", ")}
+                . Choose other dates or times.
+              </div>
+            )}
             {meetingType === "Internal" ? (
               <>
-             {isReceptionist || isTechManager ? (
+                {isReceptionist || isTechManager ? (
                   <Controller
                     name="company"
                     control={control}
@@ -1190,7 +1433,7 @@ const MeetingFormLayout = ({
                     <TextField
                       fullWidth
                       size="small"
-                     // value={`${auth.user?.company?.companyName || "BIZNest"} `}
+                      // value={`${auth.user?.company?.companyName || "BIZNest"} `}
                       value={
                         isTechEmployee
                           ? wonoClient?.clientName || "WONO"

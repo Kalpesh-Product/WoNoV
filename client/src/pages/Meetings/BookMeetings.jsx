@@ -26,6 +26,7 @@ import { queryClient } from "../../main";
 import CustomRating from "../../components/CustomRating";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import humanDate from "../../utils/humanDateForamt";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 import { isAlphanumeric, noOnlyWhitespace } from "../../utils/validators";
@@ -754,7 +755,7 @@ const BookMeetings = ({
               />
               <DetalisFormatted
                 title="Date"
-                detail={selectedMeeting?.date || "N/A"}
+                detail={formatMeetingDateRange(selectedMeeting)}
               />
               <MeetingTimeDetails
                 startTime={selectedMeeting?.startTime}

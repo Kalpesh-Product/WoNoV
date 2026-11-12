@@ -20,7 +20,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
-import humanDate from "../../utils/humanDateForamt";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import { useSelector } from "react-redux";
 import { setMeetings } from "../../redux/slices/meetingSlice";
 import useAuth from "../../hooks/useAuth";
@@ -301,21 +301,22 @@ const Calender = () => {
   }, [visibleMeetings]);
 
   const transformedMeetings = useMemo(() => {
-    return visibleMeetings.map((meeting) => {
+    return visibleMeetings.flatMap((meeting) => {
       const statusColors = getStatusColors(
         getMeetingCalendarColorStatus(meeting),
       );
 
-      return {
-        id: meeting._id,
+      const slots = meeting.bookingSlots?.length ? meeting.bookingSlots : [meeting];
+      return slots.map((slot, index) => ({
+        id: `${meeting._id}-${index}`,
         title: meeting.subject,
-        start: meeting.startTime.split("/").reverse().join("-"),
-        end: meeting.endTime.split("/").reverse().join("-"),
+        start: slot.startTime.includes("/") ? slot.startTime.split("/").reverse().join("-") : slot.startTime,
+        end: slot.endTime.includes("/") ? slot.endTime.split("/").reverse().join("-") : slot.endTime,
         backgroundColor: statusColors.backgroundColor,
         borderColor: "transparent",
         textColor: statusColors.color,
-        extendedProps: { ...meeting },
-      };
+        extendedProps: { ...meeting, startTime: slot.startTime, endTime: slot.endTime },
+      }));
     });
   }, [visibleMeetings]);
 
@@ -573,13 +574,14 @@ const Calender = () => {
               />
               <DetalisFormatted
                 title="Date"
-                detail={humanDate(selectedEvent.start)}
+                detail={formatMeetingDateRange(selectedEvent.extendedProps)}
               />
               <MeetingTimeDetails
                 startTime={selectedEvent.start}
                 endTime={selectedEvent.extendedProps.endTime}
                 extendTime={selectedEvent.extendedProps.extendTime}
                 duration={selectedEvent.extendedProps.duration}
+                bookingSlots={selectedEvent.extendedProps.bookingSlots}
               />
               <DetalisFormatted
                 title="Status"

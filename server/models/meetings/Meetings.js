@@ -38,6 +38,18 @@ const meetingSchema = new mongoose.Schema(
       type: Date,
       required: true,
     },
+    bookingPeriod: {
+      type: String,
+      enum: ["Day", "Month"],
+      default: "Day",
+    },
+    bookingSlots: [
+      {
+        date: { type: String, required: true },
+        startTime: { type: Date, required: true },
+        endTime: { type: Date, required: true },
+      },
+    ],
     extendTime: {
       type: Date,
     },

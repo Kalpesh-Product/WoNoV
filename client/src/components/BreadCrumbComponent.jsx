@@ -20,6 +20,9 @@ const BreadCrumbComponent = () => {
   const isEmployeeDashboardContext = location.pathname.includes(
     "/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard",
   );
+  const isMemberWiseKpaTrail =
+    isEmployeeDashboardContext &&
+    location.state?.breadcrumbOrigin === "member-wise-kpa";
   const isOwnDailyScorePage = location.pathname.startsWith(
     "/app/kra-kpa/individual/daily-score/",
   );
@@ -125,7 +128,7 @@ const BreadCrumbComponent = () => {
   const pathBreadcrumbs = pathSegments.map((segment, index) => {
     const isLast = index === pathSegments.length - 1;
     const isDepartmentCardCrumb =
-      isEmployeeDashboardContext && segment.toLowerCase() === "department-kpa";
+      isEmployeeDashboardContext && !isMemberWiseKpaTrail && segment.toLowerCase() === "department-kpa";
     const isEmployeeWorkCrumb =
       isEmployeeDashboardContext &&
       segment.toLowerCase() === "kra-kpa" &&
@@ -180,7 +183,7 @@ const BreadCrumbComponent = () => {
     if (
       isClientIdSegment ||
       (isOwnDailyScorePage && segment === "individual") ||
-      (isEmployeeDashboardContext && segment.toLowerCase() === "member-wise-kpa") ||
+      (isEmployeeDashboardContext && !isMemberWiseKpaTrail && segment.toLowerCase() === "member-wise-kpa") ||
       (index > 0 &&
         pathSegments[0]?.toLowerCase() === "kra-kpa" &&
         segment.toLowerCase() === "kra-kpa" &&
@@ -199,7 +202,9 @@ const BreadCrumbComponent = () => {
         onClick={() =>
           navigate(
             fullPath,
-            isEmployeeDashboardContext && segment === "employee-dashboard"
+            isEmployeeDashboardContext &&
+              (segment === "employee-dashboard" ||
+                (isMemberWiseKpaTrail && segment === "member-wise-KPA"))
               ? { state: location.state }
               : undefined,
           )

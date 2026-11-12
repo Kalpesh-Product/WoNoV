@@ -14,6 +14,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import MuiModal from "../../../components/MuiModal";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../../../utils/formatMeetingDateRange";
 import humanDate from "../../../utils/humanDateForamt";
 import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import UploadFileInput from "../../../components/UploadFileInput";
@@ -637,6 +638,9 @@ const DayPassInvoiceFields = ({ revenue }) => {
       paymentMode: client.paymentMode || "N/A",
       meetingTitle: client.meetingTitle || "",
       meetingAgenda: client.meetingAgenda || "",
+      meetingStartDate: client.meetingStartDate || null,
+      meetingEndDate: client.meetingEndDate || null,
+      meetingBookingSlots: client.meetingBookingSlots || [],
       meetingStartTime: client.meetingStartTime || null,
       meetingEndTime: client.meetingEndTime || null,
       meetingExtendTime: client.meetingExtendTime || null,
@@ -1206,12 +1210,12 @@ const DayPassInvoiceFields = ({ revenue }) => {
                 </div>
               ) : null
             }
-            headerActions={!showChart && revenueKind !== "day-pass" ? (
+            headerActions={!showChart ? (
               <PrimaryButton
                 title="Manage Meeting"
                 handleSubmit={() =>
                   navigate(
-                    "/app/dashboard/finance-dashboard/mix-bag/manage-meetings/external-clients",
+                    `/app/dashboard/finance-dashboard/mix-bag/manage-meetings/${revenueKind === "day-pass" ? "day-pass" : "external-clients"}`,
                   )
                 }
               />
@@ -1448,7 +1452,14 @@ const DayPassInvoiceFields = ({ revenue }) => {
                 />
                 <DetalisFormatted
                   title="Date"
-                  detail={humanDate(selectedRevenue.date)}
+                  detail={formatMeetingDateRange({
+                    date: selectedRevenue.date,
+                    startDate: selectedRevenue.meetingStartDate,
+                    endDate: selectedRevenue.meetingEndDate,
+                    bookingSlots: selectedRevenue.meetingBookingSlots,
+                    startTime: selectedRevenue.meetingStartTime,
+                    endTime: selectedRevenue.meetingEndTime,
+                  })}
                 />
                 <MeetingTimeDetails
                   startTime={selectedRevenue.meetingStartTime}

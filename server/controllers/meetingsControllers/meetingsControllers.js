@@ -30,6 +30,7 @@ const ExternalVisits = require("../../models/visitor/ExternalVisits");
 const buildDateFilter = require("../../utils/dateFilter");
 const setAuditLogContext = require("../../utils/auditLogContext");
 const { getMeetingDepartments } = require("../../utils/meetingDepartments");
+const { meetingOverlapFilter, getMeetingDurationHours } = require("../../utils/meetingSlots");
 
 const getEffectiveEndTime = (meeting) => {
   const originalEndTime = new Date(meeting?.endTime);
@@ -61,8 +62,7 @@ const recalculateAndUpdatePayment = ({
   paymentMode,
   paymentStatus,
 }) => {
-  const durationInMs = getEffectiveEndTime(meeting) - meeting.startTime;
-  const durationInHours = Number((durationInMs / (1000 * 60 * 60)).toFixed(2));
+  const durationInHours = Number(getMeetingDurationHours(meeting).toFixed(2));
   const perHourCost = Number(meeting.bookedRoom?.perHourPrice || 0);
   const calculatedBaseAmount = Number(
     (durationInHours * perHourCost).toFixed(2),
@@ -381,10 +381,7 @@ const addMeetings = async (req, res, next) => {
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: roomAvailable._id,
       status: { $ne: "Cancelled" },
-      startTime: { $lt: endTimeObj },
-      $expr: {
-        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, startTimeObj],
-      },
+      ...meetingOverlapFilter(startTimeObj, endTimeObj),
     });
 
     if (conflictingMeeting) {
@@ -802,13 +799,10 @@ const getAvaliableUsers = async (req, res, next) => {
     const meetings = await Meeting.find({
       company: req.company,
       status: { $nin: cancelledStatuses },
-      startTime: { $lt: end },
-      $expr: {
-        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, start],
-      },
+      ...meetingOverlapFilter(start, end),
     })
       .select(
-        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime extendTime",
+        "bookedBy clientBookedBy internalParticipants clientParticipants startTime endTime extendTime bookingSlots",
       )
       .lean()
       .exec();
@@ -1359,12 +1353,13 @@ const getMyMeetings = async (req, res, next) => {
         endDate: meeting.endDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
+        bookingPeriod: meeting.bookingPeriod || "Day",
+        bookingSlots: meeting.bookingSlots || [],
         extendTime: meeting.extendTime,
         credits: meeting.credits,
-        duration: formatDuration(
-          meeting.startTime,
-          getEffectiveEndTime(meeting),
-        ),
+        duration: meeting.bookingSlots?.length
+          ? `${Math.round(getMeetingDurationHours(meeting) * 60)}min`
+          : formatDuration(meeting.startTime, getEffectiveEndTime(meeting)),
         meetingStatus: meeting.status,
         action: meeting.extend,
         agenda: meeting.agenda,
@@ -1775,7 +1770,7 @@ const cancelMeeting = async (req, res, next) => {
     }
 
     const meetingToCancel = await Meeting.findById(meetingId).select(
-      "status meetingType creditsUsed client clientBookedBy internalParticipants bookedBy startTime",
+      "status meetingType creditsUsed client clientBookedBy internalParticipants bookedBy startTime bookingSlots",
     );
 
     if (!meetingToCancel) {
@@ -1785,6 +1780,10 @@ const cancelMeeting = async (req, res, next) => {
         logAction,
         logSourceKey,
       );
+    }
+
+    if (meetingToCancel.bookingSlots?.length > 1) {
+      throw new CustomError("Cancellation is not available for month bookings", logPath, logAction, logSourceKey, 400);
     }
 
     if (meetingToCancel.status === "Cancelled") {
@@ -1954,6 +1953,10 @@ const extendMeeting = async (req, res, next) => {
       );
     }
 
+    if (meeting.bookingSlots?.length > 1) {
+      throw new CustomError("Extension is not available for month bookings", logPath, logAction, logSourceKey, 400);
+    }
+
     extensionLockToken = new mongoose.Types.ObjectId().toString();
     extensionLockedRoomId = meeting.bookedRoom._id;
     const lockNow = new Date();
@@ -2023,13 +2026,7 @@ const extendMeeting = async (req, res, next) => {
     const conflictingMeeting = await Meeting.findOne({
       bookedRoom: meeting.bookedRoom._id,
       status: { $ne: "Cancelled" },
-      startTime: { $lt: normalizedNewEndTime },
-      $expr: {
-        $gt: [
-          { $ifNull: ["$extendTime", "$endTime"] },
-          currentEffectiveEndTime,
-        ],
-      },
+      ...meetingOverlapFilter(currentEffectiveEndTime, normalizedNewEndTime),
       _id: { $ne: meetingId },
     });
     if (conflictingMeeting) {
@@ -2258,18 +2255,15 @@ const getSingleRoomMeetings = async (req, res, next) => {
       return res.status(400).json({ message: "Invalid room Id provided" });
     }
 
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
     const meetings = await Meeting.find({
       bookedRoom: roomId,
-      $or: [
-        { startDate: { $lte: endOfDay }, endDate: { $gte: startOfDay } },
-        { startDate: { $gt: endOfDay } },
-      ],
+      company: req.company,
+      $expr: {
+        $gte: [
+          { $max: ["$endTime", "$extendTime"] },
+          new Date(Date.now() - 24 * 60 * 60 * 1000),
+        ],
+      },
     }).populate("bookedRoom", "_id name status description seats");
 
     // No date formatting here
@@ -2613,6 +2607,10 @@ const updateMeetingStatus = async (req, res, next) => {
     });
   }
 
+  if (status === "Completed" && meeting.bookingSlots?.length > 1 && currDate < meeting.endTime) {
+    return res.status(400).json({ message: "A month booking can be completed only after its final slot ends" });
+  }
+
   // if (status === "Completed" && currDate < getEffectiveEndTime(meeting)) {
   //   return res.status(400).json({
   //     message: "Meeting cannot be marked completed before its end time",
@@ -2791,6 +2789,10 @@ const updateMeetingDetails = async (req, res, next) => {
       return res.status(404).json({ message: "Meeting not found" });
     }
 
+    if (meeting.bookingSlots?.length > 1) {
+      return res.status(400).json({ message: "Editing is not available for month bookings" });
+    }
+
     const isClient = !!meeting.clientBookedBy;
     const isExternal = !!meeting.externalBookedBy;
     const BookingCompanyModel = isClient
@@ -2917,10 +2919,7 @@ const updateMeetingDetails = async (req, res, next) => {
       _id: { $ne: meetingId },
       bookedRoom: meeting.bookedRoom._id,
       status: { $ne: "Cancelled" },
-      startTime: { $lt: endTimeObj },
-      $expr: {
-        $gt: [{ $ifNull: ["$extendTime", "$endTime"] }, startTimeObj],
-      },
+      ...meetingOverlapFilter(startTimeObj, endTimeObj),
     });
 
     if (conflictingMeeting) {

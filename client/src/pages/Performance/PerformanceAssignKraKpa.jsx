@@ -13,6 +13,7 @@ import {
 
 const PerformanceAssignKraKpa = ({
   memberDestination = "/app/performance/assign-KRA-KPA/team-Daily-KRA",
+  showAllDepartmentsForHr = false,
 }) => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -51,9 +52,11 @@ const PerformanceAssignKraKpa = ({
   };
 
   const { data: departmentMembers = [] } = useQuery({
-    queryKey: ["performanceAccessibleDepartments"],
+    queryKey: ["performanceAccessibleDepartments", showAllDepartmentsForHr],
     queryFn: async () => {
-      const response = await axios.get("/api/access/department-wise-employees");
+      const response = await axios.get("/api/access/department-wise-employees", {
+        params: showAllDepartmentsForHr ? { scope: "kra-kpa-departments" } : undefined,
+      });
       return response.data?.data || [];
     },
   });

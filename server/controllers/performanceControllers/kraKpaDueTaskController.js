@@ -220,31 +220,15 @@ const validateParentKpa = async ({
   parentKpa,
   department,
   employee,
-  identificationDate,
 }) => {
   if (!mongoose.isValidObjectId(parentKpa)) {
     return { error: "Main KPA is required" };
   }
-  const monthStart = new Date(
-    Date.UTC(
-      identificationDate.getUTCFullYear(),
-      identificationDate.getUTCMonth(),
-      1,
-    ),
-  );
-  const monthEnd = new Date(
-    Date.UTC(
-      identificationDate.getUTCFullYear(),
-      identificationDate.getUTCMonth() + 1,
-      1,
-    ),
-  );
   const record = await IndividualMonthlyKpa.findOne({
     _id: parentKpa,
     company: req.company,
     department,
     employee,
-    createdAt: { $gte: monthStart, $lt: monthEnd },
     isDeleted: { $ne: true },
     isActive: { $ne: false },
     $or: [
@@ -253,7 +237,7 @@ const validateParentKpa = async ({
     ],
   }).select("_id deadline");
   if (!record) {
-    return { error: "Select a valid KPA for the selected month" };
+    return { error: "Select an active, approved KPA for this employee" };
   }
   if (!record.deadline) {
     return { error: "The selected KPA must have a deadline" };
@@ -274,15 +258,9 @@ const hasInactiveParentKpa = async (req, record) => {
   return !parentKpa;
 };
 
-const validateTaskDates = (task, parentKpaDeadline) => {
-  if (task.deadline > parentKpaDeadline) {
-    return "KPA Task deadline cannot be after the KPA deadline";
-  }
+const validateTaskDates = (task) => {
   if (task.identificationDate > task.deadline) {
     return "Identification Date cannot be after the KPA Task deadline";
-  }
-  if (task.identificationDate > parentKpaDeadline) {
-    return "Identification Date cannot be after the KPA deadline";
   }
   return null;
 };
@@ -297,6 +275,18 @@ const validateTask = (body) => {
   if (!dueTaskName) return { error: "KPA Task is required" };
   if (dueTaskName.length > 500) return { error: "KPA Task is too long" };
   if (!identificationDate) return { error: "Identification Date is required" };
+  const todayParts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date()).map(({ type, value }) => [type, value]),
+  );
+  const today = new Date(Date.UTC(
+    Number(todayParts.year), Number(todayParts.month) - 1, Number(todayParts.day),
+  ));
+  if (identificationDate > today) return { error: "Identification Date cannot be in the future" };
   if (!deadline) return { error: "Deadline is required" };
   if (comments.length > 5000) return { error: "Comments are too long" };
   return { value: { dueTaskName, identificationDate, deadline, comments } };
@@ -362,6 +352,7 @@ const listDueTasks = async (req, res, next) => {
             $match: {
               company: records[0].company,
               sourceDueTask: { $in: records.map((record) => record._id) },
+              isDeleted: { $ne: true },
             },
           },
           {
@@ -419,15 +410,11 @@ const createDueTask = async (req, res, next) => {
       parentKpa: req.body.parentKpa,
       department: req.body.department,
       employee: req.body.employee,
-      identificationDate: validation.value.identificationDate,
     });
     if (parentKpaValidation.error) {
       return res.status(400).json({ message: parentKpaValidation.error });
     }
-    const dateError = validateTaskDates(
-      validation.value,
-      parentKpaValidation.deadline,
-    );
+    const dateError = validateTaskDates(validation.value);
     if (dateError) return res.status(400).json({ message: dateError });
     const identifierError = await validateUserSelection(
       req,
@@ -579,6 +566,7 @@ const bulkUploadDueTasks = async (req, res, next) => {
       kpasByName.set(name, [...(kpasByName.get(name) || []), kpa]);
     });
     const errors = [];
+    const mismatchRows = [];
     const records = nonEmptyRows.map((row, index) => {
       const rowNumber = index + 2;
       const parentKpaName = getCell(row, "mainkpa");
@@ -588,16 +576,7 @@ const bulkUploadDueTasks = async (req, res, next) => {
         deadline: getCell(row, "taskdeadline"),
         comments: getCell(row, "comments"),
       });
-      const identificationMonth = task.value?.identificationDate
-        .toISOString()
-        .slice(0, 7);
-      const matches = (
-        kpasByName.get(normalizeKpaName(parentKpaName)) || []
-      ).filter(
-        (kpa) =>
-          !identificationMonth ||
-          kpa.createdAt.toISOString().slice(0, 7) === identificationMonth,
-      );
+      const matches = kpasByName.get(normalizeKpaName(parentKpaName)) || [];
       const parentKpa = matches.length === 1 ? matches[0] : null;
       if (!parentKpaName) {
         errors.push({
@@ -610,14 +589,20 @@ const bulkUploadDueTasks = async (req, res, next) => {
           row: rowNumber,
           field: "Main KPA",
           message:
-            "More than one KPA has this name in the identification month. Rename the KPAs to distinguish them before uploading.",
+            "More than one KPA has this name in the selected date range. Rename the KPAs to distinguish them before uploading.",
         });
-      } else if (!parentKpa || !parentKpa.deadline) {
+      } else if (!matches.length) {
+        mismatchRows.push(rowNumber);
         errors.push({
           row: rowNumber,
           field: "Main KPA",
-          message:
-            "Select an active, approved KPA from the downloaded date range and its creation month.",
+          message: "No matching KPA. Download a fresh template and keep the Main KPA name unchanged.",
+        });
+      } else if (!parentKpa.deadline) {
+        errors.push({
+          row: rowNumber,
+          field: "Main KPA",
+          message: "The matching KPA has no deadline.",
         });
       }
       if (task.error) {
@@ -631,7 +616,7 @@ const bulkUploadDueTasks = async (req, res, next) => {
         errors.push({ row: rowNumber, field, message: task.error });
       }
       if (!parentKpa || task.error) return null;
-      const dateError = validateTaskDates(task.value, parentKpa.deadline);
+      const dateError = validateTaskDates(task.value);
       if (dateError)
         errors.push({
           row: rowNumber,
@@ -654,7 +639,10 @@ const bulkUploadDueTasks = async (req, res, next) => {
     });
     if (errors.length) {
       return res.status(400).json({
-        message: "Due Task CSV validation failed. No rows were imported.",
+        message: mismatchRows.length
+          ? "Some Main KPAs don't match the active, approved KPAs in this date range. No tasks were uploaded."
+          : "Please fix the listed rows and try again. No tasks were uploaded.",
+        ...(mismatchRows.length && { code: "MAIN_KPA_MISMATCH", mismatchRows }),
         errors,
       });
     }
@@ -722,15 +710,11 @@ const updateDueTask = async (req, res, next) => {
       parentKpa: req.body.parentKpa,
       department: record.department,
       employee: record.employee,
-      identificationDate: validation.value.identificationDate,
     });
     if (parentKpaValidation.error) {
       return res.status(400).json({ message: parentKpaValidation.error });
     }
-    const dateError = validateTaskDates(
-      validation.value,
-      parentKpaValidation.deadline,
-    );
+    const dateError = validateTaskDates(validation.value);
     if (dateError) return res.status(400).json({ message: dateError });
     const identifierError = await validateUserSelection(
       req,

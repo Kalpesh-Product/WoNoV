@@ -17,7 +17,8 @@ const formatExtensionDuration = (durationInMinutes) => {
     .join(" ");
 };
 
-const MeetingTimeDetails = ({ startTime, endTime, extendTime, duration }) => {
+const MeetingTimeDetails = ({ startTime, endTime, extendTime, duration, bookingSlots, gap }) => {
+  const hasMultipleSlots = Array.isArray(bookingSlots) && bookingSlots.length > 1;
   const startTimestamp = getTimestamp(startTime);
   const endTimestamp = getTimestamp(endTime);
   const extendTimestamp = getTimestamp(extendTime);
@@ -27,10 +28,14 @@ const MeetingTimeDetails = ({ startTime, endTime, extendTime, duration }) => {
     extendTimestamp > endTimestamp;
   const effectiveEndTime = hasExtension ? extendTime : endTime;
   const effectiveEndTimestamp = hasExtension ? extendTimestamp : endTimestamp;
-  const computedDurationInMinutes =
-    startTimestamp !== null &&
-    effectiveEndTimestamp !== null &&
-    effectiveEndTimestamp > startTimestamp
+  const computedDurationInMinutes = hasMultipleSlots
+    ? bookingSlots.reduce((total, slot) => {
+        const slotStart = getTimestamp(slot.startTime);
+        const slotEnd = getTimestamp(slot.endTime);
+        return total + (slotStart !== null && slotEnd !== null && slotEnd > slotStart
+          ? Math.round((slotEnd - slotStart) / (1000 * 60)) : 0);
+      }, 0)
+    : startTimestamp !== null && effectiveEndTimestamp !== null && effectiveEndTimestamp > startTimestamp
       ? Math.round((effectiveEndTimestamp - startTimestamp) / (1000 * 60))
       : 0;
   const displayDuration =
@@ -46,6 +51,7 @@ const MeetingTimeDetails = ({ startTime, endTime, extendTime, duration }) => {
     <>
       <DetalisFormatted
         title="Time"
+        gap={gap}
         detail={
           startTime && effectiveEndTime
             ? `${humanTime(startTime)} - ${humanTime(effectiveEndTime)}`
@@ -53,16 +59,18 @@ const MeetingTimeDetails = ({ startTime, endTime, extendTime, duration }) => {
         }
       />
       {displayDuration && (
-        <DetalisFormatted title="Duration" detail={displayDuration} />
+        <DetalisFormatted title="Duration" detail={displayDuration} gap={gap} />
       )}
       {hasExtension && (
         <>
           <DetalisFormatted
             title="Extended Time"
+            gap={gap}
             detail={`${humanTime(endTime)} - ${humanTime(extendTime)}`}
           />
           <DetalisFormatted
             title="Extended Duration"
+            gap={gap}
             detail={formatExtensionDuration(extensionDurationInMinutes)}
           />
         </>

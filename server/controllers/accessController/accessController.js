@@ -64,12 +64,18 @@ const updatePermissions = async (req, res, next) => {
 
 const getDepartmentWiseUsers = async (req, res, next) => {
   try {
-    const { departments, roles, company } = req;
+    const { departments, roles } = req;
 
     const deptIds = departments.map((dept) => dept._id);
     let query = {};
+    const isKraKpaDepartmentCard = req.query.scope === "kra-kpa-departments";
+    const isHr = roles.some((role) => /^hr(?:\s|$)/i.test(role));
 
-    if (!roles.includes("Master Admin") && !roles.includes("Super Admin")) {
+    if (
+      !roles.includes("Master Admin") &&
+      !roles.includes("Super Admin") &&
+      !(isKraKpaDepartmentCard && isHr)
+    ) {
       query = { _id: { $in: deptIds } };
     }
 

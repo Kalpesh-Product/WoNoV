@@ -10,6 +10,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import dayjs from "dayjs";
 import PageFrame from "../../components/Pages/PageFrame";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -253,6 +254,11 @@ const MeetingReports = () => {
   };
 
   const getDisplayDuration = (meeting) => {
+    if (meeting?.bookingSlots?.length) {
+      const minutes = meeting.bookingSlots.reduce((total, slot) =>
+        total + dayjs(slot.endTime).diff(dayjs(slot.startTime), "minute"), 0);
+      return `${minutes}min`;
+    }
     const startTime = meeting?.startTime;
     const endTime = getEffectiveEndTime(meeting);
 
@@ -436,6 +442,9 @@ const MeetingReports = () => {
                     meetingType: item.meetingType,
                     housekeepingStatus: item.housekeepingStatus,
                     date: item.date,
+                    startDate: item.startDate,
+                    endDate: item.endDate,
+                    bookingSlots: item.bookingSlots,
                     startTime: item.startTime,
                     scheduledEndTime: item.endTime,
                     endTime: getEffectiveEndTime(item),
@@ -523,7 +532,7 @@ const MeetingReports = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={selectedMeeting?.date ? selectedMeeting?.date : "N/A"}
+              detail={formatMeetingDateRange(selectedMeeting)}
             />
             <MeetingTimeDetails
               startTime={selectedMeeting?.startTime}
@@ -532,6 +541,7 @@ const MeetingReports = () => {
               }
               extendTime={selectedMeeting?.extendTime}
               duration={getDisplayDuration(selectedMeeting)}
+              bookingSlots={selectedMeeting?.bookingSlots}
             />
             <DetalisFormatted
               title="Meeting Status"

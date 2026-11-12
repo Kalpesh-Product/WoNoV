@@ -14,6 +14,7 @@ const FINANCE_REVENUE_BASE_PATH =
 
 const VERTICAL_ROUTE_MAP = {
   Meeting: "meetings",
+  "Day Pass": "day-pass",
   "Alternate Revenue": "alt-revenue",
   "Virtual Office": "virtual-office",
   Workation: "workation",
@@ -119,7 +120,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
       flatten.push({
-        vertical: "Meeting",
+        vertical: item.source === "day-pass" ? "Day Pass" : "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
         // normalizedStatus: getNormalizedPaymentStatus(item.status),
@@ -196,7 +197,14 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
       <button
         type="button"
         className={clickableCellClass}
-        onClick={() => handleVerticalNavigation(vertical)}
+        onMouseDown={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+        onClick={(event) => {
+          event.stopPropagation();
+          handleVerticalNavigation(vertical);
+        }}
         aria-label={`Open ${vertical} income details`}
       >
         {params.value}
@@ -209,38 +217,47 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
   const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
     const tooltipRows = [
       { label: "Co-Working", seriesName: "Coworking" },
-      { label: "Meetings", seriesName: "Meeting" },
       { label: "Virtual Office", seriesName: "Virtual Office" },
+      { label: "Meetings", seriesName: "Meeting" },
+      { label: "Day Pass", seriesName: "Day Pass" },
       { label: "Workation", seriesName: "Workation" },
       { label: "Alt Revenues", seriesName: "Alternate Revenue" },
-    ];
-    let total = 0;
-
+    ].map(({ label, seriesName }) => {
+      const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
+      return {
+        label,
+        color: seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280",
+        value: rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0,
+      };
+    });
+    const total = tooltipRows.reduce((sum, row) => sum + row.value, 0);
+    const formatShare = (value) => {
+      const percentage = (value / total) * 100;
+      if (percentage < 0.1) return "<0.1%";
+      if (percentage < 1) return `${percentage.toFixed(1)}%`;
+      return `${Math.round(percentage)}%`;
+    };
     const rowsHtml = tooltipRows
-      .map(({ label, seriesName }) => {
-        const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
-        const color =
-          seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280";
-        const value = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
-        total += value;
-
-        return `
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-            <span style="height:10px; width:10px; flex:none; border-radius:50%; background-color:${color}; display:inline-block;"></span>
-            <div style="display:flex; justify-content:space-between; width:100%; gap:24px;">
-              <span>${label}</span>
-              <span>INR ${inrFormat(value)}</span>
-            </div>
-          </div>`;
-      })
+      .filter(({ value }) => value > 0)
+      .map(({ label, color, value }) => `
+        <div style="display:flex; align-items:center; gap:8px; padding:4px 10px; white-space:nowrap;">
+          <span style="width:11px; height:11px; flex:none; border-radius:50%; background:${color};"></span>
+          <span>${formatShare(value)} = ${label} =</span>
+          <strong>INR ${inrFormat(value)}</strong>
+        </div>`)
       .join("");
 
     return `
-      <div style="padding:10px; width:300px;">
-        <div class="apexcharts-tooltip-title" style="margin-bottom:8px; font-weight:bold;">${monthLabel}</div>
-        ${rowsHtml}
-        <hr style="margin-top:6px;" />
-        <div style="text-align:right; font-weight:600;">Total: INR ${inrFormat(total)}</div>
+      <div style="overflow:hidden; border:1px solid #e5e7eb; border-radius:6px; background:#fff; box-shadow:0 4px 12px #0002; color:#1f2937; font-size:13px;">
+        <div style="background:#eef0f2; padding:8px 10px;">${monthLabel}</div>
+        <div style="padding:7px 0 9px;">
+          ${rowsHtml || '<div style="padding:4px 10px;">No revenue</div>'}
+          <div style="display:flex; align-items:center; gap:8px; margin:7px 10px 0; border-top:1px solid #e5e7eb; padding-top:10px; white-space:nowrap;">
+            <span style="width:11px; height:11px; flex:none; border-radius:50%; background:#86efac;"></span>
+            <span>${total > 0 ? 100 : 0}% = Overall Revenues =</span>
+            <strong>INR ${inrFormat(total)}</strong>
+          </div>
+        </div>
       </div>`;
   };
 
@@ -262,6 +279,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
           seriesColors={{
             Coworking: "#1E3D73",
             Meeting: "#2196F3",
+            "Day Pass": "#F59E0B",
             "Virtual Office": "#11daf5",
             Workation: "#54C4A7",
             "Alternate Revenue": "#1976D2",
@@ -269,6 +287,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
           legendItems={[
             { label: "Co-Working", seriesName: "Coworking" },
             { label: "Meetings", seriesName: "Meeting" },
+            { label: "Day Pass", seriesName: "Day Pass" },
             { label: "Virtual Office", seriesName: "Virtual Office" },
             { label: "Workation", seriesName: "Workation" },
             { label: "Alt Revenues", seriesName: "Alternate Revenue" },

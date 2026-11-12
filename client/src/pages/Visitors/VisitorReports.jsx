@@ -8,6 +8,7 @@ import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import humanTime from "../../utils/humanTime";
 import humanDate from "../../utils/humanDateForamt";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import MuiModal from "../../components/MuiModal";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
@@ -529,7 +530,7 @@ const VisitorReports = ({ dayPassOnly = false }) => {
               .filter(Boolean)
               .join(" - ")
           : "-",
-      meetingDate: formatDateValue(meeting?.startDate || meeting?.startTime),
+      meetingDate: formatMeetingDateRange(meeting),
       meetingStartTime: formatTimeValue(meeting?.startTime),
       meetingEndTime: formatTimeValue(effectiveMeetingEndTime),
       meetingStatus: meeting?.status || "-",

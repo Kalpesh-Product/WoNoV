@@ -15,6 +15,7 @@ import CustomRating from "../../components/CustomRating";
 import humanTime from "../../utils/humanTime";
 import humanDateFormat from "../../utils/humanDateForamt";
 import humanDate from "../../utils/humanDateForamt";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import PageFrame from "../../components/Pages/PageFrame";
 import YearWiseTable from "../../components/Tables/YearWiseTable";
 
@@ -155,6 +156,9 @@ const MeetingRoomCredits = ({ pageTitle }) => {
               meetingStatus: meeting.meetingStatus,
               meetingType: meeting.meetingType,
               date: meeting.date,
+              startDate: meeting.startDate,
+              endDate: meeting.endDate,
+              bookingSlots: meeting.bookingSlots,
               bookedBy: bookedByName,
               clientBookedBy: meeting.clientBookedBy,
               receptionist: meeting.receptionist || "Unknown",
@@ -262,7 +266,7 @@ const MeetingRoomCredits = ({ pageTitle }) => {
             />
             <DetalisFormatted
               title="Date"
-              detail={humanDate(selectedMeeting?.date)}
+              detail={formatMeetingDateRange(selectedMeeting)}
             />
             {/* <DetalisFormatted
               title="Time"

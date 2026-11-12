@@ -9,7 +9,7 @@ import {
   Popover,
   TextField,
 } from "@mui/material";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { DatePicker, LocalizationProvider, TimePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateRangePicker } from "react-date-range";
 import {
@@ -92,6 +92,8 @@ const emptyForm = () => ({
   month: currentMonth(),
   target: "",
   deadline: "",
+  closingDate: "",
+  closingTime: "",
   isActive: true,
   managerComments: "",
   kpaRating: "",
@@ -255,6 +257,8 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [editingRecord, setEditingRecord] = useState(null);
+  const [completedDateEdit, setCompletedDateEdit] = useState(null);
+  const [completedDateErrors, setCompletedDateErrors] = useState({});
   const [form, setForm] = useState(emptyForm);
   const [formErrors, setFormErrors] = useState({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -266,6 +270,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   );
   const [dailyLogDateError, setDailyLogDateError] = useState("");
   const [viewRecord, setViewRecord] = useState(null);
+  const [taskListRecord, setTaskListRecord] = useState(null);
   const [historyRecord, setHistoryRecord] = useState(null);
   const [historyDateRange, setHistoryDateRange] = useState(() => monthRange(currentMonth()));
   const [historyCalendarAnchor, setHistoryCalendarAnchor] = useState(null);
@@ -414,7 +419,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const downloadSelfKpaTemplate = () => {
     const csv =
       String.fromCharCode(65279) +
-      ["KPA,Deadline", "Example KPA,2026-11-30", ""].join("\r\n");
+      ["KPA,Deadline", "Example KPA,01-Nov-2026", ""].join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -427,7 +432,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   const downloadSelfKraTemplate = () => {
     const csv =
       String.fromCharCode(65279) +
-      ["KRA,Category", ""].join("\r\n");
+      ["KRA,Category,Start Date", "Example KRA,Example Category,01-Nov-2026", ""].join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -479,6 +484,17 @@ const KraKpaIndividualMonthlyKpa = () => {
           },
         },
       );
+      return response.data || [];
+    },
+  });
+
+  const { data: dueTasks = [], isLoading: isLoadingDueTasks } = useQuery({
+    queryKey: ["kraKpaDueTask", departmentId, employeeId],
+    enabled: Boolean(!isSelfKra && departmentId && employeeId),
+    queryFn: async () => {
+      const response = await axios.get("/api/kra-kpa/due-task", {
+        params: { department: departmentId, employee: employeeId },
+      });
       return response.data || [];
     },
   });
@@ -599,6 +615,24 @@ const KraKpaIndividualMonthlyKpa = () => {
     },
     onError: (error) => {
       toast.error(error?.response?.data?.message || "Unable to save KPA");
+    },
+  });
+
+  const saveCompletedDate = useMutation({
+    mutationFn: async ({ id, closingDate }) => {
+      const response = await axios.patch(
+        `/api/kra-kpa/individual-monthly-kpa/${id}`,
+        { closingDate },
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      refreshKpaQueries();
+      setCompletedDateEdit(null);
+      toast.success("Completed date and time updated");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Unable to update completed date and time");
     },
   });
 
@@ -742,6 +776,7 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
   const openEdit = (record) => {
     if (!isSelfKra && isEmployeeUser) return;
+    if (!isSelfKra && record.status === "Completed" && !canEditManagerReview) return;
     setEditingRecord(record);
     setFormErrors({});
     setForm({
@@ -750,6 +785,8 @@ const KraKpaIndividualMonthlyKpa = () => {
       deadline: record.deadline
         ? dayjs(record.deadline).format("YYYY-MM-DD")
         : "",
+      closingDate: record.closingDate ? dayjs(record.closingDate).format("YYYY-MM-DD") : "",
+      closingTime: record.closingDate ? dayjs(record.closingDate).format("HH:mm") : "",
       isActive: record.isActive !== false,
       managerComments: record.managerComments || "",
       kpaRating:
@@ -782,6 +819,31 @@ const KraKpaIndividualMonthlyKpa = () => {
       ],
     });
     setModalOpen(true);
+  };
+  const openCompletedDateEdit = (record) => {
+    if (isSelfKra || record.status !== "Completed" || !canEditManagerReview) return;
+    setCompletedDateErrors({});
+    setCompletedDateEdit({
+      record,
+      date: record.closingDate ? dayjs(record.closingDate).format("YYYY-MM-DD") : "",
+      time: record.closingDate ? dayjs(record.closingDate).format("HH:mm") : "",
+    });
+  };
+  const submitCompletedDateEdit = (event) => {
+    event.preventDefault();
+    if (!completedDateEdit) return;
+    const { date, time, record } = completedDateEdit;
+    const completedAt = dayjs(`${date}T${time}:00`);
+    const nextErrors = {};
+    if (!date || !completedAt.isValid() || completedAt.isAfter(dayjs())) {
+      nextErrors.date = "Completed Date and Time must not be in the future";
+    }
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) {
+      nextErrors.time = "Select a valid Completed Time";
+    }
+    setCompletedDateErrors(nextErrors);
+    if (Object.keys(nextErrors).length) return;
+    saveCompletedDate.mutate({ id: record._id, closingDate: completedAt.toISOString() });
   };
   const openEditHistory = (record) => {
     const dates = getKraKpaEditHistory(record, isSelfKra ? "kra" : "kpa")
@@ -826,6 +888,15 @@ const KraKpaIndividualMonthlyKpa = () => {
       if (!form.month) nextErrors.month = "Month is required";
       if (!form.target.trim()) nextErrors.target = "KPA is required";
       if (!form.deadline) nextErrors.deadline = "Deadline is required";
+    }
+    const closingDateTime = dayjs(`${form.closingDate}T${form.closingTime}:00`);
+    if (!isSelfKra && editingRecord?.status === "Completed") {
+      if (!form.closingDate || !closingDateTime.isValid() || closingDateTime.isAfter(dayjs())) {
+        nextErrors.closingDate = "Completed Date and Time must not be in the future";
+      }
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(form.closingTime)) {
+        nextErrors.closingTime = "Select a valid Completed Time";
+      }
     }
     if (
       !isSelfKra &&
@@ -877,6 +948,11 @@ const KraKpaIndividualMonthlyKpa = () => {
             ...(editingRecord && { isActive: form.isActive }),
           };
     if (editingRecord && !isSelfKra) {
+      if (editingRecord.status === "Completed" &&
+        (form.closingDate !== (editingRecord.closingDate ? dayjs(editingRecord.closingDate).format("YYYY-MM-DD") : "") ||
+          form.closingTime !== (editingRecord.closingDate ? dayjs(editingRecord.closingDate).format("HH:mm") : ""))) {
+        payload.closingDate = closingDateTime.toISOString();
+      }
       if (canEditManagerReview) {
         payload.managerComments = form.managerComments.trim();
         if (form.verification === "Closed") {
@@ -905,10 +981,29 @@ const KraKpaIndividualMonthlyKpa = () => {
   };
 
   const { pendingTableData, completedTableData } = useMemo(() => {
+    const tasksByKpa = new Map();
+    if (!isSelfKra) {
+      dueTasks.forEach((task) => {
+        const parentId = task.parentKpa?._id || task.parentKpa;
+        if (!parentId) return;
+        const key = String(parentId);
+        if (!tasksByKpa.has(key)) tasksByKpa.set(key, []);
+        tasksByKpa.get(key).push(task);
+      });
+      tasksByKpa.forEach((tasks) => {
+        tasks.sort((first, second) =>
+          new Date(first.deadline || 0) - new Date(second.deadline || 0),
+        );
+      });
+    }
     const mapRecords = (items) =>
       items.map((record, index) => ({
           ...record,
           srNo: index + 1,
+          linkedTasks: tasksByKpa.get(String(record._id)) || [],
+          kpaTaskSummary: (tasksByKpa.get(String(record._id)) || [])
+            .map((task) => `${task.dueTaskName}${task.scheduledDate ? ` (Scheduled ${formatDate(task.scheduledDate)})` : ""}`)
+            .join("; ") || "No tasks",
           monthLabel: record.month
             ? dayjs(`${record.month}-01`).format("MMMM")
             : "-",
@@ -995,12 +1090,12 @@ const KraKpaIndividualMonthlyKpa = () => {
         ),
       ),
     };
-  }, [records, dateRange, isSelfKra]);
+  }, [records, dueTasks, dateRange, isSelfKra]);
 
   const statusColumn = {
-    headerName: isSelfKra ? "Status" : "KPA Status",
+    headerName: isSelfKra ? "Status" : "KPA Status (Employee)",
     field: "status",
-    width: 140,
+    width: isSelfKra ? 140 : 210,
     cellRenderer: ({ value }) => (
       <Chip
         size="small"
@@ -1045,15 +1140,15 @@ const KraKpaIndividualMonthlyKpa = () => {
     ),
   };
   const reviewStatusColumn = {
-    headerName: "Review Status",
+    headerName: "Review Status (Manager)",
     field: "reviewStatus",
-    width: 180,
+    width: 230,
     cellRenderer: workflowStatusRenderer,
   };
   const finalClosureColumn = {
-    headerName: "Final Closure",
+    headerName: "Final Closure (HR)",
     field: "finalClosure",
-    width: 165,
+    width: 190,
     cellRenderer: workflowStatusRenderer,
   };
   const showActionColumn =
@@ -1129,6 +1224,28 @@ const KraKpaIndividualMonthlyKpa = () => {
         },
       ]
     : [];
+  const kpaTasksColumn = {
+    headerName: "KPA Tasks",
+    field: "kpaTaskSummary",
+    minWidth: 210,
+    flex: 1,
+    cellRenderer: ({ data }) => {
+      if (isLoadingDueTasks) return "Loading tasks...";
+      const tasks = data.linkedTasks || [];
+      if (!tasks.length) return "No tasks";
+      return (
+        <button
+          type="button"
+          className="flex max-w-full items-center gap-1 text-left text-primary hover:underline"
+          title={data.kpaTaskSummary}
+          onClick={() => setTaskListRecord(data)}
+        >
+          <span className="truncate">{tasks[0].dueTaskName}</span>
+          {tasks.length > 1 && <span className="shrink-0">+{tasks.length - 1} more</span>}
+        </button>
+      );
+    },
+  };
   const individualKpaColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
     {
@@ -1146,6 +1263,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         </button>
       ),
     },
+    kpaTasksColumn,
     { headerName: "Deadline", field: "deadlineLabel", width: 165 },
     { headerName: "Active Status", field: "activeStatus", width: 150 },
     approvalStatusColumn,
@@ -1258,6 +1376,7 @@ const KraKpaIndividualMonthlyKpa = () => {
             </button>
           ),
         },
+        kpaTasksColumn,
         { headerName: "Deadline", field: "deadlineLabel", width: 165 },
         { headerName: "Active Status", field: "activeStatus", width: 150 },
         approvalStatusColumn,
@@ -1280,14 +1399,14 @@ const KraKpaIndividualMonthlyKpa = () => {
           headerName: "Actions",
           field: "completedActions",
           pinned: "right",
-          width: 92,
-          minWidth: 92,
-          maxWidth: 92,
+          width: canEditManagerReview ? 110 : 92,
+          minWidth: canEditManagerReview ? 110 : 92,
+          maxWidth: canEditManagerReview ? 110 : 92,
           suppressSizeToFit: true,
           sortable: false,
           filter: false,
           cellRenderer: ({ data }) => (
-            <div className="flex h-full items-center">
+            <div className="flex h-full items-center gap-2">
               <button
                 type="button"
                 title="View Edit History"
@@ -1297,6 +1416,11 @@ const KraKpaIndividualMonthlyKpa = () => {
               >
                 <MdHistory size={25} color="#111827" />
               </button>
+              {canEditManagerReview && (
+                <button type="button" title="Edit Completed Date and Time" aria-label={`Edit completed date and time for ${data.target || "KPA"}`} onClick={() => openCompletedDateEdit(data)} className="flex h-8 w-8 items-center justify-center">
+                  <HiPencilSquare size={24} color="#111827" />
+                </button>
+              )}
             </div>
           ),
         },
@@ -1576,6 +1700,86 @@ const KraKpaIndividualMonthlyKpa = () => {
         </WidgetSection>
         </PageFrame>
       </div>
+
+      <MuiModal
+        open={Boolean(taskListRecord)}
+        onClose={() => setTaskListRecord(null)}
+        title="KPA Tasks"
+        widthClass="w-[92vw] max-w-[560px]"
+      >
+        <div className="grid gap-3">
+          <p className="text-sm text-gray-600">{taskListRecord?.target}</p>
+          <div className="grid max-h-[55vh] gap-3 overflow-y-auto pr-1">
+            {(taskListRecord?.linkedTasks || []).map((task) => (
+              <div key={task._id} className="rounded-md border border-borderGray p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <span className="min-w-0 break-words font-pmedium text-primary">
+                    {task.dueTaskName}
+                  </span>
+                  <Chip
+                    size="small"
+                    label={task.status === "Closed" ? "Completed" : "Pending"}
+                    sx={task.status === "Closed"
+                      ? { backgroundColor: "#d8f0df", color: "#16784d" }
+                      : { backgroundColor: "#fff4dc", color: "#9a6700" }}
+                  />
+                </div>
+                <p className="mt-2 text-sm text-gray-600">Deadline: {formatDate(task.deadline)}</p>
+                {task.scheduledDate && (
+                  <p className="text-sm text-gray-600">
+                    Scheduled Date: {formatDate(task.scheduledDate)}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </MuiModal>
+
+      <MuiModal
+        open={Boolean(completedDateEdit)}
+        onClose={() => setCompletedDateEdit(null)}
+        title="Edit Completed KPA"
+        widthClass="w-[92vw] max-w-[560px]"
+      >
+        <form onSubmit={submitCompletedDateEdit} className="grid gap-4">
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <DatePicker
+              label="Completed Date *"
+              format="DD-MM-YYYY"
+              value={completedDateEdit?.date ? dayjs(completedDateEdit.date) : null}
+              minDate={completedDateEdit?.record.createdAt ? dayjs(completedDateEdit.record.createdAt) : undefined}
+              maxDate={completedDateEdit?.record.verificationClosedDate && dayjs(completedDateEdit.record.verificationClosedDate).isBefore(dayjs(), "day")
+                ? dayjs(completedDateEdit.record.verificationClosedDate)
+                : dayjs()}
+              onChange={(date) => {
+                setCompletedDateEdit((current) => current && ({
+                  ...current,
+                  date: date?.isValid() ? date.format("YYYY-MM-DD") : "",
+                }));
+                setCompletedDateErrors((current) => ({ ...current, date: "" }));
+              }}
+              slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(completedDateErrors.date), helperText: completedDateErrors.date } }}
+            />
+            <TimePicker
+              label="Completed Time *"
+              value={completedDateEdit?.time ? dayjs(`2000-01-01T${completedDateEdit.time}:00`) : null}
+              onChange={(time) => {
+                setCompletedDateEdit((current) => current && ({
+                  ...current,
+                  time: time?.isValid() ? time.format("HH:mm") : "",
+                }));
+                setCompletedDateErrors((current) => ({ ...current, time: "", date: "" }));
+              }}
+              slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(completedDateErrors.time), helperText: completedDateErrors.time } }}
+            />
+          </LocalizationProvider>
+          <div className="flex justify-end gap-3">
+            <SecondaryButton type="button" title="Close" handleSubmit={() => setCompletedDateEdit(null)} />
+            <PrimaryButton type="submit" title="Save" isLoading={saveCompletedDate.isPending} disabled={saveCompletedDate.isPending} />
+          </div>
+        </form>
+      </MuiModal>
 
       <MuiModal
         open={dailyLogTargets.length > 0}
@@ -2234,6 +2438,36 @@ const KraKpaIndividualMonthlyKpa = () => {
                       }}
                     />
                   </LocalizationProvider>
+                  {editingRecord?.status === "Completed" && (
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <DatePicker
+                        label="Completed Date *"
+                        format="DD-MM-YYYY"
+                        value={form.closingDate ? dayjs(form.closingDate) : null}
+                        minDate={editingRecord.createdAt ? dayjs(editingRecord.createdAt) : undefined}
+                        maxDate={editingRecord.verificationClosedDate && dayjs(editingRecord.verificationClosedDate).isBefore(dayjs(), "day")
+                          ? dayjs(editingRecord.verificationClosedDate)
+                          : dayjs()}
+                        onChange={(date) => {
+                          setForm((current) => ({ ...current, closingDate: date?.isValid() ? date.format("YYYY-MM-DD") : "" }));
+                          clearFormError("closingDate");
+                        }}
+                        slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(formErrors.closingDate), helperText: formErrors.closingDate } }}
+                      />
+                      <TimePicker
+                        label="Completed Time *"
+                        value={form.closingTime ? dayjs(`2000-01-01T${form.closingTime}:00`) : null}
+                        onChange={(time) => {
+                          setForm((current) => ({ ...current, closingTime: time?.isValid() ? time.format("HH:mm") : "" }));
+                          clearFormError("closingTime");
+                          clearFormError("closingDate");
+                        }}
+                        slotProps={{ textField: { size: "small", fullWidth: true, error: Boolean(formErrors.closingTime), helperText: formErrors.closingTime } }}
+                      />
+                      </div>
+                    </LocalizationProvider>
+                  )}
                 </>
               )}
               {editingRecord && (

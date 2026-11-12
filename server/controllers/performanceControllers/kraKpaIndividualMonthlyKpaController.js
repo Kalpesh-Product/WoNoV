@@ -3,6 +3,7 @@ const Department = require("../../models/Departments");
 const UserData = require("../../models/hr/UserData");
 const Company = require("../../models/hr/Company");
 const IndividualMonthlyKpa = require("../../models/performances/KraKpaIndividualMonthlyKpa");
+const DailyLog = require("../../models/performances/KraKpaDailyLog");
 const DueTask = require("../../models/performances/KraKpaDueTask");
 const Event = require("../../models/events/Events");
 const isDepartmentManager = require("../../utils/kraKpaDepartmentManager");
@@ -10,6 +11,7 @@ const { getPendingApprovalScope } = require("../../utils/kraKpaPendingApprovalSc
 const { buildKpaApprovalUpdate } = require("../../utils/kraKpaLifecycleHistory");
 const {
   calculateDelayedWorkingDays,
+  toCalendarKey,
 } = require("../../utils/kraKpaDelayedDays");
 
 const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
@@ -32,7 +34,7 @@ const EDIT_HISTORY_FIELDS = {
   deadline: "Deadline",
   status: "KPA Status",
   isActive: "Active Status",
-  closingDate: "Closing Date",
+  closingDate: "Completed Date",
   managerComments: "Manager Comments",
   kpaRating: "Manager Rating",
   managerRatingDate: "Manager Rating Date",
@@ -720,6 +722,43 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
     const departmentManager = await isDepartmentManager(req, record.department, access);
     const canEditManagerReview =
       access.isTopManagement || access.isHr || departmentManager;
+    let closingDate;
+    if (Object.hasOwn(req.body, "closingDate")) {
+      closingDate = new Date(req.body.closingDate);
+      if (!canEditManagerReview) {
+        return res.status(403).json({ message: "Only the department manager, HR or Top Management can edit Completed Date" });
+      }
+      if (
+        record.status !== "Completed" ||
+        typeof req.body.closingDate !== "string" ||
+        Number.isNaN(closingDate.getTime()) ||
+        closingDate > new Date()
+      ) {
+        return res.status(400).json({ message: "Completed Date must be a valid date no later than today for a completed KPA" });
+      }
+      if (closingDate < record.createdAt) {
+        return res.status(400).json({ message: "Completed Date and Time cannot be before the KPA was created" });
+      }
+      const lastCompletedTask = await DueTask.findOne({
+        company: req.company,
+        parentKpa: record._id,
+        status: "Closed",
+        closureDate: { $ne: null },
+        isDeleted: { $ne: true },
+      }).sort({ closureDate: -1 }).select("closureDate").lean();
+      if (lastCompletedTask && closingDate < lastCompletedTask.closureDate) {
+        return res.status(400).json({ message: "Completed Date and Time cannot be before a linked Due Task was completed" });
+      }
+      if (verification.value?.verification === "Changes Required") {
+        return res.status(400).json({ message: "Change the review status separately before editing Completed Date" });
+      }
+      const reviewClosedDate = verification.value?.verification === "Closed"
+        ? verification.value.reviewDate
+        : record.verificationClosedDate;
+      if (reviewClosedDate && toCalendarKey(closingDate) > toCalendarKey(reviewClosedDate)) {
+        return res.status(400).json({ message: "Completed Date cannot be after the review was closed" });
+      }
+    }
     const canEditHrRating = access.isHr;
     const hasManagerReviewFields = [
       "managerComments",
@@ -817,6 +856,7 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
 
     Object.assign(record, validation.value, review.value || {}, {
       ...(Object.hasOwn(req.body, "isActive") && { isActive: req.body.isActive }),
+      ...(closingDate && { closingDate }),
       updatedBy: req.user,
     });
     // Capture submitted fields before review processing resets related values.
@@ -882,6 +922,12 @@ const updateIndividualMonthlyKpa = async (req, res, next) => {
       });
     }
     await record.save();
+    if (closingDate && record.status === "Completed") {
+      await DailyLog.updateMany(
+        { company: req.company, sourceSelfKpa: record._id, isDeleted: { $ne: true } },
+        { $set: { completedAt: closingDate, updatedBy: req.user } },
+      );
+    }
     await record.populate(DETAIL_POPULATION);
     return res.json(record);
   } catch (error) {

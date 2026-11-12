@@ -75,6 +75,7 @@ const HISTORY_FIELDS = {
   managerComments: "Manager Comments",
   hrComments: "HR Comments",
   status: "Task Status",
+  completedAt: "Completed Date",
   startTime: "Start Time",
   endTime: "End Time",
   resourceComment: "Resource Comment",
@@ -830,6 +831,9 @@ const updateDailyLog = async (req, res, next) => {
       ...getScopedFilter(req, access),
     });
     if (!record) return res.status(404).json({ message: "Daily Log not found" });
+    if (record.status === "Done" && record.sourceSelfKpa) {
+      return res.status(409).json({ message: "Edit completed main KPAs from the Self KPA table" });
+    }
     if (await isInactiveKpaDailyLog(req, record)) {
       return res.status(409).json({ message: "Daily Logs for an inactive KPA cannot be edited" });
     }
@@ -882,6 +886,54 @@ const updateDailyLog = async (req, res, next) => {
     if (hrComments === null || hrComments.length > 5000) {
       return res.status(400).json({ message: "HR Comments are invalid" });
     }
+    let completedAt;
+    let sourceTask;
+    if (Object.hasOwn(req.body, "completedAt")) {
+      completedAt = new Date(req.body.completedAt);
+      if (
+        record.status !== "Done" ||
+        typeof req.body.completedAt !== "string" ||
+        Number.isNaN(completedAt.getTime()) ||
+        completedAt > new Date()
+      ) {
+        return res.status(400).json({ message: "Completed Date must be a valid date no later than today for a completed Daily Log" });
+      }
+      if (toCalendarKey(completedAt) < toCalendarKey(record.date)) {
+        return res.status(400).json({ message: "Completed Date cannot be before the Daily Log date" });
+      }
+      if (record.endTime && completedAt < record.endTime) {
+        return res.status(400).json({ message: "Completed Date and Time cannot be before the task End Time" });
+      }
+      if (record.sourceDueTask) {
+        sourceTask = await DueTask.findOne({
+          _id: record.sourceDueTask,
+          company: req.company,
+          department: record.department,
+          employee: record.employee,
+          isDeleted: { $ne: true },
+        });
+        if (sourceTask?.status !== "Closed") {
+          return res.status(409).json({ message: "The linked Due Task must be closed before its Completed Date can be edited" });
+        }
+        if (
+          completedAt < sourceTask.createdAt ||
+          toCalendarKey(completedAt) < toCalendarKey(sourceTask.identificationDate)
+        ) {
+          return res.status(400).json({ message: "Completed Date cannot be before the Due Task was created or identified" });
+        }
+        if (sourceTask.parentKpa) {
+          const parentKpa = await SelfKpa.findOne({
+            _id: sourceTask.parentKpa,
+            company: req.company,
+            isDeleted: { $ne: true },
+          }).select("status closingDate").lean();
+          if (parentKpa?.status === "Completed" && parentKpa.closingDate &&
+            completedAt > parentKpa.closingDate) {
+            return res.status(400).json({ message: "A Due Task cannot be completed after its main KPA" });
+          }
+        }
+      }
+    }
     const historyBefore = historySnapshot(record);
     if (hasManagerComments && managerComments !== record.managerComments) {
       record.managerCommentsBy = managerComments ? req.user : null;
@@ -894,9 +946,35 @@ const updateDailyLog = async (req, res, next) => {
       hrComments,
       updatedBy: req.user,
     });
+    if (completedAt) record.completedAt = completedAt;
     appendEditHistory(record, historyBefore,
-      ["date", "managerComments", "hrComments"].filter((field) => Object.hasOwn(req.body, field)), req.user);
+      ["date", "completedAt", "managerComments", "hrComments"].filter((field) => Object.hasOwn(req.body, field)), req.user);
     await record.save();
+    if (completedAt && sourceTask) {
+      const previousDate = sourceTask.closureDate?.toISOString() || null;
+      if (previousDate !== completedAt.toISOString()) {
+        const holidays = await Event.find({
+          company: req.company,
+          type: { $regex: /^holidays?$/i },
+          active: { $ne: false },
+        }).select("start end").lean();
+        sourceTask.editHistory.push({
+          editedBy: req.user,
+          editedAt: new Date(),
+          changes: [{ field: "closureDate", label: "Completed Date", oldValue: previousDate, newValue: completedAt.toISOString() }],
+        });
+        sourceTask.closureDate = completedAt;
+        sourceTask.delayedDays = calculateDelayedWorkingDays(sourceTask.deadline, completedAt, holidays);
+        sourceTask.updatedBy = req.user;
+        await sourceTask.save();
+      }
+    }
+    if (completedAt && sourceTask) {
+      await DailyLog.updateMany(
+        { company: req.company, isDeleted: { $ne: true }, sourceDueTask: sourceTask._id },
+        { $set: { completedAt, updatedBy: req.user } },
+      );
+    }
     await record.populate(POPULATION);
     return res.json(hideRestrictedComments(record, access));
   } catch (error) {
