@@ -16,9 +16,9 @@ import dayjs from "dayjs";
 
 import MuiModal from "../components/MuiModal";
 import MeetingTimeDetails from "../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../utils/formatMeetingDateRange";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import humanDate from "../utils/humanDateForamt";
 import { getStatusColors } from "../constants/statusColors";
 import {
   hasValidMeetingExtension,
@@ -169,16 +169,16 @@ const Calender = () => {
 
   const transformedMeetings = useMemo(
     () =>
-      visibleMeetings.map((meeting) => {
+      visibleMeetings.flatMap((meeting) => {
         const eventStatusColors = getStatusColors(
           getMeetingCalendarColorStatus(meeting),
         );
 
-        return {
-          id: meeting._id,
+        return (meeting.bookingSlots?.length ? meeting.bookingSlots : [meeting]).map((slot, index) => ({
+          id: `${meeting._id}-${index}`,
           title: meeting.subject || "Meeting",
-          start: meeting.startTime,
-          end: meeting.endTime,
+          start: slot.startTime,
+          end: slot.endTime,
           allDay: false,
           backgroundColor: eventStatusColors.backgroundColor,
           borderColor: "transparent",
@@ -191,8 +191,12 @@ const Calender = () => {
             receptionist: meeting.receptionist,
             client: meeting.client,
             duration: meeting.duration,
-            startTime: meeting.startTime,
-            endTime: meeting.endTime,
+            bookingSlots: meeting.bookingSlots,
+            startDate: meeting.startDate,
+            endDate: meeting.endDate,
+            date: meeting.date,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
             extendTime: meeting.extendTime,
             subject: meeting.subject,
             department: meeting.department,
@@ -214,7 +218,7 @@ const Calender = () => {
             housekeepingStatus: meeting.housekeepingStatus,
             location: meeting.location,
           },
-        };
+        }));
       }),
     [visibleMeetings],
   );
@@ -567,28 +571,28 @@ const Calender = () => {
                       </span>
                     </div>
                   )}
-                  <span className="text-content flex  items-center">
-                    <span className="w-[30%]"> Start Date </span>
+                  <span className="text-content flex items-center">
+                    <span className="w-[30%]">Date</span>
                     <span>:</span>
-                    <span className="text-content   w-full justify-start pl-4">
-                      {humanDate(
-                        new Date(selectedEvent?._instance.range.start)
-                      )}
-                    </span>{" "}
-                  </span>{" "}
-                  <span className="text-content flex  items-center">
-                    <span className="w-[30%]"> End Date </span>
-                    <span>:</span>
-                    <span className="text-content   w-full justify-start pl-4">
-                      {humanDate(selectedEvent?._instance.range.end)}
-                    </span>{" "}
-                  </span>{" "}
+                    <span className="text-content w-full justify-start pl-4">
+                      {selectedEvent.extendedProps.type.toLowerCase() === "meeting"
+                        ? formatMeetingDateRange(selectedEvent.extendedProps)
+                        : formatMeetingDateRange({
+                            startDate: selectedEvent.start,
+                            endDate: selectedEvent.allDay && selectedEvent.end
+                              ? dayjs(selectedEvent.end).subtract(1, "day")
+                              : selectedEvent.end || selectedEvent.start,
+                          })}
+                    </span>
+                  </span>
                   {selectedEvent.extendedProps.startTime && (
                     <MeetingTimeDetails
+                      gap="w-[30%]"
                       startTime={selectedEvent.start}
                       endTime={selectedEvent.extendedProps.endTime}
                       extendTime={selectedEvent.extendedProps.extendTime}
                       duration={selectedEvent.extendedProps.duration}
+                      bookingSlots={selectedEvent.extendedProps.bookingSlots}
                     />
                   )}
                   {selectedEvent.extendedProps.meetingStatus && (

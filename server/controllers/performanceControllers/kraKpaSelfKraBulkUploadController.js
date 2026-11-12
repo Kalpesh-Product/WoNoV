@@ -6,6 +6,7 @@ const UserData = require("../../models/hr/UserData");
 const Department = require("../../models/Departments");
 const SelfKra = require("../../models/performances/KraKpaSelfKra");
 const KraCategory = require("../../models/performances/KraCategory");
+const parseKraKpaBulkDate = require("../../utils/parseKraKpaBulkDate");
 
 const BULK_UPLOAD_PERMISSION = "kra_kpa_self_kra_bulk_upload";
 const MAX_BULK_KRA_ROWS = 500;
@@ -187,6 +188,8 @@ const bulkUploadSelfKra = async (req, res, next) => {
       const rowNumber = index + 2;
       const title = getCell(row, ["KRA", "KRA Title"]);
       const categoryName = getCell(row, ["Category"]);
+      const startDateText = getCell(row, ["Start Date", "Starts On"]);
+      const startDate = startDateText ? parseKraKpaBulkDate(startDateText) : null;
       const errors = [];
 
       if (!title) {
@@ -211,9 +214,16 @@ const bulkUploadSelfKra = async (req, res, next) => {
           message: "Category must be at most 200 characters.",
         });
       }
+      if (startDateText && !startDate) {
+        errors.push({
+          row: rowNumber,
+          field: "Start Date",
+          message: "Use YYYY-MM-DD, DD-MM-YY/YYYY, DD-MMM-YY/YYYY, or DD-MMMM-YY/YYYY (for example, 01-Nov-2026).",
+        });
+      }
 
       validationErrors.push(...errors);
-      return errors.length ? null : { title, categoryName };
+      return errors.length ? null : { title, categoryName, startsOn: startDate?.toISOString().slice(0, 10) || getTodayDate() };
     });
 
     if (validationErrors.length) {
@@ -285,7 +295,7 @@ const bulkUploadSelfKra = async (req, res, next) => {
       );
     }
 
-    const kraRecords = parsedRows.map(({ title, categoryName }) => ({
+    const kraRecords = parsedRows.map(({ title, categoryName, startsOn }) => ({
       company: req.company,
       department: departmentId,
       employee: employeeId,
@@ -295,7 +305,7 @@ const bulkUploadSelfKra = async (req, res, next) => {
       lead: req.user,
       status: "Pending",
       closingDate: null,
-      startsOn: getTodayDate(),
+      startsOn,
       isActive: true,
       isDeleted: false,
       createdBy: req.user,

@@ -26,6 +26,7 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
@@ -241,10 +242,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   const calculatePaymentDetails = (meeting, meetingRoom, discount = 0) => {
     if (!meeting || !meetingRoom?.perHourPrice) return null;
 
-    const start = new Date(meeting.startTime);
-    const end = new Date(meeting.endTime);
-    const durationInHours =
-      (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+    const slots = meeting.bookingSlots?.length ? meeting.bookingSlots : [meeting];
+    const durationInHours = slots.reduce((hours, slot) =>
+      hours + (new Date(slot.endTime) - new Date(slot.startTime)) / (1000 * 60 * 60), 0);
 
     const amount = meetingRoom.perHourPrice * durationInHours;
     const safeDiscount = Number.isFinite(discount) ? discount : 0;
@@ -1332,7 +1332,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               title="Agenda"
               detail={selectedMeeting.agenda || "N/A"}
             />
-            <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
+            <DetalisFormatted title="Date" detail={formatMeetingDateRange(selectedMeeting)} />
             <MeetingTimeDetails
               startTime={selectedMeeting.startTime}
               endTime={

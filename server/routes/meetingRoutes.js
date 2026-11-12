@@ -30,8 +30,10 @@ const {
 } = require("../controllers/meetingsControllers/roomsController");
 
 const router = require("express").Router();
+const { bookMeetingDates } = require("../controllers/meetingsControllers/batchMeetingsController");
 
 router.post("/create-meeting", addMeetings);
+router.post("/create-meeting-dates", bookMeetingDates);
 router.post(
   "/create-room",
   upload.fields([

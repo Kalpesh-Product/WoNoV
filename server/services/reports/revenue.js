@@ -444,7 +444,7 @@ const fetchMeetingRevenueReportService = async ({
       .populate({
         path: "meeting",
         select:
-          "meetingType subject agenda startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof discountAmount",
+          "meetingType subject agenda startDate endDate bookingSlots startTime endTime extendTime status houeskeepingStatus bookedBy receptionist client externalClient bookedRoom paymentVerification paymentStatus paymentMode paymentProof discountAmount",
         populate: [
           {
             path: "bookedBy",
@@ -697,6 +697,9 @@ const fetchMeetingRevenueReportService = async ({
       paymentMode: item.meeting?.paymentMode || item.remarks || "N/A",
       meetingTitle: item.meeting?.subject || "",
       meetingAgenda: item.meeting?.agenda || "",
+      meetingStartDate: item.meeting?.startDate || null,
+      meetingEndDate: item.meeting?.endDate || null,
+      meetingBookingSlots: item.meeting?.bookingSlots || [],
       meetingStartTime: item.meeting?.startTime || null,
       meetingEndTime: item.meeting?.endTime || null,
       meetingExtendTime: item.meeting?.extendTime || null,

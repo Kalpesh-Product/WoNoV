@@ -33,6 +33,7 @@ import {
   LuChartPie as ChartPie,
 } from "react-icons/lu";
 import dayjs from "dayjs";
+import { formatMeetingDateRange } from "../../../../utils/formatMeetingDateRange";
 import meetingRoomBanner from "../../../../assets/meeting-room-banner.png";
 import { PERMISSIONS } from "../../../../constants/permissions";
 import useUserPermissions from "../../../../hooks/useUserPermissions";
@@ -1952,7 +1953,7 @@ const MeetingRoomOngoingUpcomingTable = () => {
               title="Agenda"
               detail={selectedMeeting.meeting?.agenda || "N/A"}
             />
-            <DetalisFormatted title="Date" detail={selectedMeeting.date} />
+            <DetalisFormatted title="Date" detail={formatMeetingDateRange(selectedMeeting.meeting)} />
             <DetalisFormatted
               title="Time"
               detail={`${selectedMeeting.startTime} - ${selectedMeeting.endTime}`}

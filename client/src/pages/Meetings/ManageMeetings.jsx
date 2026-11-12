@@ -25,6 +25,7 @@ import ThreeDotMenu from "../../components/ThreeDotMenu";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../components/DetalisFormatted";
 import MeetingTimeDetails from "../../components/MeetingTimeDetails";
+import { formatMeetingDateRange } from "../../utils/formatMeetingDateRange";
 import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../utils/humanDateForamt";
 import humanTime from "../../utils/humanTime";
@@ -475,6 +476,11 @@ const ManageMeetings = ({ financeView = false }) => {
   }));
 
   const getDisplayDuration = (meeting) => {
+    if (meeting?.bookingSlots?.length) {
+      const minutes = meeting.bookingSlots.reduce((total, slot) =>
+        total + dayjs(slot.endTime).diff(dayjs(slot.startTime), "minute"), 0);
+      return `${minutes}min`;
+    }
     const startTime = meeting?.startTime;
     const endTime = meeting?.endTime;
 
@@ -491,6 +497,7 @@ const ManageMeetings = ({ financeView = false }) => {
 
   const canEditMeeting = (meeting) => {
     if (!meeting) return false;
+    if (meeting.bookingSlots?.length > 1) return false;
     if (
       meeting.meetingStatus === "Cancelled" ||
       meeting.meetingStatus === "Completed"
@@ -880,13 +887,15 @@ const ManageMeetings = ({ financeView = false }) => {
         const hasReachedStartTime =
           meetingStartTime.isValid() && !currentTime.isBefore(meetingStartTime);
         const isEditAllowed = canEditMeeting(params.data);
+        const isMonthBooking = params.data.bookingSlots?.length > 1;
+        const lastSlotEnd = isMonthBooking ? dayjs(params.data.bookingSlots.at(-1).endTime) : null;
         const editMenuItem = {
           label: "Edit",
           onClick: () => handleEditMeeting("edit", params.data),
         };
 
         const menuItems = isCompleted
-          ? [editMenuItem]
+          ? (isMonthBooking ? [] : [editMenuItem])
           : [
               !isOngoing &&
                 !isHousekeepingCompleted && {
@@ -901,15 +910,15 @@ const ManageMeetings = ({ financeView = false }) => {
                   label: "Mark As Ongoing",
                   onClick: () => handleOngoing("ongoing", params.data._id),
                 },
-              !isUpcoming && {
+              !isUpcoming && (!isMonthBooking || currentTime.isAfter(lastSlotEnd)) && {
                 label: "Mark As Completed",
                 onClick: () => handleCompleted("complete", params.data._id),
               },
-              !isUpcoming && {
+              !isUpcoming && !isMonthBooking && {
                 label: "Extend Meeting",
                 onClick: () => handleExtendMeetingModal("extend", params.data),
               },
-              isUpcoming && {
+              isUpcoming && !isMonthBooking && {
                 label: "Cancel",
                 onClick: () => handleSelectedMeeting("cancel", params.data),
               },
@@ -926,7 +935,7 @@ const ManageMeetings = ({ financeView = false }) => {
               </span>
             </div>
 
-            {!isCancelled && (!isFinance || isCompleted) && (
+            {!isCancelled && menuItems.length > 0 && (!isFinance || isCompleted) && (
               <ThreeDotMenu menuItems={menuItems} />
             )}
           </div>
@@ -1107,7 +1116,7 @@ const ManageMeetings = ({ financeView = false }) => {
               title="Agenda"
               detail={selectedMeeting.agenda || "N/A"}
             />
-            <DetalisFormatted title="Date" detail={selectedMeeting?.date} />
+            <DetalisFormatted title="Date" detail={formatMeetingDateRange(selectedMeeting)} />
             <MeetingTimeDetails
               startTime={selectedMeeting.startTime}
               endTime={
@@ -1115,6 +1124,7 @@ const ManageMeetings = ({ financeView = false }) => {
               }
               extendTime={selectedMeeting.extendTime}
               duration={getDisplayDuration(selectedMeeting)}
+              bookingSlots={selectedMeeting?.bookingSlots}
             />
             <DetalisFormatted
               title="Status"

@@ -12,6 +12,11 @@ const CoworkingMember = require("../../models/sales/CoworkingMembers");
 const Visitor = require("../../models/visitor/Visitor");
 const { getPagination } = require("../../utils/pagination");
 const { getMeetingDepartments } = require("../../utils/meetingDepartments");
+const { getMeetingDurationHours } = require("../../utils/meetingSlots");
+
+const meetingDuration = (meeting) => meeting.bookingSlots?.length
+  ? `${Math.round(getMeetingDurationHours(meeting) * 60)}min`
+  : formatDuration(meeting.startTime, getEffectiveEndTime(meeting));
 
 const formatPersonName = (person) =>
   [person?.firstName, person?.lastName].filter(Boolean).join(" ");
@@ -511,7 +516,6 @@ const fetchMeetingReportService = async ({
 
     const meetingQuery = {
       company,
-      ...(dateFilter?.startDate && { startDate: dateFilter.startDate }),
       ...(["internal", "external"].includes(meetingTypeFilter) && {
         meetingType:
           meetingTypeFilter.charAt(0).toUpperCase() +
@@ -524,9 +528,16 @@ const fetchMeetingReportService = async ({
       ...(shouldIncludeCompleted && {
         status: { $ne: "Cancelled" },
       }),
-      ...(searchConditions.length && {
-        $and: [{ $or: searchConditions }],
-      }),
+      ...((dateFilter?.startDate || searchConditions.length) && { $and: [
+        ...(dateFilter?.startDate ? [{ $or: [
+          { startDate: dateFilter.startDate },
+          { bookingSlots: { $elemMatch: {
+            ...(dateFilter.startDate.$lt || dateFilter.startDate.$lte ? { startTime: { $lt: dateFilter.startDate.$lt || dateFilter.startDate.$lte } } : {}),
+            ...(dateFilter.startDate.$gte ? { endTime: { $gt: dateFilter.startDate.$gte } } : {}),
+          } } },
+        ] }] : []),
+        ...(searchConditions.length ? [{ $or: searchConditions }] : []),
+      ] }),
       ...(!canViewAllMeetings &&
         currentUserId && {
           $or: [
@@ -553,7 +564,7 @@ const fetchMeetingReportService = async ({
 
     let meetingsQuery = Meeting.find(meetingQuery)
       .select(
-        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
+        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime bookingPeriod bookingSlots meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
       )
       .populate({ path: "company", select: "meetingCreditBalance" })
       .populate({
@@ -709,12 +720,11 @@ const fetchMeetingReportService = async ({
         endDate: meeting.endDate,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
+        bookingPeriod: meeting.bookingPeriod || "Day",
+        bookingSlots: meeting.bookingSlots || [],
         extendTime: meeting.extendTime,
         credits: meeting.credits,
-        duration: formatDuration(
-          meeting.startTime,
-          getEffectiveEndTime(meeting),
-        ),
+        duration: meetingDuration(meeting),
         meetingStatus: meeting.status,
         action: meeting.extend,
         agenda: meeting.agenda,
@@ -762,9 +772,11 @@ const fetchMeetingReportService = async ({
           agenda: meeting.agenda,
           startDate: meeting.startDate,
           endDate: meeting.endDate,
-          duration: formatDuration(meeting.startTime, effectiveEndTime),
+          duration: meetingDuration(meeting),
           startTime: meeting.startTime,
           endTime: effectiveEndTime,
+          bookingPeriod: meeting.bookingPeriod || "Day",
+          bookingSlots: meeting.bookingSlots || [],
           meetingType: meeting.meetingType,
           housekeepingStatus: meeting.houeskeepingStatus,
           ...(meetingTypeFilter === "internal" && {

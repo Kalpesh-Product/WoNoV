@@ -169,6 +169,10 @@ const KraKpaDueTask = () => {
   );
   const canAdd =
     String(employeeId) === String(auth?.user?._id) || canManageOthers;
+  const canBulkUploadOwnDueTasks =
+    isIndividualRoute &&
+    Boolean(auth?.user?._id && departmentId) &&
+    String(employeeId) === String(auth.user._id);
   const [dateRange, setDateRange] = useState(initialDateRange);
   const [calendarAnchor, setCalendarAnchor] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -190,12 +194,6 @@ const KraKpaDueTask = () => {
   const bulkFileInputRef = useRef(null);
   const [bulkUploadFile, setBulkUploadFile] = useState(null);
   const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
-  const selectedKpaMonth = form.identificationDate
-    ? dayjs(form.identificationDate).format("YYYY-MM")
-    : "";
-  const selectedKpaMonthLabel = form.identificationDate
-    ? dayjs(form.identificationDate).format("MMMM")
-    : "Month";
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["kraKpaDueTask", departmentId, employeeId],
@@ -240,11 +238,10 @@ const KraKpaDueTask = () => {
         "kraKpaDueTaskParentKpas",
         departmentId,
         employeeId,
-        selectedKpaMonth,
+        dayjs(dateRange.startDate).format("YYYY-MM-DD"),
+        dayjs(dateRange.endDate).format("YYYY-MM-DD"),
       ],
-      enabled: Boolean(
-        modalOpen && departmentId && employeeId && selectedKpaMonth,
-      ),
+      enabled: Boolean(modalOpen && departmentId && employeeId),
       queryFn: async () => {
         const response = await axios.get(
           "/api/kra-kpa/individual-monthly-kpa",
@@ -252,13 +249,8 @@ const KraKpaDueTask = () => {
             params: {
               department: departmentId,
               employee: employeeId,
-              createdAtStart: dayjs(`${selectedKpaMonth}-01`)
-                .startOf("month")
-                .format("YYYY-MM-DD"),
-              createdAtEnd: dayjs(`${selectedKpaMonth}-01`)
-                .add(1, "month")
-                .startOf("month")
-                .format("YYYY-MM-DD"),
+              createdAtStart: dayjs(dateRange.startDate).format("YYYY-MM-DD"),
+              createdAtEnd: dayjs(dateRange.endDate).add(1, "day").format("YYYY-MM-DD"),
             },
           },
         );
@@ -279,22 +271,6 @@ const KraKpaDueTask = () => {
           });
       },
     });
-
-  const selectedParentKpa = parentKpaOptions.find(
-    (kpa) => kpa._id === form.parentKpa,
-  );
-  const selectedParentDeadline = selectedParentKpa?.deadline
-    ? dayjs(selectedParentKpa.deadline).startOf("day")
-    : null;
-  const taskDeadline = form.deadline
-    ? dayjs(form.deadline).startOf("day")
-    : null;
-  const identificationMaxDate =
-    selectedParentDeadline && taskDeadline
-      ? taskDeadline.isBefore(selectedParentDeadline)
-        ? taskDeadline
-        : selectedParentDeadline
-      : selectedParentDeadline || taskDeadline;
 
   const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ["kraKpaDueTask"] });
@@ -336,8 +312,8 @@ const KraKpaDueTask = () => {
       const rows = kpas.map((kpa) => [
         kpa.target,
         "",
-        "",
-        "",
+        kpa.createdAt ? dayjs(kpa.createdAt).format("DD-MMM-YYYY") : "",
+        kpa.deadline ? dayjs(kpa.deadline).format("DD-MMM-YYYY") : "",
       ]);
       const csv = `\uFEFF${[header, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}\r\n`;
       const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -371,10 +347,18 @@ const KraKpaDueTask = () => {
       toast.success(`${data.count} Due Task${data.count === 1 ? "" : "s"} uploaded.`);
     },
     onError: (error) => {
-      const firstError = error?.response?.data?.errors?.[0];
+      const response = error?.response?.data;
+      if (response?.code === "MAIN_KPA_MISMATCH") {
+        const rows = response.mismatchRows || [];
+        const rowList = rows.slice(0, 4).join(", ");
+        const more = rows.length > 4 ? ` +${rows.length - 4} more` : "";
+        toast.error(`Main KPA mismatch in row${rows.length === 1 ? "" : "s"} ${rowList}${more}. Download a fresh template; keep names unchanged.`);
+        return;
+      }
+      const firstError = response?.errors?.[0];
       toast.error(firstError
-        ? `Row ${firstError.row}, ${firstError.field}: ${firstError.message}`
-        : error?.response?.data?.message || "Unable to upload Due Tasks.");
+        ? `Row ${firstError.row} (${firstError.field}): ${firstError.message}`
+        : response?.message || "Couldn't upload Due Tasks. Please try again.");
     },
     onSettled: () => {
       setBulkUploadFile(null);
@@ -503,12 +487,8 @@ const KraKpaDueTask = () => {
     const kpaTaskDeadline = form.deadline
       ? dayjs(form.deadline).startOf("day")
       : null;
-    if (
-      kpaTaskDeadline &&
-      selectedParentDeadline &&
-      kpaTaskDeadline.isAfter(selectedParentDeadline)
-    ) {
-      errors.deadline = "KPA Task deadline cannot be after the KPA deadline";
+    if (identificationDate?.isAfter(dayjs(), "day")) {
+      errors.identificationDate = "Identification Date cannot be in the future";
     }
     if (
       identificationDate &&
@@ -517,13 +497,6 @@ const KraKpaDueTask = () => {
     ) {
       errors.identificationDate =
         "Identification Date cannot be after the KPA Task deadline";
-    } else if (
-      identificationDate &&
-      selectedParentDeadline &&
-      identificationDate.isAfter(selectedParentDeadline)
-    ) {
-      errors.identificationDate =
-        "Identification Date cannot be after the KPA deadline";
     }
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
@@ -762,7 +735,7 @@ const KraKpaDueTask = () => {
         </h1>
         {!isLoading && (
           <div className="flex flex-wrap items-center justify-end gap-3">
-            {canAdd && (
+            {canBulkUploadOwnDueTasks && (
               <>
                 <input
                   ref={bulkFileInputRef}
@@ -793,12 +766,14 @@ const KraKpaDueTask = () => {
                   isLoading={bulkUploadDueTasks.isPending}
                   externalStyles="!px-4"
                 />
-                <PrimaryButton
-                  type="button"
-                  title="Add Due Task"
-                  handleSubmit={openCreate}
-                />
               </>
+            )}
+            {canAdd && (
+              <PrimaryButton
+                type="button"
+                title="Add Due Task"
+                handleSubmit={openCreate}
+              />
             )}
             <PrimaryButton
               type="button"
@@ -819,7 +794,7 @@ const KraKpaDueTask = () => {
         }}
         onConfirm={() => bulkUploadFile && bulkUploadDueTasks.mutate(bulkUploadFile)}
         title="Confirm Due Task Bulk Upload"
-        message={`Upload "${bulkUploadFile?.file?.name || "the selected CSV"}"? The department manager will be set as Task Identifier for every row. No rows will be imported if validation fails.`}
+        message={`Upload "${bulkUploadFile?.file?.name || "the selected CSV"}"? We'll check every Main KPA against the selected date range. The department manager will be the Task Identifier. If any row fails, nothing is uploaded.`}
         isLoading={bulkUploadDueTasks.isPending}
       />
 
@@ -1056,14 +1031,14 @@ const KraKpaDueTask = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <TextField
               ref={parentKpaFieldRef}
-              label={`${selectedKpaMonthLabel} KPA *`}
+              label="Main KPA *"
               select
               size="small"
               value={form.parentKpa}
               onChange={updateForm("parentKpa")}
               error={Boolean(formErrors.parentKpa)}
               helperText={formErrors.parentKpa}
-              disabled={!selectedKpaMonth || isLoadingParentKpas}
+              disabled={isLoadingParentKpas}
               SelectProps={{
                 onOpen: () => {
                   const field = parentKpaFieldRef.current;
@@ -1136,8 +1111,8 @@ const KraKpaDueTask = () => {
                 {isLoadingParentKpas
                   ? "Loading KPAs..."
                   : parentKpaOptions.length
-                    ? `Select ${selectedKpaMonthLabel} KPA`
-                    : `No Approved KPAs available for ${selectedKpaMonthLabel}`}
+                    ? "Select a KPA"
+                    : "No approved KPAs in the selected date range"}
               </MenuItem>
               {parentKpaOptions.map((kpa) => (
                 <MenuItem
@@ -1208,7 +1183,7 @@ const KraKpaDueTask = () => {
               <DatePicker
                 label="Identification Date *"
                 format="DD-MM-YYYY"
-                maxDate={identificationMaxDate || undefined}
+                maxDate={dayjs()}
                 value={
                   form.identificationDate
                     ? dayjs(form.identificationDate)
@@ -1221,10 +1196,6 @@ const KraKpaDueTask = () => {
                   setForm((current) => ({
                     ...current,
                     identificationDate: nextIdentificationDate,
-                    ...(dayjs(current.identificationDate).format("YYYY-MM") !==
-                      dayjs(nextIdentificationDate).format("YYYY-MM") && {
-                      parentKpa: "",
-                    }),
                   }));
                   setFormErrors((current) => ({
                     ...current,
@@ -1249,7 +1220,6 @@ const KraKpaDueTask = () => {
                     ? dayjs(form.identificationDate)
                     : undefined
                 }
-                maxDate={selectedParentDeadline || undefined}
                 value={form.deadline ? dayjs(form.deadline) : null}
                 disabled={Boolean(
                   editingRecord && !canEditDeadline(editingRecord),

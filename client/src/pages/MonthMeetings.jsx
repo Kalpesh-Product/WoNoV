@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 import MuiModal from '../components/MuiModal';
 import DetalisFormatted from '../components/DetalisFormatted';
 import MeetingTimeDetails from '../components/MeetingTimeDetails';
+import { formatMeetingDateRange } from '../utils/formatMeetingDateRange';
 import { getMeetingDisplayStatus } from '../utils/meetingStatus';
 
 const MonthMeetings = () => {
@@ -158,12 +159,6 @@ const MonthMeetings = () => {
       .map(getParticipantDisplayName)
       .filter(Boolean)
       .join(", ");
-
-  const formatMeetingDate = (value) => {
-    if (!value) return "";
-    const parsedDate = dayjs(value);
-    return parsedDate.isValid() ? parsedDate.format("DD-MM-YYYY") : "";
-  };
 
 
   const columns = [
@@ -346,7 +341,7 @@ const MonthMeetings = () => {
             />
             <DetalisFormatted
               title="Date"
-              detail={formatMeetingDate(selectedMeeting?.date)}
+              detail={formatMeetingDateRange(selectedMeeting)}
             />
             <MeetingTimeDetails
               startTime={selectedMeeting.startTime}

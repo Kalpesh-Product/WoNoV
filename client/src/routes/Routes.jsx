@@ -792,7 +792,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",
@@ -1285,7 +1289,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "meetings",
-                            element: <MeetingRevenue />,
+                            element: <MeetingRevenue revenueKind="meetings" />,
+                          },
+                          {
+                            path: "day-pass",
+                            element: <MeetingRevenue revenueKind="day-pass" />,
                           },
                           {
                             path: "virtual-office",
@@ -6891,6 +6899,7 @@ export const routes = createBrowserRouter([
                             permissions={[PERMISSIONS.KRAKPA_DEPARTMENTS]}
                             element={<PerformanceAssignKraKpa
                               memberDestination="/app/kra-kpa/department-KPA/member-wise-KPA/employee-dashboard"
+                              showAllDepartmentsForHr
                             />}
                           />
                         ),
