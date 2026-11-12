@@ -402,7 +402,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         paymentMode: meeting.paymentMode ?? "",
         paymentProofUrl: meeting?.paymentProof ?? "",
         paymentStatus: meeting.paymentStatus ?? false,
-        paymentVerification: meeting.paymentVerification || "Under Review",
+        paymentVerification: meeting.paymentVerification || "Pending",
         client:
           meeting.client ||
           meeting.externalClient?.companyName ||
@@ -562,18 +562,18 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   });
 
   const { mutate: verifyPayment, isPending: isVerifyPayment } = useMutation({
-    mutationFn: async (data) => {
+    mutationFn: async ({ status, meetingId }) => {
       const respone = await axios.patch(
         `/api/meetings/update-meeting-payment-status`,
         {
-          status: data,
-          meetingId: selectedMeeting._id,
+          status,
+          meetingId,
         },
       );
 
       return respone.data;
     },
-    onSuccess: (data, paymentStatus) => {
+    onSuccess: (data, { status: paymentStatus, meetingId }) => {
       const meetingQueryKey = financeView
         ? "finance-external-meetings"
         : "external-meetings";
@@ -584,7 +584,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           if (!Array.isArray(oldData)) return oldData;
 
           return oldData.map((meeting) =>
-            meeting?._id === selectedMeeting?._id
+            meeting?._id === meetingId
               ? { ...meeting, paymentVerification: paymentStatus }
               : meeting,
           );
@@ -733,8 +733,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   };
 
   const handleVerifyPayment = (data, status) => {
-    setSelectedMeeting(data);
-    verifyPayment(status);
+    verifyPayment({ status, meetingId: data._id });
   };
 
   const handleAddChecklistItem = () => {
@@ -881,8 +880,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   ]);
   //---------------------------------Event handlers----------------------------------------//
   const getFinanceStatus = (rowData = {}) => {
-    const isPaid =
-      rowData?.paymentStatus === "Paid" || rowData?.paymentStatus === true;
+    const isPaid = isMeetingPaid(rowData?.paymentStatus);
     const paymentVerificationStatus = String(
       rowData?.paymentVerification || "Pending",
     ).toLowerCase();
@@ -894,6 +892,8 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
     if (paymentVerificationStatus === "completed") return "Completed";
     return "Pending";
   };
+  const isMeetingPaid = (paymentStatus) =>
+    paymentStatus === "Paid" || paymentStatus === true;
 
   const getFinanceStatusChipStyle = (status) => {
     const normalizedStatus = String(status || "").toLowerCase();
@@ -947,10 +947,10 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       pinned: "right",
       cellRenderer: (params) => (
         <Chip
-          label={params.value === "Paid" ? "Paid" : "Unpaid"}
+          label={isMeetingPaid(params.value) ? "Paid" : "Unpaid"}
           sx={{
-            backgroundColor: params.value === "Paid" ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
-            color: params.value === "Paid" ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
+            backgroundColor: isMeetingPaid(params.value) ? "#D1FAE5" : "#FECACA", // Tailwind: green-100 / red-100
+            color: isMeetingPaid(params.value) ? "#047857" : "#B91C1C", // Tailwind: green-700 / red-700
             fontWeight: "bold",
           }}
         />
@@ -1053,7 +1053,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       cellRenderer: (params) => {
         const status = params.data.meetingStatus;
         const housekeepingStatus = params.data.housekeepingStatus;
-        const isPaid = params.data.paymentStatus === "Paid";
+        const isPaid = isMeetingPaid(params.data.paymentStatus);
         const isUpcoming = status === "Upcoming";
         const isCancelled = status === "Cancelled";
         const isOngoing = status === "Ongoing";
@@ -1066,8 +1066,6 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         const isVerified = params.data.paymentVerification === "Verified";
         const paymentVerificationStatus = params.data.paymentVerification;
 
-        const shouldHideMenu =
-          isCancelled || paymentVerificationStatus === "Verified" || !isPaid;
         const editMenuItem = {
           label: "Edit",
           onClick: () => handleEditMeeting("edit", params.data),
@@ -1136,7 +1134,27 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               ]
             : []),
         ].filter(Boolean);
-        const menuItems = isCompleted ? [editMenuItem] : regularMenuItems;
+        const financeMenuItems = [
+          !isPaid && { label: "Wait for Payment" },
+          isPaid && paymentVerificationStatus === "Pending" && {
+            label: "Review Payment",
+            onClick: () => handleVerifyPayment(params.data, "Under Review"),
+          },
+          isPaid && paymentVerificationStatus === "Under Review" && {
+            label: "Verify Payment",
+            onClick: () => handleVerifyPayment(params.data, "Verified"),
+          },
+          isPaid && paymentVerificationStatus === "Verified" && {
+            label: "Completed",
+            onClick: () => handleVerifyPayment(params.data, "Completed"),
+          },
+          isPaid && paymentVerificationStatus === "Completed" && {
+            label: "Completed",
+          },
+        ].filter(Boolean);
+        const menuItems = financeView || isFinance
+          ? financeMenuItems
+          : isCompleted ? [editMenuItem] : regularMenuItems;
 
         return (
           <div className="flex gap-2 items-center">
@@ -1498,7 +1516,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
             <DetalisFormatted
               title="Status"
               detail={
-                selectedMeeting?.paymentStatus === "Paid" ? "Paid" : "Unpaid"
+                isMeetingPaid(selectedMeeting?.paymentStatus) ? "Paid" : "Unpaid"
               }
             />
             <DetalisFormatted
