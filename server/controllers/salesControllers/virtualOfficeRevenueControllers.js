@@ -84,6 +84,7 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
     const {
       client,
       location,
+      source,
       channel,
       taxableAmount,
       revenue,
@@ -106,7 +107,8 @@ const createVirtualOfficeRevenue = async (req, res, next) => {
     const newRevenue = new VirtualOfficeRevenue({
       client,
       location,
-      channel: normalizeVirtualOfficeChannel(channel),
+      source,
+      channel: channel ? normalizeVirtualOfficeChannel(channel) : "",
       taxableAmount,
       revenue,
       receivedAmount: Number(receivedAmount || 0),

@@ -5,6 +5,10 @@ const jobApplicationsSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "Company",
   },
+  source: {
+    type: String,
+    default: "local",
+  },
   jobPosition: {
     type: String,
   },

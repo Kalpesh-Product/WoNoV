@@ -96,6 +96,7 @@ const bulkInsertJobApplications = async (req, res, next) => {
 
         jobApplications.push({
           companyData: req.company,
+          source: "local",
           jobPosition: row["Job Position"],
           name: row["Name"],
           email: row["Email"],
@@ -193,6 +194,7 @@ const createJobApplication = async (req, res, next) => {
     // Create and save job application
     const application = new JobApplications({
       companyData: company,
+      source: "local",
       jobPosition,
       name,
       email,

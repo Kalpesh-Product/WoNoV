@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm } from "react-hook-form";
@@ -78,6 +78,48 @@ const JobApplicationList = () => {
       return response.data;
     },
   });
+  const {
+    data: websiteApplications,
+    isPending: isWebsiteApplicationPending,
+    isError: isWebsiteApplicationError,
+    error: websiteApplicationError,
+  } = useQuery({
+    queryKey: ["websiteJobApplications"],
+    queryFn: async () => {
+      const response = await axios.get("/api/company/website-job-applications");
+      return response.data;
+    },
+    retry: false,
+  });
+
+  const combinedApplications = useMemo(() => {
+    const localRows = (jobApplications || []).map((job) => ({
+      ...job,
+      source: job.source || "local",
+      count: 1,
+      jobPosition: job.jobPosition || "-",
+      deletedByName: job.deletedBy
+        ? [job.deletedBy.firstName, job.deletedBy.lastName]
+            .filter(Boolean)
+            .join(" ") ||
+          job.deletedBy.employeeName ||
+          job.deletedBy.name ||
+          job.deletedBy.email ||
+          "—"
+        : "—",
+    }));
+    const websiteRows = (websiteApplications?.data || []).map((job) => ({
+      ...job,
+      isWebsiteApplication: true,
+      count: 1,
+      jobPosition: job.jobPosition || "-",
+    }));
+    return [...localRows, ...websiteRows].sort(
+      (a, b) =>
+        new Date(a.finalSubmissionDate || 0) -
+        new Date(b.finalSubmissionDate || 0),
+    );
+  }, [jobApplications, websiteApplications?.data]);
 
   const saveApplicationMutation = useMutation({
     mutationFn: async (values) => {
@@ -90,6 +132,7 @@ const JobApplicationList = () => {
         }
         formData.append(key, value ?? "");
       });
+      if (!editingApplication) formData.set("source", "local");
 
       const response = editingApplication
         ? await axios.patch(
@@ -236,17 +279,21 @@ const JobApplicationList = () => {
       hide:true,
       valueFormatter: (params) => inrFormat(params.value),
     },
-    { field: "howSoonYouCanJoinInDays", headerName: "Joining Time (Days)", flex: 1 ,hide:true},
+    { field: "howSoonYouCanJoinInDays", headerName: "Joining Time", flex: 1 ,hide:true},
     { field: "willRelocateToGoa", headerName: "Willing to Relocate to Goa", flex: 1 ,hide:true},
     { field: "willingToBootstrap", headerName: "Willing to Bootstrap", flex: 1 ,hide:true},   
     {field: "linkedInProfileUrl", headerName: "LinkedIn Profile", flex: 1, hide:true},
     { field: "skillSetsForJob", headerName: "Skill Sets for Job", flex: 1, hide:true },
     { field: "whyShouldWeConsiderYou", headerName: "Why Should We Consider You?", flex: 1, hide:true },
+    { field: "relevantExperience", headerName: "Relevant Experience", flex: 1, hide: true },
+    { field: "resumeFilename", headerName: "Resume Filename", flex: 1, hide: true },
     { field: "whoAreYouAsPerson", headerName: "Who Are You As a Person?", flex: 1, hide:true },
     { field: "message", headerName: "Message", flex: 1, hide:true },
     { field: "resumeLink", headerName: "Resume Link", flex: 1, hide:true },
     { field: "remarks", headerName: "Remarks", flex: 1, hide:true },
     { field: "finalSubmissionDate", headerName: "Submission Date" ,flex:1},
+    { field: "source", headerName: "Source", flex: 1, minWidth: 150,
+      valueGetter: (params) => params.data?.source || "local" },
     { field: "jobPosition", headerName: "Job Position", flex: 1 },
     { field: "status",
       headerName: "Status",
@@ -278,6 +325,17 @@ const JobApplicationList = () => {
       filter: false,
       suppressCsvExport: true,
       cellRenderer: (params) => {
+        if (params.data?.isWebsiteApplication || !params.data?._id) {
+          return (
+            <button
+              type="button"
+              className="text-primary underline"
+              onClick={() => handleViewApplicationDetails(params.data)}
+            >
+              View
+            </button>
+          );
+        }
         if (params.data.isDeleted) {
           return (
             <div className="flex h-full items-center gap-2">
@@ -366,44 +424,30 @@ const JobApplicationList = () => {
 
   return (
     <div>
+      {isWebsiteApplicationError && (
+        <p role="alert" className="mb-3 text-red-600">
+          {websiteApplicationError?.response?.data?.message || "Unable to load website applications."} Local applications are still available.
+        </p>
+      )}
+      {(websiteApplications?.pagination?.filteredTotal ?? 0) > (websiteApplications?.data?.length ?? 0) && (
+        <p className="mb-3 text-sm text-gray-600">
+          Showing the first {websiteApplications.data.length} website applications. More pages require additional API query parameters.
+        </p>
+      )}
       <WidgetTable
         dateColumn={"finalSubmissionDate"}
         search
         totalKey="count"
         totalText="TOTAL : "
-        titleAmountOverride={`TOTAL : ${jobApplications?.length ?? 0}`}
+        titleAmountOverride={`TOTAL : ${combinedApplications.length}`}
         searchColumn={"Job Position"}
         tableTitle={"Job Applications"}
-        data={
-          isJobApplicationPending
-            ? []
-            : jobApplications
-                .slice()
-                .sort(
-                  (a, b) =>
-                    new Date(a.finalSubmissionDate) -
-                    new Date(b.finalSubmissionDate)
-                )
-                .map((job) => ({
-                  ...job,
-                  count: 1,
-                  finalSubmissionDate: job.finalSubmissionDate,
-                  jobPosition: job.jobPosition == "" ? "-" : job.jobPosition,
-                  deletedByName: job.deletedBy
-                    ? [job.deletedBy.firstName, job.deletedBy.lastName]
-                        .filter(Boolean)
-                        .join(" ") ||
-                      job.deletedBy.employeeName ||
-                      job.deletedBy.name ||
-                      job.deletedBy.email ||
-                      "—"
-                    : "—",
-                }))
-        }
+        data={combinedApplications}
         columns={leavesColumn}
         buttonTitle="Add Job Application"
         handleSubmit={openCreateApplication}
         exportData
+        loading={isJobApplicationPending || isWebsiteApplicationPending}
       />
       <MuiModal
         open={openAddModal}
@@ -582,10 +626,8 @@ const JobApplicationList = () => {
               render={({ field }) => (
                 <TextField
                   {...field}
-                  label="Joining Time (Days)"
-                  type="number"
+                  label="Joining Time"
                   size="small"
-                  inputProps={{ min: 0 }}
                 />
               )}
             />
@@ -743,7 +785,7 @@ const JobApplicationList = () => {
         onClose={() => setOpenModal(false)}
         title={"Job Application Details"}
       >
-        {!isJobApplicationPending && jobApplications ? (
+        {viewApplicationDetails ? (
           <div className="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-1 gap-4">
             <div className="font-bold">Personal Details</div>
             <DetalisFormatted
@@ -782,7 +824,7 @@ const JobApplicationList = () => {
               detail={inrFormat(viewApplicationDetails?.expectedMonthlySalary)}
             />
             <DetalisFormatted
-              title="Joining Time (Days)"
+              title="Joining Time"
               detail={viewApplicationDetails?.howSoonYouCanJoinInDays}
             />
             <DetalisFormatted
@@ -821,10 +863,15 @@ const JobApplicationList = () => {
               title="Skill Sets for Job"
               detail={viewApplicationDetails?.skillSetsForJob}
             />
-            <DetalisFormatted
-              title="Why Should We Consider You?"
-              detail={viewApplicationDetails?.whyShouldWeConsiderYou}
-            />
+            {!viewApplicationDetails?.isWebsiteApplication && (
+              <DetalisFormatted
+                title="Why Should We Consider You?"
+                detail={viewApplicationDetails?.whyShouldWeConsiderYou}
+              />
+            )}
+            {viewApplicationDetails?.relevantExperience && (
+              <DetalisFormatted title="Relevant Experience" detail={viewApplicationDetails.relevantExperience} />
+            )}
             <DetalisFormatted
               title="Who Are You As a Person?"
               detail={viewApplicationDetails?.whoAreYouAsPerson}
@@ -840,7 +887,9 @@ const JobApplicationList = () => {
               title="Resume Link"
               detail={
                 !isValidURL(viewApplicationDetails.resumeLink) ? (
-                  "Not Provided"
+                  viewApplicationDetails.hasResume
+                    ? viewApplicationDetails.resumeFilename || "Resume available on website"
+                    : "Not Provided"
                 ) : (
                   <div>
                     <a
@@ -859,6 +908,10 @@ const JobApplicationList = () => {
             <DetalisFormatted
               title="Status"
               detail={viewApplicationDetails?.status}
+            />
+            <DetalisFormatted
+              title="Source"
+              detail={viewApplicationDetails?.source || "local"}
             />
             <DetalisFormatted
               title="Remarks"

@@ -83,6 +83,13 @@ const TotalRevenueLayout = () => {
       path: "co-working",
       permission: revenuePermissions.coworking.value,
     },
+    ...(isFinanceRoute
+      ? [{
+          label: "Flexible Desk Clients",
+          path: "flexible-desk-clients",
+          permission: revenuePermissions.coworking.value,
+        }]
+      : []),
     {
       label: "Meetings",
       path: "meetings",

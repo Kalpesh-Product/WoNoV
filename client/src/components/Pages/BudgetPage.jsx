@@ -110,7 +110,7 @@ const BudgetPage = () => {
     .trim()
     .toLowerCase()
     .startsWith("finance");
-  const showManagedDepartment = isFinanceManager && isFinanceBudgetPage;
+  const showManagedDepartment = (isFinanceManager || belongsToFinance) && isFinanceBudgetPage;
   const queryClient = useQueryClient();
   const fyFromQuery = useMemo(
     () => new URLSearchParams(location.search).get("fy"),

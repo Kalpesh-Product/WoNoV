@@ -95,6 +95,16 @@ const ModulePermissions = () => {
     setValue("permissions", Array.from(current));
   };
 
+  // Select All is temporarily disabled. Restore this handler with its button.
+  // const handleSelectAll = () => {
+  //   const current = new Set(watch("permissions") || []);
+  //   filteredPermissions.forEach(({ action }) => current.add(action));
+  //   setValue("permissions", Array.from(current));
+  // };
+  // const allVisibleSelected =
+  //   filteredPermissions.length > 0 &&
+  //   filteredPermissions.every(({ action }) => formPermissions.has(action));
+
   const handleEditToggle = () => {
     if (isEditing) {
       setValue("permissions", currentPermissions || []);
@@ -180,6 +190,15 @@ const ModulePermissions = () => {
                 type="button"
                 handleSubmit={handleEditToggle}
               />
+              {/* Select All is temporarily disabled.
+              {isEditing && (
+                <SecondaryButton
+                  title="Select All"
+                  type="button"
+                  handleSubmit={handleSelectAll}
+                  disabled={allVisibleSelected || filteredPermissions.length === 0 || mutation.isPending}
+                />
+              )} */}
               <div
                 className="p-2 hover:bg-gray-200 cursor-pointer rounded-full border-[1px] border-borderGray"
                 onClick={() => setFilterDrawerOpen(true)}

@@ -588,7 +588,8 @@ const getUserDisplayName = (user) => {
         const payload = {
           client: values.client,
           location: selectedAddClient?.buildingAddress || selectedAddClient?.city || "",
-          channel: selectedAddClient?.bookingType || "Direct",
+          source: selectedAddClient?.source || "",
+          channel: selectedAddClient?.channel || "",
           taxableAmount: addRevenue,
           revenue: addRevenue,
           receivedAmount: addReceivedAmountValue,
@@ -1556,23 +1557,12 @@ const getUserDisplayName = (user) => {
 
             {[
               ["clientInvoiceName", "Client Invoice Name", selectedAddClient?.clientName],
-              ["channel", "Channel", selectedAddClient?.bookingType || "Direct"],
+              ["totalTerm", "Total Term", selectedAddClient?.totalTerm || 0],
+              ["source", "Source", selectedAddClient?.source],
+              ["channel", "Channel", selectedAddClient?.channel],
               ["noOfDesks", "No. of Desks", addTotalDesks],
               ["deskRate", "Open Desk Rate", addDeskRate],
-              // ["revenue", "Revenue", addRevenue],
-               ].map(([name, label, value]) => (
-              <TextField
-                key={name}
-                value={value ?? ""}
-                label={label}
-                size="small"
-                fullWidth
-                disabled
-              />
-            ))}
-
-            {[
-              ["totalTerm", "Total Term", selectedAddClient?.totalTerm || 0],
+              ["securityDeposit", "Security Deposit", selectedAddClient?.securityDeposit],
               ["annualIncrement", "Annual Increment (%)", selectedAddClient?.annualIncrement || 0],
             ].map(([name, label, value]) => (
               <TextField
@@ -1585,26 +1575,33 @@ const getUserDisplayName = (user) => {
               />
             ))}
 
-            <TextField
-              value={selectedAddClient?.nextIncrementDate ? dayjs(selectedAddClient.nextIncrementDate).format("DD-MM-YYYY") : ""}
-              label="Next Increment Date"
-              size="small"
-              fullWidth
-              disabled
-            />
-            <TextField
-              value={selectedAddClient?.securityDeposit ?? ""}
-              label="Security Deposit"
-              size="small"
-              fullWidth
-              disabled
-            />
-            <TextField
-              value={selectedAddClient?.pastDueDate ? dayjs(selectedAddClient.pastDueDate).format("DD-MM-YYYY") : ""}
-              label="Past Due Date"
-              size="small"
-              fullWidth
-              disabled
+            {[
+              ["nextIncrementDate", "Next Increment Date", selectedAddClient?.nextIncrementDate],
+              ["pastDueDate", "Past Due Date", selectedAddClient?.pastDueDate],
+            ].map(([name, label, value]) => (
+              <TextField
+                key={name}
+                value={value ? dayjs(value).format("DD-MM-YYYY") : ""}
+                label={label}
+                size="small"
+                fullWidth
+                disabled
+              />
+            ))}
+            <Controller
+              name="invoiceUploadedAt"
+              control={addControl}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  value={field.value ?? null}
+                  label="Invoice Upload Date"
+                  format="DD-MM-YYYY"
+                  maxDate={dayjs()}
+                  onChange={(dateValue) => field.onChange(dateValue)}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
+              )}
             />
             <Controller
               name="rentDate"
@@ -1617,37 +1614,10 @@ const getUserDisplayName = (user) => {
                   format="DD-MM-YYYY"
                   maxDate={dayjs()}
                   onChange={(dateValue) => field.onChange(dateValue)}
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      fullWidth: true,
-                    },
-                  }}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               )}
             />
-            <div className="col-span-2">
-              <Controller
-                name="invoiceUploadedAt"
-                control={addControl}
-                render={({ field }) => (
-                  <DatePicker
-                    {...field}
-                    value={field.value ?? null}
-                    label="Invoice Upload Date"
-                    format="DD-MM-YYYY"
-                    maxDate={dayjs()}
-                    onChange={(dateValue) => field.onChange(dateValue)}
-                    slotProps={{
-                      textField: {
-                        size: "small",
-                        fullWidth: true,
-                      },
-                    }}
-                  />
-                )}
-              />
-            </div>
             <div
               className={`col-span-2 grid grid-cols-1 gap-4 ${
                 addPaymentState.previousTotalAmount > 0

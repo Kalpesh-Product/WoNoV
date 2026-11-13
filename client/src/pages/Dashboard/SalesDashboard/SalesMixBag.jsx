@@ -30,6 +30,11 @@ const SalesMixBag = () => {
       permission: PERMISSIONS.SALES_CLIENTS_MIX_BAG.value,
     },
     {
+      title: "Partners",
+      route: "/app/dashboard/sales-dashboard/mix-bag/partners",
+      permission: PERMISSIONS.SALES_PARTNERS_MIX_BAG.value,
+    },
+    {
       title: "Desks",
       route: "/app/dashboard/sales-dashboard/mix-bag/inventory",
       permission: PERMISSIONS.SALES_DESKS_MIX_BAG.value,

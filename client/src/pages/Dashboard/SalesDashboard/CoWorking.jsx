@@ -102,7 +102,26 @@ const getInvoiceBillingFrequency = (row, clientList) => {
 
 const getInvoiceClientType = (row, clientList) => {
   const client = getInvoiceClient(row, clientList);
-  return client ? client.clientType || "" : row.clientType || "";
+  const clientType = client?.clientType || row.clientType;
+  if (clientType) return clientType;
+
+  const billingFrequency = client?.billingFrequency || row.billingFrequency;
+  if (billingFrequency === "Yearly") return "Annual Client";
+  if (billingFrequency === "Monthly") return "Flexy Desk Client";
+  return "";
+};
+
+const isFlexibleDeskInvoice = (row, clientList) => {
+  const client = getInvoiceClient(row, clientList);
+  const clientType = String(client?.clientType || row.clientType || "")
+    .trim()
+    .toLowerCase();
+  if (clientType) {
+    return ["flexy desk client", "flexi desk client", "flexible desk client"].includes(clientType);
+  }
+  return String(client?.billingFrequency || row.billingFrequency || "")
+    .trim()
+    .toLowerCase() === "monthly";
 };
 
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
@@ -268,7 +287,7 @@ const getUnpaidInvoiceRowsForMonth = (
 };
 // const CoWorking = () => {
   // const CoWorking = ({ showChart = true }) => {
-const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
+const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSegment = "all" }) => {
   const axios = useAxiosPrivate();
   const [viewRow, setViewRow] = useState(null);
   const [editRow, setEditRow] = useState(null);
@@ -281,6 +300,13 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
       return Array.isArray(response.data) ? response.data : [];
     },
   });
+  const flexibleDeskView = clientSegment === "flexible-desk";
+  const belongsToSegment = (row) =>
+    clientSegment === "all" ||
+    isFlexibleDeskInvoice(row, coworkingClients) === flexibleDeskView;
+  const clientsInSegment = coworkingClients.filter(
+    belongsToSegment,
+  );
 
   const openEdit = (row) => {
     setEditRow(row);
@@ -394,10 +420,12 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
     ? []
     : coWorkingData.flatMap((item) =>
       (item.clients || []).filter(
-        (client) => getNormalizedRentStatus(client.rentStatus) === "paid"
+        (client) =>
+          getNormalizedRentStatus(client.rentStatus) === "paid" &&
+          belongsToSegment(client)
       ).map((client) => ({
         ...client,
-        vertical: "Co-Working",
+        vertical: flexibleDeskView ? "Flexible Desk Clients" : "Co-Working",
       }))
     );
 
@@ -499,7 +527,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
 
   //const flattenedRevenueData = tableData.flatMap((month) => month.revenue);
   const activeCoworkingClientIds = new Set(
-    coworkingClients
+    clientsInSegment
       .filter(
         (client) =>
           client?.isActive !== false && client?.clientStatus !== false,
@@ -509,6 +537,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
   const baseRevenueData = tableData
     .flatMap((month) => month.revenue)
     .filter((row) => {
+      if (!belongsToSegment(row)) return false;
       const rowMonth = dayjs(row.rentDate).startOf("month");
       const currentMonth = dayjs().startOf("month");
       const isPaid = row.normalizedRentStatus === "paid";
@@ -541,7 +570,9 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           chartOptions={options}
           dateKey="rentDate"
           valueKey="revenue"
-          graphTitle="ANNUAL MONTHLY CO WORKING REVENUES"
+          graphTitle={flexibleDeskView
+            ? "ANNUAL MONTHLY FLEXIBLE DESK REVENUES"
+            : "ANNUAL MONTHLY CO WORKING REVENUES"}
           disableHoverCrosshair
         />
       ) : (
@@ -559,8 +590,12 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
           formatDate
           tableTitle={
             showInvoiceProjections
-              ? "Co-Working Revenue Client Invoicing"
-              : "MONTHLY REVENUE WITH CLIENT DETAILS"
+              ? flexibleDeskView
+                ? "Flexible Desk Clients Revenue Invoicing"
+                : "Co-Working Revenue Client Invoicing"
+              : flexibleDeskView
+                ? "MONTHLY FLEXIBLE DESK REVENUE WITH CLIENT DETAILS"
+                : "MONTHLY REVENUE WITH CLIENT DETAILS"
           }
           totalKey="revenue"
           titleAmountOverride=""
@@ -596,7 +631,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
                     baseRevenueData,
                     selectedDate,
                     existingMonthRows,
-                    coworkingClients,
+                    clientsInSegment,
                   )
               : undefined
           }
@@ -604,7 +639,9 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             { headerName: "Sr No", field: "srNo", width: 100 },
             { headerName: "Client Name", field: "clientName", width: 350 },
             { headerName: "Channel", field: "channel" },
-            { headerName: "Client Type", field: "clientType", minWidth: 170 },
+            ...(clientSegment === "all"
+              ? [{ headerName: "Client Type", field: "clientType", minWidth: 170 }]
+              : []),
             {
               headerName: "Revenue (INR)",
               field: "revenue",
@@ -848,7 +885,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false }) => {
             fullWidth
             disabled
           >
-            {coworkingClients.map((client) => (
+            {clientsInSegment.map((client) => (
               <MenuItem key={client._id} value={client._id}>
                 {client.clientName}
               </MenuItem>

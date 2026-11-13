@@ -57,6 +57,7 @@ const WidgetTable = ({
   showCalendarWhenEmpty = true,
   getMissingRangeData,
   getVisibleColumns,
+  loading = false,
 }) => {
   const agGridRef = useRef(null);
   const [exportTable, setExportTable] = useState(false);
@@ -485,6 +486,7 @@ const WidgetTable = ({
               onSelectionChange={(rows) => setSelectedRows(rows)}
               batchButton={batchButton}
               hideTitle={hideTitle}
+              loading={loading}
             />
         </>
       </WidgetSection>

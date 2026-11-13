@@ -97,6 +97,9 @@ const {
   restoreJobApplication,
   permanentlyDeleteJobApplication,
 } = require("../controllers/companyControllers/jobApplicationsController");
+const {
+  getWebsiteJobApplications,
+} = require("../controllers/companyControllers/websiteJobApplicationsController");
 
 // Company basic info routes
 router.post("/create-company", addCompany);
@@ -177,6 +180,7 @@ router.post(
   createJobApplication,
 );
 router.get("/get-job-applications", getJobApplications);
+router.get("/website-job-applications", getWebsiteJobApplications);
 router.patch(
   "/update-job-application/:id",
   upload.single("resume"),
