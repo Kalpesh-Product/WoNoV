@@ -5,6 +5,7 @@ const CoworkingMembers = require("../../models/sales/CoworkingMembers");
 const mongoose = require("mongoose");
 const VirtualOfficeClient = require("../../models/sales/VirtualOfficeClient");
 const VirtualOfficeRevenue = require("../../models/sales/VirtualOfficeRevenue");
+const dayjs = require("dayjs");
 const WorkationClient = require("../../models/sales/WorkationClients");
 const { formatDate } = require("../../utils/formatDateTime");
 const { getPagination } = require("../../utils/pagination");
@@ -381,6 +382,48 @@ const fetchCoworkingClientReportService = async ({
   return buildResponse(result, total);
 };
 
+const getVirtualOfficeReportCurrentRate = (client) => {
+  const start = dayjs(client.termStartDate);
+  const end = dayjs(client.termEnd);
+  const baseRate = Number(client.openDeskRate) || 0;
+  const increment = Number(client.annualIncrement) || 0;
+
+  if (
+    !client.termStartDate ||
+    !client.termEnd ||
+    !start.isValid() ||
+    !end.isValid() ||
+    !end.isAfter(start, "day") ||
+    !baseRate
+  ) {
+    return baseRate;
+  }
+
+  let periodStart = start.startOf("day");
+  let currentRate = baseRate;
+  while (periodStart.add(1, "year").subtract(1, "day").isBefore(end, "day")) {
+    periodStart = periodStart.add(1, "year");
+    currentRate *= 1 + increment / 100;
+  }
+  return currentRate;
+};
+
+const getVirtualOfficeReportAgreementExpiry = (client) => {
+  if (!client.termStartDate || !client.termEnd) return "-";
+  const start = dayjs(client.termStartDate).startOf("day");
+  const end = dayjs(client.termEnd).startOf("day");
+  if (!start.isValid() || !end.isValid() || end.isBefore(start, "day")) {
+    return "-";
+  }
+
+  const totalDays = end.diff(start, "day");
+  const remainingDays = Math.min(
+    totalDays,
+    Math.max(0, end.diff(dayjs().startOf("day"), "day")),
+  );
+  return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
+};
+
 const fetchVirtualOfficeClientsReportService = async ({
   company,
   dateFilter,
@@ -442,14 +485,14 @@ const fetchVirtualOfficeClientsReportService = async ({
         cabinTotal,
         openTotal,
         rentStatus,
-        perDeskMeetingCredits,
-        totalMeetingCredits,
         ...restClient
       } = client;
 
       return {
         ...restClient,
         revenue: revenueByClientId.get(String(client._id)) || 0,
+        currentRate: getVirtualOfficeReportCurrentRate(client),
+        agreementExpiry: getVirtualOfficeReportAgreementExpiry(client),
         unit: restClient.unit
           ? {
               ...restClient.unit,
