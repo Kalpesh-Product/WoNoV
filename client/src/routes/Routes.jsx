@@ -174,6 +174,7 @@ import SalesPayment from "../pages/Dashboard/SalesDashboard/SalesFinance/SalesPa
 import UniqueClients from "../pages/Dashboard/SalesDashboard/UniqueClients";
 import MemberDetails from "../pages/Dashboard/SalesDashboard/ViewClients/MemberDetails";
 import SalesMixBag from "../pages/Dashboard/SalesDashboard/SalesMixBag";
+import SalesPartners from "../pages/Dashboard/SalesDashboard/SalesPartners";
 import ExternalClient from "../pages/Dashboard/SalesDashboard/ExternalClient";
 import InternalMeetingsDashboard from "../pages/Dashboard/SalesDashboard/InternalMeetingsDashboard";
 import ExternalClientCompanies from "../pages/Dashboard/SalesDashboard/ExternalClientCompanies";
@@ -788,7 +789,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "co-working",
-                            element: <CoWorking />,
+                            element: <CoWorking clientSegment="coworking" />,
+                          },
+                          {
+                            path: "flexible-desk-clients",
+                            element: <CoWorking clientSegment="flexible-desk" />,
                           },
                           {
                             path: "meetings",
@@ -1044,9 +1049,20 @@ export const routes = createBrowserRouter([
                                   <CoWorking
                                     showChart={false}
                                     showInvoiceProjections
+                                    clientSegment="coworking"
                                   />
                                 ),
                     
+                              },
+                              {
+                                path: "flexible-desk-revenue-invoicing",
+                                element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                    clientSegment="flexible-desk"
+                                  />
+                                ),
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -1285,7 +1301,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "co-working",
-                            element: <CoWorking />,
+                            element: <CoWorking clientSegment="coworking" />,
+                          },
+                          {
+                            path: "flexible-desk-clients",
+                            element: <CoWorking clientSegment="flexible-desk" />,
                           },
                           {
                             path: "meetings",
@@ -1541,9 +1561,20 @@ export const routes = createBrowserRouter([
                                   <CoWorking
                                     showChart={false}
                                     showInvoiceProjections
+                                    clientSegment="coworking"
                                   />
                                 ),
                     
+                              },
+                              {
+                                path: "flexible-desk-revenue-invoicing",
+                                element: (
+                                  <CoWorking
+                                    showChart={false}
+                                    showInvoiceProjections
+                                    clientSegment="flexible-desk"
+                                  />
+                                ),
                               },
                               {
                                 path: "meeting-revenue-invoicing",
@@ -4535,6 +4566,14 @@ export const routes = createBrowserRouter([
                       {
                         path: "mix-bag",
                         element: <SalesMixBag />,
+                      },
+                      {
+                        path: "mix-bag/partners",
+                        element: (
+                          <SidebarDropdown permissions={[PERMISSIONS.SALES_PARTNERS_MIX_BAG.value]}>
+                            <SalesPartners />
+                          </SidebarDropdown>
+                        ),
                       },
                       {
                         path: "mix-bag/inventory",

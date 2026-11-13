@@ -8,6 +8,8 @@ const formatDate = (value) => {
 
 // Prefer the booking's full date span over the individual calendar event's date.
 export const formatMeetingDateRange = (meeting = {}) => {
+  if (!meeting) return "N/A";
+
   const slots = Array.isArray(meeting.bookingSlots) ? meeting.bookingSlots : [];
   const slotDates = slots
     .map((slot) => formatDate(slot.date || slot.startTime))

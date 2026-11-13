@@ -1,13 +1,21 @@
 import TabLayout from "../../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../../constants/permissions";
-
-const BASE_PATH = "/app/dashboard/finance-dashboard/billing/client-invoicing";
+import { useLocation } from "react-router-dom";
 
 const ClientInvoicingLayout = () => {
+  const location = useLocation();
+  const basePath = location.pathname.includes("/finance-dashboard1/")
+    ? "/app/dashboard/finance-dashboard1/billing/client-invoicing"
+    : "/app/dashboard/finance-dashboard/billing/client-invoicing";
   const tabs = [
     {
       label: "Co-Working",
       path: "co-working-revenue-invoicing",
+      permission: PERMISSIONS.FINANCE_BILLING_COWORKING_REVENUE_INVOICING.value,
+    },
+    {
+      label: "Flexible Desk Clients",
+      path: "flexible-desk-revenue-invoicing",
       permission: PERMISSIONS.FINANCE_BILLING_COWORKING_REVENUE_INVOICING.value,
     },
     {
@@ -40,7 +48,7 @@ const ClientInvoicingLayout = () => {
 
   return (
     <TabLayout
-      basePath={BASE_PATH}
+      basePath={basePath}
       defaultTabPath="co-working-revenue-invoicing"
       tabs={tabs}
     />

@@ -11,10 +11,14 @@ const virtualOfficeRevenueSchema = new mongoose.Schema(
       type: String,
       // required: true,
     },
-
+    source: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     channel: {
       type: String,
-      enum: ["Direct", "SPV"],
+      trim: true,
       // required: true,
     },
     taxableAmount: {

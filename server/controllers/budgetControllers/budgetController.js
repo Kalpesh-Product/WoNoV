@@ -34,6 +34,7 @@ const FINANCE_MANAGED_DEPARTMENT_PREFIXES = [
   "admin",
   "administration",
 ];
+const FINANCE_TEAM_BUDGET_PREFIXES = ["finance", "legal", "cafe", "cafeteria"];
 
 const isFinanceManager = (roles = []) =>
   roles.some((role) => {
@@ -46,6 +47,14 @@ const isFinanceManager = (roles = []) =>
 
 const isFinanceDepartment = (department) =>
   normalizeAccessName(department?.name).startsWith("finance");
+
+const isFinanceDepartmentUser = (user) =>
+  (user?.departments || []).some(isFinanceDepartment);
+
+const isFinanceTeamBudgetDepartment = (department) =>
+  FINANCE_TEAM_BUDGET_PREFIXES.some((prefix) =>
+    normalizeAccessName(department?.name).startsWith(prefix),
+  );
 
 const isFinanceManagerUser = (user) => {
   const roles = user?.role || [];
@@ -585,11 +594,15 @@ const updateBudget = async (req, res, next) => {
         },
       ) &&
       isFinanceManagedDepartment(foundBudget.department);
+    const hasFinanceTeamAccess =
+      isFinanceDepartmentUser(requestingUser) &&
+      isFinanceTeamBudgetDepartment(foundBudget.department);
 
     if (
       !departmentIds.includes(budgetDepartmentId) &&
       !isGlobalBudgetAdmin(userRoles) &&
-      !hasFinanceManagerAccess
+      !hasFinanceManagerAccess &&
+      !hasFinanceTeamAccess
     ) {
       return res
         .status(403)
@@ -836,7 +849,7 @@ const fetchBudget = async (req, res, next) => {
 
 
     let scopedDepartmentIds = departmentId ? [departmentId] : [];
-    if (departmentId && isFinanceManagerUser(user)) {
+    if (departmentId && (isFinanceManagerUser(user) || isFinanceDepartmentUser(user))) {
       const requestedDepartment = await Department.findById(departmentId)
         .select("name")
         .lean();
@@ -848,7 +861,11 @@ const fetchBudget = async (req, res, next) => {
           .select("name")
           .lean();
         scopedDepartmentIds = managedDepartments
-          .filter(isFinanceManagedDepartment)
+          .filter(
+            isFinanceManagerUser(user)
+              ? isFinanceManagedDepartment
+              : isFinanceTeamBudgetDepartment,
+          )
           .map((managedDepartment) => managedDepartment._id);
       }
     }

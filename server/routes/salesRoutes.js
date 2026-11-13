@@ -1,5 +1,15 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
+const {
+  requirePartnersAccess,
+  getPartners,
+  createPartner,
+  getWebsitePartners,
+} = require("../controllers/salesControllers/partnerControllers");
+
+router.get("/partners", requirePartnersAccess, getPartners);
+router.post("/partners", requirePartnersAccess, createPartner);
+router.get("/partners/website", requirePartnersAccess, getWebsitePartners);
 
 const {
   createCoworkingClient,

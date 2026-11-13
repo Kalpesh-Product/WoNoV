@@ -276,7 +276,11 @@ const CoWorkingClients = () => {
     // openDesks: item.openDesks,
     // totalDesks: item.totalDesks,
     desks: Number(item.openDesks || 0) + Number(item.cabinDesks),
-    clientType: item.clientType || "",
+    clientType:
+      String(item.clientType || "").trim() ||
+      (item.billingFrequency === "Monthly"
+        ? "Flexy Desk Client"
+        : "Annual Client"),
     occupancy: (
       ((Number(item.openDesks || 0) + Number(item.cabinDesks)) / 589) *
       100

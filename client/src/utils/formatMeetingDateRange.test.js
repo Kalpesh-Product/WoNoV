@@ -25,3 +25,8 @@ test("falls back to booking slots when date fields are absent", () => {
     "12-11-2026 to 16-11-2026",
   );
 });
+
+test("returns N/A when a visitor has no linked meeting", () => {
+  assert.equal(formatMeetingDateRange(null), "N/A");
+  assert.equal(formatMeetingDateRange(), "N/A");
+});
