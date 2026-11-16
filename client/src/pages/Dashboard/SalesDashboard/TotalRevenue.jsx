@@ -5,7 +5,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { CircularProgress } from "@mui/material";
+import SalesDashboardChartSkeleton from "./SalesDashboardChartSkeleton";
 import dayjs from "dayjs";
 import MonthWiseAgTable from "../../../components/Tables/MonthWiseAgTable";
 import WidgetTable from "../../../components/Tables/WidgetTable";
@@ -433,10 +433,10 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
 
   return (
     <div className="flex flex-col gap-4 ">
-      {isTotalLoading ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+      {isTotalLoading || isSimpleRevenue ? (
+        <WidgetSection border title="ANNUAL MONTHLY MIX INCOME">
+          <SalesDashboardChartSkeleton title="Annual Monthly Mix Income" />
+        </WidgetSection>
       ) : (
         <FyBarGraphPercentage
           data={isTotalLoading ? [] : paidRevenueData}
@@ -465,6 +465,7 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
 
       <WidgetTable
         tableTitle={"Annual Monthly Revenue Breakup"}
+        loading={isTotalLoading || isSimpleRevenue}
         dateColumn="date"
         totalKey="revenue"
         groupByKey="vertical" // 👈 we’ll use this to show 1 row per vertical

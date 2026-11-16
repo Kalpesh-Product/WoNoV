@@ -268,7 +268,6 @@ const TicketReports = () => {
       hide: true,
     },
     { field: "closingCategoriesExport", headerName: "Categories", hide: true },
-    { field: "resolvedDateExport", headerName: "Resolved Date", hide: true },
     { field: "attachmentsExport", headerName: "Attachments", hide: true },
     // {
     //   field: "closedAtTime",
@@ -447,9 +446,7 @@ const TicketReports = () => {
                   closingCategoriesExport: Array.isArray(item.closingCategories)
                     ? item.closingCategories.join(", ")
                     : "",
-                  resolvedDateExport: item.resolvedDate
-                    ? formatDateTime(item.resolvedDate)
-                    : "",
+                  resolvedDate: item.resolvedDate || null,
                   attachmentsExport: [
                     ...(item.attachments || []).map((attachment) => attachment.url),
                     item.image?.url,
@@ -630,7 +627,7 @@ const TicketReports = () => {
               detail={selectedMeeting?.escalatedTo || ""}
             />
             <DetalisFormatted
-              title={"Escalated Status"}
+              title={"Escalation Status"}
               detail={selectedMeeting?.escalatedStatus || ""}
             />
             <DetalisFormatted
@@ -638,7 +635,7 @@ const TicketReports = () => {
               detail={selectedMeeting?.escalatedAt || ""}
             />
             <DetalisFormatted
-              title={"Reason for Escalated"}
+              title={"Reason for Escalation"}
               detail={selectedMeeting?.reasonForEscalated || ""}
             />
             {selectedMeeting?.resolvedDate && (

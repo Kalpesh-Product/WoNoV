@@ -5,18 +5,21 @@ import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../../../utils/humanDateForamt";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { CircularProgress, Menu, MenuItem, TextField } from "@mui/material";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import StatusChip from "../../../../components/StatusChip";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import { toast } from "sonner";
-import { HiPencilSquare } from "react-icons/hi2";
-import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import { MdDeleteForever, MdMoreHoriz, MdOutlineRestore } from "react-icons/md";
 import useAuth from "../../../../hooks/useAuth";
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const APPLICATION_STATUSES = [
+  "Pending", "Under Review", "Shortlisted", "Interviewing",
+  "Offered", "Selected", "Hired", "Rejected",
+];
 
 const defaultApplicationValues = {
   jobPosition: "",
@@ -58,6 +61,9 @@ const JobApplicationList = () => {
   const [editingApplication, setEditingApplication] = useState(null);
   const [confirmationAction, setConfirmationAction] = useState(null);
   const [viewApplicationDetails, setViewApplicationDetails] = useState({});
+  const [actionPosition, setActionPosition] = useState(null);
+  const [actionRow, setActionRow] = useState(null);
+  const [statusExpanded, setStatusExpanded] = useState(false);
   const {
     control,
     handleSubmit,
@@ -188,6 +194,27 @@ const JobApplicationList = () => {
     },
   });
 
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }) =>
+      (await axios.patch(`/api/company/job-application/${id}/status`, { status })).data,
+    onSuccess: ({ application }) => {
+      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
+      setViewApplicationDetails((current) =>
+        current?._id === application._id ? { ...current, status: application.status } : current,
+      );
+      toast.success("Application status updated");
+    },
+    onError: (error) => {
+      toast.error(error?.response?.data?.message || "Failed to update application status");
+    },
+  });
+
+  const closeActionMenu = () => {
+    setActionPosition(null);
+    setActionRow(null);
+    setStatusExpanded(false);
+  };
+
   const closeAddModal = () => {
     reset(defaultApplicationValues);
     setEditingApplication(null);
@@ -317,73 +344,29 @@ const JobApplicationList = () => {
       : []),
     {
       field: "actions",
-      headerName: "Action",
-      width: 140,
+      headerName: "Actions",
+      width: 90,
       pinned: "right",
       lockPinned: true,
       sortable: false,
       filter: false,
       suppressCsvExport: true,
       cellRenderer: (params) => {
-        if (params.data?.isWebsiteApplication || !params.data?._id) {
-          return (
-            <button
-              type="button"
-              className="text-primary underline"
-              onClick={() => handleViewApplicationDetails(params.data)}
-            >
-              View
-            </button>
-          );
-        }
-        if (params.data.isDeleted) {
-          return (
-            <div className="flex h-full items-center gap-2">
-              <button
-                type="button"
-                title="Restore job application"
-                aria-label="Restore job application"
-                className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:text-gray-400"
-                disabled={applicationActionMutation.isPending}
-                onClick={() => restoreApplication(params.data)}
-              >
-                <MdOutlineRestore size={24} />
-              </button>
-              <button
-                type="button"
-                title="Permanently delete job application"
-                aria-label="Permanently delete job application"
-                className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:text-gray-400"
-                disabled={applicationActionMutation.isPending}
-                onClick={() => permanentlyDeleteApplication(params.data)}
-              >
-                <MdDeleteForever size={24} />
-              </button>
-            </div>
-          );
-        }
-
         return (
-          <div className="flex h-full items-center gap-2">
-            <button
-              type="button"
-              title="Edit job application"
-              aria-label="Edit job application"
-              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
-              onClick={() => openEditApplication(params.data)}
-            >
-              <HiPencilSquare size={24} />
-            </button>
-            <button
-              type="button"
-              title="Delete job application"
-              aria-label="Delete job application"
-              className="flex h-8 w-8 items-center justify-center text-red-600 hover:text-red-700"
-              onClick={() => archiveApplication(params.data)}
-            >
-              <MdDeleteForever size={24} />
-            </button>
-          </div>
+          <button
+            type="button"
+            aria-label="Open job application actions"
+            title="Actions"
+            className="p-1 text-primary"
+            onClick={(event) => {
+              const { right, bottom } = event.currentTarget.getBoundingClientRect();
+              setActionPosition({ top: bottom, left: right });
+              setActionRow(params.data);
+              setStatusExpanded(false);
+            }}
+          >
+            <MdMoreHoriz size={22} />
+          </button>
         );
       },
     },
@@ -449,6 +432,54 @@ const JobApplicationList = () => {
         exportData
         loading={isJobApplicationPending || isWebsiteApplicationPending}
       />
+      <Menu
+        anchorReference="anchorPosition"
+        anchorPosition={actionPosition}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        open={Boolean(actionPosition)}
+        onClose={closeActionMenu}
+      >
+        {actionRow?.isDeleted ? [
+          <MenuItem key="restore" disabled={applicationActionMutation.isPending} onClick={() => {
+            const row = actionRow;
+            closeActionMenu();
+            restoreApplication(row);
+          }}><MdOutlineRestore className="mr-2" />Restore</MenuItem>,
+          <MenuItem key="permanent-delete" disabled={applicationActionMutation.isPending} onClick={() => {
+            const row = actionRow;
+            closeActionMenu();
+            permanentlyDeleteApplication(row);
+          }}><MdDeleteForever className="mr-2" />Delete permanently</MenuItem>,
+        ] : [
+          <MenuItem key="edit" disabled={actionRow?.isWebsiteApplication || !actionRow?._id} onClick={() => {
+            const row = actionRow;
+            closeActionMenu();
+            openEditApplication(row);
+          }}>Edit</MenuItem>,
+          <MenuItem key="status" disabled={actionRow?.isWebsiteApplication || !actionRow?._id} aria-expanded={statusExpanded} onClick={() => setStatusExpanded((expanded) => !expanded)}>
+            <span className="flex w-full items-center justify-between gap-4">Status <span aria-hidden="true">{statusExpanded ? "▴" : "▾"}</span></span>
+          </MenuItem>,
+          ...(statusExpanded && !actionRow?.isWebsiteApplication ? APPLICATION_STATUSES.map((status) => (
+            <MenuItem key={status} selected={actionRow?.status === status} disabled={statusMutation.isPending} sx={{ pl: 4 }} onClick={() => {
+              const row = actionRow;
+              closeActionMenu();
+              statusMutation.mutate({ id: row._id, status });
+            }}>{status}</MenuItem>
+          )) : []),
+          <MenuItem key="view" onClick={() => {
+            const row = actionRow;
+            closeActionMenu();
+            handleViewApplicationDetails(row);
+          }}>View</MenuItem>,
+          ...(!actionRow?.isWebsiteApplication && actionRow?._id ? [
+            <MenuItem key="delete" onClick={() => {
+              const row = actionRow;
+              closeActionMenu();
+              archiveApplication(row);
+            }}>Delete</MenuItem>,
+          ] : []),
+        ]}
+      </Menu>
       <MuiModal
         open={openAddModal}
         onClose={closeAddModal}
@@ -688,10 +719,9 @@ const JobApplicationList = () => {
               control={control}
               render={({ field }) => (
                 <TextField {...field} select label="Status" size="small">
-                  <MenuItem value="Pending">Pending</MenuItem>
-                  <MenuItem value="Shortlisted">Shortlisted</MenuItem>
-                  <MenuItem value="Selected">Selected</MenuItem>
-                  <MenuItem value="Rejected">Rejected</MenuItem>
+                  {APPLICATION_STATUSES.map((status) => (
+                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                  ))}
                 </TextField>
               )}
             />

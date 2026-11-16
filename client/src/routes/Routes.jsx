@@ -4568,12 +4568,16 @@ export const routes = createBrowserRouter([
                         element: <SalesMixBag />,
                       },
                       {
-                        path: "mix-bag/partners",
+                        path: "mix-bag/enquiries",
                         element: (
                           <SidebarDropdown permissions={[PERMISSIONS.SALES_PARTNERS_MIX_BAG.value]}>
                             <SalesPartners />
                           </SidebarDropdown>
                         ),
+                      },
+                      {
+                        path: "mix-bag/partners",
+                        element: <Navigate to="/app/dashboard/sales-dashboard/mix-bag/enquiries" replace />,
                       },
                       {
                         path: "mix-bag/inventory",

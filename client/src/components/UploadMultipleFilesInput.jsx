@@ -27,6 +27,7 @@ const UploadMultipleFilesInput = ({
   showPreviews = true,
   showClearAll = true,
   showMaxInLabel = true,
+  displayCount = false,
 }) => {
   const fileInputRef = useRef(null);
   const [openModal, setOpenModal] = useState(false);
@@ -104,7 +105,7 @@ const UploadMultipleFilesInput = ({
     const filesWithinLimit = chosen.slice(0, availableSlots);
 
     if (chosen.length > availableSlots) {
-      toast.error("You can attach a maximum of 5 files");
+      toast.error(`You can attach a maximum of ${maxFiles} file${maxFiles === 1 ? "" : "s"}`);
     }
 
     // filter by allowed extensions
@@ -183,12 +184,13 @@ const UploadMultipleFilesInput = ({
   };
 
   // Friendly label value (TextField needs a string)
-  const displayValue =
-    (value?.length || 0) === 0
-      ? ""
+  const displayValue = (value?.length || 0) === 0
+    ? ""
+    : displayCount
+      ? `${value.length} file(s) selected`
       : value.length === 1
         ? getFileName(value[0])
-      : `${value.length} files selected`;
+        : `${value.length} files selected`;
 
   const reachedLimit = (value?.length || 0) >= maxFiles;
 
@@ -228,7 +230,7 @@ const UploadMultipleFilesInput = ({
               onClick={(event) => {
                 if (reachedLimit) {
                   event.preventDefault();
-                  toast.error("You can attach a maximum of 5 files");
+                  toast.error(`You can attach a maximum of ${maxFiles} file${maxFiles === 1 ? "" : "s"}`);
                 }
               }}
             >

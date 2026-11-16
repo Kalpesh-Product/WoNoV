@@ -29,6 +29,7 @@ const WidgetTable = ({
   key,
   exportData,
   exportAction,
+  processExportCell,
   dropdownColumns = [],
   handleBatchAction,
   batchButton,
@@ -253,7 +254,9 @@ const WidgetTable = ({
       const visibleColumns = getVisibleColumns
         ? getVisibleColumns({ filteredData, dateRange })
         : columns;
-      return visibleColumns.map((col) => col.field).filter(Boolean);
+      return visibleColumns
+        .filter((col) => col.field && !col.suppressCsvExport)
+        .map((col) => col.field);
     },
     [columns, dateRange, filteredData, getVisibleColumns]
   );
@@ -270,6 +273,7 @@ const WidgetTable = ({
         fileName: `${tableTitle || "data"}.csv`,
         allColumns: true,
         columnKeys: exportColumnKeys,
+        ...(processExportCell && { processCellCallback: processExportCell }),
       });
     }
   };

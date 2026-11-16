@@ -324,7 +324,8 @@ const MeetingReports = () => {
     { field: "meetingType", headerName: "Meeting Type" },
     { field: "subject", headerName: "Subject", hide: true },
     { field: "agenda", headerName: "Agenda", hide: true },
-    { field: "date", headerName: "Date" },
+    { field: "date", headerName: "Start Date", exportFormat: "date" },
+    { field: "endDate", headerName: "End Date", hide: true, exportFormat: "date" },
     { field: "duration", headerName: "Duration" },
 
     {
@@ -350,6 +351,8 @@ const MeetingReports = () => {
     { field: "department", headerName: "Department", hide: true },
     { field: "location", headerName: "Location", hide: true },
     { field: "paymentAmount", headerName: "Payment Amount", hide: true },
+    { field: "paymentBaseAmount", headerName: "Taxable Amount", hide: true },
+    { field: "paymentGstAmount", headerName: "GST Amount", hide: true },
     {
       field: "paymnetDiscountAmount",
       headerName: "Payment Discount",
@@ -363,6 +366,15 @@ const MeetingReports = () => {
       hide: true,
     },
     { field: "paymentProofUrl", headerName: "Payment Proof", hide: true },
+    { field: "bookingPeriod", headerName: "Booking Period", hide: true },
+    { field: "bookingSlotsDisplay", headerName: "Booking Slots", hide: true },
+    { field: "extendedTimeDisplay", headerName: "Extended Time", hide: true },
+    { field: "extendedDurationDisplay", headerName: "Extended Duration", hide: true },
+    { field: "creditsUsed", headerName: "Credits Used", hide: true },
+    { field: "completedAt", headerName: "Completed At", hide: true, exportFormat: "datetime-comma" },
+    { field: "completedBy", headerName: "Completed By", hide: true },
+    { field: "reason", headerName: "Cancellation Reason", hide: true },
+    { field: "housekeepingChecklistDisplay", headerName: "Housekeeping Checklist", hide: true },
     {
       field: "displayMeetingStatus",
       headerName: "Status",
@@ -401,6 +413,7 @@ const MeetingReports = () => {
           <YearWiseTable
               search={true}
               exportData
+              exportAllColumns
               taskExportDateTimeFormatting
               dateColumn={"date"}
               initialDateRange={meetingDateRange}
@@ -445,17 +458,44 @@ const MeetingReports = () => {
                     startDate: item.startDate,
                     endDate: item.endDate,
                     bookingSlots: item.bookingSlots,
+                    bookingPeriod: item.bookingPeriod || "Day",
+                    bookingSlotsDisplay: item.bookingSlots?.map((slot) =>
+                      `${slot.date}: ${dayjs(slot.startTime).format("hh:mm A")} - ${dayjs(slot.endTime).format("hh:mm A")}`,
+                    ).join(" | ") || "",
                     startTime: item.startTime,
                     scheduledEndTime: item.endTime,
                     endTime: getEffectiveEndTime(item),
                     extendTime: item.extendTime,
+                    extendedTimeDisplay: item.extendTime && dayjs(item.extendTime).isAfter(dayjs(item.endTime))
+                      ? `${dayjs(item.endTime).format("hh:mm A")} - ${dayjs(item.extendTime).format("hh:mm A")}`
+                      : "",
+                    extendedDurationDisplay: item.extendTime && dayjs(item.extendTime).isAfter(dayjs(item.endTime))
+                      ? (() => {
+                          const minutes = dayjs(item.extendTime).diff(dayjs(item.endTime), "minute");
+                          const hours = Math.floor(minutes / 60);
+                          const remainingMinutes = minutes % 60;
+                          return [hours ? `${hours} hr` : "", remainingMinutes ? `${remainingMinutes} min` : ""]
+                            .filter(Boolean)
+                            .join(" ");
+                        })()
+                      : "",
+                    creditsUsed: item.creditsUsed ?? 0,
+                    completedAt: item.completedAt,
+                    completedBy: item.completedBy,
+                    reason: item.reason || "",
                     duration: getDisplayDuration(item),
                     meetingStatus: item.meetingStatus,
                     displayMeetingStatus: getMeetingDisplayStatus(item),
                     agenda: item.agenda,
                     subject: item.subject,
                     housekeepingChecklist: item.housekeepingChecklist,
+                    housekeepingChecklistDisplay: item.housekeepingChecklist
+                      ?.map((task) => task.name)
+                      .filter(Boolean)
+                      .join(", ") || "",
                     paymentAmount: item.paymentAmount ?? 0,
+                    paymentBaseAmount: item.paymentBaseAmount ?? 0,
+                    paymentGstAmount: item.paymentGstAmount ?? 0,
                     paymnetDiscountAmount: item.discountAmount ?? 0,
                     paymentMode: item.paymentMode,
                     paymentStatus: item.paymentStatus,
@@ -519,11 +559,7 @@ const MeetingReports = () => {
             {/* Section 1: Basic Info */}
             <div className="font-bold">Basic Info</div>
             <DetalisFormatted
-              title="Meeting Type"
-              detail={selectedMeeting?.meetingType || "N/A"}
-            />
-            <DetalisFormatted
-              title="Subject"
+              title="Title"
               detail={selectedMeeting?.subject || "N/A"}
             />
             <DetalisFormatted
@@ -544,12 +580,12 @@ const MeetingReports = () => {
               bookingSlots={selectedMeeting?.bookingSlots}
             />
             <DetalisFormatted
-              title="Meeting Status"
+              title="Status"
               detail={selectedMeeting?.displayMeetingStatus || "N/A"}
             />
             <DetalisFormatted
-              title="Housekeeping Status"
-              detail={selectedMeeting?.housekeepingStatus || "N/A"}
+              title="Type"
+              detail={selectedMeeting?.meetingType || "N/A"}
             />
             <DetalisFormatted
               title="Company"
@@ -561,16 +597,48 @@ const MeetingReports = () => {
                 "N/A"
               }
             />
+            <DetalisFormatted
+              title="Booking Period"
+              detail={selectedMeeting?.bookingPeriod || "Day"}
+            />
+            {selectedMeeting?.bookingSlotsDisplay && (
+              <DetalisFormatted
+                title="Booking Slots"
+                detail={selectedMeeting.bookingSlotsDisplay}
+              />
+            )}
+            {selectedMeeting?.meetingType === "Internal" && (
+              <DetalisFormatted
+                title="Credits Used"
+                detail={selectedMeeting.creditsUsed ?? 0}
+              />
+            )}
+            {selectedMeeting?.completedAt && (
+              <>
+                <DetalisFormatted
+                  title="Completed At"
+                  detail={dayjs(selectedMeeting.completedAt).format("DD-MM-YYYY hh:mm A")}
+                />
+                <DetalisFormatted
+                  title="Completed By"
+                  detail={selectedMeeting.completedBy || "N/A"}
+                />
+              </>
+            )}
+            {selectedMeeting?.reason && (
+              <DetalisFormatted
+                title="Cancellation Reason"
+                detail={selectedMeeting.reason}
+              />
+            )}
 
             {/* Section 2: People Involved */}
             <br />
             <div className="font-bold">People Involved</div>
-            {selectedMeeting?.participants?.length > 0 && (
-              <DetalisFormatted
-                title="Participants"
-                detail={selectedMeeting?.participants || "Unknown"}
-              />
-            )}
+            <DetalisFormatted
+              title="Participants"
+              detail={selectedMeeting?.participants || "N/A"}
+            />
             <DetalisFormatted
               title="Booked By"
               detail={selectedMeeting?.bookedBy || "Unknown"}
@@ -579,16 +647,6 @@ const MeetingReports = () => {
               title="Receptionist"
               detail={selectedMeeting?.receptionist || "Unknown"}
             />
-            {/* <DetalisFormatted
-              title="Department"
-              detail={
-                selectedMeeting?.department?.length
-                  ? selectedMeeting.department
-                      .map((item) => item.name)
-                      .join(", ")
-                  : "Top Management"
-              }
-            /> */}
             <DetalisFormatted
               title="Department"
               detail={
@@ -616,6 +674,16 @@ const MeetingReports = () => {
               title="Building"
               detail={selectedMeeting?.buildingName || "N/A"}
             />
+            <DetalisFormatted
+              title="Housekeeping Status"
+              detail={selectedMeeting?.housekeepingStatus || "N/A"}
+            />
+            {selectedMeeting?.housekeepingChecklistDisplay && (
+              <DetalisFormatted
+                title="Housekeeping Checklist"
+                detail={selectedMeeting.housekeepingChecklistDisplay}
+              />
+            )}
 
             {/* Section 2: Payment Details */}
             {selectedMeeting?.meetingType
@@ -625,18 +693,26 @@ const MeetingReports = () => {
                 <br />
                 <div className="font-bold">Payment Details</div>
                 <DetalisFormatted
+                  title="Discount"
+                  detail={`INR ${inrFormat(
+                    selectedMeeting?.paymnetDiscountAmount,
+                  )}`}
+                />
+                <DetalisFormatted
+                  title="Taxable Amount"
+                  detail={`INR ${inrFormat(selectedMeeting?.paymentBaseAmount)}`}
+                />
+                <DetalisFormatted
+                  title="GST Amount"
+                  detail={`INR ${inrFormat(selectedMeeting?.paymentGstAmount)}`}
+                />
+                <DetalisFormatted
                   title="Total Amount"
                   detail={`INR ${inrFormat(selectedMeeting?.paymentAmount)}`}
                 />
                 <DetalisFormatted
                   title="Status"
-                  detail={selectedMeeting?.paymentStatus ? "Paid" : "Unpaid"}
-                />
-                <DetalisFormatted
-                  title="Discount"
-                  detail={`INR ${inrFormat(
-                    selectedMeeting?.paymnetDiscountAmount,
-                  )}`}
+                  detail={selectedMeeting?.paymentStatus === "Paid" || selectedMeeting?.paymentStatus === true ? "Paid" : "Unpaid"}
                 />
                 <DetalisFormatted
                   title="Payment Mode"

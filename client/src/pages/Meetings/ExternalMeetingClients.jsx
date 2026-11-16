@@ -134,6 +134,14 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
   const isFinance =
     department?.name?.toLowerCase().includes("finance") ||
     location.pathname.includes("finance-dashboard");
+  const isFinanceDepartmentUser = departmentNames.some(
+    (deptName) => deptName?.toLowerCase() === "finance",
+  );
+  const meetingCompletionFilter = isFinance || isFinanceDepartmentUser
+    ? isTechDepartment
+      ? "true"
+      : "false"
+    : "include-unpaid-completed";
   const [currentTime, setCurrentTime] = useState(() =>
     dayjs().second(0).millisecond(0),
   );
@@ -319,7 +327,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
           "external-meetings",
           meetingFilters.startDate,
           meetingFilters.endDate,
-          isTechDepartment ? "include-completed" : "active-only",
+          meetingCompletionFilter,
           pagination.page,
           pagination.limit,
           debouncedMeetingSearch,
@@ -341,7 +349,7 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               startDate: meetingFilters.startDate,
               endDate: meetingFilters.endDate,
               type: "External",
-              completed: isTechDepartment ? "true" : "false",
+              completed: meetingCompletionFilter,
               page: pagination.page,
               limit: pagination.limit,
               search: debouncedMeetingSearch || undefined,
@@ -1437,6 +1445,25 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
               />
             )} */}
 
+            <br />
+            <div className="font-bold">People Involved</div>
+            <DetalisFormatted
+              title="Participants"
+              detail={
+                selectedMeeting?.participants?.length
+                  ? selectedMeeting.participants
+                      .map((participant) =>
+                        participant?.employeeName ||
+                        [participant?.firstName, participant?.lastName]
+                          .filter(Boolean)
+                          .join(" ") ||
+                        participant?.name ||
+                        "N/A",
+                      )
+                      .join(", ")
+                  : "N/A"
+              }
+            />
             <DetalisFormatted
               title="Booked By"
               detail={selectedMeeting.bookedBy}

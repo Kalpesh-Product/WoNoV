@@ -16,6 +16,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { useLocation, useParams } from "react-router-dom";
+import SalesDashboardPageSkeleton from "../SalesDashboardPageSkeleton";
 
 const BOOKING_TYPE_OPTIONS = ["Direct", "SPV Booking"];
 const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
@@ -665,6 +666,10 @@ const ClientDetails = () => {
       />
     </LocalizationProvider>
   );
+
+  if (isClientLoading) {
+    return <SalesDashboardPageSkeleton tableTitle="Client Details" />;
+  }
 
   return (
     <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4 ">

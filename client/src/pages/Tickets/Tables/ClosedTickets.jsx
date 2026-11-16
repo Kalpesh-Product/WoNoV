@@ -270,7 +270,7 @@ const ClosedTickets = ({
             detail={viewTicketDetails?.escalatedTo || ""}
           />
           <DetalisFormatted
-            title="Escalated Status"
+            title="Escalation Status"
             detail={viewTicketDetails?.escalatedStatus || ""}
           />
           <DetalisFormatted
@@ -279,7 +279,7 @@ const ClosedTickets = ({
           />
           {viewTicketDetails?.sourceTicket?.escalatedTo?.at(-1)?.description && (
             <DetalisFormatted
-              title="Reason for Escalated"
+              title="Reason for Escalation"
               detail={viewTicketDetails.sourceTicket.escalatedTo.at(-1).description}
             />
           )}
@@ -301,6 +301,27 @@ const ClosedTickets = ({
             title="Closing Remark"
             detail={viewTicketDetails?.closingRemark}
           />
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedBy && (
+            <DetalisFormatted
+              title="Rejected By"
+              detail={[
+                viewTicketDetails.sourceTicket.reject.rejectedBy.firstName,
+                viewTicketDetails.sourceTicket.reject.rejectedBy.lastName,
+              ].filter(Boolean).join(" ")}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.rejectedAt && (
+            <DetalisFormatted
+              title="Rejected At"
+              detail={formatDateTime(viewTicketDetails.sourceTicket.reject.rejectedAt)}
+            />
+          )}
+          {viewTicketDetails?.sourceTicket?.reject?.reason && (
+            <DetalisFormatted
+              title="Reason"
+              detail={viewTicketDetails.sourceTicket.reject.reason}
+            />
+          )}
            {(isItDepartment || isTechDepartment) &&
             Array.isArray(viewTicketDetails?.closingCategories) &&
             viewTicketDetails.closingCategories.length > 0 && (

@@ -761,7 +761,7 @@ const SupportTickets = ({
               </div>
             ) : (
               <DetalisFormatted
-                title="Assigned To"
+                title="Assigned At"
                 detail={selectedTicket?.assignedAt || ""}
               />
             )}

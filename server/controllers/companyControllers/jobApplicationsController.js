@@ -8,6 +8,16 @@ const mongoose = require("mongoose");
 const User = require("../../models/hr/UserData");
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
+const APPLICATION_STATUSES = [
+  "Pending",
+  "Under Review",
+  "Shortlisted",
+  "Interviewing",
+  "Offered",
+  "Selected",
+  "Hired",
+  "Rejected",
+];
 
 const isTechDepartmentUser = async (userId) => {
   const user = await User.findById(userId)
@@ -298,6 +308,30 @@ const updateJobApplication = async (req, res, next) => {
   }
 };
 
+const updateJobApplicationStatus = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({ message: "Invalid job application ID." });
+    }
+    if (!APPLICATION_STATUSES.includes(status)) {
+      return res.status(400).json({ message: "Select a valid application status." });
+    }
+    const application = await JobApplications.findOneAndUpdate(
+      applicationScope(id, req.company),
+      { $set: { status } },
+      { new: true },
+    );
+    if (!application) {
+      return res.status(404).json({ message: "Job application not found." });
+    }
+    return res.status(200).json({ message: "Application status updated.", application });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const archiveJobApplication = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -408,6 +442,7 @@ module.exports = {
   createJobApplication,
   getJobApplications,
   updateJobApplication,
+  updateJobApplicationStatus,
   archiveJobApplication,
   restoreJobApplication,
   permanentlyDeleteJobApplication,

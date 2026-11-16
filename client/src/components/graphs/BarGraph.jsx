@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import Chart from "react-apexcharts";
-import { Select, MenuItem, FormControl, CircularProgress } from "@mui/material";
+import { Select, MenuItem, FormControl } from "@mui/material";
 import SecondaryButton from "../SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import useResponsiveChart from "../../hooks/useResponsiveChart";
@@ -19,19 +19,8 @@ const BarGraph = ({
   doubleParam,
   responsiveResize = false,
 }) => {
-  const [isChartLoading, setIsChartLoading] = useState(false);
   const [selectedYear, setSelectedYear] = useState("2024-2025");
   const [departmentIndex, setDepartmentIndex] = useState(0);
-  useEffect(() => {
-    // Trigger loading once on initial render
-    setIsChartLoading(true);
-    const timer = setTimeout(() => {
-      setIsChartLoading(false);
-    }, 400); // adjust as needed
-  
-    return () => clearTimeout(timer);
-  }, []);
-  
 
   // Hooks always called
   const responsive = useResponsiveChart();
@@ -49,17 +38,6 @@ const BarGraph = ({
       ...options?.xaxis,
     },
   }), [options, chartId]);
-  useEffect(() => {
-    if (!responsiveResize) return;
-    setIsChartLoading(true);
-
-    const timeout = setTimeout(() => {
-      setIsChartLoading(false);
-    }, 300); // match debounce time in useResponsiveChart
-
-    return () => clearTimeout(timeout);
-  }, [chartKey]);
-
   const handleYearChange = (event) => {
     setSelectedYear(event.target.value);
   };
@@ -123,24 +101,15 @@ const BarGraph = ({
         </div>
       )}
 
-      {isChartLoading ? (
-        <div
-          className="flex justify-center items-center"
-          style={{ height: height || 370 }}
-        >
-          <CircularProgress size={32} />
-        </div>
-      ) : (
-        <div  className="w-full">
-          <Chart
-            key={chartKey}
-            options={updatedOptions}
-            series={filteredData}
-            type="bar"
-            height={height || 370}
-          />
-        </div>
-      )}
+      <div className="w-full">
+        <Chart
+          key={chartKey}
+          options={updatedOptions}
+          series={filteredData}
+          type="bar"
+          height={height || 370}
+        />
+      </div>
 
       {departments && (
         <div className="flex justify-center items-center">

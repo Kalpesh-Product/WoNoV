@@ -66,6 +66,7 @@ async function fetchTickets(query, companyId) {
           },
         },
         { path: "raisedToDepartment", select: "name" },
+        { path: "reject.rejectedBy", select: "firstName lastName" },
         {
           path: "escalatedTo",
           populate: [
