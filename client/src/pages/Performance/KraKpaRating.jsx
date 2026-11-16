@@ -270,7 +270,17 @@ const KraKpaRatingSection = ({ type = "kpa", navigationTabs }) => {
 
   const kpaColumns = [
     { headerName: "Sr No", field: "srNo", width: 85 },
-    { headerName: "KPA", field: "target", minWidth: 280, flex: 2 },
+    {
+      headerName: "KPA",
+      field: "target",
+      minWidth: 280,
+      flex: 2,
+      cellRenderer: ({ value }) => (
+        <span className="block w-full truncate" title={value || undefined}>
+          {value || "-"}
+        </span>
+      ),
+    },
     { headerName: "Assigned By", field: "assignedByName", minWidth: 180 },
     { headerName: "Deadline", field: "deadlineLabel", width: 155 },
     {

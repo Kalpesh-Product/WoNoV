@@ -48,15 +48,8 @@ const STATUS_FILTERS = [
   "extended",
   "cancelled",
 ];
-const TYPE_FILTERS = ["internal", "external"];
-const ALL_FILTERS = [...STATUS_FILTERS, ...TYPE_FILTERS];
-const getFilterColors = (filter) =>
-  STATUS_FILTERS.includes(filter)
-    ? getStatusColors(filter)
-    : {
-        color: FILTER_COLORS[filter],
-        backgroundColor: `${FILTER_COLORS[filter]}18`,
-      };
+const ALL_FILTERS = STATUS_FILTERS;
+const getFilterColors = (filter) => getStatusColors(filter);
 
 const normalize = (value) =>
   String(value || "")
@@ -197,23 +190,6 @@ const Calender = () => {
     [roleTitles],
   );
 
-  const isEmployee = useMemo(
-    () => roleTitles.some((role) => role.includes("employee")),
-    [roleTitles],
-  );
-
-  const isAdministrationDepartment = useMemo(
-    () =>
-      (auth?.user?.departments || []).some(
-        (department) =>
-          normalize(department?.name || department) === "administration",
-      ),
-    [auth?.user?.departments],
-  );
-
-  const showMeetingTypeFilters =
-    !isEmployee || isAdministrationDepartment;
-
   const isTopManagement = useMemo(
     () =>
       roleTitles.some((role) => role.includes("top management")) ||
@@ -288,13 +264,10 @@ const Calender = () => {
 
     visibleMeetings.forEach((meeting) => {
       const status = getMeetingStatus(meeting);
-      const type = normalize(meeting.meetingType);
-
       if (status in counts) counts[status]++;
       if (hasValidMeetingExtension(meeting) && status !== "extended") {
         counts.extended++;
       }
-      if (type in counts) counts[type]++;
     });
 
     return counts;
@@ -325,24 +298,19 @@ const Calender = () => {
       STATUS_FILTERS.includes(filter),
     );
 
-    const selectedTypes = eventFilter.filter((filter) =>
-      TYPE_FILTERS.includes(filter),
-    );
-
-    if (!selectedStatuses.length || !selectedTypes.length) {
+    if (!selectedStatuses.length) {
       return [];
     }
 
     return transformedMeetings.filter((event) => {
       const status = getMeetingStatus(event.extendedProps);
-      const type = normalize(event.extendedProps.meetingType);
 
       const matchesStatus =
         selectedStatuses.includes(status) ||
         (hasValidMeetingExtension(event.extendedProps) &&
           selectedStatuses.includes("extended"));
 
-      return matchesStatus && selectedTypes.includes(type);
+      return matchesStatus;
     });
   }, [transformedMeetings, eventFilter]);
 
@@ -399,9 +367,6 @@ const Calender = () => {
                   <div className="text-content">
                     {[
                       { title: "Meeting Status", filters: STATUS_FILTERS },
-                      ...(showMeetingTypeFilters
-                        ? [{ title: "Meeting Type", filters: TYPE_FILTERS }]
-                        : []),
                     ].map((section, sectionIndex) => (
                       <div
                         key={section.title}

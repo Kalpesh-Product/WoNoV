@@ -1,9 +1,9 @@
 import {
-  CircularProgress,
   IconButton,
   MenuItem,
   TextField,
 } from "@mui/material";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -576,9 +576,9 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           disableHoverCrosshair
         />
       ) : (
-        <div className="h-72 flex justify-center items-center">
-          <CircularProgress />
-        </div>
+        <SalesDashboardPageSkeleton
+          chartTitle={flexibleDeskView ? "ANNUAL MONTHLY FLEXIBLE DESK REVENUES" : "ANNUAL MONTHLY CO WORKING REVENUES"}
+        />
       // )}
       ))}
 
@@ -769,9 +769,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           ]}
         />
       ) : (
-        <div className="h-72 flex justify-center items-center">
-          <CircularProgress />
-        </div>
+        <SalesDashboardPageSkeleton tableTitle={flexibleDeskView ? "MONTHLY FLEXIBLE DESK REVENUE WITH CLIENT DETAILS" : "MONTHLY REVENUE WITH CLIENT DETAILS"} />
       )}
 
       {viewRow && (

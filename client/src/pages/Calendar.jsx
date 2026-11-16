@@ -368,11 +368,22 @@ const Calender = () => {
                               size="small"
                               checked={eventFilter.includes(type)}
                               onChange={(event) =>
-                                setEventFilter((previous) =>
-                                  event.target.checked
+                                setEventFilter((previous) => {
+                                  if (type === "meeting") {
+                                    const otherFilters = previous.filter(
+                                      (item) =>
+                                        item !== "meeting" &&
+                                        !MEETING_STATUS_FILTERS.includes(item),
+                                    );
+                                    return event.target.checked
+                                      ? [...otherFilters, "meeting", ...MEETING_STATUS_FILTERS]
+                                      : otherFilters;
+                                  }
+
+                                  return event.target.checked
                                     ? [...previous, type]
-                                    : previous.filter((item) => item !== type),
-                                )
+                                    : previous.filter((item) => item !== type);
+                                })
                               }
                               sx={{
                                 color: FILTER_COLORS[type],

@@ -489,6 +489,8 @@ const fetchMeetingReportService = async ({
       .toLowerCase();
     const shouldHideCompleted = normalizedCompletedFilter === "false";
     const shouldIncludeCompleted = normalizedCompletedFilter === "true";
+    const shouldIncludeUnpaidCompleted =
+      normalizedCompletedFilter === "include-unpaid-completed";
     const searchConditions = await buildMeetingSearchConditions({
       company,
       search,
@@ -528,7 +530,14 @@ const fetchMeetingReportService = async ({
       ...(shouldIncludeCompleted && {
         status: { $ne: "Cancelled" },
       }),
-      ...((dateFilter?.startDate || searchConditions.length) && { $and: [
+      ...(shouldIncludeUnpaidCompleted && {
+        status: { $ne: "Cancelled" },
+      }),
+      ...((dateFilter?.startDate || searchConditions.length || shouldIncludeUnpaidCompleted) && { $and: [
+        ...(shouldIncludeUnpaidCompleted ? [{ $or: [
+          { status: { $ne: "Completed" } },
+          { paymentStatus: { $ne: true } },
+        ] }] : []),
         ...(dateFilter?.startDate ? [{ $or: [
           { startDate: dateFilter.startDate },
           { bookingSlots: { $elemMatch: {
@@ -564,7 +573,7 @@ const fetchMeetingReportService = async ({
 
     let meetingsQuery = Meeting.find(meetingQuery)
       .select(
-        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime bookingPeriod bookingSlots meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
+        "bookedBy clientBookedBy externalBookedBy receptionist bookedRoom startDate endDate startTime endTime extendTime bookingPeriod bookingSlots completedAt completedBy meetingType credits creditsUsed paymentBaseAmount paymentGstAmount paymentAmount paymentStatus paymentMode paymentProof paymentVerification internalParticipants clientParticipants externalParticipants agenda subject reason status client externalClient company housekeepingChecklist houeskeepingStatus discountAmount extend",
       )
       .populate({ path: "company", select: "meetingCreditBalance" })
       .populate({
@@ -590,6 +599,7 @@ const fetchMeetingReportService = async ({
         },
         { path: "clientBookedBy", select: "employeeName email" },
         { path: "externalBookedBy", select: "firstName middleName lastName" },
+        { path: "completedBy", select: "firstName middleName lastName" },
         {
           path: "receptionist",
           select: "firstName lastName departments",
@@ -723,6 +733,10 @@ const fetchMeetingReportService = async ({
         bookingPeriod: meeting.bookingPeriod || "Day",
         bookingSlots: meeting.bookingSlots || [],
         extendTime: meeting.extendTime,
+        completedAt: meeting.completedAt || null,
+        completedBy: formatPersonName(meeting.completedBy) || null,
+        creditsUsed: meeting.creditsUsed ?? 0,
+        reason: meeting.reason || "",
         credits: meeting.credits,
         duration: meetingDuration(meeting),
         meetingStatus: meeting.status,

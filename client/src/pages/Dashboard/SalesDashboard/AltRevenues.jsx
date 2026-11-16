@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
@@ -568,7 +569,9 @@ const AltRevenues = ({ showChart = true }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      {showChart && !isLoadingAlternateRevenue ? (
+      {showChart && (isLoadingAlternateRevenue ? (
+        <SalesDashboardPageSkeleton chartTitle="ANNUAL MONTHLY ALTERNATE REVENUES" />
+      ) : (
         <FyBarGraph
           graphTitle="ANNUAL MONTHLY ALTERNATE REVENUES"
           chartOptions={options}
@@ -579,12 +582,10 @@ const AltRevenues = ({ showChart = true }) => {
           onSelectedFYChange={setSelectedFY}
           disableHoverCrosshair
         />
-      ) : null}
+      ))}
 
       {isLoadingAlternateRevenue ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+        <SalesDashboardPageSkeleton tableTitle={isBillingView ? "Alternate Revenue Source Invoicing" : "Monthly Revenue with Source Details"} />
       ) : (
         <WidgetTable
           tableTitle={

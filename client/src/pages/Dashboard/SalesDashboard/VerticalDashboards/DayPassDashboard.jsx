@@ -32,6 +32,7 @@ import humanTime from "../../../../utils/humanTime";
 import MeetingRevenue from "../MeetingRevenue";
 import LeadsLayout from "../ViewClients/LeadsLayout";
 import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
+import SalesDashboardChartSkeleton from "../SalesDashboardChartSkeleton";
 
 const BiznestTitle = () => (
   <span
@@ -351,9 +352,11 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
                 height={350}
                 centerAlign
               />
+            ) : isLoading ? (
+              <SalesDashboardChartSkeleton circular title={chart.title} />
             ) : (
               <div className="flex h-[350px] items-center justify-center text-sm text-[#1E3D73]">
-                {isLoading ? "Loading chart data…" : "No chart data available"}
+                No chart data available
               </div>
             )}
           </WidgetSection>

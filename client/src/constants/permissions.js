@@ -2729,9 +2729,9 @@ export const PERMISSIONS = {
   },
   SALES_PARTNERS_MIX_BAG: {
     value: "sales_partners_mix_bag_card",
-    title: "PARTNERS",
+    title: "ENQUIRIES",
     type: "read",
-    route: "/app/dashboard/sales-dashboard/mix-bag/partners",
+    route: "/app/dashboard/sales-dashboard/mix-bag/enquiries",
   },
   SALES_DESKS_MIX_BAG: {
     value: "sales_desks_mix_bag_card",

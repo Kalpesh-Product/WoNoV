@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import SalesDashboardPageSkeleton from "../SalesDashboardPageSkeleton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
@@ -524,9 +525,10 @@ const ActualBusinessRevenue = () => {
           </WidgetSection>
         </>
       ) : (
-        <div className="h-96 flex justify-center items-center">
-          <CircularProgress />
-        </div>
+        <SalesDashboardPageSkeleton
+          chartTitle="ANNUAL MONTHLY REVENUE"
+          tableTitle="VERTICAL-WISE REVENUE BREAKDOWN"
+        />
       )}
     </div>
   );

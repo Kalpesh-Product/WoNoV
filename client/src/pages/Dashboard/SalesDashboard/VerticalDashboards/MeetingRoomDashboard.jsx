@@ -52,6 +52,7 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import SalesDashboardChartSkeleton from "../SalesDashboardChartSkeleton";
 
 const getFiscalYearLabel = () => {
   const currentDate = dayjs();
@@ -724,7 +725,7 @@ const BiznestTitle = () => (
 
 const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
   const axios = useAxiosPrivate();
-  const { data: meetingRevenue = [] } = useQuery({
+  const { data: meetingRevenue = [], isPending: revenuePending } = useQuery({
     queryKey: ["meeting-room-unique-client-revenue"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/simple-consolidated-revenue");
@@ -794,6 +795,14 @@ const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
   const totalUniqueClientsTitle = ({ count }) =>
     `TOTAL UNIQUE CLIENTS: ${count.toLocaleString("en-IN")}`;
 
+  if (revenuePending) {
+    return (
+      <WidgetSection border title="MEETING ROOM UNIQUE CLIENT COUNT">
+        <SalesDashboardChartSkeleton title="Meeting Room Unique Client Count" />
+      </WidgetSection>
+    );
+  }
+
   return (
     <LeadsLayout
       data={clientsByMonth}
@@ -859,7 +868,7 @@ const meetingClientChartConfig = {
 
 const MeetingRoomClientCharts = ({ visibleCharts }) => {
   const axios = useAxiosPrivate();
-  const { data: meetingRevenue = [] } = useQuery({
+  const { data: meetingRevenue = [], isPending: revenuePending } = useQuery({
     queryKey: ["meetings-revenue"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/get-meeting-revenue");
@@ -868,7 +877,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: meetings = [] } = useQuery({
+  const { data: meetings = [], isPending: meetingsPending } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
@@ -877,7 +886,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], isPending: roomsPending } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-rooms");
@@ -886,7 +895,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: internalClients = [] } = useQuery({
+  const { data: internalClients = [], isPending: clientsPending } = useQuery({
     queryKey: ["meeting-room-internal-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients", {
@@ -1144,7 +1153,9 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
                 : "lg:!h-10"
             }
           >
-            {hasChartData ? (
+            {revenuePending || meetingsPending || roomsPending || clientsPending ? (
+              <SalesDashboardChartSkeleton circular title={chart.title} />
+            ) : hasChartData ? (
               <PieChartMui
                 key={`${chartKey}-${chartData
                   .map((item) => `${item.label}-${item.value}`)
@@ -1375,7 +1386,7 @@ const MeetingOperationalChartTitle = ({ chart, monthLabel }) => (
 const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
   const axios = useAxiosPrivate();
   const currentTime = dayjs();
-  const { data: meetings = [] } = useQuery({
+  const { data: meetings = [], isPending: meetingsPending } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
@@ -1384,7 +1395,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], isPending: roomsPending } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-rooms");
@@ -1393,7 +1404,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const { data: visitors = [] } = useQuery({
+  const { data: visitors = [], isPending: visitorsPending } = useQuery({
     queryKey: ["visitors"],
     queryFn: async () => {
       const response = await axios.get("/api/visitors/fetch-visitors");
@@ -1690,6 +1701,10 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
               ) : undefined
             }
           >
+            {meetingsPending || roomsPending || visitorsPending ? (
+              <SalesDashboardChartSkeleton circular={["availabilityStatus"].includes(chartKey)} title={chart.title} />
+            ) : (
+              <>
             {chartKey === "externalGuests" && (
               <BarGraph
                 data={externalGuestSeries}
@@ -1731,6 +1746,8 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
             {chartKey === "busyTimeWeek" && (
               <HeatMap data={heatmapData} options={heatmapOptions} height={350} />
             )}
+              </>
+            )}
           </WidgetSection>
         );
       })}
@@ -1742,7 +1759,7 @@ const MeetingRoomOngoingUpcomingTable = () => {
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
   const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const { data: meetings = [] } = useQuery({
+  const { data: meetings = [], isPending: meetingsPending } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
@@ -1923,6 +1940,7 @@ const MeetingRoomOngoingUpcomingTable = () => {
         }}
       >
         <AgTable
+          loading={meetingsPending}
           hideTitle
           data={rows}
           columns={columns}

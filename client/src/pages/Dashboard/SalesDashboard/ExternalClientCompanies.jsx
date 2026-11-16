@@ -6,7 +6,8 @@ import { useDispatch, useSelector } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { setClientData } from "../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../redux/slices/clientSlice";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 
 const ExternalClientCompanies = () => {
     const navigate = useNavigate();
@@ -141,9 +142,7 @@ const ExternalClientCompanies = () => {
             <div className="w-full">
                 <PageFrame>
                     {loading ? (
-                        <div className="flex justify-center p-8">
-                            <CircularProgress />
-                        </div>
+                        <SalesDashboardPageSkeleton tableTitle={isOpenDeskView ? "EXTERNAL COMPANIES (OPEN DESK)" : "EXTERNAL COMPANIES"} columns={columns} />
                     ) : (
                         <AgTable
                             search={true}

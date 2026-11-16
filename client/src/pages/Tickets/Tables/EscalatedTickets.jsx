@@ -424,7 +424,7 @@ const { mutate, isPending: isClosingTicket } = useMutation({
                 detail={formatDateTime(selectedTicket?.escalatedAt)}
               />
               <DetalisFormatted
-                title="Reason for Escalated"
+                title="Reason for Escalation"
                 detail={selectedTicket?.reasonForEscalated || ""}
               />
               <TicketAttachments

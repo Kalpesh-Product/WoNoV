@@ -351,14 +351,7 @@ const companySchema = new mongoose.Schema({
   ],
   virtualOfficeSourcingOptions: {
     type: [String],
-    default: [
-      "Google",
-      "LinkedIn",
-      "Referral",
-      "IPC",
-      "Walk-IN",
-      "WhatsApp",
-    ],
+    default: ["Google", "LinkedIn", "Referral", "IPC", "Walk-IN", "WhatsApp"],
   },
   vendorTypeOptions: {
     type: [String],
@@ -572,6 +565,14 @@ const companySchema = new mongoose.Schema({
   lastCreditReset: {
     type: Date,
     default: Date.now,
+  },
+  billingFrequency: {
+    type: String,
+    default: "Annually",
+  },
+  clientType: {
+    type: String,
+    default: "Annual Client",
   },
   complianceDocuments: [
     {

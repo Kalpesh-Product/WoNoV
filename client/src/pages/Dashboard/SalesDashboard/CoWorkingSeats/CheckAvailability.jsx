@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import WidgetSection from "../../../../components/WidgetSection";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import FinanceCard from "../../../../components/FinanceCard";
+import SalesDashboardPageSkeleton from "../SalesDashboardPageSkeleton";
 import dayjs from "dayjs";
 
 const MONTHLY_GRAPH_START = dayjs("2026-04-01");
@@ -84,7 +85,7 @@ const CheckAvailability = ({
     [activeUnits],
   );
 
-  const { data: occupancyData = [] } = useQuery({
+  const { data: occupancyData = [], isPending: occupancyPending } = useQuery({
     queryKey: occupancyQueryKey,
     queryFn: async () => {
       const results = await Promise.allSettled(
@@ -145,7 +146,7 @@ const CheckAvailability = ({
     });
   }, [activeUnits, occupiedByUnit]);
 
-  const { data: monthlyClients = [], refetch: refetchMonthlyClients } = useQuery({
+  const { data: monthlyClients = [], isPending: monthlyClientsPending, refetch: refetchMonthlyClients } = useQuery({
     queryKey: ["co-working-monthly-occupancy", monthlyView],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
@@ -1103,8 +1104,11 @@ const CheckAvailability = ({
     </div>
   );
 
+  if (locationsLoading || occupancyPending || (monthlyView && monthlyClientsPending)) {
+    return <SalesDashboardPageSkeleton chartTitle="CO-WORKING INVENTORY" />;
+  }
+
   return (
-    
     <div className={`flex flex-col gap-4 ${noOuterPadding ? "" : "p-4"}`}>
       {cardsFirst
         ? !hideSummaryCards && inventorySummaryCards

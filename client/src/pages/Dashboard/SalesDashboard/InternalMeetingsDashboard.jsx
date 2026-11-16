@@ -49,7 +49,7 @@ const getAvatarName = (participant) => {
 const InternalMeetingsDashboard = () => {
     const axios = useAxiosPrivate();
 
-    const { data: meetings = [] } = useQuery({
+    const { data: meetings = [], isPending: meetingsPending } = useQuery({
     queryKey: ["all-meetings"],
     queryFn: async () => {
             const response = await axios.get("/api/meetings/get-meetings", {
@@ -62,7 +62,7 @@ const InternalMeetingsDashboard = () => {
         },
     });
 
-    const { data: coWorkingClients = [] } = useQuery({
+    const { data: coWorkingClients = [], isPending: clientsPending } = useQuery({
         queryKey: ["co-working-clients"],
         queryFn: async () => {
             const response = await axios.get("/api/sales/co-working-clients");
@@ -193,6 +193,7 @@ const InternalMeetingsDashboard = () => {
         <PageFrame>
             <YearWiseTable
                 tableTitle="Internal Meetings"
+                loading={meetingsPending || clientsPending}
                 data={tableData}
                 columns={columns}
                 search={true}

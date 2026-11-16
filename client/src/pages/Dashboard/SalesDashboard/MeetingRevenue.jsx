@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { inrFormat } from "../../../utils/currencyFormat";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
-import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 import WidgetTable from "../../../components/Tables/WidgetTable";
 import StatusChip from "../../../components/StatusChip";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
@@ -1109,9 +1110,10 @@ const DayPassInvoiceFields = ({ revenue }) => {
   return (
     <div className="flex flex-col gap-4">
       {isMeetingsLoading ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+        <SalesDashboardPageSkeleton
+          chartTitle={showChart ? (revenueKind === "day-pass" ? "ANNUAL MONTHLY DAY PASS REVENUES" : "ANNUAL MONTHLY MEETINGS REVENUES") : undefined}
+          tableTitle={!graphOnly ? (revenueKind === "day-pass" ? "DAY PASS REVENUE" : "MEETING REVENUE") : undefined}
+        />
       ) : isError ? (
         <div className="text-red-600 text-center py-8">
           Failed to fetch meeting revenue data. {error?.message || ""}

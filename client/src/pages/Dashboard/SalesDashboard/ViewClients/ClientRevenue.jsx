@@ -163,6 +163,7 @@ const ClientRevenue = () => {
     <div className="w-full">
       <PageFrame>
         <YearWiseTable
+          loading={isRevenuePending}
           dateColumn="rentDate"
           tableTitle={`${selectedClient?.clientName || "Unknown"} Revenue Details`}
           search={true}

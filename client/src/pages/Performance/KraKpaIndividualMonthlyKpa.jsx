@@ -1678,7 +1678,7 @@ const KraKpaIndividualMonthlyKpa = () => {
         <WidgetSection padding>
         <AgTable
           loading={isLoading}
-          showDateControls={false}
+          dateColumn="closingDate"
           data={completedTableData}
           columns={completedColumns}
           tableTitle={`COMPLETED ${isSelfKra ? "SELF KRA" : "SELF KPA"}${employeeTitleSuffix}`}

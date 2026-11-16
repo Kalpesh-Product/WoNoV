@@ -93,6 +93,7 @@ const {
   createJobApplication,
   getJobApplications,
   updateJobApplication,
+  updateJobApplicationStatus,
   archiveJobApplication,
   restoreJobApplication,
   permanentlyDeleteJobApplication,
@@ -186,6 +187,7 @@ router.patch(
   upload.single("resume"),
   updateJobApplication,
 );
+router.patch("/job-application/:id/status", updateJobApplicationStatus);
 router.patch("/archive-job-application/:id", archiveJobApplication);
 router.patch("/restore-job-application/:id", restoreJobApplication);
 router.delete(
