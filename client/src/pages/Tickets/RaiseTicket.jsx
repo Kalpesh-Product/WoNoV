@@ -666,6 +666,10 @@ const RaiseTicket = () => {
                 return {
                   sourceTicket: ticket,
                   raisedBy: ticket?.raisedBy?.firstName || "Unknown",
+                  fromDepartment: ticket?.raisedBy?.departments
+                    ?.map((department) => department?.name)
+                    .filter(Boolean)
+                    .join(", ") || "N/A",
                   raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
                   id: ticket?._id,
                   description: ticket?.description,
@@ -719,6 +723,10 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.description}
           />
           <DetalisFormatted
+            title="From Department"
+            detail={viewTicketDetails?.fromDepartment || "N/A"}
+          />
+          <DetalisFormatted
             title="Raised By"
             detail={viewTicketDetails?.raisedBy}
           />
@@ -755,7 +763,7 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.escalatedTo || ""}
           />
           <DetalisFormatted
-            title="Escalated Status"
+            title="Escalation Status"
             detail={viewTicketDetails?.escalatedStatus || ""}
           />
           <DetalisFormatted
@@ -764,7 +772,7 @@ const RaiseTicket = () => {
           />
           {viewTicketDetails?.reasonForEscalated && (
             <DetalisFormatted
-              title="Reason for Escalated"
+              title="Reason for Escalation"
               detail={viewTicketDetails.reasonForEscalated}
             />
           )}

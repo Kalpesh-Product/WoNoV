@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 import AgTable from "../../../components/AgTable";
 import { Chip, CircularProgress } from "@mui/material";
 import BarGraph from "../../../components/graphs/BarGraph";
@@ -34,7 +35,7 @@ const ViewClients = () => {
     fetchSourceIfEmpty();
   }, [clientsData, dispatch]);
 
-  const { data = [] } = useQuery({
+  const { data = [], isPending: clientsPending } = useQuery({
     queryKey: ["clientDetails"],
     queryFn: async () => {
       try {
@@ -46,7 +47,7 @@ const ViewClients = () => {
     },
   });
 
-  const { data: coWorkingClients = [] } = useQuery({
+  const { data: coWorkingClients = [], isPending: coworkingPending } = useQuery({
     queryKey: ["view-clients-co-working"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
@@ -289,6 +290,10 @@ const ViewClients = () => {
 
   const transformedData = transformClientsGroupedByMonth(unifiedClients);
   console.log("transformed data ", transformedData);
+
+  if (clientsPending || coworkingPending) {
+    return <SalesDashboardPageSkeleton chartTitle="OVERALL CLIENTS" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">

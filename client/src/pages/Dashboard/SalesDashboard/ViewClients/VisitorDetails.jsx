@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CircularProgress, TextField } from "@mui/material";
+import { Skeleton, TextField } from "@mui/material";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -184,8 +184,13 @@ const VisitorDetails = () => {
 
     if (isLoadingVisitors) {
         return (
-            <div className="flex justify-center items-center p-8">
-                <CircularProgress />
+            <div className="border-2 border-gray-200 p-4 rounded-md flex flex-col gap-4" aria-busy="true">
+                <Skeleton variant="text" width="35%" height={36} />
+                <div className="grid grid-cols-2 gap-4">
+                    {Array.from({ length: 12 }, (_, index) => (
+                        <Skeleton key={index} variant="rectangular" height={42} />
+                    ))}
+                </div>
             </div>
         );
     }

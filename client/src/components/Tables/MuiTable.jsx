@@ -20,6 +20,7 @@ const MuiTable = ({
   scrollHeight = 480,
   showTableControls = true,
   loading = false,
+  loadingRows = 6,
 }) => {
   const { filteredRows, toolbar } = useTableControls(rows, columns.map((column) => ({ field: column.id, headerName: column.label })));
   const visibleRows = showTableControls ? filteredRows : rows;
@@ -59,7 +60,7 @@ const MuiTable = ({
               </TableRow>
             </TableHead>
             <TableBody>
-            {loading ? Array.from({ length: rowsToDisplay || 6 }).map((_, rowIndex) => (
+            {loading ? Array.from({ length: loadingRows }).map((_, rowIndex) => (
               <TableRow key={`loading-${rowIndex}`}>
                 {columns.map((column) => (
                   <TableCell key={column.id} align={column.align || "left"}>

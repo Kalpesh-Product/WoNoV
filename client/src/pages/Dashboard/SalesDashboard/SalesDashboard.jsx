@@ -27,7 +27,6 @@ import {
   setLeadsData,
   setUnitData,
 } from "../../../redux/slices/salesSlice";
-import { CircularProgress, Skeleton } from "@mui/material";
 import { SiCashapp, SiGoogleadsense } from "react-icons/si";
 import { useSidebar } from "../../../context/SideBarContext";
 import FinanceCard from "../../../components/FinanceCard";
@@ -35,6 +34,7 @@ import { YearCalendar } from "@mui/x-date-pickers";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import humanDate from "../../../utils/humanDateForamt";
 import LazyDashboardWidget from "../../../components/Optimization/LazyDashboardWidget";
+import SalesDashboardChartSkeleton from "./SalesDashboardChartSkeleton";
 import SectorLegend from "../../../components/graphs/SectorLegend";
 import FyBarGraph from "../../../components/graphs/FyBarGraph";
 import FyBarGraphCount from "../../../components/graphs/FyBarGraphCount";
@@ -221,7 +221,7 @@ const SalesDashboard = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-  const { data: selectedDepartments = [] } = useQuery({
+  const { data: selectedDepartments = [], isPending: isDepartmentsPending } = useQuery({
     queryKey: ["sales-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
@@ -233,7 +233,7 @@ const SalesDashboard = () => {
     },
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["sales-dashboard-tasks", department?._id],
     queryFn: async () => {
       const response = await axios.get(
@@ -790,7 +790,7 @@ const SalesDashboard = () => {
     },
   });
 
-  const { data: consolidatedClientsData = {} } = useQuery({
+  const { data: consolidatedClientsData = {}, isPending: isConsolidatedClientsPending } = useQuery({
     queryKey: ["sales-dashboard-consolidated-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/consolidated-clients");
@@ -874,7 +874,7 @@ const SalesDashboard = () => {
     [activeUnits],
   );
 
-  const { data: occupancyDataByUnit = [] } = useQuery({
+  const { data: occupancyDataByUnit = [], isLoading: isOccupancyLoading } = useQuery({
     queryKey: occupancyQueryKey,
     queryFn: async () => {
       const results = await Promise.allSettled(
@@ -911,6 +911,7 @@ const SalesDashboard = () => {
     totalInventoryFromUnits - totalOccupancyFromInventory,
     0,
   );
+  const isInventoryLoading = isUnitsPending || isOccupancyLoading;
   //-----------------------------------------------API-----------------------------------------------------------//
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
   const totalCoWorkingSeats = unitsData
@@ -1628,6 +1629,7 @@ const SalesDashboard = () => {
       rowKey: "id",
       rowsToDisplay: 40,
       scroll: true,
+      loading: isClientsDataPending,
       className: "h-full",
       layout: 1,
       padding: true,
@@ -1640,6 +1642,7 @@ const SalesDashboard = () => {
       rowKey: "id",
       rowsToDisplay: 40,
       scroll: true,
+      loading: isClientsDataPending,
       className: "h-full",
       layout: 1,
       key: PERMISSIONS.SALES_CURRENT_MONTH_CLIENT_ANNIVERSARY.value,
@@ -1711,10 +1714,12 @@ const SalesDashboard = () => {
   const meetingsWidgets = [
     {
       layout: 1,
-      widgets: [
-        <>
-          {!isTotalLoading ? (
-            allowedGraph.map((config) => (
+      widgets: allowedGraph.map((config) => (
+          isTotalLoading ? (
+            <WidgetSection key={config.key} border title={config.title}>
+              <SalesDashboardChartSkeleton title={config.title} />
+            </WidgetSection>
+          ) : (
               <YearlyGraph
                 key={config.key}
                 chartId={config.chartId}
@@ -1725,19 +1730,22 @@ const SalesDashboard = () => {
                 currentYear={selectedFiscalYear}
                 onYearChange={config.onYearChange}
               />
-            ))
-          ) : (
-            <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
-            </div>
-          )}
-        </>,
-      ],
+          )
+      )),
     },
     {
       layout: 3,
       widgets: allowedFinanceCards.map((config) => (
-        <FinanceCard titleCenter {...config.value} />
+        <FinanceCard
+          key={config.key}
+          titleCenter
+          {...config.value}
+          loading={config.key === PERMISSIONS.SALES_REVENUE.value
+            ? isTotalLoading || isInventoryLoading
+            : config.key === PERMISSIONS.SALES_KEY_STATS.value
+              ? isInventoryLoading || isConsolidatedClientsPending
+              : isTotalLoading || isInventoryLoading || isConsolidatedClientsPending}
+        />
       )),
     },
     // {
@@ -1783,22 +1791,20 @@ const SalesDashboard = () => {
     ...allowedGraphs.map((config) => ({
       layout: 1,
       widgets: [
-        <>
-          {isLeadsPending ? (
-            <div className="space-y-4">
-              <Skeleton variant="rectangular" width="100%" height={40} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </div>
-          ) : (
+        isLeadsPending ? (
+          <WidgetSection key={config.key} border title={config.graphTitle}>
+            <SalesDashboardChartSkeleton title={config.graphTitle} />
+          </WidgetSection>
+        ) : (
             <FyBarGraphCount
+              key={config.key}
               graphTitle={config.graphTitle}
               data={config.data}
               chartOptions={config.chartOptions}
               dateKey={config.dateKey}
               groupKey={config.groupKey}
             />
-          )}
-        </>,
+        ),
       ],
     })),
     {
@@ -1809,7 +1815,9 @@ const SalesDashboard = () => {
           title={config.title}
           border={config.border}
         >
-          {!isClientsDataPending ? (
+          {isClientsDataPending ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : (
             <PieChartMui
               data={config.data}
               options={config.options}
@@ -1817,8 +1825,6 @@ const SalesDashboard = () => {
               height={config?.height}
               centerAlign
             />
-          ) : (
-            <CircularProgress color="#1E3D73" />
           )}
         </WidgetSection>
       )),
@@ -1832,13 +1838,17 @@ const SalesDashboard = () => {
           title={config.title}
           border={config.border}
         >
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config?.width}
-            height={config?.height}
-            centerAlign
-          />
+          {isClientsDataPending ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config?.width}
+              height={config?.height}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },
@@ -1847,7 +1857,9 @@ const SalesDashboard = () => {
       layout: allowedDueTasks.length,
       widgets: allowedDueTasks.map((config) => (
         <WidgetSection key={config.key} border title={config.title}>
-          {config.type === "PieChartMui" ? (
+          {isTasksLoading || isDepartmentsPending ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : config.type === "PieChartMui" ? (
             <PieChartMui
               data={config.data}
               options={config.options}
@@ -1872,13 +1884,17 @@ const SalesDashboard = () => {
       layout: allowedSalesTicketCharts.length,
       widgets: allowedSalesTicketCharts.map((config) => (
         <WidgetSection key={config.title} border title={config.title}>
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config.width}
-            height={config.height}
-            centerAlign
-          />
+          {isSalesTicketsLoading ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },

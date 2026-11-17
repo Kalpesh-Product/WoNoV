@@ -346,6 +346,10 @@ const YearWiseTable = ({
 
           const normalizedField = field.toLowerCase();
           if (taskExportDateTimeFormatting) {
+            if (exportFormat === "date" && /^\d{2}-\d{2}-\d{4}$/.test(String(value))) {
+              return String(value);
+            }
+
             const parsedValue = dayjs(value);
 
             if (parsedValue.isValid()) {

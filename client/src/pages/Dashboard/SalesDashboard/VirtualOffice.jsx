@@ -3,7 +3,8 @@ import { Controller, useForm } from "react-hook-form";
 import { inrFormat } from "../../../utils/currencyFormat";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { IconButton, MenuItem, Skeleton, TextField } from "@mui/material";
+import { IconButton, MenuItem, TextField } from "@mui/material";
+import SalesDashboardPageSkeleton from "./SalesDashboardPageSkeleton";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { useMutation } from "@tanstack/react-query";
@@ -1432,7 +1433,7 @@ const getUserDisplayName = (user) => {
           }
         />
       ) : (
-        <Skeleton height={"500px"} width={"100%"} />
+        <SalesDashboardPageSkeleton chartTitle={dashboardProjectionMode ? "VIRTUAL OFFICE REVENUES" : "ANNUAL MONTHLY VIRTUAL OFFICE REVENUES"} />
       );
 
   if (graphOnly) {
@@ -1500,7 +1501,7 @@ const getUserDisplayName = (user) => {
           }
         />
       ) : (
-        <Skeleton height={"500px"} width={"100%"} />
+        <SalesDashboardPageSkeleton tableTitle={showInvoiceProjections ? "Virtual Office Revenue Client Invoicing" : "Monthly Revenue with Client Details"} columns={showInvoiceProjections ? billingTableColumns : revenueTableColumns} />
       )}
       {addRow && (
         <MuiModal

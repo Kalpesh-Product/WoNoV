@@ -104,6 +104,7 @@ const ExternalClientRevenue = () => {
         <div className="w-full">
             <PageFrame>
                 <YearWiseTable
+                    loading={isRevenuePending}
                     dateColumn="date"
                     tableTitle={`${selectedClient?.clientName || "Unknown"} Revenue Details`}
                     search={true}

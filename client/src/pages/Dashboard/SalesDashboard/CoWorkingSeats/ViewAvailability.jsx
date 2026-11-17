@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Tabs, Tab, Skeleton, CircularProgress } from "@mui/material";
+import { Tabs, Tab, Skeleton } from "@mui/material";
+import TableLoadingSkeleton from "../../../../components/Tables/TableLoadingSkeleton";
 import AgTable from "../../../../components/AgTable";
 import occupied from "../../../../assets/biznest/occupancy/occupied-701.jpeg";
 import cleared from "../../../../assets/biznest/occupancy/clear-701.png";
@@ -168,8 +169,8 @@ const ViewAvailability = () => {
 
   if (isUnitsLoading || isFetching) {
     return (
-      <div className="h-[80vh] flex justify-center items-center">
-        <CircularProgress />
+      <div className="h-[80vh] w-full min-w-0 p-4" aria-busy="true">
+        <TableLoadingSkeleton />
       </div>
     );
   }
