@@ -690,12 +690,16 @@ const DayPassInvoiceFields = ({ revenue }) => {
   const isVerifiedFinanceRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
   const isPaidRow = (item) => item?.normalizedStatus === "paid";
+  const isCompletedDayPassRevenue = (item) =>
+    isPaidRow(item) && isVerifiedFinanceRow(item);
   const isFinancePaidRow = (item) =>
     item?.normalizedFinanceStatus === "verified";
-  const visibleRevenueData = revenueKind === "day-pass" && showChart
-    ? selectedRevenueData
-    : showChart
-    ? selectedRevenueData.filter(isVerifiedFinanceRow)
+  const visibleRevenueData = showChart
+    ? selectedRevenueData.filter((item) =>
+        revenueKind === "day-pass"
+          ? isCompletedDayPassRevenue(item)
+          : isVerifiedFinanceRow(item),
+      )
     : selectedRevenueData.filter(
         (item) => item?.source !== "day-pass" || isPaidRow(item),
       );
@@ -757,6 +761,7 @@ const DayPassInvoiceFields = ({ revenue }) => {
     return selectedRevenueData
       .filter((item) => {
         if (!isVerifiedFinanceRow(item)) return false;
+        if (revenueKind === "day-pass" && !isPaidRow(item)) return false;
         if (!isDayPassDashboard || revenueKind !== "all") return true;
 
         const passType = String(item?.meetingType || item?.meetingTypeRaw || "")
