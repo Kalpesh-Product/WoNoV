@@ -138,6 +138,27 @@ const APP_ROUTE_OVERRIDES = {
   "/app/profile/hr": "/app/profile/HR/attendance",
   "/app/profile/assets": "/app/profile/my-assets",
 };
+const DASHBOARD_DESTINATION_EXTRAS = {
+  finance: [
+    {
+      title: "Flexy Desk",
+      route:
+        "/app/dashboard/finance-dashboard/mix-bag/revenue/flexible-desk-clients",
+      section: "Revenue",
+      permission: PERMISSIONS.FINANCE_COWORKING_REVENUE.value,
+      aliases: "flexi flexible desk clients",
+    },
+    {
+      title: "Flexy Desk",
+      route:
+        "/app/dashboard/finance-dashboard/billing/client-invoicing/flexible-desk-revenue-invoicing",
+      section: "Billing",
+      permission:
+        PERMISSIONS.FINANCE_BILLING_COWORKING_REVENUE_INVOICING.value,
+      aliases: "flexi flexible desk clients revenue invoicing",
+    },
+  ],
+};
 const ACRONYMS = new Set(["HR", "KPA", "KRA", "SOP", "SOPS"]);
 const RECENT_HISTORY_LIMIT = 3;
 const RECENT_HISTORY_KEY_PREFIX = "wono:global-palette:recent:";
@@ -321,7 +342,20 @@ const buildAppDestinations = () => {
 const DASHBOARD_DESTINATIONS = Object.fromEntries(
   Object.entries(PALETTE_CONFIG).map(([key, config]) => [
     key,
-    buildDestinations(config),
+    [
+      ...buildDestinations(config),
+      ...(DASHBOARD_DESTINATION_EXTRAS[key] || []).map((destination) => ({
+        title: destination.title,
+        route: destination.route,
+        section: destination.section,
+        dashboardLabel: config.label,
+        contextLabel: `${config.label} Dashboard`,
+        scope: "dashboard",
+        permissions: [destination.permission],
+        searchText:
+          `${destination.title} ${destination.aliases || ""} ${config.label} ${destination.section}`.toLowerCase(),
+      })),
+    ].sort((a, b) => a.title.localeCompare(b.title)),
   ]),
 );
 const APP_DESTINATIONS = buildAppDestinations();

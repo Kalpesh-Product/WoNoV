@@ -6,6 +6,7 @@ import SalesDashboardPageSkeleton from "../SalesDashboardPageSkeleton";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -18,6 +19,7 @@ const SALES_REVENUE_BASE_PATH = "/app/dashboard/sales-dashboard/revenue";
 const VERTICAL_ROUTE_MAP = {
   Meeting: "meetings",
   Meetings: "meetings",
+  "Day Pass": "day-pass",
   Alternate: "alt-revenue",
   "Alternate Revenue": "alt-revenue",
   "Alternate Revenues": "alt-revenue",
@@ -31,7 +33,18 @@ const VERTICAL_ROUTE_MAP = {
   "Co-Working Revenue": "co-working",
   Coworking: "co-working",
   "Co Working": "co-working",
+  "Flexy Desk": "flexible-desk-clients",
 };
+
+const REVENUE_VERTICALS = [
+  "Meetings",
+  "Day Pass",
+  "Alt. Revenues",
+  "Virtual Offices",
+  "Workations",
+  "Coworking",
+  "Flexy Desk",
+];
 
 const months = [
   "April",
@@ -66,6 +79,41 @@ const getNumericAmount = (value) => {
   return 0;
 };
 
+const isMeetingFinancePaid = (item) =>
+  getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(
+    item?.clientType ||
+      item?.clients?.clientType ||
+      item?.client?.clientType ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+
+  if (clientType === "annual client") return false;
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    !clientType &&
+    String(
+      item?.billingFrequency ||
+        item?.clients?.billingFrequency ||
+        item?.client?.billingFrequency ||
+        "",
+    )
+      .trim()
+      .toLowerCase() === "monthly"
+  );
+};
+
 const isBeforeVirtualOfficeUploadLogicStart = (value) => {
   const date = dayjs(value);
   return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
@@ -87,6 +135,9 @@ const normalizeVerticalLabel = (value) => {
   const normalized = String(value || "").trim().toLowerCase();
 
   if (normalized === "meeting" || normalized === "meetings") return "Meetings";
+  if (normalized === "day pass" || normalized === "day-pass") {
+    return "Day Pass";
+  }
   if (
     normalized === "alternate" ||
     normalized === "alternate revenue" ||
@@ -109,6 +160,13 @@ const normalizeVerticalLabel = (value) => {
     normalized === "co working"
   ) {
     return "Coworking";
+  }
+  if (
+    normalized === "flexy desk" ||
+    normalized === "flexi desk" ||
+    normalized === "flexible desk"
+  ) {
+    return "Flexy Desk";
   }
 
   return value || "N/A";
@@ -154,11 +212,18 @@ const ActualBusinessRevenue = () => {
     const flatten = [];
 
     (simpleRevenue?.meetingRevenue || []).forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
-        vertical: "Meetings",
+        vertical: isDayPass ? "Day Pass" : "Meetings",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -193,7 +258,7 @@ const ActualBusinessRevenue = () => {
 
     (simpleRevenue?.coworkingRevenues || []).forEach((item) => {
       flatten.push({
-        vertical: "Coworking",
+        vertical: isFlexyDeskRevenue(item) ? "Flexy Desk" : "Coworking",
         revenue: getNumericAmount(item.revenue),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
@@ -282,7 +347,17 @@ const ActualBusinessRevenue = () => {
   );
 
   const selectedMonthData = useMemo(() => {
-    const grouped = {};
+    const grouped = Object.fromEntries(
+      REVENUE_VERTICALS.map((vertical) => [
+        vertical,
+        {
+          name: vertical,
+          paidRevenue: 0,
+          totalRevenue: 0,
+          unpaidRevenue: 0,
+        },
+      ]),
+    );
 
     selectedMonthEntries.forEach((item) => {
       const vertical = normalizeVerticalLabel(item.vertical);
@@ -305,7 +380,7 @@ const ActualBusinessRevenue = () => {
       }
     });
 
-    return Object.values(grouped);
+    return REVENUE_VERTICALS.map((vertical) => grouped[vertical]);
   }, [selectedMonthEntries]);
 
   const handleMonthChange = (event) => {

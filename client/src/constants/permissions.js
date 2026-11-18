@@ -2982,6 +2982,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/sales-dashboard/revenue/co-working",
   },
+  SALES_FLEXY_DESK_REVENUE: {
+    value: "sales_mix_bag_revenue_flexy_desk_tab",
+    title: "FLEXY DESK",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/revenue/flexible-desk-clients",
+  },
   SALES_MEETINGS: {
     value: "sales_mix_bag_revenue_meetings_tab",
     title: "MEETINGS",

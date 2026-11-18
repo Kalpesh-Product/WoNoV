@@ -23,6 +23,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import useUserPermissions from "../../../hooks/useUserPermissions";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 
 const dashboardLinks = [
   "Annual KPA",
@@ -136,6 +137,38 @@ const getNormalizedStatus = (value) => {
   return value ? "paid" : "unpaid";
 };
 
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(
+    item?.clientType ||
+      item?.clients?.clientType ||
+      item?.client?.clientType ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+
+  if (clientType === "annual client") return false;
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    !clientType &&
+    String(
+      item?.billingFrequency ||
+        item?.clients?.billingFrequency ||
+        item?.client?.billingFrequency ||
+        "",
+    )
+      .trim()
+      .toLowerCase() === "monthly"
+  );
+};
+
 const getFiscalMonthIndex = (date = dayjs()) => {
   const month = dayjs(date).month();
   return month >= 3 ? month - 3 : month + 9;
@@ -242,16 +275,21 @@ const getMonthlyIncomeBreakdownData = (simpleRevenue) => {
     }
   };
 
-  asArray(simpleRevenue?.meetingRevenue).forEach((item) =>
+  asArray(simpleRevenue?.meetingRevenue).forEach((item) => {
+    const isDayPass = isDayPassRevenue(item);
+    const isPaymentReceived = getNormalizedStatus(item?.status) === "paid";
+    const isFinanceVerified =
+      getNormalizedStatus(item?.financeStatus) === "verified";
+
     addRevenue(
-      "Meeting",
+      isDayPass ? "Day Pass" : "Meeting",
       item?.taxable,
       item?.date,
-      getNormalizedStatus(item?.financeStatus) === "verified"
+      isFinanceVerified && (!isDayPass || isPaymentReceived)
         ? "paid"
         : "unpaid",
-    ),
-  );
+    );
+  });
   asArray(simpleRevenue?.alternateRevenues).forEach((item) =>
     addRevenue(
       "Alternate",
@@ -278,7 +316,7 @@ const getMonthlyIncomeBreakdownData = (simpleRevenue) => {
   );
   asArray(simpleRevenue?.coworkingRevenues).forEach((item) =>
     addRevenue(
-      "Co-Working",
+      isFlexyDeskRevenue(item) ? "Flexy Desk" : "Co-Working",
       item?.revenue,
       item?.rentDate,
       getNormalizedStatus(item?.rentStatus),
@@ -296,8 +334,10 @@ const getMonthlyIncomeBreakdownData = (simpleRevenue) => {
   const completedMonthCount = projectionStart.diff(fiscalStart, "month");
   const projectedVerticals = [
     "Co-Working",
+    "Flexy Desk",
     "Virtual Office",
     "Meeting",
+    "Day Pass",
     "Alternate",
   ];
   const historicalFiscalData = paidRevenue.filter((item) => {

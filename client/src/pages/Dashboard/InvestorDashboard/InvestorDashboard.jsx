@@ -17,6 +17,7 @@ import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import InvestorOperationalCharts from "./InvestorOperationalCharts";
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import { useCurrency } from "../../../context/CurrencyContext";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 import investorBanner from "../../../assets/investor/banner-investor.png";
 import {
   MdBarChart,
@@ -742,11 +743,18 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
-        vertical: "Meeting",
+        vertical: isDayPass ? "Day Pass" : "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -781,7 +789,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
 
     simpleRevenue.coworkingRevenues?.forEach((item) => {
       flatten.push({
-        vertical: "Co-Working",
+        vertical: isFlexyDeskRevenue(item) ? "Flexy Desk" : "Co-Working",
         revenue: getNumericAmount(item.revenue),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
@@ -808,8 +816,10 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     const completedMonthCount = projectionStart.diff(fiscalStart, "month");
     const projectedVerticals = [
       "Co-Working",
+      "Flexy Desk",
       "Virtual Office",
       "Meeting",
+      "Day Pass",
       "Alternate",
     ];
 
@@ -1100,6 +1110,42 @@ const getNumericAmount = (value) => {
 };
 const isMeetingFinancePaid = (item) =>
   getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(
+    item?.clientType ||
+      item?.clients?.clientType ||
+      item?.client?.clientType ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+
+  if (clientType === "annual client") return false;
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    !clientType &&
+    String(
+      item?.billingFrequency ||
+        item?.clients?.billingFrequency ||
+        item?.client?.billingFrequency ||
+        "",
+    )
+      .trim()
+      .toLowerCase() === "monthly"
+  );
+};
+
+const isCompletedDayPassRevenue = (item) =>
+  getNormalizedPaymentStatus(item?.status) === "paid" &&
+  isMeetingFinancePaid(item);
 const isBeforeVirtualOfficeUploadLogicStart = (value) => {
   const date = dayjs(value);
   return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
@@ -1450,7 +1496,9 @@ const InvestorUniqueClientsGraph = () => {
     asArray(revenueInvoices.coworkingRevenues).forEach((invoice) => {
       addInvoice({
         invoice,
-        typeOfClient: "Coworking",
+        typeOfClient: isFlexyDeskRevenue(invoice)
+          ? "Flexy Desk"
+          : "Co-Working",
         date: invoice.rentDate,
         client: invoice.clientName || invoice.clientInvoiceName,
       });
@@ -1459,7 +1507,7 @@ const InvestorUniqueClientsGraph = () => {
     asArray(revenueInvoices.virtualOfficeRevenues).forEach((invoice) => {
       addInvoice({
         invoice,
-        typeOfClient: "Virtualoffice",
+        typeOfClient: "Virtual Office",
         date: invoice.rentDate,
         client:
           invoice.client?.clientName ||
@@ -1469,26 +1517,32 @@ const InvestorUniqueClientsGraph = () => {
     });
 
     asArray(revenueInvoices.meetingRevenue).forEach((invoice) => {
-      const meetingType = String(
-        invoice.meetingType ||
-          invoice.particulars ||
-          invoice.visitorDetails?.purposeOfVisit ||
-          "",
-      )
-        .trim()
-        .toLowerCase();
-      const isDayPass =
-        invoice.source === "day-pass" ||
-        meetingType.includes("half-day") ||
-        meetingType.includes("half day") ||
-        meetingType.includes("full-day") ||
-        meetingType.includes("full day");
+      const isDayPass = invoice?.source === "day-pass";
+      if (isDayPass && !isCompletedDayPassRevenue(invoice)) return;
 
       addInvoice({
         invoice,
-        typeOfClient: isDayPass ? "Open Desk" : "External Meetings",
+        typeOfClient: isDayPass ? "Day Pass" : "Meeting",
         date: invoice.date,
         client: invoice.clientName || invoice.client,
+      });
+    });
+
+    asArray(revenueInvoices.alternateRevenues).forEach((invoice) => {
+      addInvoice({
+        invoice,
+        typeOfClient: "Alternate",
+        date: invoice.invoiceCreationDate,
+        client: invoice.clientName || invoice.client || invoice.particulars,
+      });
+    });
+
+    asArray(revenueInvoices.workationRevenues).forEach((invoice) => {
+      addInvoice({
+        invoice,
+        typeOfClient: "Workation",
+        date: invoice.date,
+        client: invoice.clientName || invoice.client || invoice.particulars,
       });
     });
 
@@ -1540,6 +1594,7 @@ const InvestorUniqueClientsGraph = () => {
       investorBlueStyle
       investorTitleAmountChip
       hideFinancialYearControls
+      showAllInvestorClientVerticals
     >
       {/*
       <div className="border-b border-borderGray px-4 pb-4">
