@@ -28,6 +28,7 @@ import { PERMISSIONS } from "../../../constants/permissions";
 import useAuth from "../../../hooks/useAuth";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import StatusChip from "../../../components/StatusChip";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 
 const getGraphNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
@@ -548,10 +549,17 @@ const FinanceDashboard = () => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getGraphNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
         revenue: getGraphNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isGraphMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isGraphMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 
