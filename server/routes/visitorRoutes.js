@@ -2,6 +2,7 @@ const router = require("express").Router();
 const upload = require("../config/multerConfig");
 const {
   fetchVisitors,
+  getDayPassBookingCounts,
   fetchVisitorHistory,
   checkExistingVisitor,
   addVisitor,
@@ -20,6 +21,7 @@ const {
 } = require("../controllers/visitorControllers/visitorController");
 
 router.get("/fetch-visitors", fetchVisitors);
+router.get("/day-pass/booking-counts", getDayPassBookingCounts);
 router.get("/visitor-history/:visitorId", fetchVisitorHistory);
 router.get("/check-existing", checkExistingVisitor);
 router.get("/fetch-team-members", fetchTeamMembers);

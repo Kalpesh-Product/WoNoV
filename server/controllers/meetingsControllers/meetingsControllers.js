@@ -923,6 +923,67 @@ async function getMeetings(req, res, next) {
   }
 }
 
+async function getMeetingBookingCounts(req, res, next) {
+  try {
+    const { company } = req;
+    const indiaDateParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+    }).formatToParts(new Date());
+    const currentYear = Number(
+      indiaDateParts.find((part) => part.type === "year")?.value,
+    );
+    const currentMonth = Number(
+      indiaDateParts.find((part) => part.type === "month")?.value,
+    );
+    const fiscalYearStart = currentMonth >= 4 ? currentYear : currentYear - 1;
+    const rangeStart = new Date(
+      `${fiscalYearStart}-04-01T00:00:00.000+05:30`,
+    );
+    const cutoffMonth = new Date(
+      Date.UTC(currentYear, currentMonth - 2, 1),
+    );
+    const cutoffYear = cutoffMonth.getUTCFullYear();
+    const cutoffMonthNumber = String(cutoffMonth.getUTCMonth() + 1).padStart(
+      2,
+      "0",
+    );
+    const rangeEnd = new Date(
+      `${cutoffYear}-${cutoffMonthNumber}-01T00:00:00.000+05:30`,
+    );
+    const meetingBookingQuery = {
+      company,
+      startDate: { $gte: rangeStart, $lt: rangeEnd },
+      status: "Completed",
+    };
+    const [internal, external] = await Promise.all([
+      Meeting.countDocuments({
+        ...meetingBookingQuery,
+        meetingType: "Internal",
+      }),
+      Meeting.countDocuments({
+        ...meetingBookingQuery,
+        meetingType: "External",
+      }),
+    ]);
+
+    return res.status(200).json({
+      internal,
+      external,
+      total: internal + external,
+      periodLabel: `FY ${fiscalYearStart}-${String(fiscalYearStart + 1).slice(-2)}`,
+      throughMonth: new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        month: "long",
+        year: "numeric",
+      }).format(new Date(rangeEnd.getTime() - 1)),
+    });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 // const getMeetings = async (req, res, next) => {
 //   try {
 //     const { user, company, roles, departments } = req;
@@ -3209,6 +3270,7 @@ const updateMeetingDetails = async (req, res, next) => {
 module.exports = {
   addMeetings,
   getMeetings,
+  getMeetingBookingCounts,
   getMyMeetings,
   deleteMyMeeting,
   extendMeeting,

@@ -21,6 +21,10 @@ import ThreeDotMenu from "../../../components/ThreeDotMenu";
 import UploadFileInput from "../../../components/UploadFileInput";
 import PrimaryButton from "../../../components/PrimaryButton";
 import dayjs from "dayjs";
+import {
+  isDayPassRevenue,
+  isPaidDayPassRevenue,
+} from "../../../utils/dayPassRevenue";
 
 const BiznestHeaderLogo = () => (
   <span
@@ -596,25 +600,16 @@ const DayPassInvoiceFields = ({ revenue }) => {
         : [];
 
       return revenue.filter((item) => {
-        const meetingType = String(
-          item?.meetingType ||
-            item?.particulars ||
-            item?.visitorDetails?.purposeOfVisit ||
-            "",
-        )
-          .trim()
-          .toLowerCase();
-        const isDayPass =
-          item?.source === "day-pass" ||
-          meetingType.includes("open desk") ||
-          meetingType.includes("half-day") ||
-          meetingType.includes("half day") ||
-          meetingType.includes("full-day") ||
-          meetingType.includes("full day");
+        // Day Pass tooltip count = Investor dashboard's ACTIVE UNIQUE CLIENTS
+        // count: source day-pass rows that are finance-verified and paid.
+        if (dashboardTitle.toLowerCase().includes("day pass")) {
+          return item?.source === "day-pass" && isPaidDayPassRevenue(item);
+        }
 
-        return dashboardTitle.toLowerCase().includes("day pass")
-          ? isDayPass
-          : !isDayPass;
+        return (
+          !isDayPassRevenue(item) &&
+          String(item?.financeStatus || "").trim().toLowerCase() === "verified"
+        );
       });
     },
   });
@@ -761,19 +756,24 @@ const DayPassInvoiceFields = ({ revenue }) => {
     return selectedRevenueData
       .filter((item) => {
         if (!isVerifiedFinanceRow(item)) return false;
-        if (revenueKind === "day-pass" && !isPaidRow(item)) return false;
-        if (!isDayPassDashboard || revenueKind !== "all") return true;
+        if (
+          (revenueKind === "day-pass" || isDayPassDashboard) &&
+          !isPaidRow(item)
+        ) {
+          return false;
+        }
 
-        const passType = String(item?.meetingType || item?.meetingTypeRaw || "")
-          .trim()
-          .toLowerCase();
-        return (
-          item?.source === "day-pass" &&
-          (passType.includes("half-day pass") ||
-            passType.includes("half day pass") ||
-            passType.includes("full-day pass") ||
-            passType.includes("full day pass"))
-        );
+        if (revenueKind !== "all") return true;
+
+        if (isDayPassDashboard) {
+          // DAY PASS REVENUES dashboard: same amount as the Investor
+          // breakdown graph - day pass rows, finance-verified and paid.
+          return isDayPassRevenue(item);
+        }
+
+        // MEETING ROOM REVENUES dashboard: Day Pass is a separate vertical,
+        // so keep it out of this graph and its tooltip amount.
+        return !isDayPassRevenue(item);
       })
       .map((item) => ({
         date: item.date,

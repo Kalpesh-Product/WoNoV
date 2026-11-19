@@ -31,3 +31,18 @@ export const isDayPassRevenue = (revenue = {}) => {
 
   return hasDayPassType(revenueType) && !isMeetingRoomRevenue;
 };
+
+const normalizePaymentStatus = (value) =>
+  typeof value === "string"
+    ? value.trim().toLowerCase()
+    : value
+      ? "paid"
+      : "unpaid";
+
+// Same rule used by the Investor dashboard's income breakdown and
+// ACTIVE UNIQUE CLIENTS graphs: a day pass counts only when finance is
+// verified AND its payment status is paid.
+export const isPaidDayPassRevenue = (revenue = {}) =>
+  isDayPassRevenue(revenue) &&
+  normalizePaymentStatus(revenue?.financeStatus) === "verified" &&
+  normalizePaymentStatus(revenue?.status) === "paid";
