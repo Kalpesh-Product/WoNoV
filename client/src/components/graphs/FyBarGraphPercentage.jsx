@@ -53,48 +53,61 @@ const ACTUAL_RANK_PREFIX = "Actual Rank ";
 const PROJECTED_RANK_PREFIX = "Projected Rank ";
 const INVESTOR_ACTUAL_STACK_ORDER = [
   "Co-Working",
+  "Flexy Desk",
   "Virtual Office",
   "Meeting",
+  "Day Pass",
   "Alternate",
 ];
 const INVESTOR_PROJECTED_STACK_ORDER = [
   "Co-Working",
+  "Flexy Desk",
   "Virtual Office",
   "Meeting",
+  "Day Pass",
   "Alternate",
 ].map((vertical) => `${PROJECTED_SERIES_PREFIX}${vertical}`);
 const INVESTOR_PROJECTED_COLORS = [
   "#3c3c3c",
+  "#525252",
   "#616161",
   "#787878",
+  "#9e9e9e",
   "#b4b4b4",
-  "#f0f0f0",
 ];
 const INVESTOR_ACTUAL_COLORS = {
   "Co-Working": "#365D96",
+  "Flexy Desk": "#0077B6",
   Meeting: "#2196F3",
+  "Day Pass": "#F59E0B",
   Alternate: "#80CED6",
   Workation: "#54C4A7",
   "Virtual Office": "#11daf5",
 };
 const INVESTOR_LEGEND_ITEMS = [
   { label: "Co-Working", color: "#365D96" },
+  { label: "Flexy Desk", color: "#0077B6" },
   { label: "Virtual Office", color: "#11daf5" },
   { label: "Meeting", color: "#2196F3" },
+  { label: "Day Pass", color: "#F59E0B" },
   { label: "Alternate", color: "#80CED6" },
   { label: "Projected", color: "#787878" },
 ];
 const INVESTOR_TOOLTIP_ROWS = [
   { vertical: "Co-Working", label: "Co-Working" },
+  { vertical: "Flexy Desk", label: "Flexy Desk" },
   { vertical: "Virtual Office", label: "Virtual Office" },
   { vertical: "Meeting", label: "Meetings" },
+  { vertical: "Day Pass", label: "Day Pass" },
   { vertical: "Alternate", label: "Alt Revenues" },
 ];
 const INVESTOR_LEGEND_TO_SERIES = {
   Meeting: "Meeting",
+  "Day Pass": "Day Pass",
   Alternate: "Alternate",
   "Virtual Office": "Virtual Office",
   "Co-Working": "Co-Working",
+  "Flexy Desk": "Flexy Desk",
 };
 
 const roundInvestorStackedBars = (chartContext) => {

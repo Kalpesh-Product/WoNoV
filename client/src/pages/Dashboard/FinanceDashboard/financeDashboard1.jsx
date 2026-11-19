@@ -49,6 +49,7 @@ import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 import { useDispatch } from "react-redux";
 import {
   setTotalExpense,
@@ -529,58 +530,9 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   });
 
   const paidRevenueData = useMemo(() => {
-    if (!simpleRevenue) return [];
-
-    const flatten = [];
-
-    simpleRevenue.meetingRevenue?.forEach((item) => {
-      flatten.push({
-        vertical: "Meeting",
-        revenue: getNumericAmount(item.taxable),
-        date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
-      });
-    });
-
-    simpleRevenue.alternateRevenues?.forEach((item) => {
-      flatten.push({
-        vertical: "Alternate",
-        revenue: getNumericAmount(item.taxableAmount),
-        date: item.invoiceCreationDate,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
-      flatten.push({
-        vertical: "Virtual Office",
-        revenue: getVirtualOfficeReportingAmount(item),
-        date: item.rentDate,
-        normalizedStatus: getNormalizedPaymentStatus(
-          item.rentStatus ?? item.status,
-        ),
-      });
-    });
-
-    simpleRevenue.workationRevenues?.forEach((item) => {
-      flatten.push({
-        vertical: "Workation",
-        revenue: getNumericAmount(item.taxableAmount),
-        date: item.date,
-        normalizedStatus: getNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.coworkingRevenues?.forEach((item) => {
-      flatten.push({
-        vertical: "Co-Working",
-        revenue: getNumericAmount(item.revenue),
-        date: item.rentDate,
-        normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
-      });
-    });
-
-    return flatten.filter((item) => item.normalizedStatus === "paid");
+    return getFinanceIncomeRecords(simpleRevenue).filter(
+      (item) => item.normalizedStatus === "paid",
+    );
   }, [simpleRevenue]);
 
   const investorMixIncomeData = useMemo(() => {
@@ -599,8 +551,10 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
     const completedMonthCount = projectionStart.diff(fiscalStart, "month");
     const projectedVerticals = [
       "Co-Working",
+      "Flexy Desk",
       "Virtual Office",
       "Meeting",
+      "Day Pass",
       "Alternate",
     ];
 
@@ -898,6 +852,42 @@ const getNumericAmount = (value) => {
 };
 const isMeetingFinancePaid = (item) =>
   getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(
+    item?.clientType ||
+      item?.clients?.clientType ||
+      item?.client?.clientType ||
+      "",
+  )
+    .trim()
+    .toLowerCase();
+
+  if (clientType === "annual client") return false;
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    !clientType &&
+    String(
+      item?.billingFrequency ||
+        item?.clients?.billingFrequency ||
+        item?.client?.billingFrequency ||
+        "",
+    )
+      .trim()
+      .toLowerCase() === "monthly"
+  );
+};
+
+const isCompletedDayPassRevenue = (item) =>
+  getNormalizedPaymentStatus(item?.status) === "paid" &&
+  isMeetingFinancePaid(item);
 const isBeforeVirtualOfficeUploadLogicStart = (value) => {
   const date = dayjs(value);
   return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
@@ -913,6 +903,49 @@ const getVirtualOfficeReportingAmount = (item) =>
           item?.revenue ??
           item?.taxableAmount,
       );
+const getFinanceIncomeRecords = (revenue = {}) => [
+  ...asArray(revenue.meetingRevenue).map((item) => {
+    const isDayPass = isDayPassRevenue(item);
+    const isPaymentReceived =
+      getNormalizedPaymentStatus(item.status) === "paid";
+
+    return {
+      vertical: isDayPass ? "Day Pass" : "Meeting",
+      revenue: getNumericAmount(item.taxable),
+      date: item.date,
+      normalizedStatus:
+        isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+          ? "paid"
+          : "unpaid",
+    };
+  }),
+  ...asArray(revenue.alternateRevenues).map((item) => ({
+    vertical: "Alternate",
+    revenue: getNumericAmount(item.taxableAmount),
+    date: item.invoiceCreationDate,
+    normalizedStatus: getNormalizedPaymentStatus(item.status),
+  })),
+  ...asArray(revenue.virtualOfficeRevenues).map((item) => ({
+    vertical: "Virtual Office",
+    revenue: getVirtualOfficeReportingAmount(item),
+    date: item.rentDate,
+    normalizedStatus: getNormalizedPaymentStatus(
+      item.rentStatus ?? item.status,
+    ),
+  })),
+  ...asArray(revenue.workationRevenues).map((item) => ({
+    vertical: "Workation",
+    revenue: getNumericAmount(item.taxableAmount),
+    date: item.date,
+    normalizedStatus: getNormalizedPaymentStatus(item.status),
+  })),
+  ...asArray(revenue.coworkingRevenues).map((item) => ({
+    vertical: isFlexyDeskRevenue(item) ? "Flexy Desk" : "Co-Working",
+    revenue: getNumericAmount(item.revenue),
+    date: item.rentDate,
+    normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
+  })),
+];
 const INVESTOR_INCOME_COLOR = "#3cb37180";
 const INVESTOR_INCOME_GRADIENT_END = "#3cb37145";
 const INVESTOR_EXPENSE_COLOR = "#ff000080";
@@ -1233,7 +1266,9 @@ const groupUniqueClientInvoices = (revenueInvoices) => {
   asArray(revenueInvoices.coworkingRevenues).forEach((invoice) => {
     addInvoice({
       invoice,
-      typeOfClient: "Coworking",
+      typeOfClient: isFlexyDeskRevenue(invoice)
+        ? "Flexy Desk"
+        : "Co-Working",
       date: invoice.rentDate,
       client: invoice.clientName || invoice.clientInvoiceName,
     });
@@ -1242,7 +1277,7 @@ const groupUniqueClientInvoices = (revenueInvoices) => {
   asArray(revenueInvoices.virtualOfficeRevenues).forEach((invoice) => {
     addInvoice({
       invoice,
-      typeOfClient: "Virtualoffice",
+      typeOfClient: "Virtual Office",
       date: invoice.rentDate,
       client:
         invoice.client?.clientName ||
@@ -1252,26 +1287,32 @@ const groupUniqueClientInvoices = (revenueInvoices) => {
   });
 
   asArray(revenueInvoices.meetingRevenue).forEach((invoice) => {
-    const meetingType = String(
-      invoice.meetingType ||
-        invoice.particulars ||
-        invoice.visitorDetails?.purposeOfVisit ||
-        "",
-    )
-      .trim()
-      .toLowerCase();
-    const isDayPass =
-      invoice.source === "day-pass" ||
-      meetingType.includes("half-day") ||
-      meetingType.includes("half day") ||
-      meetingType.includes("full-day") ||
-      meetingType.includes("full day");
+    const isDayPass = invoice?.source === "day-pass";
+    if (isDayPass && !isCompletedDayPassRevenue(invoice)) return;
 
     addInvoice({
       invoice,
-      typeOfClient: isDayPass ? "Open Desk" : "External Meetings",
+      typeOfClient: isDayPass ? "Day Pass" : "Meeting",
       date: invoice.date,
       client: invoice.clientName || invoice.client,
+    });
+  });
+
+  asArray(revenueInvoices.alternateRevenues).forEach((invoice) => {
+    addInvoice({
+      invoice,
+      typeOfClient: "Alternate",
+      date: invoice.invoiceCreationDate,
+      client: invoice.clientName || invoice.client || invoice.particulars,
+    });
+  });
+
+  asArray(revenueInvoices.workationRevenues).forEach((invoice) => {
+    addInvoice({
+      invoice,
+      typeOfClient: "Workation",
+      date: invoice.date,
+      client: invoice.clientName || invoice.client || invoice.particulars,
     });
   });
 
@@ -1366,6 +1407,7 @@ const InvestorUniqueClientsGraph = () => {
       noOuterPadding
       investorBlueStyle
       investorTitleAmountChip
+      showAllInvestorClientVerticals
     >
       {/*
       <div className="border-b border-borderGray px-4 pb-4">
@@ -1391,40 +1433,6 @@ const InvestorUniqueClientsGraph = () => {
 };
 
 //Meetings
-
-const getGraphNormalizedPaymentStatus = (value) => {
-  if (typeof value === "string") return value.trim().toLowerCase();
-  return value ? "paid" : "unpaid";
-};
-
-const getGraphNumericAmount = (value) => {
-  if (typeof value === "number") return value;
-  if (typeof value === "string") {
-    const parsedValue = parseFloat(value.replace(/,/g, ""));
-    return Number.isNaN(parsedValue) ? 0 : parsedValue;
-  }
-  return 0;
-};
-
-const isGraphMeetingFinancePaid = (item) =>
-  getGraphNormalizedPaymentStatus(item?.financeStatus) === "verified";
-
-const isBeforeGraphVirtualOfficeUploadLogicStart = (value) => {
-  const date = dayjs(value);
-  return date.isValid() && date.isBefore(dayjs("2026-09-01"), "month");
-};
-
-const getGraphVirtualOfficeReportingAmount = (item) =>
-  isBeforeGraphVirtualOfficeUploadLogicStart(
-    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
-  )
-    ? getGraphNumericAmount(item?.revenue ?? item?.taxableAmount)
-    : getGraphNumericAmount(
-        item?.reportingAmount ??
-          item?.receivedAmount ??
-          item?.revenue ??
-          item?.taxableAmount,
-      );
 
 // Keep Finance projections aligned with the Investor dashboard calculation.
 const getFinanceProjectionStartIndex = (now = new Date()) =>
@@ -2131,52 +2139,7 @@ const FinanceDashboard1 = () => {
   const excludedMonths = ["Jan-24", "Feb-24", "Mar-24"];
 
   const incomeSources = useMemo(() => {
-    if (!simpleRevenue) return [];
-    const flatten = [];
-
-    simpleRevenue.meetingRevenue?.forEach((item) => {
-      flatten.push({
-        revenue: getGraphNumericAmount(item.taxable),
-        date: item.date,
-        normalizedStatus: isGraphMeetingFinancePaid(item) ? "paid" : "unpaid",
-      });
-    });
-
-    simpleRevenue.alternateRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getGraphNumericAmount(item.taxableAmount),
-        date: item.invoiceCreationDate,
-        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.virtualOfficeRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getGraphVirtualOfficeReportingAmount(item),
-        date: item.rentDate,
-        normalizedStatus: getGraphNormalizedPaymentStatus(
-          item.rentStatus ?? item.status,
-        ),
-      });
-    });
-
-    simpleRevenue.workationRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getGraphNumericAmount(item.taxableAmount),
-        date: item.date,
-        normalizedStatus: getGraphNormalizedPaymentStatus(item.status),
-      });
-    });
-
-    simpleRevenue.coworkingRevenues?.forEach((item) => {
-      flatten.push({
-        revenue: getGraphNumericAmount(item.revenue),
-        date: item.rentDate,
-        normalizedStatus: getGraphNormalizedPaymentStatus(item.rentStatus),
-      });
-    });
-
-    return flatten;
+    return getFinanceIncomeRecords(simpleRevenue);
   }, [simpleRevenue]);
 
   const getFiscalYearLabel = (dateInput) => {

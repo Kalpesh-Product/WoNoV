@@ -17,7 +17,7 @@ import DetalisFormatted from "./DetalisFormatted";
 import PageFrame from "./Pages/PageFrame";
 import humanDate from "../utils/humanDateForamt";
 import {
-  isAlphanumeric,
+  isAlphanumeric, 
   isValidBankAccount,
   isValidEmail,
   isValidGSTIN,

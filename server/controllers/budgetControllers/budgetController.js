@@ -88,7 +88,7 @@ const getBudgetApprovalAccess = (budget, user) => {
   const amount = budget.particulars?.length
     ? budget.particulars.reduce((sum, item) => sum + Number(item.particularAmount || 0), 0)
     : Number(budget.projectedAmount);
-  const level = amount <= 10000 ? "Level 3" : amount <= 1000000 ? "Level 2" : "Level 1";
+  const level = amount <= 10000 ? "Level 3" : amount <= 1500000 ? "Level 2" : "Level 1";
   const departments = user?.departments || [];
   const roles = (user?.role || []).map((role) => String(role.roleTitle || role).trim().toLowerCase());
   const inDepartment = (name) => departments.some((department) => String(department.name || "").trim().toLowerCase() === name);
@@ -97,13 +97,21 @@ const getBudgetApprovalAccess = (budget, user) => {
   const topManagement = inDepartment("top management");
   const kashif = name === "kashif" && topManagement && roles.includes("super admin");
   const abrar = name === "abrar" && topManagement && roles.some((role) => ["master admin", "super admin"].includes(role));
-  // Retain existing tech bulk approval access within the Level 3 limit.
+  // Tech Department can manage every approval level; other approvers are level-specific.
   const tech = departments.some((department) => String(department._id || department) === TECH_DEPARTMENT_ID) || inDepartment("tech department");
   return {
     approvalLevel: level,
     approvalDepartment: level === "Level 3" ? "Finance" : "Top Management",
     requiredApprover: level === "Level 3" ? "Narshiva Naik" : level === "Level 2" ? "Kashif Saikh" : "Abrar Shaikh",
-    canApproveBudget: Number.isFinite(amount) && amount >= 0 && (tech || (level === "Level 3" ? finance || kashif || abrar : level === "Level 2" ? kashif || abrar : abrar)),
+    canApproveBudget:
+      Number.isFinite(amount) &&
+      amount >= 0 &&
+      (tech ||
+        (level === "Level 3"
+          ? finance
+          : level === "Level 2"
+            ? kashif
+            : abrar)),
   };
 };
 const fetchBudgetApprover = (userId) => User.findById(userId).select("firstName role departments").populate([{ path: "role", select: "roleTitle" }, { path: "departments", select: "name" }]).lean();

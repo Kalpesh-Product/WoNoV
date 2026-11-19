@@ -10,6 +10,7 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { CircularProgress } from "@mui/material";
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 
 
 const getNormalizedPaymentStatus = (value) => {
@@ -157,10 +158,17 @@ const OverallProfitLoss = () => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 

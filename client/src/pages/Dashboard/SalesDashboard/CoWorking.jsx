@@ -111,17 +111,23 @@ const getInvoiceClientType = (row, clientList) => {
   return "";
 };
 
-const isFlexibleDeskInvoice = (row, clientList) => {
+const getCoworkingSegment = (row, clientList) => {
   const client = getInvoiceClient(row, clientList);
   const clientType = String(client?.clientType || row.clientType || "")
     .trim()
     .toLowerCase();
-  if (clientType) {
-    return ["flexy desk client", "flexi desk client", "flexible desk client"].includes(clientType);
+  if (["flexy desk client", "flexi desk client", "flexible desk client"].includes(clientType)) {
+    return "flexible-desk";
   }
-  return String(client?.billingFrequency || row.billingFrequency || "")
+  if (clientType === "annual client") return "coworking";
+
+  const billingFrequency = String(
+    client?.billingFrequency || row.billingFrequency || "",
+  )
     .trim()
-    .toLowerCase() === "monthly";
+    .toLowerCase();
+  if (billingFrequency === "monthly") return "flexible-desk";
+  return "coworking";
 };
 
 const CoworkingInvoiceActions = ({ row, onView, onEdit }) => (
@@ -303,7 +309,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
   const flexibleDeskView = clientSegment === "flexible-desk";
   const belongsToSegment = (row) =>
     clientSegment === "all" ||
-    isFlexibleDeskInvoice(row, coworkingClients) === flexibleDeskView;
+    getCoworkingSegment(row, coworkingClients) === clientSegment;
   const clientsInSegment = coworkingClients.filter(
     belongsToSegment,
   );
@@ -425,7 +431,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           belongsToSegment(client)
       ).map((client) => ({
         ...client,
-        vertical: flexibleDeskView ? "Flexible Desk Clients" : "Co-Working",
+        vertical: flexibleDeskView ? "Flexy Desk" : "Co-Working",
       }))
     );
 
@@ -458,7 +464,9 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
         const seriesName =
           w?.globals?.seriesNames?.[seriesIndex] || "Co-Working";
         const value = series?.[seriesIndex]?.[dataPointIndex] || 0;
-        const color = w?.globals?.colors?.[seriesIndex] || "#1E88E5";
+        const color =
+          w?.globals?.colors?.[seriesIndex] ||
+          (flexibleDeskView ? "#0077B6" : "#1E3D73");
 
         return `
           <div style="min-width: 160px; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18); border: 1px solid #e5e7eb;">
@@ -486,7 +494,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
         },
       },
     },
-    colors: ["#1E3D73"],
+    colors: [flexibleDeskView ? "#0077B6" : "#1E3D73"],
   };
 
   let serialNumber = 1;
@@ -571,13 +579,13 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           dateKey="rentDate"
           valueKey="revenue"
           graphTitle={flexibleDeskView
-            ? "ANNUAL MONTHLY FLEXIBLE DESK REVENUES"
+            ? "ANNUAL MONTHLY FLEXY DESK REVENUES"
             : "ANNUAL MONTHLY CO WORKING REVENUES"}
           disableHoverCrosshair
         />
       ) : (
         <SalesDashboardPageSkeleton
-          chartTitle={flexibleDeskView ? "ANNUAL MONTHLY FLEXIBLE DESK REVENUES" : "ANNUAL MONTHLY CO WORKING REVENUES"}
+          chartTitle={flexibleDeskView ? "ANNUAL MONTHLY FLEXY DESK REVENUES" : "ANNUAL MONTHLY CO WORKING REVENUES"}
         />
       // )}
       ))}
@@ -591,10 +599,10 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           tableTitle={
             showInvoiceProjections
               ? flexibleDeskView
-                ? "Flexible Desk Clients Revenue Invoicing"
+                ? "Flexy Desk Revenue Invoicing"
                 : "Co-Working Revenue Client Invoicing"
               : flexibleDeskView
-                ? "MONTHLY FLEXIBLE DESK REVENUE WITH CLIENT DETAILS"
+                ? "MONTHLY FLEXY DESK REVENUE WITH CLIENT DETAILS"
                 : "MONTHLY REVENUE WITH CLIENT DETAILS"
           }
           totalKey="revenue"
@@ -769,7 +777,7 @@ const CoWorking = ({ showChart = true, showInvoiceProjections = false, clientSeg
           ]}
         />
       ) : (
-        <SalesDashboardPageSkeleton tableTitle={flexibleDeskView ? "MONTHLY FLEXIBLE DESK REVENUE WITH CLIENT DETAILS" : "MONTHLY REVENUE WITH CLIENT DETAILS"} />
+        <SalesDashboardPageSkeleton tableTitle={flexibleDeskView ? "MONTHLY FLEXY DESK REVENUE WITH CLIENT DETAILS" : "MONTHLY REVENUE WITH CLIENT DETAILS"} />
       )}
 
       {viewRow && (

@@ -61,7 +61,7 @@ const ClientOnboarding = () => {
       invoiceCompanyName: "",
       tenure: "",
       securityDeposit: 0,
-      billingFrequency: "",
+      billingFrequency: "Monthly",
       clientType: "",
     },
   });
@@ -78,8 +78,8 @@ const ClientOnboarding = () => {
   const openDesks = useWatch({ control, name: "openDesks" });
   const openDesksRate = useWatch({ control, name: "ratePerOpenDesk" });
   const selectedBuilding = useWatch({ control, name: "building" });
-  const billingFrequency = useWatch({ control, name: "billingFrequency" });
-  const isMonthlyBilling = billingFrequency === "Monthly";
+  const clientType = useWatch({ control, name: "clientType" });
+  const isFlexyDeskClient = clientType === "Flexy Desk Client";
   const totalOpenDeskCost =
     (parseFloat(openDesks) || 0) * (parseFloat(openDesksRate) || 0);
 
@@ -96,18 +96,6 @@ const ClientOnboarding = () => {
 
     setValue("totalMeetingCredits", computed);
   }, [openDesks, cabinDesks, perDeskCredit, setValue]);
-
-  useEffect(() => {
-    setValue(
-      "clientType",
-      billingFrequency === "Monthly"
-        ? "Flexy Desk Client"
-        : billingFrequency === "Yearly"
-          ? "Annual Client"
-          : "",
-      { shouldValidate: true },
-    );
-  }, [billingFrequency, setValue]);
 
   //-----------------------------------------------------Calculation------------------------------------------------------------//
   const axios = useAxiosPrivate();
@@ -621,12 +609,11 @@ const ClientOnboarding = () => {
                           select
                           size="small"
                           label="Billing Frequency"
+                          disabled
                           error={!!errors.billingFrequency}
                           helperText={errors.billingFrequency?.message}
                           fullWidth
                         >
-                          <MenuItem value="">Select Frequency</MenuItem>
-                          <MenuItem value="Yearly">Yearly</MenuItem>
                           <MenuItem value="Monthly">Monthly</MenuItem>
                         </TextField>
                       )}
@@ -634,10 +621,20 @@ const ClientOnboarding = () => {
                     <Controller
                       name="clientType"
                       control={control}
+                      rules={{ required: "Client Type is required" }}
                       render={({ field }) => (
-                        <TextField {...field} select size="small" label="Client Type" disabled fullWidth>
-                          <MenuItem value="Annual Client">Annual Client</MenuItem>
+                        <TextField
+                          {...field}
+                          select
+                          size="small"
+                          label="Client Type"
+                          error={!!errors.clientType}
+                          helperText={errors.clientType?.message}
+                          fullWidth
+                        >
+                          <MenuItem value="">Select Client Type</MenuItem>
                           <MenuItem value="Flexy Desk Client">Flexy Desk Client</MenuItem>
+                          <MenuItem value="Annual Client">Annual Client</MenuItem>
                         </TextField>
                       )}
                     />
@@ -733,7 +730,7 @@ const ClientOnboarding = () => {
                     control={control}
                     //rules={{ required: "Annual Increment is required" }}
                      rules={{
-                      required: isMonthlyBilling
+                      required: isFlexyDeskClient
                         ? false
                         : "Annual Increment is required",
                     }}
@@ -743,7 +740,7 @@ const ClientOnboarding = () => {
                         size="small"
                         label="Annual Increment"
                         type="number"
-                        disabled={isMonthlyBilling}
+                        disabled={isFlexyDeskClient}
                         error={!!errors.annualIncrement}
                         helperText={errors.annualIncrement?.message}
                         fullWidth
@@ -755,7 +752,7 @@ const ClientOnboarding = () => {
                       name="perDeskMeetingCredits"
                       control={control}
                       rules={{
-                         required: isMonthlyBilling
+                         required: isFlexyDeskClient
                           ? false
                           : "Per Desk Meeting Credits is required",
                        // required: "Per Desk Meeting Credits is required",
@@ -765,7 +762,7 @@ const ClientOnboarding = () => {
                           {...field}
                           size="small"
                           type="number"
-                          disabled={isMonthlyBilling}
+                          disabled={isFlexyDeskClient}
                           error={!!errors.perDeskMeetingCredits}
                           helperText={errors.perDeskMeetingCredits?.message}
                           label="Per Desk Meeting Credits"
@@ -782,7 +779,6 @@ const ClientOnboarding = () => {
                           size="small"
                           type="number"
                           disabled
-                         //disabled={isMonthlyBilling}
                           label="Total Meeting Credits"
                           fullWidth
                         />
