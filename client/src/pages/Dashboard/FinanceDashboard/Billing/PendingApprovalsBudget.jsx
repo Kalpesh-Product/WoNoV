@@ -305,6 +305,7 @@ const PendingApprovalsBudget = () => {
           columns={kraColumn}
           getRowId={getBudgetRowId}
           isRowSelectable={(node) => Boolean(node.data?.canApproveBudget)}
+          showSelectedRowCount={canUseBulkBudgetActions}
           checkbox={canUseBulkBudgetActions}
           checkAll={canUseBulkBudgetActions}
           batchButton={

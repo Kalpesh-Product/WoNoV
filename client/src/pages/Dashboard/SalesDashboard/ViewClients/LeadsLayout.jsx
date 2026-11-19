@@ -51,7 +51,7 @@ const INVESTOR_ALL_CLIENT_VERTICALS = [
 const INVESTOR_ALL_CLIENT_COLORS = {
   "Co-Working": "#365D96",
   "Flexy Desk": "#0077B6",
-  "Virtual Office": "#11daf5",
+  "Virtual Office": "#80BF01",
   Meeting: "#2196F3",
   "Day Pass": "#F59E0B",
   Alternate: "#80CED6",
@@ -135,6 +135,7 @@ const LeadsLayout = ({
   virtualOfficeDataLabelsAbove = false,
   onSelectedFinancialYearClientsCountChange,
   showAllInvestorClientVerticals = false,
+  hideWorkationInAllInvestorVerticals = false,
 }) => {
   const singleSeriesOnly =
     virtualOfficeOnly || Boolean(focusedClientSeries);
@@ -142,11 +143,22 @@ const LeadsLayout = ({
   const focusedProjectedSeries = `Projected ${focusedActualSeries}`;
   const useAllInvestorVerticals =
     showAllInvestorClientVerticals && !singleSeriesOnly;
+  const allInvestorClientVerticals = useMemo(
+    () =>
+      hideWorkationInAllInvestorVerticals
+        ? INVESTOR_ALL_CLIENT_VERTICALS.filter(
+            (vertical) => vertical !== "Workation",
+          )
+        : INVESTOR_ALL_CLIENT_VERTICALS,
+    [hideWorkationInAllInvestorVerticals],
+  );
   const resolvedActualSeriesNames = useAllInvestorVerticals
-    ? INVESTOR_ALL_CLIENT_VERTICALS
+    ? allInvestorClientVerticals
     : ACTUAL_UNIQUE_CLIENT_SERIES;
   const resolvedProjectedSeriesNames = useAllInvestorVerticals
-    ? INVESTOR_ALL_CLIENT_VERTICALS.map((name) => `Projected ${name}`)
+    ? allInvestorClientVerticals
+        .filter((name) => name !== "Workation")
+        .map((name) => `Projected ${name}`)
     : PROJECTED_UNIQUE_CLIENT_SERIES;
   const allClients = useMemo(
     () => data.flatMap((monthData) => monthData.clients || []),
@@ -283,7 +295,7 @@ const LeadsLayout = ({
           : transformedData;
 
       const actualCountKeys = useAllInvestorVerticals
-        ? INVESTOR_ALL_CLIENT_VERTICALS
+        ? allInvestorClientVerticals
         : [
             "Coworking",
             "Virtualoffice",
@@ -308,6 +320,7 @@ const LeadsLayout = ({
       transformedData,
       actualMonthLag,
       focusedActualSeries,
+      allInvestorClientVerticals,
       useAllInvestorVerticals,
       reportingMonth,
     ],
@@ -348,7 +361,7 @@ const LeadsLayout = ({
       return isActualMonthAvailable(monthDate) ? item[key] || 0 : 0;
     };
     const actualSeriesDefinitions = useAllInvestorVerticals
-      ? INVESTOR_ALL_CLIENT_VERTICALS.map((name) => ({ name, key: name }))
+      ? allInvestorClientVerticals.map((name) => ({ name, key: name }))
       : [
           { name: "Co-Working", key: "Coworking" },
           {
@@ -392,7 +405,7 @@ const LeadsLayout = ({
       actualSeries.map((series) => [series.name, series]),
     );
     const investorActualSeriesNames = useAllInvestorVerticals
-      ? INVESTOR_ALL_CLIENT_VERTICALS
+      ? allInvestorClientVerticals
       : singleSeriesOnly && focusedActualSeries === "Workation"
         ? [...ACTUAL_UNIQUE_CLIENT_SERIES, "Workation"]
         : ACTUAL_UNIQUE_CLIENT_SERIES;
@@ -448,6 +461,7 @@ const LeadsLayout = ({
     investorBlueStyle,
     transformedData,
     actualMonthLag,
+    allInvestorClientVerticals,
     focusedActualSeries,
     singleSeriesOnly,
     virtualOfficeProjectedClientCount,
@@ -526,11 +540,17 @@ const LeadsLayout = ({
       );
       const monthSeries = hasProjectedData ? projectedSeries : actualSeries;
 
-      const entries = monthSeries.map((series) => ({
+      const entries = monthSeries
+        .map((series) => ({
           name: series.name,
           value: series.data[monthIndex] || 0,
           color: getUniqueClientSeriesColor(series.name),
-        }));
+        }))
+        .filter(
+          (entry) =>
+            !entry.name.replace(/^Projected /, "").includes("Workation") ||
+            entry.value > 0,
+        );
 
       return entries.sort((a, b) => b.value - a.value);
     });
@@ -565,6 +585,15 @@ const LeadsLayout = ({
     investorRankedMonthEntries,
     resolvedActualSeriesNames,
   ]);
+  const hasWorkationClientData = useMemo(
+    () =>
+      scopedUniqueClientsData.some(
+        (series) =>
+          series.name === "Workation" &&
+          series.data.some((value) => (Number(value) || 0) > 0),
+      ),
+    [scopedUniqueClientsData],
+  );
   const toggleInvestorSeries = (seriesName) => {
     setHiddenInvestorSeries((current) => {
       const next = new Set(current);
@@ -810,7 +839,12 @@ const LeadsLayout = ({
             {(singleSeriesOnly
               ? ["Actual", "Projected"]
               : [...resolvedActualSeriesNames, "Projected"]
-            ).map(
+            )
+              .filter(
+                (seriesName) =>
+                  seriesName !== "Workation" || hasWorkationClientData,
+              )
+              .map(
               (seriesName, index) => {
                 const legendColor =
                   !singleSeriesOnly && seriesName === "Projected"
