@@ -680,7 +680,7 @@ function getUnitInventorySummaryValues(rows = []) {
         `/api/inventory/get-inventories?department=${department._id}&includeDeleted=true`,
       );
 
-      return response.data.map((item) => {
+      return response.data.data.map((item) => {
         const safeDate =
           item.date ||
           item.createdAt ||
