@@ -21,7 +21,7 @@ const Notifications = () => {
       const res = await axios.get("/api/notifications/get-my-notifications");
       return res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   const unreadCount = notifications.reduce((total, notification) => {

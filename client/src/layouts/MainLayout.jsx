@@ -37,7 +37,7 @@ const MainLayout = () => {
       const res = await axios.get("/api/notifications/get-my-notifications");
       return res.data;
     },
-    refetchInterval: 15000,
+    refetchInterval: 60000,
   });
 
   useEffect(() => {
