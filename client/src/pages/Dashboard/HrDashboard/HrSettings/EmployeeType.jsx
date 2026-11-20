@@ -122,7 +122,7 @@ const EmployeeType = () => {
     },
   }[confirmationAction?.type];
 
-  const { data: employeeTypes = [] } = useQuery({
+  const { data: employeeTypes = [], isLoading: isEmployeeTypesLoading } = useQuery({
     queryKey: ["employeeTypes", Boolean(isTechDepartment)],
     queryFn: async () => {
       try {
@@ -320,6 +320,7 @@ const EmployeeType = () => {
     <PageFrame>
       <div>
         <AgTable
+          loading={isEmployeeTypesLoading}
           search={true}
           searchColumn={"Employee Type"}
           tableTitle={"Employee Type List"}

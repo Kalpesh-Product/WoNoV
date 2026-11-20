@@ -154,6 +154,7 @@ const AdminOfficesNew = () => {
           search
           tableTitle="Admin Offices Details"
           exportData
+          loading={isUnitsLoading || isOccupancyLoading}
         />
       </PageFrame>
     </div>

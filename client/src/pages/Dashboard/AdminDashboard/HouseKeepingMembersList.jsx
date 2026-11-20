@@ -7,13 +7,8 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import {
-  Button,
-  CircularProgress,
-  FormHelperText,
-  MenuItem,
-  TextField,
-} from "@mui/material";
+import { Button, FormHelperText, MenuItem, TextField } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import { toast } from "sonner";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import { DateRange } from "@mui/icons-material";
@@ -310,9 +305,7 @@ const HouseKeepingMembersList = () => {
             exportData
           />
         ) : (
-          <div className="flex justify-center items-center h-[60vh]">
-            <CircularProgress />
-          </div>
+          <AdminLoadingSkeleton variant="table" />
         )}
       </PageFrame>
 

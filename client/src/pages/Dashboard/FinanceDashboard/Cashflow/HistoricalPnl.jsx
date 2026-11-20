@@ -5,7 +5,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
 import dayjs from "dayjs";
-import { CircularProgress } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import { useMemo } from "react";
 
 const yearCategories = {
@@ -276,9 +276,7 @@ const HistoricalPnl = () => {
       <WidgetSection layout={1} padding>
         <WidgetSection border title={"Historical P&L"}>
           {isLoading || isSimpleRevenueLoading ? (
-            <div className="h-72 flex items-center justify-center">
-              <CircularProgress />
-            </div>
+            <FinanceLoadingSkeleton />
           ) : (
             <NormalBarGraph
               data={incomeExpenseData}
@@ -290,6 +288,7 @@ const HistoricalPnl = () => {
 
       <WidgetSection title={"Historical P&L Details"} border>
         <AgTable
+          loading={isLoading || isSimpleRevenueLoading}
           columns={[
             { field: "srNo", headerName: "Sr No", sort: "desc" },
             { field: "name", headerName: "Financial Year", flex: 1 },

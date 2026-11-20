@@ -3,7 +3,8 @@ import PrimaryButton from "../../../../components/PrimaryButton";
 import MuiModal from "../../../../components/MuiModal";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Box, CircularProgress, IconButton, TextField } from "@mui/material";
+import { Box, IconButton, TextField } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import { LuImageUp } from "react-icons/lu";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -187,9 +188,7 @@ const Templates = () => {
                 ))}
           </div>
         ) : (
-          <div className="flex justify-center items-center h-full">
-            <CircularProgress />
-          </div>
+          <HrLoadingSkeleton variant="cards" />
         )}
 
         <MuiModal

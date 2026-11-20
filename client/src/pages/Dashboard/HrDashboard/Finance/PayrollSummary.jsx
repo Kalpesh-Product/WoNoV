@@ -104,13 +104,13 @@ const PayrollSummary = () => {
   return (
     <PageFrame>
       <AgTable
+        loading={isLoading}
         data={rows}
         columns={columns}
         search
         tableTitle="Payroll Summary"
         tableHeight={450}
       />
-      {isLoading && <p className="p-4 text-content">Loading payroll drafts...</p>}
     </PageFrame>
   );
 };

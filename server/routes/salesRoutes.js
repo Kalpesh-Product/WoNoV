@@ -1,5 +1,6 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
+const { getWebsiteLeads } = require("../controllers/salesControllers/websiteLeadsController");
 const {
   requirePartnershipAccess,
   getPartnership,
@@ -270,6 +271,7 @@ router.get("/services", getClientServices);
 router.post("/create-lead", createLead);
 router.patch("/edit-lead", editLead);
 router.get("/leads", getLeads);
+router.get("/leads/website", getWebsiteLeads);
 router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 
 //Desk routes

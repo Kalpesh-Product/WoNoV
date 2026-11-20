@@ -3,7 +3,7 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
-import { CircularProgress } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import humanDate from "../../../../utils/humanDateForamt";
 import { useState } from "react";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -94,6 +94,7 @@ const AttendanceCompleted = () => {
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           dateColumn={"date"}
           columns={columns}
           data={!isLoading ? tableData : []}
@@ -158,7 +159,7 @@ const AttendanceCompleted = () => {
             )}
           </div>
         ) : (
-          <CircularProgress />
+          <HrLoadingSkeleton />
         )}
       </MuiModal>
     </div>

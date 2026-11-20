@@ -385,6 +385,7 @@ const AdminPerSqFtExpense = () => {
           search
           tableTitle={`Admin Expense Per Sq. ft ${selectedFY}`}
           exportData
+          loading={isBudgetLoading}
         />
       </PageFrame>
     </div>

@@ -205,6 +205,7 @@ const DepartmentInvoiceBudget = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         <YearWiseTable
+          loading={isHrLoading}
           data={mappedRows}
           dropdownColumns={["department"]}
           columns={invoiceCreationColumns}

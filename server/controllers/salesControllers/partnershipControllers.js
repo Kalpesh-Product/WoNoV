@@ -2,10 +2,12 @@ const axios = require("axios");
 const Partnership = require("../../models/sales/Partnership");
 const Permission = require("../../models/Permissions");
 const { handleDocumentUpload, handleDocumentDelete } = require("../../config/s3Config");
+const {
+  PROD_BIZNEST_SUBMISSIONS_URL,
+  PROD_MEWO_SUBMISSIONS_URL,
+} = require("../../config/submissionsConfig");
 
 const PARTNERSHIP_PERMISSION = "sales_partners_mix_bag_card";
-const DEFAULT_SUBMISSIONS_URL = "http://localhost:3011/api/submissions";
-const MEWO_SUBMISSIONS_URL = "http://localhost:3012/api/submissions";
 const SUBMISSION_KINDS = ["partnership", "startup", "subscription", "contact"];
 const PARTNERSHIP_STATUSES = ["Pending", "Follow Up", "Converted", "Not Proceeding"];
 const PARTNERSHIP_FIELDS = [
@@ -333,6 +335,9 @@ const updatePartnership = async (req, res, next) => {
     if (fields.some((field) => typeof req.body[field] !== "string")) {
       return res.status(400).json({ message: "Complete the enquiry form." });
     }
+    if (req.body.status != null && !PARTNERSHIP_STATUSES.includes(req.body.status)) {
+      return res.status(400).json({ field: "status", message: "Select a valid status." });
+    }
     const values = Object.fromEntries(fields.map((field) => [field, req.body[field].trim()]));
     const { name, message } = values;
     const email = values.email.toLowerCase();
@@ -378,6 +383,7 @@ const updatePartnership = async (req, res, next) => {
       submission.presentation = undefined;
     }
     submission.set({ ...values, email, emailNormalized: email, phoneNormalized });
+    if (req.body.status != null) submission.status = req.body.status;
     if (!phoneNormalized) submission.phoneNormalized = undefined;
     try {
       await submission.save();
@@ -439,10 +445,10 @@ const getWebsitePartnership = async (req, res) => {
   try {
     const url = new URL(
       isMeWo
-        ? process.env.MEWO_SUBMISSIONS_URL || MEWO_SUBMISSIONS_URL
+        ? process.env.MEWO_SUBMISSIONS_URL || PROD_MEWO_SUBMISSIONS_URL
         : process.env.PARTNERSHIP_SUBMISSIONS_URL ||
             process.env.PARTNER_SUBMISSIONS_URL ||
-            DEFAULT_SUBMISSIONS_URL,
+            PROD_BIZNEST_SUBMISSIONS_URL,
     );
     url.search = "";
     url.searchParams.set("kind", kind);

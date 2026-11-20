@@ -11,7 +11,7 @@ import dayjs from "dayjs";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { CircularProgress } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 
 const getNormalizedPaymentStatus = (value) => {
@@ -526,9 +526,7 @@ const SqWiseData = () => {
   ];
   if (isRevenueExpenseLoading || isBudgetDataLoading || isSimpleRevenueLoading) {
     return (
-      <div className="p-4 h-72 flex justify-center items-center text-center text-gray-500">
-        <CircularProgress />
-      </div>
+      <FinanceLoadingSkeleton variant="page" />
     );
   }
 

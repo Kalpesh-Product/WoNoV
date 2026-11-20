@@ -56,6 +56,7 @@ const DepartmentPolicies = () => {
     <div>
       <PageFrame>
         <AgTable
+          loading={isLoading}
           columns={columns}
           data={tableData}
           tableTitle={`${departmentName || "Null"} Policy Documents`}

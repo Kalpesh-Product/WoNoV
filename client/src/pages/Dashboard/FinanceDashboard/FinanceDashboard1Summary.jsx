@@ -6,6 +6,7 @@ import { PiDesktopTowerFill } from "react-icons/pi";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { PERMISSIONS } from "../../../constants/permissions";
 import { useCurrency } from "../../../context/CurrencyContext";
+import FinanceLoadingSkeleton from "./FinanceLoadingSkeleton";
 
 const FinanceBarsIcon = () => (
   <span className="flex h-8 w-8 items-end justify-center gap-1" aria-hidden="true">
@@ -21,7 +22,7 @@ const FinanceDashboard1Summary = ({ income, expense, profitLoss, incomeGrowth = 
   const axios = useAxiosPrivate();
   const { currency, convert } = useCurrency();
   const canView = (key) => userPermissions.includes(PERMISSIONS[key].value);
-  const { data: assets = [] } = useQuery({
+  const { data: assets = [], isLoading: isAssetsLoading } = useQuery({
     queryKey: ["finance1-summary-owned-assets"],
     queryFn: async () => {
       const response = await axios.get("/api/assets/get-assets");
@@ -51,6 +52,7 @@ const FinanceDashboard1Summary = ({ income, expense, profitLoss, incomeGrowth = 
     { key: "FINANCE1_ASSET_VALUE_OWNED_SUMMARY_CARD", title: "Asset Value Owned", value: formatCurrency(assetValue), icon: MdMapsHomeWork, tone: "bg-sky-50 text-[#13a9e8]" },
   ].filter((card) => canView(card.key));
   if (!cards.length) return null;
+  if (isAssetsLoading) return <FinanceLoadingSkeleton variant="cards" />;
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
       {cards.map(({ key, title, value, period, icon: Icon, tone, valueTone = "text-[#1E3D73]", perSqft, percentage }) => (

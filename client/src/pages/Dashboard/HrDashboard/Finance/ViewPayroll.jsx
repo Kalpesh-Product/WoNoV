@@ -14,7 +14,8 @@ import {
 } from "../../../../utils/currencyFormat";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import MuiModal from "../../../../components/MuiModal";
@@ -1618,9 +1619,7 @@ const ViewPayroll = ({
             </div>
           </div>
         ) : (
-          <div className="flex justify-center items-center py-6">
-            <CircularProgress />
-          </div>
+          <HrLoadingSkeleton />
         )}
       </MuiModal>
     </div>

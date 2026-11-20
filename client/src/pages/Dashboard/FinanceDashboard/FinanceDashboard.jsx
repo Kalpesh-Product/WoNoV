@@ -28,6 +28,7 @@ import { PERMISSIONS } from "../../../constants/permissions";
 import useAuth from "../../../hooks/useAuth";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import StatusChip from "../../../components/StatusChip";
+import FinanceLoadingSkeleton from "./FinanceLoadingSkeleton";
 
 const getGraphNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
@@ -133,7 +134,7 @@ const FinanceDashboard = () => {
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
-  const { data: selectedDepartments = [] } = useQuery({
+  const { data: selectedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["finance-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
@@ -145,7 +146,7 @@ const FinanceDashboard = () => {
     },
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["finance-dashboard-tasks", department?._id],
     queryFn: async () => {
       const response = await axios.get(
@@ -207,7 +208,7 @@ const FinanceDashboard = () => {
     refetchOnReconnect: true,
   });
 
-  const { data: simpleRevenue = {} } = useQuery({
+  const { data: simpleRevenue = {}, isLoading: isSimpleRevenueLoading } = useQuery({
     queryKey: ["finance-dashboard-simpleRevenue"],
     queryFn: async () => {
       try {
@@ -1902,6 +1903,21 @@ const donutRentalColors = ["#66DB66", "#EA9A87"];
   const visibleTechWidgets = techWidgets.filter(
     (section) => Array.isArray(section?.widgets) && section.widgets.length > 0,
   );
+
+  if (isDepartmentsLoading || isTasksLoading || isFinanceTicketsLoading ||
+      isRevenueExpenseLoading || isBudgetDataLoading || isSimpleRevenueLoading) {
+    return <FinanceLoadingSkeleton variant="dashboard" sections={[
+      { type: "chart", count: allowedYearlyGraphs.length },
+      { type: "cards", count: allowedFinanceCards.length },
+      { type: "cards", count: allowedCards.length },
+      { type: "pie", count: allowedPieCharts.length },
+      { type: "donut", count: allowedDonutCharts.length },
+      { type: "pie", count: allowedDueTasks.length,
+        types: allowedDueTasks.map((task) => task.type === "PieChartMui" ? "pie" : "donut") },
+      { type: "pie", count: allowedFinanceTicketCharts.length },
+      { type: "table", count: allowedMuiTables.length },
+    ]} />;
+  }
 
   return (
     <div className="flex flex-col gap-4">

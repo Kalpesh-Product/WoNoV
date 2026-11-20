@@ -126,6 +126,7 @@ const KRA = () => {
       <PageFrame>
         <div>
           <AgTable
+            loading={isLoading}
             dateColumn="reviewDate"
             search={true}
             buttonTitle="Add KRA"

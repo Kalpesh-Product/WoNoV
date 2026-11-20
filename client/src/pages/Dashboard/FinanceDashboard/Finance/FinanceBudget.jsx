@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
@@ -15,6 +15,7 @@ import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAuth from "../../../../hooks/useAuth";
 import usePageDepartment from "../../../../hooks/usePageDepartment";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
@@ -192,21 +193,12 @@ const FinanceBudget = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
 const expenseRawSeries = useMemo(() => {
   // Initialize monthly buckets
@@ -332,6 +324,10 @@ const expenseRawSeries = useMemo(() => {
   const totalUtilised =
     budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
   // BUDGET NEW END
+
+  if (isHrLoading || locationsLoading) {
+    return <FinanceLoadingSkeleton variant="page" />;
+  }
 
   return (
     <div className="flex flex-col gap-8">

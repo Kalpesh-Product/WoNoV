@@ -8,7 +8,8 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import LeadsLayout from "../SalesDashboard/ViewClients/LeadsLayout";
 import { useCurrency } from "../../../context/CurrencyContext";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
+import FinanceLoadingSkeleton from "./FinanceLoadingSkeleton";
 import { Menu } from "@mui/material";
 import FinanceDashboard1Summary from "./FinanceDashboard1Summary";
 import { MdCalendarMonth, MdKeyboardArrowDown } from "react-icons/md";
@@ -516,7 +517,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   };
 
   const { data: simpleRevenue = [], isLoading } = useQuery({
-    queryKey: ["finance1-monthly-income-breakdown"],
+    queryKey: ["finance-dashboard1-simpleRevenue"],
     queryFn: async () => {
       const response = await axios.get(
         "/api/sales/simple-consolidated-revenue",
@@ -663,9 +664,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
   const options = {};
 
   return isLoading ? (
-    <div className="flex h-72 items-center justify-center">
-      <CircularProgress />
-    </div>
+    <FinanceLoadingSkeleton />
   ) : (
     <FyBarGraphPercentage
       data={investorMixIncomeData}
@@ -1902,7 +1901,7 @@ const FinanceDashboard1 = () => {
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
-  const { data: selectedDepartments = [] } = useQuery({
+  const { data: selectedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["finance-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
@@ -1914,7 +1913,7 @@ const FinanceDashboard1 = () => {
     },
   });
 
-  const { data: tasks = [] } = useQuery({
+  const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["finance-dashboard1-tasks", department?._id],
     queryFn: async () => {
       const response = await axios.get(
@@ -1956,7 +1955,7 @@ const FinanceDashboard1 = () => {
     refetchOnReconnect: true,
   });
 
-  const { data: simpleRevenue = {} } = useQuery({
+  const { data: simpleRevenue = {}, isLoading: isSimpleRevenueLoading } = useQuery({
     queryKey: ["finance-dashboard1-simpleRevenue"],
     queryFn: async () => {
       try {
@@ -3724,6 +3723,11 @@ const FinanceDashboard1 = () => {
       <Navigate to="/unauthorized" replace />
     );
   }
+  if (isDepartmentsLoading || isTasksLoading || isRevenueExpenseLoading ||
+      isBudgetDataLoading || isSimpleRevenueLoading) {
+    return <FinanceLoadingSkeleton variant="dashboard1" />;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <MuiModal

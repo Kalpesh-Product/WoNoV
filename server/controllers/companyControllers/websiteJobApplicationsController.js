@@ -1,8 +1,10 @@
 const axios = require("axios");
 const Permission = require("../../models/Permissions");
+const {
+  PROD_BIZNEST_SUBMISSIONS_URL,
+} = require("../../config/submissionsConfig");
 
 const APPLICATION_LIST_PERMISSION = "hr_job_application_list_tab";
-const DEFAULT_SUBMISSIONS_URL = "http://localhost:3011/api/submissions";
 
 const normalizeApplication = (row) => ({
   externalSubmissionId: String(row.id ?? ""),
@@ -57,7 +59,8 @@ const getWebsiteJobApplications = async (req, res, next) => {
     }
 
     const url = new URL(
-      process.env.JOB_APPLICATION_SUBMISSIONS_URL || DEFAULT_SUBMISSIONS_URL,
+      process.env.JOB_APPLICATION_SUBMISSIONS_URL ||
+        PROD_BIZNEST_SUBMISSIONS_URL,
     );
     url.search = "";
     url.searchParams.set("kind", "application");

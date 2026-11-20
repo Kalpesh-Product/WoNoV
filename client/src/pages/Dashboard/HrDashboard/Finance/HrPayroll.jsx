@@ -1,6 +1,6 @@
 import React from "react";
 import AgTable from "../../../../components/AgTable";
-import { Chip, CircularProgress, MenuItem } from "@mui/material";
+import { Chip, MenuItem, Skeleton } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCallback, useEffect, useState } from "react";
 // import AgTable from "../../components/AgTable";
@@ -1060,6 +1060,7 @@ const tableData = isLoading
           </div>
         ) : (
         <YearWiseTable
+          loading={isLoading || isPayrollHistoryLoading}
           search={true}
           dateColumn={"monthDate"}
           checkAll={true}
@@ -1138,7 +1139,7 @@ const tableData = isLoading
       >
         <div className="h-36 flex justify-center items-center">
           <div className="flex flex-col gap-2 justify-center items-center">
-            <CircularProgress />
+            <Skeleton variant="rounded" width={180} height={12} />
             <span className="text-content">Generating Payslips....</span>
           </div>
         </div>

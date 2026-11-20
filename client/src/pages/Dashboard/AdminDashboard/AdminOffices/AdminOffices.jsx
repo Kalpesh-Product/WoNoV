@@ -151,6 +151,7 @@ const AdminOffices = () => {
             columns={columns}
             search
             tableTitle="Admin Offices"
+            loading={isClientsDataPending}
           />
         </PageFrame>
       </div>

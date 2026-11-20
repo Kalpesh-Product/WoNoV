@@ -199,6 +199,7 @@ const ViewEmployees = () => {
       <PageFrame>
         <div className="w-full">
           <AgTable
+            loading={isLoading}
             search={true}
             tableTitle={"Employees List"}
             data={

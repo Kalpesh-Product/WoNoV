@@ -22,6 +22,7 @@ import { inrFormatExact as inrFormat } from "../../../../utils/currencyFormat";
 import { downloadCsv } from "../../../../utils/downloadCsv";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 
 const SummarySection = ({ title, rows }) => (
   <section>
@@ -395,7 +396,7 @@ const PayrollEntry = () => {
   }, [draft]);
 
   if (isLoading) {
-    return <PageFrame>Loading payroll entry...</PageFrame>;
+    return <PageFrame><HrLoadingSkeleton variant="details" /></PageFrame>;
   }
 
   if (!draft) {

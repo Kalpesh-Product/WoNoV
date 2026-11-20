@@ -3,7 +3,8 @@ import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -199,9 +200,7 @@ const AdminTeamMembersSchedule = () => {
             handleClick={handleAddUser}
           />
         ) : (
-          <div className="flex justify-center items-center h-[60vh]">
-            <CircularProgress color="#1E3D73" />
-          </div>
+          <AdminLoadingSkeleton variant="table" />
         )}
       </PageFrame>
 
@@ -242,7 +241,7 @@ const AdminTeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}
@@ -280,7 +279,7 @@ const AdminTeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}

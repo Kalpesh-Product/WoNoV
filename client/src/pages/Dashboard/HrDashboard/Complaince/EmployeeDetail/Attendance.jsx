@@ -21,7 +21,6 @@ import dayjs from "dayjs";
 import SecondaryButton from "../../../../../components/SecondaryButton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import {
-  CircularProgress,
   FormControl,
   InputLabel,
   MenuItem,
@@ -29,6 +28,7 @@ import {
   Skeleton,
   TextField,
 } from "@mui/material";
+import HrLoadingSkeleton from "../../HrLoadingSkeleton";
 import humanTime from "../../../../../utils/humanTime";
 //import { useMemo } from "react";
 import { useSelector } from "react-redux";
@@ -755,9 +755,7 @@ const Attendance = () => {
               responsiveResize
             />
           ) : (
-            <div className="h-72 flex justify-center items-center">
-              <CircularProgress />
-            </div>
+            <HrLoadingSkeleton variant="chart" />
           )}
           <WidgetSection layout={3} padding>
              <DataCard

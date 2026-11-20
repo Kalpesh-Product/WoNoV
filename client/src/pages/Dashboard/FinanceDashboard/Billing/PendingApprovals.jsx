@@ -4,7 +4,7 @@ import AgTable from "../../../../components/AgTable";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Box, CircularProgress, IconButton, TextField } from "@mui/material";
+import { Box, IconButton, Skeleton, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -128,7 +128,7 @@ const PendingApprovals = () => {
           <>
             {isRejectPending ? (
               <div className="h-10 flex justify-center items-center">
-                <CircularProgress />
+                <Skeleton variant="rounded" width={96} height={24} />
               </div>
             ) : (
               <div className="h-10 flex items-center gap-3">
@@ -175,6 +175,7 @@ const PendingApprovals = () => {
     <div>
       <PageFrame>
         <YearWiseTable
+          loading={isPendingLoading}
           dateColumn={"date"}
           search={true}
           tableTitle={"Pending Approvals Voucher"}

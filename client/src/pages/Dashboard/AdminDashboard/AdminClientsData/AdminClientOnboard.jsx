@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { TextField, Select, MenuItem, CircularProgress } from "@mui/material";
+import { TextField, Select, MenuItem } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { State, City } from "country-state-city";

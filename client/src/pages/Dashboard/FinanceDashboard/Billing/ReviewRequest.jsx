@@ -16,6 +16,7 @@ import { useSelector } from "react-redux";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 import html2pdf from "html2pdf.js";
 import PageFrame from "../../../../components/Pages/PageFrame";
@@ -225,6 +226,10 @@ const ReviewRequest = () => {
 
     html2pdf().set(opt).from(formRef.current).save();
   };
+
+  if (isVoucherPending || isDepartmentLoading || locationsLoading) {
+    return <FinanceLoadingSkeleton variant="page" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">

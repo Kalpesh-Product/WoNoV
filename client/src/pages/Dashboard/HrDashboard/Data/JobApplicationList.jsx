@@ -5,7 +5,8 @@ import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../../../utils/humanDateForamt";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { CircularProgress, Menu, MenuItem, TextField } from "@mui/material";
+import { Menu, MenuItem, TextField } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import StatusChip from "../../../../components/StatusChip";
@@ -957,7 +958,7 @@ const JobApplicationList = () => {
             />
           </div>
         ) : (
-          <CircularProgress />
+          <HrLoadingSkeleton />
         )}
       </MuiModal>
     </div>
