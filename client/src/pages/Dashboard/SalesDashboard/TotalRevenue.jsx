@@ -1,6 +1,7 @@
 import BarGraph from "../../../components/graphs/BarGraph";
 import WidgetSection from "../../../components/WidgetSection";
 import { inrFormat } from "../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -14,10 +15,22 @@ import FyBarGraphPercentage from "../../../components/graphs/FyBarGraphPercentag
 
 const VERTICAL_ROUTE_MAP = {
   Meeting: "meetings",
+  "Day Pass": "day-pass",
   Alternate: "alt-revenue",
   "Virtual Office": "virtual-office",
   Workation: "workation",
   "Co-Working": "co-working",
+  "Flexy Desk": "flexible-desk-clients",
+};
+
+const REVENUE_SERIES_COLORS = {
+  "Co-Working": "#1E3D73",
+  "Flexy Desk": "#0077B6",
+  Meeting: "#2196F3",
+  "Day Pass": "#F59E0B",
+  "Virtual Office": "#11daf5",
+  Workation: "#54C4A7",
+  Alternate: "#1976D2",
 };
 
 const getNormalizedPaymentStatus = (value) => {
@@ -36,6 +49,20 @@ const getNumericAmount = (value) => {
 
 const isMeetingFinancePaid = (item) =>
   getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(item?.clientType || "").trim().toLowerCase();
+
+  // clientType is the source of truth. billingFrequency defaults to
+  // "Monthly" for every client, so it must only be used as a fallback
+  // when clientType is missing.
+  if (clientType === "annual client") return false;
+  if (["flexy desk client", "flexi desk client", "flexible desk client"].includes(clientType)) {
+    return true;
+  }
+
+  return String(item?.billingFrequency || "").trim().toLowerCase() === "monthly";
+};
 
 const isBeforeVirtualOfficeUploadLogicStart = (value) => {
   const date = dayjs(value);
@@ -327,44 +354,53 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
   const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
     const tooltipRows = [
       { label: "Co-Working", seriesName: "Co-Working" },
-      { label: "Meetings", seriesName: "Meeting" },
+      { label: "Flexy Desk", seriesName: "Flexy Desk" },
       { label: "Virtual Office", seriesName: "Virtual Office" },
+      { label: "Meetings", seriesName: "Meeting" },
+      { label: "Day Pass", seriesName: "Day Pass" },
       { label: "Workation", seriesName: "Workation" },
       { label: "Alt Revenues", seriesName: "Alternate" },
-    ];
-
-    let total = 0;
+    ].map(({ label, seriesName }) => {
+      const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
+      return {
+        label,
+        color:
+          seriesIndex >= 0
+            ? w.globals.colors[seriesIndex]
+            : REVENUE_SERIES_COLORS[seriesName] || "#6B7280",
+        value: rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0,
+      };
+    });
+    const total = tooltipRows.reduce((sum, row) => sum + row.value, 0);
+    const formatShare = (value) => {
+      if (total <= 0 || value <= 0) return "0%";
+      const percentage = (value / total) * 100;
+      if (percentage < 0.1) return "<0.1%";
+      if (percentage < 1) return `${percentage.toFixed(1)}%`;
+      return `${Math.round(percentage)}%`;
+    };
 
     const rowsHtml = tooltipRows
-      .map(({ label, seriesName }) => {
-        const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
-        const color =
-           seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280";
-        const value = rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0;
-        total += value;
-
-        return `
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-            <span style="height: 10px; width: 10px; border-radius: 50%; background-color: ${color}; display: inline-block;"></span>
-            <div style="display: flex; justify-content: space-between; width: 100%;">
-              <span>${label}</span>
-              <span>INR ${value.toLocaleString("en-IN")}</span>
-            </div>
-          </div>
-        `;
-      })
+      .map(({ label, color, value }) => `
+        <div style="display:flex; align-items:center; gap:8px; padding:4px 10px; white-space:nowrap;">
+          <span style="width:11px; height:11px; flex:none; border-radius:50%; background:${color};"></span>
+          <span>${formatShare(value)} = ${label} =</span>
+          <strong>INR ${inrFormat(value)}</strong>
+        </div>`)
       .join("");
 
     return `
-      <div style="padding: 10px; width: 300px">
-        <div class="apexcharts-tooltip-title" style="margin-bottom: 8px; font-weight: bold;">${monthLabel}</div>
-        ${rowsHtml}
-        <hr style="margin-top: 6px;"/>
-        <div style="text-align: right; font-weight: 600;">Total: INR ${total.toLocaleString(
-      "en-IN",
-        )}</div>
-      </div>
-    `;
+      <div style="overflow:hidden; border:1px solid #e5e7eb; border-radius:6px; background:#fff; box-shadow:0 4px 12px #0002; color:#1f2937; font-size:13px;">
+        <div style="background:#eef0f2; padding:8px 10px;">${monthLabel}</div>
+        <div style="padding:7px 0 9px;">
+          ${rowsHtml}
+          <div style="display:flex; align-items:center; gap:8px; margin:7px 10px 0; border-top:1px solid #e5e7eb; padding-top:10px; white-space:nowrap;">
+            <span style="width:11px; height:11px; flex:none; border-radius:50%; background:#54C4A7;"></span>
+            <span>${total > 0 ? 100 : 0}% = Overall Revenues =</span>
+            <strong>INR ${inrFormat(total)}</strong>
+          </div>
+        </div>
+      </div>`;
   };
 
   const unifiedRevenueData = useMemo(() => {
@@ -373,12 +409,19 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaid = getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
-        vertical: "Meeting",
+        vertical: isDayPass ? "Day Pass" : "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
-       // normalizedStatus: getNormalizedPaymentStatus(item.status),
+        // Day Pass is counted only when payment is received and finance has
+        // verified it - same rule as the Day Pass revenue tab.
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaid)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -413,7 +456,7 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
 
     simpleRevenue.coworkingRevenues?.forEach((item) => {
       flatten.push({
-        vertical: "Co-Working",
+        vertical: isFlexyDeskRevenue(item) ? "Flexy Desk" : "Co-Working",
         revenue: getNumericAmount(item.revenue),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
@@ -446,17 +489,13 @@ const [revenueBasePath] = location.pathname.split("/total-revenue");
           chartOptions={options}
           tooltipBuilder={tooltipBuilder}
           showSmallLabels
-          seriesColors={{
-            "Co-Working": "#1E3D73",
-            Meeting: "#2196F3",
-            "Virtual Office": "#11daf5",
-            Workation: "#54C4A7",
-            Alternate: "#1976D2",
-          }}
+          seriesColors={REVENUE_SERIES_COLORS}
           legendItems={[
             { label: "Co-Working", seriesName: "Co-Working" },
-            { label: "Meetings", seriesName: "Meeting" },
+            { label: "Flexy Desk", seriesName: "Flexy Desk" },
             { label: "Virtual Office", seriesName: "Virtual Office" },
+            { label: "Meetings", seriesName: "Meeting" },
+            { label: "Day Pass", seriesName: "Day Pass" },
             { label: "Workation", seriesName: "Workation" },
             { label: "Alt Revenues", seriesName: "Alternate" },
           ]}

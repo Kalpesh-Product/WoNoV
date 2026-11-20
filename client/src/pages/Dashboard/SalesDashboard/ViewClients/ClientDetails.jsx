@@ -225,7 +225,7 @@ const ClientDetails = () => {
       openDesks: 0,
       totalDesks: 0,
       bookingType: "Direct",
-      billingFrequency: "",
+      billingFrequency: "Monthly",
       clientType: "",
       ratePerOpenDesk: 0,
       ratePerCabinDesk: 0,
@@ -326,24 +326,11 @@ const ClientDetails = () => {
   const watchedCabinRate = useWatch({ control, name: "ratePerCabinDesk" });
   const watchedOpenRate = useWatch({ control, name: "ratePerOpenDesk" });
   const watchedLockinPeriod = useWatch({ control, name: "lockinPeriod" });
-  const watchedBillingFrequency = useWatch({
+  const watchedClientType = useWatch({
     control,
-    name: "billingFrequency",
+    name: "clientType",
   });
-  const isMonthlyBilling = watchedBillingFrequency === "Monthly";
-
-  useEffect(() => {
-    if (isEditing) {
-      setValue(
-        "clientType",
-        watchedBillingFrequency === "Monthly"
-          ? "Flexy Desk Client"
-          : watchedBillingFrequency === "Yearly"
-            ? "Annual Client"
-            : "",
-      );
-    }
-  }, [isEditing, watchedBillingFrequency, setValue]);
+  const isFlexyDeskClient = watchedClientType === "Flexy Desk Client";
   const computedNoOfDesks = useMemo(
     () => Number(watchedCabinDesks || 0) + Number(watchedOpenDesks || 0),
     [watchedCabinDesks, watchedOpenDesks],
@@ -461,7 +448,7 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
-        billingFrequency: selectedClient.billingFrequency || "",
+        billingFrequency: "Monthly",
         clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
         lockinPeriod:
@@ -627,7 +614,7 @@ const ClientDetails = () => {
         totalMeetingCredits: selectedClient.totalMeetingCredits,
         startDate: selectedClient.startDate,
         bookingType: normalizeBookingType(selectedClient.bookingType),
-        billingFrequency: selectedClient.billingFrequency || "",
+        billingFrequency: "Monthly",
         clientType: selectedClient.clientType || "",
         endDate: selectedClient.endDate,
         lockinPeriod:
@@ -935,7 +922,9 @@ const ClientDetails = () => {
                           control={control}
                           rules={fieldKey === "billingFrequency"
                             ? { required: "Billing Frequency is required" }
-                            : undefined}
+                            : fieldKey === "clientType"
+                              ? { required: "Client Type is required" }
+                              : undefined}
                           render={({ field, fieldState }) =>
                             fieldKey === "billingFrequency" || fieldKey === "clientType" ? (
                               <TextField
@@ -943,17 +932,17 @@ const ClientDetails = () => {
                                 select
                                 size="small"
                                 label={fieldKey === "billingFrequency" ? "Billing Frequency" : "Client Type"}
-                                disabled={fieldKey === "clientType"}
+                                disabled={fieldKey === "billingFrequency"}
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
                                 fullWidth
                               >
-                                {fieldKey === "billingFrequency" && (
-                                  <MenuItem value="">Select Frequency</MenuItem>
+                                {fieldKey === "clientType" && (
+                                  <MenuItem value="">Select Client Type</MenuItem>
                                 )}
                                 {(fieldKey === "billingFrequency"
-                                  ? ["Yearly", "Monthly"]
-                                  : ["Annual Client", "Flexy Desk Client"]
+                                  ? ["Monthly"]
+                                  : ["Flexy Desk Client", "Annual Client"]
                                 ).map((option) => (
                                   <MenuItem key={option} value={option}>
                                     {option}
@@ -1066,7 +1055,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Annual Increment"
-                            disabled={isMonthlyBilling}
+                            disabled={isFlexyDeskClient}
                             fullWidth
                           />
                         )}
@@ -1101,7 +1090,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Per Desk Meeting Credits"
-                             disabled={isMonthlyBilling}
+                             disabled={isFlexyDeskClient}
                             fullWidth
                           />
                         )}
@@ -1136,7 +1125,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Total Meeting Credits"
-                            disabled={isMonthlyBilling}
+                            disabled={isFlexyDeskClient}
                             fullWidth
                           />
                         )}

@@ -49,6 +49,7 @@ import {
   salesFilterPermissions,
 } from "./salesAccessConfig";
 import usePageDepartment from "../../../hooks/usePageDepartment";
+import { isDayPassRevenue } from "../../../utils/dayPassRevenue";
 
 const getCurrentFinancialYearLabel = () => {
   const today = dayjs();
@@ -570,10 +571,18 @@ const SalesDashboard = () => {
     };
 
     (simpleRevenue?.meetingRevenue || []).forEach((item) => {
+      // Day Pass is counted only when payment is received and finance has
+      // verified it - same rule as the Day Pass revenue tab / Total Revenue.
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item?.status) === "paid";
+
       addRevenue(
         item?.date,
         item?.taxable,
-        isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+          ? "paid"
+          : "unpaid",
       );
     });
 

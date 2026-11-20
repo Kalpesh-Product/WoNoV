@@ -57,6 +57,7 @@ const TotalRevenueLayout = () => {
     ? {
         totalRevenue: PERMISSIONS.FINANCE_TOTAL_REVENUE,
         coworking: PERMISSIONS.FINANCE_COWORKING_REVENUE,
+        flexyDesk: PERMISSIONS.FINANCE_COWORKING_REVENUE,
         meetings: PERMISSIONS.FINANCE_MEETINGS_REVENUE,
         virtualOffice: PERMISSIONS.FINANCE_VIRTUAL_OFFICE_REVENUE,
         workations: PERMISSIONS.FINANCE_WORKATIONS_REVENUE,
@@ -65,6 +66,7 @@ const TotalRevenueLayout = () => {
     : {
         totalRevenue: PERMISSIONS.SALES_TOTAL_REVENUE,
         coworking: PERMISSIONS.SALES_COWORKING,
+        flexyDesk: PERMISSIONS.SALES_FLEXY_DESK_REVENUE,
         meetings: PERMISSIONS.SALES_MEETINGS,
         virtualOffice: PERMISSIONS.SALES_VIRTUAL_OFFICE,
         workations: PERMISSIONS.SALES_WORKATIONS,
@@ -83,13 +85,11 @@ const TotalRevenueLayout = () => {
       path: "co-working",
       permission: revenuePermissions.coworking.value,
     },
-    ...(isFinanceRoute
-      ? [{
-          label: "Flexible Desk Clients",
-          path: "flexible-desk-clients",
-          permission: revenuePermissions.coworking.value,
-        }]
-      : []),
+    {
+      label: "Flexy Desk",
+      path: "flexible-desk-clients",
+      permission: revenuePermissions.flexyDesk.value,
+    },
     {
       label: "Meetings",
       path: "meetings",

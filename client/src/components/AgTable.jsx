@@ -30,6 +30,23 @@ import {
   getAdvancedFilterColumns,
   shouldShowTableDateFilter,
 } from "../utils/tableFilters";
+
+const selectedCountChipSx = {
+  backgroundColor: "#1E3D73",
+  border: "1px solid #1E3D73",
+  borderRadius: "7px",
+  color: "#ffffff",
+  fontFamily: "Poppins-Regular, sans-serif",
+  fontSize: "0.875rem",
+  fontWeight: 400,
+  height: 38,
+  lineHeight: "1.25rem",
+  "& .MuiChip-label": {
+    paddingLeft: "12px",
+    paddingRight: "12px",
+  },
+};
+
 const AgTableComponent = React.memo(
   ({
     data = [],
@@ -73,6 +90,8 @@ const AgTableComponent = React.memo(
     disabled,
     handleBatchAction,
     isRowSelectable,
+    showSelectedRowCount = false,
+    selectedRowCountGroupField,
     showDisabledCheckboxes = false,
     checkboxTooltip,
     batchButton,
@@ -222,6 +241,26 @@ const AgTableComponent = React.memo(
         showTableControls,
       ],
     );
+
+    const selectedRowCountText = useMemo(() => {
+      if (!showSelectedRowCount) return "";
+      if (!selectedRowCountGroupField) return String(selectedRows.length);
+
+      const groupedCounts = selectedRows.reduce((counts, row) => {
+        const group = row?.[selectedRowCountGroupField];
+        if (group) counts[group] = (counts[group] || 0) + 1;
+        return counts;
+      }, {});
+
+      return Object.entries(groupedCounts)
+        .sort(([first], [second]) => first.localeCompare(second))
+        .map(([group, count]) => `${group} - ${count}`)
+        .join(" | ") || "0";
+    }, [
+      selectedRows,
+      selectedRowCountGroupField,
+      showSelectedRowCount,
+    ]);
 
     useEffect(() => {
       if (serverSearch) setSearchQuery(searchValue || "");
@@ -505,7 +544,8 @@ const AgTableComponent = React.memo(
           toolbarActions ||
           searchRowActions ||
           buttonTitle ||
-          headerActions) && (
+          headerActions ||
+          showSelectedRowCount) && (
           <div
             ref={toolbarRef}
             data-stacked={stackToolbar || undefined}
@@ -535,6 +575,14 @@ const AgTableComponent = React.memo(
                 {searchRowActionsPosition === "left" && searchRowActions
                   ? searchRowActions
                   : ""}
+                {showSelectedRowCount &&
+                  selectedRows.length > 0 &&
+                  searchRowActionsPosition === "left" && (
+                    <Chip
+                      label={`Approval Count : ${selectedRowCountText}`}
+                      sx={selectedCountChipSx}
+                    />
+                  )}
               </div>
             ) : (
               <></>
@@ -583,6 +631,14 @@ const AgTableComponent = React.memo(
               {searchRowActionsPosition === "aboveFilter"
                 ? searchRowActions
                 : null}
+              {showSelectedRowCount &&
+                selectedRows.length > 0 &&
+                searchRowActionsPosition !== "left" && (
+                  <Chip
+                    label={`Approval Count : ${selectedRowCountText}`}
+                    sx={selectedCountChipSx}
+                  />
+                )}
               {toolbarActions}
               {!exportButtonContainer && renderExportButton()}
               {showTableControls && advancedFilterAction}

@@ -58,6 +58,25 @@ const CoworkingBarsIcon = () => (
 const getAmount = (value) =>
   Number(String(value ?? "0").replace(/,/g, "")) || 0;
 
+const isFlexibleDeskRevenue = (row) => {
+  const clientType = String(row?.clientType || "")
+    .trim()
+    .toLowerCase();
+
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType,
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    !clientType &&
+    String(row?.billingFrequency || "").trim().toLowerCase() === "monthly"
+  );
+};
+
 const getRenewalPaymentStatus = (row) => {
   const rentStatus = String(row?.rentStatus ?? "").trim().toLowerCase();
 
@@ -1330,12 +1349,16 @@ const CoWorkingDashboard = ({
       ),
     [revenueGroups],
   );
-  const revenueGraphData = useMemo(
-    () => buildCoworkingRevenueGraphData(revenueRows, fiscalYear),
-    [fiscalYear, revenueRows],
+  const coworkingOnlyRevenueRows = useMemo(
+    () => revenueRows.filter((row) => !isFlexibleDeskRevenue(row)),
+    [revenueRows],
+  );
+  const coworkingOnlyRevenueGraphData = useMemo(
+    () => buildCoworkingRevenueGraphData(coworkingOnlyRevenueRows, fiscalYear),
+    [coworkingOnlyRevenueRows, fiscalYear],
   );
   const revenueSummary = useMemo(() => {
-    const graphSummary = revenueGraphData.reduce(
+    const graphSummary = coworkingOnlyRevenueGraphData.reduce(
       (summary, row) => {
         const amount = getAmount(row?.reportingAmount);
         if (row?.vertical === "Balance KRA Target") summary.due += amount;
@@ -1344,7 +1367,7 @@ const CoWorkingDashboard = ({
       },
       { booked: 0, due: 0 },
     );
-    const paidDesks = revenueRows.reduce((total, row) => {
+    const paidDesks = coworkingOnlyRevenueRows.reduce((total, row) => {
       const rentDate = dayjs(row?.rentDate);
       const isPaid =
         String(row?.rentStatus || "").trim().toLowerCase() === "paid";
@@ -1361,10 +1384,15 @@ const CoWorkingDashboard = ({
       annualTarget: graphSummary.booked + graphSummary.due,
       paidDesks,
     };
-  }, [fiscalYear.end, fiscalYear.start, revenueGraphData, revenueRows]);
+  }, [
+    coworkingOnlyRevenueGraphData,
+    coworkingOnlyRevenueRows,
+    fiscalYear.end,
+    fiscalYear.start,
+  ]);
   const activeUniqueCustomers = useMemo(
     () =>
-      revenueRows.filter((row) => {
+      coworkingOnlyRevenueRows.filter((row) => {
         const rentDate = dayjs(row?.rentDate);
         return (
           rentDate.isValid() &&
@@ -1375,7 +1403,7 @@ const CoWorkingDashboard = ({
             .isBefore(rentDate.startOf("month").add(2, "month"), "month")
         );
       }).length,
-    [fiscalYear.end, fiscalYear.start, revenueRows],
+    [coworkingOnlyRevenueRows, fiscalYear.end, fiscalYear.start],
   );
   const clientSummary = useMemo(() => {
     const renewalEndMonth = dayjs().startOf("month");
@@ -1401,7 +1429,7 @@ const CoWorkingDashboard = ({
         !hasPaidRenewal(revenueRows, client, renewalMonth)
       );
     };
-    const actualRevenueRows = revenueGraphData
+    const actualRevenueRows = coworkingOnlyRevenueGraphData
       .filter((row) => row?.vertical === "Revenue Booked")
       .sort((first, second) =>
         dayjs(first?.graphDate).diff(dayjs(second?.graphDate)),
@@ -1410,7 +1438,7 @@ const CoWorkingDashboard = ({
       actualRevenueRows.at(-1)?.reportingAmount,
     );
     const monthlyProjection = getAmount(
-      revenueGraphData.find(
+      coworkingOnlyRevenueGraphData.find(
         (row) => row?.vertical === "Balance KRA Target",
       )?.reportingAmount,
     );
@@ -1428,7 +1456,7 @@ const CoWorkingDashboard = ({
   }, [
     activeUniqueCustomers,
     coworkingClients,
-    revenueGraphData,
+    coworkingOnlyRevenueGraphData,
     revenueRows,
   ]);
   const clientDetailsRoute =
@@ -1563,8 +1591,8 @@ const CoWorkingDashboard = ({
     return (
       <div className="p-3 pt-3">
         <CoworkingRevenueGraph
-          graphData={revenueGraphData}
-          revenueRows={revenueRows}
+          graphData={coworkingOnlyRevenueGraphData}
+          revenueRows={coworkingOnlyRevenueRows}
           fiscalYear={fiscalYear}
           isLoading={isRevenueLoading}
         />
@@ -1575,7 +1603,7 @@ const CoWorkingDashboard = ({
   if (uniqueClientsOnly) {
     return (
       <div className="p-3 pt-3">
-        <CoworkingUniqueClientsGraph revenueRows={revenueRows} />
+        <CoworkingUniqueClientsGraph revenueRows={coworkingOnlyRevenueRows} />
       </div>
     );
   }
@@ -1707,15 +1735,15 @@ const CoWorkingDashboard = ({
 
       {canViewRevenueGraph && (
         <CoworkingRevenueGraph
-          graphData={revenueGraphData}
-          revenueRows={revenueRows}
+          graphData={coworkingOnlyRevenueGraphData}
+          revenueRows={coworkingOnlyRevenueRows}
           fiscalYear={fiscalYear}
           isLoading={isRevenueLoading}
         />
       )}
 
       {canViewUniqueClientsGraph && (
-        <CoworkingUniqueClientsGraph revenueRows={revenueRows} />
+        <CoworkingUniqueClientsGraph revenueRows={coworkingOnlyRevenueRows} />
       )}
 
       {visibleOccupancyCharts.length > 0 && (

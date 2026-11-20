@@ -29,6 +29,10 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import humanDate from "../../../../utils/humanDateForamt";
 import humanTime from "../../../../utils/humanTime";
+import {
+  isDayPassRevenue,
+  isPaidDayPassRevenue,
+} from "../../../../utils/dayPassRevenue";
 import MeetingRevenue from "../MeetingRevenue";
 import LeadsLayout from "../ViewClients/LeadsLayout";
 import DashboardPopupMenu from "../../../../components/DashboardPopupMenu";
@@ -57,28 +61,11 @@ const DayPassUniqueClientsGraph = () => {
         ? response.data.meetingRevenue
         : [];
 
-      return revenue.filter((row) => {
-        const type = String(
-          row?.meetingType ||
-            row?.meetingTypeRaw ||
-            row?.particulars ||
-            row?.visitorDetails?.purposeOfVisit ||
-            "",
-        ).toLowerCase();
-
-        if (row?.source === "day-pass") return true;
-
-        const isMeetingRoomRecord =
-          Boolean(row?.meetingRoomName) || type.includes("meeting room booking");
-        const isDayPassType =
-          type.includes("open desk") ||
-          type.includes("half-day") ||
-          type.includes("half day") ||
-          type.includes("full-day") ||
-          type.includes("full day");
-
-        return isDayPassType && !isMeetingRoomRecord;
-      });
+      // Same count as the DAY PASS REVENUES tooltip and the summary cards:
+      // day-pass rows that are finance-verified and paid only.
+      return revenue.filter(
+        (row) => row?.source === "day-pass" && isPaidDayPassRevenue(row),
+      );
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
@@ -148,104 +135,50 @@ const DayPassUniqueClientsGraph = () => {
 
 const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCharts }) => {
   const axios = useAxiosPrivate();
-  const { data: revenueRows = [], isLoading } = useQuery({
-    queryKey: ["day-pass-operational-charts"],
+  const {
+    data: bookingCounts = {
+      halfDay: 0,
+      fullDay: 0,
+      total: 0,
+      paymentStatus: {
+        paid: { clients: 0, visits: 0, taxableAmount: 0 },
+        unpaid: { clients: 0, visits: 0, taxableAmount: 0 },
+      },
+    },
+    isLoading: bookingCountsLoading,
+  } = useQuery({
+    queryKey: ["day-pass-booking-counts"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/simple-consolidated-revenue");
-      return Array.isArray(response.data?.meetingRevenue)
-        ? response.data.meetingRevenue
-        : [];
+      const response = await axios.get(
+        "/api/visitors/day-pass/booking-counts",
+      );
+      return response.data;
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const fiscalYear = useMemo(() => {
-    const now = dayjs();
-    const startYear = now.month() >= 3 ? now.year() : now.year() - 1;
-    return {
-      startYear,
-      label: `${startYear}-${String(startYear + 1).slice(-2)}`,
-    };
-  }, []);
-  const chartData = useMemo(() => {
-    const start = dayjs().year(fiscalYear.startYear).month(3).startOf("month");
-    const end = start.add(1, "year");
-    const currentMonth = dayjs().startOf("month");
-    const fiscalMonths = Array.from({ length: 12 }, (_, index) =>
-      start.add(index, "month"),
-    );
-    const latestActualMonthIndex = fiscalMonths.reduce(
-      (latestIndex, month, index) =>
-        !currentMonth.isBefore(month.add(2, "month"), "month")
-          ? index
-          : latestIndex,
-      -1,
-    );
-    const isCurrentFY = (row) => {
-      const date = dayjs(row?.date || row?.createdAt);
-      return date.isValid() && !date.isBefore(start) && date.isBefore(end);
-    };
-    const dayPassRows = revenueRows.filter(
-      (row) => row?.source === "day-pass" && isCurrentFY(row),
-    );
-    const actualDayPassRows = dayPassRows.filter((row) => {
-      const date = dayjs(row?.date || row?.createdAt);
-      const monthIndex = fiscalMonths.findIndex((month) => month.isSame(date, "month"));
-      return monthIndex >= 0 && monthIndex <= latestActualMonthIndex;
-    });
-    const halfDayCount = actualDayPassRows.filter((row) =>
-      String(row?.meetingType || "").toLowerCase().includes("half"),
-    ).length;
-    const fullDayCount = actualDayPassRows.filter((row) =>
-      String(row?.meetingType || "").toLowerCase().includes("full"),
-    ).length;
-    const currentMonthDayPassRows = dayPassRows.filter((row) => {
-      const date = dayjs(row?.date || row?.createdAt);
-      return date.isValid() && date.isSame(currentMonth, "month");
-    });
-    const paidClients = new Set();
-    const unpaidClients = new Set();
-    let paidAmount = 0;
-    let unpaidAmount = 0;
-
-    currentMonthDayPassRows.forEach((row) => {
-      const clientKey = String(
-        row?.visitorDetails?.email ||
-          row?.visitorDetails?.phoneNumber ||
-          row?.clientName ||
-          row?.meetingCompanyName ||
-          row?.id ||
-          row?._id ||
-          "",
-      )
-        .trim()
-        .toLowerCase();
-
-      if (!clientKey) return;
-
-      const taxableAmount = Number(
-        row?.taxable ?? row?.taxableAmount ?? row?.amount ?? 0,
-      ) || 0;
-      if (String(row?.status || "").trim().toLowerCase() === "paid") {
-        paidClients.add(clientKey);
-        paidAmount += taxableAmount;
-      } else {
-        unpaidClients.add(clientKey);
-        unpaidAmount += taxableAmount;
-      }
-    });
-
-    return {
-      booking: [
-        { label: "Half Day Pass", value: halfDayCount },
-        { label: "Full Day Pass", value: fullDayCount },
-      ],
-      paymentStatus: [
-        { label: "Paid", value: paidClients.size, taxableAmount: paidAmount },
-        { label: "Unpaid", value: unpaidClients.size, taxableAmount: unpaidAmount },
-      ],
-    };
-  }, [fiscalYear, revenueRows]);
+  const chartData = {
+    booking: [
+      { label: "Half Day Pass", value: Number(bookingCounts.halfDay || 0) },
+      { label: "Full Day Pass", value: Number(bookingCounts.fullDay || 0) },
+    ],
+    paymentStatus: [
+      {
+        label: "Paid",
+        value: Number(bookingCounts.paymentStatus?.paid?.clients || 0),
+        taxableAmount: Number(
+          bookingCounts.paymentStatus?.paid?.taxableAmount || 0,
+        ),
+      },
+      {
+        label: "Unpaid",
+        value: Number(bookingCounts.paymentStatus?.unpaid?.clients || 0),
+        taxableAmount: Number(
+          bookingCounts.paymentStatus?.unpaid?.taxableAmount || 0,
+        ),
+      },
+    ],
+  };
   const chartDefinitions = {
     booking: {
       title: "DAY PASS BOOKINGS",
@@ -319,7 +252,7 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
               ) : null
             }
           >
-            {!isLoading && hasChartData ? (
+            {!bookingCountsLoading && hasChartData ? (
               <PieChartMui
                 data={data}
                 options={{
@@ -352,7 +285,7 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
                 height={350}
                 centerAlign
               />
-            ) : isLoading ? (
+            ) : bookingCountsLoading ? (
               <SalesDashboardChartSkeleton circular title={chart.title} />
             ) : (
               <div className="flex h-[350px] items-center justify-center text-sm text-[#1E3D73]">
@@ -804,6 +737,20 @@ const DAY_PASS_CARDS = [
 
 const DayPassSummaryCards = ({ cardView, hasPermission }) => {
   const axios = useAxiosPrivate();
+  const {
+    data: bookingCounts = { halfDay: 0, fullDay: 0, total: 0 },
+    isLoading: bookingCountsLoading,
+  } = useQuery({
+    queryKey: ["day-pass-booking-counts"],
+    queryFn: async () => {
+      const response = await axios.get(
+        "/api/visitors/day-pass/booking-counts",
+      );
+      return response.data;
+    },
+    refetchInterval: 30000,
+    refetchOnWindowFocus: true,
+  });
   const { data: dayPassRows = [], isLoading } = useQuery({
     queryKey: ["day-pass-live-summary"],
     queryFn: async () => {
@@ -812,7 +759,7 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
         ? response.data.meetingRevenue
         : [];
 
-      return revenue.filter((row) => row?.source === "day-pass");
+      return revenue.filter((row) => isDayPassRevenue(row));
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
@@ -839,10 +786,9 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
       const date = dayjs(row?.date || row?.createdAt);
       return date.isValid() && !date.isBefore(fiscalYearStartDate) && date.isBefore(fiscalYearEndDate);
     };
+    // Same paid + finance-verified rule as the Investor breakdown amount.
     const verifiedRows = dayPassRows.filter(
-      (row) =>
-        isInFiscalYear(row) &&
-        String(row?.financeStatus || "").trim().toLowerCase() === "verified",
+      (row) => isInFiscalYear(row) && isPaidDayPassRevenue(row),
     );
     const revenueByMonth = new Map();
     verifiedRows.forEach((row) => {
@@ -869,25 +815,15 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
     const averageShortfallSurplus = Math.round(
       latestMonthRevenue - monthlyAverage,
     );
-    const actualVisits = dayPassRows.filter((row) => {
-      if (!isInFiscalYear(row)) return false;
-      const date = dayjs(row?.date || row?.createdAt);
-      const monthIndex = fiscalMonths.findIndex((month) => month.isSame(date, "month"));
-      return monthIndex >= 0 && monthIndex <= latestActualMonthIndex;
-    });
-    const activeUniqueClients = dayPassRows.filter((row) => {
-      if (!isInFiscalYear(row)) return false;
+    // Same count as Investor's ACTIVE UNIQUE CLIENTS day-pass series.
+    const activeUniqueClients = verifiedRows.filter((row) => {
       const date = dayjs(row?.date || row?.createdAt);
       const monthIndex = fiscalMonths.findIndex((month) => month.isSame(date, "month"));
 
       return monthIndex >= 0 && monthIndex <= latestActualMonthIndex;
     }).length;
-    const halfDayBookings = actualVisits.filter((row) =>
-      String(row?.meetingType || "").toLowerCase().includes("half"),
-    ).length;
-    const fullDayBookings = actualVisits.filter((row) =>
-      String(row?.meetingType || "").toLowerCase().includes("full"),
-    ).length;
+    const halfDayBookings = Number(bookingCounts.halfDay || 0);
+    const fullDayBookings = Number(bookingCounts.fullDay || 0);
     const dayPassBookings = halfDayBookings + fullDayBookings;
     return {
       fiscalYear,
@@ -904,9 +840,13 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
       fullDayBookings,
       averageShortfallSurplus,
     };
-  }, [dayPassRows]);
+  }, [bookingCounts, dayPassRows]);
   const formatMoney = (amount) => `₹ ${Number(amount || 0).toLocaleString("en-IN")}`;
   const cards = DAY_PASS_CARDS.map((card) => {
+    const isBookingCard = ["overallBookings", "dayPassBookings"].includes(
+      card.key,
+    );
+    const cardIsLoading = isBookingCard ? bookingCountsLoading : isLoading;
     const values = {
       annualRevenueTarget: formatMoney(summary.annualTarget),
       revenuesBooked: formatMoney(summary.booked),
@@ -925,11 +865,13 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
       : card.bookingBreakdown;
     return {
       ...card,
-      value: isLoading ? "—" : values[card.key],
-      subtitle: summary.fiscalYear,
+      value: cardIsLoading ? "—" : values[card.key],
+      subtitle: isBookingCard
+        ? bookingCounts.periodLabel || summary.fiscalYear
+        : summary.fiscalYear,
       bookingBreakdown: bookingBreakdown?.map((item) => ({
         ...item,
-        value: isLoading ? "—" : item.value,
+        value: cardIsLoading ? "—" : item.value,
       })),
       ...(card.key === "averageMonthlySurplus" && summary.averageShortfallSurplus < 0
         ? { tone: "bg-[#fff0f0] text-[#f04a4a]", valueTone: "text-[#f04a4a]" }

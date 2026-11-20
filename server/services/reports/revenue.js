@@ -73,7 +73,7 @@ const fetchCoworkingRevenueService = async ({
       .populate({
         path: "clients",
         select:
-          "clientName bookingType cabinDesks openDesks ratePerCabinDesk ratePerOpenDesk annualIncrement nextIncrement startDate endDate lockinPeriod rentDate",
+          "clientName bookingType billingFrequency clientType cabinDesks openDesks ratePerCabinDesk ratePerOpenDesk annualIncrement nextIncrement startDate endDate lockinPeriod rentDate",
       })
       .populate({
         path: "invoiceUploadedBy",
@@ -148,6 +148,8 @@ const fetchCoworkingRevenueService = async ({
           channel: useStoredRevenue
             ? item.channel || normalizeCoworkingChannel(client.bookingType)
             : client.bookingType,
+          billingFrequency: client.billingFrequency,
+          clientType: client.clientType,
           annualIncrement: useStoredRevenue
             ? item.annualIncrement ?? annualIncrement
             : annualIncrement,
@@ -235,6 +237,9 @@ const fetchCoworkingRevenueService = async ({
         clientName: clientBillingValues.clientName ?? item.clientName,
         clientInvoiceName: item.clientInvoiceName,
         channel: clientBillingValues.channel ?? item.channel,
+        billingFrequency:
+          clientBillingValues.billingFrequency ?? item.billingFrequency,
+        clientType: clientBillingValues.clientType ?? item.clientType,
         noOfDesks: clientBillingValues.noOfDesks ?? item.noOfDesks,
         deskRate: clientBillingValues.deskRate ?? item.deskRate,
         occupation: item.occupation,

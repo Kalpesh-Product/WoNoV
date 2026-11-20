@@ -379,6 +379,7 @@ const ExternalClients = ({
     onSuccess: () => {
       toast.success("Payment details updated successfully");
       queryClient.invalidateQueries({ queryKey: ["clients"] });
+      queryClient.invalidateQueries({ queryKey: ["day-pass-booking-counts"] });
       handleClosePaymentModal();
     },
     onError: (error) => {
@@ -402,6 +403,9 @@ const ExternalClients = ({
     //   queryClient.invalidateQueries({ queryKey: ["clients"] });
     //   toast.success(data?.message || "Payment status updated");
      onSuccess: async (data, variables) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["day-pass-booking-counts"],
+      });
       await queryClient.invalidateQueries({
         queryKey: [financeView ? "finance-day-pass" : "clients"],
       });

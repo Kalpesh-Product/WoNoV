@@ -10,7 +10,7 @@ import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
-
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 
 const getNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
@@ -36,14 +36,14 @@ const isBeforeVirtualOfficeUploadLogicStart = (value) => {
 
 const getVirtualOfficeReportingAmount = (item) =>
   isBeforeVirtualOfficeUploadLogicStart(
-    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
   )
     ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
     : getNumericAmount(
         item?.reportingAmount ??
           item?.receivedAmount ??
           item?.revenue ??
-          item?.taxableAmount
+          item?.taxableAmount,
       );
 
 const AverageProfitLoss = () => {
@@ -89,7 +89,7 @@ const AverageProfitLoss = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            "/api/sales/simple-consolidated-revenue"
+            "/api/sales/simple-consolidated-revenue",
           );
           return response.data;
         } catch (error) {
@@ -120,9 +120,8 @@ const AverageProfitLoss = () => {
     const parsedDate = dayjs(dateInput);
     if (!parsedDate.isValid()) return null;
 
-    const startYear = parsedDate.month() >= 3
-      ? parsedDate.year()
-      : parsedDate.year() - 1;
+    const startYear =
+      parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
 
     return `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
   };
@@ -157,10 +156,17 @@ const AverageProfitLoss = () => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -177,7 +183,7 @@ const AverageProfitLoss = () => {
         revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.rentStatus ?? item.status
+          item.rentStatus ?? item.status,
         ),
       });
     });
@@ -224,7 +230,7 @@ const AverageProfitLoss = () => {
       .sort(
         (a, b) =>
           Number(a.match(/\d{4}/)?.[0] || 0) -
-          Number(b.match(/\d{4}/)?.[0] || 0)
+          Number(b.match(/\d{4}/)?.[0] || 0),
       )
       .reduce((acc, fiscalYear) => {
         acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
@@ -256,7 +262,7 @@ const AverageProfitLoss = () => {
   });
 
   const transformedIncomes = Object.values(monthWiseIncome).sort((a, b) =>
-    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+    dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
   );
 
   const incomeMap = {};
@@ -269,7 +275,7 @@ const AverageProfitLoss = () => {
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    })
+    }),
   );
 
   testExpense.forEach((exp) => {
@@ -295,7 +301,7 @@ const AverageProfitLoss = () => {
   const sortedExpenses = transformedExpenses
     .filter((e) => e.month && dayjs(e.month, "MMM-YY").isValid())
     .sort((a, b) =>
-      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
+      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
     );
 
   const expenseMap = {};
@@ -308,11 +314,15 @@ const AverageProfitLoss = () => {
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    })
+    }),
   );
 
-  const currentIncomeSeries = incomeData.find((item) => item.group === selectedFY);
-  const currentExpenseSeries = expenseData.find((item) => item.group === selectedFY);
+  const currentIncomeSeries = incomeData.find(
+    (item) => item.group === selectedFY,
+  );
+  const currentExpenseSeries = expenseData.find(
+    (item) => item.group === selectedFY,
+  );
 
   const monthlyProfitLossColumns = [
     { field: "id", headerName: "Sr No", width: 100 },
@@ -326,7 +336,7 @@ const AverageProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/annual-average-profit-loss/income-details"
+              "/app/dashboard/finance-dashboard/annual-average-profit-loss/income-details",
             )
           }
           className="text-primary underline cursor-pointer"
@@ -344,7 +354,7 @@ const AverageProfitLoss = () => {
           role="button"
           onClick={() =>
             navigate(
-              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget"
+              "/app/dashboard/finance-dashboard/mix-bag/department-wise-budget",
             )
           }
           className="text-primary underline cursor-pointer"
@@ -364,12 +374,12 @@ const AverageProfitLoss = () => {
   const incomeExpenseData = [...incomeData, ...expenseData];
   const incomeExpenseAxisMax = useMemo(() => {
     const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
-      Boolean
+      Boolean,
     );
     const maxValue = visibleSeries.reduce((currentMax, series) => {
       const seriesMax = (series?.data || []).reduce(
         (max, value) => Math.max(max, Number(value) || 0),
-        0
+        0,
       );
 
       return Math.max(currentMax, seriesMax);
@@ -470,12 +480,12 @@ const AverageProfitLoss = () => {
 
   const selectedFYIncome = selectedFYMonths.reduce(
     (sum, month) => sum + (incomeMap[month] || 0),
-    0
+    0,
   );
 
   const selectedFYExpense = selectedFYMonths.reduce(
     (sum, month) => sum + (expenseMap[month] || 0),
-    0
+    0,
   );
 
   const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
@@ -517,9 +527,7 @@ const AverageProfitLoss = () => {
     isBudgetDataLoading ||
     isSimpleRevenueLoading
   ) {
-    return (
-      <FinanceLoadingSkeleton variant="page" />
-    );
+    return <FinanceLoadingSkeleton variant="page" />;
   }
 
   return (
@@ -564,19 +572,19 @@ const AverageProfitLoss = () => {
             <DetalisFormatted
               title="Income"
               detail={`INR ${Number(
-                viewDetails.income.replace(/,/g, "")
+                viewDetails.income.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="Expense"
               detail={`INR ${Number(
-                viewDetails.expense.replace(/,/g, "")
+                viewDetails.expense.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
             <DetalisFormatted
               title="P&L"
               detail={`INR ${Number(
-                viewDetails.pnl.replace(/,/g, "")
+                viewDetails.pnl.replace(/,/g, ""),
               ).toLocaleString("en-IN")}`}
             />
           </div>
