@@ -23,7 +23,8 @@ import { useSidebar } from "../../../context/SideBarContext";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
-import { Box, CircularProgress, Skeleton } from "@mui/material";
+import { Box, Skeleton } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
@@ -1535,11 +1536,17 @@ const totalUtilised = useMemo(() => {
     return weeklySchedule.map((emp, index) => ({
       srNo: index + 1,
       id: index + 1,
-      name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
-      startDate: humanDate(emp.startDate),
-      endDate: humanDate(emp.endDate),
-      building: emp.location.building.buildingName,
-      unitNo: emp.location.unitNo,
+      name:
+        `${emp?.employee?.id?.firstName || ""} ${
+          emp?.employee?.id?.lastName || ""
+        }`.trim() || "—",
+      startDate: humanDate(emp?.startDate),
+      endDate: humanDate(emp?.endDate),
+      building:
+        emp?.location?.building?.buildingName ||
+        emp?.location?.building ||
+        "—",
+      unitNo: emp?.location?.unitNo || "—",
     }));
   }, [weeklySchedule, isWeeklyScheduleLoading]);
 
@@ -2224,7 +2231,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_INDIA_WISE_MEMBERS.value,
@@ -2237,7 +2244,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA.value,
@@ -2250,7 +2257,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_BIOMETRICS_ACTIVATION_DATA.value,
@@ -2410,7 +2417,7 @@ const totalUtilised = useMemo(() => {
               centerAlign
             />
           ) : (
-            <CircularProgress color="#1E3D73" />
+            <AdminLoadingSkeleton variant="chart" />
           )}
         </WidgetSection>
       )),

@@ -4635,7 +4635,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "co-working",
-                            element: <CoWorking />,
+                            element: <CoWorking clientSegment="coworking" />,
+                          },
+                          {
+                            path: "flexible-desk-clients",
+                            element: <CoWorking clientSegment="flexible-desk" />,
                           },
                           {
                             path: "meetings",
@@ -4669,7 +4673,11 @@ export const routes = createBrowserRouter([
                           },
                           {
                             path: "co-working",
-                            element: <CoWorking />,
+                            element: <CoWorking clientSegment="coworking" />,
+                          },
+                          {
+                            path: "flexible-desk-clients",
+                            element: <CoWorking clientSegment="flexible-desk" />,
                           },
                           {
                             path: "meetings",

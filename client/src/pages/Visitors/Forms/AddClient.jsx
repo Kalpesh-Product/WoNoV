@@ -30,6 +30,7 @@ import {
 import dayjs from "dayjs";
 import UploadFileInput from "../../../components/UploadFileInput";
 import useAuth from "../../../hooks/useAuth";
+import { queryClient } from "../../../main";
 
 const AddClient = () => {
   const {
@@ -244,6 +245,7 @@ const AddClient = () => {
       return response.data;
     },
     onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["day-pass-booking-counts"] });
       reset();
       toast.custom((t) => (
         <div className="p-4 bg-successGreen rounded shadow text-green-800 flex flex-col gap-4">

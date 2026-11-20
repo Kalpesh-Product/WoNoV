@@ -76,6 +76,7 @@ const DepartmentSOP = () => {
     <div>
       <PageFrame>
         <AgTable
+          loading={isLoading}
           key={data.length}
           columns={columns}
           data={tableData}

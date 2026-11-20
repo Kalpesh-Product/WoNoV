@@ -4,7 +4,8 @@ import { useLocation } from "react-router-dom";
 import AgTable from "../../../../components/AgTable";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
 import PageFrame from "../../../../components/Pages/PageFrame";
@@ -328,9 +329,7 @@ const LandlordAgreements = () => {
             search
           />
         ) : (
-          <div className="h-72 place-items-center">
-            <CircularProgress />
-          </div>
+          <FinanceLoadingSkeleton variant="table" />
         )}
       </PageFrame>
 

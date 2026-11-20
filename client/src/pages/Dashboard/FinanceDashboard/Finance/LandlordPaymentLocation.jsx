@@ -14,6 +14,7 @@ import dayjs from "dayjs";
 import { calculateMonthTotal } from "../../../../utils/calculateMonthTotal";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import StatusChip from "../../../../components/StatusChip";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const fiscalMonths = [
   "Apr",
@@ -402,9 +403,7 @@ const LandlordPaymentLocation = () => {
           Failed to fetch landlord payments.
         </div>
       ) : landlordPaymentsLoading ? (
-        <div className="text-gray-500 text-center mb-6">
-          Loading landlord payments...
-        </div>
+        <FinanceLoadingSkeleton variant="page" />
       ) : payments.length === 0 ? (
         <div className="text-gray-500 text-center mb-6">
           No landlord payment data found for this unit.

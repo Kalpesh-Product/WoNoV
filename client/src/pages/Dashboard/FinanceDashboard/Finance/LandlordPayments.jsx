@@ -9,6 +9,7 @@ import customParseFormat from "dayjs/plugin/customParseFormat";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 dayjs.extend(customParseFormat);
 
@@ -563,7 +564,7 @@ const unpaidText =
       {isError ? (
         <div className="text-red-500 text-center">Failed to load landlord payments.</div>
       ) : isHrLoading ? (
-        <div className="text-center text-gray-500">Loading landlord payments...</div>
+        <FinanceLoadingSkeleton variant="page" />
       ) : landLordData.length === 0 ? (
         <WidgetSection title="LANDLORD MONTHLY RENT" border>
           <div className="text-center text-gray-500 py-8">

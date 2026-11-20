@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Autocomplete, CircularProgress, TextField } from "@mui/material";
+import { Autocomplete, Skeleton, TextField } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -70,7 +70,7 @@ const CompensationStructure = () => {
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {isLoading ? <CircularProgress size={18} /> : null}
+                      {isLoading ? <Skeleton variant="circular" width={18} height={18} /> : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),

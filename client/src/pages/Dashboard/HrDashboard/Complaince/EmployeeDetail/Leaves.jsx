@@ -16,7 +16,8 @@ import {
 import { Controller, useForm } from "react-hook-form";
 import MuiModal from "../../../../../components/MuiModal";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { Chip, CircularProgress, MenuItem, TextField } from "@mui/material";
+import { Chip, MenuItem, TextField } from "@mui/material";
+import HrLoadingSkeleton from "../../HrLoadingSkeleton";
 import dayjs from "dayjs";
 import { toast } from "sonner";
 import useAuth from "../../../../../hooks/useAuth";
@@ -407,9 +408,7 @@ const Leaves = () => {
           }
         >
           {isLoading ? (
-            <div className="flex justify-center items-center h-96">
-              <CircularProgress />
-            </div>
+            <HrLoadingSkeleton variant="chart" />
           ) : (
             <div className="flex flex-col gap-4">
               <BarGraph

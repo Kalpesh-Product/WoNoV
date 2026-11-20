@@ -16,6 +16,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import SecondaryButton from "../../../../components/SecondaryButton";
 //import PrimaryButton from "../../../../components/PrimaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
@@ -568,6 +569,10 @@ const StatutoryPayments = () => {
   // }, [selectedFiscalYearRows]);
 
   //--------------------------------------------------------TableData----------------------------------------------------//
+
+  if (isHrLoading) {
+    return <FinanceLoadingSkeleton variant="page" />;
+  }
 
   return (
     <div className="flex flex-col gap-4">

@@ -10,7 +10,8 @@ import MuiModal from "../../../components/MuiModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../../hooks/usePageDepartment";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import DetalisFormatted from "../../../components/DetalisFormatted";
 import PageFrame from "../../../components/Pages/PageFrame";
 import { Controller, useForm } from "react-hook-form";
@@ -239,9 +240,7 @@ const HousekeepingTeamMembersCalendar = () => {
         </div>
 
         {isLoading || isFetching ? (
-          <div className="w-full flex justify-center items-center p-4">
-            <CircularProgress size={24} />
-          </div>
+          <AdminLoadingSkeleton variant="calendar" />
         ) : (
           <div className="w-full h-full overflow-y-auto">
             <FullCalendar

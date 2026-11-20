@@ -86,6 +86,7 @@ const RepeatDayPass = () => {
       queryClient.invalidateQueries({ queryKey: ["mix-bag-repeat-day-pass"] });
       queryClient.invalidateQueries({ queryKey: ["clients"] });
       queryClient.invalidateQueries({ queryKey: ["visitors"] });
+      queryClient.invalidateQueries({ queryKey: ["day-pass-booking-counts"] });
       setOpenModal(false);
       setSelectedVisitor(null);
       reset();

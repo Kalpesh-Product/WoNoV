@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import AgTable from "../../../../../components/AgTable";
 import MuiModal from "../../../../../components/MuiModal";
-import { CircularProgress, TextField } from "@mui/material";
+import { TextField } from "@mui/material";
+import HrLoadingSkeleton from "../../HrLoadingSkeleton";
 import PrimaryButton from "../../../../../components/PrimaryButton";
 import { toast } from "sonner";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -133,9 +134,7 @@ const KPI = () => {
               handleClick={() => setModalOpen(true)}
             />
           ) : (
-            <div className="h-72 flex justify-center items-center">
-              <CircularProgress />
-            </div>
+            <HrLoadingSkeleton variant="table" columns={kpiColumn} />
           )}
         </div>
       </PageFrame>

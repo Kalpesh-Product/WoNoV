@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import { useLocation, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 
@@ -152,9 +153,7 @@ const HrCompletedMemberKpaDetails = ({ kpaType, title }) => {
 
   if (isLoading) {
     return (
-      <div className="h-72 flex items-center justify-center">
-        <CircularProgress />
-      </div>
+      <HrLoadingSkeleton variant="table" />
     );
   }
 

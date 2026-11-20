@@ -11,7 +11,6 @@ import {
   Tabs,
   Tab,
   Chip,
-  CircularProgress,
   IconButton,
   Popover,
   Menu,
@@ -30,6 +29,7 @@ import {
 } from "../../utils/budgetAmounts";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
+import TableLoadingSkeleton from "./TableLoadingSkeleton";
 //import { parseAmount } from "../../utils/parseAmount";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
@@ -1122,7 +1122,13 @@ const AllocatedBudget = ({
     [exportData, handleExportPass],
   );
 
-  if (isLoading) return <CircularProgress />;
+  if (isLoading) {
+    return (
+      <div className="w-full min-w-0 overflow-hidden rounded-lg border border-gray-200" aria-busy="true">
+        <TableLoadingSkeleton columns={tableColumns.length ? tableColumns : Array.from({ length: 7 }, (_, index) => ({ field: `loading-${index}`, flex: 1 }))} />
+      </div>
+    );
+  }
 
   return (
     <>

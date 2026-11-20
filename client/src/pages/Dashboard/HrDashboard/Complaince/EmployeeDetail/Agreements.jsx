@@ -226,6 +226,7 @@ const Agreements = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading || isEmployeeLoading}
           key={tableData.length}
           search={true}
           tableTitle={`${name}'s Agreement List`}

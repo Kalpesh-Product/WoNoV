@@ -264,9 +264,9 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
       : "0.00";
 
     return {
-      amount,
-      gstAmount,
-      finalAmount,
+      amount: amount.toFixed(2),
+      gstAmount: gstAmount.toFixed(2),
+      finalAmount: finalAmount.toFixed(2),
       discountPercentage,
     };
   };
@@ -1162,7 +1162,15 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
         ].filter(Boolean);
         const menuItems = financeView || isFinance
           ? financeMenuItems
-          : isCompleted ? [editMenuItem] : regularMenuItems;
+          : isCompleted
+            ? [
+                !isFinanceDepartmentUser && !isPaid && {
+                  label: "Update Payment Details",
+                  onClick: () => handleOpenPaymentModal(params.data),
+                },
+                editMenuItem,
+              ].filter(Boolean)
+            : regularMenuItems;
 
         return (
           <div className="flex gap-2 items-center">
@@ -1962,6 +1970,14 @@ const ExternalMeetingCLients = ({ financeView = false }) => {
                   type="number"
                   size="small"
                   fullWidth
+                  inputProps={{ step: "0.01" }}
+                  onBlur={(event) => {
+                    field.onBlur();
+                    const value = event.target.value;
+                    if (value !== "" && Number.isFinite(Number(value))) {
+                      field.onChange(Number(value).toFixed(2));
+                    }
+                  }}
                   error={!!paymentErrors.discountAmount}
                   helperText={paymentErrors.discountAmount?.message}
                 />

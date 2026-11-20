@@ -1,10 +1,11 @@
 import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { CircularProgress } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
 import dayjs from "dayjs";
@@ -19,6 +20,17 @@ const VERTICAL_ROUTE_MAP = {
   "Virtual Office": "virtual-office",
   Workation: "workation",
   Coworking: "co-working",
+  "Flexy Desk": "flexible-desk-clients",
+};
+
+const REVENUE_SERIES_COLORS = {
+  Coworking: "#1E3D73",
+  "Flexy Desk": "#0077B6",
+  Meeting: "#2196F3",
+  "Day Pass": "#F59E0B",
+  "Virtual Office": "#11daf5",
+  Workation: "#54C4A7",
+  "Alternate Revenue": "#1976D2",
 };
 
 const getNormalizedPaymentStatus = (value) => {
@@ -37,6 +49,37 @@ const getNumericAmount = (value) => {
 
 const isMeetingFinancePaid = (item) =>
   getNormalizedPaymentStatus(item?.financeStatus) === "verified";
+
+const isFlexyDeskRevenue = (item) => {
+  const clientType = String(
+    item?.clientType ||
+      item?.clients?.clientType ||
+      item?.client?.clientType ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+
+  if (clientType === "annual client") return false;
+  if (
+    ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+      clientType
+    )
+  ) {
+    return true;
+  }
+
+  return (
+    String(
+      item?.billingFrequency ||
+        item?.clients?.billingFrequency ||
+        item?.client?.billingFrequency ||
+        ""
+    )
+      .trim()
+      .toLowerCase() === "monthly"
+  );
+};
 
 const isBeforeVirtualOfficeUploadLogicStart = (value) => {
   const date = dayjs(value);
@@ -119,12 +162,17 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaid = getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
-        vertical: item.source === "day-pass" ? "Day Pass" : "Meeting",
+        vertical: isDayPass ? "Day Pass" : "Meeting",
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        // normalizedStatus: getNormalizedPaymentStatus(item.status),
-         normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaid)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -159,7 +207,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
 
     simpleRevenue.coworkingRevenues?.forEach((item) => {
       flatten.push({
-        vertical: "Coworking",
+        vertical: isFlexyDeskRevenue(item) ? "Flexy Desk" : "Coworking",
         revenue: getNumericAmount(item.revenue),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(item.rentStatus),
@@ -217,6 +265,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
   const tooltipBuilder = ({ monthLabel, rawDataMap, w, dataPointIndex }) => {
     const tooltipRows = [
       { label: "Co-Working", seriesName: "Coworking" },
+      { label: "Flexy Desk", seriesName: "Flexy Desk" },
       { label: "Virtual Office", seriesName: "Virtual Office" },
       { label: "Meetings", seriesName: "Meeting" },
       { label: "Day Pass", seriesName: "Day Pass" },
@@ -226,19 +275,20 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
       const seriesIndex = w.globals.seriesNames.indexOf(seriesName);
       return {
         label,
-        color: seriesIndex >= 0 ? w.globals.colors[seriesIndex] : "#6B7280",
+        color:
+          seriesIndex >= 0
+            ? w.globals.colors[seriesIndex]
+            : REVENUE_SERIES_COLORS[seriesName] || "#6B7280",
         value: rawDataMap?.[seriesName]?.[dataPointIndex] ?? 0,
       };
     });
     const total = tooltipRows.reduce((sum, row) => sum + row.value, 0);
     const formatShare = (value) => {
+      if (total <= 0 || value <= 0) return "0%";
       const percentage = (value / total) * 100;
-      if (percentage < 0.1) return "<0.1%";
-      if (percentage < 1) return `${percentage.toFixed(1)}%`;
-      return `${Math.round(percentage)}%`;
+      return `${Number(percentage.toFixed(2))}%`;
     };
     const rowsHtml = tooltipRows
-      .filter(({ value }) => value > 0)
       .map(({ label, color, value }) => `
         <div style="display:flex; align-items:center; gap:8px; padding:4px 10px; white-space:nowrap;">
           <span style="width:11px; height:11px; flex:none; border-radius:50%; background:${color};"></span>
@@ -251,9 +301,9 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
       <div style="overflow:hidden; border:1px solid #e5e7eb; border-radius:6px; background:#fff; box-shadow:0 4px 12px #0002; color:#1f2937; font-size:13px;">
         <div style="background:#eef0f2; padding:8px 10px;">${monthLabel}</div>
         <div style="padding:7px 0 9px;">
-          ${rowsHtml || '<div style="padding:4px 10px;">No revenue</div>'}
+          ${rowsHtml}
           <div style="display:flex; align-items:center; gap:8px; margin:7px 10px 0; border-top:1px solid #e5e7eb; padding-top:10px; white-space:nowrap;">
-            <span style="width:11px; height:11px; flex:none; border-radius:50%; background:#86efac;"></span>
+            <span style="width:11px; height:11px; flex:none; border-radius:50%; background:#54C4A7;"></span>
             <span>${total > 0 ? 100 : 0}% = Overall Revenues =</span>
             <strong>INR ${inrFormat(total)}</strong>
           </div>
@@ -264,9 +314,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
   return (
     <div className="flex flex-col gap-4 p-4">
       {isTotalLoading ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+        <FinanceLoadingSkeleton />
       ) : (
         <FyBarGraphPercentage
           data={paidRevenueData}
@@ -276,19 +324,13 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
           chartOptions={options}
           tooltipBuilder={tooltipBuilder}
           showSmallLabels
-          seriesColors={{
-            Coworking: "#1E3D73",
-            Meeting: "#2196F3",
-            "Day Pass": "#F59E0B",
-            "Virtual Office": "#11daf5",
-            Workation: "#54C4A7",
-            "Alternate Revenue": "#1976D2",
-          }}
+          seriesColors={REVENUE_SERIES_COLORS}
           legendItems={[
             { label: "Co-Working", seriesName: "Coworking" },
+            { label: "Flexy Desk", seriesName: "Flexy Desk" },
+            { label: "Virtual Office", seriesName: "Virtual Office" },
             { label: "Meetings", seriesName: "Meeting" },
             { label: "Day Pass", seriesName: "Day Pass" },
-            { label: "Virtual Office", seriesName: "Virtual Office" },
             { label: "Workation", seriesName: "Workation" },
             { label: "Alt Revenues", seriesName: "Alternate Revenue" },
           ]}
@@ -296,6 +338,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
       )}
 
       <WidgetTable
+        loading={isTotalLoading}
         tableTitle="Annual Monthly Income Breakup"
         data={paidRevenueData}
         dateColumn="date"

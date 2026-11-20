@@ -60,6 +60,138 @@ const findOpenVisit = (visitorId, company) =>
     .select("_id visitorType checkIn checkOut")
     .lean();
 
+const getDayPassBookingCounts = async (req, res, next) => {
+  try {
+    const indiaDateParts = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+    }).formatToParts(new Date());
+    const currentYear = Number(
+      indiaDateParts.find((part) => part.type === "year")?.value,
+    );
+    const currentMonth = Number(
+      indiaDateParts.find((part) => part.type === "month")?.value,
+    );
+    const fiscalYearStart = currentMonth >= 4 ? currentYear : currentYear - 1;
+    const rangeStart = new Date(
+      `${fiscalYearStart}-04-01T00:00:00.000+05:30`,
+    );
+    // Reporting closes with a two-month lag. For example, in November the
+    // exclusive upper bound is 1 October, so data is shown through September.
+    const cutoffMonth = new Date(
+      Date.UTC(currentYear, currentMonth - 2, 1),
+    );
+    const cutoffYearInIndia = cutoffMonth.getUTCFullYear();
+    const cutoffMonthInIndia = String(cutoffMonth.getUTCMonth() + 1).padStart(
+      2,
+      "0",
+    );
+    const rangeEnd = new Date(
+      `${cutoffYearInIndia}-${cutoffMonthInIndia}-01T00:00:00.000+05:30`,
+    );
+    const dayPassQuery = {
+      company: req.company,
+      createdAt: { $gte: rangeStart, $lt: rangeEnd },
+      ...activeVisitFilter,
+    };
+    const paymentStatusQuery = {
+      company: new mongoose.Types.ObjectId(req.company),
+      dateOfVisit: { $gte: rangeStart, $lt: rangeEnd },
+      ...activeVisitFilter,
+      visitorType: { $in: ["Half-Day Pass", "Full-Day Pass"] },
+    };
+    const [halfDay, fullDay, paymentGroups, latestClientPaymentGroups] =
+      await Promise.all([
+        ExternalVisits.countDocuments({
+          ...dayPassQuery,
+          visitorType: "Half-Day Pass",
+        }),
+        ExternalVisits.countDocuments({
+          ...dayPassQuery,
+          visitorType: "Full-Day Pass",
+        }),
+        ExternalVisits.aggregate([
+          {
+            $match: {
+              ...paymentStatusQuery,
+            },
+          },
+          {
+            $group: {
+              _id: "$paymentStatus",
+              visits: { $sum: 1 },
+              taxableAmount: {
+                $sum: {
+                  $max: [
+                    {
+                      $subtract: [
+                        { $ifNull: ["$amount", 0] },
+                        { $ifNull: ["$discount", 0] },
+                      ],
+                    },
+                    0,
+                  ],
+                },
+              },
+            },
+          },
+        ]),
+        ExternalVisits.aggregate([
+          {
+            $match: {
+              ...paymentStatusQuery,
+              visitorId: { $ne: null },
+            },
+          },
+          { $sort: { dateOfVisit: -1, createdAt: -1, _id: -1 } },
+          {
+            $group: {
+              _id: "$visitorId",
+              paymentStatus: { $first: "$paymentStatus" },
+            },
+          },
+          {
+            $group: {
+              _id: "$paymentStatus",
+              clients: { $sum: 1 },
+            },
+          },
+        ]),
+      ]);
+    const getPaymentSummary = (isPaid) => {
+      const group = paymentGroups.find((item) => item?._id === isPaid);
+      const clientGroup = latestClientPaymentGroups.find(
+        (item) => item?._id === isPaid,
+      );
+
+      return {
+        clients: Number(clientGroup?.clients || 0),
+        visits: Number(group?.visits || 0),
+        taxableAmount: Number(group?.taxableAmount || 0),
+      };
+    };
+
+    return res.status(200).json({
+      halfDay,
+      fullDay,
+      total: halfDay + fullDay,
+      periodLabel: `FY ${fiscalYearStart}-${String(fiscalYearStart + 1).slice(-2)}`,
+      throughMonth: new Intl.DateTimeFormat("en-US", {
+        timeZone: "Asia/Kolkata",
+        month: "long",
+        year: "numeric",
+      }).format(new Date(rangeEnd.getTime() - 1)),
+      paymentStatus: {
+        paid: getPaymentSummary(true),
+        unpaid: getPaymentSummary(false),
+      },
+    });
+  } catch (error) {
+    return next(error);
+  }
+};
+
 async function fetchVisitors(req, res, next) {
   try {
     const requestFilters = req.query?.filters || {
@@ -2503,6 +2635,7 @@ const updateDayPassPaymentVerification = async (req, res, next) => {
 
 module.exports = {
   fetchVisitors,
+  getDayPassBookingCounts,
   fetchVisitorHistory,
   checkExistingVisitor,
   addVisitor,

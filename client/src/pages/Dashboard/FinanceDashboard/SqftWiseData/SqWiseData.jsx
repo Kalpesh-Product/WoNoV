@@ -11,8 +11,8 @@ import dayjs from "dayjs";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import { CircularProgress } from "@mui/material";
-
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 
 const getNormalizedPaymentStatus = (value) => {
   if (typeof value === "string") return value.trim().toLowerCase();
@@ -38,14 +38,14 @@ const isBeforeVirtualOfficeUploadLogicStart = (value) => {
 
 const getVirtualOfficeReportingAmount = (item) =>
   isBeforeVirtualOfficeUploadLogicStart(
-    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt
+    item?.rentDate || item?.invoiceUploadedAt || item?.createdAt,
   )
     ? getNumericAmount(item?.revenue ?? item?.taxableAmount)
     : getNumericAmount(
         item?.reportingAmount ??
           item?.receivedAmount ??
           item?.revenue ??
-          item?.taxableAmount
+          item?.taxableAmount,
       );
 
 const SqWiseData = () => {
@@ -93,7 +93,7 @@ const SqWiseData = () => {
       queryFn: async () => {
         try {
           const response = await axios.get(
-            "/api/sales/simple-consolidated-revenue"
+            "/api/sales/simple-consolidated-revenue",
           );
           return response.data;
         } catch (error) {
@@ -153,10 +153,17 @@ const SqWiseData = () => {
     const flatten = [];
 
     simpleRevenue.meetingRevenue?.forEach((item) => {
+      const isDayPass = isDayPassRevenue(item);
+      const isPaymentReceived =
+        getNormalizedPaymentStatus(item.status) === "paid";
+
       flatten.push({
         revenue: getNumericAmount(item.taxable),
         date: item.date,
-        normalizedStatus: isMeetingFinancePaid(item) ? "paid" : "unpaid",
+        normalizedStatus:
+          isMeetingFinancePaid(item) && (!isDayPass || isPaymentReceived)
+            ? "paid"
+            : "unpaid",
       });
     });
 
@@ -173,7 +180,7 @@ const SqWiseData = () => {
         revenue: getVirtualOfficeReportingAmount(item),
         date: item.rentDate,
         normalizedStatus: getNormalizedPaymentStatus(
-          item.rentStatus ?? item.status
+          item.rentStatus ?? item.status,
         ),
       });
     });
@@ -224,7 +231,7 @@ const SqWiseData = () => {
       .sort(
         (a, b) =>
           Number(a.match(/\d{4}/)?.[0] || 0) -
-          Number(b.match(/\d{4}/)?.[0] || 0)
+          Number(b.match(/\d{4}/)?.[0] || 0),
       )
       .reduce((acc, fiscalYear) => {
         acc[fiscalYear] = buildFiscalYearMonths(fiscalYear);
@@ -272,7 +279,7 @@ const SqWiseData = () => {
   const totalSqft = testUnits.reduce((sum, item) => (item.sqft || 0) + sum, 0);
   const totalExpense = testExpense.reduce(
     (sum, item) => (item.actualAmount || 0) + sum,
-    0
+    0,
   );
   const totalIncomeAmount = testIncome.reduce((grandTotal, item, index) => {
     const incomeSources = item.income || {};
@@ -313,8 +320,8 @@ const SqWiseData = () => {
   const sortedExpenses = transformedExpenses
     .filter((e) => e.month && dayjs(e.month, "MMM-YY").isValid())
     .sort((a, b) =>
-      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1
-  );
+      dayjs(a.month, "MMM-YY").isAfter(dayjs(b.month, "MMM-YY")) ? 1 : -1,
+    );
 
   const expenseMap = {};
   sortedExpenses.forEach((item) => {
@@ -326,7 +333,7 @@ const SqWiseData = () => {
       name: "Income",
       group: fiscalYear,
       data: months.map((month) => (incomeMap ? incomeMap[month] || 0 : 0)),
-    })
+    }),
   );
 
   const expenseData = Object.entries(yearCategories).map(
@@ -334,12 +341,16 @@ const SqWiseData = () => {
       name: "Expense",
       group: fiscalYear,
       data: months.map((month) => (expenseMap ? expenseMap[month] || 0 : 0)),
-    })
+    }),
   );
   //------------------Expensedata----------------------//
 
-  const currentIncomeSeries = incomeData.find((item) => item.group === selectedFY);
-  const currentExpenseSeries = expenseData.find((item) => item.group === selectedFY);
+  const currentIncomeSeries = incomeData.find(
+    (item) => item.group === selectedFY,
+  );
+  const currentExpenseSeries = expenseData.find(
+    (item) => item.group === selectedFY,
+  );
 
   //-----------------------------------------------------Graph------------------------------------------------------//
   //-----------------------------------------------------Table columns/Data------------------------------------------------------//
@@ -381,12 +392,12 @@ const SqWiseData = () => {
   const incomeExpenseData = [...incomeData, ...expenseData];
   const incomeExpenseAxisMax = useMemo(() => {
     const visibleSeries = [currentIncomeSeries, currentExpenseSeries].filter(
-      Boolean
+      Boolean,
     );
     const maxValue = visibleSeries.reduce((currentMax, series) => {
       const seriesMax = (series?.data || []).reduce(
         (max, value) => Math.max(max, Number(value) || 0),
-        0
+        0,
       );
 
       return Math.max(currentMax, seriesMax);
@@ -488,11 +499,11 @@ const SqWiseData = () => {
   const selectedFYMonths = yearCategories[selectedFY] || [];
   const selectedFYIncome = selectedFYMonths.reduce(
     (sum, month) => sum + (incomeMap[month] || 0),
-    0
+    0,
   );
   const selectedFYExpense = selectedFYMonths.reduce(
     (sum, month) => sum + (expenseMap[month] || 0),
-    0
+    0,
   );
   const monthlyProfitLossData = selectedFYMonths.map((month, index) => {
     const income = incomeMap[month] || 0;
@@ -524,12 +535,12 @@ const SqWiseData = () => {
       ],
     },
   ];
-  if (isRevenueExpenseLoading || isBudgetDataLoading || isSimpleRevenueLoading) {
-    return (
-      <div className="p-4 h-72 flex justify-center items-center text-center text-gray-500">
-        <CircularProgress />
-      </div>
-    );
+  if (
+    isRevenueExpenseLoading ||
+    isBudgetDataLoading ||
+    isSimpleRevenueLoading
+  ) {
+    return <FinanceLoadingSkeleton variant="page" />;
   }
 
   return (

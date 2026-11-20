@@ -260,6 +260,7 @@ const FinanceMonthlyInvoices = () => {
   return (
     <>
       <AgTable
+        loading={assetPending || isVendorDetails}
         key={0}
         search={true}
         searchColumn={"Asset Number"}

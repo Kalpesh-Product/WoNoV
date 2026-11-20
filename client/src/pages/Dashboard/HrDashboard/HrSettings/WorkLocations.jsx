@@ -9,7 +9,7 @@ import { Country, State, City } from "country-state-city";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
-import Loader from "../../../Loading";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { noOnlyWhitespace, isAlphanumeric } from "../../../../utils/validators";
 import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
@@ -427,7 +427,7 @@ const WorkLocations = () => {
   return (
     <>
       {isLoading ? (
-        <Loader />
+        <PageFrame><HrLoadingSkeleton variant="table" columns={departmentsColumn} /></PageFrame>
       ) : (
         <div>
           <PageFrame>

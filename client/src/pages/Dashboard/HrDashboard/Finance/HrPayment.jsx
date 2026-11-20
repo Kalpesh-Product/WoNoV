@@ -8,12 +8,11 @@ import {
   FormGroup,
   FormControlLabel,
   Checkbox,
-  CircularProgress,
 } from "@mui/material";
 import MuiModal from "../../../../components/MuiModal";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
-import LoadingContainer from "../../../../components/LoadingContainer";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 
 const HrPayment = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -197,7 +196,7 @@ const HrPayment = () => {
             />
           </div>
         ) : (
-          <LoadingContainer />
+          <HrLoadingSkeleton variant="chart" />
         )}
       </div>
 

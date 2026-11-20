@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import {
   Autocomplete,
-  CircularProgress,
+  Skeleton,
   IconButton,
   Tooltip,
   MenuItem,
@@ -305,7 +305,7 @@ const HrPayslips = () => {
                   ...params.InputProps,
                   endAdornment: (
                     <>
-                      {isLoading ? <CircularProgress size={18} /> : null}
+                      {isLoading ? <Skeleton variant="circular" width={18} height={18} /> : null}
                       {params.InputProps.endAdornment}
                     </>
                   ),
@@ -317,6 +317,7 @@ const HrPayslips = () => {
       </MuiAside>
 
       <AgTable
+        loading={isLoading || isPayslipLoading}
         data={rows}
         columns={columns}
         search

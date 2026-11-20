@@ -72,7 +72,7 @@ const HrSettingsPolicies = () => {
     },
   });
 
-  const { data: policies = [] } = useQuery({
+  const { data: policies = [], isLoading: isPoliciesLoading } = useQuery({
     queryKey: ["policies", Boolean(isTechDepartment)],
     queryFn: async () => {
       const response = await axios.get(
@@ -413,6 +413,7 @@ const HrSettingsPolicies = () => {
   return (
     <PageFrame>
       <AgTable
+        loading={isPoliciesLoading}
         key={policies.length}
         search
         searchColumn="Policies"

@@ -52,6 +52,7 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import { isDayPassRevenue } from "../../../../utils/dayPassRevenue";
 import SalesDashboardChartSkeleton from "../SalesDashboardChartSkeleton";
 
 const getFiscalYearLabel = () => {
@@ -78,7 +79,7 @@ const MeetingRoomSummaryCards = ({
   const axios = useAxiosPrivate();
   const fiscalYear = getFiscalYearLabel();
   const { data: summaryMeetings = [] } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings", "all-report"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
@@ -86,6 +87,17 @@ const MeetingRoomSummaryCards = ({
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
+  const { data: bookingCounts = { internal: 0, external: 0, total: 0 } } =
+    useQuery({
+      queryKey: ["meetings", "booking-summary", "two-month-lag"],
+      queryFn: async () => {
+        const response = await axios.get("/api/meetings/meeting-booking-counts");
+
+        return response.data;
+      },
+      refetchInterval: 30000,
+      refetchOnWindowFocus: true,
+    });
   const { data: summaryRooms = [] } = useQuery({
     queryKey: ["rooms"],
     queryFn: async () => {
@@ -131,6 +143,9 @@ const MeetingRoomSummaryCards = ({
 
         return (
           financeStatus === "verified" &&
+          // Day Pass is a separate vertical - keep it out of the Meeting Room
+          // summary cards so they match the MEETING ROOM REVENUES graph.
+          !isDayPassRevenue(row) &&
           revenueDate.isValid() &&
           !revenueDate.isBefore(fiscalMonths[0]) &&
           revenueDate.isBefore(fiscalYearEnd)
@@ -192,71 +207,6 @@ const MeetingRoomSummaryCards = ({
       averageShortfallSurplus,
     };
   }, [activeUniqueClientCount, summaryMeetingRevenue]);
-  const bookingCounts = useMemo(() => {
-    const currentDate = dayjs();
-    const financialYearStart = currentDate.month() >= 3
-      ? currentDate.year()
-      : currentDate.year() - 1;
-    const rangeStart = dayjs()
-      .year(financialYearStart)
-      .month(3)
-      .startOf("month");
-    const rangeEnd = rangeStart.add(1, "year");
-    const counts = { internal: 0, external: 0, openDesk: 0 };
-
-    summaryMeetings.forEach((meeting) => {
-      const meetingDate = dayjs(
-        meeting?.date || meeting?.startDate || meeting?.startTime,
-      );
-      const meetingType = String(meeting?.meetingType || "").toLowerCase();
-      const meetingStatus = String(
-        meeting?.meetingStatus || meeting?.status || "",
-      ).toLowerCase();
-
-      if (
-        !meetingDate.isValid() ||
-        meetingDate.isBefore(rangeStart) ||
-        !meetingDate.isBefore(rangeEnd) ||
-        meetingStatus !== "completed"
-      ) {
-        return;
-      }
-
-      if (meetingType === "internal") counts.internal += 1;
-      if (meetingType === "external") counts.external += 1;
-    });
-
-    summaryMeetingRevenue
-      .flatMap((monthData) =>
-        Array.isArray(monthData?.revenue) ? monthData.revenue : [],
-      )
-      .forEach((row) => {
-        const bookingDate = dayjs(row?.date || row?.createdAt);
-        const isOpenDesk =
-          row?.source === "day-pass" ||
-          ["full-day pass", "half-day pass"].includes(
-            String(row?.meetingType || row?.meetingTypeRaw || "").toLowerCase(),
-          );
-        const isCompletedOpenDeskVisit = Boolean(
-          row?.visitorDetails?.checkOut || row?.checkOut,
-        );
-
-        if (
-          isOpenDesk &&
-          isCompletedOpenDeskVisit &&
-          bookingDate.isValid() &&
-          !bookingDate.isBefore(rangeStart) &&
-          bookingDate.isBefore(rangeEnd)
-        ) {
-          counts.openDesk += 1;
-        }
-      });
-
-    return {
-      ...counts,
-      total: counts.internal + counts.external,
-    };
-  }, [summaryMeetingRevenue, summaryMeetings]);
   const averageRoomUtilisation = useMemo(
     () =>
       calculateAverageRoomUtilisation(
@@ -530,6 +480,7 @@ const MeetingRoomSummaryCards = ({
     },
     {
       title: "Total Bookings",
+      periodLabel: bookingCounts.periodLabel,
       value: bookingCounts.total.toLocaleString("en-IN"),
       bookingBreakdown: [
         {
@@ -676,7 +627,7 @@ const MeetingRoomSummaryCards = ({
                 )}
               </span>
               <span className="mb-1 block text-xs font-semibold text-[#58709A]">
-                {fiscalYear}
+                {card.periodLabel || fiscalYear}
               </span>
               {card.bookingBreakdown ? (
                 <span className="mt-1 flex flex-nowrap items-center gap-0.5 whitespace-nowrap text-[9px] font-pmedium tracking-tight min-[1450px]:gap-1 min-[1450px]:text-[10px] min-[1700px]:gap-1.5 min-[1700px]:text-[13px]">
@@ -733,24 +684,7 @@ const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
         ? response.data.meetingRevenue
         : [];
 
-      return revenue.filter((row) => {
-        const meetingType = String(
-          row?.meetingType ||
-            row?.particulars ||
-            row?.visitorDetails?.purposeOfVisit ||
-            "",
-        )
-          .trim()
-          .toLowerCase();
-        const isDayPass =
-          row?.source === "day-pass" ||
-          meetingType.includes("half-day") ||
-          meetingType.includes("half day") ||
-          meetingType.includes("full-day") ||
-          meetingType.includes("full day");
-
-        return !isDayPass;
-      });
+      return revenue.filter((row) => !isDayPassRevenue(row));
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
@@ -868,17 +802,20 @@ const meetingClientChartConfig = {
 
 const MeetingRoomClientCharts = ({ visibleCharts }) => {
   const axios = useAxiosPrivate();
-  const { data: meetingRevenue = [], isPending: revenuePending } = useQuery({
-    queryKey: ["meetings-revenue"],
+  const {
+    data: bookingCounts = { internal: 0, external: 0, total: 0 },
+    isPending: bookingCountsPending,
+  } = useQuery({
+    queryKey: ["meetings", "booking-summary", "two-month-lag"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/get-meeting-revenue");
-      return Array.isArray(response.data) ? response.data : [];
+      const response = await axios.get("/api/meetings/meeting-booking-counts");
+      return response.data;
     },
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
   const { data: meetings = [], isPending: meetingsPending } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings", "all-report"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
@@ -910,52 +847,10 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
     refetchInterval: 30000,
     refetchOnWindowFocus: true,
   });
-  const revenueRows = useMemo(
-    () =>
-      meetingRevenue.flatMap((monthData) =>
-        Array.isArray(monthData?.revenue) ? monthData.revenue : [],
-      ),
-    [meetingRevenue],
-  );
-  const internalExternalBookingsData = useMemo(() => {
-    const counts = { Internal: 0, External: 0 };
-    const sourceRows = meetings.length > 0 ? meetings : revenueRows;
-    const currentDate = dayjs();
-    const financialYearStart = currentDate.month() >= 3
-      ? currentDate.year()
-      : currentDate.year() - 1;
-    const rangeStart = dayjs()
-      .year(financialYearStart)
-      .month(3)
-      .startOf("month");
-    const rangeEnd = rangeStart.add(1, "year");
-
-    sourceRows.forEach((meeting) => {
-      const meetingType = String(
-        meeting?.meetingType || meeting?.meetingTypeRaw || "",
-      ).toLowerCase();
-      const meetingStatus = String(
-        meeting?.meetingStatus || meeting?.status || "",
-      ).toLowerCase();
-      const meetingDate = dayjs(
-        meeting?.date || meeting?.startDate || meeting?.startTime,
-      );
-
-      if (
-        !meetingDate.isValid() ||
-        meetingDate.isBefore(rangeStart) ||
-        !meetingDate.isBefore(rangeEnd) ||
-        meetingStatus !== "completed"
-      ) {
-        return;
-      }
-
-      if (meetingType === "internal") counts.Internal += 1;
-      if (meetingType === "external") counts.External += 1;
-    });
-
-    return Object.entries(counts).map(([label, value]) => ({ label, value }));
-  }, [meetings, revenueRows]);
+  const internalExternalBookingsData = [
+    { label: "Internal", value: Number(bookingCounts.internal || 0) },
+    { label: "External", value: Number(bookingCounts.external || 0) },
+  ];
   const internalCommitmentUtilizationData = useMemo(() => {
     const currentMonth = dayjs().startOf("month");
     const totals = internalClients.reduce(
@@ -1108,6 +1003,9 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
                   />
                   <span className="max-w-40 truncate" title={label}>
                     {label}
+                    {chartKey === "internalExternalBookings"
+                      ? ` - ${chartData[index].value.toLocaleString("en-IN")}`
+                      : ""}
                   </span>
                 </div>
               ))}
@@ -1153,7 +1051,10 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
                 : "lg:!h-10"
             }
           >
-            {revenuePending || meetingsPending || roomsPending || clientsPending ? (
+            {bookingCountsPending ||
+            meetingsPending ||
+            roomsPending ||
+            clientsPending ? (
               <SalesDashboardChartSkeleton circular title={chart.title} />
             ) : hasChartData ? (
               <PieChartMui
@@ -1387,7 +1288,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
   const axios = useAxiosPrivate();
   const currentTime = dayjs();
   const { data: meetings = [], isPending: meetingsPending } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings", "all-report"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
@@ -1760,7 +1661,7 @@ const MeetingRoomOngoingUpcomingTable = () => {
   const navigate = useNavigate();
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const { data: meetings = [], isPending: meetingsPending } = useQuery({
-    queryKey: ["meetings"],
+    queryKey: ["meetings", "all-report"],
     queryFn: async () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];

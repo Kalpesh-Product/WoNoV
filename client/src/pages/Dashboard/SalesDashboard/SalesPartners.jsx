@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Menu, MenuItem, Tab, Tabs, TextField } from "@mui/material";
+import { MenuItem, Tab, Tabs, TextField } from "@mui/material";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -10,7 +10,8 @@ import PrimaryButton from "../../../components/PrimaryButton";
 import UploadMultipleFilesInput from "../../../components/UploadMultipleFilesInput";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useSearchParams } from "react-router-dom";
-import { MdMoreHoriz, MdOutlineRemoveRedEye } from "react-icons/md";
+import { MdOutlineRemoveRedEye } from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const submissionTabs = [
   { kind: "partnership", label: "Partnership" },
@@ -90,7 +91,7 @@ const formatEnquiryExportCell = (params) => {
 
 const blankPartner = {
   name: "", email: "", mobile: "", phone: "", subject: "", message: "",
-  startupName: "", websiteUrl: "", linkedinProfileUrl: "", presentation: null,
+  startupName: "", websiteUrl: "", linkedinProfileUrl: "", presentation: null, status: "",
 };
 const MESSAGE_LIMIT = 500;
 const PARTNERSHIP_STATUSES = ["Pending", "Follow Up", "Converted", "Not Proceeding"];
@@ -113,6 +114,9 @@ const isLinkedInProfileUrl = (value) => {
 
 const validatePartnerForm = (form, kind, existingRows, editingRow = null) => {
   const errors = {};
+  if (editingRow && !PARTNERSHIP_STATUSES.includes(form.status)) {
+    errors.status = "Select a status.";
+  }
   if (kind !== "subscription" && !form.name.trim()) errors.name = "Name is required.";
   const email = form.email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) errors.email = "Enter a valid email address.";
@@ -158,9 +162,6 @@ const SalesPartners = () => {
   const [form, setForm] = useState(blankPartner);
   const [formErrors, setFormErrors] = useState({});
   const [editingRow, setEditingRow] = useState(null);
-  const [actionPosition, setActionPosition] = useState(null);
-  const [actionRow, setActionRow] = useState(null);
-  const [statusExpanded, setStatusExpanded] = useState(false);
 
   const { data: localPartners = [], isPending: localPending } = useQuery({
     queryKey: ["salesPartnersLocal", selectedKind],
@@ -222,7 +223,7 @@ const SalesPartners = () => {
     onError: (error) => {
       const field = error?.response?.data?.field;
       const message = error?.response?.data?.message || "Could not update enquiry";
-      if (["name", "email", "mobile", "phone", "subject", "startupName", "websiteUrl", "linkedinProfileUrl", "presentation", "message"].includes(field)) {
+      if (["name", "email", "mobile", "phone", "subject", "startupName", "websiteUrl", "linkedinProfileUrl", "presentation", "message", "status"].includes(field)) {
         setFormErrors((previous) => ({ ...previous, [field]: message }));
       } else {
         toast.error(message);
@@ -230,19 +231,19 @@ const SalesPartners = () => {
     },
   });
 
-  const changeStatus = useMutation({
-    mutationFn: async ({ id, status }) => (await axios.patch(`/api/sales/partnership/${id}/status`, { status })).data,
-    onSuccess: (submission) => {
-      queryClient.invalidateQueries({ queryKey: ["salesPartnersLocal", submission.kind] });
-      toast.success("Enquiry status updated");
-    },
-    onError: (error) => toast.error(error?.response?.data?.message || "Could not update status"),
-  });
-
-  const closeActionMenu = () => {
-    setActionPosition(null);
-    setActionRow(null);
-    setStatusExpanded(false);
+  const openEditForm = (row) => {
+    if (!row?._id) return;
+    setEditingRow(row);
+    setForm({
+      ...blankPartner,
+      name: row.name || "", email: row.email || "", mobile: row.mobile || "", phone: row.phone || "",
+      subject: row.subject || "", startupName: row.startupName || "", websiteUrl: row.websiteUrl || "",
+      linkedinProfileUrl: row.linkedinProfileUrl || "", message: row.message || "",
+      presentation: row.presentation?.url ? { ...row.presentation, name: row.presentation.filename } : null,
+      status: PARTNERSHIP_STATUSES.includes(row.status) ? row.status : "",
+    });
+    setFormErrors({});
+    setFormOpen(true);
   };
 
   const fields = selectedKind === "partnership" ? partnershipFields : mewoFields[selectedKind];
@@ -276,26 +277,33 @@ const SalesPartners = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 90,
+      width: 105,
       pinned: "right",
       sortable: false,
       filter: false,
       suppressCsvExport: true,
       cellRenderer: (params) => selectedKind !== "subscription" ? (
-        <button
-          type="button"
-          aria-label="Open enquiry actions"
-          title="Actions"
-          className="p-1 text-primary"
-          onClick={(event) => {
-            const { right, bottom } = event.currentTarget.getBoundingClientRect();
-            setActionPosition({ top: bottom, left: right });
-            setActionRow(params.data);
-            setStatusExpanded(false);
-          }}
-        >
-          <MdMoreHoriz size={22} />
-        </button>
+        <div className="flex h-full items-center gap-1">
+          <button
+            type="button"
+            aria-label="View details"
+            title="View details"
+            className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+            onClick={() => setViewRow(params.data)}
+          >
+            <MdOutlineRemoveRedEye size={20} />
+          </button>
+          <button
+            type="button"
+            aria-label="Edit enquiry"
+            title={params.data?._id ? "Edit enquiry" : "Website enquiries are read-only"}
+            className="flex h-8 w-8 items-center justify-center text-black hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+            disabled={!params.data?._id}
+            onClick={() => openEditForm(params.data)}
+          >
+            <HiPencilSquare size={24} />
+          </button>
+        </div>
       ) : (
         <button
           type="button"
@@ -338,6 +346,7 @@ const SalesPartners = () => {
     if (selectedKind === "startup" && form.presentation instanceof File) payload.append("presentation", form.presentation);
     if (editingRow) {
       if (selectedKind === "startup" && editingRow.presentation?.key && !form.presentation) payload.append("removePresentation", "true");
+      payload.append("status", form.status);
       editPartner.mutate({ id: editingRow._id, values: payload });
       return;
     }
@@ -352,7 +361,6 @@ const SalesPartners = () => {
           setViewRow(null);
           setFormOpen(false);
           setEditingRow(null);
-          closeActionMenu();
           setForm(blankPartner);
           setFormErrors({});
           setSearchParams((previous) => {
@@ -413,55 +421,6 @@ const SalesPartners = () => {
         tableHeight={450}
       />
 
-      <Menu
-        anchorReference="anchorPosition"
-        anchorPosition={actionPosition}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        open={Boolean(actionPosition)}
-        onClose={closeActionMenu}
-      >
-        <MenuItem disabled={!actionRow?._id} onClick={() => {
-          const row = actionRow;
-          closeActionMenu();
-          setEditingRow(row);
-          setForm({
-            ...blankPartner,
-            name: row.name || "", email: row.email || "", mobile: row.mobile || "", phone: row.phone || "",
-            subject: row.subject || "", startupName: row.startupName || "", websiteUrl: row.websiteUrl || "",
-            linkedinProfileUrl: row.linkedinProfileUrl || "", message: row.message || "",
-            presentation: row.presentation?.url ? { ...row.presentation, name: row.presentation.filename } : null,
-          });
-          setFormErrors({});
-          setFormOpen(true);
-        }}>Edit</MenuItem>
-        <MenuItem disabled={!actionRow?._id} aria-expanded={statusExpanded} onClick={() => setStatusExpanded((expanded) => !expanded)}>
-          <span className="flex w-full items-center justify-between gap-4">Status <span aria-hidden="true">{statusExpanded ? "▴" : "▾"}</span></span>
-        </MenuItem>
-        {statusExpanded && actionRow?.status === "Closed" && (
-          <MenuItem disabled sx={{ fontSize: "0.75rem" }}>Classify previous Closed status</MenuItem>
-        )}
-        {statusExpanded && PARTNERSHIP_STATUSES.map((status) => (
-          <MenuItem
-            key={status}
-            selected={actionRow?.status === status}
-            disabled={changeStatus.isPending}
-            sx={{ pl: 4 }}
-            onClick={() => {
-              const row = actionRow;
-              closeActionMenu();
-              changeStatus.mutate({ id: row._id, status });
-            }}
-          >
-            {status}
-          </MenuItem>
-        ))}
-        <MenuItem onClick={() => {
-          const row = actionRow;
-          closeActionMenu();
-          setViewRow(row);
-        }}>View</MenuItem>
-      </Menu>
-
       <MuiModal open={formOpen} onClose={() => { setFormOpen(false); setEditingRow(null); }} title={`${editingRow ? "Edit" : "Add"} ${selectedLabel}`} widthClass="w-4/5 lg:w-2/5">
         <form onSubmit={submit} noValidate className="flex flex-col gap-4">
           {selectedKind !== "subscription" && <TextField label="Name" value={form.name} onChange={updateField("name")} required size="small" error={Boolean(formErrors.name)} helperText={formErrors.name} />}
@@ -494,6 +453,10 @@ const SalesPartners = () => {
             </div>
           </>}
           {selectedKind !== "subscription" && <TextField label="Message" value={form.message} onChange={updateField("message")} multiline minRows={3} required size="small" error={Boolean(formErrors.message)} helperText={formErrors.message || `${form.message.length}/${MESSAGE_LIMIT} characters`} slotProps={{ htmlInput: { maxLength: MESSAGE_LIMIT } }} />}
+          {editingRow && <TextField select label="Status" value={form.status} onChange={updateField("status")} required size="small" error={Boolean(formErrors.status)} helperText={formErrors.status}>
+            <MenuItem value="" disabled>Select status</MenuItem>
+            {PARTNERSHIP_STATUSES.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}
+          </TextField>}
           <div className="flex justify-end gap-3">
             <PrimaryButton title="Cancel" type="button" handleSubmit={() => { setFormOpen(false); setEditingRow(null); }} />
             <PrimaryButton title={editingRow ? "Save Changes" : `Add ${selectedLabel}`} type="submit" isLoading={savePartner.isPending || editPartner.isPending} />

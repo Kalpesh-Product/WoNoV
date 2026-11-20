@@ -151,7 +151,7 @@ const Shifts = () => {
     }
   };
 
-  const { data: shifts = [] } = useQuery({
+  const { data: shifts = [], isLoading: isShiftsLoading } = useQuery({
     queryKey: ["shifts", Boolean(isTechDepartment)],
     queryFn: fetchShifts,
   });
@@ -350,6 +350,7 @@ const Shifts = () => {
     <PageFrame>
       <div>
         <AgTable
+          loading={isShiftsLoading}
           search={true}
           searchColumn={"Shifts"}
           tableTitle={"Shift List"}

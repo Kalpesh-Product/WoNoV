@@ -494,6 +494,7 @@ const HrDepartmentTasks = () => {
         </div>
         <div>
           <AgTable
+           loading={isTasksLoading}
            key={selectedMonth}
             tableHeight={300}
             //hideFilter

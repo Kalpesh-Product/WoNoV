@@ -49,7 +49,7 @@ const HrOverallTasks = () => {
   const axios = useAxiosPrivate();
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  const { data: tasksRawData = [] } = useQuery({
+  const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
       const response = await axios.get("api/tasks/get-tasks-summary");
@@ -380,6 +380,7 @@ const HrOverallTasks = () => {
         )}`}
       >
         <AgTable
+          loading={isTasksLoading}
           columns={tasksColumns}
           data={tableData}
           tableHeight={300}

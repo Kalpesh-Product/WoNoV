@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../redux/slices/clientSlice";
 import { useParams } from "react-router-dom";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 
 const calculateCurrentRate = (
   cabinRate,
@@ -283,8 +284,8 @@ const AdminClientDetails = () => {
 
   if (isClientLoading && !selectedClient) {
     return (
-      <div className="border-2 border-gray-200 p-4 rounded-md flex items-center justify-center min-h-[240px]">
-        <div className="p-4 font-semibold">Loading client details...</div>
+      <div className="border-2 border-gray-200 rounded-md min-h-[240px]">
+        <AdminLoadingSkeleton variant="details" />
       </div>
     );
   }

@@ -9,6 +9,7 @@ import {
   setSelectedDepartmentName,
 } from "../../../../redux/slices/performanceSlice";
 import PerformanceMemberWiseKra from "../../../Performance/PerformanceMemberWiseKra";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 
 const HrMemberWiseKraOverview = () => {
   const axios = useAxiosPrivate();
@@ -41,7 +42,7 @@ const HrMemberWiseKraOverview = () => {
     setIsDepartmentSynchronized(true);
   }, [department, departmentId, dispatch, isFetched]);
 
-  if (!isDepartmentSynchronized) return null;
+  if (!isDepartmentSynchronized) return <HrLoadingSkeleton variant="table" />;
 
   const memberDetailsBasePath = pathname.includes("/mix-bag/department-kpa-kra/")
     ? `/app/dashboard/HR-dashboard/mix-bag/department-kpa-kra/department-KRA/${encodeURIComponent(department)}/member-wise`

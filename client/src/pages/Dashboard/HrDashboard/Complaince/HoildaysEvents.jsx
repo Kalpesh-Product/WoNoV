@@ -66,7 +66,7 @@ const HoildaysEvents = ({ title }) => {
     },
   ];
 
-  const { data: holidayEvents = [] } = useQuery({
+  const { data: holidayEvents = [], isLoading: isHolidaysLoading } = useQuery({
     queryKey: ["hrHolidays"],
     queryFn: async () => {
       const response = await axios.get("/api/events/get-holidays");
@@ -141,6 +141,7 @@ const HoildaysEvents = ({ title }) => {
     <PageFrame>
       <div>
         <YearWiseTable
+          loading={isHolidaysLoading}
           key={combinedEvents.length}
           search={true}
           dateColumn={"start"}

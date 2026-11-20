@@ -183,7 +183,7 @@ const RejectedVoucher = () => {
           tableTitle={"Rejected Voucher"}
           data={tableData}
           columns={columns}
-          isLoading={isRejectedLoading}
+          loading={isRejectedLoading}
           exportData
         />
       </PageFrame>

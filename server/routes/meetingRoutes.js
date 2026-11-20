@@ -2,6 +2,7 @@ const upload = require("../config/multerConfig");
 const {
   addMeetings,
   getMeetings,
+  getMeetingBookingCounts,
   addHousekeepingTask,
   deleteHousekeepingTask,
   getMeetingsByTypes,
@@ -49,6 +50,7 @@ router.patch("/update-meeting-details", updateMeetingDetails);
 router.get("/get-rooms", getRooms);
 router.get("/get-room/:roomName", getSingleRoom);
 router.get("/get-meetings", getMeetings);
+router.get("/meeting-booking-counts", getMeetingBookingCounts);
 router.get("/get-room-meetings/:roomId", getSingleRoomMeetings);
 router.get("/my-meetings", getMyMeetings);
 router.delete("/my-meetings/:meetingId", deleteMyMeeting);

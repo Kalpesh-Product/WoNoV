@@ -2,7 +2,8 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
-import { Skeleton, Box, CircularProgress } from "@mui/material";
+import { Skeleton, Box } from "@mui/material";
+import HrLoadingSkeleton from "./HrLoadingSkeleton";
 import { CgWebsite } from "react-icons/cg";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
@@ -2346,7 +2347,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
               className="h-full"
             />
           ) : (
-            <CircularProgress key="loading-spinner" />
+            <HrLoadingSkeleton key="loading-skeleton" variant="table" columns={columns} />
           )),
         userPermissions.includes(holidayTableConfig.permission) && (
           <MuiTable showTableControls={false}
