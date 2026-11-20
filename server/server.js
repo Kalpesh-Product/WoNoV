@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 require("dotenv").config();
 const cookieParser = require("cookie-parser");
+const compression = require("compression");
 const { corsConfig } = require("./config/corsConfig");
 const connectDb = require("./config/db");
 const { hashPassword } = require("./config/passwordGen");
@@ -68,18 +69,21 @@ const app = express();
 const PORT = process.env.PORT || 5009;
 app.set("trust proxy", true);
 
+// Compress responses (gzip) before they leave the server. JSON shrinks by
+// roughly 70-90%, which directly cuts Vercel "Fast Origin Transfer" usage.
+app.use(compression());
 app.use(credentials);
 app.use(cors(corsConfig));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", (req, res, next) => {
-  delete req.headers["if-none-match"];
-  delete req.headers["if-modified-since"];
-  res.setHeader(
-    "Cache-Control",
-    "private, no-store, no-cache, must-revalidate, max-age=0",
-  );
+  // "private, no-cache" lets only the user's own browser keep a copy, but it
+  // must check with the server every time. When nothing changed, Express
+  // answers "304 Not Modified" with an empty body instead of resending the
+  // whole response, so data is never stale but repeat requests are tiny.
+  // The CDN headers below still stop Vercel from caching anything shared.
+  res.setHeader("Cache-Control", "private, no-cache, max-age=0");
   res.setHeader("CDN-Cache-Control", "private, no-store, max-age=0");
   res.setHeader("Vercel-CDN-Cache-Control", "private, no-store, max-age=0");
   res.setHeader("Pragma", "no-cache");

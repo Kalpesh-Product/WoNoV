@@ -1095,8 +1095,7 @@ const VirtualOfficeDashboard = ({
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 5 * 60 * 1000,
   });
 
   const summary = useMemo(() => {

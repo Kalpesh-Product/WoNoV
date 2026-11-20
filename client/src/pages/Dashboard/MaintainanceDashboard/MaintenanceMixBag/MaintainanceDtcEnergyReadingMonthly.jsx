@@ -560,7 +560,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
     loadMonthlyBills();
     const shouldPollCurrentMonth = selectedMonthKey === currentMonthKey;
     const timer = shouldPollCurrentMonth
-      ? setInterval(loadMonthlyBills, 30000)
+      ? setInterval(loadMonthlyBills, 5 * 60 * 1000)
       : null;
 
     return () => {
@@ -602,7 +602,7 @@ const MaintainanceDtcEnergyReadingMonthly = () => {
     loadGraphMonthlyBills();
     const shouldPollCurrentMonth = graphSelectedMonthKey === currentMonthKey;
     const timer = shouldPollCurrentMonth
-      ? setInterval(loadGraphMonthlyBills, 30000)
+      ? setInterval(loadGraphMonthlyBills, 5 * 60 * 1000)
       : null;
 
     return () => {

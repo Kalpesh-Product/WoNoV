@@ -526,7 +526,7 @@ const InvestorAnnualMonthlyMixIncome = ({ hasPermission }) => {
       return response.data;
     },
     enabled: hasPermission(PERMISSIONS.FINANCE1_MONTHLY_INCOME_BREAKDOWN.value),
-    refetchInterval: 60000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 

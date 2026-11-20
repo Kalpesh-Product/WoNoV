@@ -67,7 +67,7 @@ const DayPassUniqueClientsGraph = () => {
         (row) => row?.source === "day-pass" && isPaidDayPassRevenue(row),
       );
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const clientsByMonth = useMemo(() => {
@@ -154,7 +154,7 @@ const DayPassOperationalCharts = ({ chartView = null, visibleCharts: requestedCh
       );
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const chartData = {
@@ -324,7 +324,7 @@ const DayPassClientDetailsToday = () => {
 
       return Array.isArray(response.data?.data) ? response.data.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const rows = useMemo(
@@ -748,7 +748,7 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
       );
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: dayPassRows = [], isLoading } = useQuery({
@@ -761,7 +761,7 @@ const DayPassSummaryCards = ({ cardView, hasPermission }) => {
 
       return revenue.filter((row) => isDayPassRevenue(row));
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const summary = useMemo(() => {
