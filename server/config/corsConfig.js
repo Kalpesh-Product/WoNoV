@@ -7,6 +7,7 @@ const allowedOrigins = [
   "http://localhost:4173",
   "https://wonofe.vercel.app",
   "https://wonomasterfe.vercel.app",
+  "https://biznest-app.wono.co/"
 ];
 
 // regex rules for subdomains
