@@ -140,7 +140,7 @@ const FinanceDashboard = () => {
       queryKey: ["finance-selectedDepartments"],
       queryFn: async () => {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments",
+          "/api/company/get-company-data?field=selectedDepartments",
         );
         return Array.isArray(response.data?.selectedDepartments)
           ? response.data.selectedDepartments

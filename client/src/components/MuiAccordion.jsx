@@ -18,6 +18,7 @@ const MuiAccordion = ({
   itemsKey = "items",
   itemClick,
   disabledKey = "",
+  showEmployeeArrowGate = true,
 }) => {
   const sortItems = (a, b) => {
     const isAdminA = a.role?.some((r) =>
@@ -50,14 +51,23 @@ const MuiAccordion = ({
         </Typography>
       </Box>
 
-      <Permissions permissions={[PERMISSIONS.ACCESS_PERMISSIONS]}>
+      {showEmployeeArrowGate ? (
+        <Permissions permissions={[PERMISSIONS.ACCESS_PERMISSIONS]}>
+          <div
+            onClick={() => itemClick?.(emp)}
+            className="p-2 cursor-pointer border-default border-black rounded-md text-content flex items-center bg-white text-black hover:text-white hover:bg-primary hover:border-primary"
+          >
+            <IoIosArrowForward />
+          </div>
+        </Permissions>
+      ) : (
         <div
           onClick={() => itemClick?.(emp)}
           className="p-2 cursor-pointer border-default border-black rounded-md text-content flex items-center bg-white text-black hover:text-white hover:bg-primary hover:border-primary"
         >
           <IoIosArrowForward />
         </div>
-      </Permissions>
+      )}
     </Box>
   );
 

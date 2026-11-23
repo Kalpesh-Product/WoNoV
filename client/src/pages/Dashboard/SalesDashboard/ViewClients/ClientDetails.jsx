@@ -1,4 +1,11 @@
-import { Autocomplete, Avatar, Button, Chip, MenuItem, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Avatar,
+  Button,
+  Chip,
+  MenuItem,
+  TextField,
+} from "@mui/material";
 import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAuth from "../../../../hooks/useAuth";
@@ -93,9 +100,10 @@ const calculateCurrentRate = (
   startDate,
   referenceDate = dayjs(),
 ) => {
-  const base = [cabinRate, openRate]
-    .map((rate) => Number(rate))
-    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const base =
+    [cabinRate, openRate]
+      .map((rate) => Number(rate))
+      .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
   const increment = Number(annualIncrement) || 0;
 
   if (!base) {
@@ -122,8 +130,8 @@ const formatExactNumber = (value) => {
 };
 
 const useCurrentMonthStartDate = () => {
-  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
-    () => dayjs().startOf("month").toISOString(),
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(() =>
+    dayjs().startOf("month").toISOString(),
   );
 
   useEffect(() => {
@@ -161,48 +169,72 @@ const ClientDetails = () => {
   const [sourcingInput, setSourcingInput] = useState("");
   const canCreateSourcingOption = useMemo(() => {
     const user = auth?.user;
-    const normalize = (value) => String(value || "").trim().toLowerCase();
-    const departments = Array.isArray(user?.departments) ? user.departments : [];
+    const normalize = (value) =>
+      String(value || "")
+        .trim()
+        .toLowerCase();
+    const departments = Array.isArray(user?.departments)
+      ? user.departments
+      : [];
     const roles = [
       ...(Array.isArray(user?.role) ? user.role : []),
       ...(Array.isArray(user?.roles) ? user.roles : []),
     ];
     return (
       departments.some((department) => {
-        const name = normalize(department?.name || department?.departmentName || department);
+        const name = normalize(
+          department?.name || department?.departmentName || department,
+        );
         const id = String(department?._id || department || "");
-        return SOURCING_MANAGER_DEPARTMENT_IDS.has(id) || ["top management", "tech", "tech department"].includes(name);
+        return (
+          SOURCING_MANAGER_DEPARTMENT_IDS.has(id) ||
+          ["top management", "tech", "tech department"].includes(name)
+        );
       }) ||
       roles.some((role) => {
         const title = normalize(role?.roleTitle || role?.name || role);
-        return title.includes("top management") || title.includes("tech department");
+        return (
+          title.includes("top management") || title.includes("tech department")
+        );
       })
     );
   }, [auth?.user]);
   const { data: sourcingOptions = [] } = useQuery({
     queryKey: ["virtualOfficeSourcingOptions"],
     queryFn: async () => {
-      const response = await axios.get("/api/sales/virtual-office/sourcing-options");
+      const response = await axios.get(
+        "/api/sales/virtual-office/sourcing-options",
+      );
       return Array.isArray(response.data) ? response.data : [];
     },
   });
   const { mutate: saveSourcingOption } = useMutation({
     mutationFn: async (option) => {
-      const response = await axios.post("/api/sales/virtual-office/sourcing-options", { option });
+      const response = await axios.post(
+        "/api/sales/virtual-office/sourcing-options",
+        { option },
+      );
       return response.data;
     },
     onSuccess: (data) => {
-      queryClient.setQueryData(["virtualOfficeSourcingOptions"], data.options || []);
+      queryClient.setQueryData(
+        ["virtualOfficeSourcingOptions"],
+        data.options || [],
+      );
       toast.success(data.message || "Sourcing added successfully");
     },
-    onError: (error) => toast.error(error?.response?.data?.message || "Failed to add sourcing"),
+    onError: (error) =>
+      toast.error(error?.response?.data?.message || "Failed to add sourcing"),
   });
   const location = useLocation();
   const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const clientsData = useSelector((state) => state.sales.clientsData);
   const normalizedClientName = useMemo(
-    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    () =>
+      decodeURIComponent(clientName || "")
+        .trim()
+        .toLowerCase(),
     [clientName],
   );
   const { control, handleSubmit, reset, setValue } = useForm({
@@ -295,13 +327,15 @@ const ClientDetails = () => {
     queryKey: ["coWorkingClientByName", normalizedClientName],
     enabled:
       Boolean(normalizedClientName) &&
-      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+      (selectedClient?.clientName || "").trim().toLowerCase() !==
+        normalizedClientName,
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
       const clients = Array.isArray(response?.data) ? response.data : [];
       const matchedClient = clients.find(
         (client) =>
-          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+          (client?.clientName || "").trim().toLowerCase() ===
+          normalizedClientName,
       );
 
       if (matchedClient?._id) {
@@ -311,7 +345,6 @@ const ClientDetails = () => {
       return matchedClient;
     },
   });
-
 
   const [isEditing, setIsEditing] = useState(
     () => location.state?.editMode === true,
@@ -361,7 +394,12 @@ const ClientDetails = () => {
         watchedAnnualIncrement,
         watchedStartDate,
       ),
-    [watchedAnnualIncrement, watchedCabinRate, watchedOpenRate, watchedStartDate],
+    [
+      watchedAnnualIncrement,
+      watchedCabinRate,
+      watchedOpenRate,
+      watchedStartDate,
+    ],
   );
   const computedRevenue = useMemo(
     () => computedNoOfDesks * computedCurrentRate,
@@ -376,7 +414,9 @@ const ClientDetails = () => {
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "client-details"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units?deskCalculated=true");
+      const response = await axios.get(
+        "/api/company/fetch-units?deskCalculated=true",
+      );
       return response.data;
     },
   });
@@ -403,14 +443,21 @@ const ClientDetails = () => {
         : [];
 
       if (matches.length === 1) return matches[0];
-      return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
+      return typeof selectedUnit === "object" && selectedUnit
+        ? selectedUnit
+        : null;
     }
 
     return (
       units.find((item) => item._id === selectedUnitId) ||
       (typeof selectedUnit === "object" ? selectedUnit : null)
     );
-  }, [selectedClient?.unit, selectedClient?.unitNo, selectedClient?.unitName, units]);
+  }, [
+    selectedClient?.unit,
+    selectedClient?.unitNo,
+    selectedClient?.unitName,
+    units,
+  ]);
 
   useEffect(() => {
     if (selectedClient) {
@@ -426,9 +473,12 @@ const ClientDetails = () => {
         building: selectedUnitDetails?.building?._id || "",
         unit:
           selectedUnitDetails?._id ||
-          (typeof selectedClient.unit === "string" ? selectedClient.unit : "") ||
+          (typeof selectedClient.unit === "string"
+            ? selectedClient.unit
+            : "") ||
           "",
-        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unitName:
+          selectedUnitDetails?.unitName || selectedClient.unitName || "",
         unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
         buildingName:
           selectedUnitDetails?.building?.buildingName ||
@@ -501,7 +551,6 @@ const ClientDetails = () => {
 
   //   return [...options];
   // }, [clientsData, selectedClient?.bookingType]);
-
 
   const handleEditToggle = () => {
     setIsEditing(!isEditing);
@@ -593,8 +642,14 @@ const ClientDetails = () => {
         hoCity: selectedClient.hoCity,
         hoState: selectedClient.hoState,
         building: selectedUnitDetails?.building?._id || "",
-        unit: selectedUnitDetails?._id || (typeof selectedClient.unit === "string" ? selectedClient.unit : "") || "",
-        unitName: selectedUnitDetails?.unitName || selectedClient.unitName || "",
+        unit:
+          selectedUnitDetails?._id ||
+          (typeof selectedClient.unit === "string"
+            ? selectedClient.unit
+            : "") ||
+          "",
+        unitName:
+          selectedUnitDetails?.unitName || selectedClient.unitName || "",
         unitNo: selectedUnitDetails?.unitNo || selectedClient.unitNo || "",
         buildingName:
           selectedUnitDetails?.building?.buildingName ||
@@ -713,9 +768,12 @@ const ClientDetails = () => {
                                 fullWidth
                               >
                                 {/* {bookingTypeOptions.map((bookingType) => (
-                                   */}
-                                  {BOOKING_TYPE_OPTIONS.map((bookingType) => (
-                                  <MenuItem key={bookingType} value={bookingType}>
+                                 */}
+                                {BOOKING_TYPE_OPTIONS.map((bookingType) => (
+                                  <MenuItem
+                                    key={bookingType}
+                                    value={bookingType}
+                                  >
                                     {bookingType}
                                   </MenuItem>
                                 ))}
@@ -739,11 +797,14 @@ const ClientDetails = () => {
                                 value={field.value || null}
                                 inputValue={sourcingInput}
                                 onInputChange={(_event, value, reason) => {
-                                  if (reason !== "reset") setSourcingInput(value);
+                                  if (reason !== "reset")
+                                    setSourcingInput(value);
                                 }}
                                 onChange={(_event, value) => {
                                   const selected = String(
-                                    typeof value === "object" ? value.inputValue : value || "",
+                                    typeof value === "object"
+                                      ? value.inputValue
+                                      : value || "",
                                   ).trim();
                                   field.onChange(selected);
                                   setSourcingInput(selected);
@@ -751,7 +812,9 @@ const ClientDetails = () => {
                                     canCreateSourcingOption &&
                                     selected &&
                                     !sourcingOptions.some(
-                                      (option) => option.toLowerCase() === selected.toLowerCase(),
+                                      (option) =>
+                                        option.toLowerCase() ===
+                                        selected.toLowerCase(),
                                     )
                                   ) {
                                     saveSourcingOption(selected);
@@ -759,13 +822,22 @@ const ClientDetails = () => {
                                 }}
                                 filterOptions={(options, params) => {
                                   const typedValue = params.inputValue.trim();
-                                  const filteredOptions = options.filter((option) =>
-                                    option.toLowerCase().includes(typedValue.toLowerCase()),
+                                  const filteredOptions = options.filter(
+                                    (option) =>
+                                      option
+                                        .toLowerCase()
+                                        .includes(typedValue.toLowerCase()),
                                   );
                                   const alreadyExists = options.some(
-                                    (option) => option.toLowerCase() === typedValue.toLowerCase(),
+                                    (option) =>
+                                      option.toLowerCase() ===
+                                      typedValue.toLowerCase(),
                                   );
-                                  if (canCreateSourcingOption && typedValue && !alreadyExists) {
+                                  if (
+                                    canCreateSourcingOption &&
+                                    typedValue &&
+                                    !alreadyExists
+                                  ) {
                                     filteredOptions.push({
                                       inputValue: typedValue,
                                       label: `+ Add "${typedValue}"`,
@@ -774,11 +846,18 @@ const ClientDetails = () => {
                                   return filteredOptions;
                                 }}
                                 getOptionLabel={(option) =>
-                                  typeof option === "string" ? option : option.label || ""
+                                  typeof option === "string"
+                                    ? option
+                                    : option.label || ""
                                 }
                                 renderOption={(props, option) => (
-                                  <li {...props} key={option.inputValue || option}>
-                                    {typeof option === "string" ? option : option.label}
+                                  <li
+                                    {...props}
+                                    key={option.inputValue || option}
+                                  >
+                                    {typeof option === "string"
+                                      ? option
+                                      : option.label}
                                   </li>
                                 )}
                                 renderInput={(params) => (
@@ -786,20 +865,30 @@ const ClientDetails = () => {
                                     {...params}
                                     size="small"
                                     label="Sourcing"
-                                    placeholder={canCreateSourcingOption ? "Select or Add Source" : "Select Source"}
+                                    placeholder={
+                                      canCreateSourcingOption
+                                        ? "Select or Add Source"
+                                        : "Select Source"
+                                    }
                                     fullWidth
                                   />
                                 )}
                               />
                             ) : fieldKey === "currentStatus" ? (
-                              <TextField {...field} select size="small" label="Current Status" fullWidth>
-                                {[
-                                  "In Progress",
-                                  "Yet to start",
-                                  "On Hold",
-                                ].map((option) => (
-                                  <MenuItem key={option} value={option}>{option}</MenuItem>
-                                ))}
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Current Status"
+                                fullWidth
+                              >
+                                {["In Progress", "Yet to start", "On Hold"].map(
+                                  (option) => (
+                                    <MenuItem key={option} value={option}>
+                                      {option}
+                                    </MenuItem>
+                                  ),
+                                )}
                               </TextField>
                             ) : (
                               <TextField
@@ -823,7 +912,9 @@ const ClientDetails = () => {
                                   ? "Sourcing"
                                   : fieldKey
                                       .replace(/([A-Z])/g, " $1")
-                                      .replace(/^./, (str) => str.toUpperCase())}
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -836,8 +927,9 @@ const ClientDetails = () => {
                                 : fieldKey === "channel"
                                   ? control._defaultValues.channel || "N/A"
                                   : fieldKey === "currentStatus"
-                                    ? control._defaultValues.currentStatus || "In Progress"
-                                : control._defaultValues[fieldKey] || "N/A"}
+                                    ? control._defaultValues.currentStatus ||
+                                      "In Progress"
+                                    : control._defaultValues[fieldKey] || "N/A"}
                             </span>
                           </div>
                         </div>
@@ -887,7 +979,13 @@ const ClientDetails = () => {
                         name="unit"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} select size="small" label="Unit" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            size="small"
+                            label="Unit"
+                            fullWidth
+                          >
                             <MenuItem value="">Select a Unit</MenuItem>
                             {filteredUnits.length > 0 ? (
                               filteredUnits.map((item) => (
@@ -899,7 +997,9 @@ const ClientDetails = () => {
                               <MenuItem disabled>Loading units...</MenuItem>
                             ) : (
                               <MenuItem disabled>
-                                {selectedBuilding ? "No units available" : "Select a building first"}
+                                {selectedBuilding
+                                  ? "No units available"
+                                  : "Select a building first"}
                               </MenuItem>
                             )}
                           </TextField>
@@ -920,25 +1020,34 @@ const ClientDetails = () => {
                           key={fieldKey}
                           name={fieldKey}
                           control={control}
-                          rules={fieldKey === "billingFrequency"
-                            ? { required: "Billing Frequency is required" }
-                            : fieldKey === "clientType"
-                              ? { required: "Client Type is required" }
-                              : undefined}
+                          rules={
+                            fieldKey === "billingFrequency"
+                              ? { required: "Billing Frequency is required" }
+                              : fieldKey === "clientType"
+                                ? { required: "Client Type is required" }
+                                : undefined
+                          }
                           render={({ field, fieldState }) =>
-                            fieldKey === "billingFrequency" || fieldKey === "clientType" ? (
+                            fieldKey === "billingFrequency" ||
+                            fieldKey === "clientType" ? (
                               <TextField
                                 {...field}
                                 select
                                 size="small"
-                                label={fieldKey === "billingFrequency" ? "Billing Frequency" : "Client Type"}
+                                label={
+                                  fieldKey === "billingFrequency"
+                                    ? "Billing Frequency"
+                                    : "Client Type"
+                                }
                                 disabled={fieldKey === "billingFrequency"}
                                 error={!!fieldState.error}
                                 helperText={fieldState.error?.message}
                                 fullWidth
                               >
                                 {fieldKey === "clientType" && (
-                                  <MenuItem value="">Select Client Type</MenuItem>
+                                  <MenuItem value="">
+                                    Select Client Type
+                                  </MenuItem>
                                 )}
                                 {(fieldKey === "billingFrequency"
                                   ? ["Monthly"]
@@ -950,7 +1059,13 @@ const ClientDetails = () => {
                                 ))}
                               </TextField>
                             ) : fieldKey === "isActive" ? (
-                              <TextField {...field} select size="small" label="Company Status" fullWidth>
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Company Status"
+                                fullWidth
+                              >
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
@@ -969,7 +1084,7 @@ const ClientDetails = () => {
                                 value={formatExactNumber(computedCurrentRate)}
                                 disabled
                                 size="small"
-                                label="Current Rate"
+                                label="Invoice Rate"
                                 fullWidth
                               />
                             ) : (
@@ -1000,7 +1115,10 @@ const ClientDetails = () => {
                       "currentRate",
                       "isActive",
                     ].map((fieldKey) => (
-                      <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
+                      <div
+                        key={fieldKey}
+                        className="py-2 flex justify-between items-start gap-2"
+                      >
                         <div className="w-[100%] justify-start flex">
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "isActive"
@@ -1008,10 +1126,12 @@ const ClientDetails = () => {
                               : fieldKey === "noOfDesks"
                                 ? "No of Desk"
                                 : fieldKey === "currentRate"
-                                  ? "Current Rate"
-                              : fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                                  ? "Invoice Rate"
+                                  : fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
                           </span>{" "}
                         </div>
                         <div className="">
@@ -1024,11 +1144,13 @@ const ClientDetails = () => {
                                 ? "Active"
                                 : "Inactive"
                               : fieldKey === "noOfDesks"
-                                ? Number(control._defaultValues.cabinDesks || 0) +
+                                ? Number(
+                                    control._defaultValues.cabinDesks || 0,
+                                  ) +
                                   Number(control._defaultValues.openDesks || 0)
-                              : fieldKey === "currentRate"
-                                ? formatExactNumber(computedCurrentRate)
-                              : control._defaultValues[fieldKey] || "N/A"}
+                                : fieldKey === "currentRate"
+                                  ? formatExactNumber(computedCurrentRate)
+                                  : control._defaultValues[fieldKey] || "N/A"}
                           </span>
                         </div>
                       </div>
@@ -1090,7 +1212,7 @@ const ClientDetails = () => {
                             {...field}
                             size="small"
                             label="Per Desk Meeting Credits"
-                             disabled={isFlexyDeskClient}
+                            disabled={isFlexyDeskClient}
                             fullWidth
                           />
                         )}

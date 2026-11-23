@@ -7,12 +7,18 @@ const {
   createPartnership,
   updatePartnership,
   updatePartnershipStatus,
+  getEnquiryEditHistory,
+  updateWebsitePartnership,
+  updateWebsiteSubmission,
   getWebsitePartnership,
 } = require("../controllers/salesControllers/partnershipControllers");
 
 router.get("/partnership", requirePartnershipAccess, getPartnership);
 router.post("/partnership", requirePartnershipAccess, upload.single("presentation"), createPartnership);
 router.get("/partnership/website", requirePartnershipAccess, getWebsitePartnership);
+router.get("/partnership/history/:source/:id", requirePartnershipAccess, getEnquiryEditHistory);
+router.patch("/partnership/website/:kind/:id", requirePartnershipAccess, updateWebsiteSubmission);
+router.patch("/partnership/website/:id", requirePartnershipAccess, updateWebsitePartnership);
 router.patch("/partnership/:id", requirePartnershipAccess, upload.single("presentation"), updatePartnership);
 router.patch("/partnership/:id/status", requirePartnershipAccess, updatePartnershipStatus);
 

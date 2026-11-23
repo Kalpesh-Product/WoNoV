@@ -11,6 +11,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import StatusChip from "../../../../components/StatusChip";
+import getUserName from "../../../../utils/getUserName";
 
 const BudgetViewDetail = ({ detail, ...props }) => {
   const isMissing = detail == null ||
@@ -244,6 +245,10 @@ const DepartmentInvoiceBudget = () => {
             <BudgetViewDetail
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
+            />
+            <BudgetViewDetail
+              title="Requested By"
+              detail={getUserName(viewDetails.requestedBy)}
             />
             <BudgetViewDetail
               title="Expense Type"

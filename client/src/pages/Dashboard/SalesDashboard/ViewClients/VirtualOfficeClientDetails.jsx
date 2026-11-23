@@ -35,7 +35,10 @@ const canCreateVirtualOfficeSourcingOption = (user) => {
     ...(Array.isArray(user?.role) ? user.role : []),
     ...(Array.isArray(user?.roles) ? user.roles : []),
   ];
-  const normalize = (value) => String(value || "").trim().toLowerCase();
+  const normalize = (value) =>
+    String(value || "")
+      .trim()
+      .toLowerCase();
 
   return (
     departments.some((department) => {
@@ -45,9 +48,7 @@ const canCreateVirtualOfficeSourcingOption = (user) => {
       );
       return (
         SOURCING_MANAGER_DEPARTMENT_IDS.has(departmentId) ||
-        ["top management", "tech", "tech department"].includes(
-          departmentName,
-        )
+        ["top management", "tech", "tech department"].includes(departmentName)
       );
     }) ||
     roles.some((role) => {
@@ -71,7 +72,12 @@ const buildRateSchedule = (
   const baseRate = Number(openDeskRate) || 0;
   const increment = Number(annualIncrement) || 0;
 
-  if (!start.isValid() || !end.isValid() || !end.isAfter(start, "day") || !baseRate) {
+  if (
+    !start.isValid() ||
+    !end.isValid() ||
+    !end.isAfter(start, "day") ||
+    !baseRate
+  ) {
     return [];
   }
 
@@ -116,8 +122,8 @@ const formatCurrency = (value) => {
 };
 
 const useCurrentMonthStartDate = () => {
-  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
-    () => dayjs().startOf("month").format("YYYY-MM-DD"),
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(() =>
+    dayjs().startOf("month").format("YYYY-MM-DD"),
   );
 
   useEffect(() => {
@@ -236,17 +242,14 @@ const VirtualOfficeClientDetails = () => {
   ];
   const CURRENT_STATUS_OPTIONS = ["In Progress", "Yet to start", "On Hold"];
   const normalizedClientName = useMemo(
-    () => decodeURIComponent(clientId || "").trim().toLowerCase(),
+    () =>
+      decodeURIComponent(clientId || "")
+        .trim()
+        .toLowerCase(),
     [clientId],
   );
 
-  const {
-    control,
-    getValues,
-    handleSubmit,
-    reset,
-    setValue,
-  } = useForm({
+  const { control, getValues, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       clientName: "",
       serviceName: "",
@@ -373,13 +376,15 @@ const VirtualOfficeClientDetails = () => {
     enabled:
       Boolean(normalizedClientName) &&
       !/^[a-fA-F0-9]{24}$/.test(clientId || "") &&
-      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+      (selectedClient?.clientName || "").trim().toLowerCase() !==
+        normalizedClientName,
     queryFn: async () => {
       const response = await axios.get("/api/sales/virtual-office/clients");
       const clients = Array.isArray(response?.data) ? response.data : [];
       const matchedClient = clients.find(
         (client) =>
-          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+          (client?.clientName || "").trim().toLowerCase() ===
+          normalizedClientName,
       );
 
       if (matchedClient?._id) {
@@ -434,7 +439,9 @@ const VirtualOfficeClientDetails = () => {
   const termStartDateValue = useWatch({ control, name: "termStartDate" });
   const termEndValue = useWatch({ control, name: "termEnd" });
   const resolveUnitId = (client) =>
-    typeof client?.unit === "object" ? client?.unit?._id || "" : client?.unit || "";
+    typeof client?.unit === "object"
+      ? client?.unit?._id || ""
+      : client?.unit || "";
   const resolveBuildingId = (client) => {
     if (typeof client?.unit === "object" && client?.unit?.building) {
       return typeof client.unit.building === "object"
@@ -450,8 +457,11 @@ const VirtualOfficeClientDetails = () => {
   };
   const calculatedTotalTermMonths = useMemo(() => {
     const startDate =
-      termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate;
-    const endDate = termEndValue || selectedClient?.termEnd || selectedClient?.endDate;
+      termStartDateValue ||
+      selectedClient?.termStartDate ||
+      selectedClient?.startDate;
+    const endDate =
+      termEndValue || selectedClient?.termEnd || selectedClient?.endDate;
 
     return calculateTotalTermMonths(startDate, endDate);
   }, [
@@ -465,7 +475,9 @@ const VirtualOfficeClientDetails = () => {
   const rateSchedule = useMemo(
     () =>
       buildRateSchedule(
-        termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate,
+        termStartDateValue ||
+          selectedClient?.termStartDate ||
+          selectedClient?.startDate,
         termEndValue || selectedClient?.termEnd || selectedClient?.endDate,
         watchedOpenDeskRate,
         watchedAnnualIncrement,
@@ -492,8 +504,19 @@ const VirtualOfficeClientDetails = () => {
     [watchedCabinDesks, watchedOpenDesks],
   );
   const computedRevenue = useMemo(
-    () => Number(watchedTotalDesks || selectedClient?.totalDesks || computedTotalDesks || 0) * Number(computedCurrentRate || 0),
-    [computedCurrentRate, computedTotalDesks, selectedClient?.totalDesks, watchedTotalDesks],
+    () =>
+      Number(
+        watchedTotalDesks ||
+          selectedClient?.totalDesks ||
+          computedTotalDesks ||
+          0,
+      ) * Number(computedCurrentRate || 0),
+    [
+      computedCurrentRate,
+      computedTotalDesks,
+      selectedClient?.totalDesks,
+      watchedTotalDesks,
+    ],
   );
   const computedRemainingAmount = useMemo(
     () => computedRevenue - Number(watchedTotalReceivedAmount || 0),
@@ -503,7 +526,9 @@ const VirtualOfficeClientDetails = () => {
   const calculatedAgreementExpiry = useMemo(
     () =>
       calculateAgreementExpiry(
-        termStartDateValue || selectedClient?.termStartDate || selectedClient?.startDate,
+        termStartDateValue ||
+          selectedClient?.termStartDate ||
+          selectedClient?.startDate,
         termEndValue || selectedClient?.termEnd || selectedClient?.endDate,
         selectedClient?.termStartDate || selectedClient?.startDate,
       ),
@@ -520,7 +545,9 @@ const VirtualOfficeClientDetails = () => {
   const { data: units = [], isLoading: isUnitsLoading } = useQuery({
     queryKey: ["units", "virtual-office-client-details"],
     queryFn: async () => {
-      const response = await axios.get("/api/company/fetch-units?deskCalculated=true");
+      const response = await axios.get(
+        "/api/company/fetch-units?deskCalculated=true",
+      );
       return response.data;
     },
   });
@@ -532,7 +559,9 @@ const VirtualOfficeClientDetails = () => {
       typeof selectedUnit === "string" ? selectedUnit : selectedUnit?._id;
 
     if (!selectedUnitId) {
-      return typeof selectedUnit === "object" && selectedUnit ? selectedUnit : null;
+      return typeof selectedUnit === "object" && selectedUnit
+        ? selectedUnit
+        : null;
     }
 
     return (
@@ -553,9 +582,7 @@ const VirtualOfficeClientDetails = () => {
         building:
           selectedUnitDetails?.building?._id ||
           resolveBuildingId(selectedClient),
-        unit:
-          selectedUnitDetails?._id ||
-          resolveUnitId(selectedClient),
+        unit: selectedUnitDetails?._id || resolveUnitId(selectedClient),
         unitName:
           selectedUnitDetails?.unitName ||
           selectedClient.unit?.unitName ||
@@ -590,7 +617,9 @@ const VirtualOfficeClientDetails = () => {
         internalLead: selectedClient.internalLead || "",
         receivedAmount: selectedClient.receivedAmount || 0,
         totalReceivedAmount:
-          selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
+          selectedClient.totalReceivedAmount ??
+          selectedClient.receivedAmount ??
+          0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
@@ -635,7 +664,10 @@ const VirtualOfficeClientDetails = () => {
     }
 
     const currentUnit = control._formValues.unit;
-    if (currentUnit && !filteredUnits.some((item) => item._id === currentUnit)) {
+    if (
+      currentUnit &&
+      !filteredUnits.some((item) => item._id === currentUnit)
+    ) {
       setValue("unit", "");
     }
   }, [control._formValues.unit, filteredUnits, isEditing, setValue]);
@@ -757,15 +789,23 @@ const VirtualOfficeClientDetails = () => {
         // Map other potentially renamed fields back for UI compatibility
         hoCity: serverData.city || serverData.hoCity || data.hoCity,
         hoState: serverData.state || serverData.hoState || data.hoState,
-        clientStatus: serverData.clientStatus ?? serverData.isActive ?? data.clientStatus,
+        clientStatus:
+          serverData.clientStatus ?? serverData.isActive ?? data.clientStatus,
         lockInPeriodMonths:
           (serverData.lockInPeriodMonths ??
             serverData.lockinPeriod ??
-            Number(data.lockInPeriodMonths)) || 0,
-        termStartDate: serverData.termStartDate ?? serverData.startDate ?? data.termStartDate,
+            Number(data.lockInPeriodMonths)) ||
+          0,
+        termStartDate:
+          serverData.termStartDate ??
+          serverData.startDate ??
+          data.termStartDate,
         termEnd: serverData.termEnd ?? serverData.endDate ?? data.termEnd,
         rentDate: serverData.rentDate ?? data.rentDate,
-        nextIncrementDate: serverData.nextIncrementDate ?? serverData.nextIncrement ?? data.nextIncrementDate,
+        nextIncrementDate:
+          serverData.nextIncrementDate ??
+          serverData.nextIncrement ??
+          data.nextIncrementDate,
       };
 
       dispatch(setSelectedClient(updatedClient));
@@ -784,7 +824,9 @@ const VirtualOfficeClientDetails = () => {
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["virtualOfficeRevenue"] }),
-        queryClient.invalidateQueries({ queryKey: ["virtualOfficeClientOptions"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["virtualOfficeClientOptions"],
+        }),
         queryClient.invalidateQueries({
           queryKey: ["virtualOfficeClient", selectedClient._id],
         }),
@@ -819,7 +861,8 @@ const VirtualOfficeClientDetails = () => {
   const handleReset = () => {
     if (selectedClient) {
       const resetUnit =
-        units.find((item) => item._id === resolveUnitId(selectedClient)) || null;
+        units.find((item) => item._id === resolveUnitId(selectedClient)) ||
+        null;
       const resetBuildingId =
         resetUnit?.building?._id ||
         resetUnit?.building ||
@@ -834,7 +877,11 @@ const VirtualOfficeClientDetails = () => {
         hoState: selectedClient.state || selectedClient.hoState,
         building: resetBuildingId,
         unit: resolveUnitId(selectedClient),
-        unitName: selectedClient.unit?.unitName || selectedClient.unitName || resetUnit?.unitName || "",
+        unitName:
+          selectedClient.unit?.unitName ||
+          selectedClient.unitName ||
+          resetUnit?.unitName ||
+          "",
         unitNo:
           selectedClient.unit?.unitNo ||
           selectedClient.unitNo ||
@@ -863,7 +910,9 @@ const VirtualOfficeClientDetails = () => {
         internalLead: selectedClient.internalLead || "",
         receivedAmount: selectedClient.receivedAmount || 0,
         totalReceivedAmount:
-          selectedClient.totalReceivedAmount ?? selectedClient.receivedAmount ?? 0,
+          selectedClient.totalReceivedAmount ??
+          selectedClient.receivedAmount ??
+          0,
         cabinDeskRate: selectedClient.cabinDeskRate || 0,
         annualIncrement: selectedClient.annualIncrement || 0,
         perDeskMeetingCredits: selectedClient.perDeskMeetingCredits || 0,
@@ -939,7 +988,9 @@ const VirtualOfficeClientDetails = () => {
           <PrimaryButton
             handleSubmit={handleEditToggle}
             title={isEditing ? "Cancel" : "Edit"}
-            disabled={isClientLoading || isClientByNameLoading || !selectedClient?._id}
+            disabled={
+              isClientLoading || isClientByNameLoading || !selectedClient?._id
+            }
           />
         </div>
       </div>
@@ -1002,7 +1053,7 @@ const VirtualOfficeClientDetails = () => {
                                 fullWidth
                                 disabled
                               />
-                               ) : fieldKey === "remainingAmount" ? (
+                            ) : fieldKey === "remainingAmount" ? (
                               <TextField
                                 {...field}
                                 size="small"
@@ -1061,24 +1112,32 @@ const VirtualOfficeClientDetails = () => {
                           <div className="w-full">
                             <span className="text-gray-500">
                               {fieldKey === "bookingType"
-                                ? selectedClient?.bookingType || DEFAULT_BOOKING_TYPE
+                                ? selectedClient?.bookingType ||
+                                  DEFAULT_BOOKING_TYPE
                                 : fieldKey === "revenue"
                                   ? formatCurrency(computedRevenue)
-                                    : fieldKey === "receivedAmount"
-                                      ? formatCurrency(selectedClient?.receivedAmount || 0)
+                                  : fieldKey === "receivedAmount"
+                                    ? formatCurrency(
+                                        selectedClient?.receivedAmount || 0,
+                                      )
                                     : fieldKey === "totalReceivedAmount"
                                       ? formatCurrency(
                                           selectedClient?.totalReceivedAmount ??
                                             selectedClient?.receivedAmount ??
                                             0,
                                         )
-                                    : fieldKey === "remainingAmount"
-                                      ? formatCurrency(computedRemainingAmount)
-                                  : (fieldKey === "hoCity"
-                                ? selectedClient?.city || selectedClient?.hoCity
-                                : fieldKey === "hoState"
-                                  ? selectedClient?.state || selectedClient?.hoState
-                                  : selectedClient?.[fieldKey]) || "N/A"}
+                                      : fieldKey === "remainingAmount"
+                                        ? formatCurrency(
+                                            computedRemainingAmount,
+                                          )
+                                        : (fieldKey === "hoCity"
+                                            ? selectedClient?.city ||
+                                              selectedClient?.hoCity
+                                            : fieldKey === "hoState"
+                                              ? selectedClient?.state ||
+                                                selectedClient?.hoState
+                                              : selectedClient?.[fieldKey]) ||
+                                          "N/A"}
                             </span>
                           </div>
                         </div>
@@ -1256,7 +1315,13 @@ const VirtualOfficeClientDetails = () => {
                         name="building"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} select size="small" label="Building" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            size="small"
+                            label="Building"
+                            fullWidth
+                          >
                             <MenuItem value="">Select a Building</MenuItem>
                             {availableBuildings.map((item) => (
                               <MenuItem key={item._id} value={item._id}>
@@ -1270,7 +1335,13 @@ const VirtualOfficeClientDetails = () => {
                         name="unit"
                         control={control}
                         render={({ field }) => (
-                          <TextField {...field} select size="small" label="Unit" fullWidth>
+                          <TextField
+                            {...field}
+                            select
+                            size="small"
+                            label="Unit"
+                            fullWidth
+                          >
                             <MenuItem value="">Select a Unit</MenuItem>
                             {isUnitsLoading ? (
                               <MenuItem disabled>Loading units...</MenuItem>
@@ -1282,25 +1353,38 @@ const VirtualOfficeClientDetails = () => {
                               ))
                             ) : (
                               <MenuItem disabled>
-                                {selectedBuilding ? "No units available" : "Select a building first"}
+                                {selectedBuilding
+                                  ? "No units available"
+                                  : "Select a building first"}
                               </MenuItem>
                             )}
                           </TextField>
                         )}
                       />
-                       <div className="grid grid-cols-1 lg:col-span-2 lg:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 lg:col-span-2 lg:grid-cols-2 gap-4">
                         <Controller
                           name="securityDeposit"
                           control={control}
                           render={({ field }) => (
-                            <TextField {...field} size="small" label="Security Deposit" fullWidth />
+                            <TextField
+                              {...field}
+                              size="small"
+                              label="Security Deposit"
+                              fullWidth
+                            />
                           )}
                         />
                         <Controller
                           name="billingFrequency"
                           control={control}
                           render={({ field }) => (
-                            <TextField {...field} select size="small" label="Billing Frequency" fullWidth>
+                            <TextField
+                              {...field}
+                              select
+                              size="small"
+                              label="Billing Frequency"
+                              fullWidth
+                            >
                               <MenuItem value="Monthly">Monthly</MenuItem>
                               <MenuItem value="Yearly">Yearly</MenuItem>
                             </TextField>
@@ -1337,7 +1421,7 @@ const VirtualOfficeClientDetails = () => {
                       </div>
                       {[
                         // "cabinDesks",
-                       // "securityDeposit",
+                        // "securityDeposit",
                         // "cabinDeskRate",
                         "openDesks",
                         "openDeskRate",
@@ -1353,12 +1437,24 @@ const VirtualOfficeClientDetails = () => {
                           control={control}
                           render={({ field }) =>
                             fieldKey === "clientStatus" ? (
-                              <TextField {...field} select size="small" label="Company Status" fullWidth>
+                              <TextField
+                                {...field}
+                                select
+                                size="small"
+                                label="Company Status"
+                                fullWidth
+                              >
                                 <MenuItem value={true}>Active</MenuItem>
                                 <MenuItem value={false}>Inactive</MenuItem>
                               </TextField>
                             ) : fieldKey === "totalDesks" ? (
-                              <TextField {...field} disabled size="small" label="No Of Desk" fullWidth />
+                              <TextField
+                                {...field}
+                                disabled
+                                size="small"
+                                label="No Of Desk"
+                                fullWidth
+                              />
                             ) : fieldKey === "brokerage" ? (
                               <TextField
                                 {...field}
@@ -1374,7 +1470,7 @@ const VirtualOfficeClientDetails = () => {
                                 value={formatCurrency(computedCurrentRate)}
                                 disabled
                                 size="small"
-                                label="Current Rate"
+                                label="Invoice Rate"
                                 fullWidth
                               />
                             ) : (
@@ -1409,18 +1505,23 @@ const VirtualOfficeClientDetails = () => {
                       "internalLead",
                       "clientStatus",
                     ].map((fieldKey) => (
-                      <div key={fieldKey} className="py-2 flex justify-between items-start gap-2">
+                      <div
+                        key={fieldKey}
+                        className="py-2 flex justify-between items-start gap-2"
+                      >
                         <div className="w-[100%] justify-start flex">
                           <span className="font-pmedium text-gray-600 text-content">
                             {fieldKey === "clientStatus"
                               ? "Company Status"
                               : fieldKey === "totalDesks"
                                 ? "No Of Desk"
-                              : fieldKey === "currentRate"
-                                  ? "Current Rate"
-                              : fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                                : fieldKey === "currentRate"
+                                  ? "Invoice Rate"
+                                  : fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) =>
+                                        str.toUpperCase(),
+                                      )}
                           </span>{" "}
                         </div>
                         <div className="">
@@ -1429,28 +1530,36 @@ const VirtualOfficeClientDetails = () => {
                         <div className="w-full">
                           <span className="text-gray-500">
                             {fieldKey === "clientStatus"
-                              ? (selectedClient?.clientStatus ?? selectedClient?.isActive)
+                              ? (selectedClient?.clientStatus ??
+                                selectedClient?.isActive)
                                 ? "Active"
                                 : "Inactive"
                               : fieldKey === "currentRate"
                                 ? formatCurrency(computedCurrentRate)
-                              : fieldKey === "brokerage"
-                                ? formatCurrency(selectedClient?.brokerage || 0)
-                              : fieldKey === "monthlyFee" || fieldKey === "deskRate"
-                                ? formatCurrency(selectedClient?.[fieldKey] ?? 0)
-                              : fieldKey === "buildingName"
-                                ? selectedUnitDetails?.building?.buildingName ||
-                                  selectedClient?.unit?.building?.buildingName ||
-                                  selectedClient?.buildingName ||
-                                  control._defaultValues.buildingName ||
-                                  "N/A"
-                                : fieldKey === "unitNo"
-                                  ? selectedUnitDetails?.unitNo ||
-                                    selectedClient?.unit?.unitNo ||
-                                    selectedClient?.unitNo ||
-                                    control._defaultValues.unitNo ||
-                                    "N/A"
-                                  : selectedClient?.[fieldKey] || "N/A"}
+                                : fieldKey === "brokerage"
+                                  ? formatCurrency(
+                                      selectedClient?.brokerage || 0,
+                                    )
+                                  : fieldKey === "monthlyFee" ||
+                                      fieldKey === "deskRate"
+                                    ? formatCurrency(
+                                        selectedClient?.[fieldKey] ?? 0,
+                                      )
+                                    : fieldKey === "buildingName"
+                                      ? selectedUnitDetails?.building
+                                          ?.buildingName ||
+                                        selectedClient?.unit?.building
+                                          ?.buildingName ||
+                                        selectedClient?.buildingName ||
+                                        control._defaultValues.buildingName ||
+                                        "N/A"
+                                      : fieldKey === "unitNo"
+                                        ? selectedUnitDetails?.unitNo ||
+                                          selectedClient?.unit?.unitNo ||
+                                          selectedClient?.unitNo ||
+                                          control._defaultValues.unitNo ||
+                                          "N/A"
+                                        : selectedClient?.[fieldKey] || "N/A"}
                           </span>
                         </div>
                       </div>
@@ -1690,7 +1799,10 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(selectedClient?.termStartDate || selectedClient?.startDate)}
+                            {humanDate(
+                              selectedClient?.termStartDate ||
+                                selectedClient?.startDate,
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1719,7 +1831,10 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(selectedClient?.termEnd || selectedClient?.endDate)}
+                            {humanDate(
+                              selectedClient?.termEnd ||
+                                selectedClient?.endDate,
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1740,8 +1855,10 @@ const VirtualOfficeClientDetails = () => {
                             if (!rentDate || !startDate) return true;
 
                             return (
-                              !dayjs(rentDate).isBefore(dayjs(startDate), "day") ||
-                              "Rent Date cannot be before Start Date"
+                              !dayjs(rentDate).isBefore(
+                                dayjs(startDate),
+                                "day",
+                              ) || "Rent Date cannot be before Start Date"
                             );
                           },
                         }}
@@ -1798,7 +1915,10 @@ const VirtualOfficeClientDetails = () => {
                         </div>
                         <div className="w-full">
                           <span className="text-gray-500">
-                            {humanDate(selectedClient?.nextIncrementDate || selectedClient?.nextIncrement)}
+                            {humanDate(
+                              selectedClient?.nextIncrementDate ||
+                                selectedClient?.nextIncrement,
+                            )}
                           </span>
                         </div>
                       </div>
@@ -1894,11 +2014,19 @@ const VirtualOfficeClientDetails = () => {
                           render={({ field }) => (
                             <TextField
                               {...field}
-                              type={fieldKey === "alternateAdminPhone" ? "tel" : "text"}
+                              type={
+                                fieldKey === "alternateAdminPhone"
+                                  ? "tel"
+                                  : "text"
+                              }
                               size="small"
-                              label={fieldKey === "alternateAdminPhone" ? "Alternate Admin Phone Number" : fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                              label={
+                                fieldKey === "alternateAdminPhone"
+                                  ? "Alternate Admin Phone Number"
+                                  : fieldKey
+                                      .replace(/([A-Z])/g, " $1")
+                                      .replace(/^./, (str) => str.toUpperCase())
+                              }
                               fullWidth
                             />
                           )}
@@ -1907,9 +2035,11 @@ const VirtualOfficeClientDetails = () => {
                         <div className="py-2 flex justify-between items-start gap-2">
                           <div className="w-[100%] justify-start flex">
                             <span className="font-pmedium text-gray-600 text-content">
-                              {fieldKey === "alternateAdminPhone" ? "Alternate Admin Phone Number" : fieldKey
-                                .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (str) => str.toUpperCase())}
+                              {fieldKey === "alternateAdminPhone"
+                                ? "Alternate Admin Phone Number"
+                                : fieldKey
+                                    .replace(/([A-Z])/g, " $1")
+                                    .replace(/^./, (str) => str.toUpperCase())}
                             </span>{" "}
                           </div>
                           <div className="">
@@ -1931,11 +2061,14 @@ const VirtualOfficeClientDetails = () => {
                                           ? selectedClient?.hoPoc?.phone
                                           : fieldKey === "hoPocAddress"
                                             ? selectedClient?.hoPoc?.address
-                                          : fieldKey === "alternateAdminName"
-                                            ? selectedClient?.alternateAdmin?.name
-                                          : fieldKey === "alternateAdminPhone"
-                                            ? selectedClient?.alternateAdmin?.phone
-                                          : ""}
+                                            : fieldKey === "alternateAdminName"
+                                              ? selectedClient?.alternateAdmin
+                                                  ?.name
+                                              : fieldKey ===
+                                                  "alternateAdminPhone"
+                                                ? selectedClient?.alternateAdmin
+                                                    ?.phone
+                                                : ""}
                             </span>
                           </div>
                         </div>

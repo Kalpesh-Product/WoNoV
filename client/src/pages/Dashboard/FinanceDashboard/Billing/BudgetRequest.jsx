@@ -1,15 +1,8 @@
-
 import TabLayout from "../../../../components/Tabs/TabLayout";
 import { PERMISSIONS } from "../../../../constants/permissions";
 
 const BudgetRequest = () => {
   const tabs = [
-    {
-      label: "Department Invoice Budget",
-      path: "department-invoice-budget",
-      permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE_BUDGET.value,
-     // permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
-    },
     {
       label: "Pending Approvals Budget",
       path: "pending-approvals-budget",
@@ -20,6 +13,12 @@ const BudgetRequest = () => {
       label: "Manage Budgets",
       path: "manage-budgets",
       permission: PERMISSIONS.FINANCE_BILLING_BUDGET_HISTORY.value,
+    },
+    {
+      label: "Department Invoice Budget",
+      path: "department-invoice-budget",
+      permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE_BUDGET.value,
+      // permission: PERMISSIONS.FINANCE_BILLING_DEPARTMENT_INVOICE.value,
     },
     {
       label: "Budget History",

@@ -357,7 +357,7 @@ const SupportTickets = ({
     queryKey: ["departments"],
     queryFn: async () => {
       try {
-        const response = await axios.get("api/departments/get-departments");
+        const response = await axios.get("/api/departments/get-departments");
         return response.data;
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -536,7 +536,7 @@ const SupportTickets = ({
               <MdOutlineRemoveRedEye />
             </div>
             {/* <ThreeDotMenu rowId={params.data.id} menuItems={conditionalItems} /> */}
-             {canViewActionMenu ? (
+            {canViewActionMenu ? (
               <ThreeDotMenu
                 rowId={params.data.id}
                 menuItems={conditionalItems}
@@ -805,10 +805,10 @@ const SupportTickets = ({
       <MuiModal
         open={closeModal}
         // onClose={() => setCloseModal(false)}
-          onClose={() => {
+        onClose={() => {
           resetCloseForm();
           setCloseModal(false);
-        }}  
+        }}
         title="Close Ticket"
       >
         <form
@@ -819,7 +819,7 @@ const SupportTickets = ({
           //   }),
           // )}
           // className="grid grid-cols-1 gap-4"
-           onSubmit={handleCloseSubmit((data) =>
+          onSubmit={handleCloseSubmit((data) =>
             closeTicket({ ticketId: closingTicketId, ...data }),
           )}
           className="grid grid-cols-1 gap-5"
@@ -870,7 +870,7 @@ const SupportTickets = ({
                 {...field}
                 label="Closing Remark"
                 fullWidth
-               // size="small"
+                // size="small"
                 multiline
                 rows={4}
                 error={!!closeErrors.closingRemark}

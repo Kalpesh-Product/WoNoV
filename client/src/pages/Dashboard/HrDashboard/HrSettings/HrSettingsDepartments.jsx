@@ -57,7 +57,7 @@ const HrSettingsDepartments = () => {
     queryKey: ["selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
     },
@@ -224,7 +224,7 @@ const HrSettingsDepartments = () => {
       },
       flex: 1,
     },
-    { field: "manager", headerName: "Manager",flex: 1, },
+    { field: "manager", headerName: "Manager", flex: 1 },
     {
       field: "status",
       headerName: "Status",
@@ -369,7 +369,9 @@ const HrSettingsDepartments = () => {
 
           <div className="flex justify-end">
             <PrimaryButton
-              title={modalType === "edit" ? "Update Department" : "Add Department"}
+              title={
+                modalType === "edit" ? "Update Department" : "Add Department"
+              }
               type="submit"
               handleSubmit={() => {}}
               isLoading={isAddingDepartment || isEditingDepartment}

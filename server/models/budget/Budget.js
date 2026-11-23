@@ -16,6 +16,11 @@ const budgetSchema = new mongoose.Schema(
       ref: "Vendor",
       default: null,
     },
+    requestedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
     expanseName: {
       type: String,
     },

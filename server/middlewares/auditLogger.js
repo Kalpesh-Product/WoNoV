@@ -1,4 +1,5 @@
 const emitter = require("../utils/eventEmitter");
+const { normalizeLogModule } = require("../utils/logModule");
 
 const auditLogger = (req, res, next) => {
   try {
@@ -103,6 +104,7 @@ const auditLogger = (req, res, next) => {
           ipAddress: ip,
           company,
           action: customAction || lastSegment,
+          module: normalizeLogModule(url),
           method,
           path: url,
           statusCode: status,

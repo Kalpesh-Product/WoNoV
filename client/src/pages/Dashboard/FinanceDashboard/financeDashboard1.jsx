@@ -165,8 +165,12 @@ const FinanceDashboardMenu = ({ cards, sections, itemMeta }) => {
                         {activeCard.icon}
                       </span>
                       <div>
-                        <p className="font-psemibold text-base text-[#1E3D73]">{activeCard.title}</p>
-                        <p className="text-xs text-[#7084a4]">Open mix-bag modules</p>
+                        <p className="font-psemibold text-base text-[#1E3D73]">
+                          {activeCard.title}
+                        </p>
+                        <p className="text-xs text-[#7084a4]">
+                          Open mix-bag modules
+                        </p>
                       </div>
                     </div>
                   </button>
@@ -176,8 +180,12 @@ const FinanceDashboardMenu = ({ cards, sections, itemMeta }) => {
                       {activeCard.icon}
                     </span>
                     <div>
-                      <p className="font-psemibold text-base text-[#1E3D73]">{activeCard.title}</p>
-                      <p className="text-xs text-[#7084a4]">Open {activeCard.title.toLowerCase()} modules</p>
+                      <p className="font-psemibold text-base text-[#1E3D73]">
+                        {activeCard.title}
+                      </p>
+                      <p className="text-xs text-[#7084a4]">
+                        Open {activeCard.title.toLowerCase()} modules
+                      </p>
                     </div>
                   </div>
                 )}
@@ -199,8 +207,12 @@ const FinanceDashboardMenu = ({ cards, sections, itemMeta }) => {
                           {meta.icon}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block font-pmedium text-[15px] leading-tight">{label}</span>
-                          <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">{meta.description}</span>
+                          <span className="block font-pmedium text-[15px] leading-tight">
+                            {label}
+                          </span>
+                          <span className="mt-1 block text-xs leading-tight text-[#7b8eac]">
+                            {meta.description}
+                          </span>
                         </span>
                         <FiChevronRight size={17} />
                       </button>
@@ -481,7 +493,9 @@ const InvestorHeaderLogo = () => (
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>&nbsp;N<span className="lowercase">est</span></span>
+    <span>
+      &nbsp;N<span className="lowercase">est</span>
+    </span>
   </span>
 );
 
@@ -1265,9 +1279,7 @@ const groupUniqueClientInvoices = (revenueInvoices) => {
   asArray(revenueInvoices.coworkingRevenues).forEach((invoice) => {
     addInvoice({
       invoice,
-      typeOfClient: isFlexyDeskRevenue(invoice)
-        ? "Flexy Desk"
-        : "Co-Working",
+      typeOfClient: isFlexyDeskRevenue(invoice) ? "Flexy Desk" : "Co-Working",
       date: invoice.rentDate,
       client: invoice.clientName || invoice.clientInvoiceName,
     });
@@ -1564,26 +1576,65 @@ const FinanceCashflow = ({ financialSeries, now }) => {
   const startYear = Number(fiscalYear.match(/\d{4}/)?.[0]);
   const completedMonths = getCashflowActualMonthCount(startYear, now);
   const openingBalance = cashflowOpeningForYear(financialSeries, startYear);
-  const rows = projectCashflowRows(income, expenses, completedMonths, openingBalance);
-  const amountLabel = (value) => new Intl.NumberFormat("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Math.trunc(Number(value) / 100000 * 100) / 100);
-  const cashflowBalance = completedMonths ? rows[completedMonths - 1].closing : openingBalance;
-  const visibleAmount = (row, field, label) => hiddenLegendItems.includes(label) || (row.projected && hiddenLegendItems.includes("Projected")) ? null : field === "closing" ? Math.max(0, row.closing) : row[field];
-  const availableFiscalYears = financialSeries.map((series) => Number(series.group?.match(/\d{4}/)?.[0])).filter(Number.isFinite);
-  const earliestFiscalYear = availableFiscalYears.length ? Math.min(...availableFiscalYears) : 2026;
-  const chartData = [...new Set(financialSeries.map((series) => series.group))].map((group) => {
-    const yearStart = Number(group.match(/\d{4}/)?.[0]);
-    const completed = getCashflowActualMonthCount(yearStart, now);
-    const yearRows = projectCashflowRows(
-      financialSeries.find((series) => series.group === group && series.name === "Income")?.data,
-      financialSeries.find((series) => series.group === group && series.name === "Expense")?.data,
-      completed,
-      cashflowOpeningForYear(financialSeries, yearStart),
-    );
-    return [
-      { name: "Expenses", group, data: yearRows.map((row) => visibleAmount(row, "expenses", "Expenses")) },
-      { name: "Closing Balance", group, data: yearRows.map((row) => visibleAmount(row, "closing", "Closing Balance")) },
-    ];
-  }).flat();
+  const rows = projectCashflowRows(
+    income,
+    expenses,
+    completedMonths,
+    openingBalance,
+  );
+  const amountLabel = (value) =>
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Math.trunc((Number(value) / 100000) * 100) / 100);
+  const cashflowBalance = completedMonths
+    ? rows[completedMonths - 1].closing
+    : openingBalance;
+  const visibleAmount = (row, field, label) =>
+    hiddenLegendItems.includes(label) ||
+    (row.projected && hiddenLegendItems.includes("Projected"))
+      ? null
+      : field === "closing"
+        ? Math.max(0, row.closing)
+        : row[field];
+  const availableFiscalYears = financialSeries
+    .map((series) => Number(series.group?.match(/\d{4}/)?.[0]))
+    .filter(Number.isFinite);
+  const earliestFiscalYear = availableFiscalYears.length
+    ? Math.min(...availableFiscalYears)
+    : 2026;
+  const chartData = [...new Set(financialSeries.map((series) => series.group))]
+    .map((group) => {
+      const yearStart = Number(group.match(/\d{4}/)?.[0]);
+      const completed = getCashflowActualMonthCount(yearStart, now);
+      const yearRows = projectCashflowRows(
+        financialSeries.find(
+          (series) => series.group === group && series.name === "Income",
+        )?.data,
+        financialSeries.find(
+          (series) => series.group === group && series.name === "Expense",
+        )?.data,
+        completed,
+        cashflowOpeningForYear(financialSeries, yearStart),
+      );
+      return [
+        {
+          name: "Expenses",
+          group,
+          data: yearRows.map((row) =>
+            visibleAmount(row, "expenses", "Expenses"),
+          ),
+        },
+        {
+          name: "Closing Balance",
+          group,
+          data: yearRows.map((row) =>
+            visibleAmount(row, "closing", "Closing Balance"),
+          ),
+        },
+      ];
+    })
+    .flat();
   const options = {
     states: {
       hover: { filter: { type: "none" } },
@@ -1781,7 +1832,9 @@ const FinanceDashboard1 = () => {
     [auth?.user?.firstName, auth?.user?.lastName]
       .filter(Boolean)
       .join(" ")
-      .trim() || auth?.user?.name || "";
+      .trim() ||
+    auth?.user?.name ||
+    "";
 
   const location = useLocation();
   const navigate = useFinanceNavigate();
@@ -1843,34 +1896,82 @@ const FinanceDashboard1 = () => {
   const menuSections = {
     Cashflow: [
       ["Projections", "/app/dashboard/finance-dashboard1/cashflow/projections"],
-      ["Historical P&L", "/app/dashboard/finance-dashboard1/cashflow/historical-P&L"],
+      [
+        "Historical P&L",
+        "/app/dashboard/finance-dashboard1/cashflow/historical-P&L",
+      ],
     ],
     Finance: [
       ["Budget", "/app/dashboard/finance-dashboard1/finance/budget"],
-      ["Budget History", "/app/dashboard/finance-dashboard1/finance/budget-history"],
-      ["Payment Schedule", "/app/dashboard/finance-dashboard1/finance/payment-schedule"],
+      [
+        "Budget History",
+        "/app/dashboard/finance-dashboard1/finance/budget-history",
+      ],
+      [
+        "Payment Schedule",
+        "/app/dashboard/finance-dashboard1/finance/payment-schedule",
+      ],
       ["Voucher", "/app/dashboard/finance-dashboard1/finance/voucher"],
-      ["Voucher History", "/app/dashboard/finance-dashboard1/finance/voucher-history"],
+      [
+        "Voucher History",
+        "/app/dashboard/finance-dashboard1/finance/voucher-history",
+      ],
     ],
     Billing: [
-      ["Client Invoicing", "/app/dashboard/finance-dashboard1/billing/client-invoicing/co-working-revenue-invoicing"],
-      ["Voucher Request", "/app/dashboard/finance-dashboard1/billing/voucher-request/department-invoice-voucher"],
-      ["Budget Request", "/app/dashboard/finance-dashboard1/billing/budget-request/department-invoice-budget"],
+      [
+        "Client Invoicing",
+        "/app/dashboard/finance-dashboard1/billing/client-invoicing/co-working-revenue-invoicing",
+      ],
+      [
+        "Voucher Request",
+        "/app/dashboard/finance-dashboard1/billing/voucher-request/department-invoice-voucher",
+      ],
+      [
+        "Budget Request",
+        "/app/dashboard/finance-dashboard1/billing/budget-request/department-invoice-budget",
+      ],
     ],
     "Mix-Bag": [
       ["Revenue", "/app/dashboard/finance-dashboard1/mix-bag/revenue"],
-      ["Manage Meetings", "/app/dashboard/finance-dashboard1/mix-bag/manage-meetings"],
-      ["Department Wise Budget", "/app/dashboard/finance-dashboard1/mix-bag/department-wise-budget"],
-      ["Collection & Payments", "/app/dashboard/finance-dashboard1/mix-bag/collection-payments"],
-      ["Directors & Company KYC", "/app/dashboard/finance-dashboard1/mix-bag/directors-company-KYC"],
-      ["Compliance Documents", "/app/dashboard/finance-dashboard1/mix-bag/compliance-documents"],
-      ["Landlord Agreements", "/app/dashboard/finance-dashboard1/mix-bag/landlord-agreements"],
-      ["Client Agreements", "/app/dashboard/finance-dashboard1/mix-bag/client-agreements"],
+      [
+        "Manage Meetings",
+        "/app/dashboard/finance-dashboard1/mix-bag/manage-meetings",
+      ],
+      [
+        "Department Wise Budget",
+        "/app/dashboard/finance-dashboard1/mix-bag/department-wise-budget",
+      ],
+      [
+        "Collection & Payments",
+        "/app/dashboard/finance-dashboard1/mix-bag/collection-payments",
+      ],
+      [
+        "Directors & Company KYC",
+        "/app/dashboard/finance-dashboard1/mix-bag/directors-company-KYC",
+      ],
+      [
+        "Compliance Documents",
+        "/app/dashboard/finance-dashboard1/mix-bag/compliance-documents",
+      ],
+      [
+        "Landlord Agreements",
+        "/app/dashboard/finance-dashboard1/mix-bag/landlord-agreements",
+      ],
+      [
+        "Client Agreements",
+        "/app/dashboard/finance-dashboard1/mix-bag/client-agreements",
+      ],
     ],
     Data: [
       ["Asset List", "/app/dashboard/finance-dashboard1/data/asset-list"],
-      ["Monthly Budget Reports", "/app/dashboard/finance-dashboard1/data/monthly-budget-report"],
-      ["Monthly Invoice Reports", "/app/dashboard/finance-dashboard1/data/monthly-invoice-reports"],
+      [
+        "Monthly Budget Reports",
+        "/app/dashboard/finance-dashboard1/data/monthly-budget-report",
+      ],
+      [
+        "Monthly Invoice Reports",
+        "/app/dashboard/finance-dashboard1/data/monthly-invoice-reports",
+      ],
       ["Vendor", "/app/dashboard/finance-dashboard1/data/vendor"],
     ],
     Settings: [
@@ -1880,46 +1981,119 @@ const FinanceDashboard1 = () => {
     ],
   };
   const menuItemMeta = {
-    Projections: { icon: <FiTrendingUp />, description: "Future financial projections" },
-    "Historical P&L": { icon: <FiFileText />, description: "Review historical profit and loss" },
-    Budget: { icon: <FiDatabase />, description: "Plan and manage department budgets" },
-    "Budget History": { icon: <FiFileText />, description: "View previous budget records" },
-    "Payment Schedule": { icon: <MdCalendarMonth />, description: "Track upcoming payments" },
-    Voucher: { icon: <FiCreditCard />, description: "Create and manage vouchers" },
-    "Voucher History": { icon: <FiFileText />, description: "View voucher history" },
-    "Client Invoicing": { icon: <FiUsers />, description: "Manage client invoices" },
-    "Voucher Request": { icon: <FiFileText />, description: "Request department vouchers" },
-    "Budget Request": { icon: <FiDatabase />, description: "Request department budgets" },
-    Revenue: { icon: <FaChartSimple />, description: "Track revenue performance" },
-    "Manage Meetings": { icon: <FiUsers />, description: "Manage meeting bookings" },
-    "Department Wise Budget": { icon: <FiDatabase />, description: "Compare budgets by department" },
-    "Collection & Payments": { icon: <FiCreditCard />, description: "Monitor collections and payments" },
-    "Directors & Company KYC": { icon: <FiUsers />, description: "Manage company KYC details" },
-    "Compliance Documents": { icon: <FiFileText />, description: "Manage compliance records" },
-    "Landlord Agreements": { icon: <FiFileText />, description: "Manage landlord agreements" },
-    "Client Agreements": { icon: <FiFileText />, description: "Manage client agreements" },
-    "Asset List": { icon: <FiDatabase />, description: "View and manage assets" },
-    "Monthly Budget Reports": { icon: <FiFileText />, description: "Monthly budget insights" },
-    "Monthly Invoice Reports": { icon: <FiFileText />, description: "Monthly invoice insights" },
+    Projections: {
+      icon: <FiTrendingUp />,
+      description: "Future financial projections",
+    },
+    "Historical P&L": {
+      icon: <FiFileText />,
+      description: "Review historical profit and loss",
+    },
+    Budget: {
+      icon: <FiDatabase />,
+      description: "Plan and manage department budgets",
+    },
+    "Budget History": {
+      icon: <FiFileText />,
+      description: "View previous budget records",
+    },
+    "Payment Schedule": {
+      icon: <MdCalendarMonth />,
+      description: "Track upcoming payments",
+    },
+    Voucher: {
+      icon: <FiCreditCard />,
+      description: "Create and manage vouchers",
+    },
+    "Voucher History": {
+      icon: <FiFileText />,
+      description: "View voucher history",
+    },
+    "Client Invoicing": {
+      icon: <FiUsers />,
+      description: "Manage client invoices",
+    },
+    "Voucher Request": {
+      icon: <FiFileText />,
+      description: "Request department vouchers",
+    },
+    "Budget Request": {
+      icon: <FiDatabase />,
+      description: "Request department budgets",
+    },
+    Revenue: {
+      icon: <FaChartSimple />,
+      description: "Track revenue performance",
+    },
+    "Manage Meetings": {
+      icon: <FiUsers />,
+      description: "Manage meeting bookings",
+    },
+    "Department Wise Budget": {
+      icon: <FiDatabase />,
+      description: "Compare budgets by department",
+    },
+    "Collection & Payments": {
+      icon: <FiCreditCard />,
+      description: "Monitor collections and payments",
+    },
+    "Directors & Company KYC": {
+      icon: <FiUsers />,
+      description: "Manage company KYC details",
+    },
+    "Compliance Documents": {
+      icon: <FiFileText />,
+      description: "Manage compliance records",
+    },
+    "Landlord Agreements": {
+      icon: <FiFileText />,
+      description: "Manage landlord agreements",
+    },
+    "Client Agreements": {
+      icon: <FiFileText />,
+      description: "Manage client agreements",
+    },
+    "Asset List": {
+      icon: <FiDatabase />,
+      description: "View and manage assets",
+    },
+    "Monthly Budget Reports": {
+      icon: <FiFileText />,
+      description: "Monthly budget insights",
+    },
+    "Monthly Invoice Reports": {
+      icon: <FiFileText />,
+      description: "Monthly invoice insights",
+    },
     Vendor: { icon: <FiUsers />, description: "Manage vendor information" },
-    "Bulk Upload": { icon: <FiUploadCloud />, description: "Upload data in bulk" },
-    SOPs: { icon: <FiFileText />, description: "Standard operating procedures" },
-    Policies: { icon: <FiSettings />, description: "Configure finance policies" },
+    "Bulk Upload": {
+      icon: <FiUploadCloud />,
+      description: "Upload data in bulk",
+    },
+    SOPs: {
+      icon: <FiFileText />,
+      description: "Standard operating procedures",
+    },
+    Policies: {
+      icon: <FiSettings />,
+      description: "Configure finance policies",
+    },
   };
   //------------------------PAGE ACCESS CARD END-------------------//
 
   const axios = useAxiosPrivate();
-  const { data: selectedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
-    queryKey: ["finance-selectedDepartments"],
-    queryFn: async () => {
-      const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
-      );
-      return Array.isArray(response.data?.selectedDepartments)
-        ? response.data.selectedDepartments
-        : [];
-    },
-  });
+  const { data: selectedDepartments = [], isLoading: isDepartmentsLoading } =
+    useQuery({
+      queryKey: ["finance-selectedDepartments"],
+      queryFn: async () => {
+        const response = await axios.get(
+          "/api/company/get-company-data?field=selectedDepartments",
+        );
+        return Array.isArray(response.data?.selectedDepartments)
+          ? response.data.selectedDepartments
+          : [];
+      },
+    });
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["finance-dashboard1-tasks", department?._id],
@@ -1963,24 +2137,25 @@ const FinanceDashboard1 = () => {
     refetchOnReconnect: true,
   });
 
-  const { data: simpleRevenue = {}, isLoading: isSimpleRevenueLoading } = useQuery({
-    queryKey: ["finance-dashboard1-simpleRevenue"],
-    queryFn: async () => {
-      try {
-        const response = await axios.get(
-          "/api/sales/simple-consolidated-revenue",
-        );
-        return response.data || {};
-      } catch (error) {
-        console.error(error);
-        return {};
-      }
-    },
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
-  });
+  const { data: simpleRevenue = {}, isLoading: isSimpleRevenueLoading } =
+    useQuery({
+      queryKey: ["finance-dashboard1-simpleRevenue"],
+      queryFn: async () => {
+        try {
+          const response = await axios.get(
+            "/api/sales/simple-consolidated-revenue",
+          );
+          return response.data || {};
+        } catch (error) {
+          console.error(error);
+          return {};
+        }
+      },
+      staleTime: 0,
+      refetchOnMount: "always",
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
+    });
 
   const uniqueClientsSummary = useMemo(
     () => uniqueClientGraphSummary(simpleRevenue),
@@ -1993,13 +2168,15 @@ const FinanceDashboard1 = () => {
   const payoutMonthPayments = isBudgetDataLoading
     ? []
     : budgetData.filter(
-      (item) =>
-        item?.dueDate &&
-        dayjs(item.dueDate).format("MMM-YY") === selectedPayoutMonth,
-    );
+        (item) =>
+          item?.dueDate &&
+          dayjs(item.dueDate).format("MMM-YY") === selectedPayoutMonth,
+      );
   const payoutSummary = payoutMonthPayments.reduce(
     (summary, item) => {
-      const status = String(item?.status || "").trim().toLowerCase();
+      const status = String(item?.status || "")
+        .trim()
+        .toLowerCase();
       const amount = Number(item?.projectedAmount) || 0;
 
       summary.total.count += 1;
@@ -2947,45 +3124,74 @@ const FinanceDashboard1 = () => {
   //-----------------------------------------------------Donut Rental Payments------------------------------------------------------//
   //-----------------------------------------------------Table Priority Tasks------------------------------------------------------//
 
-  const { mutate: updatePayoutApproval, isPending: isPayoutApprovalPending } = useMutation({
-    mutationFn: async ({ row, action, reason }) => {
-      if (!row.canApproveBudget || row.status !== "Pending") throw new Error("This budget is not eligible for approval actions");
-      return action === "approve"
-        ? axios.patch("/api/budget/approve-budget", { budgetId: row._id })
-        : axios.patch(`/api/budget/reject-budget/${row._id}`, { reason });
-    },
-    onSuccess: async (_response, { row, action }) => {
-      const status = action === "approve" ? "Approved" : "Rejected";
-      payoutQueryClient.setQueryData(["budgetData", "finance-dashboard1"], (rows) => Array.isArray(rows)
-        ? rows.map((item) => item._id === row._id
-          ? {
-              ...item,
-              status,
-              ...(action === "approve" && currentApproverName
-                ? { approverName: currentApproverName }
-                : {}),
-            }
-          : item) : rows);
-      payoutQueryClient.setQueryData(["pendingApprovalsBudget"], (rows) => Array.isArray(rows)
-        ? rows.filter((item) => item._id !== row._id) : rows);
-      setPayoutDetails((current) => current?._id === row._id
-        ? {
-            ...current,
-            status,
-            ...(action === "approve" && currentApproverName
-              ? { approverName: currentApproverName }
-              : {}),
-          }
-        : current);
-      setPayoutRejectRow(null);
-      setPayoutRejectReason("");
-      toast.success(`Budget ${status.toLowerCase()} successfully`);
-      await Promise.all([
-        ["budgetData", "finance-dashboard1"], ["pendingApprovalsBudget"], ["budgetHistory"], ["allBudgets"],
-      ].map((queryKey) => payoutQueryClient.invalidateQueries({ queryKey, refetchType: "all" })));
-    },
-    onError: (error) => toast.error(error.response?.data?.message || error.message || "Unable to update budget"),
-  });
+  const { mutate: updatePayoutApproval, isPending: isPayoutApprovalPending } =
+    useMutation({
+      mutationFn: async ({ row, action, reason }) => {
+        if (!row.canApproveBudget || row.status !== "Pending")
+          throw new Error("This budget is not eligible for approval actions");
+        return action === "approve"
+          ? axios.patch("/api/budget/approve-budget", { budgetId: row._id })
+          : axios.patch(`/api/budget/reject-budget/${row._id}`, { reason });
+      },
+      onSuccess: async (_response, { row, action }) => {
+        const status = action === "approve" ? "Approved" : "Rejected";
+        payoutQueryClient.setQueryData(
+          ["budgetData", "finance-dashboard1"],
+          (rows) =>
+            Array.isArray(rows)
+              ? rows.map((item) =>
+                  item._id === row._id
+                    ? {
+                        ...item,
+                        status,
+                        ...(action === "approve" && currentApproverName
+                          ? { approverName: currentApproverName }
+                          : {}),
+                      }
+                    : item,
+                )
+              : rows,
+        );
+        payoutQueryClient.setQueryData(["pendingApprovalsBudget"], (rows) =>
+          Array.isArray(rows)
+            ? rows.filter((item) => item._id !== row._id)
+            : rows,
+        );
+        setPayoutDetails((current) =>
+          current?._id === row._id
+            ? {
+                ...current,
+                status,
+                ...(action === "approve" && currentApproverName
+                  ? { approverName: currentApproverName }
+                  : {}),
+              }
+            : current,
+        );
+        setPayoutRejectRow(null);
+        setPayoutRejectReason("");
+        toast.success(`Budget ${status.toLowerCase()} successfully`);
+        await Promise.all(
+          [
+            ["budgetData", "finance-dashboard1"],
+            ["pendingApprovalsBudget"],
+            ["budgetHistory"],
+            ["allBudgets"],
+          ].map((queryKey) =>
+            payoutQueryClient.invalidateQueries({
+              queryKey,
+              refetchType: "all",
+            }),
+          ),
+        );
+      },
+      onError: (error) =>
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Unable to update budget",
+        ),
+    });
   const viewPayout = async (row) => {
     setPayoutDetails(row);
     try {
@@ -3001,9 +3207,12 @@ const FinanceDashboard1 = () => {
       console.error("Unable to fetch payment details", error);
     }
   };
-  const payoutInvoiceFilesForRow = (row) => Array.isArray(row?.invoices) && row.invoices.some((file) => file?.link)
-    ? row.invoices.filter((file) => file?.link)
-    : row?.invoice?.link ? [row.invoice] : [];
+  const payoutInvoiceFilesForRow = (row) =>
+    Array.isArray(row?.invoices) && row.invoices.some((file) => file?.link)
+      ? row.invoices.filter((file) => file?.link)
+      : row?.invoice?.link
+        ? [row.invoice]
+        : [];
   const validPayoutName = (value) => {
     const name = String(value || "").trim();
     return name && !["-", "--", "\u2013", "\u2014"].includes(name) ? name : "";
@@ -3014,12 +3223,18 @@ const FinanceDashboard1 = () => {
     }
 
     if (row.status === "Approved") {
-      return validPayoutName(row.approverName) ||
-        validPayoutName(row.requiredApprover) || "\u2014";
+      return (
+        validPayoutName(row.approverName) ||
+        validPayoutName(row.requiredApprover) ||
+        "\u2014"
+      );
     }
 
-    return validPayoutName(row.requiredApprover) ||
-      validPayoutName(row.approverName) || "\u2014";
+    return (
+      validPayoutName(row.requiredApprover) ||
+      validPayoutName(row.approverName) ||
+      "\u2014"
+    );
   };
   const marchPaymentColumns = [
     { id: "srNo", label: "Sr No", width: 70 },
@@ -3607,50 +3822,69 @@ const FinanceDashboard1 = () => {
           borderColor="#1E3D73"
           bodyBorderColor="#9FB2CF"
           headerContentClassName="min-h-[42px]"
-          headerRightContent={(
+          headerRightContent={
             <div className="flex flex-wrap items-center justify-end gap-1.5 lg:flex-nowrap min-[1800px]:gap-2">
               <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-2 py-1.5 text-xs font-pmedium uppercase text-[#274784] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
-                TOTAL: {payoutSummary.total.count} | {inrFormat(payoutSummary.total.amount)}
+                TOTAL: {payoutSummary.total.count} |{" "}
+                {inrFormat(payoutSummary.total.amount)}
               </span>
               <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#9bd8ba] bg-[#eafbf3] px-2 py-1.5 text-xs font-pmedium uppercase text-[#16875d] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
-                APPROVAL: {payoutSummary.approved.count} | {inrFormat(payoutSummary.approved.amount)}
+                APPROVAL: {payoutSummary.approved.count} |{" "}
+                {inrFormat(payoutSummary.approved.amount)}
               </span>
               <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#f2cf83] bg-[#fff7df] px-2 py-1.5 text-xs font-pmedium uppercase text-[#b7791f] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
-                PENDING: {payoutSummary.pending.count} | {inrFormat(payoutSummary.pending.amount)}
+                PENDING: {payoutSummary.pending.count} |{" "}
+                {inrFormat(payoutSummary.pending.amount)}
               </span>
               <span className="inline-flex items-center whitespace-nowrap rounded-lg border border-[#f3aaaa] bg-[#fff0f0] px-2 py-1.5 text-xs font-pmedium uppercase text-[#d64545] min-[1800px]:px-3 min-[1800px]:py-2 min-[1800px]:text-sm">
-                REJECTED: {payoutSummary.rejected.count} | {inrFormat(payoutSummary.rejected.amount)}
+                REJECTED: {payoutSummary.rejected.count} |{" "}
+                {inrFormat(payoutSummary.rejected.amount)}
               </span>
             </div>
-          )}
+          }
         >
-        <div className="text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73]" style={{ "--ag-foreground-color": "#1E3D73", "--ag-header-foreground-color": "#1E3D73", "--ag-icon-color": "#1E3D73" }}>
-        <AgTable showTableControls={false}
-
-          hideTitle
-          data={item.rows}
-          columns={item.columns.map(({ id, label, width, hide, valueGetter, renderCell }) => ({
-            field: id,
-            headerName: label,
-            width,
-            hide,
-            valueGetter,
-            minWidth: id === "actions" ? 115 : 80,
-            flex: id === "srNo" ? undefined : 1,
-            cellStyle: { color: "#1E3D73" },
-            headerClass: "!text-[#1E3D73]",
-            sortable: id !== "actions",
-            filter: ["department", "projectedAmount", "status"].includes(id),
-            pinned: id === "actions" ? "right" : undefined,
-            cellRenderer: (params) => {
-              const value = renderCell ? renderCell(params.data) : params.value;
-              return value == null || value === "" || value === "--" ? "\u2014" : value;
-            },
-          }))}
-          search
-          showDateControls={false}
-        />
-        </div>
+          <div
+            className="text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73]"
+            style={{
+              "--ag-foreground-color": "#1E3D73",
+              "--ag-header-foreground-color": "#1E3D73",
+              "--ag-icon-color": "#1E3D73",
+            }}
+          >
+            <AgTable
+              showTableControls={false}
+              hideTitle
+              data={item.rows}
+              columns={item.columns.map(
+                ({ id, label, width, hide, valueGetter, renderCell }) => ({
+                  field: id,
+                  headerName: label,
+                  width,
+                  hide,
+                  valueGetter,
+                  minWidth: id === "actions" ? 115 : 80,
+                  flex: id === "srNo" ? undefined : 1,
+                  cellStyle: { color: "#1E3D73" },
+                  headerClass: "!text-[#1E3D73]",
+                  sortable: id !== "actions",
+                  filter: ["department", "projectedAmount", "status"].includes(
+                    id,
+                  ),
+                  pinned: id === "actions" ? "right" : undefined,
+                  cellRenderer: (params) => {
+                    const value = renderCell
+                      ? renderCell(params.data)
+                      : params.value;
+                    return value == null || value === "" || value === "--"
+                      ? "\u2014"
+                      : value;
+                  },
+                }),
+              )}
+              search
+              showDateControls={false}
+            />
+          </div>
         </WidgetSection>
       )),
     },
@@ -3686,8 +3920,13 @@ const FinanceDashboard1 = () => {
       <Navigate to="/unauthorized" replace />
     );
   }
-  if (isDepartmentsLoading || isTasksLoading || isRevenueExpenseLoading ||
-      isBudgetDataLoading || isSimpleRevenueLoading) {
+  if (
+    isDepartmentsLoading ||
+    isTasksLoading ||
+    isRevenueExpenseLoading ||
+    isBudgetDataLoading ||
+    isSimpleRevenueLoading
+  ) {
     return <FinanceLoadingSkeleton variant="dashboard1" />;
   }
 
@@ -3939,8 +4178,7 @@ const FinanceDashboard1 = () => {
                 Finance Dashboard
               </p>
               <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.88] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:text-5xl min-[1800px]:text-[56px]">
-                FINANCE{" "}
-                <span className="text-[#E64B4B]">DASHBOARD</span>
+                FINANCE <span className="text-[#E64B4B]">DASHBOARD</span>
               </h1>
               <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[36px] min-[1800px]:text-[42px]">
                 Finance, Performance &amp; Insights
@@ -3951,16 +4189,18 @@ const FinanceDashboard1 = () => {
                 aria-label="Finance dashboard navigation"
                 className="absolute bottom-0 left-0 z-10 flex w-fit max-w-[61%] items-end gap-6 overflow-x-auto px-3 sm:gap-8 sm:px-4 lg:w-[50%] lg:max-w-none lg:justify-between lg:gap-2 min-[1700px]:w-fit min-[1700px]:max-w-[61%] min-[1700px]:justify-start min-[1700px]:gap-10"
               >
-                {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map((label) => (
-                  <button
-                    key={label}
-                    type="button"
-                    className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm min-[1700px]:text-base"
-                  >
-                    {label}
-                    <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
-                  </button>
-                ))}
+                {["Annual KPA", "KRA", "Handbook", "Performance Summary"].map(
+                  (label) => (
+                    <button
+                      key={label}
+                      type="button"
+                      className="group relative inline-flex shrink-0 items-center pb-0 pt-6 font-pmedium text-xs text-[#1E3D73] focus-visible:outline-none sm:text-sm min-[1700px]:text-base"
+                    >
+                      {label}
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-0 bg-[#E64B4B] transition-transform duration-200 group-hover:scale-x-100 group-focus-visible:scale-x-100" />
+                    </button>
+                  ),
+                )}
                 <FinanceDashboardMenu
                   cards={settingsCards}
                   sections={menuSections}

@@ -67,8 +67,7 @@ const bulkInsertRoutes = [
       {
         name: "tasks",
         fileKey: "file",
-        route:
-          "api/tasks/bulk-insert",
+        route: "/api/tasks/bulk-insert",
       },
       {
         name: "assets",
@@ -155,7 +154,8 @@ const bulkInsertRoutes = [
         ],
         fileKey: "schedule",
         sourceDepartmentId: "6798bae6e469e809084e24a4",
-        route: "/api/administration/bulk-insert-weekly-shift-schedule/6798bae6e469e809084e24a4",
+        route:
+          "/api/administration/bulk-insert-weekly-shift-schedule/6798bae6e469e809084e24a4",
       },
       {
         name: "Holidays And Events",

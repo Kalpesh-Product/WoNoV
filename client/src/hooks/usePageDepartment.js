@@ -12,7 +12,7 @@ const usePageDepartment = (sectionOverride) => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments"
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments || [];
     } catch (error) {
@@ -30,10 +30,11 @@ const usePageDepartment = (sectionOverride) => {
 
   const pathSegments = location?.pathname?.split("/")?.filter(Boolean) || [];
   const dashboardSegment = pathSegments.find((segment) =>
-    /-dashboard(?:\d+)?$/.test(segment || "")
+    /-dashboard(?:\d+)?$/.test(segment || ""),
   );
 
-  let section = sectionOverride || dashboardSegment?.split("-")?.[0]?.toLowerCase?.() || "";
+  let section =
+    sectionOverride || dashboardSegment?.split("-")?.[0]?.toLowerCase?.() || "";
 
   // Fallback for undefined section
   if (!section) {
@@ -50,7 +51,10 @@ const usePageDepartment = (sectionOverride) => {
         return preferredDepartment;
       }
 
-      if (Array.isArray(fetchedDepartments) && fetchedDepartments[0]?.department) {
+      if (
+        Array.isArray(fetchedDepartments) &&
+        fetchedDepartments[0]?.department
+      ) {
         return fetchedDepartments[0].department;
       }
     }
@@ -72,8 +76,8 @@ const usePageDepartment = (sectionOverride) => {
     ? fetchedDepartments.map((item) => item?.department).filter(Boolean)
     : [];
 
-    if (section === "cafe" || section === "legal") {
-      const dashboardDepartment =
+  if (section === "cafe" || section === "legal") {
+    const dashboardDepartment =
       allDepartments.find((dept) =>
         dept?.name?.toLowerCase()?.includes(section),
       ) ||
@@ -96,27 +100,27 @@ const usePageDepartment = (sectionOverride) => {
     managementAccessDepartments.some(
       (m) =>
         m._id === dept?._id &&
-        dept?.name?.toLowerCase() === m.name.toLowerCase()
-    )
+        dept?.name?.toLowerCase() === m.name.toLowerCase(),
+    ),
   );
 
   if (isManagementAccess && Array.isArray(fetchedDepartments)) {
     const matchedDept = fetchedDepartments.find((deptObj) =>
-      deptObj?.department?.name?.toLowerCase()?.includes(section)
+      deptObj?.department?.name?.toLowerCase()?.includes(section),
     );
 
     if (matchedDept?.department) {
       return matchedDept.department;
     } else {
       console.warn(
-        `usePageDepartment: Top Management user but no matching department found in fetchedDepartments for section "${section}"`
+        `usePageDepartment: Top Management user but no matching department found in fetchedDepartments for section "${section}"`,
       );
     }
   }
 
   // Regular user logic
   const matchedUserDept = userDepartments.find((dept) =>
-    dept?.name?.toLowerCase()?.includes(section)
+    dept?.name?.toLowerCase()?.includes(section),
   );
 
   if (matchedUserDept) {
@@ -124,7 +128,7 @@ const usePageDepartment = (sectionOverride) => {
     return matchedUserDept;
   } else {
     console.warn(
-      `usePageDepartment: No matching department found in userDepartments for section "${section}"`
+      `usePageDepartment: No matching department found in userDepartments for section "${section}"`,
     );
     return null; // fallback if nothing matches
   }

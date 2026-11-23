@@ -10,7 +10,7 @@ import useAuth from "../../hooks/useAuth";
 import {
   setSelectedDepartment,
   setSelectedDepartmentName,
-    setSelectedMember,
+  setSelectedMember,
 } from "../../redux/slices/performanceSlice";
 import { PERMISSIONS } from "../../constants/permissions";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
@@ -50,7 +50,6 @@ const getDateKey = (dateValue) => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-
 };
 const getTaskAssignedDateKey = (task) =>
   getDateKey(task?.assignedDate || task?.dueDate || task?.createdAt);
@@ -61,9 +60,9 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
 };
 
 // const PerformanceMemberWiseKra = () => {
- const PerformanceMemberWiseKra = ({
+const PerformanceMemberWiseKra = ({
   memberDetailsBasePath = "/app/performance/department-KRA/member-wise-KRA",
-}) => { 
+}) => {
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
   const navigate = useNavigate();
@@ -87,7 +86,9 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const currentDepartmentName = auth.user?.departments?.[0]?.name;
 
-  const selectedDepartment = useSelector((state) => state.performance.selectedDepartment);
+  const selectedDepartment = useSelector(
+    (state) => state.performance.selectedDepartment,
+  );
   const selectedDepartmentName = useSelector(
     (state) => state.performance.selectedDepartmentName,
   );
@@ -96,7 +97,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
   //const [selectedDate, setSelectedDate] = useState(new Date());
-   const initialSelectedDate = useMemo(() => {
+  const initialSelectedDate = useMemo(() => {
     const routedDate = location.state?.date;
     if (!routedDate) return new Date();
 
@@ -104,7 +105,10 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     return Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
   }, [location.state?.date]);
   const [selectedDate, setSelectedDate] = useState(initialSelectedDate);
-  const selectedDateKey = useMemo(() => getDateKey(selectedDate), [selectedDate]);
+  const selectedDateKey = useMemo(
+    () => getDateKey(selectedDate),
+    [selectedDate],
+  );
   const selectedDateLabel = useMemo(
     () =>
       selectedDate.toLocaleDateString("en-US", {
@@ -123,7 +127,9 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["performance-selectedDepartments"],
     queryFn: async () => {
-      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      const response = await axios.get(
+        "/api/company/get-company-data?field=selectedDepartments",
+      );
       return response.data?.selectedDepartments || [];
     },
   });
@@ -132,15 +138,19 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     const normalize = (value) =>
       (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
-    const activeDepartmentName = selectedDepartmentName || department || currentDepartmentName;
-    const activeDepartmentId = selectedDepartment?.toString?.() || currentDepartmentId?.toString?.();
+    const activeDepartmentName =
+      selectedDepartmentName || department || currentDepartmentName;
+    const activeDepartmentId =
+      selectedDepartment?.toString?.() || currentDepartmentId?.toString?.();
 
     const matchedDepartment = selectedDepartments.find((item) => {
       const itemDepartmentId = item?.department?._id?.toString?.();
       const itemDepartmentName = item?.department?.name;
 
       return (
-        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentId &&
+          itemDepartmentId &&
+          activeDepartmentId === itemDepartmentId) ||
         (activeDepartmentName &&
           itemDepartmentName &&
           normalize(activeDepartmentName) === normalize(itemDepartmentName))
@@ -166,7 +176,8 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     const normalize = (value) =>
       (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
-    const activeDepartmentName = selectedDepartmentName || department || currentDepartmentName;
+    const activeDepartmentName =
+      selectedDepartmentName || department || currentDepartmentName;
     return normalize(activeDepartmentName) === "top management";
   }, [currentDepartmentName, department, selectedDepartmentName]);
 
@@ -174,321 +185,362 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     additionalTopUserIds: ["67b83885daad0f7bab2f1888"],
   });
 
-  
+  const { data: memberWiseData = [], isLoading: isMemberWiseLoading } =
+    useQuery({
+      queryKey: [
+        "performanceMemberWiseKra",
+        selectedDepartment,
+        department,
+        selectedDateKey,
+        selectedDepartmentManagerKey,
+      ],
+      queryFn: async () => {
+        let departmentId = selectedDepartment;
 
-  const { data: memberWiseData = [], isLoading: isMemberWiseLoading } = useQuery({
-    queryKey: [
-      "performanceMemberWiseKra",
-      selectedDepartment,
-      department,
-      selectedDateKey,
-      selectedDepartmentManagerKey,
-    ],
-    queryFn: async () => {
-      let departmentId = selectedDepartment;
+        if (!departmentId && department) {
+          const departmentResponse = await axios.get(
+            "/api/performance/get-depts-tasks",
+          );
+          const matchedDepartment = departmentResponse.data?.find(
+            (item) => item.department?.name === department,
+          );
+          departmentId = matchedDepartment?.department?._id;
+        }
 
-      if (!departmentId && department) {
-        const departmentResponse = await axios.get("/api/performance/get-depts-tasks");
-        const matchedDepartment = departmentResponse.data?.find(
-          (item) => item.department?.name === department,
+        if (!departmentId) return [];
+
+        const settledResponses = await Promise.allSettled([
+          axios.get(`/api/users/assignees?deptId=${departmentId}`),
+          // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
+          // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
+          // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
+          axios.get(
+            `/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDateKey}`,
+          ),
+          axios.get(
+            `/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA&date=${selectedDateKey}`,
+          ),
+          axios.get(
+            `/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA&date=${selectedDateKey}`,
+          ),
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`,
+          ),
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`,
+          ),
+          axios.get(
+            `/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKRA`,
+          ),
+        ]);
+
+        const [
+          assigneesResponse,
+          kraResponse,
+          individualKraResponse,
+          teamKraResponse,
+          completedKraResponse,
+          completedIndividualKraResponse,
+          completedTeamKraResponse,
+        ] = settledResponses;
+
+        const getResponseData = (response) =>
+          response?.status === "fulfilled" ? response.value?.data || [] : [];
+
+        const normalizeName = (value) =>
+          (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+
+        const getRoleTitleLabel = (member) => {
+          const roleTitles = Array.isArray(member?.roleTitles)
+            ? member.roleTitles.filter(Boolean)
+            : [];
+
+          if (roleTitles.length > 0) {
+            return [...new Set(roleTitles)].join(", ");
+          }
+
+          return "Employee";
+        };
+
+        const getMemberRole = (memberName, member) => {
+          if (isTopManagementDepartment) {
+            return getRoleTitleLabel(member);
+          }
+
+          return normalizeName(memberName) ===
+            normalizeName(selectedDepartmentManagerName)
+            ? "Manager"
+            : "Employee";
+        };
+
+        const map = new Map();
+        const memberIdByName = new Map();
+        const allowedMemberIds = new Set();
+
+        const assignees = getResponseData(assigneesResponse);
+        assignees.forEach((member) => {
+          const memberId = member?.id?.toString();
+          if (!memberId) return;
+
+          const memberName = member?.name || "Unknown";
+          allowedMemberIds.add(memberId);
+          map.set(memberId, {
+            memberId,
+            member: memberName,
+            memberRole: getMemberRole(memberName, member),
+            ...DEFAULT_COUNTS,
+          });
+          memberIdByName.set(normalizeName(memberName), memberId);
+        });
+
+        const normalizedManagerName = normalizeName(
+          selectedDepartmentManagerName,
         );
-        departmentId = matchedDepartment?.department?._id;
-      }
-
-      if (!departmentId) return [];
-
-      const settledResponses = await Promise.allSettled([
-        axios.get(`/api/users/assignees?deptId=${departmentId}`),
-        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA`),
-        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
-        // axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA`),
-         axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=KRA&date=${selectedDateKey}`),
-        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=INDIVIDUALKRA&date=${selectedDateKey}`),
-        axios.get(`/api/performance/get-tasks?dept=${departmentId}&type=TEAMKRA&date=${selectedDateKey}`),
-        axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=KRA`),
-        axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=INDIVIDUALKRA`),
-        axios.get(`/api/performance/get-completed-tasks?dept=${departmentId}&type=TEAMKRA`),
-      ]);
-
-      const [
-        assigneesResponse,
-        kraResponse,
-        individualKraResponse,
-        teamKraResponse,
-        completedKraResponse,
-        completedIndividualKraResponse,
-        completedTeamKraResponse,
-      ] = settledResponses;
-
-      const getResponseData = (response) =>
-        response?.status === "fulfilled" ? response.value?.data || [] : [];
-
-      const normalizeName = (value) =>
-        (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
-
-      const getRoleTitleLabel = (member) => {
-        const roleTitles = Array.isArray(member?.roleTitles)
-          ? member.roleTitles.filter(Boolean)
-          : [];
-
-        if (roleTitles.length > 0) {
-          return [...new Set(roleTitles)].join(", ");
-        }
-
-        return "Employee";
-      };
-
-      const getMemberRole = (memberName, member) => {
-        if (isTopManagementDepartment) {
-          return getRoleTitleLabel(member);
-        }
-
-        return normalizeName(memberName) === normalizeName(selectedDepartmentManagerName)
-          ? "Manager"
-          : "Employee";
-      };
-
-      const map = new Map();
-      const memberIdByName = new Map();
-      const allowedMemberIds = new Set();
-
-      const assignees = getResponseData(assigneesResponse);
-      assignees.forEach((member) => {
-        const memberId = member?.id?.toString();
-        if (!memberId) return;
-
-        const memberName = member?.name || "Unknown";
-        allowedMemberIds.add(memberId);
-        map.set(memberId, {
-          memberId,
-          member: memberName,
-          memberRole: getMemberRole(memberName, member),
-          ...DEFAULT_COUNTS,
-        });
-        memberIdByName.set(normalizeName(memberName), memberId);
-      });
-
-      const normalizedManagerName = normalizeName(selectedDepartmentManagerName);
-      const normalizedLoggedInName = normalizeName(loggedInUserName);
-      const selectedDepartmentManagerId = normalizedManagerName
-        ? memberIdByName.get(normalizedManagerName) || null
-        : null;
-      const managerRowId = selectedDepartmentManagerId
-        ? selectedDepartmentManagerId
-        : normalizedManagerName === normalizedLoggedInName && loggedInUserId
-          ? loggedInUserId
-          : normalizedManagerName
-            ? `manager-${normalizedManagerName}`
-            : null;
-
-      if (selectedDepartmentManagerId && map.has(selectedDepartmentManagerId)) {
-        map.set(selectedDepartmentManagerId, {
-          ...map.get(selectedDepartmentManagerId),
-          memberRole: "Manager",
-        });
-      } else if (managerRowId && !map.has(managerRowId)) {
-        map.set(managerRowId, {
-          memberId: managerRowId,
-          member: selectedDepartmentManagerName,
-          memberRole: "Manager",
-          ...DEFAULT_COUNTS,
-        });
-      }
-
-      const resolveMemberId = (task) => {
-        const directId = task?.assignToId?.toString?.() || task?.assignedToId?.toString?.();
-        if (directId) {
-          if (allowedMemberIds.has(directId)) return directId;
-          if (managerRowId && directId === managerRowId.toString()) return managerRowId;
-        }
-
-        const taskName = (task?.assignedTo || task?.assignTo || "")
-          .toString()
-          .replace(/\s+/g, " ")
-          .trim();
-        const normalizedTaskName = normalizeName(taskName);
-        const matchedId = memberIdByName.get(normalizedTaskName);
-        if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+        const normalizedLoggedInName = normalizeName(loggedInUserName);
+        const selectedDepartmentManagerId = normalizedManagerName
+          ? memberIdByName.get(normalizedManagerName) || null
+          : null;
+        const managerRowId = selectedDepartmentManagerId
+          ? selectedDepartmentManagerId
+          : normalizedManagerName === normalizedLoggedInName && loggedInUserId
+            ? loggedInUserId
+            : normalizedManagerName
+              ? `manager-${normalizedManagerName}`
+              : null;
 
         if (
-          managerRowId &&
-          normalizedManagerName &&
-          normalizedTaskName === normalizedManagerName
+          selectedDepartmentManagerId &&
+          map.has(selectedDepartmentManagerId)
         ) {
-          return managerRowId;
-        }
-
-        return null;
-      };
-
-      const upsert = (task, field) => {
-        const userId = resolveMemberId(task);
-        if (!userId) return;
-
-        const userName = (task.assignedTo || task.assignTo || "Unassigned")
-          .toString()
-          .replace(/\s+/g, " ")
-          .trim();
-
-        if (!map.has(userId)) {
-          map.set(userId, {
-            memberId: userId,
-            member: userName,
-            memberRole: getMemberRole(userName, {}),
+          map.set(selectedDepartmentManagerId, {
+            ...map.get(selectedDepartmentManagerId),
+            memberRole: "Manager",
+          });
+        } else if (managerRowId && !map.has(managerRowId)) {
+          map.set(managerRowId, {
+            memberId: managerRowId,
+            member: selectedDepartmentManagerName,
+            memberRole: "Manager",
             ...DEFAULT_COUNTS,
           });
         }
 
-        map.get(userId)[field] += 1;
-      };
-
-      // const upsertManagerTeamKraCount = (field) => {
-          const upsertManagerCount = (field) => {
-        const managerId = selectedDepartmentManagerId || managerRowId;
-        if (!managerId) return;
-        const managerName = selectedDepartmentManagerName || "Manager";
-
-        if (!map.has(managerId)) {
-          map.set(managerId, {
-            memberId: managerId,
-            member: managerName,
-            memberRole: getMemberRole(managerName, {}),
-            ...DEFAULT_COUNTS,
-          });
-        }
-
-        map.get(managerId)[field] += 1;
-      };
-
-      const incrementPendingKra = (task) => {
-        // const assignedDateKey = getDateKey(task?.assignedDate);
-        const assignedDateKey = getTaskAssignedDateKey(task);
-        if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
-
-        if (task?.status === "Completed") return;
-
-        const userId = resolveMemberId(task);
-        if (!userId) return;
-        const userName = (task.assignedTo || task.assignTo || "Unassigned")
-          .toString()
-          .replace(/\s+/g, " ")
-          .trim();
-
-        if (!map.has(userId)) {
-          map.set(userId, {
-            memberId: userId,
-            member: userName,
-            memberRole: getMemberRole(userName, {}),
-            ...DEFAULT_COUNTS,
-          });
-        }
-
-        map.get(userId).pendingKra += 1;
-      };
-
-      const incrementCompletedKra = (task) => {
-        const completionDateKey = getDateKey(task?.completionDate);
-        if (!completionDateKey || completionDateKey !== selectedDateKey) return;
-
-        const completedById = task?.completedById?.toString?.();
-        const completedByName = (task?.completedBy || "")
-          .toString()
-          .replace(/\s+/g, " ")
-          .trim();
-        if (!completedByName) return;
-
-        const matchedMemberId =
-          (completedById && (allowedMemberIds.has(completedById) || completedById === managerRowId?.toString())
-            ? completedById
-            : null) ||
-          memberIdByName.get(normalizeName(completedByName)) ||
-          (normalizedManagerName === normalizeName(completedByName) ? managerRowId : null) ||
-          completedByName;
-
-        if (!map.has(matchedMemberId)) {
-          map.set(matchedMemberId, {
-            memberId: matchedMemberId,
-            member: completedByName,
-            memberRole: getMemberRole(completedByName, {}),
-            ...DEFAULT_COUNTS,
-          });
-        }
-
-        map.get(matchedMemberId).completedKra += 1;
-      };
-
-      //  getResponseData(kraResponse)
-      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
-      //   .forEach((task) => upsert(task, "dailyKra"));
-
-      // getResponseData(individualKraResponse)
-      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
-      //   .forEach((task) => upsert(task, "individualDailyKra"));
-
-      // getResponseData(teamKraResponse)
-      //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
-      //   .forEach((task) => {
-      //     if (canManageTeam) {
-      //       upsertManagerTeamKraCount("teamDailyKra");
-         getResponseData(kraResponse)
-        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
-        .forEach(() => upsertManagerCount("dailyKra"));
-
-      getResponseData(individualKraResponse)
-        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
-        .forEach((task) => upsert(task, "individualDailyKra"));
-
-      getResponseData(teamKraResponse)
-        .filter((task) => isTaskScheduledOnOrBeforeDate(task, selectedDateKey))
-        .forEach((task) => {
-          if (canManageTeam) {
-            upsertManagerCount("teamDailyKra");
-            const assigneeId = task?.assignToId?.toString?.();
-            const assigneeName = normalizeName(task?.assignedTo);
-            const managerName = normalizeName(loggedInUserName);
-            const isManagerAssignee =
-              (assigneeId && assigneeId === loggedInUserId) ||
-              (!!assigneeName && !!managerName && assigneeName === managerName);
-            if (!isManagerAssignee) {
-              upsert(task, "individualDailyKra");
-            }
-            return;
+        const resolveMemberId = (task) => {
+          const directId =
+            task?.assignToId?.toString?.() || task?.assignedToId?.toString?.();
+          if (directId) {
+            if (allowedMemberIds.has(directId)) return directId;
+            if (managerRowId && directId === managerRowId.toString())
+              return managerRowId;
           }
-          upsert(task, "teamDailyKra");
+
+          const taskName = (task?.assignedTo || task?.assignTo || "")
+            .toString()
+            .replace(/\s+/g, " ")
+            .trim();
+          const normalizedTaskName = normalizeName(taskName);
+          const matchedId = memberIdByName.get(normalizedTaskName);
+          if (matchedId && allowedMemberIds.has(matchedId)) return matchedId;
+
+          if (
+            managerRowId &&
+            normalizedManagerName &&
+            normalizedTaskName === normalizedManagerName
+          ) {
+            return managerRowId;
+          }
+
+          return null;
+        };
+
+        const upsert = (task, field) => {
+          const userId = resolveMemberId(task);
+          if (!userId) return;
+
+          const userName = (task.assignedTo || task.assignTo || "Unassigned")
+            .toString()
+            .replace(/\s+/g, " ")
+            .trim();
+
+          if (!map.has(userId)) {
+            map.set(userId, {
+              memberId: userId,
+              member: userName,
+              memberRole: getMemberRole(userName, {}),
+              ...DEFAULT_COUNTS,
+            });
+          }
+
+          map.get(userId)[field] += 1;
+        };
+
+        // const upsertManagerTeamKraCount = (field) => {
+        const upsertManagerCount = (field) => {
+          const managerId = selectedDepartmentManagerId || managerRowId;
+          if (!managerId) return;
+          const managerName = selectedDepartmentManagerName || "Manager";
+
+          if (!map.has(managerId)) {
+            map.set(managerId, {
+              memberId: managerId,
+              member: managerName,
+              memberRole: getMemberRole(managerName, {}),
+              ...DEFAULT_COUNTS,
+            });
+          }
+
+          map.get(managerId)[field] += 1;
+        };
+
+        const incrementPendingKra = (task) => {
+          // const assignedDateKey = getDateKey(task?.assignedDate);
+          const assignedDateKey = getTaskAssignedDateKey(task);
+          if (!assignedDateKey || assignedDateKey !== selectedDateKey) return;
+
+          if (task?.status === "Completed") return;
+
+          const userId = resolveMemberId(task);
+          if (!userId) return;
+          const userName = (task.assignedTo || task.assignTo || "Unassigned")
+            .toString()
+            .replace(/\s+/g, " ")
+            .trim();
+
+          if (!map.has(userId)) {
+            map.set(userId, {
+              memberId: userId,
+              member: userName,
+              memberRole: getMemberRole(userName, {}),
+              ...DEFAULT_COUNTS,
+            });
+          }
+
+          map.get(userId).pendingKra += 1;
+        };
+
+        const incrementCompletedKra = (task) => {
+          const completionDateKey = getDateKey(task?.completionDate);
+          if (!completionDateKey || completionDateKey !== selectedDateKey)
+            return;
+
+          const completedById = task?.completedById?.toString?.();
+          const completedByName = (task?.completedBy || "")
+            .toString()
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!completedByName) return;
+
+          const matchedMemberId =
+            (completedById &&
+            (allowedMemberIds.has(completedById) ||
+              completedById === managerRowId?.toString())
+              ? completedById
+              : null) ||
+            memberIdByName.get(normalizeName(completedByName)) ||
+            (normalizedManagerName === normalizeName(completedByName)
+              ? managerRowId
+              : null) ||
+            completedByName;
+
+          if (!map.has(matchedMemberId)) {
+            map.set(matchedMemberId, {
+              memberId: matchedMemberId,
+              member: completedByName,
+              memberRole: getMemberRole(completedByName, {}),
+              ...DEFAULT_COUNTS,
+            });
+          }
+
+          map.get(matchedMemberId).completedKra += 1;
+        };
+
+        //  getResponseData(kraResponse)
+        //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+        //   .forEach((task) => upsert(task, "dailyKra"));
+
+        // getResponseData(individualKraResponse)
+        //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+        //   .forEach((task) => upsert(task, "individualDailyKra"));
+
+        // getResponseData(teamKraResponse)
+        //   .filter((task) => getDateKey(task?.assignedDate) === selectedDateKey)
+        //   .forEach((task) => {
+        //     if (canManageTeam) {
+        //       upsertManagerTeamKraCount("teamDailyKra");
+        getResponseData(kraResponse)
+          .filter((task) =>
+            isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+          )
+          .forEach(() => upsertManagerCount("dailyKra"));
+
+        getResponseData(individualKraResponse)
+          .filter((task) =>
+            isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+          )
+          .forEach((task) => upsert(task, "individualDailyKra"));
+
+        getResponseData(teamKraResponse)
+          .filter((task) =>
+            isTaskScheduledOnOrBeforeDate(task, selectedDateKey),
+          )
+          .forEach((task) => {
+            if (canManageTeam) {
+              upsertManagerCount("teamDailyKra");
+              const assigneeId = task?.assignToId?.toString?.();
+              const assigneeName = normalizeName(task?.assignedTo);
+              const managerName = normalizeName(loggedInUserName);
+              const isManagerAssignee =
+                (assigneeId && assigneeId === loggedInUserId) ||
+                (!!assigneeName &&
+                  !!managerName &&
+                  assigneeName === managerName);
+              if (!isManagerAssignee) {
+                upsert(task, "individualDailyKra");
+              }
+              return;
+            }
+            upsert(task, "teamDailyKra");
+          });
+
+        getResponseData(kraResponse).forEach(incrementPendingKra);
+        getResponseData(individualKraResponse).forEach(incrementPendingKra);
+        getResponseData(teamKraResponse).forEach(incrementPendingKra);
+
+        // Department Daily KRA completion should roll up to manager in member-wise graph.
+        getResponseData(completedKraResponse).forEach((task) => {
+          const completionDateKey = getDateKey(task?.completionDate);
+          if (!completionDateKey || completionDateKey !== selectedDateKey)
+            return;
+          upsertManagerCount("completedKra");
+        });
+        getResponseData(completedIndividualKraResponse).forEach(
+          incrementCompletedKra,
+        );
+        getResponseData(completedTeamKraResponse).forEach(
+          incrementCompletedKra,
+        );
+
+        const withDerivedPending = Array.from(map.values()).map((item) => {
+          const derivedPendingKra =
+            (Number(item?.dailyKra) || 0) +
+            (Number(item?.individualDailyKra) || 0);
+
+          return {
+            ...item,
+            // Align graph pending with visible KRA table buckets (excluding team daily KRA).
+            pendingKra: derivedPendingKra,
+          };
         });
 
-      getResponseData(kraResponse).forEach(incrementPendingKra);
-      getResponseData(individualKraResponse).forEach(incrementPendingKra);
-      getResponseData(teamKraResponse).forEach(incrementPendingKra);
-
-      // Department Daily KRA completion should roll up to manager in member-wise graph.
-      getResponseData(completedKraResponse).forEach((task) => {
-        const completionDateKey = getDateKey(task?.completionDate);
-        if (!completionDateKey || completionDateKey !== selectedDateKey) return;
-        upsertManagerCount("completedKra");
-      });
-      getResponseData(completedIndividualKraResponse).forEach(incrementCompletedKra);
-      getResponseData(completedTeamKraResponse).forEach(incrementCompletedKra);
-
-      const withDerivedPending = Array.from(map.values()).map((item) => {
-        const derivedPendingKra =
-          (Number(item?.dailyKra) || 0) +
-          (Number(item?.individualDailyKra) || 0);
-
-        return {
-          ...item,
-          // Align graph pending with visible KRA table buckets (excluding team daily KRA).
-          pendingKra: derivedPendingKra,
-        };
-      });
-
-      return withDerivedPending;
-    },
-  });
+        return withDerivedPending;
+      },
+    });
 
   const rowData = useMemo(() => {
     const filteredData = isEmployeeLevel
-      ? memberWiseData.filter((item) => item?.memberId?.toString() === loggedInUserId)
+      ? memberWiseData.filter(
+          (item) => item?.memberId?.toString() === loggedInUserId,
+        )
       : memberWiseData;
 
     return filteredData.map((item, index) => ({
@@ -521,10 +573,10 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
       },
     ];
   }, [
-     canManageTeam,
+    canManageTeam,
     isEmployeeLevel,
     isTop,
-   // isTopManagementDepartment,
+    // isTopManagementDepartment,
     loggedInUserId,
     loggedInUserName,
     rowData,
@@ -551,7 +603,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
 
           dispatch(setSelectedDepartment(targetDepartmentId));
           dispatch(setSelectedDepartmentName(targetDepartmentName));
-         // dispatch(setSelectedMember({ memberId, memberName: params.value }));
+          // dispatch(setSelectedMember({ memberId, memberName: params.value }));
           dispatch(
             setSelectedMember({
               memberId,
@@ -565,17 +617,17 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
             firstTab = "daily-KRA";
           }
 
-           //  navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
-                        navigate(`${detailsPath}/${firstTab}`, {
-             // state: { selectedMember: { memberId, memberName: params.value } },
-              state: {
-                selectedMember: {
-                  memberId,
-                  memberName: params.value,
-                  memberRole: params?.data?.memberRole || "Employee",
-                },
+          //  navigate(`/app/performance/department-KRA/member-wise-KRA/${firstTab}`, {
+          navigate(`${detailsPath}/${firstTab}`, {
+            // state: { selectedMember: { memberId, memberName: params.value } },
+            state: {
+              selectedMember: {
+                memberId,
+                memberName: params.value,
+                memberRole: params?.data?.memberRole || "Employee",
               },
-            });
+            },
+          });
         };
 
         return (
@@ -596,7 +648,11 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     },
     { headerName: "Department Daily KRA", field: "dailyKra" },
     { headerName: "Individual Daily KRA", field: "individualDailyKra" },
-    { headerName: "Team Daily KRA", field: "teamDailyKra", hide: isEmployeeLevel },
+    {
+      headerName: "Team Daily KRA",
+      field: "teamDailyKra",
+      hide: isEmployeeLevel,
+    },
   ];
 
   const graphData = [
@@ -610,7 +666,7 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     },
     {
       name: "Pending KRA",
-       group: `KRA - ${selectedDateLabel}`,
+      group: `KRA - ${selectedDateLabel}`,
       data: visibleRowData.map((item) => ({
         x: item.member,
         y: item.pendingKra || 0,
@@ -653,14 +709,14 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
     fill: { opacity: 1 },
     legend: { position: "top" },
     tooltip: {
-            custom: ({ series, dataPointIndex, w }) => {
-                const label =
-                    w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
-                const completed = series?.[0]?.[dataPointIndex] ?? 0;
-                const pending = series?.[1]?.[dataPointIndex] ?? 0;
-                const total = completed + pending;
+      custom: ({ series, dataPointIndex, w }) => {
+        const label =
+          w?.config?.series?.[0]?.data?.[dataPointIndex]?.x || "Department";
+        const completed = series?.[0]?.[dataPointIndex] ?? 0;
+        const pending = series?.[1]?.[dataPointIndex] ?? 0;
+        const total = completed + pending;
 
-                return `
+        return `
                     <div style="padding:8px; font-family:Poppins, sans-serif; font-size:13px; width:220px;">
                         <strong>${label}</strong><br/>
                         <hr style="margin:6px 0; border-top:1px solid #ddd;" />
@@ -670,15 +726,14 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
                         <div style="display:flex; justify-content:space-between;"><span>Pending KRA :</span><span>${pending}</span></div>
                     </div>
                 `;
-            },
-        },
-
+      },
+    },
   };
 
   return (
     <div className="flex flex-col gap-4">
       <WidgetSection
-         title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedDateLabel}`}
+        title={`${selectedDepartmentName || department || "Department"} KRA overview - ${selectedDateLabel}`}
         border
         padding
         TitleAmountTotal={totalKraCount}
@@ -690,31 +745,48 @@ const isTaskScheduledOnOrBeforeDate = (task, selectedDateKey) => {
       >
         {isMemberWiseLoading ? (
           <PerformanceChartSkeleton variant="bar" height="h-[400px]" />
-        ) : <NormalBarGraph data={graphData} options={graphOptions} year={false} height={400} />}
+        ) : (
+          <NormalBarGraph
+            data={graphData}
+            options={graphOptions}
+            year={false}
+            height={400}
+          />
+        )}
 
         <div className="flex justify-center items-center pb-4">
           {/* <div className="flex items-center"> */}
-           <div className="flex items-center  mt-2">
+          <div className="flex items-center  mt-2">
             <SecondaryButton
               title={<MdNavigateBefore />}
               disabled={false}
               handleSubmit={() => {
-               setSelectedDate(
+                setSelectedDate(
                   (prevDate) =>
-                    new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate() - 1),
+                    new Date(
+                      prevDate.getFullYear(),
+                      prevDate.getMonth(),
+                      prevDate.getDate() - 1,
+                    ),
                 );
               }}
             />
-              {/* <div className="text-sm min-w-[140px] text-center">{selectedDateLabel}</div> */}
-               <div className="text-primary text-content font-semibold min-w-[120px] text-center">{selectedDateLabel}</div>
+            {/* <div className="text-sm min-w-[140px] text-center">{selectedDateLabel}</div> */}
+            <div className="text-primary text-content font-semibold min-w-[120px] text-center">
+              {selectedDateLabel}
+            </div>
             <SecondaryButton
               title={<MdNavigateNext />}
               disabled={false}
               externalStyles="min-w-20 px-6 py-2 bg-[#9ca3af] text-black font-semibold rounded-lg"
               handleSubmit={() => {
-                 setSelectedDate(
+                setSelectedDate(
                   (prevDate) =>
-                    new Date(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate() + 1),
+                    new Date(
+                      prevDate.getFullYear(),
+                      prevDate.getMonth(),
+                      prevDate.getDate() + 1,
+                    ),
                 );
               }}
             />

@@ -79,7 +79,10 @@ const getUnifiedClientTypeAndDate = (clientType, client) => {
     const serviceName = client.service.serviceName.toLowerCase();
     if (serviceName.includes("workation")) {
       resolvedClientType = "workation";
-    } else if (serviceName.includes("living") || serviceName.includes("coliving")) {
+    } else if (
+      serviceName.includes("living") ||
+      serviceName.includes("coliving")
+    ) {
       resolvedClientType = "coliving";
     }
   }
@@ -90,10 +93,14 @@ const getUnifiedClientTypeAndDate = (clientType, client) => {
     clientDate = client?.startDate || null;
   } else if (resolvedClientType === "virtualOffice") {
     clientDate = client?.termStartDate || client?.rentDate || null;
-  } else if (resolvedClientType === "externalMeeting" || resolvedClientType === "openDesk") {
+  } else if (
+    resolvedClientType === "externalMeeting" ||
+    resolvedClientType === "openDesk"
+  ) {
     clientDate = client?.dateOfVisit || client?.scheduledDate || null;
   } else {
-    clientDate = client?.startDate || client?.dateOfVisit || client?.termStartDate || null;
+    clientDate =
+      client?.startDate || client?.dateOfVisit || client?.termStartDate || null;
   }
 
   return { resolvedClientType, clientDate };
@@ -120,7 +127,10 @@ const getDashboardUniqueClientBucket = (clientType, client) => {
     const serviceName = client.service.serviceName.toLowerCase();
     if (serviceName.includes("workation")) {
       rawServiceName = "workation";
-    } else if (serviceName.includes("living") || serviceName.includes("coliving")) {
+    } else if (
+      serviceName.includes("living") ||
+      serviceName.includes("coliving")
+    ) {
       rawServiceName = "coliving";
     }
   }
@@ -144,7 +154,10 @@ const getDashboardUniqueClientBucket = (clientType, client) => {
       : client?.rentDate
         ? new Date(client.rentDate)
         : null;
-  } else if (rawServiceName === "externalMeeting" || rawServiceName === "openDesk") {
+  } else if (
+    rawServiceName === "externalMeeting" ||
+    rawServiceName === "openDesk"
+  ) {
     date = client?.dateOfVisit
       ? new Date(client.dateOfVisit)
       : client?.scheduledDate
@@ -222,17 +235,18 @@ const SalesDashboard = () => {
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
 
-  const { data: selectedDepartments = [], isPending: isDepartmentsPending } = useQuery({
-    queryKey: ["sales-selectedDepartments"],
-    queryFn: async () => {
-      const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
-      );
-      return Array.isArray(response.data?.selectedDepartments)
-        ? response.data.selectedDepartments
-        : [];
-    },
-  });
+  const { data: selectedDepartments = [], isPending: isDepartmentsPending } =
+    useQuery({
+      queryKey: ["sales-selectedDepartments"],
+      queryFn: async () => {
+        const response = await axios.get(
+          "/api/company/get-company-data?field=selectedDepartments",
+        );
+        return Array.isArray(response.data?.selectedDepartments)
+          ? response.data.selectedDepartments
+          : [];
+      },
+    });
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["sales-dashboard-tasks", department?._id],
@@ -245,25 +259,26 @@ const SalesDashboard = () => {
     enabled: Boolean(department?._id),
   });
 
-  const { data: salesTickets = [], isLoading: isSalesTicketsLoading } = useQuery({
-    queryKey: ["sales-dashboard-tickets", department?._id],
-    queryFn: async () => {
-      if (!department?._id) {
-        return [];
-      }
+  const { data: salesTickets = [], isLoading: isSalesTicketsLoading } =
+    useQuery({
+      queryKey: ["sales-dashboard-tickets", department?._id],
+      queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
 
-      try {
-        const response = await axios.get(
-          `/api/tickets/department-tickets/${department._id}`,
-        );
-        return Array.isArray(response.data) ? response.data : [];
-      } catch (error) {
-        console.error("Error fetching sales tickets:", error);
-        return [];
-      }
-    },
-    enabled: !!department?._id,
-  });
+        try {
+          const response = await axios.get(
+            `/api/tickets/department-tickets/${department._id}`,
+          );
+          return Array.isArray(response.data) ? response.data : [];
+        } catch (error) {
+          console.error("Error fetching sales tickets:", error);
+          return [];
+        }
+      },
+      enabled: !!department?._id,
+    });
 
   //------------------------PAGE ACCESS START-------------------//
   const cardsConfig = [
@@ -446,14 +461,7 @@ const SalesDashboard = () => {
       width: 2,
       colors: ["#ffffff"],
     },
-    colors: [
-      "#274C77",
-      "#6096BA",
-      "#A3CEF1",
-      "#8B5E3C",
-      "#5B8E7D",
-      "#D08C60",
-    ],
+    colors: ["#274C77", "#6096BA", "#A3CEF1", "#8B5E3C", "#5B8E7D", "#D08C60"],
     tooltip: {
       fillSeriesColor: false,
       custom: ({ series, seriesIndex, w }) => {
@@ -483,14 +491,23 @@ const SalesDashboard = () => {
     },
   };
 
-  const salesPendingStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+  const salesPendingStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
 
-  const salesPendingTicketsCount = (Array.isArray(salesTickets) ? salesTickets : []).filter(
-    (ticket) => salesPendingStatuses.has(String(ticket?.status || "").toLowerCase())
+  const salesPendingTicketsCount = (
+    Array.isArray(salesTickets) ? salesTickets : []
+  ).filter((ticket) =>
+    salesPendingStatuses.has(String(ticket?.status || "").toLowerCase()),
   ).length;
 
-  const salesCompletedTicketsCount = (Array.isArray(salesTickets) ? salesTickets : []).filter(
-    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  const salesCompletedTicketsCount = (
+    Array.isArray(salesTickets) ? salesTickets : []
+  ).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
   ).length;
 
   const salesDueTicketsData = [
@@ -613,7 +630,9 @@ const SalesDashboard = () => {
     queryKey: ["sales-dashboard-simple-revenue"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/sales/simple-consolidated-revenue");
+        const response = await axios.get(
+          "/api/sales/simple-consolidated-revenue",
+        );
         return response.data || {};
       } catch (error) {
         console.error(error);
@@ -639,12 +658,13 @@ const SalesDashboard = () => {
     [revenueByFiscalYear],
   );
 
-  const selectedSeries =
-    incomeExpenseData.find((item) => item.group === selectedFiscalYear) || {
-      name: "Expense",
-      group: selectedFiscalYear,
-      data: new Array(12).fill(0),
-    };
+  const selectedSeries = incomeExpenseData.find(
+    (item) => item.group === selectedFiscalYear,
+  ) || {
+    name: "Expense",
+    group: selectedFiscalYear,
+    data: new Array(12).fill(0),
+  };
 
   const totalValue = useMemo(() => {
     if (!selectedSeries) return 0;
@@ -799,7 +819,10 @@ const SalesDashboard = () => {
     },
   });
 
-  const { data: consolidatedClientsData = {}, isPending: isConsolidatedClientsPending } = useQuery({
+  const {
+    data: consolidatedClientsData = {},
+    isPending: isConsolidatedClientsPending,
+  } = useQuery({
     queryKey: ["sales-dashboard-consolidated-clients"],
     queryFn: async () => {
       const response = await axios.get("/api/sales/consolidated-clients");
@@ -838,39 +861,43 @@ const SalesDashboard = () => {
   const currentFinancialYearUniqueClients = useMemo(() => {
     const currentFinancialYearStart = getCurrentFinancialYearStart();
 
-    return Object.entries(consolidatedClientsData || {}).flatMap(([key, clients]) => {
-      const normalizedClients = Array.isArray(clients) ? clients : [];
-      const clientType = key.replace(/Clients$/, "");
+    return Object.entries(consolidatedClientsData || {}).flatMap(
+      ([key, clients]) => {
+        const normalizedClients = Array.isArray(clients) ? clients : [];
+        const clientType = key.replace(/Clients$/, "");
 
-      return normalizedClients.filter((client) => {
-        const { resolvedClientType, clientDate } = getUnifiedClientTypeAndDate(
-          clientType,
-          client,
-        );
+        return normalizedClients.filter((client) => {
+          const { resolvedClientType, clientDate } =
+            getUnifiedClientTypeAndDate(clientType, client);
 
-        if (
-          !["coworking", "virtualOffice", "externalMeeting", "openDesk"].includes(
-            resolvedClientType,
-          )
-        ) {
-          return false;
-        }
+          if (
+            ![
+              "coworking",
+              "virtualOffice",
+              "externalMeeting",
+              "openDesk",
+            ].includes(resolvedClientType)
+          ) {
+            return false;
+          }
 
-        const parsedDate = dayjs(clientDate);
-        if (!parsedDate.isValid()) return false;
+          const parsedDate = dayjs(clientDate);
+          if (!parsedDate.isValid()) return false;
 
-        const clientFinancialYearStart =
-          parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+          const clientFinancialYearStart =
+            parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
 
-        return clientFinancialYearStart === currentFinancialYearStart;
-      });
-    }).length;
+          return clientFinancialYearStart === currentFinancialYearStart;
+        });
+      },
+    ).length;
   }, [consolidatedClientsData]);
 
   const activeUnits = useMemo(
     () =>
       (unitsData || []).filter(
-        (unit) => unit?.isActive && !unit?.isOnlyBudget && unit?.building?.buildingName,
+        (unit) =>
+          unit?.isActive && !unit?.isOnlyBudget && unit?.building?.buildingName,
       ),
     [unitsData],
   );
@@ -878,36 +905,41 @@ const SalesDashboard = () => {
   const occupancyQueryKey = useMemo(
     () => [
       "sales-dashboard-co-working-occupancy-by-unit",
-      activeUnits.map((unit) => unit._id).sort().join("|"),
+      activeUnits
+        .map((unit) => unit._id)
+        .sort()
+        .join("|"),
     ],
     [activeUnits],
   );
 
-  const { data: occupancyDataByUnit = [], isLoading: isOccupancyLoading } = useQuery({
-    queryKey: occupancyQueryKey,
-    queryFn: async () => {
-      const results = await Promise.allSettled(
-        activeUnits.map(async (unit) => {
-          const response = await axios.get("/api/sales/co-working-members", {
-            params: { unitId: unit._id, active: true },
-          });
+  const { data: occupancyDataByUnit = [], isLoading: isOccupancyLoading } =
+    useQuery({
+      queryKey: occupancyQueryKey,
+      queryFn: async () => {
+        const results = await Promise.allSettled(
+          activeUnits.map(async (unit) => {
+            const response = await axios.get("/api/sales/co-working-members", {
+              params: { unitId: unit._id, active: true },
+            });
 
-          return {
-            unitId: unit._id,
-            occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
-          };
-        }),
-      );
+            return {
+              unitId: unit._id,
+              occupiedDesks: Number(response.data?.totalOccupiedDesks) || 0,
+            };
+          }),
+        );
 
-      return results
-        .filter((result) => result.status === "fulfilled")
-        .map((result) => result.value);
-    },
-    enabled: activeUnits.length > 0,
-  });
+        return results
+          .filter((result) => result.status === "fulfilled")
+          .map((result) => result.value);
+      },
+      enabled: activeUnits.length > 0,
+    });
 
   const totalInventoryFromUnits = activeUnits.reduce(
-    (sum, unit) => sum + (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0),
+    (sum, unit) =>
+      sum + (Number(unit?.openDesks) || 0) + (Number(unit?.cabinDesks) || 0),
     0,
   );
 
@@ -970,11 +1002,13 @@ const SalesDashboard = () => {
 
   //-----------------------------------------------For Data cards-----------------------------------------------------------//
 
- const totalFreeSeats = totalFreeInventoryFromUnits;
+  const totalFreeSeats = totalFreeInventoryFromUnits;
 
   const occupancyPercentage =
     totalInventoryFromUnits > 0
-      ? ((totalOccupancyFromInventory / totalInventoryFromUnits) * 100).toFixed(0)
+      ? ((totalOccupancyFromInventory / totalInventoryFromUnits) * 100).toFixed(
+          0,
+        )
       : "0";
 
   const keyStatsData = {
@@ -1687,7 +1721,10 @@ const SalesDashboard = () => {
         `${label}: ${value || 0} pending tasks`,
     },
   ];
-  const allowedDueTasks = salesFilterPermissions(dueTasksConfigs, userPermissions);
+  const allowedDueTasks = salesFilterPermissions(
+    dueTasksConfigs,
+    userPermissions,
+  );
 
   const salesTicketChartConfigs = [
     {
@@ -1719,28 +1756,27 @@ const SalesDashboard = () => {
     userPermissions,
   );
 
-
   const meetingsWidgets = [
     {
       layout: 1,
-      widgets: allowedGraph.map((config) => (
-          isTotalLoading ? (
-            <WidgetSection key={config.key} border title={config.title}>
-              <SalesDashboardChartSkeleton title={config.title} />
-            </WidgetSection>
-          ) : (
-              <YearlyGraph
-                key={config.key}
-                chartId={config.chartId}
-                data={config.data}
-                options={config.options}
-                title={config.title}
-                titleAmount={config.titleAmount}
-                currentYear={selectedFiscalYear}
-                onYearChange={config.onYearChange}
-              />
-          )
-      )),
+      widgets: allowedGraph.map((config) =>
+        isTotalLoading ? (
+          <WidgetSection key={config.key} border title={config.title}>
+            <SalesDashboardChartSkeleton title={config.title} />
+          </WidgetSection>
+        ) : (
+          <YearlyGraph
+            key={config.key}
+            chartId={config.chartId}
+            data={config.data}
+            options={config.options}
+            title={config.title}
+            titleAmount={config.titleAmount}
+            currentYear={selectedFiscalYear}
+            onYearChange={config.onYearChange}
+          />
+        ),
+      ),
     },
     {
       layout: 3,
@@ -1749,11 +1785,15 @@ const SalesDashboard = () => {
           key={config.key}
           titleCenter
           {...config.value}
-          loading={config.key === PERMISSIONS.SALES_REVENUE.value
-            ? isTotalLoading || isInventoryLoading
-            : config.key === PERMISSIONS.SALES_KEY_STATS.value
-              ? isInventoryLoading || isConsolidatedClientsPending
-              : isTotalLoading || isInventoryLoading || isConsolidatedClientsPending}
+          loading={
+            config.key === PERMISSIONS.SALES_REVENUE.value
+              ? isTotalLoading || isInventoryLoading
+              : config.key === PERMISSIONS.SALES_KEY_STATS.value
+                ? isInventoryLoading || isConsolidatedClientsPending
+                : isTotalLoading ||
+                  isInventoryLoading ||
+                  isConsolidatedClientsPending
+          }
         />
       )),
     },
@@ -1805,14 +1845,14 @@ const SalesDashboard = () => {
             <SalesDashboardChartSkeleton title={config.graphTitle} />
           </WidgetSection>
         ) : (
-            <FyBarGraphCount
-              key={config.key}
-              graphTitle={config.graphTitle}
-              data={config.data}
-              chartOptions={config.chartOptions}
-              dateKey={config.dateKey}
-              groupKey={config.groupKey}
-            />
+          <FyBarGraphCount
+            key={config.key}
+            graphTitle={config.graphTitle}
+            data={config.data}
+            chartOptions={config.chartOptions}
+            dateKey={config.dateKey}
+            groupKey={config.groupKey}
+          />
         ),
       ],
     })),

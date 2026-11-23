@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import PrimaryButton from "../../components/PrimaryButton";
 import AllocatedBudget from "../../components/Tables/AllocatedBudget";
@@ -323,6 +323,7 @@ const BudgetPage = () => {
     // acc[month].projectedAmount += item.projectedAmount; // Summing the total projected amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       createdAt: item.createdAt,
       expanseName: item.expanseName,
       departmentId: item.department?._id || department?._id || "",

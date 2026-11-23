@@ -69,7 +69,9 @@ const formatAssignedUser = (value, userIdToNameMap = new Map()) => {
   const firstName = source.firstName || "";
   const middleName = source.middleName || "";
   const lastName = source.lastName || "";
-  const fullName = `${firstName} ${middleName} ${lastName}`.replace(/\s+/g, " ").trim();
+  const fullName = `${firstName} ${middleName} ${lastName}`
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (fullName) return fullName;
 
@@ -80,17 +82,16 @@ const formatAssignedUser = (value, userIdToNameMap = new Map()) => {
   return source.name || source.email || "-";
 };
 
-
 const HrDepartmentTasks = () => {
   const location = useLocation();
   const { department: departmentParam } = useParams();
-  const axios = useAxiosPrivate()
+  const axios = useAxiosPrivate();
   const { department: departmentFromState, tasks } = location.state || {};
   const department = departmentFromState || departmentParam;
- // const { month, department, tasks, year } = location.state || {};
+  // const { month, department, tasks, year } = location.state || {};
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-   const { data: usersDirectory = [] } = useQuery({
+  const { data: usersDirectory = [] } = useQuery({
     queryKey: ["hrTaskUsersDirectory"],
     queryFn: async () => {
       const response = await axios.get("/api/users/fetch-users");
@@ -119,7 +120,7 @@ const HrDepartmentTasks = () => {
   const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
-      const response = await axios.get("api/tasks/get-tasks-summary");
+      const response = await axios.get("/api/tasks/get-tasks-summary");
 
       return response.data.map((dept) => ({
         ...dept,
@@ -154,62 +155,63 @@ const HrDepartmentTasks = () => {
     Nov: "November",
     Dec: "December",
   };
-   const currentFiscalStartYear = getCurrentFiscalStartYear();
+  const currentFiscalStartYear = getCurrentFiscalStartYear();
   const [overviewFiscalStartYear, setOverviewFiscalStartYear] = useState(
-    currentFiscalStartYear
+    currentFiscalStartYear,
   );
 
   const overviewFyMonths = useMemo(
     () => getFiscalMonths(overviewFiscalStartYear),
-    [overviewFiscalStartYear]
+    [overviewFiscalStartYear],
   );
 
   const overviewFiscalYearLabel = `FY ${overviewFiscalStartYear}-${String(
-    overviewFiscalStartYear + 1
+    overviewFiscalStartYear + 1,
   ).slice(2)}`;
 
   const currentDate = new Date();
   const currentMonthLabel = `${SHORT_MONTHS[currentDate.getMonth()]}-${String(
-    currentDate.getFullYear()
+    currentDate.getFullYear(),
   ).slice(2)}`;
 
   const [detailsFiscalStartYear, setDetailsFiscalStartYear] = useState(
-    getFiscalStartYearFromDate(currentDate)
+    getFiscalStartYearFromDate(currentDate),
   );
 
   const detailsFyMonths = useMemo(
     () => getFiscalMonths(detailsFiscalStartYear),
-    [detailsFiscalStartYear]
+    [detailsFiscalStartYear],
   );
 
   const initialMonthIndex = detailsFyMonths.findIndex(
-    (m) => m === currentMonthLabel
+    (m) => m === currentMonthLabel,
   );
 
   const [selectedMonthIndex, setSelectedMonthIndex] = useState(
-    initialMonthIndex !== -1 ? initialMonthIndex : 0
+    initialMonthIndex !== -1 ? initialMonthIndex : 0,
   );
 
- const selectedMonth = detailsFyMonths[selectedMonthIndex];
-    const [shortMonth, shortYear] = selectedMonth.split("-");
-   const selectedMonthDisplay = `${fullMonthNames[shortMonth].toUpperCase()} - 20${shortYear}`;
+  const selectedMonth = detailsFyMonths[selectedMonthIndex];
+  const [shortMonth, shortYear] = selectedMonth.split("-");
+  const selectedMonthDisplay = `${fullMonthNames[shortMonth].toUpperCase()} - 20${shortYear}`;
 
   // if (!department || !tasks?.length) {
   //   return <div className="">No tasks found for this department.</div>;
   // }
   const filteredData = tasksRawData.filter(
-    (item) => item.department === department
+    (item) => item.department === department,
   );
   // const departmentName = filteredData[0]?.department;
   // const tasksData = filteredData[0]?.tasks;
 
-    const departmentName = filteredData[0]?.department || department || "Department";
+  const departmentName =
+    filteredData[0]?.department || department || "Department";
   const rawTasksData = filteredData[0]?.tasks || tasks || [];
   const tasksData = rawTasksData.filter(
-    (task) => task?.taskType === "Department"
+    (task) => task?.taskType === "Department",
   );
 
- const handlePrevMonth = () => {
+  const handlePrevMonth = () => {
     if (selectedMonthIndex > 0) {
       setSelectedMonthIndex((prev) => prev - 1);
       return;
@@ -229,7 +231,7 @@ const HrDepartmentTasks = () => {
     setSelectedMonthIndex(0);
   };
 
-   const handlePrevFiscalYear = () => {
+  const handlePrevFiscalYear = () => {
     setOverviewFiscalStartYear((prev) => {
       const updatedYear = prev - 1;
       setDetailsFiscalStartYear(updatedYear);
@@ -269,7 +271,7 @@ const HrDepartmentTasks = () => {
     {
       name: "Completed Tasks",
       group: `${departmentName} - ${selectedMonthDisplay}`,
-    data: overviewFyMonths.map((label) => {
+      data: overviewFyMonths.map((label) => {
         const { total, achieved } = monthlyMap[label] || {
           total: 0,
           achieved: 0,
@@ -324,7 +326,7 @@ const HrDepartmentTasks = () => {
     },
     xaxis: {
       title: { text: "Months" },
-        categories: overviewFyMonths,
+      categories: overviewFyMonths,
     },
     yaxis: {
       title: { text: "Completion (%)" },
@@ -424,16 +426,16 @@ const HrDepartmentTasks = () => {
 
   const filteredTasks = tasksData.filter((task) => {
     const [day, month, year] = task.assignedDate.split("-").map(Number);
-       const taskDate = new Date(year, month - 1, day);
+    const taskDate = new Date(year, month - 1, day);
     const taskMonthLabel = `${SHORT_MONTHS[taskDate.getMonth()]}-${String(
-      taskDate.getFullYear()
+      taskDate.getFullYear(),
     ).slice(2)}`;
 
     return taskMonthLabel === selectedMonth;
   });
 
   const completedFilteredTasks = filteredTasks.filter(
-    (task) => String(task.status || "").toLowerCase() === "completed"
+    (task) => String(task.status || "").toLowerCase() === "completed",
   );
 
   return (
@@ -449,11 +451,11 @@ const HrDepartmentTasks = () => {
           year={false}
           height={350}
         />
-           <div className="flex justify-center items-center gap-4 pb-4">
+        <div className="flex justify-center items-center gap-4 pb-4">
           <SecondaryButton
             title={<MdNavigateBefore />}
             handleSubmit={handlePrevFiscalYear}
-           // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
+            // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
           />
           <div className="text-sm min-w-[80px] text-center text-primary font-semibold">
             {overviewFiscalYearLabel}
@@ -469,7 +471,7 @@ const HrDepartmentTasks = () => {
       <WidgetSection
         title={`Department Completed Tasks details`}
         border
-       TitleAmount={`${selectedMonthDisplay} : ${
+        TitleAmount={`${selectedMonthDisplay} : ${
           completedFilteredTasks.length > 1
             ? `${completedFilteredTasks.length} Tasks`
             : `${completedFilteredTasks.length} Tasks`
@@ -480,22 +482,22 @@ const HrDepartmentTasks = () => {
             title={<MdNavigateBefore />}
             handleSubmit={handlePrevMonth}
             //externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
-           // disabled={selectedMonthIndex === 0}
+            // disabled={selectedMonthIndex === 0}
           />
-         <div className="text-sm min-w-[80px] text-center text-primary font-semibold">
-                        {selectedMonthDisplay}
+          <div className="text-sm min-w-[80px] text-center text-primary font-semibold">
+            {selectedMonthDisplay}
           </div>
           <PrimaryButton
             title={<MdNavigateNext />}
             handleSubmit={handleNextMonth}
             externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
-           // disabled={selectedMonthIndex === fyMonths.length - 1}
+            // disabled={selectedMonthIndex === fyMonths.length - 1}
           />
         </div>
         <div>
           <AgTable
-           loading={isTasksLoading}
-           key={selectedMonth}
+            loading={isTasksLoading}
+            key={selectedMonth}
             tableHeight={300}
             //hideFilter
             search={true}
@@ -512,7 +514,6 @@ const HrDepartmentTasks = () => {
             }))}
           />
         </div>
-
       </WidgetSection>
     </div>
   );
