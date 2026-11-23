@@ -123,7 +123,7 @@ const APP_MODULE_CONFIG = {
   },
   logs: {
     label: "Logs",
-    root: "/app/secret-logs",
+    root: "/app/logs",
     permission: PERMISSIONS.SIDEBAR_LOGS.value,
   },
 };

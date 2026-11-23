@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import CurrencySelector from "./CurrencySelector";
 import { useSelector } from "react-redux";
 import useAuth from "../hooks/useAuth";
+import { getModuleDisplayName } from "../utils/permissionModules";
 
 const BreadCrumbComponent = () => {
   const location = useLocation();
@@ -35,7 +36,15 @@ const BreadCrumbComponent = () => {
         .join(" ")
     : (location.state?.selectedMember || selectedMember)?.memberName;
 
+  const logsModuleSegment = location.pathname.match(
+    /^\/app\/logs\/permissions\/([^/]+)\/?$/,
+  )?.[1];
+
   const formatLabel = (value) => {
+    if (value === logsModuleSegment) {
+      return getModuleDisplayName(value);
+    }
+
     if (value.toLowerCase() === "kra-kpa") {
       return "KRA & KPA";
     }

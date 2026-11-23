@@ -1,5 +1,6 @@
 const Log = require("../models/Log");
 const modelMap = require("../config/modelMap");
+const { getModulePathRegex } = require("../utils/logModule");
 const mongoose = require("mongoose");
 
 const modelSelectMap = {
@@ -33,12 +34,36 @@ const getDateFilter = (req) => {
   return Object.keys(createdAt).length ? { createdAt } : {};
 };
 
+const getLogFilter = (req) => {
+  const filter = getDateFilter(req);
+  const module = String(req.query.module || "").trim().toLowerCase();
+  const performedBy = req.query.performedBy;
+  const actions = String(req.query.actions || "")
+    .split(",")
+    .map((action) => action.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (performedBy && mongoose.isValidObjectId(performedBy)) {
+    filter.performedBy = performedBy;
+  }
+
+  if (actions.length) {
+    filter.action = { $in: actions };
+  }
+
+  if (module) {
+    filter.$or = [{ module }, { path: getModulePathRegex(module) }];
+  }
+
+  return filter;
+};
+
 const getLogs = async (req, res, next) => {
   try {
     // const logs = await Log.find().populate([
     //   { path: "performedBy", select: "firstName middleName lastName" },
     // ]);
-    const logs = await Log.find(getDateFilter(req))
+    const logs = await Log.find(getLogFilter(req))
       .sort({ createdAt: -1 })
       .populate([
         { path: "performedBy", select: "firstName middleName lastName" },

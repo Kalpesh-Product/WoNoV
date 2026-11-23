@@ -196,6 +196,7 @@ const requestBudget = async (req, res, next) => {
     const {
       projectedAmount,
       expanseName,
+      requestedBy,
       dueDate,
       expanseType,
       paymentType,
@@ -360,6 +361,9 @@ const requestBudget = async (req, res, next) => {
 
     const budgetData = {
       expanseName,
+      requestedBy: mongoose.Types.ObjectId.isValid(requestedBy)
+        ? requestedBy
+        : user,
       projectedAmount: projectedAmount || 0,
       actualAmount: 0,
       department: departmentId,
@@ -904,6 +908,13 @@ const fetchBudget = async (req, res, next) => {
     );
 
 
+    // Legacy rows stored requestedBy as an empty string before it became a
+    // UserData reference; clear them so ObjectId casting keeps working.
+    await Budget.updateMany(
+      { company, requestedBy: { $type: "string" } },
+      { $set: { requestedBy: null } },
+    );
+
     const result = await fetchBudgetVoucherService({
       company: company,
       departmentId,
@@ -1057,6 +1068,10 @@ const fetchPendingApprovals = async (req, res, next) => {
         { path: "department", select: "name" },
         { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
+        {
+          path: "requestedBy",
+          select: "firstName lastName employeeName name email",
+        },
       ])
       .lean()
       .exec();
@@ -1095,6 +1110,10 @@ const fetchApprovedbudgets = async (req, res, next) => {
         { path: "department", select: "name" },
         { path: "vendor", select: "name companyName" },
         { path: "unit", populate: { path: "building", model: "Building" } },
+        {
+          path: "requestedBy",
+          select: "firstName lastName employeeName name email",
+        },
       ])
       .lean()
       .exec();

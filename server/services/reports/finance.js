@@ -238,6 +238,10 @@ const fetchBudgetVoucherService = async ({
   const budgets = await budgetQuery
     .populate(populateOptions)
     .populate({
+      path: "requestedBy",
+      select: "firstName lastName employeeName name email",
+    })
+    .populate({
       path: "financeAmountHistory.changedBy",
       select: "firstName lastName",
     })

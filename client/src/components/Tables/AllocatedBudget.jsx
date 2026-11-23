@@ -27,6 +27,7 @@ import {
   normalizeBudgetAmount,
   sumBudgetAmounts,
 } from "../../utils/budgetAmounts";
+import getUserName from "../../utils/getUserName";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
 import TableLoadingSkeleton from "./TableLoadingSkeleton";
@@ -98,13 +99,6 @@ const getBudgetCreatedAt = (row = {}) => {
 
   return 0;
 };
-
-const getUserName = (user) =>
-  user?.employeeName ||
-  [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-  user?.name ||
-  user?.email ||
-  "-";
 
 const getBudgetInvoiceFiles = (budget) => {
   if (!budget) return [];
@@ -1199,6 +1193,10 @@ const AllocatedBudget = ({
             <DetalisFormatted
               title="Expense Name"
               detail={viewBudget.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Requested By"
+              detail={getUserName(viewBudget.requestedBy)}
             />
             <DetalisFormatted
               title="Expense Type"

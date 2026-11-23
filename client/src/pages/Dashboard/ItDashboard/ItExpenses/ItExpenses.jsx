@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import {
   Select,
@@ -106,7 +106,7 @@ const ItExpenses = () => {
       const budgets = response.data.allBudgets;
       return Array.isArray(budgets) ? budgets : [];
     },
-    enabled: !!activeDepartmentId, // <- ✅ prevents firing until department is ready
+    enabled: !!activeDepartmentId, // <- âœ… prevents firing until department is ready
   });
 
   const {
@@ -194,6 +194,7 @@ const ItExpenses = () => {
     acc[month].amount += item?.actualAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
@@ -280,10 +281,10 @@ const ItExpenses = () => {
         fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
       } else if (year === 2025) {
         if (monthIndex <= 2) {
-          // Jan to Mar 2025 (months 0–2)
+          // Jan to Mar 2025 (months 0â€“2)
           fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
         } else if (monthIndex >= 3) {
-          // Apr 2025 to Dec 2025 (months 3–11)
+          // Apr 2025 to Dec 2025 (months 3â€“11)
           fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
         }
       } else if (year === 2026 && monthIndex <= 2) {

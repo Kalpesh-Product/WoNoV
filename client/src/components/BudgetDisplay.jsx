@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+﻿import React, { useState } from "react";
 import LayerBarGraph from "../components/graphs/LayerBarGraph";
 import WidgetSection from "../components/WidgetSection";
 import { TextField, Select, MenuItem, FormControl } from "@mui/material";
@@ -84,6 +84,7 @@ const BudgetDisplay = ({ budgetData }) => {
     acc[month].amount += item.projectedAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
