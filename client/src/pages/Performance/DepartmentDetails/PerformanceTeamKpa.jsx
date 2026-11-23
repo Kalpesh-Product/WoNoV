@@ -37,32 +37,41 @@ const PerformanceTeamKpa = () => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
-    const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
-     const [selectedMonthRange, setSelectedMonthRange] = useState(null);
+  const [activeViewMonthBucket, setActiveViewMonthBucket] = useState("current");
+  const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
-    (state) => state.performance.selectedDepartmentName
+    (state) => state.performance.selectedDepartmentName,
   );
-  const selectedMember = useSelector((state) => state.performance.selectedMember);
+  const selectedMember = useSelector(
+    (state) => state.performance.selectedMember,
+  );
   const departmentName =
     selectedDepartmentName ||
     department ||
     auth?.user?.departments?.find((dept) => dept._id === deptId)?.name ||
     "Department";
-  const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+  const loggedInUserName = [
+    auth?.user?.firstName,
+    auth?.user?.middleName,
+    auth?.user?.lastName,
+  ]
     .filter(Boolean)
     .join(" ")
     .trim();
   const selectedMemberFromRoute = location.state?.selectedMember;
   const activeMember = selectedMemberFromRoute || selectedMember;
-  const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
+  const activeMemberName =
+    activeMember?.memberName || loggedInUserName || "User Name";
   const userId = auth.user._id;
   const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["performance-selectedDepartments-team"],
     queryFn: async () => {
-      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      const response = await axios.get(
+        "/api/company/get-company-data?field=selectedDepartments",
+      );
       return response.data?.selectedDepartments || [];
     },
   });
@@ -75,7 +84,9 @@ const PerformanceTeamKpa = () => {
       const itemDepartmentName = item?.department?.name;
 
       return (
-        (deptId && itemDepartmentId && deptId.toString() === itemDepartmentId) ||
+        (deptId &&
+          itemDepartmentId &&
+          deptId.toString() === itemDepartmentId) ||
         (departmentName &&
           itemDepartmentName &&
           normalize(departmentName) === normalize(itemDepartmentName))
@@ -86,10 +97,12 @@ const PerformanceTeamKpa = () => {
   }, [departmentName, deptId, selectedDepartments]);
   const isSelectedMemberManager =
     normalizeValue(activeMember?.memberRole).includes("manager") ||
-    normalizeValue(activeMember?.memberName) === normalizeValue(selectedDepartmentManagerName);
+    normalizeValue(activeMember?.memberName) ===
+      normalizeValue(selectedDepartmentManagerName);
   const isViewingOwnMember =
     normalizeValue(activeMember?.memberId) === normalizeValue(userId) ||
-    normalizeValue(activeMember?.memberName) === normalizeValue(loggedInUserName);
+    normalizeValue(activeMember?.memberName) ===
+      normalizeValue(loggedInUserName);
   const shouldPrefillAssignTo = !!activeMember?.memberId && !isViewingOwnMember;
 
   const restrictedRoles = [
@@ -104,7 +117,7 @@ const PerformanceTeamKpa = () => {
     "Marketing Employee",
   ];
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
-    restrictedRoles.includes(role.roleTitle)
+    restrictedRoles.includes(role.roleTitle),
   );
 
   const canDeleteRecurrence = !isAddKpaDisabled;
@@ -114,9 +127,11 @@ const PerformanceTeamKpa = () => {
     PERMISSIONS.PERFORMANCE_TEAM_KPA.value,
   );
 
-  const roleTitles = (auth?.user?.role || []).map((role) => role?.roleTitle?.toLowerCase?.() || "");
+  const roleTitles = (auth?.user?.role || []).map(
+    (role) => role?.roleTitle?.toLowerCase?.() || "",
+  );
   const isMasterOrSuperAdmin = roleTitles.some((title) =>
-    ["master admin", "super admin"].includes(title)
+    ["master admin", "super admin"].includes(title),
   );
 
   const getRowMonthBucket = (row) => {
@@ -175,7 +190,8 @@ const PerformanceTeamKpa = () => {
     !isMasterOrSuperAdmin &&
     isManager &&
     ["previous", "next"].includes(activeViewMonthBucket);
-  const showActionsColumn = !isAddKpaDisabled && !shouldHideActionsColumnForManager;
+  const showActionsColumn =
+    !isAddKpaDisabled && !shouldHideActionsColumnForManager;
 
   const {
     handleSubmit: submitMonthlyKpa,
@@ -205,21 +221,26 @@ const PerformanceTeamKpa = () => {
     });
   }, [activeMember?.memberId, isEditMode, reset, shouldPrefillAssignTo]);
 
-  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
-    mutationKey: ["deleteMonthlyKpaRecurrence"],
-    mutationFn: async (taskId) => {
-      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA", deptId] });
-      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA", deptId] });
-      toast.success(data.message || "KPA recurrence removed");
-    },
-    onError: () => {
-      toast.error("Failed to remove recurrence");
-    },
-  });
+  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } =
+    useMutation({
+      mutationKey: ["deleteMonthlyKpaRecurrence"],
+      mutationFn: async (taskId) => {
+        const response = await axios.patch(
+          `/api/performance/delete-recurrence/${taskId}`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        queryClient.refetchQueries({ queryKey: ["fetchedTeamKPA", deptId] });
+        queryClient.refetchQueries({
+          queryKey: ["completedEntriesKPA", deptId],
+        });
+        toast.success(data.message || "KPA recurrence removed");
+      },
+      onError: () => {
+        toast.error("Failed to remove recurrence");
+      },
+    });
 
   const handleConfirmDelete = () => {
     if (!deleteTargetId) return;
@@ -303,9 +324,9 @@ const PerformanceTeamKpa = () => {
       ? data.assignTo
       : typeof data.assignTo === "string"
         ? data.assignTo
-          .split(",")
-          .map((id) => id.trim())
-          .filter(Boolean)
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean)
         : [];
 
     addMonthlyKpa({
@@ -345,9 +366,9 @@ const PerformanceTeamKpa = () => {
   });
 
   const filteredTeamKpa = useMemo(() => {
-     if (!activeMember?.memberId) return teamKpa || [];
+    if (!activeMember?.memberId) return teamKpa || [];
 
-     if (isSelectedMemberManager) return teamKpa || [];
+    if (isSelectedMemberManager) return teamKpa || [];
 
     return (teamKpa || []).filter((item) => {
       const assignedToList = Array.isArray(item?.assignedTo)
@@ -355,10 +376,12 @@ const PerformanceTeamKpa = () => {
         : item?.assignedTo
           ? [item.assignedTo]
           : [];
-      const assignedToId = item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
+      const assignedToId =
+        item?.assignToId?.toString?.() || item?.assignedToId?.toString?.();
 
       return (
-        normalizeValue(assignedToId) === normalizeValue(activeMember.memberId) ||
+        normalizeValue(assignedToId) ===
+          normalizeValue(activeMember.memberId) ||
         assignedToList.some((name) => {
           const normalizedName = normalizeValue(name);
           return (
@@ -368,32 +391,46 @@ const PerformanceTeamKpa = () => {
         })
       );
     });
-      }, [activeMember?.memberId, activeMember?.memberName, isSelectedMemberManager, teamKpa]);
+  }, [
+    activeMember?.memberId,
+    activeMember?.memberName,
+    isSelectedMemberManager,
+    teamKpa,
+  ]);
 
   const filteredCompletedEntries = useMemo(() => {
-       if (!activeMember?.memberId) return completedEntries || [];
+    if (!activeMember?.memberId) return completedEntries || [];
 
-       if (isSelectedMemberManager) return completedEntries || [];
+    if (isSelectedMemberManager) return completedEntries || [];
 
     return (completedEntries || []).filter(
       (item) =>
-        normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberName) ||
-        normalizeValue(item?.completedBy) === normalizeValue(activeMember.memberId)
+        normalizeValue(item?.completedBy) ===
+          normalizeValue(activeMember.memberName) ||
+        normalizeValue(item?.completedBy) ===
+          normalizeValue(activeMember.memberId),
     );
- }, [activeMember?.memberId, activeMember?.memberName, completedEntries, isSelectedMemberManager]);
+  }, [
+    activeMember?.memberId,
+    activeMember?.memberName,
+    completedEntries,
+    isSelectedMemberManager,
+  ]);
   const selectedMonthLabel = selectedMonthRange?.startDate
     ? dayjs(selectedMonthRange.startDate).format("MMMM YYYY")
     : dayjs().format("MMMM YYYY");
   const completedEntriesForSelectedMonth = selectedMonthRange
     ? filteredCompletedEntries.filter((item) => {
-      const completionDate = dayjs(item?.completionDate);
-      if (!completionDate.isValid()) return false;
+        const completionDate = dayjs(item?.completionDate);
+        if (!completionDate.isValid()) return false;
 
-      const start = dayjs(selectedMonthRange.startDate).startOf("day");
-      const end = dayjs(selectedMonthRange.endDate).endOf("day");
-      return completionDate.isAfter(start.subtract(1, "millisecond")) &&
-        completionDate.isBefore(end.add(1, "millisecond"));
-    })
+        const start = dayjs(selectedMonthRange.startDate).startOf("day");
+        const end = dayjs(selectedMonthRange.endDate).endOf("day");
+        return (
+          completionDate.isAfter(start.subtract(1, "millisecond")) &&
+          completionDate.isBefore(end.add(1, "millisecond"))
+        );
+      })
     : filteredCompletedEntries;
   const showCompletedExport = activeViewMonthBucket !== "next";
   const formatDateTime = (value) =>
@@ -431,41 +468,45 @@ const PerformanceTeamKpa = () => {
         return <Chip label={params.value} style={{ backgroundColor, color }} />;
       },
     },
-  ...(showActionsColumn
+    ...(showActionsColumn
       ? [
-        {
-          headerName: "Actions",
-          field: "actions",
-          pinned:"right",
-          cellRenderer: (params) => (
-            <div className="p-2 flex gap-2 items-center">
-                            {getRowPermissions(params.data).showEdit && (
+          {
+            headerName: "Actions",
+            field: "actions",
+            pinned: "right",
+            cellRenderer: (params) => (
+              <div className="p-2 flex gap-2 items-center">
+                {getRowPermissions(params.data).showEdit && (
+                  <button
+                    type="button"
+                    title="Edit"
+                    onClick={() => handleOpenEditModal(params.data)}
+                    className="ml-2"
+                  >
+                    <HiPencilSquare size={24} color="#111827" />
+                  </button>
+                )}
 
-              <button
-                                    type="button"
-                                    title="Edit"
-                                    onClick={() => handleOpenEditModal(params.data)}
-                                    className="ml-2"
-                                >
-                                    <HiPencilSquare size={24} color="#111827" />
-                                </button>
-                                  )}
-
-                            {canDeleteRecurrence && getRowPermissions(params.data).showDelete && (
-                <button
-                  type="button"
-                  title="Delete Recurrence"
-                  // disabled={!params.node.selected || isDeletePending}
-                  onClick={() => setDeleteTargetId(params.data.id)}
-                  className="ml-2 disabled:cursor-not-allowed"
-                >
-                  {isDeletePending ? "⏳" : <MdDeleteForever size={26} color="red" />}
-                </button>
-              )}
-            </div>
-          ),
-        },
-      ]
+                {canDeleteRecurrence &&
+                  getRowPermissions(params.data).showDelete && (
+                    <button
+                      type="button"
+                      title="Delete Recurrence"
+                      // disabled={!params.node.selected || isDeletePending}
+                      onClick={() => setDeleteTargetId(params.data.id)}
+                      className="ml-2 disabled:cursor-not-allowed"
+                    >
+                      {isDeletePending ? (
+                        "⏳"
+                      ) : (
+                        <MdDeleteForever size={26} color="red" />
+                      )}
+                    </button>
+                  )}
+              </div>
+            ),
+          },
+        ]
       : []),
   ];
 
@@ -486,7 +527,7 @@ const PerformanceTeamKpa = () => {
       exportFormat: "date",
       valueFormatter: (params) => (params.value ? humanDate(params.value) : ""),
     },
-    { headerName: "Completed By", field: "completedBy" ,flex: 1 },
+    { headerName: "Completed By", field: "completedBy", flex: 1 },
     {
       headerName: "Completed At",
       field: "completedAt",
@@ -500,7 +541,7 @@ const PerformanceTeamKpa = () => {
     {
       field: "status",
       headerName: "Status",
-      flex: 1 ,
+      flex: 1,
       cellRenderer: (params) => {
         const statusColorMap = {
           Pending: { backgroundColor: "#FFECC5", color: "#CC8400" }, // Light orange bg, dark orange font
@@ -538,12 +579,21 @@ const PerformanceTeamKpa = () => {
   //   const nextBucket = buckets.size === 1 ? [...buckets][0] : "current";
   //   setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
   // };
-   const handleTeamDateFilterChange = ({ filteredData = [], selectedRange = null }) => {
+  const handleTeamDateFilterChange = ({
+    filteredData = [],
+    selectedRange = null,
+  }) => {
     setSelectedMonthRange((prev) => {
-      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevStart = prev?.startDate
+        ? dayjs(prev.startDate).valueOf()
+        : null;
       const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
-      const nextStart = selectedRange?.startDate ? dayjs(selectedRange.startDate).valueOf() : null;
-      const nextEnd = selectedRange?.endDate ? dayjs(selectedRange.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
 
       if (prevStart === nextStart && prevEnd === nextEnd) return prev;
       return selectedRange;
@@ -554,9 +604,13 @@ const PerformanceTeamKpa = () => {
       return;
     }
 
-    const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+    const buckets = new Set(
+      filteredData.map((item) => getRowMonthBucket(item)),
+    );
     const nextBucket = buckets.size === 1 ? [...buckets][0] : "current";
-    setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
+    setActiveViewMonthBucket((prev) =>
+      prev === nextBucket ? prev : nextBucket,
+    );
   };
 
   return (
@@ -568,8 +622,12 @@ const PerformanceTeamKpa = () => {
               <YearWiseTable
                 // buttonTitle={"Add Team Monthly KPA"}
                 // buttonDisabled={isAddKpaDisabled}
-                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Team Monthly KPA"}
-                buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
+                buttonTitle={
+                  shouldHideAddButtonForManager ? "" : "Add Team Monthly KPA"
+                }
+                buttonDisabled={
+                  shouldHideAddButtonForManager || isAddKpaDisabled
+                }
                 handleSubmit={() => setOpenModal(true)}
                 tableTitle={`${departmentName} - TEAM MONTHLY KPA - ${activeMemberName}`}
                 data={filteredTeamKpa
@@ -586,7 +644,9 @@ const PerformanceTeamKpa = () => {
                 dateColumn={"dueDate"}
                 columns={teamColumns}
                 preserveCurrentMonthRange
-                  isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
+                isRowSelectable={(rowNode) =>
+                  !getRowPermissions(rowNode?.data).disableRowSelection
+                }
                 onDateFilterChange={handleTeamDateFilterChange}
               />
             </WidgetSection>
@@ -611,7 +671,7 @@ const PerformanceTeamKpa = () => {
                   checkAll={false}
                   // key={filteredCompletedEntries.length}
                   // data={filteredCompletedEntries.map((item, index) => ({
-                      key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
+                  key={`${completedEntriesForSelectedMonth.length}-${selectedMonthLabel}`}
                   data={completedEntriesForSelectedMonth.map((item, index) => ({
                     srno: index + 1,
                     id: item.id,
@@ -632,12 +692,11 @@ const PerformanceTeamKpa = () => {
               </WidgetSection>
             ) : (
               <div className="h-72 flex items-center justify-center">
-                  <PerformanceTableSkeleton />
+                <PerformanceTableSkeleton />
               </div>
             )}
           </div>
         </PageFrame>
-
       </div>
 
       <ConfirmationModal
@@ -650,7 +709,7 @@ const PerformanceTeamKpa = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-         title={isEditMode ? "Edit Task" : "Add Team Monthly KPA"}
+        title={isEditMode ? "Edit Task" : "Add Team Monthly KPA"}
       >
         <form
           onSubmit={submitMonthlyKpa(handleFormSubmit)}
@@ -751,58 +810,63 @@ const PerformanceTeamKpa = () => {
             )}
           />
 
-           {!isEditMode && <Controller
-            name="assignTo"
-            control={control}
-            rules={{ required: "Select at least one team member" }}
-            render={({ field, fieldState: { error } }) => (
-              <TextField
-                {...field}
-                select
-                size="small"
-                label="Assign To"
-                fullWidth
-                value={field.value || []}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  field.onChange(
-                    Array.isArray(value)
-                      ? value
-                      : typeof value === "string"
+          {!isEditMode && (
+            <Controller
+              name="assignTo"
+              control={control}
+              rules={{ required: "Select at least one team member" }}
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  size="small"
+                  label="Assign To"
+                  fullWidth
+                  value={field.value || []}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    field.onChange(
+                      Array.isArray(value)
                         ? value
-                          .split(",")
-                          .map((id) => id.trim())
-                          .filter(Boolean)
-                        : [],
-                  );
-                }}
-                error={!!error}
-                helperText={error?.message}
-                SelectProps={{
-                  multiple: true,
-                  renderValue: (selected) => (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                      {selected.map((value) => (
-                        <Chip
-                          key={value}
-                          label={
-                            assignees.find((a) => a.id === value)?.name || value
-                          }
-                          size="small"
-                        />
-                      ))}
-                    </div>
-                  ),
-                }}
-              >
-                {assignees.map((emp) => (
-                  <MenuItem key={emp.id} value={emp.id}>
-                    {emp.name}
-                  </MenuItem>
-                ))}
-              </TextField>
-            )}
-        />}
+                        : typeof value === "string"
+                          ? value
+                              .split(",")
+                              .map((id) => id.trim())
+                              .filter(Boolean)
+                          : [],
+                    );
+                  }}
+                  error={!!error}
+                  helperText={error?.message}
+                  SelectProps={{
+                    multiple: true,
+                    renderValue: (selected) => (
+                      <div
+                        style={{ display: "flex", flexWrap: "wrap", gap: 4 }}
+                      >
+                        {selected.map((value) => (
+                          <Chip
+                            key={value}
+                            label={
+                              assignees.find((a) => a.id === value)?.name ||
+                              value
+                            }
+                            size="small"
+                          />
+                        ))}
+                      </div>
+                    ),
+                  }}
+                >
+                  {assignees.map((emp) => (
+                    <MenuItem key={emp.id} value={emp.id}>
+                      {emp.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+          )}
 
           <PrimaryButton
             type="submit"

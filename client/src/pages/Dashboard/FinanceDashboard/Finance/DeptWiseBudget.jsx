@@ -1,4 +1,4 @@
-import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
+﻿import { useFinanceNavigate as useNavigate } from "../financeDashboard1";
 import React, { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import WidgetSection from "../../../../components/WidgetSection";
@@ -97,6 +97,7 @@ const [hiddenDepartmentExpenseSeries, setHiddenDepartmentExpenseSeries] =
     acc[month].amount += item.actualAmount;
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       expanseName: item.expanseName,
       department: item.department?.name,
       departmentId: item.department?._id,
@@ -711,7 +712,7 @@ const totalUtilised =
     )
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
 
-  // ✅ BLOCK RENDERING UNTIL DATA IS READY
+  // âœ… BLOCK RENDERING UNTIL DATA IS READY
   // if (isHrLoading || !budgetBar || !budgetBar.utilisedBudget) {
   //   return (
   //     <div className="h-screen flex justify-start items-center">

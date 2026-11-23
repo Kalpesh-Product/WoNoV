@@ -37,82 +37,80 @@ import YearwiseEnergyBilling from "./MaintenanceMixBag/YearwiseEnergyBilling";
 
 const MaintainanceDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
-const department = usePageDepartment();
-const axios = useAxiosPrivate();
-const navigate = useNavigate();
-const dispatch = useDispatch();
+  const department = usePageDepartment();
+  const axios = useAxiosPrivate();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-const getFiscalYearStart = (date = dayjs()) => {
-  const parsedDate = dayjs(date);
-  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
-};
+  const getFiscalYearStart = (date = dayjs()) => {
+    const parsedDate = dayjs(date);
+    return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+  };
 
-const formatFiscalYear = (startYear) =>
-  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  const formatFiscalYear = (startYear) =>
+    `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
 
-const getFiscalMonthIndex = (date) => {
-  const parsedDate = dayjs(date);
-  const month = parsedDate.month();
+  const getFiscalMonthIndex = (date) => {
+    const parsedDate = dayjs(date);
+    const month = parsedDate.month();
 
-  return month >= 3 ? month - 3 : month + 9;
-};
+    return month >= 3 ? month - 3 : month + 9;
+  };
 
-const getAmount = (value) => {
-  if (typeof value === "number") return value;
+  const getAmount = (value) => {
+    if (typeof value === "number") return value;
 
-  if (typeof value === "string") {
-    const parsed = Number(value.replace(/,/g, ""));
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
+    if (typeof value === "string") {
+      const parsed = Number(value.replace(/,/g, ""));
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
 
-  return 0;
-};
+    return 0;
+  };
 
-const currentDepartmentId = department?._id;
-const currentDepartmentName = department?.name || "Maintenance";
-const encodedDepartmentName = encodeURIComponent(currentDepartmentName);
+  const currentDepartmentId = department?._id;
+  const currentDepartmentName = department?.name || "Maintenance";
+  const encodedDepartmentName = encodeURIComponent(currentDepartmentName);
 
-const handleUnderMaintenanceAssetsClick = () => {
-  if (!currentDepartmentId) return;
+  const handleUnderMaintenanceAssetsClick = () => {
+    if (!currentDepartmentId) return;
 
-  dispatch(setSelectedDepartment(currentDepartmentId));
-  dispatch(setSelectedDepartmentName(currentDepartmentName));
-  navigate(
-    `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
-    {
-      state: { assetStatusFilter: "underMaintenance" },
-    },
-  );
-};
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    dispatch(setSelectedDepartmentName(currentDepartmentName));
+    navigate(
+      `/app/assets/view-assets/${encodedDepartmentName}/list-of-assets/assets-under-maintenance`,
+      {
+        state: { assetStatusFilter: "underMaintenance" },
+      },
+    );
+  };
 
-const fiscalMonths = [
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-  "Jan",
-  "Feb",
-  "Mar",
-];
+  const fiscalMonths = [
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+  ];
 
-const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 
-const [selectedFiscalYear, setSelectedFiscalYear] =
-  useState(currentFiscalYear);
-const [
-  hiddenMaintenanceExpenseSeries,
-  setHiddenMaintenanceExpenseSeries,
-] = useState({
-  actual: false,
-  projected: false,
-});  
-const currentFiscalMonthIndexForCard =
-  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+  const [selectedFiscalYear, setSelectedFiscalYear] =
+    useState(currentFiscalYear);
+  const [hiddenMaintenanceExpenseSeries, setHiddenMaintenanceExpenseSeries] =
+    useState({
+      actual: false,
+      projected: false,
+    });
+  const currentFiscalMonthIndexForCard =
+    dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
 
   const { auth } = useAuth();
   const userPermissions = auth?.user?.permissions?.permissions || [];
@@ -127,7 +125,7 @@ const currentFiscalMonthIndexForCard =
     queryKey: ["maintenance-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return Array.isArray(response.data?.selectedDepartments)
         ? response.data.selectedDepartments
@@ -176,7 +174,7 @@ const currentFiscalMonthIndexForCard =
   ];
 
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //------------------------PAGE ACCESS END-------------------//
 
@@ -186,9 +184,9 @@ const currentFiscalMonthIndexForCard =
       try {
         const response = await axios.get(
           `/api/budget/company-budget?departmentId=6798bafbe469e809084e24a7
-            `
+            `,
         );
-          return Array.isArray(response.data?.allBudgets)
+        return Array.isArray(response.data?.allBudgets)
           ? response.data.allBudgets
           : [];
       } catch (error) {
@@ -197,7 +195,6 @@ const currentFiscalMonthIndexForCard =
     },
   });
 
-  
   //----------------------KPA Data-----------------------//
   const fetchDepartments = async () => {
     if (!department?._id) {
@@ -206,7 +203,7 @@ const currentFiscalMonthIndexForCard =
 
     try {
       const response = await axios.get(
-        `/api/performance/get-tasks?dept=${department._id}&type=KPA&duration=Monthly`
+        `/api/performance/get-tasks?dept=${department._id}&type=KPA&duration=Monthly`,
       );
       return normalizeListResponse(response.data);
     } catch (error) {
@@ -222,10 +219,7 @@ const currentFiscalMonthIndexForCard =
   //----------------------KPA Data-----------------------//
   const totalOverallExpense = isHrFinanceLoading
     ? 0
-    : hrFinance.reduce(
-        (sum, item) => sum + getAmount(item?.actualAmount),
-        0,
-      );
+    : hrFinance.reduce((sum, item) => sum + getAmount(item?.actualAmount), 0);
   //----------------------Monthly average-----------------------//
 
   const { data: tasks = [], isLoading: isTasksLoading } = useQuery({
@@ -237,7 +231,7 @@ const currentFiscalMonthIndexForCard =
 
       try {
         const response = await axios.get(
-          `/api/tasks/get-tasks?dept=${department._id}`
+          `/api/tasks/get-tasks?dept=${department._id}`,
         );
         return normalizeListResponse(response.data);
       } catch (error) {
@@ -255,7 +249,7 @@ const currentFiscalMonthIndexForCard =
       try {
         const response = await axios.get(
           `/api/company/fetch-simple-units
-            `
+            `,
         );
         return response.data;
       } catch (error) {
@@ -267,36 +261,39 @@ const currentFiscalMonthIndexForCard =
     ? []
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
-  const { data: maintenanceAssets = [], isLoading: isMaintenanceAssetsLoading } =
-    useQuery({
-      queryKey: ["maintenance-assets", department?._id],
-      queryFn: async () => {
-        if (!department?._id) {
-          return [];
-        }
+  const {
+    data: maintenanceAssets = [],
+    isLoading: isMaintenanceAssetsLoading,
+  } = useQuery({
+    queryKey: ["maintenance-assets", department?._id],
+    queryFn: async () => {
+      if (!department?._id) {
+        return [];
+      }
 
-        try {
-          const response = await axios.get(
-            `/api/assets/get-assets?departmentId=${department._id}`,
-          );
-          return Array.isArray(response.data)
-            ? response.data.flatMap((item) => item?.assets || [])
-            : [];
-        } catch (error) {
-          console.error("Error fetching maintenance assets:", error);
-          return [];
-        }
-      },
-      enabled: !!department?._id,
-    });
+      try {
+        const response = await axios.get(
+          `/api/assets/get-assets?departmentId=${department._id}`,
+        );
+        return Array.isArray(response.data)
+          ? response.data.flatMap((item) => item?.assets || [])
+          : [];
+      } catch (error) {
+        console.error("Error fetching maintenance assets:", error);
+        return [];
+      }
+    },
+    enabled: !!department?._id,
+  });
 
   const underMaintenanceAssetsCount = useMemo(() => {
     if (isMaintenanceAssetsLoading || !Array.isArray(maintenanceAssets)) {
       return 0;
     }
 
-    return maintenanceAssets.filter((asset) => asset?.isUnderMaintenance === true)
-      .length;
+    return maintenanceAssets.filter(
+      (asset) => asset?.isUnderMaintenance === true,
+    ).length;
   }, [maintenanceAssets, isMaintenanceAssetsLoading]);
 
   const monthlyDueTasksCount = useMemo(() => {
@@ -319,7 +316,7 @@ const currentFiscalMonthIndexForCard =
 
         try {
           const response = await axios.get(
-            `/api/weekly-unit/fetch-weekly-unit/${department._id}`
+            `/api/weekly-unit/fetch-weekly-unit/${department._id}`,
           );
           return response.data;
         } catch (error) {
@@ -339,7 +336,7 @@ const currentFiscalMonthIndexForCard =
 
       try {
         const response = await axios.get(
-          `/api/tickets/department-tickets/${department._id}`
+          `/api/tickets/department-tickets/${department._id}`,
         );
         return Array.isArray(response.data) ? response.data : [];
       } catch (error) {
@@ -377,13 +374,13 @@ const currentFiscalMonthIndexForCard =
 
   const totalCategoryWiseMaintenance = categoryWiseMaintenance.reduce(
     (sum, item) => sum + item.expense,
-    0
+    0,
   );
   const pieCategoryWiseMaintenanceData = categoryWiseMaintenance.map(
     (item) => ({
       label: item.unit,
       value: item.expense,
-    })
+    }),
   );
   const pieCategoryWiseMaintenanceOptions = {
     labels: categoryWiseMaintenance.map((item) => item.unit),
@@ -446,388 +443,362 @@ const currentFiscalMonthIndexForCard =
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
-    0
+    0,
   );
 
   const maintenanceExpenseByFiscalYear = useMemo(() => {
-  const fyData = {};
+    const fyData = {};
 
-  (hrFinance || []).forEach((item) => {
-    if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
-      return;
-    }
+    (hrFinance || []).forEach((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return;
+      }
 
-    const fiscalYearStart = getFiscalYearStart(item.dueDate);
-    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
-    const monthIndex = getFiscalMonthIndex(item.dueDate);
+      const fiscalYearStart = getFiscalYearStart(item.dueDate);
+      const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+      const monthIndex = getFiscalMonthIndex(item.dueDate);
 
-    if (!fyData[fiscalYearLabel]) {
-      fyData[fiscalYearLabel] = {
+      if (!fyData[fiscalYearLabel]) {
+        fyData[fiscalYearLabel] = {
+          actual: Array(12).fill(0),
+          projected: Array(12).fill(0),
+        };
+      }
+
+      const actualAmount = getAmount(item?.actualAmount);
+      const projectedAmount = getAmount(item?.projectedAmount);
+
+      fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+      fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
+    });
+
+    if (!fyData[currentFiscalYear]) {
+      fyData[currentFiscalYear] = {
         actual: Array(12).fill(0),
         projected: Array(12).fill(0),
       };
     }
 
-    const actualAmount = getAmount(item?.actualAmount);
-    const projectedAmount = getAmount(item?.projectedAmount);
+    return fyData;
+  }, [hrFinance, currentFiscalYear]);
 
-    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
-  });
+  const expenseRawSeries = useMemo(() => {
+    return Object.entries(maintenanceExpenseByFiscalYear)
+      .sort(([fyA], [fyB]) => {
+        const startA = Number(fyA.slice(3, 7));
+        const startB = Number(fyB.slice(3, 7));
 
-  if (!fyData[currentFiscalYear]) {
-    fyData[currentFiscalYear] = {
-      actual: Array(12).fill(0),
-      projected: Array(12).fill(0),
-    };
-  }
+        return startA - startB;
+      })
+      .flatMap(([fiscalYear, data]) => {
+        const actualForGraph = data.actual.map((actualAmount) =>
+          hiddenMaintenanceExpenseSeries.actual ? 0 : actualAmount,
+        );
 
-  return fyData;
-}, [hrFinance, currentFiscalYear]);
+        const projectedForGraph = data.projected.map(
+          (projectedAmount, monthIndex) => {
+            if (hiddenMaintenanceExpenseSeries.projected) {
+              return 0;
+            }
 
-const expenseRawSeries = useMemo(() => {
-  return Object.entries(maintenanceExpenseByFiscalYear)
-    .sort(([fyA], [fyB]) => {
-      const startA = Number(fyA.slice(3, 7));
-      const startB = Number(fyB.slice(3, 7));
+            if (hiddenMaintenanceExpenseSeries.actual) {
+              return projectedAmount;
+            }
 
-      return startA - startB;
-    })
-    .flatMap(([fiscalYear, data]) => {
-     
-      const actualForGraph = data.actual.map((actualAmount) =>
-        hiddenMaintenanceExpenseSeries.actual ? 0 : actualAmount,
-      );
+            const actualAmount = data.actual[monthIndex] || 0;
 
-      const projectedForGraph = data.projected.map(
-        (projectedAmount, monthIndex) => {
-         
-          if (hiddenMaintenanceExpenseSeries.projected) {
-            return 0;
-          }
-
-          
-          if (hiddenMaintenanceExpenseSeries.actual) {
-            return projectedAmount;
-          }
-
-         
-          const actualAmount = data.actual[monthIndex] || 0;
-
-          return actualAmount > 0 ? 0 : projectedAmount;
-        },
-      );
-
-      return [
-        {
-          name: "Actual Amount",
-          group: fiscalYear,
-          data: actualForGraph,
-        },
-        {
-          name: "Projected Amount",
-          group: fiscalYear,
-          data: projectedForGraph,
-        },
-      ];
-    });
-}, [
-  maintenanceExpenseByFiscalYear,
-  hiddenMaintenanceExpenseSeries.actual,
-  hiddenMaintenanceExpenseSeries.projected,
-]);
-
-// const roundedMax = useMemo(() => {
-//   const fiscalYears = [
-//     ...new Set(expenseRawSeries.map((series) => series.group)),
-//   ];
-
-//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
-//     const actualSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Actual Amount"
-//     );
-
-//     const projectedSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Projected Amount"
-//     );
-
-//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
-//       const actual = actualSeries?.data?.[index] || 0;
-//       const projectedBalance = projectedSeries?.data?.[index] || 0;
-
-//       return actual + projectedBalance;
-//     });
-
-//     return Math.max(max, ...monthlyMax);
-//   }, 0);
-
-//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
-// }, [expenseRawSeries]);
-const { roundedMax, tickAmount } = useMemo(() => {
-  /*
-   * Sirf selected FY ki currently visible series use hogi.
-   * Doosre financial year ka data scale ko affect nahi karega.
-   */
-  const selectedYearSeries = expenseRawSeries.filter(
-    (series) => series.group === selectedFiscalYear,
-  );
-
-  /*
-   * Har month ka currently displayed Actual + Projected total.
-   */
-  const monthlyTotals = Array.from(
-    { length: 12 },
-    (_, monthIndex) =>
-      selectedYearSeries.reduce(
-        (total, series) =>
-          total + Number(series?.data?.[monthIndex] || 0),
-        0,
-      ),
-  );
-
-  const maxExpenseValue = Math.max(...monthlyTotals, 0);
-
-  if (maxExpenseValue <= 0) {
-    return {
-      roundedMax: 10000,
-      tickAmount: 5,
-    };
-  }
-
-  /*
-   * Maintenance BudgetPage wala exact dynamic-scale formula.
-   */
-  const bufferedMax = maxExpenseValue * 1.1;
-  const roughStep = bufferedMax / 6;
-
-  const magnitude =
-    10 ** Math.floor(Math.log10(roughStep));
-
-  const normalizedStep = roughStep / magnitude;
-
-  let step = magnitude;
-
-  if (normalizedStep <= 1) {
-    step = magnitude;
-  } else if (normalizedStep <= 2) {
-    step = 2 * magnitude;
-  } else if (normalizedStep <= 5) {
-    step = 5 * magnitude;
-  } else {
-    step = 10 * magnitude;
-  }
-
-  const safeRoundedMax =
-    Math.ceil(bufferedMax / step) * step;
-
-  return {
-    roundedMax: safeRoundedMax,
-    tickAmount: Math.max(
-      Math.round(safeRoundedMax / step),
-      1,
-    ),
-  };
-}, [expenseRawSeries, selectedFiscalYear]);
-
-  const expenseOptions = {
-  chart: {
-    type: "bar",
-    toolbar: { show: false },
-    stacked: true,
-    fontFamily: "Poppins-Regular, Arial, sans-serif",
-    events: {
-  legendClick: (_chartContext, seriesIndex) => {
-    setHiddenMaintenanceExpenseSeries((currentState) => {
-      // Series index 0 = Actual Amount
-      if (seriesIndex === 0) {
-        return {
-          ...currentState,
-          actual: !currentState.actual,
-        };
-      }
-
-      // Series index 1 = Projected Amount
-      if (seriesIndex === 1) {
-        return {
-          ...currentState,
-          projected: !currentState.projected,
-        };
-      }
-
-      return currentState;
-    });
-  },
-
- 
-  dataPointSelection: () => {
-    navigate("finance/budget");
-  },
-},
-  },
-  colors: ["#54C4A7", "#c4c4c4"],
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: "40%",
-      borderRadius: 5,
-      borderRadiusApplication: "end",
-      dataLabels: {
-        position: "top",
-        total: {
-          enabled: true,
-         formatter: (_, config) => {
-  const total =
-    config?.w?.globals?.stackedSeriesTotals?.[
-      config?.dataPointIndex
-    ] || 0;
-
-  if (Number(total) <= 0) {
-    return "";
-  }
-
-  return inrFormat(Number(total));
-},
-          style: {
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "#000",
+            return actualAmount > 0 ? 0 : projectedAmount;
           },
-          offsetY: -8,
-        },
-      },
-    },
-  },
-  dataLabels: {
-    enabled: false,
-  },
-  xaxis: {
-  categories: fiscalMonths,
-  title: {
-    text: "  ",
-  },
-  crosshairs: {
-    show: false,
-    fill: {
-      opacity: 0,
-    },
-    stroke: {
-      opacity: 0,
-    },
-  },
-},
-  yaxis: {
-  min: 0,
-  max: roundedMax,
-  tickAmount,
-  forceNiceScale: false,
+        );
 
-  title: {
-    text: "Amount In Lakhs (INR)",
-  },
+        return [
+          {
+            name: "Actual Amount",
+            group: fiscalYear,
+            data: actualForGraph,
+          },
+          {
+            name: "Projected Amount",
+            group: fiscalYear,
+            data: projectedForGraph,
+          },
+        ];
+      });
+  }, [
+    maintenanceExpenseByFiscalYear,
+    hiddenMaintenanceExpenseSeries.actual,
+    hiddenMaintenanceExpenseSeries.projected,
+  ]);
 
-  labels: {
-    minWidth: 25,
-    maxWidth: 35,
+  // const roundedMax = useMemo(() => {
+  //   const fiscalYears = [
+  //     ...new Set(expenseRawSeries.map((series) => series.group)),
+  //   ];
+
+  //   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+  //     const actualSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Actual Amount"
+  //     );
+
+  //     const projectedSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Projected Amount"
+  //     );
+
+  //     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+  //       const actual = actualSeries?.data?.[index] || 0;
+  //       const projectedBalance = projectedSeries?.data?.[index] || 0;
+
+  //       return actual + projectedBalance;
+  //     });
+
+  //     return Math.max(max, ...monthlyMax);
+  //   }, 0);
+
+  //   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+  // }, [expenseRawSeries]);
+  const { roundedMax, tickAmount } = useMemo(() => {
+    /*
+     * Sirf selected FY ki currently visible series use hogi.
+     * Doosre financial year ka data scale ko affect nahi karega.
+     */
+    const selectedYearSeries = expenseRawSeries.filter(
+      (series) => series.group === selectedFiscalYear,
+    );
 
     /*
-     * BudgetPage ke current display ke bilkul same:
-     * ₹50,000   -> 5
-     * ₹1,00,000 -> 10
+     * Har month ka currently displayed Actual + Projected total.
      */
-    formatter: (value) => {
-      const axisValue =
-        Number(value || 0) / 10000;
+    const monthlyTotals = Array.from({ length: 12 }, (_, monthIndex) =>
+      selectedYearSeries.reduce(
+        (total, series) => total + Number(series?.data?.[monthIndex] || 0),
+        0,
+      ),
+    );
 
-      if (Number.isInteger(axisValue)) {
-        return String(axisValue);
-      }
+    const maxExpenseValue = Math.max(...monthlyTotals, 0);
 
-      return Number(
-        axisValue.toFixed(2),
-      ).toString();
-    },
+    if (maxExpenseValue <= 0) {
+      return {
+        roundedMax: 10000,
+        tickAmount: 5,
+      };
+    }
 
-    style: {
+    /*
+     * Maintenance BudgetPage wala exact dynamic-scale formula.
+     */
+    const bufferedMax = maxExpenseValue * 1.1;
+    const roughStep = bufferedMax / 6;
+
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+
+    const normalizedStep = roughStep / magnitude;
+
+    let step = magnitude;
+
+    if (normalizedStep <= 1) {
+      step = magnitude;
+    } else if (normalizedStep <= 2) {
+      step = 2 * magnitude;
+    } else if (normalizedStep <= 5) {
+      step = 5 * magnitude;
+    } else {
+      step = 10 * magnitude;
+    }
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
+    return {
+      roundedMax: safeRoundedMax,
+      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
+    };
+  }, [expenseRawSeries, selectedFiscalYear]);
+
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      stacked: true,
       fontFamily: "Poppins-Regular, Arial, sans-serif",
-      fontSize: "11px",
-    },
-  },
-},
-  fill: {
-    opacity: 1,
-  },
-  states: {
-    hover: {
-      filter: {
-        type: "none",
+      events: {
+        legendClick: (_chartContext, seriesIndex) => {
+          setHiddenMaintenanceExpenseSeries((currentState) => {
+            // Series index 0 = Actual Amount
+            if (seriesIndex === 0) {
+              return {
+                ...currentState,
+                actual: !currentState.actual,
+              };
+            }
+
+            // Series index 1 = Projected Amount
+            if (seriesIndex === 1) {
+              return {
+                ...currentState,
+                projected: !currentState.projected,
+              };
+            }
+
+            return currentState;
+          });
+        },
+
+        dataPointSelection: () => {
+          navigate("finance/budget");
+        },
       },
     },
-    active: {
-      filter: {
-        type: "none",
+    colors: ["#54C4A7", "#c4c4c4"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "end",
+        dataLabels: {
+          position: "top",
+          total: {
+            enabled: true,
+            formatter: (_, config) => {
+              const total =
+                config?.w?.globals?.stackedSeriesTotals?.[
+                  config?.dataPointIndex
+                ] || 0;
+
+              if (Number(total) <= 0) {
+                return "";
+              }
+
+              return inrFormat(Number(total));
+            },
+            style: {
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#000",
+            },
+            offsetY: -8,
+          },
+        },
       },
     },
-  },
-  legend: {
-  show: true,
-  position: "top",
+    dataLabels: {
+      enabled: false,
+    },
+    xaxis: {
+      categories: fiscalMonths,
+      title: {
+        text: "  ",
+      },
+      crosshairs: {
+        show: false,
+        fill: {
+          opacity: 0,
+        },
+        stroke: {
+          opacity: 0,
+        },
+      },
+    },
+    yaxis: {
+      min: 0,
+      max: roundedMax,
+      tickAmount,
+      forceNiceScale: false,
 
-  
-  onItemClick: {
-    toggleDataSeries: false,
-  },
+      title: {
+        text: "Amount In Lakhs (INR)",
+      },
 
-  labels: {
-    colors: [
-      // Actual legend text
-      hiddenMaintenanceExpenseSeries.actual
-        ? "#D5D5D5"
-        : "#4B4B4B",
+      labels: {
+        minWidth: 25,
+        maxWidth: 35,
 
-      // Projected legend text
-      hiddenMaintenanceExpenseSeries.projected
-        ? "#D5D5D5"
-        : "#4B4B4B",
-    ],
-  },
+        /*
+         * BudgetPage ke current display ke bilkul same:
+         * ₹50,000   -> 5
+         * ₹1,00,000 -> 10
+         */
+        formatter: (value) => {
+          const axisValue = Number(value || 0) / 10000;
 
-  markers: {
-    fillColors: [
-      // Actual legend marker
-      hiddenMaintenanceExpenseSeries.actual
-        ? "#E1F5EF"
-        : "#54C4A7",
+          if (Number.isInteger(axisValue)) {
+            return String(axisValue);
+          }
 
-      // Projected legend marker
-      hiddenMaintenanceExpenseSeries.projected
-        ? "#E2E2E2"
-        : "#C4C4C4",
-    ],
-  },
-},
-  tooltip: {
-  enabled: true,
-  shared: true,
-  intersect: false,
+          return Number(axisValue.toFixed(2)).toString();
+        },
 
-  custom: function ({ dataPointIndex, w }) {
-    const selectedYearData =
-      maintenanceExpenseByFiscalYear?.[selectedFiscalYear];
+        style: {
+          fontFamily: "Poppins-Regular, Arial, sans-serif",
+          fontSize: "11px",
+        },
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
+    },
+    legend: {
+      show: true,
+      position: "top",
 
-    const actualAmount =
-      selectedYearData?.actual?.[dataPointIndex] || 0;
+      onItemClick: {
+        toggleDataSeries: false,
+      },
 
-    const projectedAmount =
-      selectedYearData?.projected?.[dataPointIndex] || 0;
+      labels: {
+        colors: [
+          // Actual legend text
+          hiddenMaintenanceExpenseSeries.actual ? "#D5D5D5" : "#4B4B4B",
 
-    const monthLabel =
-      w?.globals?.labels?.[dataPointIndex] ||
-      fiscalMonths[dataPointIndex] ||
-      `Month ${dataPointIndex + 1}`;
+          // Projected legend text
+          hiddenMaintenanceExpenseSeries.projected ? "#D5D5D5" : "#4B4B4B",
+        ],
+      },
 
-    return `
+      markers: {
+        fillColors: [
+          // Actual legend marker
+          hiddenMaintenanceExpenseSeries.actual ? "#E1F5EF" : "#54C4A7",
+
+          // Projected legend marker
+          hiddenMaintenanceExpenseSeries.projected ? "#E2E2E2" : "#C4C4C4",
+        ],
+      },
+    },
+    tooltip: {
+      enabled: true,
+      shared: true,
+      intersect: false,
+
+      custom: function ({ dataPointIndex, w }) {
+        const selectedYearData =
+          maintenanceExpenseByFiscalYear?.[selectedFiscalYear];
+
+        const actualAmount = selectedYearData?.actual?.[dataPointIndex] || 0;
+
+        const projectedAmount =
+          selectedYearData?.projected?.[dataPointIndex] || 0;
+
+        const monthLabel =
+          w?.globals?.labels?.[dataPointIndex] ||
+          fiscalMonths[dataPointIndex] ||
+          `Month ${dataPointIndex + 1}`;
+
+        return `
       <div
         class="apexcharts-tooltip-title"
         style="
@@ -919,40 +890,40 @@ const { roundedMax, tickAmount } = useMemo(() => {
         </div>
       </div>
     `;
-  },
-},
-};
+      },
+    },
+  };
 
   const budgetBar = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
   }, [isHrFinanceLoading, hrFinance]);
-const selectedMaintenanceActualAmounts = useMemo(() => {
-  return (
-    maintenanceExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
-    Array(12).fill(0)
-  );
-}, [maintenanceExpenseByFiscalYear, selectedFiscalYear]);
+  const selectedMaintenanceActualAmounts = useMemo(() => {
+    return (
+      maintenanceExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
+      Array(12).fill(0)
+    );
+  }, [maintenanceExpenseByFiscalYear, selectedFiscalYear]);
 
-const totalUtilised = useMemo(() => {
-  return selectedMaintenanceActualAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
-}, [selectedMaintenanceActualAmounts]);
+  const totalUtilised = useMemo(() => {
+    return selectedMaintenanceActualAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
+  }, [selectedMaintenanceActualAmounts]);
 
-const currentFyAverageMonthlyExpense = useMemo(() => {
-  const currentFyActualAmounts =
-    maintenanceExpenseByFiscalYear?.[currentFiscalYear]?.actual ||
-    Array(12).fill(0);
+  const currentFyAverageMonthlyExpense = useMemo(() => {
+    const currentFyActualAmounts =
+      maintenanceExpenseByFiscalYear?.[currentFiscalYear]?.actual ||
+      Array(12).fill(0);
 
-  const totalCurrentFyExpense = currentFyActualAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
+    const totalCurrentFyExpense = currentFyActualAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
 
-  return totalCurrentFyExpense / 12;
-}, [currentFiscalYear, maintenanceExpenseByFiscalYear]);
+    return totalCurrentFyExpense / 12;
+  }, [currentFiscalYear, maintenanceExpenseByFiscalYear]);
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -1037,13 +1008,22 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   // ------------------------------------------------------------------------------------------------------------------//
   // ------------------------------------------------------------------------------------------------------------------//
   // Due Maintenance
-  const dueTicketStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+  const dueTicketStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
 
-  const pendingMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
-    (ticket) => dueTicketStatuses.has(String(ticket?.status || "").toLowerCase())
+  const pendingMaintenanceTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter((ticket) =>
+    dueTicketStatuses.has(String(ticket?.status || "").toLowerCase()),
   ).length;
-  const completedMaintenanceTicketsCount = (Array.isArray(tickets) ? tickets : []).filter(
-    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  const completedMaintenanceTicketsCount = (
+    Array.isArray(tickets) ? tickets : []
+  ).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
   ).length;
 
   const dueMaintenanceData = [
@@ -1104,11 +1084,11 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const totalGenderCount = genderData.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
   const pieGenderData = genderData.map((item) => ({
     label: `${item.gender} ${((item.count / totalGenderCount) * 100).toFixed(
-      1
+      1,
     )}%`,
     value: item.count,
   }));
@@ -1138,7 +1118,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const totalMonthlyDueTasksCount = monthlyDueTasksData.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
   const pieMonthlyDueTasksData = monthlyDueTasksData.map((item) => ({
     label: `${item.monthlyDueTasks} ${(
@@ -1173,7 +1153,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const totalYearlyDueTasksCount = yearlyDueTasksData.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
   const pieYearlyDueTasksData = yearlyDueTasksData.map((item) => ({
     label: `${item.yearlyDueTasks} ${(
@@ -1209,7 +1189,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const totalExecutionChannelCount = executionChannelData.reduce(
     (sum, item) => sum + item.count,
-    0
+    0,
   );
   const pieExecutionChannelData = executionChannelData.map((item) => ({
     label: `${item.executionChannel} ${(
@@ -1278,8 +1258,6 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
     { id: "endTime", label: "End Time", align: "left" },
   ];
 
-
-
   const executiveTimingsColumns = [
     { id: "srNo", label: "Sr No", align: "left" },
     { id: "name", label: "Name", align: "left" },
@@ -1302,7 +1280,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
 
   const totalClientComplaints = clientComplaints.reduce(
     (sum, item) => sum + item.complaints,
-    0
+    0,
   );
   const pieComplaintsData = clientComplaints.map((item) => ({
     label: `${item.client} (${(
@@ -1374,7 +1352,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
 
   const allowedMaintenanceYearlyGraphs = filterPermissions(
     maintenanceYearlyGraphConfigs,
-    userPermissions
+    userPermissions,
   );
 
   // 3️⃣ PieChart Widgets
@@ -1400,7 +1378,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const allowedPieDonut = filterPermissions(
     maintenancePieDonutChart,
-    userPermissions
+    userPermissions,
   );
 
   // Pie chart and Donuts
@@ -1436,7 +1414,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
   ];
   const allowedPieChartConfig = filterPermissions(
     pieChartConfig,
-    userPermissions
+    userPermissions,
   );
 
   // Data Cards
@@ -1488,7 +1466,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
 
   const allowedMaintenanceDataCards = filterPermissions(
     maintenanceDataCardsConfig,
-    userPermissions
+    userPermissions,
   );
 
   const maintenanceEnergyGraphsConfig = [
@@ -1535,10 +1513,10 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
 
   const allowedMaintenanceTables = filterPermissions(
     maintenanceTablesConfig,
-    userPermissions
+    userPermissions,
   );
 
-   const dueTasksConfigs = [
+  const dueTasksConfigs = [
     {
       key: PERMISSIONS.MAINTENANCE_UNIT_WISE_DUE_TASKS.value,
       type: "PieChartMui",
@@ -1676,11 +1654,8 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
     {
       layout: 2,
       widgets: allowedMaintenanceTables.map((config) => (
-
-        <MuiTable showTableControls={false}
-          {...config}
-        />
-      ))
+        <MuiTable showTableControls={false} {...config} />
+      )),
     },
 
     {
@@ -1714,7 +1689,11 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
       widgets: allowedPieDonut.map((config) => {
         if (config.type === "PieChartMui") {
           return (
-            <WidgetSection key={config.key} border={config.border} title={config.title}>
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
               <PieChartMui
                 data={config.data}
                 options={config.options}
@@ -1726,7 +1705,11 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
           );
         } else if (config.type === "Donut") {
           return (
-            <WidgetSection key={config.key} border={config.border} title={config.title}>
+            <WidgetSection
+              key={config.key}
+              border={config.border}
+              title={config.title}
+            >
               <DonutChart
                 centerLabel={config.centerLabel}
                 labels={config.labels}
@@ -1744,8 +1727,7 @@ const currentFyAverageMonthlyExpense = useMemo(() => {
         <WidgetSection border={config.border} title={config.title}>
           <PieChartMui data={config.data} options={config.options} />
         </WidgetSection>
-      ))
-
+      )),
     },
   ];
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -120,6 +120,7 @@ const [
     acc[month].amount += item?.actualAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,

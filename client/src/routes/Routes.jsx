@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from "react-router-dom";
+import { Navigate, Outlet, createBrowserRouter } from "react-router-dom";
 import MainLayout from "../layouts/MainLayout";
 import AuthLayout from "../layouts/AuthLayout";
 import LoginPage from "../pages/LoginPage/LoginPage";
@@ -12,7 +12,9 @@ import Access from "../pages/Access/Access";
 import AccessProfile from "../pages/Access/AccessProfile";
 import Notifications from "../pages/Notifications";
 import Chat from "../pages/Chat";
-import LogPage from "../pages/LogPage";
+import LogAccess from "../pages/Logs/LogAccess";
+import LogPermissions from "../pages/Logs/LogPermissions";
+import LogModuleLogs from "../pages/Logs/LogModuleLogs";
 import Profile from "../pages/Profile/Profile";
 
 //Reports Pages
@@ -6000,13 +6002,18 @@ export const routes = createBrowserRouter([
                 element: <Chat />,
               },
               {
-                path: "secret-logs",
+                path: "logs",
                 element: (
                   <PerformancePermissionRoute
-                    element={<LogPage />}
+                    element={<Outlet />}
                     permissions={[PERMISSIONS.SIDEBAR_LOGS]}
                   />
                 ),
+                children: [
+                  { index: true, element: <LogAccess /> },
+                  { path: "permissions", element: <LogPermissions /> },
+                  { path: "permissions/:module", element: <LogModuleLogs /> },
+                ],
               },
               {
                 path: "profile",

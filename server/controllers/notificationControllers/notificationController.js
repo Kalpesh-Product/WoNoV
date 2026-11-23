@@ -1,10 +1,21 @@
 const { default: mongoose } = require("mongoose");
 const Notification = require("../../models/Notification");
 
+const DEFAULT_NOTIFICATION_LIMIT = 100;
+const MAX_NOTIFICATION_LIMIT = 200;
+
 const getNotifications = async (req, res, next) => {
   try {
     const userId = req.user;
+    const requestedLimit = Number.parseInt(req.query?.limit, 10);
+    const limit =
+      Number.isFinite(requestedLimit) && requestedLimit > 0
+        ? Math.min(requestedLimit, MAX_NOTIFICATION_LIMIT)
+        : DEFAULT_NOTIFICATION_LIMIT;
 
+    // Only the newest notifications are sent, and only the current user's own
+    // read/unread entry is kept from the recipients list. This endpoint is
+    // polled by every open tab, so the response has to stay small.
     const notifications = await Notification.find({
       $or: [
         { initiatorData: userId },
@@ -12,20 +23,23 @@ const getNotifications = async (req, res, next) => {
       ],
     })
       .sort({ createdAt: -1 })
-      .populate([
-        {
-          path: "initiatorData",
-          select: "firstName lastName profilePicture",
-        },
-        {
-          path: "users.userActions.whichUser",
-          select: "firstName lastName profilePicture",
-        },
-      ])
+      .limit(limit)
+      .populate({
+        path: "initiatorData",
+        select: "firstName lastName",
+      })
       .lean()
       .exec();
 
-    res.json(notifications);
+    const currentUserId = String(userId);
+    const trimmed = notifications.map((notification) => ({
+      ...notification,
+      users: (notification.users || []).filter(
+        (entry) => String(entry?.userActions?.whichUser) === currentUserId,
+      ),
+    }));
+
+    res.json(trimmed);
   } catch (error) {
     next(error);
   }

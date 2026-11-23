@@ -84,7 +84,7 @@ const MeetingRoomSummaryCards = ({
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: bookingCounts = { internal: 0, external: 0, total: 0 } } =
@@ -95,7 +95,7 @@ const MeetingRoomSummaryCards = ({
 
         return response.data;
       },
-      refetchInterval: 30000,
+      refetchInterval: 5 * 60 * 1000,
       refetchOnWindowFocus: true,
     });
   const { data: summaryRooms = [] } = useQuery({
@@ -104,7 +104,7 @@ const MeetingRoomSummaryCards = ({
       const response = await axios.get("/api/meetings/get-rooms");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const {
@@ -116,7 +116,7 @@ const MeetingRoomSummaryCards = ({
       const response = await axios.get("/api/sales/get-meeting-revenue");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const revenueSummary = useMemo(() => {
@@ -686,7 +686,7 @@ const MeetingRoomUniqueClientsGraph = ({ onUniqueClientCountChange }) => {
 
       return revenue.filter((row) => !isDayPassRevenue(row));
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const revenueRows = useMemo(
@@ -811,7 +811,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/meetings/meeting-booking-counts");
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: meetings = [], isPending: meetingsPending } = useQuery({
@@ -820,7 +820,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: rooms = [], isPending: roomsPending } = useQuery({
@@ -829,7 +829,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/meetings/get-rooms");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: internalClients = [], isPending: clientsPending } = useQuery({
@@ -844,7 +844,7 @@ const MeetingRoomClientCharts = ({ visibleCharts }) => {
           ? response.data.data
           : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const internalExternalBookingsData = [
@@ -1293,7 +1293,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: rooms = [], isPending: roomsPending } = useQuery({
@@ -1302,7 +1302,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/meetings/get-rooms");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const { data: visitors = [], isPending: visitorsPending } = useQuery({
@@ -1311,7 +1311,7 @@ const MeetingRoomOperationalCharts = ({ visibleCharts }) => {
       const response = await axios.get("/api/visitors/fetch-visitors");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const navyTextStyle = {
@@ -1666,7 +1666,7 @@ const MeetingRoomOngoingUpcomingTable = () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return Array.isArray(response.data) ? response.data : [];
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
   const rows = useMemo(() => {

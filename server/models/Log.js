@@ -6,6 +6,11 @@ const logSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    module: {
+      type: String,
+      index: true,
+      default: "unknown",
+    },
     performedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

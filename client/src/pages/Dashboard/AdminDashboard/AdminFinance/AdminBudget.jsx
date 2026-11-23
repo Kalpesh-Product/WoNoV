@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+﻿import React, { Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
   TextField,
@@ -203,7 +203,7 @@ const AdminBudget = () => {
                 headerName: "Projected (INR)",
                 flex: 1,
               },
-              { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // ✅ add this
+              { field: "actualAmount", headerName: "Actual (INR)", flex: 1 }, // âœ… add this
               { field: "dueDate", headerName: "Due Date", flex: 1 },
               { field: "status", headerName: "Status", flex: 1 },
             ],
@@ -215,12 +215,13 @@ const AdminBudget = () => {
       acc[month].amount += item?.actualAmount; // Summing the total amount per month
       acc[month].tableData.rows.push({
         id: item._id,
+        requestedBy: item.requestedBy,
         expanseName: item?.expanseName,
         department: item?.department,
         invoiceAttached: item?.invoiceAttached,
         expanseType: item?.expanseType,
         projectedAmount: Number(item?.projectedAmount).toFixed(2),
-        actualAmount: inrFormat(item?.actualAmount || 0), // ✅ Add this
+        actualAmount: inrFormat(item?.actualAmount || 0), // âœ… Add this
         dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
         status: item.status,
       });

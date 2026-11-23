@@ -58,7 +58,7 @@ const DepartmentTasks = () => {
   };
 
   useTopDepartment({
-    additionalTopUserIds: ["6961fcd737afa664ab215d10"], // Kiran 
+    additionalTopUserIds: ["6961fcd737afa664ab215d10"], // Kiran
     onNotTop: () => {
       dispatch(setSelectedDepartment(currentDepartmentId));
       navigate(`/app/tasks/department-tasks/${currentDepartment}`);
@@ -67,7 +67,7 @@ const DepartmentTasks = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get("api/tasks/get-depts-tasks", {
+      const response = await axios.get("/api/tasks/get-depts-tasks", {
         params: { month: selectedMonth },
       });
       return response.data;
@@ -89,9 +89,9 @@ const DepartmentTasks = () => {
           pending: summary.pending + (Number(item?.pendingTasks) || 0),
           completed: summary.completed + (Number(item?.completedTasks) || 0),
         }),
-        { total: 0, pending: 0, completed: 0 }
+        { total: 0, pending: 0, completed: 0 },
       ),
-    [fetchedDepartments]
+    [fetchedDepartments],
   );
 
   const departmentColumns = [
@@ -135,7 +135,6 @@ const DepartmentTasks = () => {
             <>
               {/* ✅ Header */}
               <div className="w-full pb-3">
-                
                 {/* Heading */}
                 <div className="flex justify-between items-center gap-3 flex-wrap">
                   <span className="text-title text-primary font-pmedium uppercase">
@@ -178,7 +177,6 @@ const DepartmentTasks = () => {
                     </div>
                   </div>
                 </div>
-
               </div>
 
               <AgTable

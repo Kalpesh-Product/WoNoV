@@ -55,7 +55,7 @@ const MeetingDashboard = () => {
       const response = await axios.get("/api/meetings/get-meetings");
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 
@@ -67,7 +67,7 @@ const MeetingDashboard = () => {
       const response = await axios.get("/api/meetings/get-rooms");
       return response.data;
     },
-    refetchInterval: 30000,
+    refetchInterval: 5 * 60 * 1000,
     refetchOnWindowFocus: true,
   });
 

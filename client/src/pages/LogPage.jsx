@@ -10,7 +10,12 @@ import PageFrame from "../components/Pages/PageFrame";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import dayjs from "dayjs";
 
-const LogPage = () => {
+const LogPage = ({
+  moduleFilter = "",
+  userFilter = "",
+  actionFilter = "",
+  tableTitle = "Logs Table",
+}) => {
   const axios = useAxiosPrivate();
   const [openModal, setOpenModal] = useState(false);
   const [selectedLogDate, setSelectedLogDate] = useState(() =>
@@ -22,16 +27,19 @@ const LogPage = () => {
 
   const [selectedLog, setselectedLog] = useState({});
   const { data, isLoading } = useQuery({
-    queryKey: ["secret-logs", selectedLogDateKey],
+    queryKey: ["logs", selectedLogDateKey, moduleFilter, userFilter, actionFilter],
     queryFn: async () => {
       try {
-        // const response = await axios.get("/api/logs/get-logs");
-        const response = await axios.get("/api/logs/get-logs", {
-          params: {
-            fromDate: selectedLogDateKey,
-            toDate: selectedLogDateKey,
-          },
-        });
+        const params = {
+          fromDate: selectedLogDateKey,
+          toDate: selectedLogDateKey,
+        };
+
+        if (moduleFilter) params.module = moduleFilter;
+        if (userFilter) params.performedBy = userFilter;
+        if (actionFilter) params.actions = actionFilter;
+
+        const response = await axios.get("/api/logs/get-logs", { params });
         return response.data || [];
       } catch (error) {
         console.error(error?.response?.data?.message || error.message);
@@ -141,13 +149,13 @@ const LogPage = () => {
       sort: "desc",
     },
     {
-      headerName: "Activity",
-      field: "activity",
+      headerName: "User",
+      field: "user",
       flex: 1,
     },
     {
-      headerName: "User",
-      field: "user",
+      headerName: "Activity",
+      field: "activity",
       flex: 1,
     },
     {
@@ -403,7 +411,7 @@ const LogPage = () => {
           columns={columns}
           dateColumn="createdAt"
           tableHeight={400}
-          tableTitle="Logs Table"
+          tableTitle={tableTitle}
           exportData={true}
           search={true}
           showDateNavigator

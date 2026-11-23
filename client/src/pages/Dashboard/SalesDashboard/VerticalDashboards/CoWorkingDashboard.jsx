@@ -4,12 +4,7 @@ import { Skeleton } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import dayjs from "dayjs";
-import {
-  FiDatabase,
-  FiUploadCloud,
-  FiUserPlus,
-  FiUsers,
-} from "react-icons/fi";
+import { FiDatabase, FiUploadCloud, FiUserPlus, FiUsers } from "react-icons/fi";
 import {
   MdAssignmentInd,
   MdAutorenew,
@@ -73,20 +68,29 @@ const isFlexibleDeskRevenue = (row) => {
 
   return (
     !clientType &&
-    String(row?.billingFrequency || "").trim().toLowerCase() === "monthly"
+    String(row?.billingFrequency || "")
+      .trim()
+      .toLowerCase() === "monthly"
   );
 };
 
 const getRenewalPaymentStatus = (row) => {
-  const rentStatus = String(row?.rentStatus ?? "").trim().toLowerCase();
+  const rentStatus = String(row?.rentStatus ?? "")
+    .trim()
+    .toLowerCase();
 
   if (rentStatus) return rentStatus;
   if (typeof row?.status === "boolean") return row.status ? "paid" : "unpaid";
-  return String(row?.status ?? "").trim().toLowerCase();
+  return String(row?.status ?? "")
+    .trim()
+    .toLowerCase();
 };
 
 const getRenewalRevenueDate = (row) =>
-  row?.rentDate || row?.invoiceUploadedAt || row?.invoice?.date || row?.createdAt;
+  row?.rentDate ||
+  row?.invoiceUploadedAt ||
+  row?.invoice?.date ||
+  row?.createdAt;
 
 const getRenewalRevenueAmount = (client) => {
   const totalDesks =
@@ -125,7 +129,9 @@ const isRenewalRevenueForClientMonth = (revenue, client, month) => {
     )
       .trim()
       .toLowerCase() ===
-    String(client?.clientName || "").trim().toLowerCase();
+    String(client?.clientName || "")
+      .trim()
+      .toLowerCase();
 
   return (
     revenueDate.isValid() &&
@@ -136,7 +142,9 @@ const isRenewalRevenueForClientMonth = (revenue, client, month) => {
 
 const isActiveRenewalClient = (client) => {
   const activeValue = client?.isActive ?? client?.clientStatus;
-  const normalizedValue = String(activeValue ?? "").trim().toLowerCase();
+  const normalizedValue = String(activeValue ?? "")
+    .trim()
+    .toLowerCase();
 
   return (
     activeValue === true ||
@@ -196,13 +204,15 @@ const escapeTooltipText = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 
-const createPieTooltip = (suffix) => ({ series = [], seriesIndex = 0, w }) => {
-  const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
-  const value = Math.round(Number(series[seriesIndex]) || 0);
-  const color = w?.globals?.colors?.[seriesIndex] || "#1E3D73";
+const createPieTooltip =
+  (suffix) =>
+  ({ series = [], seriesIndex = 0, w }) => {
+    const label = w?.globals?.labels?.[seriesIndex] || "Unknown";
+    const value = Math.round(Number(series[seriesIndex]) || 0);
+    const color = w?.globals?.colors?.[seriesIndex] || "#1E3D73";
 
-  return `<div style="padding:8px 10px;background:${color};color:#fff;border-radius:6px;font-family:Poppins-Regular;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(15,23,42,.22);white-space:nowrap;">${escapeTooltipText(label)}: ${value} ${suffix}</div>`;
-};
+    return `<div style="padding:8px 10px;background:${color};color:#fff;border-radius:6px;font-family:Poppins-Regular;font-size:12px;font-weight:600;box-shadow:0 2px 8px rgba(15,23,42,.22);white-space:nowrap;">${escapeTooltipText(label)}: ${value} ${suffix}</div>`;
+  };
 
 const SingleLineChartLegend = ({
   labels = [],
@@ -215,9 +225,7 @@ const SingleLineChartLegend = ({
         <span
           key={`${label}-${index}`}
           className={`inline-flex min-w-0 items-center justify-center gap-1 whitespace-nowrap ${
-            truncateLabels
-              ? "max-w-[90px] flex-[0_1_auto]"
-              : "shrink-0"
+            truncateLabels ? "max-w-[90px] flex-[0_1_auto]" : "shrink-0"
           }`}
           title={label}
         >
@@ -241,7 +249,10 @@ const getFiscalYear = () => {
   return {
     label: `FY ${startYear}-${String(startYear + 1).slice(-2)}`,
     start: dayjs().year(startYear).month(3).startOf("month"),
-    end: dayjs().year(startYear + 1).month(3).startOf("month"),
+    end: dayjs()
+      .year(startYear + 1)
+      .month(3)
+      .startOf("month"),
   };
 };
 
@@ -275,7 +286,11 @@ const buildCoworkingRevenueGraphData = (revenueRows, fiscalYear) => {
       return;
     }
 
-    if (String(row?.rentStatus || "").trim().toLowerCase() !== "paid") {
+    if (
+      String(row?.rentStatus || "")
+        .trim()
+        .toLowerCase() !== "paid"
+    ) {
       return;
     }
 
@@ -285,10 +300,7 @@ const buildCoworkingRevenueGraphData = (revenueRows, fiscalYear) => {
   });
 
   const isActualMonthAvailable = (month) =>
-    !currentMonth.isBefore(
-      month.startOf("month").add(2, "month"),
-      "month",
-    );
+    !currentMonth.isBefore(month.startOf("month").add(2, "month"), "month");
   const latestActualIndex = fiscalMonths.reduce(
     (latestIndex, month, index) =>
       isActualMonthAvailable(month) ? index : latestIndex,
@@ -355,9 +367,7 @@ const CoworkingRevenueGraph = ({
     const rawStep = highestValue / 3;
     const magnitude = 10 ** Math.floor(Math.log10(rawStep));
     const normalizedStep = rawStep / magnitude;
-    const niceFactor = [1, 2, 5, 10].find(
-      (factor) => normalizedStep <= factor,
-    );
+    const niceFactor = [1, 2, 5, 10].find((factor) => normalizedStep <= factor);
     const step = (niceFactor || 10) * magnitude;
     const max = Math.max(step, Math.ceil(highestValue / step) * step);
 
@@ -475,7 +485,11 @@ const CoworkingRevenueGraph = ({
         },
       },
       plotOptions: {
-        bar: { columnWidth: "40%", borderRadius: 5, dataLabels: { position: "top" } },
+        bar: {
+          columnWidth: "40%",
+          borderRadius: 5,
+          dataLabels: { position: "top" },
+        },
       },
       legend: { labels: { colors: "#1E3D73" } },
       colors: ["#3cb37180", "#787878"],
@@ -795,35 +809,32 @@ const CoworkingBusinessCharts = ({
     stroke: { show: false },
   };
 
-  const clientTypeCounts = useMemo(
-    () => {
-      const uniqueClients = Array.from(
-        new Map(
-          clients.map((client, index) => [
-            String(client?._id || client?.id || `client-${index}`),
-            client,
-          ]),
-        ).values(),
-      );
+  const clientTypeCounts = useMemo(() => {
+    const uniqueClients = Array.from(
+      new Map(
+        clients.map((client, index) => [
+          String(client?._id || client?.id || `client-${index}`),
+          client,
+        ]),
+      ).values(),
+    );
 
-      return uniqueClients.reduce(
-        (counts, client) => {
-          const clientType = String(client?.clientType || "")
-            .trim()
-            .toLowerCase();
+    return uniqueClients.reduce(
+      (counts, client) => {
+        const clientType = String(client?.clientType || "")
+          .trim()
+          .toLowerCase();
 
-          if (["flexy desk client", "flexi desk client"].includes(clientType)) {
-            counts.monthly += 1;
-          } else if (clientType === "annual client") {
-            counts.yearly += 1;
-          }
-          return counts;
-        },
-        { monthly: 0, yearly: 0 },
-      );
-    },
-    [clients],
-  );
+        if (["flexy desk client", "flexi desk client"].includes(clientType)) {
+          counts.monthly += 1;
+        } else if (clientType === "annual client") {
+          counts.yearly += 1;
+        }
+        return counts;
+      },
+      { monthly: 0, yearly: 0 },
+    );
+  }, [clients]);
   const clientTypeData = [
     { label: "Flexy Desk Client", value: clientTypeCounts.monthly },
     { label: "Annual Client", value: clientTypeCounts.yearly },
@@ -989,67 +1000,180 @@ const CoworkingRenewalClientView = ({ client }) => {
     const date = dayjs(value);
     return date.isValid() ? date.format("DD-MM-YYYY") : "N/A";
   };
-  const displayValue = (value) =>
-    value === 0 ? "0" : value || "N/A";
+  const displayValue = (value) => (value === 0 ? "0" : value || "N/A");
 
   return (
     <div className="flex flex-col gap-6 text-[#1E3D73]">
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Customer Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Client Name" detail={displayValue(client?.clientName)} />
-          <DetalisFormatted title="Sector" detail={displayValue(client?.sector)} />
-          <DetalisFormatted title="Ho City" detail={displayValue(client?.hoCity || client?.city)} />
-          <DetalisFormatted title="Ho State" detail={displayValue(client?.hoState || client?.state)} />
-          <DetalisFormatted title="Booking Type" detail={displayValue(client?.bookingType || client?.channelLabel)} />
+          <DetalisFormatted
+            title="Client Name"
+            detail={displayValue(client?.clientName)}
+          />
+          <DetalisFormatted
+            title="Sector"
+            detail={displayValue(client?.sector)}
+          />
+          <DetalisFormatted
+            title="Ho City"
+            detail={displayValue(client?.hoCity || client?.city)}
+          />
+          <DetalisFormatted
+            title="Ho State"
+            detail={displayValue(client?.hoState || client?.state)}
+          />
+          <DetalisFormatted
+            title="Booking Type"
+            detail={displayValue(client?.bookingType || client?.channelLabel)}
+          />
           <DetalisFormatted title="Revenue" detail={inrFormat(revenue)} />
-          <DetalisFormatted title="Sourcing" detail={displayValue(client?.channel || client?.sourcing || client?.channelLabel)} />
-          <DetalisFormatted title="Current Status" detail={displayValue(client?.currentStatus || "In Progress")} />
+          <DetalisFormatted
+            title="Sourcing"
+            detail={displayValue(
+              client?.channel || client?.sourcing || client?.channelLabel,
+            )}
+          />
+          <DetalisFormatted
+            title="Current Status"
+            detail={displayValue(client?.currentStatus || "In Progress")}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Company Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Building Name" detail={displayValue(buildingName)} />
+          <DetalisFormatted
+            title="Building Name"
+            detail={displayValue(buildingName)}
+          />
           <DetalisFormatted title="Unit No" detail={displayValue(unitNo)} />
-          <DetalisFormatted title="Billing Frequency" detail={displayValue(client?.billingFrequency)} />
-          <DetalisFormatted title="Client Type" detail={displayValue(client?.clientType)} />
-          <DetalisFormatted title="Cabin Desks" detail={displayValue(client?.cabinDesks)} />
-          <DetalisFormatted title="Rate Per Cabin Desk" detail={inrFormat(client?.ratePerCabinDesk || client?.cabinDeskRate || 0)} />
-          <DetalisFormatted title="Open Desks" detail={displayValue(client?.openDesks)} />
-          <DetalisFormatted title="Rate Per Open Desk" detail={inrFormat(client?.ratePerOpenDesk || client?.openDeskRate || 0)} />
-          <DetalisFormatted title="No of Desk" detail={displayValue(totalDesks)} />
-          <DetalisFormatted title="Current Rate" detail={inrFormat(currentRate)} />
-          <DetalisFormatted title="Company Status" detail={isActive ? "Active" : "Inactive"} />
+          <DetalisFormatted
+            title="Billing Frequency"
+            detail={displayValue(client?.billingFrequency)}
+          />
+          <DetalisFormatted
+            title="Client Type"
+            detail={displayValue(client?.clientType)}
+          />
+          <DetalisFormatted
+            title="Cabin Desks"
+            detail={displayValue(client?.cabinDesks)}
+          />
+          <DetalisFormatted
+            title="Rate Per Cabin Desk"
+            detail={inrFormat(
+              client?.ratePerCabinDesk || client?.cabinDeskRate || 0,
+            )}
+          />
+          <DetalisFormatted
+            title="Open Desks"
+            detail={displayValue(client?.openDesks)}
+          />
+          <DetalisFormatted
+            title="Rate Per Open Desk"
+            detail={inrFormat(
+              client?.ratePerOpenDesk || client?.openDeskRate || 0,
+            )}
+          />
+          <DetalisFormatted
+            title="No of Desk"
+            detail={displayValue(totalDesks)}
+          />
+          <DetalisFormatted
+            title="Invoice Rate"
+            detail={inrFormat(currentRate)}
+          />
+          <DetalisFormatted
+            title="Company Status"
+            detail={isActive ? "Active" : "Inactive"}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Agreement Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Annual Increment" detail={`${Number(client?.annualIncrement) || 0}%`} />
-          <DetalisFormatted title="Per Desk Meeting Credits" detail={displayValue(client?.perDeskMeetingCredits ?? 0)} />
-          <DetalisFormatted title="Total Meeting Credits" detail={displayValue(client?.totalMeetingCredits ?? 0)} />
+          <DetalisFormatted
+            title="Annual Increment"
+            detail={`${Number(client?.annualIncrement) || 0}%`}
+          />
+          <DetalisFormatted
+            title="Per Desk Meeting Credits"
+            detail={displayValue(client?.perDeskMeetingCredits ?? 0)}
+          />
+          <DetalisFormatted
+            title="Total Meeting Credits"
+            detail={displayValue(client?.totalMeetingCredits ?? 0)}
+          />
           <DetalisFormatted title="Start Date" detail={formatDate(startDate)} />
           <DetalisFormatted title="End Date" detail={formatDate(endDate)} />
-          <DetalisFormatted title="Lock-in Period" detail={`${Number(client?.lockinPeriod || client?.lockInPeriodMonths) || 0} months`} />
-          <DetalisFormatted title="Rent Date" detail={formatDate(client?.rentDate)} />
-          <DetalisFormatted title="Next Increment" detail={formatDate(client?.nextIncrement || client?.nextIncrementDate)} />
+          <DetalisFormatted
+            title="Lock-in Period"
+            detail={`${Number(client?.lockinPeriod || client?.lockInPeriodMonths) || 0} months`}
+          />
+          <DetalisFormatted
+            title="Rent Date"
+            detail={formatDate(client?.rentDate)}
+          />
+          <DetalisFormatted
+            title="Next Increment"
+            detail={formatDate(
+              client?.nextIncrement || client?.nextIncrementDate,
+            )}
+          />
           <DetalisFormatted title="Total Term" detail={`${totalTerm} months`} />
-          <DetalisFormatted title="Agreement Expiry" detail={totalDays ? `${remainingDays}/${totalDays} days` : "N/A"} />
+          <DetalisFormatted
+            title="Agreement Expiry"
+            detail={totalDays ? `${remainingDays}/${totalDays} days` : "N/A"}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">POC Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Local Poc Name" detail={displayValue(client?.localPoc?.name || client?.localPocName)} />
-          <DetalisFormatted title="Local Poc Email" detail={displayValue(client?.localPoc?.email || client?.localPocEmail)} />
-          <DetalisFormatted title="Local Poc Phone" detail={displayValue(client?.localPoc?.phone || client?.localPocPhone)} />
-          <DetalisFormatted title="Ho Poc Name" detail={displayValue(client?.hOPoc?.name || client?.hoPoc?.name || client?.hOPocName)} />
-          <DetalisFormatted title="Ho Poc Email" detail={displayValue(client?.hOPoc?.email || client?.hoPoc?.email || client?.hOPocEmail)} />
-          <DetalisFormatted title="Ho Poc Phone" detail={displayValue(client?.hOPoc?.phone || client?.hoPoc?.phone || client?.hOPocPhone)} />
+          <DetalisFormatted
+            title="Local Poc Name"
+            detail={displayValue(
+              client?.localPoc?.name || client?.localPocName,
+            )}
+          />
+          <DetalisFormatted
+            title="Local Poc Email"
+            detail={displayValue(
+              client?.localPoc?.email || client?.localPocEmail,
+            )}
+          />
+          <DetalisFormatted
+            title="Local Poc Phone"
+            detail={displayValue(
+              client?.localPoc?.phone || client?.localPocPhone,
+            )}
+          />
+          <DetalisFormatted
+            title="Ho Poc Name"
+            detail={displayValue(
+              client?.hOPoc?.name || client?.hoPoc?.name || client?.hOPocName,
+            )}
+          />
+          <DetalisFormatted
+            title="Ho Poc Email"
+            detail={displayValue(
+              client?.hOPoc?.email ||
+                client?.hoPoc?.email ||
+                client?.hOPocEmail,
+            )}
+          />
+          <DetalisFormatted
+            title="Ho Poc Phone"
+            detail={displayValue(
+              client?.hOPoc?.phone ||
+                client?.hoPoc?.phone ||
+                client?.hOPocPhone,
+            )}
+          />
         </div>
       </section>
     </div>
@@ -1185,51 +1309,51 @@ const CoworkingRenewalTable = ({ clients, revenues = [] }) => {
   return (
     <>
       <WidgetSection
-      autoHeight
-      border
-      normalCase
-      borderColor="#1E3D73"
-      bodyBorderColor="#9FB2CF"
-      title={
-        <div className="inline-flex flex-wrap items-baseline gap-2 leading-none text-[#1E3D73]">
-          <BiznestTitle />
-          <span>
-            CO-WORKING FY {renewalFiscalYear} - RENEWALS IN{" "}
-            {renewalStartMonth.format("MMMM").toUpperCase()} -{" "}
-            {renewalEndMonth.format("MMMM").toUpperCase()}
-          </span>
-        </div>
-      }
-      headerRightContent={
-        <div className="flex flex-wrap items-center justify-end gap-3 text-sm font-pmedium uppercase">
-          <span className="rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-2 text-[#16784d]">
-            {renewalStartMonth.format("MMM").toUpperCase()}: {" "}
-            {inrFormat(previousMonthRenewalRevenue)}
-          </span>
-          <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-[#274784]">
-            {renewalEndMonth.format("MMM").toUpperCase()}: {" "}
-            {inrFormat(currentMonthRenewalRevenue)}
-          </span>
-        </div>
-      }
-    >
-      <div
-        className="text-[#1E3D73] [&_.ag-cell]:!text-[#1E3D73] [&_.ag-header-cell-text]:!text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73] [&_.ag-paging-panel]:!text-[#1E3D73] [&_.MuiChip-label]:!text-[#1E3D73] [&_.MuiInputBase-input]:!text-[#1E3D73] [&_.MuiInputLabel-root]:!text-[#1E3D73] [&_button]:!text-[#1E3D73]"
-        style={{
-          "--ag-foreground-color": "#1E3D73",
-          "--ag-header-foreground-color": "#1E3D73",
-          "--ag-icon-color": "#1E3D73",
-        }}
+        autoHeight
+        border
+        normalCase
+        borderColor="#1E3D73"
+        bodyBorderColor="#9FB2CF"
+        title={
+          <div className="inline-flex flex-wrap items-baseline gap-2 leading-none text-[#1E3D73]">
+            <BiznestTitle />
+            <span>
+              CO-WORKING FY {renewalFiscalYear} - RENEWALS IN{" "}
+              {renewalStartMonth.format("MMMM").toUpperCase()} -{" "}
+              {renewalEndMonth.format("MMMM").toUpperCase()}
+            </span>
+          </div>
+        }
+        headerRightContent={
+          <div className="flex flex-wrap items-center justify-end gap-3 text-sm font-pmedium uppercase">
+            <span className="rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-2 text-[#16784d]">
+              {renewalStartMonth.format("MMM").toUpperCase()}:{" "}
+              {inrFormat(previousMonthRenewalRevenue)}
+            </span>
+            <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-[#274784]">
+              {renewalEndMonth.format("MMM").toUpperCase()}:{" "}
+              {inrFormat(currentMonthRenewalRevenue)}
+            </span>
+          </div>
+        }
       >
-        <AgTable
-          hideTitle
-          data={renewalRows}
-          columns={columns}
-          search
-          hideFilter
-          showDateControls={false}
-        />
-      </div>
+        <div
+          className="text-[#1E3D73] [&_.ag-cell]:!text-[#1E3D73] [&_.ag-header-cell-text]:!text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73] [&_.ag-paging-panel]:!text-[#1E3D73] [&_.MuiChip-label]:!text-[#1E3D73] [&_.MuiInputBase-input]:!text-[#1E3D73] [&_.MuiInputLabel-root]:!text-[#1E3D73] [&_button]:!text-[#1E3D73]"
+          style={{
+            "--ag-foreground-color": "#1E3D73",
+            "--ag-header-foreground-color": "#1E3D73",
+            "--ag-icon-color": "#1E3D73",
+          }}
+        >
+          <AgTable
+            hideTitle
+            data={renewalRows}
+            columns={columns}
+            search
+            hideFilter
+            showDateControls={false}
+          />
+        </div>
       </WidgetSection>
       <MuiModal
         open={Boolean(viewClient)}
@@ -1264,8 +1388,7 @@ const CoWorkingDashboard = ({
           label: "Client Onboarding",
           description: "Add a new co-working customer",
           icon: <FiUserPlus />,
-          route:
-            "/app/dashboard/sales-dashboard/co-working/client-onboarding",
+          route: "/app/dashboard/sales-dashboard/co-working/client-onboarding",
         },
       ],
     },
@@ -1326,19 +1449,24 @@ const CoWorkingDashboard = ({
       return Array.isArray(response.data) ? response.data : [];
     },
   });
-  const { data: coworkingClients = [], isLoading: areClientsLoading } = useQuery({
-    queryKey: ["coWorkingDashboardClients"],
-    queryFn: async () => {
-      const response = await axios.get("/api/sales/co-working-clients");
-      return Array.isArray(response.data) ? response.data : [];
-    },
-  });
+  const { data: coworkingClients = [], isLoading: areClientsLoading } =
+    useQuery({
+      queryKey: ["coWorkingDashboardClients"],
+      queryFn: async () => {
+        const response = await axios.get("/api/sales/co-working-clients");
+        return Array.isArray(response.data) ? response.data : [];
+      },
+    });
   const activeCoworkingClients = useMemo(
     () =>
       coworkingClients.filter((client) => {
         const activeValue = client?.isActive ?? client?.clientStatus;
         const normalizedValue = String(activeValue ?? "").toLowerCase();
-        return activeValue === true || normalizedValue === "true" || normalizedValue === "active";
+        return (
+          activeValue === true ||
+          normalizedValue === "true" ||
+          normalizedValue === "active"
+        );
       }),
     [coworkingClients],
   );
@@ -1370,7 +1498,9 @@ const CoWorkingDashboard = ({
     const paidDesks = coworkingOnlyRevenueRows.reduce((total, row) => {
       const rentDate = dayjs(row?.rentDate);
       const isPaid =
-        String(row?.rentStatus || "").trim().toLowerCase() === "paid";
+        String(row?.rentStatus || "")
+          .trim()
+          .toLowerCase() === "paid";
       return rentDate.isValid() &&
         !rentDate.isBefore(fiscalYear.start) &&
         rentDate.isBefore(fiscalYear.end) &&
@@ -1411,7 +1541,11 @@ const CoWorkingDashboard = ({
     const isActiveClient = (client) => {
       const activeValue = client?.isActive ?? client?.clientStatus;
       const normalizedValue = String(activeValue ?? "").toLowerCase();
-      return activeValue === true || normalizedValue === "true" || normalizedValue === "active";
+      return (
+        activeValue === true ||
+        normalizedValue === "true" ||
+        normalizedValue === "active"
+      );
     };
     const hasPendingRenewal = (client) => {
       const renewalDate = dayjs(client?.termEnd || client?.endDate);
@@ -1547,14 +1681,14 @@ const CoWorkingDashboard = ({
             : "On Target"
       }`,
       permission:
-        PERMISSIONS.SALES_VERTICAL_COWORKING_AVERAGE_SHORTFALL_SURPLUS_CARD.value,
+        PERMISSIONS.SALES_VERTICAL_COWORKING_AVERAGE_SHORTFALL_SURPLUS_CARD
+          .value,
       icon: MdTrendingDown,
       iconClass:
         shortfallSurplus >= 0
           ? "bg-[#eafbf3] text-[#12a573]"
           : "bg-[#fff0f0] text-[#f04a4a]",
-      valueClass:
-        shortfallSurplus >= 0 ? "text-[#13a573]" : "text-[#f04a4a]",
+      valueClass: shortfallSurplus >= 0 ? "text-[#13a573]" : "text-[#f04a4a]",
       route: COWORKING_REVENUE_ROUTE,
     },
   ];
@@ -1581,8 +1715,8 @@ const CoWorkingDashboard = ({
         .value,
     clientType: PERMISSIONS.SALES_VERTICAL_COWORKING_CLIENT_TYPE_CHART.value,
   };
-  const visibleBusinessCharts = ["activeStatus", "clientType"].filter(
-    (chart) => hasPermission(businessChartPermissions[chart]),
+  const visibleBusinessCharts = ["activeStatus", "clientType"].filter((chart) =>
+    hasPermission(businessChartPermissions[chart]),
   );
   const canViewPipelineRenewalTable = hasPermission(
     PERMISSIONS.SALES_VERTICAL_COWORKING_PIPELINE_RENEWAL_TABLE.value,
@@ -1691,10 +1825,7 @@ const CoWorkingDashboard = ({
                 </Link>
               ),
             )}
-            <DashboardPopupMenu
-              cards={menuCards}
-              moduleLabel="Co-Working"
-            />
+            <DashboardPopupMenu cards={menuCards} moduleLabel="Co-Working" />
           </nav>
         </div>
       </div>

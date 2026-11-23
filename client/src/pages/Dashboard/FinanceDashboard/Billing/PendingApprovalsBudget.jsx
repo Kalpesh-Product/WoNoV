@@ -10,6 +10,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import getUserName from "../../../../utils/getUserName";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
@@ -373,6 +374,10 @@ const PendingApprovalsBudget = () => {
               <BudgetViewDetail
                 title="Expense Name"
                 detail={selectedBudget.expanseName}
+              />
+              <BudgetViewDetail
+                title="Requested By"
+                detail={getUserName(selectedBudget.requestedBy)}
               />
               <BudgetViewDetail
                 title="Expense Type"

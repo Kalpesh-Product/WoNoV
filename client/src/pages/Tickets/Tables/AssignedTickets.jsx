@@ -123,15 +123,15 @@ const AssignedTickets = ({
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-        const assignee = assignment?.assignee;
-        const assigneeName =
-          assignee?.firstName && assignee?.lastName
-            ? `${assignee.firstName} ${assignee.lastName}`
-            : "Unknown";
-        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-        return { assigneeName, assignedAtFormatted };
-      })
+          return { assigneeName, assignedAtFormatted };
+        })
       : [];
 
     const assignedToDisplay = assignmentDetails
@@ -150,71 +150,85 @@ const AssignedTickets = ({
     return !tickets.length
       ? []
       : tickets.map((ticket, index) => {
-        const mostRecentAssignment = Array.isArray(ticket.assignedTo)
-          ? ticket.assignedTo[ticket.assignedTo.length - 1]
-          : null;
-        const mostRecentAssigneeName =
-          mostRecentAssignment?.assignee?.firstName &&
+          const mostRecentAssignment = Array.isArray(ticket.assignedTo)
+            ? ticket.assignedTo[ticket.assignedTo.length - 1]
+            : null;
+          const mostRecentAssigneeName =
+            mostRecentAssignment?.assignee?.firstName &&
             mostRecentAssignment?.assignee?.lastName
-            ? `${mostRecentAssignment.assignee.firstName} ${mostRecentAssignment.assignee.lastName}`
-            : ticket.assignees?.length
-              ? `${ticket.assignees[ticket.assignees.length - 1]?.firstName || ""} ${ticket.assignees[ticket.assignees.length - 1]?.lastName || ""}`.trim() ||
-              "N/A"
-              : "N/A";
+              ? `${mostRecentAssignment.assignee.firstName} ${mostRecentAssignment.assignee.lastName}`
+              : ticket.assignees?.length
+                ? `${ticket.assignees[ticket.assignees.length - 1]?.firstName || ""} ${ticket.assignees[ticket.assignees.length - 1]?.lastName || ""}`.trim() ||
+                  "N/A"
+                : "N/A";
 
-        const supportTicket = {
-          sourceTicket: ticket,
-          id: ticket._id,
-          srno: index + 1,
-          description: ticket.description,
-          raisedBy:
-            ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
-              ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
-              : "Unknown",
-          recentAssignee: mostRecentAssigneeName,
-          raisedAt: ticket.createdAt,
-          raisedToDepartment: ticket.raisedToDepartment.name,
-          selectedDepartment:
-            Array.isArray(ticket.raisedBy?.departments) &&
+          const supportTicket = {
+            sourceTicket: ticket,
+            id: ticket._id,
+            srno: index + 1,
+            description: ticket.description,
+            raisedBy:
+              ticket.raisedBy?.firstName && ticket.raisedBy?.lastName
+                ? `${ticket.raisedBy.firstName} ${ticket.raisedBy.lastName}`
+                : "Unknown",
+            recentAssignee: mostRecentAssigneeName,
+            raisedAt: ticket.createdAt,
+            raisedToDepartment: ticket.raisedToDepartment.name,
+            selectedDepartment:
+              Array.isArray(ticket.raisedBy?.departments) &&
               ticket.raisedBy.departments.length > 0
-              ? ticket.raisedBy.departments.map((dept) => dept.name)
-              : ["N/A"],
-          priority: ticket.priority,
-          ticketTitle: ticket.ticket || "No Title",
-          ...(() => {
-            const { assignedToDisplay, assignmentDetails } =
-              formatAssignments(ticket.assignedTo);
-            return {
-              assignees: assignedToDisplay || "N/A",
-              assignedToDetails: assignmentDetails,
-            };
-          })(),
-          assignees:
-            ticket.assignees.length > 0
-              ? `${ticket.assignees.map(
-                (item) => `${item.firstName} ${item.lastName}`,
-              )}`
-              : "N/A",
-          tickets:
-            ticket.assignees.length > 0
-              ? "Assigned Ticket"
-              : ticket.ticket?.acceptedBy
-                ? "Accepted Ticket"
+                ? ticket.raisedBy.departments.map((dept) => dept.name)
+                : ["N/A"],
+            priority: ticket.priority,
+            ticketTitle: ticket.ticket || "No Title",
+            ...(() => {
+              const { assignedToDisplay, assignmentDetails } =
+                formatAssignments(ticket.assignedTo);
+              return {
+                assignees: assignedToDisplay || "N/A",
+                assignedToDetails: assignmentDetails,
+              };
+            })(),
+            assignees:
+              ticket.assignees.length > 0
+                ? `${ticket.assignees.map(
+                    (item) => `${item.firstName} ${item.lastName}`,
+                  )}`
                 : "N/A",
-          assignedAt: mostRecentAssignment?.assignedAt || ticket.assignedAt || "N/A",
-          assignedAtRaw: mostRecentAssignment?.assignedAt || ticket.assignedAt || null,
-          status: ticket.status || "Pending",
-          image: ticket.image?.url || null,
-          attachments: ticket.attachments || [],
-        };
+            tickets:
+              ticket.assignees.length > 0
+                ? "Assigned Ticket"
+                : ticket.ticket?.acceptedBy
+                  ? "Accepted Ticket"
+                  : "N/A",
+            assignedAt:
+              mostRecentAssignment?.assignedAt || ticket.assignedAt || "N/A",
+            assignedAtRaw:
+              mostRecentAssignment?.assignedAt || ticket.assignedAt || null,
+            status: ticket.status || "Pending",
+            image: ticket.image?.url || null,
+            attachments: ticket.attachments || [],
+          };
 
-        return supportTicket;
-      });
+          return supportTicket;
+        });
   };
 
   const recievedTicketsColumns = [
-    { field: "srno", headerName: "Sr No", width: 200, minWidth: 190, maxWidth: 220 },
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1, minWidth: 220, wrapText: true },
+    {
+      field: "srno",
+      headerName: "Sr No",
+      width: 200,
+      minWidth: 190,
+      maxWidth: 220,
+    },
+    {
+      field: "ticketTitle",
+      headerName: "Ticket Title",
+      flex: 1,
+      minWidth: 220,
+      wrapText: true,
+    },
     {
       field: "selectedDepartment",
       headerName: "From Department",
@@ -222,8 +236,20 @@ const AssignedTickets = ({
       minWidth: 210,
       wrapText: true,
     },
-    { field: "raisedBy", headerName: "Raised By", flex: 1, minWidth: 180, wrapText: true },
-    { field: "recentAssignee", headerName: "Assignees", flex: 1, minWidth: 180, wrapText: true },
+    {
+      field: "raisedBy",
+      headerName: "Raised By",
+      flex: 1,
+      minWidth: 180,
+      wrapText: true,
+    },
+    {
+      field: "recentAssignee",
+      headerName: "Assignees",
+      flex: 1,
+      minWidth: 180,
+      wrapText: true,
+    },
     // { field: "assignees", headerName: "Assigned To", width: 300 },
     // {
     //   field: "tickets",
@@ -336,19 +362,19 @@ const AssignedTickets = ({
         const conditionalItems = [
           ...(canReassignTicket
             ? [
-              {
-                label: "Re-Assign",
-                onClick: () => handleOpenAssignModal(params.data.id),
-              },
-            ]
+                {
+                  label: "Re-Assign",
+                  onClick: () => handleOpenAssignModal(params.data.id),
+                },
+              ]
             : []),
           ...(canEscalateTicket
             ? [
-              {
-                label: "Escalate",
-                onClick: () => handleEscalateTicket(params.data),
-              },
-            ]
+                {
+                  label: "Escalate",
+                  onClick: () => handleEscalateTicket(params.data),
+                },
+              ]
             : []),
           {
             label: "Support",
@@ -493,7 +519,7 @@ const AssignedTickets = ({
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments",
+          "/api/company/get-company-data?field=selectedDepartments",
         );
         return response.data?.selectedDepartments;
       } catch (error) {
@@ -772,7 +798,9 @@ const AssignedTickets = ({
                 detail={[
                   selectedTicket.sourceTicket.acceptedBy.firstName,
                   selectedTicket.sourceTicket.acceptedBy.lastName,
-                ].filter(Boolean).join(" ")}
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
               />
             )}
             {selectedTicket?.sourceTicket?.acceptedAt && (
@@ -857,7 +885,7 @@ const AssignedTickets = ({
           />
         </form>
       </MuiModal> */}
-        <MuiModal
+      <MuiModal
         open={closeModal}
         onClose={() => {
           resetCloseForm();
