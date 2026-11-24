@@ -28,25 +28,27 @@ export const SingleLineLegend = ({
   suffix = "",
   maxLabelWidth,
 }) => (
-  <div className="flex h-[22px] w-full flex-nowrap items-center justify-center gap-x-2.5 overflow-hidden px-2 text-xs text-[#373d3f]">
-    {labels.map((label, index) => (
-      <span
-        key={`${label}-${index}`}
-        className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"
-        title={suffix ? `${label} ${suffix}` : label}
-      >
+  <div className="h-[22px] w-full overflow-x-auto overflow-y-hidden px-2 text-xs text-[#373d3f]">
+    <div className="flex min-w-full w-max flex-nowrap items-center justify-center gap-x-2.5">
+      {labels.map((label, index) => (
         <span
-          className="h-2.5 w-2.5 shrink-0 rounded-full"
-          style={{ backgroundColor: colors?.[index] || "#1E3D73" }}
-        />
-        {/* Long names stay on one line and end with "..." (full name in tooltip/title) */}
-        <span
-          className={maxLabelWidth ? "inline-block overflow-hidden text-ellipsis" : undefined}
-          style={maxLabelWidth ? { maxWidth: maxLabelWidth } : undefined}
+          key={`${label}-${index}`}
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"
+          title={suffix ? `${label} ${suffix}` : label}
         >
-          {label}
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: colors?.[index] || "#1E3D73" }}
+          />
+          {/* Long names stay on one line and end with "..." (full name in tooltip/title) */}
+          <span
+            className={maxLabelWidth ? "inline-block overflow-hidden text-ellipsis" : undefined}
+            style={maxLabelWidth ? { maxWidth: maxLabelWidth } : undefined}
+          >
+            {label}
+          </span>
         </span>
-      </span>
-    ))}
+      ))}
+    </div>
   </div>
 );

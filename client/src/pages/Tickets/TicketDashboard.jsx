@@ -330,6 +330,7 @@ const TicketDashboard = () => {
       ],
       series: donutSeries,
       tooltipValue: donutSeries,
+      singleLineLegend: true,
       onSliceClick: (index) => {
         const clickedDepartment = masterDepartments[index];
         console.log("dep : ", clickedDepartment);
@@ -573,6 +574,7 @@ const TicketDashboard = () => {
               series={item.series}
               tooltipValue={item.tooltipValue}
               onSliceClick={item.onSliceClick}
+              singleLineLegend={item.singleLineLegend}
               // isMonetary={item.isMonetary}
             />
           ) : (

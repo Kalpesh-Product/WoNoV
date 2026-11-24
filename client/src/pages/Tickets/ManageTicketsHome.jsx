@@ -8,7 +8,7 @@ import { setSelectedDepartment } from "../../redux/slices/performanceSlice";
 import { useTopDepartment } from "../../hooks/useTopDepartment";
 import useAuth from "../../hooks/useAuth";
 import PageFrame from "../../components/Pages/PageFrame";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 
 const ManageTicketsHome = () => {
   const axios = useAxiosPrivate();
@@ -17,6 +17,22 @@ const ManageTicketsHome = () => {
   const navigate = useNavigate();
   const currentDepartmentId = auth.user?.departments?.[0]?._id;
   const currentDepartment = auth.user?.departments?.[0]?.name;
+  const canViewDepartmentSummary = auth.user?.role?.some((role) => {
+    const roleTitle = role?.roleTitle?.trim().toLowerCase() || "";
+    return roleTitle.includes("manager") || roleTitle.endsWith("admin");
+  });
+  const handleNonManager = useCallback(() => {
+    if (canViewDepartmentSummary) return;
+
+    dispatch(setSelectedDepartment(currentDepartmentId));
+    navigate(`/app/tickets/manage-tickets/${currentDepartment}`);
+  }, [
+    canViewDepartmentSummary,
+    currentDepartment,
+    currentDepartmentId,
+    dispatch,
+    navigate,
+  ]);
 
   useTopDepartment({
     additionalTopUserIds: [
@@ -25,10 +41,7 @@ const ManageTicketsHome = () => {
       // "67b83885daad0f7bab2f1888",
       "6961fcd737afa664ab215d10",
     ],
-    onNotTop: () => {
-      dispatch(setSelectedDepartment(currentDepartmentId));
-      navigate(`/app/tickets/manage-tickets/${currentDepartment}`);
-    },
+    onNotTop: handleNonManager,
   });
 
   const { data: getAllTickets = [], isLoading } = useQuery({
@@ -41,6 +54,8 @@ const ManageTicketsHome = () => {
         console.log(error);
       }
     },
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const ticketSummary = useMemo(

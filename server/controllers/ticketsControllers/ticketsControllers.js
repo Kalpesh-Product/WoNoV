@@ -17,6 +17,7 @@ const {
   filterEscalatedTickets,
   filterAssignedTickets,
   filterAcceptedAssignedTickets,
+  filterRejectedTickets,
 } = require("../../utils/filterTickets");
 const Company = require("../../models/hr/Company");
 const { createLog } = require("../../utils/moduleLogs");
@@ -1488,6 +1489,14 @@ const fetchFilteredTickets = async (req, res, next) => {
         break;
       case "close":
         filteredTickets = await filterCloseTickets(
+          user,
+          roles,
+          department,
+          company,
+        );
+        break;
+      case "reject":
+        filteredTickets = await filterRejectedTickets(
           user,
           roles,
           department,

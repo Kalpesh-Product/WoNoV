@@ -8,6 +8,7 @@ import SupportTickets from "./Tables/SupportTickets";
 import EscalatedTickets from "./Tables/EscalatedTickets";
 import ClosedTickets from "./Tables/ClosedTickets";
 import AssignedTickets from "./Tables/AssignedTickets";
+import RejectedTickets from "./Tables/RejectedTickets";
 import { useQuery } from "@tanstack/react-query";
 import useAuth from "../../hooks/useAuth";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
@@ -59,13 +60,16 @@ const ManageTickets = () => {
     selectedDepartmentDetails?.name?.trim().toLowerCase() === "tech";
 
   const { data: ticketsData = [], isLoading } = useQuery({
-    queryKey: ["tickets-data"],
+    queryKey: ["tickets-data", selectedDepartment],
     queryFn: async () => {
       const response = await axios.get(
         `/api/tickets/department-tickets/${selectedDepartment}`,
       );
       return response.data;
     },
+    enabled: Boolean(selectedDepartment),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { data: supportTicketsData = [], isLoading: isSupportLoading } =
@@ -77,12 +81,14 @@ const ManageTickets = () => {
         );
         return response.data;
       },
+      enabled: Boolean(selectedDepartment),
+      staleTime: 0,
+      refetchOnMount: "always",
     });
 
   const ticketsFilteredData = {
     openTickets: ticketsData.filter((item) => item.status === "Open").length,
-    recievedTickets: ticketsData.filter((item) => item.status !== "Escalated")
-      .length,
+    totalTickets: ticketsData.length,
     closedTickets: ticketsData.filter((item) => item.status === "Closed")
       .length,
     pendingTickets: ticketsData.filter((item) => item.status === "Pending")
@@ -105,6 +111,8 @@ const ManageTickets = () => {
       }).length,
     escalatedTickets: ticketsData.filter((item) => item.status === "Escalated")
       .length,
+    rejectedTickets: ticketsData.filter((item) => item.status === "Rejected")
+      .length,
     supportTickets: supportTicketsData.length,
   };
 
@@ -115,10 +123,10 @@ const ManageTickets = () => {
         <WidgetSection
           key="department"
           border
-          layout={3}
+          layout={4}
           title={"Department received Tickets :"}
           titleDataColor={"red"}
-          TitleAmount={String(ticketsFilteredData.recievedTickets).padStart(
+          TitleAmount={String(ticketsFilteredData.totalTickets).padStart(
             2,
             "0",
           )}
@@ -145,6 +153,14 @@ const ManageTickets = () => {
             titleColor={"#1E3D73"}
             data={ticketsFilteredData.closedTickets}
             fontColor={"#52CE71"}
+            fontFamily={"Poppins-Bold"}
+          />
+          <TicketCard
+            loading={isLoading || isSupportLoading}
+            title={"Rejected"}
+            titleColor={"#1E3D73"}
+            data={ticketsFilteredData.rejectedTickets}
+            fontColor={"#E76A52"}
             fontFamily={"Poppins-Bold"}
           />
         </WidgetSection>,
@@ -276,6 +292,17 @@ const ManageTickets = () => {
           isItDepartment={isItTicketDepartment}
           isTechDepartment={isTechTicketDepartment}
           title="Closed Tickets"
+        />
+      ),
+    },
+    {
+      label: "Rejected Tickets",
+      subLabel: ticketLabel,
+      permission: PERMISSIONS.TICKETS_REJECTED_TICKETS.value,
+      component: (
+        <RejectedTickets
+          departmentId={selectedDepartment}
+          title="Rejected Tickets"
         />
       ),
     },

@@ -50,7 +50,7 @@ const EscalatedTickets = ({
 
   // Fetch Supported Tickets
   const { data: escalatedTickets = [], isLoading } = useQuery({
-    queryKey: ["escalate-tickets"],
+    queryKey: ["escalate-tickets", departmentId],
     queryFn: async () => {
       const response = await axios.get(
         `/api/tickets/ticket-filter/escalate/${departmentId}`,
@@ -58,6 +58,9 @@ const EscalatedTickets = ({
 
       return response.data;
     },
+    enabled: Boolean(departmentId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const handleViewTicket = (ticket) => {
@@ -107,6 +110,9 @@ const { mutate, isPending: isClosingTicket } = useMutation({
       queryClient.invalidateQueries({
         queryKey: ["escalate-tickets"],
       });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["closed-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["all-tickets"] });
     },
     onError: (err) => {
       toast.error(err.response.data.message || "Failed to close ticket");

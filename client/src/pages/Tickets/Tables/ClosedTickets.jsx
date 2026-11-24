@@ -40,6 +40,9 @@ const ClosedTickets = ({
       return response.data || [];
     },
     initialData: [],
+    enabled: Boolean(departmentId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const handleViewTicketDetails = (ticket) => {
