@@ -191,18 +191,15 @@ const TicketDashboard = () => {
 
   if (roles.includes("Master Admin") || roles.includes("Super Admin")) {
     masterDepartments = !departmentsIsLoading
-  //     ? departments.map((dept) => dept.name)
-  //     : [];
-  // } else {
-  //   masterDepartments = !departmentsIsLoading
-  //     ? departments
-     ? safeDepartments.map((dept) => dept.name)
+      ? safeDepartments
+          .filter((dept) => dept.isActive !== false)
+          .map((dept) => dept.name)
       : [];
   } else {
     masterDepartments = !departmentsIsLoading
       ? safeDepartments
-        .filter((dept) => depts.includes(dept.name))
-        .map((dept) => dept.name)
+          .filter((dept) => dept.isActive !== false && depts.includes(dept.name))
+          .map((dept) => dept.name)
       : [];
   }
 
@@ -304,6 +301,7 @@ const TicketDashboard = () => {
       colors: ["#ff4d4d", "#ffc107", "#28a745"],
       series: series,
       tooltipValue: series,
+      singleLineLegend: true,
       // isMonetary: true,
       permission: PERMISSIONS.TICKETS_TOTAL_TICKETS_DONUT.value,
     },
@@ -555,6 +553,7 @@ const TicketDashboard = () => {
           border={item.border}
           padding={item.padding}
           titleLabel={item.titleLabel}
+          fillHeight
         >
           {/* <DonutChart
             centerLabel={item.centerLabel}
@@ -566,17 +565,19 @@ const TicketDashboard = () => {
           // isMonetary={item.isMonetary}
           /> */}
 
-           {!isLoading && !departmentsIsLoading ? (
-            <DonutChart
-              centerLabel={item.centerLabel}
-              labels={item.labels}
-              colors={item.colors}
-              series={item.series}
-              tooltipValue={item.tooltipValue}
-              onSliceClick={item.onSliceClick}
-              singleLineLegend={item.singleLineLegend}
-              // isMonetary={item.isMonetary}
-            />
+          {!isLoading && !departmentsIsLoading ? (
+            <div className="w-full pt-2">
+              <DonutChart
+                centerLabel={item.centerLabel}
+                labels={item.labels}
+                colors={item.colors}
+                series={item.series}
+                tooltipValue={item.tooltipValue}
+                onSliceClick={item.onSliceClick}
+                singleLineLegend={item.singleLineLegend}
+                // isMonetary={item.isMonetary}
+              />
+            </div>
           ) : (
             <div className="flex h-80 items-center justify-center" aria-label="Loading ticket chart">
               <div className="h-52 w-52 animate-pulse rounded-full bg-[conic-gradient(#e5e7eb_0_25%,#f3f4f6_25%_50%,#e5e7eb_50%_75%,#f3f4f6_75%_100%)] p-10">

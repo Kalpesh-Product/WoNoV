@@ -28,8 +28,8 @@ export const SingleLineLegend = ({
   suffix = "",
   maxLabelWidth,
 }) => (
-  <div className="h-[22px] w-full overflow-x-auto overflow-y-hidden px-2 text-xs text-[#373d3f]">
-    <div className="flex min-w-full w-max flex-nowrap items-center justify-center gap-x-2.5">
+  <div className="w-full px-2 text-xs text-[#373d3f]">
+    <div className="flex w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
       {labels.map((label, index) => (
         <span
           key={`${label}-${index}`}
@@ -40,11 +40,7 @@ export const SingleLineLegend = ({
             className="h-2.5 w-2.5 shrink-0 rounded-full"
             style={{ backgroundColor: colors?.[index] || "#1E3D73" }}
           />
-          {/* Long names stay on one line and end with "..." (full name in tooltip/title) */}
-          <span
-            className={maxLabelWidth ? "inline-block overflow-hidden text-ellipsis" : undefined}
-            style={maxLabelWidth ? { maxWidth: maxLabelWidth } : undefined}
-          >
+          <span style={maxLabelWidth ? { maxWidth: maxLabelWidth } : undefined}>
             {label}
           </span>
         </span>

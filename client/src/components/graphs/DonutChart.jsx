@@ -16,6 +16,7 @@ const DonutChart = ({
   legendFormatter,
   legendPosition = "bottom",
   singleLineLegend = false,
+  legendClassName = "",
 }) => {
   const chartData = {
     series: series,
@@ -116,7 +117,7 @@ const DonutChart = ({
 
   return (
     <div
-      className={`rounded-md ${singleLineLegend ? "w-full" : ""}`}
+      className={`rounded-md ${singleLineLegend ? "flex w-full flex-col items-center gap-2" : ""}`}
       ref={containerRef}
     >
       <div className="flex w-full justify-center">
@@ -125,15 +126,17 @@ const DonutChart = ({
           options={chartOptions}
           series={chartData.series}
           type="donut"
-          height={singleLineLegend ? 298 : 320}
+          height={singleLineLegend ? 290 : 320}
           width={width || "100%"}
         />
       </div>
       {singleLineLegend && (
-        <SingleLineLegend
-          labels={chartData.labels || []}
-          colors={chartData.colors || []}
-        />
+        <div className="flex min-h-[44px] w-full items-start justify-center">
+          <SingleLineLegend
+            labels={chartData.labels || []}
+            colors={chartData.colors || []}
+          />
+        </div>
       )}
     </div>
   );
