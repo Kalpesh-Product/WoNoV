@@ -2,6 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import { useQuery } from "@tanstack/react-query";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import { Chip } from "@mui/material";
 
 import NormalBarGraph from "../../../../components/graphs/NormalBarGraph";
@@ -106,7 +107,7 @@ const HrDepartmentKRA = () => {
     year: "numeric",
   });
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["hrKraDepartments"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks");
@@ -121,7 +122,7 @@ const HrDepartmentKRA = () => {
     return matched?.department?._id || null;
   }, [fetchedDepartments, department]);
 
-  const { data: fetchedDepartmentTasks = [] } = useQuery({
+  const { data: fetchedDepartmentTasks = [], isLoading: isDepartmentTasksLoading } = useQuery({
     queryKey: ["hrDepartmentKraTasks", departmentId, selectedDateKey],
     enabled: !!departmentId,
     queryFn: async () => {
@@ -132,7 +133,7 @@ const HrDepartmentKRA = () => {
     },
   });
 
-  const { data: fetchedCompletedTasks = [] } = useQuery({
+  const { data: fetchedCompletedTasks = [], isLoading: isCompletedTasksLoading } = useQuery({
     queryKey: ["hrDepartmentKraCompletedTasks", departmentId],
     enabled: !!departmentId,
     queryFn: async () => {
@@ -370,12 +371,14 @@ const HrDepartmentKRA = () => {
         redTitle="pending"
         TitleAmountRed={pending}
       >
-        <NormalBarGraph
+        {isDepartmentsLoading || isDepartmentTasksLoading || isCompletedTasksLoading ? (
+          <HrLoadingSkeleton variant="chart" />
+        ) : <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={320}
-        />
+        />}
 
         <div className="flex justify-center items-center">
           <div className="flex items-center pb-4">
@@ -404,6 +407,7 @@ const HrDepartmentKRA = () => {
         TitleAmount={`${selectedDateLabel} : ${totalTasks} KRA`}
       >
         <AgTable
+          loading={isDepartmentsLoading || isDepartmentTasksLoading || isCompletedTasksLoading}
           columns={columns}
           data={completedTableData}
           tableHeight={300}

@@ -208,6 +208,7 @@ const InvoiceCreation = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         <YearWiseTable
+          loading={isClientsDataPending || isInvoicePending}
           data={rows}
           columns={invoiceCreationColumns}
           search

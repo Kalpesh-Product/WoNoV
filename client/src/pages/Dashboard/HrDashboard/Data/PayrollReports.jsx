@@ -4,7 +4,7 @@ import PageFrame from "../../../../components/Pages/PageFrame";
 import { useQuery } from "@tanstack/react-query";
 import humanDate from "../../../../utils/humanDateForamt";
 import { useState } from "react";
-import { CircularProgress } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
@@ -100,6 +100,7 @@ const PayrollReports = () => {
     <div>
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           data={isLoading ? [] : transformedData}
           columns={payrollColumns}
           exportData={true}
@@ -153,7 +154,7 @@ const PayrollReports = () => {
             />
           </div>
         ) : (
-          <CircularProgress />
+          <HrLoadingSkeleton />
         )}
       </MuiModal>
     </div>

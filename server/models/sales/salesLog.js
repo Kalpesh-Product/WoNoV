@@ -34,6 +34,8 @@ const salesLogSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    websiteEnquiryId: { type: String, trim: true },
+    enquiryKind: { type: String, trim: true },
     performedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "UserData",

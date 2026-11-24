@@ -133,6 +133,7 @@ const AdminPerSqFtElectricityExpense = () => {
       />
 
       <WidgetTable
+        loading={isHrLoading || isClientsDataPending || isUnitsData}
         data={tableData}
         columns={columns}
         totalKey="expense"

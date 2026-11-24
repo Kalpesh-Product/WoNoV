@@ -36,7 +36,7 @@ const Row = ({ row, onApprove, onReject }) => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments"
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
     } catch (error) {
@@ -54,7 +54,7 @@ const Row = ({ row, onApprove, onReject }) => {
     if (!fetchedDepartments.length || !auth.user?.departments?.length) return;
 
     const selectedDept = fetchedDepartments.find(
-      (dept) => dept.department._id === auth.user.departments[0]._id
+      (dept) => dept.department._id === auth.user.departments[0]._id,
     );
 
     setTicketIssues(selectedDept?.ticketIssues || []);
@@ -202,7 +202,7 @@ const TicketSettingsNew = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/tickets/other-tickets/${department}`
+          `/api/tickets/other-tickets/${department}`,
         );
 
         return response.data;
@@ -230,7 +230,7 @@ const TicketSettingsNew = () => {
   const rejectTicketMutation = useMutation({
     mutationFn: async (ticketId) => {
       const res = await axios.delete(
-        `/api/tickets/reject-ticket-issue/${ticketId}`
+        `/api/tickets/reject-ticket-issue/${ticketId}`,
       );
       return res.data;
     },
@@ -294,18 +294,18 @@ const TicketSettingsNew = () => {
                     </TableRow>
                   ))
                 : ticketsData.map((row, index) => (
-                <Row
-                  key={index}
-                  row={{
-                    ...row,
-                    srNo: index + 1,
-                    department,
-                    description: row.description,
-                  }}
-                  onApprove={approveTicketMutation.mutate}
-                  onReject={rejectTicketMutation.mutate}
-                />
-                ))}
+                    <Row
+                      key={index}
+                      row={{
+                        ...row,
+                        srNo: index + 1,
+                        department,
+                        description: row.description,
+                      }}
+                      onApprove={approveTicketMutation.mutate}
+                      onReject={rejectTicketMutation.mutate}
+                    />
+                  ))}
             </TableBody>
           </Table>
         </TableContainer>

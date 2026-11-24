@@ -5,7 +5,8 @@ import humanDate from "../../../../utils/humanDateForamt";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { CircularProgress, IconButton, Menu, MenuItem, TextField } from "@mui/material";
+import { IconButton, Menu, MenuItem, TextField } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import UploadFileInput from "../../../../components/UploadFileInput";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -191,9 +192,7 @@ const ClientAgreementData = () => {
     <div className="p-4">
       <PageFrame>
         {isLoading ? (
-          <div className="h-72 place-items-center">
-            <CircularProgress />
-          </div>
+          <FinanceLoadingSkeleton variant="table" />
         ) : (
           <AgTable
             columns={columns}

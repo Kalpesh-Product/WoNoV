@@ -321,6 +321,7 @@ const fetchMyTasksReportService = async ({
     let tasksQuery = Task.find(queryObj)
       .populate("department", "name")
       .populate("assignedBy", "firstName lastName")
+      .populate("assignedTo", "firstName lastName")
       .populate("completedBy", "firstName lastName")
       .populate({ path: "location", select: "unitNo unitName" })
       .populate({

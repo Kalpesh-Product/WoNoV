@@ -113,7 +113,7 @@ const AcceptedTickets = ({
   //   queryKey: ["departments"],
   //   queryFn: async () => {
   //     try {
-  //       const response = await axios.get("api/departments/get-departments");
+  //       const response = await axios.get("/api/departments/get-departments");
   //       return response.data?.selectedDepartments;
   //     } catch (error) {
   //       console.error("Error fetching data:", error);
@@ -124,7 +124,7 @@ const AcceptedTickets = ({
   const { data: departments = [], isPending: isDepartmentsPending } = useQuery({
     queryKey: ["departments"],
     queryFn: async () => {
-      const response = await axios.get("api/departments/get-departments");
+      const response = await axios.get("/api/departments/get-departments");
       return response.data; // because it's already an array
     },
   });
@@ -152,15 +152,15 @@ const AcceptedTickets = ({
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-        const assignee = assignment?.assignee;
-        const assigneeName =
-          assignee?.firstName && assignee?.lastName
-            ? `${assignee.firstName} ${assignee.lastName}`
-            : "Unknown";
-        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-        return { assigneeName, assignedAtFormatted };
-      })
+          return { assigneeName, assignedAtFormatted };
+        })
       : [];
 
     const assignedToDisplay = assignmentDetails
@@ -176,7 +176,7 @@ const AcceptedTickets = ({
 
   const { mutate: closeTicket, isPending: isClosing } = useMutation({
     mutationKey: ["close-ticket"],
-     mutationFn: async ({ ticketId, closingRemark, closingCategories }) => {
+    mutationFn: async ({ ticketId, closingRemark, closingCategories }) => {
       const response = await axios.patch("/api/tickets/close-ticket", {
         ticketId,
         closingRemark,
@@ -264,9 +264,21 @@ const AcceptedTickets = ({
   };
 
   const recievedTicketsColumns = [
-    { field: "srNo", headerName: "Sr No", width: 200, minWidth: 190, maxWidth: 220 },
+    {
+      field: "srNo",
+      headerName: "Sr No",
+      width: 200,
+      minWidth: 190,
+      maxWidth: 220,
+    },
 
-    { field: "ticketTitle", headerName: "Ticket Title", flex: 1, minWidth: 220, wrapText: true },
+    {
+      field: "ticketTitle",
+      headerName: "Ticket Title",
+      flex: 1,
+      minWidth: 220,
+      wrapText: true,
+    },
     {
       field: "raisedToDepartment",
       headerName: "From Department",
@@ -274,8 +286,20 @@ const AcceptedTickets = ({
       minWidth: 210,
       wrapText: true,
     },
-    { field: "raisedUser", headerName: "Raised By", flex: 1, minWidth: 180, wrapText: true },
-    { field: "acceptedBy", headerName: "Accepted By", flex: 1, minWidth: 180, wrapText: true },
+    {
+      field: "raisedUser",
+      headerName: "Raised By",
+      flex: 1,
+      minWidth: 180,
+      wrapText: true,
+    },
+    {
+      field: "acceptedBy",
+      headerName: "Accepted By",
+      flex: 1,
+      minWidth: 180,
+      wrapText: true,
+    },
     {
       field: "status",
       headerName: "Status",
@@ -306,24 +330,24 @@ const AcceptedTickets = ({
 
         const additionalItems = showOtherActions
           ? [
-            {
-              label: "Support",
-              onClick: () => handleSupportTicket(params.data.id),
-            },
-            ...(canManageAssignments
-              ? [
-                {
-                  label: "Escalate",
-                  onClick: () => handleEscalateTicket(params.data),
-                },
-              ]
-              : []),
+              {
+                label: "Support",
+                onClick: () => handleSupportTicket(params.data.id),
+              },
+              ...(canManageAssignments
+                ? [
+                    {
+                      label: "Escalate",
+                      onClick: () => handleEscalateTicket(params.data),
+                    },
+                  ]
+                : []),
 
-            {
-              label: "Close",
-              onClick: () => handleCloseTicket(params.data.id),
-            },
-          ]
+              {
+                label: "Close",
+                onClick: () => handleCloseTicket(params.data.id),
+              },
+            ]
           : [];
 
         return (
@@ -346,8 +370,9 @@ const AcceptedTickets = ({
       ...ticket,
       srNo: index + 1,
       id: ticket._id,
-      raisedUser: `${ticket.raisedBy?.firstName || ""} ${ticket.raisedBy?.lastName || ""
-        }`,
+      raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+        ticket.raisedBy?.lastName || ""
+      }`,
 
       description: ticket.description,
       raisedByDepartment:
@@ -357,10 +382,11 @@ const AcceptedTickets = ({
       status: ticket.status || "Pending",
       acceptedBy: ticket?.acceptedBy
         ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-        : `${ticket.assignees.map(
-          (item) => `${item.firstName} ${item.lastName}`,
-        )[0]
-        }`,
+        : `${
+            ticket.assignees.map(
+              (item) => `${item.firstName} ${item.lastName}`,
+            )[0]
+          }`,
       // assignees: `${ticket.assignees.map((item) => item.firstName)[0]}`,
       ...(() => {
         const { assignedToDisplay, assignmentDetails } = formatAssignments(
@@ -388,53 +414,54 @@ const AcceptedTickets = ({
       </div>
       <div className="w-full">
         <AgTable
-            loading={isLoading}
-            dateColumn="acceptedAt"
-            key={acceptedTickets.length}
-            search
-            // hideFilter
-            data={[
-              ...acceptedTickets.map((ticket, index) => ({
-                ...ticket,
-                srNo: index + 1,
-                id: ticket._id,
-                raisedUser: `${ticket.raisedBy?.firstName || ""} ${ticket.raisedBy?.lastName || ""
-                  }`,
+          loading={isLoading}
+          dateColumn="acceptedAt"
+          key={acceptedTickets.length}
+          search
+          // hideFilter
+          data={[
+            ...acceptedTickets.map((ticket, index) => ({
+              ...ticket,
+              srNo: index + 1,
+              id: ticket._id,
+              raisedUser: `${ticket.raisedBy?.firstName || ""} ${
+                ticket.raisedBy?.lastName || ""
+              }`,
 
-                description: ticket.description,
-                raisedByDepartment:
-                  ticket.raisedBy?.departments?.map((dept) => dept.name) ||
-                  "N/A",
-                raisedToDepartment: ticket.raisedBy?.departments?.map(
-                  (item) => item.name || "N/A",
-                ),
-                ticketTitle: ticket?.ticket || "No Title",
-                status: ticket.status || "Pending",
-                acceptedBy: ticket?.acceptedBy
-                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                  : `${ticket.assignees.map(
-                    (item) => `${item.firstName} ${item.lastName}`,
-                  )[0]
+              description: ticket.description,
+              raisedByDepartment:
+                ticket.raisedBy?.departments?.map((dept) => dept.name) || "N/A",
+              raisedToDepartment: ticket.raisedBy?.departments?.map(
+                (item) => item.name || "N/A",
+              ),
+              ticketTitle: ticket?.ticket || "No Title",
+              status: ticket.status || "Pending",
+              acceptedBy: ticket?.acceptedBy
+                ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                : `${
+                    ticket.assignees.map(
+                      (item) => `${item.firstName} ${item.lastName}`,
+                    )[0]
                   }`,
-                // assignees: `${
-                //   ticket.assignees.map((item) => item.firstName)[0]
-                // }`,
-                ...(() => {
-                  const { assignedToDisplay, assignmentDetails } =
-                    formatAssignments(ticket.assignedTo);
-                  return {
-                    assignees: assignedToDisplay,
-                    assignedToDetails: assignmentDetails,
-                  };
-                })(),
-                acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "-",
-                priority: ticket.priority,
-                image: ticket.image ? ticket.image.url : null,
-                attachments: ticket.attachments || [],
-              })),
-            ]}
-            columns={recievedTicketsColumns}
-          />
+              // assignees: `${
+              //   ticket.assignees.map((item) => item.firstName)[0]
+              // }`,
+              ...(() => {
+                const { assignedToDisplay, assignmentDetails } =
+                  formatAssignments(ticket.assignedTo);
+                return {
+                  assignees: assignedToDisplay,
+                  assignedToDetails: assignmentDetails,
+                };
+              })(),
+              acceptedAt: ticket.acceptedAt ? ticket.acceptedAt : "-",
+              priority: ticket.priority,
+              image: ticket.image ? ticket.image.url : null,
+              attachments: ticket.attachments || [],
+            })),
+          ]}
+          columns={recievedTicketsColumns}
+        />
       </div>
 
       <MuiModal
@@ -661,7 +688,7 @@ const AcceptedTickets = ({
           />
         </form>
       </MuiModal> */}
-       <MuiModal
+      <MuiModal
         open={closeModal}
         onClose={() => {
           resetCloseForm();

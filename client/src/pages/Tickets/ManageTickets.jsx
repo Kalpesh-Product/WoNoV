@@ -31,7 +31,7 @@ const ManageTickets = () => {
       : "Personal";
 
   const isAdmin = auth.user?.role?.some((item) =>
-     item.roleTitle?.trim().endsWith("Admin"),
+    item.roleTitle?.trim().endsWith("Admin"),
   );
 
   const canViewEscalatedTickets = userPermissions.includes(
@@ -41,11 +41,11 @@ const ManageTickets = () => {
     PERMISSIONS.TICKETS_SUPPORT_TICKETS.value,
   );
 
-   const { data: companyDepartments = [] } = useQuery({
+  const { data: companyDepartments = [] } = useQuery({
     queryKey: ["ticket-company-departments"],
     queryFn: async () => {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments || [];
     },
@@ -291,14 +291,14 @@ const ManageTickets = () => {
     <div>
       {/* Widgets */}
       <div>
-          {widgets.map((widget, index) => (
-            <div key={index}>
-              <WidgetSection layout={widget.layout}>
-                {widget.widgets}
-              </WidgetSection>
-            </div>
-          ))}
-        </div>
+        {widgets.map((widget, index) => (
+          <div key={index}>
+            <WidgetSection layout={widget.layout}>
+              {widget.widgets}
+            </WidgetSection>
+          </div>
+        ))}
+      </div>
 
       {/* Tabs */}
       {/* Tabs or Fallback */}

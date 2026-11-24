@@ -10,7 +10,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import dayjs from "dayjs";
 import YearWiseTable from "../../../../components/Tables/YearWiseTable";
-import { CircularProgress } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const yearCategories = {
   "FY 2024-25": [
@@ -318,9 +318,7 @@ const Projections = () => {
           </WidgetSection>
         </div>
       ) : (
-        <div className="h-72 flex items-center justify-center">
-          <CircularProgress />
-        </div>
+        <FinanceLoadingSkeleton variant="page" />
       )}
 
       {viewDetails && (

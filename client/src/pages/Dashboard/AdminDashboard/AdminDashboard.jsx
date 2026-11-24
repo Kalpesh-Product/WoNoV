@@ -23,7 +23,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
-import { Box, CircularProgress, Skeleton } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
@@ -124,9 +124,9 @@ const AdminDashboard = () => {
   const [selectedFiscalYear, setSelectedFiscalYear] =
     useState(currentFiscalYear);
   const [hiddenAdminExpenseSeries, setHiddenAdminExpenseSeries] = useState({
-  actual: false,
-  projected: false,
-});  
+    actual: false,
+    projected: false,
+  });
   const currentFiscalMonthIndexForCard =
     dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
 
@@ -208,7 +208,7 @@ const AdminDashboard = () => {
     },
   });
   //------------------------Graph round functions-------------------//
- 
+
   //------------------------Graph round functions-------------------//
   //----------------------Electricity expense-----------------------//
   const currentMonthElectricityExpense = useMemo(() => {
@@ -258,7 +258,8 @@ const AdminDashboard = () => {
     const monthlyTotals = Object.values(currentFyMonthlyTotals);
 
     return monthlyTotals.length
-      ? monthlyTotals.reduce((sum, value) => sum + value, 0) / monthlyTotals.length
+      ? monthlyTotals.reduce((sum, value) => sum + value, 0) /
+          monthlyTotals.length
       : 0;
   }, [currentFiscalYear, hrFinance, isHrFinanceLoading]);
 
@@ -336,7 +337,7 @@ const AdminDashboard = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "api/company/get-company-data?field=selectedDepartments",
+          "/api/company/get-company-data?field=selectedDepartments",
         );
         return Array.isArray(response.data?.selectedDepartments)
           ? response.data.selectedDepartments
@@ -360,36 +361,37 @@ const AdminDashboard = () => {
     },
   });
 
-  const { data: holidayEvents = [] } = useQuery({
-    queryKey: ["admin-holiday-events"],
-    queryFn: async () => {
-      try {
-        const [holidaysResponse, eventsResponse] = await Promise.all([
-          axios.get("/api/events/get-holidays"),
-          axios.get("/api/events/get-events"),
-        ]);
+  const { data: holidayEvents = [], isLoading: isHolidayEventsLoading } =
+    useQuery({
+      queryKey: ["admin-holiday-events"],
+      queryFn: async () => {
+        try {
+          const [holidaysResponse, eventsResponse] = await Promise.all([
+            axios.get("/api/events/get-holidays"),
+            axios.get("/api/events/get-events"),
+          ]);
 
-        const holidays = Array.isArray(holidaysResponse.data)
-          ? holidaysResponse.data.map((item) => ({
-              ...item,
-              type: item?.type || "holiday",
-            }))
-          : [];
+          const holidays = Array.isArray(holidaysResponse.data)
+            ? holidaysResponse.data.map((item) => ({
+                ...item,
+                type: item?.type || "holiday",
+              }))
+            : [];
 
-        const events = Array.isArray(eventsResponse.data)
-          ? eventsResponse.data.map((item) => ({
-              ...item,
-              type: item?.type || "event",
-            }))
-          : [];
+          const events = Array.isArray(eventsResponse.data)
+            ? eventsResponse.data.map((item) => ({
+                ...item,
+                type: item?.type || "event",
+              }))
+            : [];
 
-        return [...holidays, ...events];
-      } catch (error) {
-        console.error("Error fetching holiday and events data:", error);
-        return [];
-      }
-    },
-  });
+          return [...holidays, ...events];
+        } catch (error) {
+          console.error("Error fetching holiday and events data:", error);
+          return [];
+        }
+      },
+    });
 
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
@@ -482,7 +484,9 @@ const AdminDashboard = () => {
     queryKey: ["housekeeping-assignments"],
     queryFn: async () => {
       try {
-        const response = await axios.get("/api/company/get-housekeeping-schedule");
+        const response = await axios.get(
+          "/api/company/get-housekeeping-schedule",
+        );
         return Array.isArray(response.data?.data) ? response.data.data : [];
       } catch (error) {
         console.error("Error fetching housekeeping assignments:", error);
@@ -492,396 +496,356 @@ const AdminDashboard = () => {
   });
 
   const adminExpenseByFiscalYear = useMemo(() => {
-  const fyData = {};
+    const fyData = {};
 
-  (hrFinance || []).forEach((item) => {
-    if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
-      return;
-    }
+    (hrFinance || []).forEach((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return;
+      }
 
-    const fiscalYearStart = getFiscalYearStart(item.dueDate);
-    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
-    const monthIndex = getFiscalMonthIndex(item.dueDate);
+      const fiscalYearStart = getFiscalYearStart(item.dueDate);
+      const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+      const monthIndex = getFiscalMonthIndex(item.dueDate);
 
-    if (!fyData[fiscalYearLabel]) {
-      fyData[fiscalYearLabel] = {
+      if (!fyData[fiscalYearLabel]) {
+        fyData[fiscalYearLabel] = {
+          actual: Array(12).fill(0),
+          projected: Array(12).fill(0),
+        };
+      }
+
+      const actualAmount = getAmount(item?.actualAmount);
+      const projectedAmount = getAmount(item?.projectedAmount);
+
+      fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+      fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
+    });
+
+    if (!fyData[currentFiscalYear]) {
+      fyData[currentFiscalYear] = {
         actual: Array(12).fill(0),
         projected: Array(12).fill(0),
       };
     }
 
-    const actualAmount = getAmount(item?.actualAmount);
-    const projectedAmount = getAmount(item?.projectedAmount);
+    return fyData;
+  }, [hrFinance, currentFiscalYear]);
 
-    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
-  });
+  const expenseRawSeries = useMemo(() => {
+    return Object.entries(adminExpenseByFiscalYear)
+      .sort(([fyA], [fyB]) => {
+        const startA = Number(fyA.slice(3, 7));
+        const startB = Number(fyB.slice(3, 7));
 
-  if (!fyData[currentFiscalYear]) {
-    fyData[currentFiscalYear] = {
-      actual: Array(12).fill(0),
-      projected: Array(12).fill(0),
-    };
-  }
+        return startA - startB;
+      })
+      .flatMap(([fiscalYear, data]) => {
+        const actualForGraph = data.actual.map((actualAmount) =>
+          hiddenAdminExpenseSeries.actual ? 0 : actualAmount,
+        );
 
-  return fyData;
-}, [hrFinance, currentFiscalYear]);
+        const projectedForGraph = data.projected.map(
+          (projectedAmount, monthIndex) => {
+            if (hiddenAdminExpenseSeries.projected) {
+              return 0;
+            }
 
-const expenseRawSeries = useMemo(() => {
-  return Object.entries(adminExpenseByFiscalYear)
-    .sort(([fyA], [fyB]) => {
-      const startA = Number(fyA.slice(3, 7));
-      const startB = Number(fyB.slice(3, 7));
+            if (hiddenAdminExpenseSeries.actual) {
+              return projectedAmount;
+            }
 
-      return startA - startB;
-    })
-    .flatMap(([fiscalYear, data]) => {
-     
-      const actualForGraph = data.actual.map((actualAmount) =>
-        hiddenAdminExpenseSeries.actual ? 0 : actualAmount,
-      );
+            const actualAmount = data.actual[monthIndex] || 0;
 
-      const projectedForGraph = data.projected.map(
-        (projectedAmount, monthIndex) => {
-         
-          if (hiddenAdminExpenseSeries.projected) {
-            return 0;
-          }
+            return actualAmount > 0 ? 0 : projectedAmount;
+          },
+        );
 
-         
-          if (hiddenAdminExpenseSeries.actual) {
-            return projectedAmount;
-          }
+        return [
+          {
+            name: "Actual Amount",
+            group: fiscalYear,
+            data: actualForGraph,
+          },
+          {
+            name: "Projected Amount",
+            group: fiscalYear,
+            data: projectedForGraph,
+          },
+        ];
+      });
+  }, [
+    adminExpenseByFiscalYear,
+    hiddenAdminExpenseSeries.actual,
+    hiddenAdminExpenseSeries.projected,
+  ]);
 
-          
-          const actualAmount = data.actual[monthIndex] || 0;
+  // const roundedMax = useMemo(() => {
+  //   const fiscalYears = [
+  //     ...new Set(expenseRawSeries.map((series) => series.group)),
+  //   ];
 
-          return actualAmount > 0 ? 0 : projectedAmount;
-        },
-      );
+  //   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+  //     const actualSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Actual Amount"
+  //     );
 
-      return [
-        {
-          name: "Actual Amount",
-          group: fiscalYear,
-          data: actualForGraph,
-        },
-        {
-          name: "Projected Amount",
-          group: fiscalYear,
-          data: projectedForGraph,
-        },
-      ];
-    });
-}, [
-  adminExpenseByFiscalYear,
-  hiddenAdminExpenseSeries.actual,
-  hiddenAdminExpenseSeries.projected,
-]);
+  //     const projectedSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Projected Amount"
+  //     );
 
-// const roundedMax = useMemo(() => {
-//   const fiscalYears = [
-//     ...new Set(expenseRawSeries.map((series) => series.group)),
-//   ];
+  //     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+  //       const actual = actualSeries?.data?.[index] || 0;
+  //       const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
-//     const actualSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Actual Amount"
-//     );
+  //       return actual + projectedBalance;
+  //     });
 
-//     const projectedSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Projected Amount"
-//     );
+  //     return Math.max(max, ...monthlyMax);
+  //   }, 0);
 
-//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
-//       const actual = actualSeries?.data?.[index] || 0;
-//       const projectedBalance = projectedSeries?.data?.[index] || 0;
+  //   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+  // }, [expenseRawSeries]);
+  const { roundedMax, tickAmount } = useMemo(() => {
+    const selectedYearSeries = expenseRawSeries.filter(
+      (series) => series.group === selectedFiscalYear,
+    );
 
-//       return actual + projectedBalance;
-//     });
-
-//     return Math.max(max, ...monthlyMax);
-//   }, 0);
-
-//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
-// }, [expenseRawSeries]);
-const { roundedMax, tickAmount } = useMemo(() => {
- 
-  const selectedYearSeries = expenseRawSeries.filter(
-    (series) => series.group === selectedFiscalYear,
-  );
-
- 
-  const monthlyTotals = Array.from(
-    { length: 12 },
-    (_, monthIndex) =>
+    const monthlyTotals = Array.from({ length: 12 }, (_, monthIndex) =>
       selectedYearSeries.reduce(
-        (total, series) =>
-          total + Number(series?.data?.[monthIndex] || 0),
+        (total, series) => total + Number(series?.data?.[monthIndex] || 0),
         0,
       ),
-  );
+    );
 
-  const maxExpenseValue = Math.max(...monthlyTotals, 0);
+    const maxExpenseValue = Math.max(...monthlyTotals, 0);
 
-  if (maxExpenseValue <= 0) {
+    if (maxExpenseValue <= 0) {
+      return {
+        roundedMax: 10000,
+        tickAmount: 5,
+      };
+    }
+
+    const bufferedMax = maxExpenseValue * 1.1;
+    const roughStep = bufferedMax / 6;
+
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+
+    const normalizedStep = roughStep / magnitude;
+
+    let step = magnitude;
+
+    if (normalizedStep <= 1) {
+      step = magnitude;
+    } else if (normalizedStep <= 2) {
+      step = 2 * magnitude;
+    } else if (normalizedStep <= 5) {
+      step = 5 * magnitude;
+    } else {
+      step = 10 * magnitude;
+    }
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
     return {
-      roundedMax: 10000,
-      tickAmount: 5,
+      roundedMax: safeRoundedMax,
+      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
     };
-  }
-
- 
-  const bufferedMax = maxExpenseValue * 1.1;
-  const roughStep = bufferedMax / 6;
-
-  const magnitude =
-    10 ** Math.floor(Math.log10(roughStep));
-
-  const normalizedStep = roughStep / magnitude;
-
-  let step = magnitude;
-
-  if (normalizedStep <= 1) {
-    step = magnitude;
-  } else if (normalizedStep <= 2) {
-    step = 2 * magnitude;
-  } else if (normalizedStep <= 5) {
-    step = 5 * magnitude;
-  } else {
-    step = 10 * magnitude;
-  }
-
-  const safeRoundedMax =
-    Math.ceil(bufferedMax / step) * step;
-
-  return {
-    roundedMax: safeRoundedMax,
-    tickAmount: Math.max(
-      Math.round(safeRoundedMax / step),
-      1,
-    ),
-  };
-}, [expenseRawSeries, selectedFiscalYear]);
+  }, [expenseRawSeries, selectedFiscalYear]);
 
   const expenseOptions = {
-  chart: {
-    type: "bar",
-    toolbar: { show: false },
-    stacked: true,
-    fontFamily: "Poppins-Regular, Arial, sans-serif",
-    events: {
-  legendClick: (_chartContext, seriesIndex) => {
-    setHiddenAdminExpenseSeries((currentState) => {
-      // Series index 0 = Actual Amount
-      if (seriesIndex === 0) {
-        return {
-          ...currentState,
-          actual: !currentState.actual,
-        };
-      }
+    chart: {
+      type: "bar",
+      toolbar: { show: false },
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        legendClick: (_chartContext, seriesIndex) => {
+          setHiddenAdminExpenseSeries((currentState) => {
+            // Series index 0 = Actual Amount
+            if (seriesIndex === 0) {
+              return {
+                ...currentState,
+                actual: !currentState.actual,
+              };
+            }
 
-      // Series index 1 = Projected Amount
-      if (seriesIndex === 1) {
-        return {
-          ...currentState,
-          projected: !currentState.projected,
-        };
-      }
+            // Series index 1 = Projected Amount
+            if (seriesIndex === 1) {
+              return {
+                ...currentState,
+                projected: !currentState.projected,
+              };
+            }
 
-      return currentState;
-    });
-  },
+            return currentState;
+          });
+        },
 
- 
-  dataPointSelection: () => {
-    navigate("finance/budget");
-  },
-},
-  },
-  colors: ["#54C4A7", "#c4c4c4"],
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: "40%",
-      borderRadius: 5,
-      borderRadiusApplication: "end",
-      dataLabels: {
-        position: "top",
-        total: {
-          enabled: false,
+        dataPointSelection: () => {
+          navigate("finance/budget");
         },
       },
     },
-  },
-  dataLabels: {
-    enabled: true,
-    formatter: (val, opts) => {
-  if (!val || Number(val) <= 0) {
-    return "";
-  }
-
-  const seriesName =
-    opts?.w?.globals?.seriesNames?.[opts.seriesIndex];
-
-  const actualSeries =
-    opts?.w?.globals?.initialSeries?.find(
-      (item) => item.name === "Actual Amount",
-    );
-
-  const projectedSeries =
-    opts?.w?.globals?.initialSeries?.find(
-      (item) => item.name === "Projected Amount",
-    );
-
-  const actualAmount =
-    Number(
-      actualSeries?.data?.[opts.dataPointIndex] || 0,
-    );
-
-  const projectedAmount =
-    Number(
-      projectedSeries?.data?.[opts.dataPointIndex] || 0,
-    );
-
-  if (seriesName === "Projected Amount") {
-    return inrFormat(
-      actualAmount + projectedAmount,
-    );
-  }
-
-  if (
-    seriesName === "Actual Amount" &&
-    projectedAmount === 0
-  ) {
-    return inrFormat(actualAmount);
-  }
-
-  return "";
-},
-    style: {
-      fontSize: "12px",
-      colors: ["#000"],
-    },
-    offsetY: -22,
-  },
- xaxis: {
-  categories: fiscalMonths,
-  title: {
-    text: "  ",
-  },
-  crosshairs: {
-    show: false,
-  },
-},
- yaxis: {
-  min: 0,
-  max: roundedMax,
-  tickAmount,
-  forceNiceScale: false,
-
-  title: {
-    text: "Amount In Lakhs (INR)",
-  },
-
-  labels: {
-    minWidth: 25,
-    maxWidth: 35,
-
-    formatter: (value) => {
-      const axisValue =
-        Number(value || 0) / 10000;
-
-      if (Number.isInteger(axisValue)) {
-        return String(axisValue);
-      }
-
-      return Number(
-        axisValue.toFixed(2),
-      ).toString();
-    },
-
-    style: {
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      fontSize: "11px",
-    },
-  },
-},
-  fill: {
-    opacity: 1,
-  },
-  states: {
-    hover: {
-      filter: {
-        type: "none",
+    colors: ["#54C4A7", "#c4c4c4"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "end",
+        dataLabels: {
+          position: "top",
+          total: {
+            enabled: false,
+          },
+        },
       },
     },
-    active: {
-      filter: {
-        type: "none",
+    dataLabels: {
+      enabled: true,
+      formatter: (val, opts) => {
+        if (!val || Number(val) <= 0) {
+          return "";
+        }
+
+        const seriesName = opts?.w?.globals?.seriesNames?.[opts.seriesIndex];
+
+        const actualSeries = opts?.w?.globals?.initialSeries?.find(
+          (item) => item.name === "Actual Amount",
+        );
+
+        const projectedSeries = opts?.w?.globals?.initialSeries?.find(
+          (item) => item.name === "Projected Amount",
+        );
+
+        const actualAmount = Number(
+          actualSeries?.data?.[opts.dataPointIndex] || 0,
+        );
+
+        const projectedAmount = Number(
+          projectedSeries?.data?.[opts.dataPointIndex] || 0,
+        );
+
+        if (seriesName === "Projected Amount") {
+          return inrFormat(actualAmount + projectedAmount);
+        }
+
+        if (seriesName === "Actual Amount" && projectedAmount === 0) {
+          return inrFormat(actualAmount);
+        }
+
+        return "";
+      },
+      style: {
+        fontSize: "12px",
+        colors: ["#000"],
+      },
+      offsetY: -22,
+    },
+    xaxis: {
+      categories: fiscalMonths,
+      title: {
+        text: "  ",
+      },
+      crosshairs: {
+        show: false,
       },
     },
-  },
- legend: {
-  show: true,
-  position: "top",
+    yaxis: {
+      min: 0,
+      max: roundedMax,
+      tickAmount,
+      forceNiceScale: false,
 
- 
-  onItemClick: {
-    toggleDataSeries: false,
-  },
+      title: {
+        text: "Amount In Lakhs (INR)",
+      },
 
-  labels: {
-    colors: [
-      // Actual legend text
-      hiddenAdminExpenseSeries.actual
-        ? "#D5D5D5"
-        : "#4B4B4B",
+      labels: {
+        minWidth: 25,
+        maxWidth: 35,
 
-      // Projected legend text
-      hiddenAdminExpenseSeries.projected
-        ? "#D5D5D5"
-        : "#4B4B4B",
-    ],
-  },
+        formatter: (value) => {
+          const axisValue = Number(value || 0) / 10000;
 
-  markers: {
-    fillColors: [
-      // Actual marker
-      hiddenAdminExpenseSeries.actual
-        ? "#E1F5EF"
-        : "#54C4A7",
+          if (Number.isInteger(axisValue)) {
+            return String(axisValue);
+          }
 
-      // Projected marker
-      hiddenAdminExpenseSeries.projected
-        ? "#E2E2E2"
-        : "#C4C4C4",
-    ],
-  },
-},
-  tooltip: {
-  enabled: true,
-  shared: true,
-  intersect: false,
+          return Number(axisValue.toFixed(2)).toString();
+        },
 
-  custom: function ({ dataPointIndex, w }) {
-    const selectedYearData =
-      adminExpenseByFiscalYear?.[selectedFiscalYear];
+        style: {
+          fontFamily: "Poppins-Regular, Arial, sans-serif",
+          fontSize: "11px",
+        },
+      },
+    },
+    fill: {
+      opacity: 1,
+    },
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
+      },
+    },
+    legend: {
+      show: true,
+      position: "top",
 
-    const actualAmount =
-      selectedYearData?.actual?.[dataPointIndex] || 0;
+      onItemClick: {
+        toggleDataSeries: false,
+      },
 
-    const projectedAmount =
-      selectedYearData?.projected?.[dataPointIndex] || 0;
+      labels: {
+        colors: [
+          // Actual legend text
+          hiddenAdminExpenseSeries.actual ? "#D5D5D5" : "#4B4B4B",
 
-    const monthLabel =
-      w?.globals?.labels?.[dataPointIndex] ||
-      fiscalMonths[dataPointIndex] ||
-      `Month ${dataPointIndex + 1}`;
+          // Projected legend text
+          hiddenAdminExpenseSeries.projected ? "#D5D5D5" : "#4B4B4B",
+        ],
+      },
 
-    return `
+      markers: {
+        fillColors: [
+          // Actual marker
+          hiddenAdminExpenseSeries.actual ? "#E1F5EF" : "#54C4A7",
+
+          // Projected marker
+          hiddenAdminExpenseSeries.projected ? "#E2E2E2" : "#C4C4C4",
+        ],
+      },
+    },
+    tooltip: {
+      enabled: true,
+      shared: true,
+      intersect: false,
+
+      custom: function ({ dataPointIndex, w }) {
+        const selectedYearData = adminExpenseByFiscalYear?.[selectedFiscalYear];
+
+        const actualAmount = selectedYearData?.actual?.[dataPointIndex] || 0;
+
+        const projectedAmount =
+          selectedYearData?.projected?.[dataPointIndex] || 0;
+
+        const monthLabel =
+          w?.globals?.labels?.[dataPointIndex] ||
+          fiscalMonths[dataPointIndex] ||
+          `Month ${dataPointIndex + 1}`;
+
+        return `
       <div
         class="apexcharts-tooltip-title"
         style="
@@ -973,28 +937,28 @@ const { roundedMax, tickAmount } = useMemo(() => {
         </div>
       </div>
     `;
-  },
-},
-};
+      },
+    },
+  };
 
   const budgetBar = useMemo(() => {
     if (isHrFinanceLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrFinanceLoading ? [] : hrFinance);
   }, [isHrFinanceLoading, hrFinance]);
 
-const selectedAdminActualAmounts = useMemo(() => {
-  return (
-    adminExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
-    Array(12).fill(0)
-  );
-}, [adminExpenseByFiscalYear, selectedFiscalYear]);
+  const selectedAdminActualAmounts = useMemo(() => {
+    return (
+      adminExpenseByFiscalYear?.[selectedFiscalYear]?.actual ||
+      Array(12).fill(0)
+    );
+  }, [adminExpenseByFiscalYear, selectedFiscalYear]);
 
-const totalUtilised = useMemo(() => {
-  return selectedAdminActualAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
-}, [selectedAdminActualAmounts]);
+  const totalUtilised = useMemo(() => {
+    return selectedAdminActualAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
+  }, [selectedAdminActualAmounts]);
   useEffect(() => {
     setIsSidebarOpen(true);
   }, []); // Empty dependency array ensures this runs once on mount
@@ -1150,50 +1114,50 @@ const totalUtilised = useMemo(() => {
     },
   };
 
-
   //-----------------------------------------------------------------------------------------------------------------//
   const executiveTasks = useMemo(() => {
-    const pendingTaskCollection = hasMultipleDepartments && !isSuperAdminView
-      ? tasksSummary
-        .filter((dept) => {
-          const deptName =
-            typeof dept?.department === "object"
-              ? dept?.department?.name
-              : dept?.department;
-          const normalizedName =
-            typeof deptName === "string" ? deptName.toLowerCase() : "";
-          const isSalesDepartment = normalizedName.includes("sales");
+    const pendingTaskCollection =
+      hasMultipleDepartments && !isSuperAdminView
+        ? tasksSummary
+            .filter((dept) => {
+              const deptName =
+                typeof dept?.department === "object"
+                  ? dept?.department?.name
+                  : dept?.department;
+              const normalizedName =
+                typeof deptName === "string" ? deptName.toLowerCase() : "";
+              const isSalesDepartment = normalizedName.includes("sales");
 
-          return (
-            !isSalesDepartment &&
-            (!departmentNames.length ||
-              departmentNames.includes(normalizedName))
+              return (
+                !isSalesDepartment &&
+                (!departmentNames.length ||
+                  departmentNames.includes(normalizedName))
+              );
+            })
+            .flatMap((dept) =>
+              Array.isArray(dept?.tasks)
+                ? dept.tasks
+                    .filter(
+                      (task) =>
+                        task?.taskType === "Department" &&
+                        task?.status === "Pending",
+                    )
+                    .map((task) => ({
+                      ...task,
+                      department:
+                        typeof task?.department === "object"
+                          ? task?.department?.name
+                          : task?.department ||
+                            (typeof dept?.department === "object"
+                              ? dept?.department?.name
+                              : dept?.department),
+                    }))
+                : [],
+            )
+        : tasks.filter(
+            (task) =>
+              task?.taskType === "Department" && task?.status === "Pending",
           );
-        })
-        .flatMap((dept) =>
-          Array.isArray(dept?.tasks)
-            ? dept.tasks
-              .filter(
-                (task) =>
-                  task?.taskType === "Department" &&
-                  task?.status === "Pending",
-              )
-              .map((task) => ({
-                ...task,
-                department:
-                  typeof task?.department === "object"
-                    ? task?.department?.name
-                    : task?.department ||
-                    (typeof dept?.department === "object"
-                      ? dept?.department?.name
-                      : dept?.department),
-              }))
-            : [],
-        )
-      : tasks.filter(
-        (task) =>
-          task?.taskType === "Department" && task?.status === "Pending",
-      );
 
     const groupedTasks = pendingTaskCollection.reduce((acc, task) => {
       const departmentName =
@@ -1241,8 +1205,7 @@ const totalUtilised = useMemo(() => {
   const executiveTasksCount = executiveTasks.map((user) => user.tasks);
   const labels = executiveTasks.map((user) => user.name);
   const currentDepartmentAdminName =
-    managerByDepartmentName.get(department?.name?.toLowerCase?.()) ||
-    "—";
+    managerByDepartmentName.get(department?.name?.toLowerCase?.()) || "—";
   const colors = [
     "#FF5733",
     "#FFC300",
@@ -1258,9 +1221,9 @@ const totalUtilised = useMemo(() => {
   const clientMembersData = isClientsDataPending
     ? []
     : clientsData
-      .filter((item) => item.members?.length > 0)
-      .map((item) => item.members)
-      .flat();
+        .filter((item) => item.members?.length > 0)
+        .map((item) => item.members)
+        .flat();
 
   const genderCounts = clientMembersData.reduce(
     (acc, member) => {
@@ -1419,7 +1382,9 @@ const totalUtilised = useMemo(() => {
 
           return {
             event: event?.title || "-",
-            type: normalizedType ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1) : "-",
+            type: normalizedType
+              ? normalizedType.charAt(0).toUpperCase() + normalizedType.slice(1)
+              : "-",
             date: startDate.isValid() ? startDate.format("DD-MM-YYYY") : "-",
             eventDate: startDate,
             isUpcoming:
@@ -1535,11 +1500,15 @@ const totalUtilised = useMemo(() => {
     return weeklySchedule.map((emp, index) => ({
       srNo: index + 1,
       id: index + 1,
-      name: `${emp.employee.id.firstName} ${emp.employee.id.lastName}`,
-      startDate: humanDate(emp.startDate),
-      endDate: humanDate(emp.endDate),
-      building: emp.location.building.buildingName,
-      unitNo: emp.location.unitNo,
+      name:
+        `${emp?.employee?.id?.firstName || ""} ${
+          emp?.employee?.id?.lastName || ""
+        }`.trim() || "—",
+      startDate: humanDate(emp?.startDate),
+      endDate: humanDate(emp?.endDate),
+      building:
+        emp?.location?.building?.buildingName || emp?.location?.building || "—",
+      unitNo: emp?.location?.unitNo || "—",
     }));
   }, [weeklySchedule, isWeeklyScheduleLoading]);
 
@@ -1768,7 +1737,7 @@ const totalUtilised = useMemo(() => {
 
           return acc;
         },
-          { approved: 0, pending: 0, revoke: 0 },
+        { approved: 0, pending: 0, revoke: 0 },
       );
 
     return [
@@ -1789,7 +1758,7 @@ const totalUtilised = useMemo(() => {
         },
       },
     },
-     colors: ["#0B7A3E", "#E69A00", "#B42318"],
+    colors: ["#0B7A3E", "#E69A00", "#B42318"],
     legend: {
       position: "bottom",
     },
@@ -1819,15 +1788,13 @@ const totalUtilised = useMemo(() => {
       "#4C51BF", // indigo-tinged blue
     ],
 
-
     tooltip: {
       custom: function ({ series, seriesIndex, w }) {
         const name = w.globals.labels[seriesIndex] || "";
         const value = series[seriesIndex];
         const color = w.globals.colors[seriesIndex];
 
-        const shortName =
-          name.length > 15 ? name.slice(0, 15) + "..." : name;
+        const shortName = name.length > 15 ? name.slice(0, 15) + "..." : name;
 
         return `<div style="
                      padding:7px 10px;
@@ -1859,20 +1826,35 @@ const totalUtilised = useMemo(() => {
     },
   };
 
+  const isExpenseChartLoading = isHrFinanceLoading;
+  const areDataCardsLoading =
+    isHrFinanceLoading ||
+    isUnitsData ||
+    isTasksLoading ||
+    isTasksSummaryLoading;
+  const isExecutiveShiftTableLoading = isWeeklyScheduleLoading;
+  const isUpcomingEventsTableLoading = isHolidayEventsLoading;
+  const isClientCelebrationsTableLoading = isClientsDataPending;
+  const isUnitWiseChartLoading = isTasksLoading;
+  const isExecutiveWiseChartLoading = isTasksLoading || isTasksSummaryLoading;
+  const isTicketChartsLoading = isTicketsLoading;
+  const isHouseKeepingTableLoading =
+    isHouseKeepingLoading || isHouseKeepingAssignmentsLoading;
+
   //--------------------ACCESS CONFIG-------------------------//
 
- const departmentExpenseGraphConfig = [
-  {
-    key: PERMISSIONS.ADMIN_DEPARTMENT_EXPENSE.value,
-    data: expenseRawSeries,
-    options: expenseOptions,
-    responsiveResize: true,
-    chartId: "bargraph-admin-expense",
-    title: `BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`,
-    titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
-    onYearChange: setSelectedFiscalYear,
-  },
-];
+  const departmentExpenseGraphConfig = [
+    {
+      key: PERMISSIONS.ADMIN_DEPARTMENT_EXPENSE.value,
+      data: expenseRawSeries,
+      options: expenseOptions,
+      responsiveResize: true,
+      chartId: "bargraph-admin-expense",
+      title: `BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`,
+      titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
+      onYearChange: setSelectedFiscalYear,
+    },
+  ];
   const allowedDeptExpenseGrpah = filterPermissions(
     departmentExpenseGraphConfig,
     userPermissions,
@@ -1942,6 +1924,7 @@ const totalUtilised = useMemo(() => {
       Title: "Weekly Executive Shift Timing",
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
+      loading: isExecutiveShiftTableLoading,
     },
     {
       key: PERMISSIONS.ADMIN_UPCOMING_EVENTS_LIST.value,
@@ -1953,6 +1936,7 @@ const totalUtilised = useMemo(() => {
         id: index + 1,
       })),
       columns: upcomingEventsColumns,
+      loading: isUpcomingEventsTableLoading,
     },
     {
       key: PERMISSIONS.ADMIN_UPCOMING_CLIENT_MEMBER_BIRTHDAYS.value,
@@ -1964,6 +1948,7 @@ const totalUtilised = useMemo(() => {
         srNo: index + 1,
       })),
       columns: clientMemberBirthdaysColumns,
+      loading: isClientCelebrationsTableLoading,
     },
     {
       key: PERMISSIONS.ADMIN_UPCOMING_CLIENT_ANNIVERSARIES.value,
@@ -1975,6 +1960,7 @@ const totalUtilised = useMemo(() => {
         srNo: index + 1,
       })),
       columns: upComingClientAnniversaryColumns,
+      loading: isClientCelebrationsTableLoading,
     },
   ];
 
@@ -1988,6 +1974,7 @@ const totalUtilised = useMemo(() => {
       Title: `Newly Joined House Keeping Members - ${currentMonthLabel}`,
       rows: transformedHouseKeepingMembers,
       columns: houseKeepingMemberColumns,
+      loading: isHouseKeepingTableLoading,
     },
   ];
   const allowedTables2 = filterPermissions(muiTableConfigs2, userPermissions);
@@ -2084,14 +2071,7 @@ const totalUtilised = useMemo(() => {
       width: 2,
       colors: ["#ffffff"],
     },
-    colors: [
-      "#274C77",
-      "#6096BA",
-      "#A3CEF1",
-      "#8B5E3C",
-      "#5B8E7D",
-      "#D08C60",
-    ],
+    colors: ["#274C77", "#6096BA", "#A3CEF1", "#8B5E3C", "#5B8E7D", "#D08C60"],
     tooltip: {
       fillSeriesColor: false,
       custom: ({ series, seriesIndex, w }) => {
@@ -2136,8 +2116,9 @@ const totalUtilised = useMemo(() => {
 
   const adminCompletedTicketsCount = (
     Array.isArray(tickets) ? tickets : []
-  ).filter((ticket) => String(ticket?.status || "").toLowerCase() === "closed")
-    .length;
+  ).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
+  ).length;
 
   const adminDueTicketsData = [
     { label: "Completed", value: adminCompletedTicketsCount },
@@ -2224,7 +2205,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_INDIA_WISE_MEMBERS.value,
@@ -2237,7 +2218,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA.value,
@@ -2250,7 +2231,7 @@ const totalUtilised = useMemo(() => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <CircularProgress color="#1E3D73" />,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_BIOMETRICS_ACTIVATION_DATA.value,
@@ -2260,6 +2241,8 @@ const totalUtilised = useMemo(() => {
       border: true,
       data: biometricStatusSummary,
       options: biometricPieOptions,
+      isLoading: isClientsDataPending,
+      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
   ];
 
@@ -2271,32 +2254,26 @@ const totalUtilised = useMemo(() => {
   const techWidgets = [
     {
       layout: 1,
-      widgets: [
-        <Suspense
-          fallback={
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-              {/* Simulating chart skeleton */}
-              <Skeleton variant="text" width={200} height={30} />
-              <Skeleton variant="rectangular" width="100%" height={300} />
-            </Box>
-          }
-        >
+      widgets: isExpenseChartLoading ? (
+        <AdminLoadingSkeleton variant="chart" />
+      ) : (
+        <Suspense fallback={<AdminLoadingSkeleton variant="chart" />}>
           <WidgetSection normalCase layout={1} padding>
-           {allowedDeptExpenseGrpah.map((config) => (
-  <YearlyGraph
-    key={config.chartId}
-    data={config.data}
-    responsiveResize={config.responsiveResize}
-    chartId={config.chartId}
-    options={config.options}
-    onYearChange={config.onYearChange}
-    title={config.title}
-    titleAmount={config.titleAmount}
-  />
-))}
+            {allowedDeptExpenseGrpah.map((config) => (
+              <YearlyGraph
+                key={config.chartId}
+                data={config.data}
+                responsiveResize={config.responsiveResize}
+                chartId={config.chartId}
+                options={config.options}
+                onYearChange={config.onYearChange}
+                title={config.title}
+                titleAmount={config.titleAmount}
+              />
+            ))}
           </WidgetSection>
-        </Suspense>,
-      ],
+        </Suspense>
+      ),
     },
 
     // {
@@ -2348,37 +2325,64 @@ const totalUtilised = useMemo(() => {
     },
     {
       layout: 3,
-      widgets: allowedAdminDataCards.map((config) => <DataCard {...config} />),
+      widgets: areDataCardsLoading ? (
+        <AdminLoadingSkeleton
+          variant="cards"
+          cardCount={allowedAdminDataCards.length || 6}
+        />
+      ) : (
+        allowedAdminDataCards.map((config) => (
+          <DataCard key={config.title} {...config} />
+        ))
+      ),
     },
 
     {
       layout: 2,
-      widgets: allowedTables.map((config) => <MuiTable showTableControls={false} {...config} />),
+      widgets: allowedTables.map((config) => (
+        <MuiTable key={config.Title} showTableControls={false} {...config} />
+      )),
     },
     {
       layout: 2,
       widgets: [
         allowedUnitWise.map((config) => (
-          <WidgetSection border={config.border} title={config.title}>
-            <PieChartMui
-              data={config.data}
-              options={config.options}
-              width={config?.width}
-              height={config?.height}
-              centerAlign
-            />
+          <WidgetSection
+            key={config.title}
+            border={config.border}
+            title={config.title}
+          >
+            {isUnitWiseChartLoading ? (
+              <AdminLoadingSkeleton variant="chart" />
+            ) : (
+              <PieChartMui
+                data={config.data}
+                options={config.options}
+                width={config?.width}
+                height={config?.height}
+                centerAlign
+              />
+            )}
           </WidgetSection>
         )),
         allowedExecutiveWise.map((config) => (
-          <WidgetSection border={config.border} title={config.title}>
-            <DonutChart
-              centerLabel={config.centerLabel}
-              labels={config.labels}
-              colors={config.colors}
-              series={config.series}
-              tooltipValue={config.tooltipValue}
-              tooltipFormatter={config.tooltipFormatter}
-            />
+          <WidgetSection
+            key={config.title}
+            border={config.border}
+            title={config.title}
+          >
+            {isExecutiveWiseChartLoading ? (
+              <AdminLoadingSkeleton variant="chart" />
+            ) : (
+              <DonutChart
+                centerLabel={config.centerLabel}
+                labels={config.labels}
+                colors={config.colors}
+                series={config.series}
+                tooltipValue={config.tooltipValue}
+                tooltipFormatter={config.tooltipFormatter}
+              />
+            )}
           </WidgetSection>
         )),
       ],
@@ -2386,22 +2390,32 @@ const totalUtilised = useMemo(() => {
     {
       layout: allowedAdminTicketCharts.length,
       widgets: allowedAdminTicketCharts.map((config) => (
-        <WidgetSection border title={config.title}>
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config.width}
-            height={config.height}
-            centerAlign
-          />
+        <WidgetSection key={config.title} border title={config.title}>
+          {isTicketChartsLoading ? (
+            <AdminLoadingSkeleton variant="chart" />
+          ) : (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },
     {
       layout: 2,
       widgets: allowedPiechartConfig2.map((config) => (
-        <WidgetSection border={config.border} title={config.title}>
-          {!isClientsDataPending ? (
+        <WidgetSection
+          key={config.title}
+          border={config.border}
+          title={config.title}
+        >
+          {config.isLoading ? (
+            config.loadingFallback || <AdminLoadingSkeleton variant="chart" />
+          ) : (
             <PieChartMui
               data={config.data}
               options={config.options}
@@ -2409,8 +2423,6 @@ const totalUtilised = useMemo(() => {
               height={config?.height}
               centerAlign
             />
-          ) : (
-            <CircularProgress color="#1E3D73" />
           )}
         </WidgetSection>
       )),
@@ -2440,7 +2452,9 @@ const totalUtilised = useMemo(() => {
     // },
     {
       layout: 1,
-      widgets: allowedTables2.map((config) => <MuiTable showTableControls={false} {...config} />),
+      widgets: allowedTables2.map((config) => (
+        <MuiTable key={config.Title} showTableControls={false} {...config} />
+      )),
     },
   ];
 

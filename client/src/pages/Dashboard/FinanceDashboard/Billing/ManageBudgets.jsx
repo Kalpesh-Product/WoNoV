@@ -16,6 +16,7 @@ import YearWiseTable from "../../../../components/Tables/YearWiseTable";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import humanDate from "../../../../utils/humanDateForamt";
+import getUserName from "../../../../utils/getUserName";
 import { queryClient } from "../../../../main";
 
 const getManageBudgetsRowId = ({ data }) => String(data._id);
@@ -469,6 +470,10 @@ const ManageBudgets = () => {
             <BudgetViewDetail
               title="Expense Name"
               detail={viewDetails.expanseName || "-"}
+            />
+            <BudgetViewDetail
+              title="Requested By"
+              detail={getUserName(viewDetails.requestedBy)}
             />
             <BudgetViewDetail
               title="Expense Type"

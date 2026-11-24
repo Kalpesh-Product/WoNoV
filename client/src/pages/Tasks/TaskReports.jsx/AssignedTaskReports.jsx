@@ -8,7 +8,7 @@ import humanDate from "../../../utils/humanDateForamt";
 import humanTime from "../../../utils/humanTime";
 import PageFrame from "../../../components/Pages/PageFrame";
 import MuiModal from "../../../components/MuiModal";
-import DetalisFormatted from "../../../components/DetalisFormatted";
+import TaskReportViewDetails from "./TaskReportViewDetails";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import YearWiseTable from "../../../components/Tables/YearWiseTable";
 import { formatDateTimeFields } from "../../../utils/formatDateTime";
@@ -313,77 +313,10 @@ const AssignedTaskReports = () => {
       <MuiModal
         open={openModal}
         onClose={() => setOpenModal(false)}
-        title={"Task Details"}
+        title={"View Task"}
       >
         {selectedTask && (
-          <div className="grid grid-cols-1 gap-4">
-            <DetalisFormatted
-              title="Sr No"
-              detail={selectedTask.srNo}
-            />
-            <DetalisFormatted
-              title="Task Name"
-              detail={selectedTask.taskName}
-            />
-            <DetalisFormatted
-              title="Description"
-              detail={selectedTask.description}
-            />
-            <DetalisFormatted
-              title="Assigned By"
-              detail={selectedTask.assignedBy}
-            />
-            <DetalisFormatted
-              title="Assign To"
-              detail={selectedTask.assignedTo || "-"}
-            />
-            <DetalisFormatted
-              title="Completed By"
-              detail={selectedTask.completedBy}
-            />
-            <DetalisFormatted
-              title="Start Date"
-              detail={selectedTask.startDate}
-            />
-            {/* <DetalisFormatted
-              title="Start Time"
-              detail={selectedTask.startTime}
-            /> */}
-            <DetalisFormatted
-              title="Assigned Date"
-              detail={selectedTask.assignedDate}
-            />
-            <DetalisFormatted
-              title="Due Date"
-              detail={selectedTask.dueDate}
-            />
-            <DetalisFormatted
-              title="Due Time"
-              detail={selectedTask.dueTime}
-            />
-            <DetalisFormatted
-              title="Completed Date"
-              detail={selectedTask.completedDate}
-            />
-            <DetalisFormatted
-              title="Completed Time"
-              detail={selectedTask.completedTime}
-            />
-
-            <DetalisFormatted
-              title="Department"
-              detail={selectedTask.department}
-            />
-            {/* <DetalisFormatted title="Priority" detail={selectedTask.priority} /> */}
-            <DetalisFormatted
-              title="Status"
-              detail={selectedTask.status || "—"}
-            />
-            <DetalisFormatted
-              title="Comment"
-              detail={selectedTask.comment || "-"}
-            />
-          </div>
+          <TaskReportViewDetails task={selectedTask} />
         )}
       </MuiModal>
     </div>

@@ -1,17 +1,24 @@
 const router = require("express").Router();
 const upload = require("../config/multerConfig");
+const { getWebsiteLeads } = require("../controllers/salesControllers/websiteLeadsController");
 const {
   requirePartnershipAccess,
   getPartnership,
   createPartnership,
   updatePartnership,
   updatePartnershipStatus,
+  getEnquiryEditHistory,
+  updateWebsitePartnership,
+  updateWebsiteSubmission,
   getWebsitePartnership,
 } = require("../controllers/salesControllers/partnershipControllers");
 
 router.get("/partnership", requirePartnershipAccess, getPartnership);
 router.post("/partnership", requirePartnershipAccess, upload.single("presentation"), createPartnership);
 router.get("/partnership/website", requirePartnershipAccess, getWebsitePartnership);
+router.get("/partnership/history/:source/:id", requirePartnershipAccess, getEnquiryEditHistory);
+router.patch("/partnership/website/:kind/:id", requirePartnershipAccess, updateWebsiteSubmission);
+router.patch("/partnership/website/:id", requirePartnershipAccess, updateWebsitePartnership);
 router.patch("/partnership/:id", requirePartnershipAccess, upload.single("presentation"), updatePartnership);
 router.patch("/partnership/:id/status", requirePartnershipAccess, updatePartnershipStatus);
 
@@ -270,6 +277,7 @@ router.get("/services", getClientServices);
 router.post("/create-lead", createLead);
 router.patch("/edit-lead", editLead);
 router.get("/leads", getLeads);
+router.get("/leads/website", getWebsiteLeads);
 router.post("/bulk-insert-leads", upload.single("leads"), bulkInsertLeads);
 
 //Desk routes

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import biznestLogo from "../../../../assets/biznest/biznest_logo.jpg";
-import { Accordion, AccordionDetails, AccordionSummary } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Skeleton } from "@mui/material";
 import { IoIosArrowDown, IoIosArrowForward } from "react-icons/io";
 import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
@@ -76,7 +76,7 @@ const CompanyHandbook = () => {
       content: (
         <div className="flex flex-col gap-4">
           {isDocumentsLoading ? (
-            <span className="text-sm text-gray-500">Loading...</span>
+            <Skeleton variant="text" width="70%" height={28} />
           ) : companyDocuments?.[generalDoc]?.length > 0 ? (
             companyDocuments[generalDoc].map((doc) => (
               <div key={doc._id} className="flex justify-between items-center">
@@ -109,7 +109,7 @@ const CompanyHandbook = () => {
       content: (
         <div className="flex flex-col gap-4">
           {isDocumentsLoading ? (
-            <span className="text-sm text-gray-500">Loading...</span>
+            <Skeleton variant="text" width="70%" height={28} />
           ) : companyDocuments?.[generalDoc]?.length > 0 ? (
             companyDocuments[generalDoc].map((doc) => (
               <div key={doc._id} className="flex justify-between items-center">

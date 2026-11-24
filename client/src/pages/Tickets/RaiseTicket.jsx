@@ -43,7 +43,7 @@ const RaiseTicket = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return response.data?.selectedDepartments;
     } catch (error) {
@@ -125,15 +125,15 @@ const RaiseTicket = () => {
   const formatAssignments = (assignments = []) => {
     const assignmentDetails = Array.isArray(assignments)
       ? assignments.map((assignment) => {
-        const assignee = assignment?.assignee;
-        const assigneeName =
-          assignee?.firstName && assignee?.lastName
-            ? `${assignee.firstName} ${assignee.lastName}`
-            : "Unknown";
-        const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
+          const assignee = assignment?.assignee;
+          const assigneeName =
+            assignee?.firstName && assignee?.lastName
+              ? `${assignee.firstName} ${assignee.lastName}`
+              : "Unknown";
+          const assignedAtFormatted = formatDateTime(assignment?.assignedAt);
 
-        return { assigneeName, assignedAtFormatted };
-      })
+          return { assigneeName, assignedAtFormatted };
+        })
       : [];
 
     const assignedToDisplay = assignmentDetails
@@ -510,21 +510,29 @@ const RaiseTicket = () => {
                           hidden
                           id="ticket-attachment-upload"
                           onChange={(e) => {
-                            const selectedFiles = Array.from(e.target.files || []);
-                            const existingFiles = Array.isArray(value) ? value : [];
+                            const selectedFiles = Array.from(
+                              e.target.files || [],
+                            );
+                            const existingFiles = Array.isArray(value)
+                              ? value
+                              : [];
                             const availableSlots = 5 - existingFiles.length;
                             const validFiles = selectedFiles
                               .slice(0, Math.max(availableSlots, 0))
                               .filter((file) => {
                                 if (file.size > 5 * 1024 * 1024) {
-                                  toast.error(`${file.name} exceeds the 5 MB limit`);
+                                  toast.error(
+                                    `${file.name} exceeds the 5 MB limit`,
+                                  );
                                   return false;
                                 }
                                 return true;
                               });
 
                             if (selectedFiles.length > availableSlots) {
-                              toast.error("You can attach a maximum of 5 files");
+                              toast.error(
+                                "You can attach a maximum of 5 files",
+                              );
                             }
 
                             onChange([...existingFiles, ...validFiles]);
@@ -537,7 +545,11 @@ const RaiseTicket = () => {
                           variant="outlined"
                           fullWidth
                           label="Upload Files"
-                          value={value?.length ? `${value.length} file(s) selected` : ""}
+                          value={
+                            value?.length
+                              ? `${value.length} file(s) selected`
+                              : ""
+                          }
                           placeholder="Choose up to 5 files"
                           InputProps={{
                             readOnly: true,
@@ -555,22 +567,27 @@ const RaiseTicket = () => {
                         />
 
                         <FormHelperText>
-                          Maximum 5 files, 5 MB each. Images, PDF, Word, Excel, and CSV.
+                          Maximum 5 files, 5 MB each. Images, PDF, Word, Excel,
+                          and CSV.
                         </FormHelperText>
                         <div className="flex flex-wrap gap-2">
                           {value?.map((file, index) => (
                             <Chip
                               key={`${file.name}-${file.lastModified}-${index}`}
-                              label={file.name.length > 28
-                                ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
-                                : file.name}
+                              label={
+                                file.name.length > 28
+                                  ? `${file.name.slice(0, 20)}...${file.name.includes(".") ? file.name.slice(file.name.lastIndexOf(".")) : ""}`
+                                  : file.name
+                              }
                               title={file.name}
                               size="small"
                               variant="outlined"
                               color="primary"
                               sx={{ maxWidth: "100%" }}
                               onClick={() => {
-                                const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name);
+                                const isPdf =
+                                  file.type === "application/pdf" ||
+                                  /\.pdf$/i.test(file.name);
                                 if (!file.type.startsWith("image/") && !isPdf) {
                                   const url = URL.createObjectURL(file);
                                   const link = document.createElement("a");
@@ -579,14 +596,28 @@ const RaiseTicket = () => {
                                   document.body.appendChild(link);
                                   link.click();
                                   link.remove();
-                                  setTimeout(() => URL.revokeObjectURL(url), 60000);
+                                  setTimeout(
+                                    () => URL.revokeObjectURL(url),
+                                    60000,
+                                  );
                                   return;
                                 }
-                                if (preview?.url) URL.revokeObjectURL(preview.url);
-                                setPreview({ name: file.name, url: URL.createObjectURL(file), isPdf });
+                                if (preview?.url)
+                                  URL.revokeObjectURL(preview.url);
+                                setPreview({
+                                  name: file.name,
+                                  url: URL.createObjectURL(file),
+                                  isPdf,
+                                });
                                 setOpenModal(true);
                               }}
-                              onDelete={() => onChange(value.filter((_, fileIndex) => fileIndex !== index))}
+                              onDelete={() =>
+                                onChange(
+                                  value.filter(
+                                    (_, fileIndex) => fileIndex !== index,
+                                  ),
+                                )
+                              }
                             />
                           ))}
                         </div>
@@ -601,11 +632,13 @@ const RaiseTicket = () => {
                               title={preview.name}
                               className="h-[70vh] w-full rounded"
                             />
-                          ) : <img
-                            src={preview?.url}
-                            alt={preview?.name || "Attachment preview"}
-                            className="max-h-[70vh] max-w-full rounded"
-                          />}
+                          ) : (
+                            <img
+                              src={preview?.url}
+                              alt={preview?.name || "Attachment preview"}
+                              className="max-h-[70vh] max-w-full rounded"
+                            />
+                          )}
                         </MuiModal>
                       </Box>
                     )}
@@ -656,56 +689,57 @@ const RaiseTicket = () => {
         </div>
         <div className=" w-full">
           <YearWiseTable
-              loading={ticketsLoading}
-              dateColumn="raisedAt"
-              preserveCurrentMonthRange
-              showEmptyTable
-              search
-              dropdownColumns={["status", "priority"]}
-              data={tickets?.map((ticket, index) => {
-                return {
-                  sourceTicket: ticket,
-                  raisedBy: ticket?.raisedBy?.firstName || "Unknown",
-                  fromDepartment: ticket?.raisedBy?.departments
+            loading={ticketsLoading}
+            dateColumn="raisedAt"
+            preserveCurrentMonthRange
+            showEmptyTable
+            search
+            dropdownColumns={["status", "priority"]}
+            data={tickets?.map((ticket, index) => {
+              return {
+                sourceTicket: ticket,
+                raisedBy: ticket?.raisedBy?.firstName || "Unknown",
+                fromDepartment:
+                  ticket?.raisedBy?.departments
                     ?.map((department) => department?.name)
                     .filter(Boolean)
                     .join(", ") || "N/A",
-                  raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
-                  id: ticket?._id,
-                  description: ticket?.description,
-                  ticketTitle: ticket?.ticket,
-                  status: ticket?.status,
-                  closingRemark: ticket?.closingRemark,
-                  closingCategories: ticket?.closingCategories,
-                  isItDepartment: ["it", "tech"].includes(
-                    ticket?.raisedToDepartment?.name?.trim().toLowerCase(),
-                  ),
-                  acceptedBy: ticket?.acceptedBy
-                    ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
-                    : "None",
-                  closedBy: ticket?.closedBy
-                    ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
-                    : "None",
-                  acceptedAt: ticket?.acceptedAt ? ticket.acceptedAt : "N/A",
-                  closedAt: ticket?.closedAt ? ticket.closedAt : "N/A",
-                  priority: ticket?.priority,
-                  ...(() => {
-                    const { assignedToDisplay, assignmentDetails } =
-                      formatAssignments(ticket.assignedTo);
-                    return {
-                      assignedTo: assignedToDisplay,
-                      assignedToDetails: assignmentDetails,
-                    };
-                  })(),
-                  image: ticket.image ? ticket.image.url : null,
-                  attachments: ticket.attachments || [],
-                  raisedAt: ticket.createdAt,
-                  ...formatEscalation(ticket.escalatedTo),
-                };
-              })}
-              columns={recievedTicketsColumns}
-              paginationPageSize={10}
-            />
+                raisedTo: ticket?.raisedToDepartment?.name || "Unknown",
+                id: ticket?._id,
+                description: ticket?.description,
+                ticketTitle: ticket?.ticket,
+                status: ticket?.status,
+                closingRemark: ticket?.closingRemark,
+                closingCategories: ticket?.closingCategories,
+                isItDepartment: ["it", "tech"].includes(
+                  ticket?.raisedToDepartment?.name?.trim().toLowerCase(),
+                ),
+                acceptedBy: ticket?.acceptedBy
+                  ? `${ticket.acceptedBy.firstName} ${ticket.acceptedBy.lastName}`
+                  : "None",
+                closedBy: ticket?.closedBy
+                  ? `${ticket.closedBy.firstName} ${ticket.closedBy.lastName}`
+                  : "None",
+                acceptedAt: ticket?.acceptedAt ? ticket.acceptedAt : "N/A",
+                closedAt: ticket?.closedAt ? ticket.closedAt : "N/A",
+                priority: ticket?.priority,
+                ...(() => {
+                  const { assignedToDisplay, assignmentDetails } =
+                    formatAssignments(ticket.assignedTo);
+                  return {
+                    assignedTo: assignedToDisplay,
+                    assignedToDetails: assignmentDetails,
+                  };
+                })(),
+                image: ticket.image ? ticket.image.url : null,
+                attachments: ticket.attachments || [],
+                raisedAt: ticket.createdAt,
+                ...formatEscalation(ticket.escalatedTo),
+              };
+            })}
+            columns={recievedTicketsColumns}
+            paginationPageSize={10}
+          />
         </div>
       </div>
       <MuiModal
@@ -757,26 +791,29 @@ const RaiseTicket = () => {
             detail={viewTicketDetails?.assignedTo || ""}
           />
 
-          {(viewTicketDetails?.escalatedTo || viewTicketDetails?.escalatedAt) && <>
-          <DetalisFormatted
-            title="Escalated To"
-            detail={viewTicketDetails?.escalatedTo || ""}
-          />
-          <DetalisFormatted
-            title="Escalation Status"
-            detail={viewTicketDetails?.escalatedStatus || ""}
-          />
-          <DetalisFormatted
-            title="Escalated At"
-            detail={viewTicketDetails?.escalatedAt || ""}
-          />
-          {viewTicketDetails?.reasonForEscalated && (
-            <DetalisFormatted
-              title="Reason for Escalation"
-              detail={viewTicketDetails.reasonForEscalated}
-            />
+          {(viewTicketDetails?.escalatedTo ||
+            viewTicketDetails?.escalatedAt) && (
+            <>
+              <DetalisFormatted
+                title="Escalated To"
+                detail={viewTicketDetails?.escalatedTo || ""}
+              />
+              <DetalisFormatted
+                title="Escalation Status"
+                detail={viewTicketDetails?.escalatedStatus || ""}
+              />
+              <DetalisFormatted
+                title="Escalated At"
+                detail={viewTicketDetails?.escalatedAt || ""}
+              />
+              {viewTicketDetails?.reasonForEscalated && (
+                <DetalisFormatted
+                  title="Reason for Escalation"
+                  detail={viewTicketDetails.reasonForEscalated}
+                />
+              )}
+            </>
           )}
-          </>}
           <DetalisFormatted
             title="Closed By"
             detail={viewTicketDetails?.closedBy}
@@ -796,13 +833,17 @@ const RaiseTicket = () => {
               detail={[
                 viewTicketDetails.sourceTicket.reject.rejectedBy.firstName,
                 viewTicketDetails.sourceTicket.reject.rejectedBy.lastName,
-              ].filter(Boolean).join(" ")}
+              ]
+                .filter(Boolean)
+                .join(" ")}
             />
           )}
           {viewTicketDetails?.sourceTicket?.reject?.rejectedAt && (
             <DetalisFormatted
               title="Rejected At"
-              detail={formatDateTime(viewTicketDetails.sourceTicket.reject.rejectedAt)}
+              detail={formatDateTime(
+                viewTicketDetails.sourceTicket.reject.rejectedAt,
+              )}
             />
           )}
           {viewTicketDetails?.sourceTicket?.reject?.reason && (
@@ -811,16 +852,18 @@ const RaiseTicket = () => {
               detail={viewTicketDetails.sourceTicket.reject.reason}
             />
           )}
-           {viewTicketDetails?.isItDepartment &&
+          {viewTicketDetails?.isItDepartment &&
             Array.isArray(viewTicketDetails?.closingCategories) &&
             viewTicketDetails.closingCategories.length > 0 && (
-            <DetalisFormatted
-              title="Categories"
-              detail={Array.isArray(viewTicketDetails?.closingCategories)
-                ? viewTicketDetails.closingCategories.join(", ")
-                : ""}
-            />
-          )}
+              <DetalisFormatted
+                title="Categories"
+                detail={
+                  Array.isArray(viewTicketDetails?.closingCategories)
+                    ? viewTicketDetails.closingCategories.join(", ")
+                    : ""
+                }
+              />
+            )}
           <TicketAttachments
             attachments={viewTicketDetails.attachments}
             legacyImage={viewTicketDetails.image}

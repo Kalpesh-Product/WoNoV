@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import WidgetSection from "../../../../components/WidgetSection";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -16,6 +16,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const DeptWiseBudgetDetails = () => {
   const axios = useAxiosPrivate();
@@ -119,6 +120,7 @@ const [
     acc[month].amount += item?.actualAmount; // Summing the total amount per month
     acc[month].tableData.rows.push({
       id: item._id,
+      requestedBy: item.requestedBy,
       expanseName: item.expanseName,
       department: item.department,
       expanseType: item.expanseType,
@@ -167,21 +169,12 @@ const [
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
     if (isBudgetLoading || !Array.isArray(departmentBudget)) return null;
     return transformBudgetData(departmentBudget);
   }, [isBudgetLoading, departmentBudget]);
-
-  useEffect(() => {
-    if (!isBudgetLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isBudgetLoading]);
 
   const departmentExpenseByFiscalYear = useMemo(() => {
   const fyData = {};
@@ -725,6 +718,10 @@ const selectedYearTotals = useMemo(() => {
     ?.data?.reduce((acc, val) => acc + val, 0) || 0;
   //const navigate = useNavigate();
   // BUDGET NEW END
+
+  if (isBudgetLoading) {
+    return <FinanceLoadingSkeleton variant="page" />;
+  }
 
   return (
     // <div className="flex flex-col gap-8">

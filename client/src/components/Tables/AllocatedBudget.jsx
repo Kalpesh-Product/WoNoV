@@ -11,7 +11,6 @@ import {
   Tabs,
   Tab,
   Chip,
-  CircularProgress,
   IconButton,
   Popover,
   Menu,
@@ -28,8 +27,10 @@ import {
   normalizeBudgetAmount,
   sumBudgetAmounts,
 } from "../../utils/budgetAmounts";
+import getUserName from "../../utils/getUserName";
 import PrimaryButton from "../PrimaryButton";
 import AgTable from "../AgTable";
+import TableLoadingSkeleton from "./TableLoadingSkeleton";
 //import { parseAmount } from "../../utils/parseAmount";
 import WidgetSection from "../WidgetSection";
 import MuiModal from "../MuiModal";
@@ -98,13 +99,6 @@ const getBudgetCreatedAt = (row = {}) => {
 
   return 0;
 };
-
-const getUserName = (user) =>
-  user?.employeeName ||
-  [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-  user?.name ||
-  user?.email ||
-  "-";
 
 const getBudgetInvoiceFiles = (budget) => {
   if (!budget) return [];
@@ -1122,7 +1116,13 @@ const AllocatedBudget = ({
     [exportData, handleExportPass],
   );
 
-  if (isLoading) return <CircularProgress />;
+  if (isLoading) {
+    return (
+      <div className="w-full min-w-0 overflow-hidden rounded-lg border border-gray-200" aria-busy="true">
+        <TableLoadingSkeleton columns={tableColumns.length ? tableColumns : Array.from({ length: 7 }, (_, index) => ({ field: `loading-${index}`, flex: 1 }))} />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -1193,6 +1193,10 @@ const AllocatedBudget = ({
             <DetalisFormatted
               title="Expense Name"
               detail={viewBudget.expanseName || "-"}
+            />
+            <DetalisFormatted
+              title="Requested By"
+              detail={getUserName(viewBudget.requestedBy)}
             />
             <DetalisFormatted
               title="Expense Type"

@@ -7,6 +7,7 @@ import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 
 const formatDateKey = (date) => {
   const year = date.getFullYear();
@@ -69,7 +70,7 @@ const HrKRA = () => {
     year: "numeric",
   });
 
-  const { data: fetchedDepartments = [] } = useQuery({
+  const { data: fetchedDepartments = [], isLoading: isDepartmentsLoading } = useQuery({
     queryKey: ["hrKraDepartments"],
     queryFn: async () => {
       const response = await axios.get("/api/performance/get-depts-tasks");
@@ -88,7 +89,7 @@ const HrKRA = () => {
     [fetchedDepartments],
   );
 
-  const { data: departmentWiseData = [] } = useQuery({
+  const { data: departmentWiseData = [], isLoading: isDepartmentStatsLoading } = useQuery({
      queryKey: [
       "hrDepartmentKraStats",
       selectedDateKey,
@@ -364,12 +365,14 @@ const HrKRA = () => {
         redTitle={"pending"}
         TitleAmountRed={pendingTasks}
       >
-  <NormalBarGraph
+  {isDepartmentsLoading || isDepartmentStatsLoading ? (
+    <HrLoadingSkeleton variant="chart" />
+  ) : <NormalBarGraph
           data={graphData}
           options={graphOptions}
           year={false}
           height={400}
-        />
+        />}
 
 
         <div className="flex justify-center items-center">
@@ -399,6 +402,7 @@ const HrKRA = () => {
         TitleAmount={`TOTAL KRA : ${totalTasks}`}
       >
         <AgTable
+          loading={isDepartmentsLoading || isDepartmentStatsLoading}
           columns={tasksColumns}
           data={tableData}
           tableHeight={300}

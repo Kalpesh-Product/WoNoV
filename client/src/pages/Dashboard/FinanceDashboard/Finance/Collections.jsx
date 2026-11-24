@@ -17,6 +17,7 @@ import WidgetTable from "../../../../components/Tables/WidgetTable";
 import SecondaryButton from "../../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
 import StatusChip from "../../../../components/StatusChip";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 // const fiscalYears = ["FY 2024-25", "FY 2025-26"];
 
@@ -443,7 +444,7 @@ const Collections = () => {
   };
 
   if (isCoWorkingLoading) {
-    return <div>Loading...</div>;
+    return <FinanceLoadingSkeleton variant="page" />;
   }
 
   return (

@@ -9,6 +9,7 @@ import { useDispatch } from "react-redux";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { setSelectedClient } from "../../../redux/slices/clientSlice";
 import { useParams } from "react-router-dom";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 
 const calculateCurrentRate = (
   cabinRate,
@@ -17,9 +18,10 @@ const calculateCurrentRate = (
   startDate,
   referenceDate = dayjs(),
 ) => {
-  const base = [cabinRate, openRate]
-    .map((rate) => Number(rate))
-    .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
+  const base =
+    [cabinRate, openRate]
+      .map((rate) => Number(rate))
+      .find((rate) => Number.isFinite(rate) && rate > 0) || 0;
   const increment = Number(annualIncrement) || 0;
 
   if (!base) {
@@ -88,8 +90,8 @@ const formatExactNumber = (value) => {
 };
 
 const useCurrentMonthStartDate = () => {
-  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(
-    () => dayjs().startOf("month").toISOString(),
+  const [currentMonthStartDate, setCurrentMonthStartDate] = useState(() =>
+    dayjs().startOf("month").toISOString(),
   );
 
   useEffect(() => {
@@ -125,12 +127,17 @@ const AdminClientDetails = () => {
   const { clientName } = useParams();
   const selectedClient = useSelector((state) => state.client.selectedClient);
   const normalizedClientName = useMemo(
-    () => decodeURIComponent(clientName || "").trim().toLowerCase(),
+    () =>
+      decodeURIComponent(clientName || "")
+        .trim()
+        .toLowerCase(),
     [clientName],
   );
   const computedRentDate = useCurrentMonthStartDate();
   const computedLockinPeriod = useMemo(() => {
-    return Number(selectedClient?.lockinPeriod ?? selectedClient?.lockInPeriodMonths ?? 0);
+    return Number(
+      selectedClient?.lockinPeriod ?? selectedClient?.lockInPeriodMonths ?? 0,
+    );
   }, [selectedClient?.lockInPeriodMonths, selectedClient?.lockinPeriod]);
   const computedTotalTerm = useMemo(() => {
     const startDate = selectedClient?.startDate;
@@ -150,7 +157,11 @@ const AdminClientDetails = () => {
     return end.diff(start, "month");
   }, [selectedClient?.endDate, selectedClient?.startDate]);
   const computedAgreementExpiry = useMemo(
-    () => calculateAgreementExpiry(selectedClient?.startDate, selectedClient?.endDate),
+    () =>
+      calculateAgreementExpiry(
+        selectedClient?.startDate,
+        selectedClient?.endDate,
+      ),
     [selectedClient?.endDate, selectedClient?.startDate],
   );
   const computedCurrentRate = useMemo(
@@ -168,28 +179,31 @@ const AdminClientDetails = () => {
       selectedClient?.startDate,
     ],
   );
-  const computedRevenue = useMemo(
-    () => {
-      const noOfDesks =
-        Number(selectedClient?.cabinDesks || 0) +
-        Number(selectedClient?.openDesks || 0);
+  const computedRevenue = useMemo(() => {
+    const noOfDesks =
+      Number(selectedClient?.cabinDesks || 0) +
+      Number(selectedClient?.openDesks || 0);
 
-      return noOfDesks * computedCurrentRate;
-    },
-    [computedCurrentRate, selectedClient?.cabinDesks, selectedClient?.openDesks],
-  );
+    return noOfDesks * computedCurrentRate;
+  }, [
+    computedCurrentRate,
+    selectedClient?.cabinDesks,
+    selectedClient?.openDesks,
+  ]);
 
   const { isLoading: isClientLoading } = useQuery({
     queryKey: ["adminCoWorkingClientByName", normalizedClientName],
     enabled:
       Boolean(normalizedClientName) &&
-      (selectedClient?.clientName || "").trim().toLowerCase() !== normalizedClientName,
+      (selectedClient?.clientName || "").trim().toLowerCase() !==
+        normalizedClientName,
     queryFn: async () => {
       const response = await axios.get("/api/sales/co-working-clients");
       const clients = Array.isArray(response?.data) ? response.data : [];
       const matchedClient = clients.find(
         (client) =>
-          (client?.clientName || "").trim().toLowerCase() === normalizedClientName,
+          (client?.clientName || "").trim().toLowerCase() ===
+          normalizedClientName,
       );
 
       if (matchedClient?._id) {
@@ -283,8 +297,8 @@ const AdminClientDetails = () => {
 
   if (isClientLoading && !selectedClient) {
     return (
-      <div className="border-2 border-gray-200 p-4 rounded-md flex items-center justify-center min-h-[240px]">
-        <div className="p-4 font-semibold">Loading client details...</div>
+      <div className="border-2 border-gray-200 rounded-md min-h-[240px]">
+        <AdminLoadingSkeleton variant="details" />
       </div>
     );
   }
@@ -349,19 +363,22 @@ const AdminClientDetails = () => {
               {displayField("Cabin Desks", _defaultValues.cabinDesks)}
               {displayField(
                 "Rate Per Cabin Desk",
-                _defaultValues.ratePerCabinDesk
+                _defaultValues.ratePerCabinDesk,
               )}
               {displayField("Open Desks", _defaultValues.openDesks)}
               {displayField(
                 "Rate Per Open Desk",
-                _defaultValues.ratePerOpenDesk
+                _defaultValues.ratePerOpenDesk,
               )}
               {displayField(
                 "No of Desk",
                 Number(_defaultValues.cabinDesks || 0) +
-                  Number(_defaultValues.openDesks || 0)
+                  Number(_defaultValues.openDesks || 0),
               )}
-              {displayField("Current Rate", formatExactNumber(computedCurrentRate))}
+              {displayField(
+                "Invoice Rate",
+                formatExactNumber(computedCurrentRate),
+              )}
             </div>
           </div>
 
@@ -376,15 +393,15 @@ const AdminClientDetails = () => {
               {displayField("Annual Increment", _defaultValues.annualIncrement)}
               {displayField(
                 "Per Desk Meeting Credits",
-                _defaultValues.perDeskMeetingCredits
+                _defaultValues.perDeskMeetingCredits,
               )}
               {displayField(
                 "Total Meeting Credits",
-                _defaultValues.totalMeetingCredits
+                _defaultValues.totalMeetingCredits,
               )}
               {displayField(
                 "Meeting Credit Balance",
-                _defaultValues.meetingCreditBalance
+                _defaultValues.meetingCreditBalance,
               )}
               {displayField("Start Date", _defaultValues.startDate, true)}
               {displayField("End Date", _defaultValues.endDate, true)}
@@ -395,7 +412,7 @@ const AdminClientDetails = () => {
               {displayField(
                 "Next Increment",
                 _defaultValues.nextIncrement,
-                true
+                true,
               )}
             </div>
           </div>

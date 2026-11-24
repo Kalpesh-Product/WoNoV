@@ -3,13 +3,14 @@ import React, { useState } from "react";
 import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import MuiModal from "../../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { Box, CircularProgress, IconButton, TextField } from "@mui/material";
+import { Box, IconButton, Skeleton, TextField } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import humanDate from "../../../../utils/humanDateForamt";
 import { inrFormat } from "../../../../utils/currencyFormat";
+import getUserName from "../../../../utils/getUserName";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import { IoCloseCircleOutline } from "react-icons/io5";
@@ -63,7 +64,7 @@ const PendingApprovalsBudget = () => {
   const axios = useAxiosPrivate();
   const cellClasses = "border border-black p-2 text-xs align-top";
   const tableClasses = "w-full border border-black border-collapse mb-5";
-  const { data: pendingApprovals = [] } = useQuery({
+  const { data: pendingApprovals = [], isLoading: isPendingLoading } = useQuery({
     queryKey: ["pendingApprovalsBudget"],
     queryFn: async () => {
       try {
@@ -238,7 +239,7 @@ const PendingApprovalsBudget = () => {
           <>
             {isRejectPending ? (
               <div className="h-10 flex justify-center items-center">
-                <CircularProgress />
+                <Skeleton variant="rounded" width={96} height={24} />
               </div>
             ) : (
               <div className="h-10 flex items-center gap-3">
@@ -291,6 +292,7 @@ const PendingApprovalsBudget = () => {
     <div>
       <PageFrame>
         <YearWiseTable
+          loading={isPendingLoading}
           dateColumn={"dueDate"}
           preserveCurrentMonthRange={true}
           search={true}
@@ -372,6 +374,10 @@ const PendingApprovalsBudget = () => {
               <BudgetViewDetail
                 title="Expense Name"
                 detail={selectedBudget.expanseName}
+              />
+              <BudgetViewDetail
+                title="Requested By"
+                detail={getUserName(selectedBudget.requestedBy)}
               />
               <BudgetViewDetail
                 title="Expense Type"

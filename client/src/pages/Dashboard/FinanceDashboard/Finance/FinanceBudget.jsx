@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import AllocatedBudget from "../../../../components/Tables/AllocatedBudget";
@@ -15,6 +15,7 @@ import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import YearlyGraph from "../../../../components/graphs/YearlyGraph";
 import useAuth from "../../../../hooks/useAuth";
 import usePageDepartment from "../../../../hooks/usePageDepartment";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const FinanceBudget = () => {
   const axios = useAxiosPrivate();
@@ -33,6 +34,8 @@ const FinanceBudget = () => {
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       expanseName: "",
+      requestedBy:
+        `${auth.user.firstName || ""} ${auth.user.lastName || ""}`.trim(),
       expanseType: "",
       paymentType: "",
       building: "",
@@ -50,7 +53,7 @@ const FinanceBudget = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`
+          `/api/budget/company-budget?departmentId=6798bab0e469e809084e249a`,
         );
         const budgets = response.data.allBudgets;
         return Array.isArray(budgets) ? budgets : [];
@@ -90,8 +93,8 @@ const FinanceBudget = () => {
         ? units
             .filter((loc) => loc.building && loc.building._id)
             .map((loc) => [loc.building._id, loc.building.buildingName])
-        : []
-    ).entries()
+        : [],
+    ).entries(),
   );
 
   const { mutate: requestBudget, isPending: requestBudgetPending } =
@@ -101,7 +104,7 @@ const FinanceBudget = () => {
           `/api/budget/request-budget/${department._id}`,
           {
             ...data,
-          }
+          },
         );
         return response.data;
       },
@@ -144,6 +147,7 @@ const FinanceBudget = () => {
     acc[month].tableData.rows.push({
       id: item._id,
       expanseName: item.expanseName,
+      requestedBy: item.requestedBy,
       department: item.department,
       expanseType: item.expanseType,
       projectedAmount: item?.projectedAmount?.toFixed(2),
@@ -159,13 +163,15 @@ const FinanceBudget = () => {
   // Data array for rendering the Accordion
   const financialData = Object.values(groupedData)
     .map((data, index) => {
-      const transoformedRows = data.tableData.rows.map((row, index) => ({
-        ...row,
-        srNo: index + 1,
-        projectedAmount: Number(
-          row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, "")
-        ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
-      }));
+      const transoformedRows = data.tableData.rows.map((row, index) => {
+        return {
+          ...row,
+          srNo: index + 1,
+          projectedAmount: Number(
+            row.projectedAmount?.toLocaleString("en-IN").replace(/,/g, ""),
+          ).toLocaleString("en-IN", { maximumFractionDigits: 0 }),
+        };
+      });
       const transformedCols = [
         { field: "srNo", headerName: "SR NO", width: 100 },
         ...data.tableData.columns,
@@ -192,8 +198,6 @@ const FinanceBudget = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   // const [openModal, setOpenModal] = useState(false);
 
   const budgetBar = useMemo(() => {
@@ -201,60 +205,52 @@ const FinanceBudget = () => {
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
 
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
+  const expenseRawSeries = useMemo(() => {
+    // Initialize monthly buckets
+    const months = Array.from({ length: 12 }, (_, index) =>
+      dayjs(`2024-04-01`).add(index, "month").format("MMM"),
+    );
 
-const expenseRawSeries = useMemo(() => {
-  // Initialize monthly buckets
-  const months = Array.from({ length: 12 }, (_, index) =>
-    dayjs(`2024-04-01`).add(index, "month").format("MMM")
-  );
+    const fyData = {
+      "FY 2024-25": Array(12).fill(0),
+      "FY 2025-26": Array(12).fill(0),
+    };
 
-  const fyData = {
-    "FY 2024-25": Array(12).fill(0),
-    "FY 2025-26": Array(12).fill(0),
-  };
+    hrFinance.forEach((item) => {
+      const date = dayjs(item.dueDate);
+      const year = date.year();
+      const monthIndex = date.month(); // 0 = Jan, 11 = Dec
 
-  hrFinance.forEach((item) => {
-    const date = dayjs(item.dueDate);
-    const year = date.year();
-    const monthIndex = date.month(); // 0 = Jan, 11 = Dec
-
-    if (year === 2024 && monthIndex >= 3) {
-      // Apr 2024 to Dec 2024 (month 3 to 11)
-      fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
-    } else if (year === 2025) {
-      if (monthIndex <= 2) {
-        // Jan to Mar 2025 (months 0–2)
-        fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
-      } else if (monthIndex >= 3) {
-        // Apr 2025 to Dec 2025 (months 3–11)
-        fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+      if (year === 2024 && monthIndex >= 3) {
+        // Apr 2024 to Dec 2024 (month 3 to 11)
+        fyData["FY 2024-25"][monthIndex - 3] += item.actualAmount || 0;
+      } else if (year === 2025) {
+        if (monthIndex <= 2) {
+          // Jan to Mar 2025 (months 0–2)
+          fyData["FY 2024-25"][monthIndex + 9] += item.actualAmount || 0;
+        } else if (monthIndex >= 3) {
+          // Apr 2025 to Dec 2025 (months 3–11)
+          fyData["FY 2025-26"][monthIndex - 3] += item.actualAmount || 0;
+        }
+      } else if (year === 2026 && monthIndex <= 2) {
+        // Jan to Mar 2026
+        fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
       }
-    } else if (year === 2026 && monthIndex <= 2) {
-      // Jan to Mar 2026
-      fyData["FY 2025-26"][monthIndex + 9] += item.actualAmount || 0;
-    }
-  });
+    });
 
-  return [
-    {
-      name: "total",
-      group: "FY 2024-25",
-      data: fyData["FY 2024-25"],
-    },
-    {
-      name: "total",
-      group: "FY 2025-26",
-      data: fyData["FY 2025-26"],
-    },
-  ];
-}, [hrFinance]);
-
+    return [
+      {
+        name: "total",
+        group: "FY 2024-25",
+        data: fyData["FY 2024-25"],
+      },
+      {
+        name: "total",
+        group: "FY 2025-26",
+        data: fyData["FY 2025-26"],
+      },
+    ];
+  }, [hrFinance]);
 
   const expenseOptions = {
     chart: {
@@ -318,7 +314,7 @@ const expenseRawSeries = useMemo(() => {
                   <div><strong>Finance Expense:</strong></div>
                   <div style="width: 10px;"></div>
                <div style="text-align: left;">INR ${Math.round(
-                 rawData
+                 rawData,
                ).toLocaleString("en-IN")}</div>
   
                 </div>
@@ -333,6 +329,10 @@ const expenseRawSeries = useMemo(() => {
     budgetBar?.utilisedBudget?.reduce((acc, val) => acc + val, 0) || 0;
   // BUDGET NEW END
 
+  if (isHrLoading || locationsLoading) {
+    return <FinanceLoadingSkeleton variant="page" />;
+  }
+
   return (
     <div className="flex flex-col gap-8">
       <YearlyGraph
@@ -342,8 +342,10 @@ const expenseRawSeries = useMemo(() => {
         titleAmount={`INR ${inrFormat(totalUtilised)}`}
       />
 
-
-      <AllocatedBudget financialData={financialData} onRequestBudget={!isTop ? () => setOpenModal(true) : undefined} />
+      <AllocatedBudget
+        financialData={financialData}
+        onRequestBudget={!isTop ? () => setOpenModal(true) : undefined}
+      />
       <MuiModal
         title="Request Budget"
         open={openModal}
@@ -363,6 +365,21 @@ const expenseRawSeries = useMemo(() => {
                 size="small"
                 error={!!fieldState.error}
                 helperText={fieldState.error?.message}
+              />
+            )}
+          />
+
+          {/* Requested By */}
+          <Controller
+            name="requestedBy"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Requested By"
+                fullWidth
+                size="small"
+                InputProps={{ readOnly: true }}
               />
             )}
           />
@@ -446,7 +463,7 @@ const expenseRawSeries = useMemo(() => {
                           </MenuItem>
                         ) : (
                           <></>
-                        )
+                        ),
                       )}
                 </Select>
               </FormControl>

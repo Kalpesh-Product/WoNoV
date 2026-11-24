@@ -49,10 +49,10 @@ const HrOverallTasks = () => {
   const axios = useAxiosPrivate();
   // const tasksRawData = useSelector((state) => state.hr.tasksRawData);
 
-  const { data: tasksRawData = [] } = useQuery({
+  const { data: tasksRawData = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
-      const response = await axios.get("api/tasks/get-tasks-summary");
+      const response = await axios.get("/api/tasks/get-tasks-summary");
 
       return response.data.map((dept) => ({
         ...dept,
@@ -84,10 +84,10 @@ const HrOverallTasks = () => {
   // );
 
   const currentMonthIndex = calendarMonths.findIndex(
-     (m) => m.toLowerCase() === activeMonth.toLowerCase()
+    (m) => m.toLowerCase() === activeMonth.toLowerCase(),
   );
 
-   const handlePrevMonth = () => {
+  const handlePrevMonth = () => {
     if (currentMonthIndex === 0) {
       setSelectedMonth(calendarMonths[calendarMonths.length - 1]);
       setSelectedYear((prev) => prev - 1);
@@ -117,22 +117,22 @@ const HrOverallTasks = () => {
           const taskMonth =
             calendarMonths[(new Date(y, m - 1, day).getMonth() + 9) % 12];
 
-            const taskYear = getYearFromTaskDate(task.assignedDate);
+          const taskYear = getYearFromTaskDate(task.assignedDate);
 
-            return (
-              taskMonth?.toLowerCase() === activeMonth.toLowerCase() &&
-              taskYear === activeYear
-            );
+          return (
+            taskMonth?.toLowerCase() === activeMonth.toLowerCase() &&
+            taskYear === activeYear
+          );
         })
-        .map((task) => ({ department: dept.department, ...task }))
+        .map((task) => ({ department: dept.department, ...task })),
     );
   }, [tasksRawData, activeMonth, activeYear]);
 
   const totalCompleted = filteredTasks.filter(
-    (t) => t.status === "Completed"
+    (t) => t.status === "Completed",
   ).length;
   const totalRemaining = filteredTasks.filter(
-    (t) => t.status !== "Completed"
+    (t) => t.status !== "Completed",
   ).length;
 
   const allDepartments = useMemo(() => {
@@ -167,7 +167,7 @@ const HrOverallTasks = () => {
   const graphData = [
     {
       name: "Completed Tasks",
-          group: `Tasks - ${activeMonthYear}`,
+      group: `Tasks - ${activeMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -179,7 +179,7 @@ const HrOverallTasks = () => {
     },
     {
       name: "Pending Tasks",
-       group: `Tasks - ${activeMonthYear}`,
+      group: `Tasks - ${activeMonthYear}`,
       data: allDepartments.map((dept) => {
         const { total, achieved } = departmentMap[dept] || {
           total: 0,
@@ -205,12 +205,12 @@ const HrOverallTasks = () => {
           // Fetch all tasks for the clicked department for the selected month
           const departmentTasks = groupedTasks[clickedDept] || [];
 
-            navigate(`${clickedDept}`, {
+          navigate(`${clickedDept}`, {
             state: {
-               month: activeMonth,
+              month: activeMonth,
               department: clickedDept,
               tasks: departmentTasks,
-                year: activeYear,
+              year: activeYear,
             },
           });
         },
@@ -309,16 +309,16 @@ const HrOverallTasks = () => {
           role="button"
           onClick={() =>
             navigate(
-             // `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
+              // `/app/dashboard/HR-dashboard/overall-KPA/department-tasks/${params.value}`,
               `${params.value}`,
               {
                 state: {
-                    month: activeMonth,
+                  month: activeMonth,
                   department: params.value,
                   tasks: groupedTasks[params.value],
                   year: activeYear,
                 },
-              }
+              },
             )
           }
           className="text-primary cursor-pointer"
@@ -355,11 +355,11 @@ const HrOverallTasks = () => {
             <SecondaryButton
               title={<MdNavigateBefore />}
               handleSubmit={handlePrevMonth}
-             // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
+              // externalStyles="min-w-20 px-6 py-2 !bg-gray-400 !text-black font-semibold rounded-lg"
               // disabled={!isPrevAvailable}
             />
             <div className="text-sm min-w-[120px] text-center text-primary font-semibold">
-                   {activeMonthYear}
+              {activeMonthYear}
             </div>
             <SecondaryButton
               title={<MdNavigateNext />}
@@ -376,10 +376,11 @@ const HrOverallTasks = () => {
         border
         TitleAmount={`TOTAL Tasks : ${tableData.reduce(
           (sum, item) => item.totalTasks + sum,
-          0
+          0,
         )}`}
       >
         <AgTable
+          loading={isTasksLoading}
           columns={tasksColumns}
           data={tableData}
           tableHeight={300}

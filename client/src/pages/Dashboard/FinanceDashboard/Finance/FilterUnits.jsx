@@ -5,7 +5,7 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import { Controller, useForm } from "react-hook-form";
@@ -105,7 +105,7 @@ const CheckAvailability = ({ landlord }) => {
                   </MenuItem>
                   {locationsLoading ? (
                     <MenuItem disabled>
-                      <CircularProgress size={20} />
+                      <Skeleton variant="text" width={100} />
                     </MenuItem>
                   ) : locationsError ? (
                     <MenuItem disabled>Error fetching units</MenuItem>

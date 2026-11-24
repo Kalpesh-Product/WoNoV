@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AgTable from "../../../components/AgTable";
-import { Chip, CircularProgress } from "@mui/material";
+import { Chip } from "@mui/material";
 import BarGraph from "../../../components/graphs/BarGraph";
 // import UniqueClients from "./ViewClients/LeadsLayout";
 // import UniqueClients from "../SalesDashboard/UniqueClients";

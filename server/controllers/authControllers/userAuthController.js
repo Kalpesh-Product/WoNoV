@@ -100,6 +100,8 @@ const login = async (req, res, next) => {
     req.logContext = {
       performedBy: userExists._id,
       company: userExists.company._id,
+      action: "login",
+      payload: { email: userExists.email },
     };
 
     res.status(200).json({ user: updatedUser, accessToken });
@@ -142,6 +144,8 @@ const logOut = async (req, res, next) => {
     req.logContext = {
       performedBy: userExists._id,
       company: userExists.company._id,
+      action: "logout",
+      payload: { email: foundUser.email },
     };
 
     res.sendStatus(204);

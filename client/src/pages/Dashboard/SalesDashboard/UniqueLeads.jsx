@@ -45,6 +45,154 @@ const MONTH_ORDER = [
   "March",
 ];
 
+const WEBSITE_KIND_OPTIONS = [
+  ["book-your-subscription", "Book Your Subscription (all listings)"],
+  ["work-from-cafe", "Work from Café"],
+  ["car-renting", "Car Renting"],
+  ["co-living-space", "Co-Living Space"],
+  ["co-working-space", "Co-Working Space"],
+  ["exclusive-campus", "Exclusive Campus"],
+  ["exclusive-workations", "Exclusive Workations"],
+  ["managed-workspace", "Managed Workspace"],
+  ["meetings-and-conferences", "Meeting & Board Rooms"],
+  ["private-apartments-villas", "Private Apartments / Villas"],
+  ["private-workspace", "Private Workspace"],
+  ["training-and-events", "Training & Events"],
+  ["virtual-office", "Virtual Office"],
+  ["yacht-renting", "Yacht Renting"],
+  ["co-working-goa", "Co-Working Goa"],
+  ["meeting-rooms-goa", "Meeting Rooms Goa"],
+  ["virtual-office-goa", "Virtual Office Goa"],
+  ["workation-goa", "Workation Goa"],
+  ["partnership", "Partner form"],
+  ["application", "Job applications"],
+  ["product", "All product forms"],
+];
+const WEBSITE_LEADS_KIND = "product";
+
+const websiteKindLabels = Object.fromEntries(WEBSITE_KIND_OPTIONS);
+const normalizeCategoryText = (value) =>
+  String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+const WEBSITE_CATEGORY_PATTERNS = [
+  [/co working goa|coworking goa/, "co-working-goa"],
+  [/meeting rooms? goa/, "meeting-rooms-goa"],
+  [/virtual office goa/, "virtual-office-goa"],
+  [/workations? goa/, "workation-goa"],
+  [/work from cafe/, "work-from-cafe"],
+  [/car renting|car rental/, "car-renting"],
+  [/co living|coliving/, "co-living-space"],
+  [/co working|coworking|shared workspace/, "co-working-space"],
+  [/exclusive campus/, "exclusive-campus"],
+  [/exclusive workations?/, "exclusive-workations"],
+  [/managed workspace/, "managed-workspace"],
+  [/meeting|board room|conference/, "meetings-and-conferences"],
+  [/private apartment|private villa/, "private-apartments-villas"],
+  [/private workspace/, "private-workspace"],
+  [/training|events?/, "training-and-events"],
+  [/virtual office/, "virtual-office"],
+  [/yacht/, "yacht-renting"],
+];
+
+const getWebsiteCategoryLabel = (row, inquiry, selectedKind) => {
+  const candidates = [
+    row.kind,
+    inquiry.pagename,
+    row.pagename,
+    inquiry.category,
+    row.category,
+  ]
+    .map(normalizeCategoryText)
+    .filter(Boolean);
+
+  for (const candidate of candidates) {
+    const exact = WEBSITE_KIND_OPTIONS.find(
+      ([kind, label]) =>
+        kind !== "book-your-subscription" &&
+        kind !== "product" &&
+        (candidate === normalizeCategoryText(kind) ||
+          candidate === normalizeCategoryText(label)),
+    );
+    if (exact) return exact[1];
+  }
+
+  for (const candidate of candidates) {
+    const match = WEBSITE_CATEGORY_PATTERNS.find(([pattern]) => pattern.test(candidate));
+    if (match) return websiteKindLabels[match[1]];
+  }
+
+  return websiteKindLabels[selectedKind] || websiteKindLabels.product;
+};
+
+const normalizeWebsiteLead = (row, index, selectedKind) => {
+  const inquiry = row.inquiries && !Array.isArray(row.inquiries)
+    ? row.inquiries
+    : row;
+  const kind = row.kind || selectedKind;
+  const productCompanyType = String(row.companyType || inquiry.companyType || row.companytype || inquiry.companytype || "").trim();
+  const productCompanySubType = String(row.companySubtype || inquiry.companySubtype || row.companySubType || inquiry.companySubType || "").trim();
+  const category = kind === "product"
+    ? productCompanyType || "Unspecified"
+    : getWebsiteCategoryLabel(row, inquiry, selectedKind);
+  const name = inquiry.name || row.name || "";
+
+  return {
+    _id: `website:${kind}:${row.id || row._id || index}`,
+    isWebsiteLead: true,
+    websiteKind: kind,
+    websitePage: inquiry.pagename || "",
+    categoryLabel: category,
+    companyType: kind === "product" ? productCompanyType : "",
+    companySubType: kind === "product" ? productCompanySubType : "",
+    inquiryCount: inquiry.count ?? null,
+    dateOfContact: kind === "product"
+      ? row.createdAt || null
+      : row.createdAt || inquiry.createdAt || inquiry.sdate || null,
+    startDate: inquiry.sdate || null,
+    companyName: inquiry.companyName || row.companyName || name,
+    serviceCategory: { serviceName: category },
+    pocName: name,
+    contactNumber: inquiry.mobile || row.mobile || inquiry.phone || row.phone || "",
+    emailAddress: inquiry.email || row.email || "",
+    leadStatus: String(row.status || "Pending").toLowerCase() === "new"
+      ? "Pending"
+      : row.status || "Pending",
+    leadSource: row.source || "Website",
+    sourceCompany: "BIZNest Website",
+    remarksComments: inquiry.message || row.message || "",
+  };
+};
+
+const matchesLeadPeriod = (lead, selectedFY, selectedMonth = "All") => {
+  const startYear = Number(selectedFY?.match(/\d{4}/)?.[0]);
+  const leadDate = dayjs(lead?.dateOfContact);
+  if (!startYear || !leadDate.isValid()) return false;
+
+  const fyStartYear = leadDate.month() >= 3 ? leadDate.year() : leadDate.year() - 1;
+  return fyStartYear === startYear &&
+    (selectedMonth === "All" || leadDate.format("MMM-YY") === selectedMonth);
+};
+
+const GRAPH_CATEGORY_COLORS = [
+  "#1E3D73", "#2196F3", "#11BCD4", "#54C4A7", "#F59E0B", "#8B5CF6",
+  "#E85D75", "#0F766E", "#F97316", "#6366F1", "#84CC16", "#EC4899",
+];
+const GRAPH_CATEGORY_ORDER = [
+  "co working", "meeting", "workation", "alternate channels",
+];
+const getGraphCategoryRank = (category) => {
+  const normalized = normalizeCategoryText(category);
+  const rank = GRAPH_CATEGORY_ORDER.findIndex(
+    (name) => normalized === name || normalized === `${name}s`,
+  );
+  return rank === -1 ? GRAPH_CATEGORY_ORDER.length : rank;
+};
+
 const getCurrentFinancialYearLabel = () => {
   const today = dayjs();
   const startYear = today.month() < 3 ? today.year() - 1 : today.year();
@@ -74,6 +222,31 @@ const UniqueLeads = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
+  const {
+    data: websiteSubmissions = [],
+    isLoading: isWebsiteLoading,
+    isError: isWebsiteError,
+    error: websiteError,
+  } = useQuery({
+    queryKey: ["website-unique-leads", WEBSITE_LEADS_KIND],
+    queryFn: async () => {
+      const response = await axios.get("/api/sales/leads/website", {
+        params: { kind: WEBSITE_LEADS_KIND },
+      });
+      return response.data.data || [];
+    },
+    staleTime: 60_000,
+  });
+
+  const allLeads = useMemo(
+    () => [
+      ...leadsData,
+      ...websiteSubmissions.map((row, index) =>
+        normalizeWebsiteLead(row, index, WEBSITE_LEADS_KIND),
+      ),
+    ],
+    [leadsData, websiteSubmissions],
+  );
 
   useEffect(() => {
     if (!selectedLead?._id || !Array.isArray(leadsData) || !leadsData.length) {
@@ -396,40 +569,24 @@ const UniqueLeads = () => {
       }
     }
 
-    leadsData.forEach((lead) => {
-      const date = dayjs(lead.startDate);
+    allLeads.forEach((lead) => {
+      const date = dayjs(lead.dateOfContact || lead.startDate);
+      if (!date.isValid()) return;
       const year = date.month() >= 3 ? date.year() : date.year() - 1; // FY starts in April
       const fyLabel = `FY ${year}-${(year + 1).toString().slice(-2)}`;
       yearsSet.add(fyLabel);
     });
 
     return Array.from(yearsSet).sort(); // optional: sort FYs ascending
-  }, [leadsData]);
+  }, [allLeads]);
 
   const selectedMonthData = useMemo(() => {
-    if (!selectedMonth || !selectedFY || leadsData.length === 0) return null;
-
-    const [fyStart] = selectedFY.match(/\d{4}/); // e.g. "2024"
-    const fyStartYear = parseInt(fyStart);
-    const fyEndYear = fyStartYear + 1;
+    if (!selectedMonth || !selectedFY || allLeads.length === 0) return null;
 
     const domainsMap = {};
 
-    leadsData.forEach((lead) => {
-      const leadDate = dayjs(lead?.dateOfContact);
-      const leadMonthIndex = leadDate.month();
-      const leadYear = leadDate.year();
-
-      const isInFY =
-        leadMonthIndex >= 3 ? leadYear === fyStartYear : leadYear === fyEndYear;
-
-      const formattedLeadMonth = leadDate.format("MMM-YY");
-
-      if (
-        !isInFY ||
-        (selectedMonth !== "All" && formattedLeadMonth !== selectedMonth)
-      )
-        return;
+    allLeads.forEach((lead) => {
+      if (!matchesLeadPeriod(lead, selectedFY, selectedMonth)) return;
 
       const domainName = lead?.serviceCategory?.serviceName || "Unknown";
 
@@ -456,7 +613,7 @@ const UniqueLeads = () => {
         ...data,
       })),
     };
-  }, [selectedMonth, selectedFY, leadsData]);
+  }, [selectedMonth, selectedFY, allLeads]);
 
   const totalLeads = selectedMonthData?.domains?.reduce((sum, item) => {
     return (item.clients?.length || 0) + sum;
@@ -466,7 +623,8 @@ const UniqueLeads = () => {
   const yearlyRevenueData = useMemo(() => {
     const revenueMap = {};
 
-    leadsData?.forEach((lead) => {
+    allLeads.forEach((lead) => {
+      if (!matchesLeadPeriod(lead, selectedFY)) return;
       const domainName = lead.serviceCategory?.serviceName || "Unknown";
 
       if (!revenueMap[domainName]) {
@@ -486,7 +644,7 @@ const UniqueLeads = () => {
     });
 
     return revenueMap;
-  }, [leadsData]);
+  }, [allLeads, selectedFY]);
 
   // const handleViewClient = (lead) => {
   //   const selectedLeadData = leadsData.find(
@@ -523,11 +681,14 @@ const UniqueLeads = () => {
   const formatViewDetail = (lead, field, type) => {
     const value = lead?.[field];
     if (type === "date") return value ? humanDate(value) : EMPTY_VIEW_VALUE;
+    if (type === "dateTime") {
+      return value ? dayjs(value).format("DD-MM-YYYY, hh:mm A") : EMPTY_VIEW_VALUE;
+    }
     if (type === "currency") return value || value === 0 ? `INR ${value}` : EMPTY_VIEW_VALUE;
     if (type === "boolean") return formatBoolean(value);
     if (field === "serviceCategory") return getOptionLabel(value, EMPTY_VIEW_VALUE);
     if (field === "proposedLocations") return getOptionLabel(value, EMPTY_VIEW_VALUE);
-    return value || EMPTY_VIEW_VALUE;
+    return value === "" || value == null ? EMPTY_VIEW_VALUE : value;
   };
 
   const handleViewClient = (lead) => {
@@ -568,6 +729,30 @@ const UniqueLeads = () => {
     { label: "Remarks Comments", field: "remarksComments" },
     { label: "Last Follow-up Date", field: "lastFollowUpDate", type: "date" },
   ];
+  const websiteViewFields = [
+    { label: "Submitted At", field: "dateOfContact", type: "dateTime" },
+    { label: "Listing", field: "websitePage" },
+    { label: "Kind", field: "websiteKind" },
+    { label: "Category", field: "serviceCategory" },
+    { label: "Name", field: "pocName" },
+    { label: "Email", field: "emailAddress" },
+    { label: "Mobile", field: "contactNumber" },
+    { label: "Count", field: "inquiryCount" },
+    { label: "Start Date", field: "startDate", type: "date" },
+    { label: "Status", field: "leadStatus" },
+    { label: "Message", field: "remarksComments" },
+  ];
+  const productViewFields = [
+    { label: "Name", field: "pocName" },
+    { label: "Email", field: "emailAddress" },
+    { label: "Mobile", field: "contactNumber" },
+    { label: "Start Date", field: "startDate", type: "date" },
+    { label: "Submitted At", field: "dateOfContact", type: "dateTime" },
+    { label: "Category", field: "companyType" },
+    { label: "Sub Category", field: "companySubType" },
+    { label: "Status", field: "leadStatus" },
+    { label: "Message", field: "remarksComments" },
+  ];
   // const graphData = [
   //   {
   //     name: "Leads",
@@ -581,17 +766,16 @@ const UniqueLeads = () => {
   //   },
   // ];
 
+  const graphDomains = (viewType === "month"
+    ? selectedMonthData?.domains || []
+    : Object.entries(yearlyRevenueData).map(([name, data]) => ({ name, ...data })))
+    .sort((a, b) => getGraphCategoryRank(a.name) - getGraphCategoryRank(b.name));
+  const graphCategories = graphDomains.map((domain) => domain.name);
+
   const graphData = [
     {
       name: "Leads",
-      data:
-        viewType === "month"
-          ? (selectedMonthData?.domains || []).map(
-              (domain) => domain.clients.length
-            )
-          : Object.values(yearlyRevenueData).map(
-              (domain) => domain.clients.length
-            ),
+      data: graphDomains.map((domain) => domain.clients.length),
     },
   ];
 
@@ -605,18 +789,15 @@ const UniqueLeads = () => {
       },
     },
     xaxis: {
-      categories:
-        viewType === "month"
-          ? selectedMonthData?.domains.map((domain) => domain.name) || []
-          : Object.keys(yearlyRevenueData),
+      categories: graphCategories,
     },
     yaxis: { title: { text: "Leads" } },
     plotOptions: {
-      bar: { horizontal: false, columnWidth: "20%", borderRadius: 3 },
+      bar: { horizontal: false, columnWidth: "20%", borderRadius: 3, distributed: true },
     },
-    legend: { position: "top" },
-    dataLabels: { enabled: true, positiom: "top" },
-    colors: ["#00cdd1"],
+    legend: { show: false },
+    dataLabels: { enabled: true, position: "top" },
+    colors: graphCategories.map((_, index) => GRAPH_CATEGORY_COLORS[index % GRAPH_CATEGORY_COLORS.length]),
   };
 
   // const availableMonths = useMemo(() => {
@@ -647,33 +828,22 @@ const UniqueLeads = () => {
   }, [selectedFY]);
 
   const filteredLeads = useMemo(() => {
-    if (!selectedMonth || !selectedFY || leadsData.length === 0) return [];
-
-    const [fyStart] = selectedFY.match(/\d{4}/) || [];
-    const fyStartYear = parseInt(fyStart);
-    const fyEndYear = fyStartYear + 1;
-
-    return leadsData.filter((lead) => {
-      const leadDate = dayjs(lead?.dateOfContact);
-      const leadMonthIndex = leadDate.month();
-      const leadYear = leadDate.year();
-
-      const isInFY =
-        leadMonthIndex >= 3 ? leadYear === fyStartYear : leadYear === fyEndYear;
-
-      const formattedLeadMonth = leadDate.format("MMM-YY");
-
-      if (!isInFY) return false;
-      if (selectedMonth !== "All" && formattedLeadMonth !== selectedMonth)
-        return false;
-
-      return true;
-    });
-  }, [selectedMonth, selectedFY, leadsData]);
+    if (!selectedMonth || !selectedFY || allLeads.length === 0) return [];
+    return allLeads.filter((lead) => matchesLeadPeriod(lead, selectedFY, selectedMonth));
+  }, [selectedMonth, selectedFY, allLeads]);
 
   return (
     <div className="p-4 flex flex-col gap-4">
-      {/* View Type Selection */}
+      {(isWebsiteLoading || isWebsiteError) && (
+        <div className="flex flex-wrap items-center gap-3">
+          {isWebsiteLoading && <span>Loading website leads…</span>}
+          {isWebsiteError && (
+            <span role="alert" className="text-red-600">
+              {websiteError?.response?.data?.message || "Website leads are unavailable. Local leads are still shown."}
+            </span>
+          )}
+        </div>
+      )}
 
       <WidgetSection
         layout={1}
@@ -682,6 +852,19 @@ const UniqueLeads = () => {
         title={"Unique Leads"}
         TitleAmount={`Total Leads : ${totalLeads}`}
       >
+        {graphCategories.length > 0 && (
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 px-4 pt-3 text-sm text-[#4B5563]">
+            {graphCategories.map((category, index) => (
+              <span key={category} className="inline-flex items-center gap-1.5">
+                <span
+                  className="h-3 w-3 shrink-0 rounded-sm"
+                  style={{ backgroundColor: GRAPH_CATEGORY_COLORS[index % GRAPH_CATEGORY_COLORS.length] }}
+                />
+                {category}
+              </span>
+            ))}
+          </div>
+        )}
         <NormalBarGraph data={graphData} options={graphOptions} height={400} />
       </WidgetSection>
 
@@ -755,6 +938,7 @@ const UniqueLeads = () => {
               srNo: index + 1,
               dateOfContact: item.dateOfContact,
               companyName: item.companyName,
+              categoryLabel: item.categoryLabel || getOptionLabel(item.serviceCategory),
               serviceCategoryLabel: getOptionLabel(item.serviceCategory),
               headOfficeLocation: item.headOfficeLocation,
               officeInGoaLabel: formatBoolean(item.officeInGoa),
@@ -764,6 +948,10 @@ const UniqueLeads = () => {
               emailAddress: item.emailAddress,
               leadStatus: item.leadStatus,
               leadSource: item.leadSource,
+              sourceCompany: item.sourceCompany || "Local",
+              websitePage: item.websitePage,
+              websiteKind: item.websiteKind,
+              inquiryCount: item.inquiryCount,
               period: item.period,
               openDesks: item.openDesks,
               cabinDesks: item.cabinDesks,
@@ -814,6 +1002,11 @@ const UniqueLeads = () => {
               { headerName: "Contact Number", field: "contactNumber",flex: 1},
               { headerName: "Email Address", field: "emailAddress", flex: 1 ,hide: true},
               { headerName: "Lead Status", field: "leadStatus" ,flex: 1},
+              { headerName: "Source", field: "sourceCompany", flex: 1 },
+              { headerName: "Category", field: "categoryLabel", flex: 1 },
+              { headerName: "Listing", field: "websitePage", flex: 1, hide: true },
+              { headerName: "Kind", field: "websiteKind", flex: 1, hide: true },
+              { headerName: "Count", field: "inquiryCount", flex: 1, hide: true },
               { headerName: "Sector", field: "sector",flex: 1,hide: true },
               { headerName: "Service Category", field: "serviceCategoryLabel",flex: 1,hide: true },
               { headerName: "Proposed Locations", field: "proposedLocationsLabel", flex: 1, hide: true },
@@ -866,15 +1059,17 @@ const UniqueLeads = () => {
                     >
                       <MdOutlineRemoveRedEye size={20} />
                     </IconButton>
-                    <ThreeDotMenu
-                      rowId={params.data?._id || params.data?.companyName}
-                      menuItems={[
-                        {
-                          label: "Edit",
-                          onClick: () => handleEditLead(params.data),
-                        },
-                      ]}
-                    />
+                    {!params.data?.isWebsiteLead && (
+                      <ThreeDotMenu
+                        rowId={params.data?._id || params.data?.companyName}
+                        menuItems={[
+                          {
+                            label: "Edit",
+                            onClick: () => handleEditLead(params.data),
+                          },
+                        ]}
+                      />
+                    )}
                   </div>
                 ),
               },
@@ -929,7 +1124,8 @@ const UniqueLeads = () => {
       >
         {selectedLead ? (
           <div className="grid grid-cols-1 gap-4">
-            {viewDetailFields.map(({ label, field, type }) => (
+            {(selectedLead.websiteKind === "product" ? productViewFields
+              : selectedLead.isWebsiteLead ? websiteViewFields : viewDetailFields).map(({ label, field, type }) => (
               <DetalisFormatted
                 key={field}
                 title={label}

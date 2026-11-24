@@ -119,6 +119,7 @@ const VoucherCreation = () => {
     <div className="flex flex-col gap-4">
       <PageFrame>
         <YearWiseTable
+          loading={isVoucherPending}
           data={(voucherData || []).map((item, index) => ({
             ...item,
           

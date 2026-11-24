@@ -11,7 +11,7 @@ import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 import { toast } from "sonner";
 import { queryClient } from "../../../../main";
 import humanTime from "../../../../utils/humanTime";
-import { CircularProgress } from "@mui/material";
+import HrLoadingSkeleton from "../HrLoadingSkeleton";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import StatusChip from "../../../../components/StatusChip";
 
@@ -157,6 +157,7 @@ const AttendanceRequests = () => {
     <div className="flex flex-col">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           key={tableData.length}
           
           dateColumn={"createdDate"}
@@ -245,9 +246,7 @@ const AttendanceRequests = () => {
             </div>
           </div>
         ) : (
-          <div className="flex justify-center items-center py-6">
-            <CircularProgress />
-          </div>
+          <HrLoadingSkeleton />
         )}
       </MuiModal>
     </div>

@@ -31,6 +31,19 @@ const partnershipSchema = new mongoose.Schema(
       url: String,
       key: String,
     },
+    editHistory: {
+      type: [{
+        editedBy: { type: mongoose.Schema.Types.ObjectId, ref: "UserData", required: true },
+        editedAt: { type: Date, required: true },
+        changes: [{
+          field: { type: String, required: true },
+          label: { type: String, required: true },
+          oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
+          newValue: { type: mongoose.Schema.Types.Mixed, default: null },
+        }],
+      }],
+      default: [],
+    },
   },
   { timestamps: true, collection: "partnership" },
 );

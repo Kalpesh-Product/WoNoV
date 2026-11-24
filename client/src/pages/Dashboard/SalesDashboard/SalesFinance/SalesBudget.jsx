@@ -1,4 +1,4 @@
-import React, { Suspense, useEffect, useMemo, useState } from "react";
+﻿import React, { Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
 import {
   TextField,
@@ -208,7 +208,7 @@ const SalesBudget = () => {
               { field: "expanseName", headerName: "Expense Name", flex: 1 },
               { field: "expanseType", headerName: "Expense Type", flex: 1 },
               { field: "projectedAmount", headerName: "Projected", flex: 1 },
-              { field: "actualAmount", headerName: "Actual", flex: 1 }, // ✅ add this
+              { field: "actualAmount", headerName: "Actual", flex: 1 }, // âœ… add this
               { field: "dueDate", headerName: "Due Date", flex: 1 },
               { field: "status", headerName: "Status", flex: 1 },
             ],
@@ -220,11 +220,12 @@ const SalesBudget = () => {
       acc[month].amount += item?.actualAmount; // Summing the total amount per month
       acc[month].tableData.rows.push({
         id: item._id,
+        requestedBy: item.requestedBy,
         expanseName: item?.expanseName,
         department: item?.department,
         expanseType: item?.expanseType,
         projectedAmount: Number(item?.projectedAmount).toFixed(2),
-        actualAmount: inrFormat(Number(item?.actualAmount || 0).toFixed(0)), // ✅ Add this
+        actualAmount: inrFormat(Number(item?.actualAmount || 0).toFixed(0)), // âœ… Add this
         dueDate: dayjs(item.dueDate).format("DD-MM-YYYY"),
         status: item.status,
       });

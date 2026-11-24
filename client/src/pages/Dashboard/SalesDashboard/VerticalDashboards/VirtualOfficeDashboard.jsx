@@ -14,12 +14,7 @@ import {
   MdTrendingDown,
   MdTrendingUp,
 } from "react-icons/md";
-import {
-  FiDatabase,
-  FiUploadCloud,
-  FiUserPlus,
-  FiUsers,
-} from "react-icons/fi";
+import { FiDatabase, FiUploadCloud, FiUserPlus, FiUsers } from "react-icons/fi";
 import {
   LuChartPie as ChartPie,
   LuChartNoAxesCombined as ChartNoAxesCombined,
@@ -85,7 +80,8 @@ const getRevenueFiscalYear = (row) => {
 const getReportingAmount = (row) => {
   const reportingDate = dayjs(getRevenueDate(row));
   const usesHistoricalRevenue =
-    reportingDate.isValid() && reportingDate.isBefore(dayjs("2026-09-01"), "month");
+    reportingDate.isValid() &&
+    reportingDate.isBefore(dayjs("2026-09-01"), "month");
 
   return usesHistoricalRevenue
     ? getNumericAmount(row?.revenue)
@@ -97,10 +93,7 @@ const getRenewalRevenueAmount = (client) => {
     Number(client?.totalDesks) ||
     Number(client?.openDesks || 0) + Number(client?.cabinDesks || 0);
   const currentRate = Number(
-    client?.currentRate ||
-      client?.openDeskRate ||
-      client?.cabinDeskRate ||
-      0,
+    client?.currentRate || client?.openDeskRate || client?.cabinDeskRate || 0,
   );
 
   return Number(
@@ -117,9 +110,7 @@ const getPaidRenewalAmount = (revenue) =>
   getNumericAmount(revenue?.taxableAmount);
 
 const getRevenueClientId = (revenue) =>
-  typeof revenue?.client === "object"
-    ? revenue.client?._id
-    : revenue?.client;
+  typeof revenue?.client === "object" ? revenue.client?._id : revenue?.client;
 
 const isRevenueForClientMonth = (revenue, client, month) => {
   const revenueDate = dayjs(getRevenueDate(revenue));
@@ -131,7 +122,9 @@ const isRevenueForClientMonth = (revenue, client, month) => {
     String(revenue?.client?.clientName || revenue?.clientName || "")
       .trim()
       .toLowerCase() ===
-    String(client?.clientName || "").trim().toLowerCase();
+    String(client?.clientName || "")
+      .trim()
+      .toLowerCase();
 
   return (
     revenueDate.isValid() &&
@@ -200,8 +193,7 @@ const getMonthlyRenewalRevenue = (clients, revenues, month) =>
           isRevenueForClientMonth(revenue, client, month),
       )
       .reduce(
-        (clientTotal, revenue) =>
-          clientTotal + getPaidRenewalAmount(revenue),
+        (clientTotal, revenue) => clientTotal + getPaidRenewalAmount(revenue),
         0,
       );
 
@@ -219,15 +211,18 @@ const useLiveCurrentMonth = () => {
       const now = dayjs();
       const nextDay = now.add(1, "day").startOf("day").add(1, "second");
 
-      timeoutId = window.setTimeout(() => {
-        const nextMonth = dayjs().startOf("month");
-        setCurrentMonth((previousMonth) =>
-          previousMonth.isSame(nextMonth, "month")
-            ? previousMonth
-            : nextMonth,
-        );
-        scheduleNextDayRefresh();
-      }, Math.max(nextDay.diff(now), 1000));
+      timeoutId = window.setTimeout(
+        () => {
+          const nextMonth = dayjs().startOf("month");
+          setCurrentMonth((previousMonth) =>
+            previousMonth.isSame(nextMonth, "month")
+              ? previousMonth
+              : nextMonth,
+          );
+          scheduleNextDayRefresh();
+        },
+        Math.max(nextDay.diff(now), 1000),
+      );
     };
 
     scheduleNextDayRefresh();
@@ -264,9 +259,7 @@ const VirtualOfficeSummaryCards = ({
   const cards = [
     {
       title: "Annual Revenue Target",
-      value: isLoading
-        ? "—"
-        : inrFormat(actualIncome + projectedIncome),
+      value: isLoading ? "—" : inrFormat(actualIncome + projectedIncome),
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_ANNUAL_REVENUE_TARGET_CARD
           .value,
@@ -309,12 +302,10 @@ const VirtualOfficeSummaryCards = ({
     },
     {
       title: "Active Unique Customers",
-      value: isLoading
-        ? "—"
-        : activeUniqueCustomers.toLocaleString("en-IN"),
+      value: isLoading ? "—" : activeUniqueCustomers.toLocaleString("en-IN"),
       permission:
-        PERMISSIONS
-          .SALES_VERTICAL_VIRTUAL_OFFICE_ACTIVE_UNIQUE_CUSTOMERS_CARD.value,
+        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_ACTIVE_UNIQUE_CUSTOMERS_CARD
+          .value,
       icon: MdGroups,
       tone: "lightNavy",
       valueTone: "text-[#1E3D73]",
@@ -330,9 +321,7 @@ const VirtualOfficeSummaryCards = ({
     },
     {
       title: "Dead Unique Clients",
-      value: isLoading
-        ? "â€”"
-        : deadUniqueClients.toLocaleString("en-IN"),
+      value: isLoading ? "â€”" : deadUniqueClients.toLocaleString("en-IN"),
       permission:
         PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DEAD_UNIQUE_CLIENTS_CARD
           .value,
@@ -352,14 +341,12 @@ const VirtualOfficeSummaryCards = ({
                 : "On Target"
           }`,
       permission:
-        PERMISSIONS
-          .SALES_VERTICAL_VIRTUAL_OFFICE_AVERAGE_SHORTFALL_SURPLUS_CARD.value,
+        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_AVERAGE_SHORTFALL_SURPLUS_CARD
+          .value,
       icon: MdTrendingDown,
       tone: safeAverageShortfallSurplus >= 0 ? "green" : "red",
       valueTone:
-        safeAverageShortfallSurplus >= 0
-          ? "text-[#13a573]"
-          : "text-[#f04a4a]",
+        safeAverageShortfallSurplus >= 0 ? "text-[#13a573]" : "text-[#f04a4a]",
     },
   ];
 
@@ -453,7 +440,9 @@ const BiznestTitle = () => (
   >
     <span>BI</span>
     <span className="text-[#e33434]">Z</span>
-    <span>&nbsp;N<span className="lowercase">est</span></span>
+    <span>
+      &nbsp;N<span className="lowercase">est</span>
+    </span>
   </span>
 );
 
@@ -536,8 +525,7 @@ const getClientDetailValue = (value) => {
   return value || "—";
 };
 
-const getClientMoneyValue = (value) =>
-  `INR ${inrFormat(Number(value) || 0)}`;
+const getClientMoneyValue = (value) => `INR ${inrFormat(Number(value) || 0)}`;
 
 const VirtualOfficeRenewalClientView = ({ client }) => {
   if (!client) return null;
@@ -564,57 +552,172 @@ const VirtualOfficeRenewalClientView = ({ client }) => {
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Customer Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Client Name" detail={getClientDetailValue(client.clientName)} />
-          <DetalisFormatted title="Sector" detail={getClientDetailValue(client.sector)} />
-          <DetalisFormatted title="City" detail={getClientDetailValue(client.city || client.hoCity)} />
-          <DetalisFormatted title="State" detail={getClientDetailValue(client.state || client.hoState)} />
-          <DetalisFormatted title="Booking Type" detail={getClientDetailValue(client.bookingType || "Direct")} />
-          <DetalisFormatted title="Revenue" detail={getClientMoneyValue(revenue)} />
-          <DetalisFormatted title="Sourcing" detail={getClientDetailValue(client.channel || client.sourcing)} />
-          <DetalisFormatted title="Current Status" detail={getClientDetailValue(client.currentStatus || "In Progress")} />
+          <DetalisFormatted
+            title="Client Name"
+            detail={getClientDetailValue(client.clientName)}
+          />
+          <DetalisFormatted
+            title="Sector"
+            detail={getClientDetailValue(client.sector)}
+          />
+          <DetalisFormatted
+            title="City"
+            detail={getClientDetailValue(client.city || client.hoCity)}
+          />
+          <DetalisFormatted
+            title="State"
+            detail={getClientDetailValue(client.state || client.hoState)}
+          />
+          <DetalisFormatted
+            title="Booking Type"
+            detail={getClientDetailValue(client.bookingType || "Direct")}
+          />
+          <DetalisFormatted
+            title="Revenue"
+            detail={getClientMoneyValue(revenue)}
+          />
+          <DetalisFormatted
+            title="Sourcing"
+            detail={getClientDetailValue(client.channel || client.sourcing)}
+          />
+          <DetalisFormatted
+            title="Current Status"
+            detail={getClientDetailValue(client.currentStatus || "In Progress")}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Company Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Building Name" detail={getClientDetailValue(buildingName)} />
-          <DetalisFormatted title="Unit No" detail={getClientDetailValue(unitNo)} />
-          <DetalisFormatted title="Security Deposit" detail={getClientMoneyValue(client.securityDeposit)} />
-          <DetalisFormatted title="Billing Frequency" detail={getClientDetailValue(client.billingFrequency)} />
-          <DetalisFormatted title="Open Desks" detail={getClientDetailValue(client.openDesks)} />
-          <DetalisFormatted title="Open Desk Rate" detail={getClientMoneyValue(client.openDeskRate)} />
-          <DetalisFormatted title="No. of Desks" detail={getClientDetailValue(totalDesks)} />
-          <DetalisFormatted title="Current Rate" detail={getClientMoneyValue(currentRate)} />
-          <DetalisFormatted title="Company Status" detail={getClientDetailValue(isActive)} />
+          <DetalisFormatted
+            title="Building Name"
+            detail={getClientDetailValue(buildingName)}
+          />
+          <DetalisFormatted
+            title="Unit No"
+            detail={getClientDetailValue(unitNo)}
+          />
+          <DetalisFormatted
+            title="Security Deposit"
+            detail={getClientMoneyValue(client.securityDeposit)}
+          />
+          <DetalisFormatted
+            title="Billing Frequency"
+            detail={getClientDetailValue(client.billingFrequency)}
+          />
+          <DetalisFormatted
+            title="Open Desks"
+            detail={getClientDetailValue(client.openDesks)}
+          />
+          <DetalisFormatted
+            title="Open Desk Rate"
+            detail={getClientMoneyValue(client.openDeskRate)}
+          />
+          <DetalisFormatted
+            title="No. of Desks"
+            detail={getClientDetailValue(totalDesks)}
+          />
+          <DetalisFormatted
+            title="Invoice Rate"
+            detail={getClientMoneyValue(currentRate)}
+          />
+          <DetalisFormatted
+            title="Company Status"
+            detail={getClientDetailValue(isActive)}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">Agreement Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Annual Increment" detail={`${Number(client.annualIncrement) || 0}%`} />
-          <DetalisFormatted title="Per Desk Meeting Credits" detail={getClientDetailValue(client.perDeskMeetingCredits)} />
-          <DetalisFormatted title="Total Meeting Credits" detail={getClientDetailValue(client.totalMeetingCredits)} />
-          <DetalisFormatted title="Start Date" detail={startDate ? humanDate(startDate) : "—"} />
-          <DetalisFormatted title="End Date" detail={endDate ? humanDate(endDate) : "—"} />
-          <DetalisFormatted title="Lock-in Period" detail={`${Number(client.lockInPeriodMonths || client.lockinPeriod) || 0} months`} />
-          <DetalisFormatted title="Rent Date" detail={client.rentDate ? humanDate(client.rentDate) : "—"} />
-          <DetalisFormatted title="Next Increment" detail={client.nextIncrementDate || client.nextIncrement ? humanDate(client.nextIncrementDate || client.nextIncrement) : "—"} />
-          <DetalisFormatted title="Total Term" detail={client.term || "0 Months"} />
-          <DetalisFormatted title="Agreement Expiry" detail={getClientDetailValue(client.expiry)} />
+          <DetalisFormatted
+            title="Annual Increment"
+            detail={`${Number(client.annualIncrement) || 0}%`}
+          />
+          <DetalisFormatted
+            title="Per Desk Meeting Credits"
+            detail={getClientDetailValue(client.perDeskMeetingCredits)}
+          />
+          <DetalisFormatted
+            title="Total Meeting Credits"
+            detail={getClientDetailValue(client.totalMeetingCredits)}
+          />
+          <DetalisFormatted
+            title="Start Date"
+            detail={startDate ? humanDate(startDate) : "—"}
+          />
+          <DetalisFormatted
+            title="End Date"
+            detail={endDate ? humanDate(endDate) : "—"}
+          />
+          <DetalisFormatted
+            title="Lock-in Period"
+            detail={`${Number(client.lockInPeriodMonths || client.lockinPeriod) || 0} months`}
+          />
+          <DetalisFormatted
+            title="Rent Date"
+            detail={client.rentDate ? humanDate(client.rentDate) : "—"}
+          />
+          <DetalisFormatted
+            title="Next Increment"
+            detail={
+              client.nextIncrementDate || client.nextIncrement
+                ? humanDate(client.nextIncrementDate || client.nextIncrement)
+                : "—"
+            }
+          />
+          <DetalisFormatted
+            title="Total Term"
+            detail={client.term || "0 Months"}
+          />
+          <DetalisFormatted
+            title="Agreement Expiry"
+            detail={getClientDetailValue(client.expiry)}
+          />
         </div>
       </section>
 
       <section className="space-y-2">
         <h3 className="text-lg font-pmedium">POC Details</h3>
         <div className="space-y-1">
-          <DetalisFormatted title="Local POC Name" detail={getClientDetailValue(client.localPoc?.name || client.localPocName)} />
-          <DetalisFormatted title="Local POC Email" detail={getClientDetailValue(client.localPoc?.email || client.localPocEmail)} />
-          <DetalisFormatted title="Local POC Phone" detail={getClientDetailValue(client.localPoc?.phone || client.localPocPhone)} />
-          <DetalisFormatted title="HO POC Name" detail={getClientDetailValue(client.hoPoc?.name || client.hOPocName)} />
-          <DetalisFormatted title="HO POC Email" detail={getClientDetailValue(client.hoPoc?.email || client.hOPocEmail)} />
-          <DetalisFormatted title="HO POC Phone" detail={getClientDetailValue(client.hoPoc?.phone || client.hOPocPhone)} />
+          <DetalisFormatted
+            title="Local POC Name"
+            detail={getClientDetailValue(
+              client.localPoc?.name || client.localPocName,
+            )}
+          />
+          <DetalisFormatted
+            title="Local POC Email"
+            detail={getClientDetailValue(
+              client.localPoc?.email || client.localPocEmail,
+            )}
+          />
+          <DetalisFormatted
+            title="Local POC Phone"
+            detail={getClientDetailValue(
+              client.localPoc?.phone || client.localPocPhone,
+            )}
+          />
+          <DetalisFormatted
+            title="HO POC Name"
+            detail={getClientDetailValue(
+              client.hoPoc?.name || client.hOPocName,
+            )}
+          />
+          <DetalisFormatted
+            title="HO POC Email"
+            detail={getClientDetailValue(
+              client.hoPoc?.email || client.hOPocEmail,
+            )}
+          />
+          <DetalisFormatted
+            title="HO POC Phone"
+            detail={getClientDetailValue(
+              client.hoPoc?.phone || client.hOPocPhone,
+            )}
+          />
         </div>
       </section>
     </div>
@@ -754,53 +857,53 @@ const VirtualOfficeRenewalTable = ({ clients, revenues = [] }) => {
   return (
     <>
       <WidgetSection
-      border
-      normalCase
-      borderColor="#1E3D73"
-      bodyBorderColor="#9FB2CF"
-      title={
-        <Link
-          to="/app/dashboard/sales-dashboard/virtual-office/pipeline-renewal"
-          className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]"
-        >
-          <BiznestTitle />
-          <span>
-            VIRTUAL OFFICE FY {renewalFiscalYear} - RENEWALS IN{" "}
-            {renewalStartMonth.format("MMMM").toUpperCase()} -{" "}
-            {renewalEndMonth.format("MMMM").toUpperCase()}
-          </span>
-        </Link>
-      }
-      headerRightContent={
-        <div className="flex flex-wrap items-center justify-end gap-3 text-sm font-pmedium uppercase">
-          <span className="rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-2 text-[#16784d]">
-            {renewalStartMonth.format("MMM").toUpperCase()}: {" "}
-            {inrFormat(previousMonthRenewalRevenue)}
-          </span>
-          <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-[#274784]">
-            {renewalEndMonth.format("MMM").toUpperCase()}: {" "}
-            {inrFormat(currentMonthRenewalRevenue)}
-          </span>
-        </div>
-      }
-    >
-      <div
-        className="text-[#1E3D73] [&_.ag-cell]:!text-[#1E3D73] [&_.ag-header-cell-text]:!text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73] [&_.ag-paging-panel]:!text-[#1E3D73] [&_.MuiChip-label]:!text-[#1E3D73] [&_.MuiInputBase-input]:!text-[#1E3D73] [&_.MuiInputLabel-root]:!text-[#1E3D73] [&_button]:!text-[#1E3D73]"
-        style={{
-          "--ag-foreground-color": "#1E3D73",
-          "--ag-header-foreground-color": "#1E3D73",
-          "--ag-icon-color": "#1E3D73",
-        }}
+        border
+        normalCase
+        borderColor="#1E3D73"
+        bodyBorderColor="#9FB2CF"
+        title={
+          <Link
+            to="/app/dashboard/sales-dashboard/virtual-office/pipeline-renewal"
+            className="inline-flex items-baseline gap-2 leading-none text-[#1E3D73]"
+          >
+            <BiznestTitle />
+            <span>
+              VIRTUAL OFFICE FY {renewalFiscalYear} - RENEWALS IN{" "}
+              {renewalStartMonth.format("MMMM").toUpperCase()} -{" "}
+              {renewalEndMonth.format("MMMM").toUpperCase()}
+            </span>
+          </Link>
+        }
+        headerRightContent={
+          <div className="flex flex-wrap items-center justify-end gap-3 text-sm font-pmedium uppercase">
+            <span className="rounded-lg border border-[#a9ddba] bg-[#d8f0df] px-3 py-2 text-[#16784d]">
+              {renewalStartMonth.format("MMM").toUpperCase()}:{" "}
+              {inrFormat(previousMonthRenewalRevenue)}
+            </span>
+            <span className="rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-2 text-[#274784]">
+              {renewalEndMonth.format("MMM").toUpperCase()}:{" "}
+              {inrFormat(currentMonthRenewalRevenue)}
+            </span>
+          </div>
+        }
       >
-        <AgTable
-          hideTitle
-          data={renewalRows}
-          columns={columns}
-          search
-          hideFilter
-          showDateControls={false}
-        />
-      </div>
+        <div
+          className="text-[#1E3D73] [&_.ag-cell]:!text-[#1E3D73] [&_.ag-header-cell-text]:!text-[#1E3D73] [&_.ag-icon]:!text-[#1E3D73] [&_.ag-paging-panel]:!text-[#1E3D73] [&_.MuiChip-label]:!text-[#1E3D73] [&_.MuiInputBase-input]:!text-[#1E3D73] [&_.MuiInputLabel-root]:!text-[#1E3D73] [&_button]:!text-[#1E3D73]"
+          style={{
+            "--ag-foreground-color": "#1E3D73",
+            "--ag-header-foreground-color": "#1E3D73",
+            "--ag-icon-color": "#1E3D73",
+          }}
+        >
+          <AgTable
+            hideTitle
+            data={renewalRows}
+            columns={columns}
+            search
+            hideFilter
+            showDateControls={false}
+          />
+        </div>
       </WidgetSection>
       <MuiModal
         open={Boolean(viewClient)}
@@ -840,10 +943,13 @@ const VirtualOfficeChannelCharts = ({ visibleCharts, clients = [] }) => {
     const sourcingCounts = new Map();
 
     clients.forEach((client) => {
-      const rawSourcing = String(client?.channel || client?.sourcing || "").trim();
+      const rawSourcing = String(
+        client?.channel || client?.sourcing || "",
+      ).trim();
       if (!rawSourcing) return;
 
-      const sourcing = rawSourcing.toLowerCase() === "bfc" ? "IPC" : rawSourcing;
+      const sourcing =
+        rawSourcing.toLowerCase() === "bfc" ? "IPC" : rawSourcing;
       const sourcingKey = sourcing.toLowerCase();
       const existing = sourcingCounts.get(sourcingKey);
 
@@ -862,7 +968,8 @@ const VirtualOfficeChannelCharts = ({ visibleCharts, clients = [] }) => {
 
   const directPaidData = useMemo(() => {
     const today = dayjs();
-    const fiscalStartYear = today.month() >= 3 ? today.year() : today.year() - 1;
+    const fiscalStartYear =
+      today.month() >= 3 ? today.year() : today.year() - 1;
     const aprilStart = dayjs(`${fiscalStartYear}-04-01`).startOf("day");
     const septemberEnd = dayjs(`${fiscalStartYear}-09-30`).endOf("day");
     const counts = { Direct: 0, Paid: 0 };
@@ -1026,16 +1133,14 @@ const VirtualOfficeDashboard = ({
           label: "Client Details",
           description: "View all virtual office customers",
           icon: <FiUsers />,
-          route:
-            "/app/dashboard/sales-dashboard/virtual-office/client-details",
+          route: "/app/dashboard/sales-dashboard/virtual-office/client-details",
         },
       ],
     },
     {
       title: "Mix Bag",
       icon: <MdShoppingBag />,
-      permission:
-        PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
+      permission: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_MIX_BAG_CARD.value,
       openRoute: "/app/dashboard/sales-dashboard/virtual-office/mix-bag",
       items: [],
     },
@@ -1095,8 +1200,7 @@ const VirtualOfficeDashboard = ({
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
-    refetchInterval: 30000,
-    refetchIntervalInBackground: true,
+    refetchInterval: 5 * 60 * 1000,
   });
 
   const summary = useMemo(() => {
@@ -1118,12 +1222,17 @@ const VirtualOfficeDashboard = ({
       );
     };
     const actualRevenueRows = currentYearRevenue.filter(isActualRevenue);
-    const actualIncome = actualRevenueRows
-      .reduce((total, row) => total + getReportingAmount(row), 0);
+    const actualIncome = actualRevenueRows.reduce(
+      (total, row) => total + getReportingAmount(row),
+      0,
+    );
     const fiscalYearStart = Number(fiscalYear.match(/\d{4}/)?.[0]);
     const fiscalMonths = Number.isFinite(fiscalYearStart)
       ? Array.from({ length: 12 }, (_, index) =>
-          dayjs().year(fiscalYearStart).month(3 + index).startOf("month"),
+          dayjs()
+            .year(fiscalYearStart)
+            .month(3 + index)
+            .startOf("month"),
         )
       : [];
     const latestActualMonthIndex = fiscalMonths.reduce(
@@ -1160,10 +1269,7 @@ const VirtualOfficeDashboard = ({
 
       return (
         revenueMonth.isValid() &&
-        !liveCurrentMonth.isBefore(
-          revenueMonth.add(2, "month"),
-          "month",
-        )
+        !liveCurrentMonth.isBefore(revenueMonth.add(2, "month"), "month")
       );
     }).length;
     const renewalEndMonth = liveCurrentMonth.startOf("month");
@@ -1214,14 +1320,12 @@ const VirtualOfficeDashboard = ({
     PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_PIPELINE_RENEWAL_TABLE.value,
   );
   const occupancyRoutes = {
-    india:
-      "/app/dashboard/sales-dashboard/virtual-office/india-wise-occupancy",
+    india: "/app/dashboard/sales-dashboard/virtual-office/india-wise-occupancy",
     sector:
       "/app/dashboard/sales-dashboard/virtual-office/sector-wise-occupancy",
   };
   const occupancyPermissions = {
-    india:
-      PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY.value,
+    india: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_INDIA_WISE_OCCUPANCY.value,
     sector:
       PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_SECTOR_WISE_OCCUPANCY.value,
   };
@@ -1233,10 +1337,8 @@ const VirtualOfficeDashboard = ({
     sector: "Sectorwise Bookings",
   };
   const channelPermissions = {
-    sourcing:
-      PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS.value,
-    directPaid:
-      PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID.value,
+    sourcing: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_SOURCING_CHANNELS.value,
+    directPaid: PERMISSIONS.SALES_VERTICAL_VIRTUAL_OFFICE_DIRECT_VS_PAID.value,
   };
   const visibleChannelCharts = ["sourcing", "directPaid"].filter((chart) =>
     hasPermission(channelPermissions[chart]),
@@ -1315,8 +1417,7 @@ const VirtualOfficeDashboard = ({
             </p>
             <h1 className="mt-6 max-w-full whitespace-nowrap font-serif text-3xl font-semibold leading-[0.9] text-[#1E3D73] drop-shadow-sm sm:mt-10 sm:text-5xl lg:origin-left lg:scale-x-90 lg:text-[38px] xl:text-[42px] min-[1700px]:text-[46px] min-[1900px]:scale-x-100 min-[1900px]:text-[50px]">
               <span ref={headingRef} className="inline-block whitespace-nowrap">
-                VIRTUAL OFFICE{" "}
-                <span className="text-[#E64B4B]">DASHBOARD</span>
+                VIRTUAL OFFICE <span className="text-[#E64B4B]">DASHBOARD</span>
               </span>
             </h1>
             <p className="mt-5 max-w-full font-pmedium text-xl leading-[0.94] text-[#1E3D73] sm:mt-8 sm:text-3xl md:whitespace-nowrap lg:text-[35px] min-[1700px]:text-[39px] min-[1900px]:text-[46px]">

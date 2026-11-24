@@ -456,6 +456,7 @@ const AttendanceLogsTimeline = () => {
     <div className="p-4">
       <div className="rounded-xl border border-borderGray bg-white p-5 shadow-sm">
         <AgTable
+          loading={isLoading}
           data={isLoading ? [] : tableData}
           columns={columns}
           search
@@ -537,13 +538,6 @@ const AttendanceLogsTimeline = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ) : null
-          }
-          searchBottomContent={
-            isLoading ? (
-              <div className="py-3 text-center text-sm text-gray-500">
-                Loading attendance logs...
               </div>
             ) : null
           }

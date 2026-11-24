@@ -78,6 +78,7 @@ const HrCommonPayslips = () => {
     <div className="flex flex-col gap-8">
       <PageFrame>
         <YearWiseTable
+          loading={isLoading}
           key={tableData.length}
           search={true}
           tableHeight={300}

@@ -646,6 +646,7 @@ const VendorOnboard = () => {
         <div>
           <div>
             <AgTable
+              loading={isVendorFetchingPending}
               search={true}
               searchColumn={"Vendor"}
               tableTitle={"List of Vendors"}

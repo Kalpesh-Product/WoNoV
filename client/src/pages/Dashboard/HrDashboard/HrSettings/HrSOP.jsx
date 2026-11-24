@@ -59,7 +59,7 @@ const HrSOP = () => {
     defaultValues: { sopName: "", status: "true" },
   });
 
-  const { data: sops = [] } = useQuery({
+  const { data: sops = [], isLoading: isSopsLoading } = useQuery({
     queryKey: ["sops", Boolean(isTechDepartment)],
     queryFn: async () => {
       const response = await axios.get(
@@ -405,6 +405,7 @@ const HrSOP = () => {
   return (
     <PageFrame>
       <AgTable
+        loading={isSopsLoading}
         key={sops.length}
         search
         searchColumn="SOPs"

@@ -2,7 +2,8 @@ import React, { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import WidgetSection from "../../../components/WidgetSection";
 import Card from "../../../components/Card";
 import { LuHardDriveUpload } from "react-icons/lu";
-import { Skeleton, Box, CircularProgress } from "@mui/material";
+import { Skeleton, Box } from "@mui/material";
+import HrLoadingSkeleton from "./HrLoadingSkeleton";
 import { CgWebsite } from "react-icons/cg";
 import { SiCashapp } from "react-icons/si";
 import { SiGoogleadsense } from "react-icons/si";
@@ -36,62 +37,62 @@ import usePageDepartment from "../../../hooks/usePageDepartment";
 import { PERMISSIONS } from "./../../../constants/permissions";
 
 const HrDashboard = () => {
-const { setIsSidebarOpen } = useSidebar();
-const dispatch = useDispatch();
+  const { setIsSidebarOpen } = useSidebar();
+  const dispatch = useDispatch();
 
-const getFiscalYearStart = (date = dayjs()) => {
-  const parsedDate = dayjs(date);
-  return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
-};
+  const getFiscalYearStart = (date = dayjs()) => {
+    const parsedDate = dayjs(date);
+    return parsedDate.month() >= 3 ? parsedDate.year() : parsedDate.year() - 1;
+  };
 
-const formatFiscalYear = (startYear) =>
-  `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
+  const formatFiscalYear = (startYear) =>
+    `FY ${startYear}-${String(startYear + 1).slice(-2)}`;
 
-const getFiscalMonthIndex = (date) => {
-  const parsedDate = dayjs(date);
-  const month = parsedDate.month();
+  const getFiscalMonthIndex = (date) => {
+    const parsedDate = dayjs(date);
+    const month = parsedDate.month();
 
-  return month >= 3 ? month - 3 : month + 9;
-};
+    return month >= 3 ? month - 3 : month + 9;
+  };
 
-const getAmount = (value) => {
-  if (typeof value === "number") return value;
+  const getAmount = (value) => {
+    if (typeof value === "number") return value;
 
-  if (typeof value === "string") {
-    const parsed = Number(value.replace(/,/g, ""));
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
+    if (typeof value === "string") {
+      const parsed = Number(value.replace(/,/g, ""));
+      return Number.isNaN(parsed) ? 0 : parsed;
+    }
 
-  return 0;
-};
+    return 0;
+  };
 
-const fiscalMonths = [
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-  "Jan",
-  "Feb",
-  "Mar",
-];
+  const fiscalMonths = [
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+  ];
 
-const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
+  const currentFiscalYear = formatFiscalYear(getFiscalYearStart());
 
-const [selectedFiscalYear, setSelectedFiscalYear] =
-  useState(currentFiscalYear);
+  const [selectedFiscalYear, setSelectedFiscalYear] =
+    useState(currentFiscalYear);
 
-const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
-  useState(currentFiscalYear);
-const [hiddenHrExpenseSeries, setHiddenHrExpenseSeries] = useState({
-  actual: false,
-  projected: false,
-});
-const department = usePageDepartment();
+  const [selectedHrFiscalYear, setSelectedHrFiscalYear] =
+    useState(currentFiscalYear);
+  const [hiddenHrExpenseSeries, setHiddenHrExpenseSeries] = useState({
+    actual: false,
+    projected: false,
+  });
+  const department = usePageDepartment();
 
   const [budgetData, setBudgetData] = useState({});
   const [totalSalary, setTotalSalary] = useState({});
@@ -146,7 +147,7 @@ const department = usePageDepartment();
   ];
 
   const allowedCards = cardsConfig.filter(
-    (card) => !card.permission || userPermissions.includes(card.permission)
+    (card) => !card.permission || userPermissions.includes(card.permission),
   );
   //------------------------PAGE ACCESS END-------------------//
 
@@ -155,7 +156,7 @@ const department = usePageDepartment();
     queryKey: ["hr-selectedDepartments"],
     queryFn: async () => {
       const response = await axios.get(
-        "api/company/get-company-data?field=selectedDepartments",
+        "/api/company/get-company-data?field=selectedDepartments",
       );
       return Array.isArray(response.data?.selectedDepartments)
         ? response.data.selectedDepartments
@@ -166,7 +167,9 @@ const department = usePageDepartment();
   const { data: dashboardTasks = [] } = useQuery({
     queryKey: ["hr-dashboard-tasks", department?._id],
     queryFn: async () => {
-      const response = await axios.get(`/api/tasks/get-tasks?dept=${department?._id}`);
+      const response = await axios.get(
+        `/api/tasks/get-tasks?dept=${department?._id}`,
+      );
       return Array.isArray(response.data) ? response.data : [];
     },
     enabled: Boolean(department?._id),
@@ -193,7 +196,7 @@ const department = usePageDepartment();
   });
 
   const navigate = useNavigate();
-   const managerByDepartmentName = useMemo(() => {
+  const managerByDepartmentName = useMemo(() => {
     const map = new Map();
 
     selectedDepartments.forEach((item) => {
@@ -251,7 +254,7 @@ const department = usePageDepartment();
       const managerName =
         managerByDepartmentName.get(departmentName.toLowerCase()) ||
         "Unassigned";
-       if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
+      if (!acc[managerName]) acc[managerName] = { name: managerName, tasks: 0 };
       acc[managerName].tasks += 1;
       return acc;
     }, {});
@@ -321,14 +324,7 @@ const department = usePageDepartment();
       width: 2,
       colors: ["#ffffff"],
     },
-    colors: [
-      "#274C77",
-      "#6096BA",
-      "#A3CEF1",
-      "#8B5E3C",
-      "#5B8E7D",
-      "#D08C60",
-    ],
+    colors: ["#274C77", "#6096BA", "#A3CEF1", "#8B5E3C", "#5B8E7D", "#D08C60"],
     tooltip: {
       fillSeriesColor: false,
       custom: ({ series, seriesIndex, w }) => {
@@ -358,14 +354,23 @@ const department = usePageDepartment();
     },
   };
 
-  const hrPendingStatuses = new Set(["open", "pending", "in progress", "escalated"]);
+  const hrPendingStatuses = new Set([
+    "open",
+    "pending",
+    "in progress",
+    "escalated",
+  ]);
 
-  const hrPendingTicketsCount = (Array.isArray(hrTickets) ? hrTickets : []).filter(
-    (ticket) => hrPendingStatuses.has(String(ticket?.status || "").toLowerCase())
+  const hrPendingTicketsCount = (
+    Array.isArray(hrTickets) ? hrTickets : []
+  ).filter((ticket) =>
+    hrPendingStatuses.has(String(ticket?.status || "").toLowerCase()),
   ).length;
 
-  const hrCompletedTicketsCount = (Array.isArray(hrTickets) ? hrTickets : []).filter(
-    (ticket) => String(ticket?.status || "").toLowerCase() === "closed"
+  const hrCompletedTicketsCount = (
+    Array.isArray(hrTickets) ? hrTickets : []
+  ).filter(
+    (ticket) => String(ticket?.status || "").toLowerCase() === "closed",
   ).length;
 
   const hrDueTicketsData = [
@@ -441,7 +446,9 @@ const department = usePageDepartment();
           ? response.data.filter((employee) => employee.isActive === false)
           : [];
       } catch (error) {
-        throw new Error(error.response?.data?.message || "Failed to fetch past employees");
+        throw new Error(
+          error.response?.data?.message || "Failed to fetch past employees",
+        );
       }
     },
     keepPreviousData: true,
@@ -454,7 +461,7 @@ const department = usePageDepartment();
       try {
         const response = await axios.get(
           `/api/budget/company-budget?departmentId=6798bab9e469e809084e249e
-            `
+            `,
         );
         return response.data?.allBudgets;
       } catch (error) {
@@ -466,7 +473,7 @@ const department = usePageDepartment();
   const hrBarData = transformBudgetData(!isHrFinanceLoading ? hrFinance : []);
   const totalExpense = hrBarData?.projectedBudget?.reduce(
     (sum, val) => sum + (val || 0),
-    0
+    0,
   );
 
   //--------------------HR BUDGET---------------------------//
@@ -477,309 +484,275 @@ const department = usePageDepartment();
   //-------------------HR Expense graph start--------------------//
 
   const hrExpenseByFiscalYear = useMemo(() => {
-  const fyData = {};
+    const fyData = {};
 
-  (hrFinance || []).forEach((item) => {
-    if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
-      return;
-    }
+    (hrFinance || []).forEach((item) => {
+      if (!item?.dueDate || !dayjs(item.dueDate).isValid()) {
+        return;
+      }
 
-    const fiscalYearStart = getFiscalYearStart(item.dueDate);
-    const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
-    const monthIndex = getFiscalMonthIndex(item.dueDate);
+      const fiscalYearStart = getFiscalYearStart(item.dueDate);
+      const fiscalYearLabel = formatFiscalYear(fiscalYearStart);
+      const monthIndex = getFiscalMonthIndex(item.dueDate);
 
-    if (!fyData[fiscalYearLabel]) {
-      fyData[fiscalYearLabel] = {
+      if (!fyData[fiscalYearLabel]) {
+        fyData[fiscalYearLabel] = {
+          actual: Array(12).fill(0),
+          projected: Array(12).fill(0),
+        };
+      }
+
+      const actualAmount = getAmount(item?.actualAmount);
+      const projectedAmount = getAmount(item?.projectedAmount);
+
+      fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
+      fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
+    });
+
+    if (!fyData[currentFiscalYear]) {
+      fyData[currentFiscalYear] = {
         actual: Array(12).fill(0),
         projected: Array(12).fill(0),
       };
     }
 
-    const actualAmount = getAmount(item?.actualAmount);
-    const projectedAmount = getAmount(item?.projectedAmount);
+    return fyData;
+  }, [hrFinance, currentFiscalYear]);
 
-    fyData[fiscalYearLabel].actual[monthIndex] += actualAmount;
-    fyData[fiscalYearLabel].projected[monthIndex] += projectedAmount;
-  });
+  const expenseRawSeries = useMemo(() => {
+    return Object.entries(hrExpenseByFiscalYear)
+      .sort(([fyA], [fyB]) => {
+        const startA = Number(fyA.slice(3, 7));
+        const startB = Number(fyB.slice(3, 7));
 
-  if (!fyData[currentFiscalYear]) {
-    fyData[currentFiscalYear] = {
-      actual: Array(12).fill(0),
-      projected: Array(12).fill(0),
-    };
-  }
+        return startA - startB;
+      })
+      .flatMap(([fiscalYear, data]) => {
+        const actualForGraph = data.actual.map((actualAmount) =>
+          hiddenHrExpenseSeries.actual ? 0 : actualAmount,
+        );
 
-  return fyData;
-}, [hrFinance, currentFiscalYear]);
+        const projectedForGraph = data.projected.map(
+          (projectedAmount, monthIndex) => {
+            if (hiddenHrExpenseSeries.projected) {
+              return 0;
+            }
 
-const expenseRawSeries = useMemo(() => {
-  return Object.entries(hrExpenseByFiscalYear)
-    .sort(([fyA], [fyB]) => {
-      const startA = Number(fyA.slice(3, 7));
-      const startB = Number(fyB.slice(3, 7));
+            if (hiddenHrExpenseSeries.actual) {
+              return projectedAmount;
+            }
 
-      return startA - startB;
-    })
-    .flatMap(([fiscalYear, data]) => {
-     
-      const actualForGraph = data.actual.map((actualAmount) =>
-        hiddenHrExpenseSeries.actual ? 0 : actualAmount,
-      );
+            const actualAmount = data.actual[monthIndex] || 0;
 
-      const projectedForGraph = data.projected.map(
-        (projectedAmount, monthIndex) => {
-          
-          if (hiddenHrExpenseSeries.projected) {
-            return 0;
-          }
+            return actualAmount > 0 ? 0 : projectedAmount;
+          },
+        );
 
-          
-          if (hiddenHrExpenseSeries.actual) {
-            return projectedAmount;
-          }
+        return [
+          {
+            name: "Actual Amount",
+            group: fiscalYear,
+            data: actualForGraph,
+          },
+          {
+            name: "Projected Amount",
+            group: fiscalYear,
+            data: projectedForGraph,
+          },
+        ];
+      });
+  }, [
+    hrExpenseByFiscalYear,
+    hiddenHrExpenseSeries.actual,
+    hiddenHrExpenseSeries.projected,
+  ]);
 
-         
-          const actualAmount = data.actual[monthIndex] || 0;
+  // const roundedMax = useMemo(() => {
+  //   const fiscalYears = [
+  //     ...new Set(expenseRawSeries.map((series) => series.group)),
+  //   ];
 
-          return actualAmount > 0 ? 0 : projectedAmount;
-        },
-      );
+  //   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
+  //     const actualSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Actual Amount"
+  //     );
 
-      return [
-        {
-          name: "Actual Amount",
-          group: fiscalYear,
-          data: actualForGraph,
-        },
-        {
-          name: "Projected Amount",
-          group: fiscalYear,
-          data: projectedForGraph,
-        },
-      ];
-    });
-}, [
-  hrExpenseByFiscalYear,
-  hiddenHrExpenseSeries.actual,
-  hiddenHrExpenseSeries.projected,
-]);
+  //     const projectedSeries = expenseRawSeries.find(
+  //       (series) =>
+  //         series.group === fiscalYear && series.name === "Projected Amount"
+  //     );
 
-// const roundedMax = useMemo(() => {
-//   const fiscalYears = [
-//     ...new Set(expenseRawSeries.map((series) => series.group)),
-//   ];
+  //     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
+  //       const actual = actualSeries?.data?.[index] || 0;
+  //       const projectedBalance = projectedSeries?.data?.[index] || 0;
 
-//   const maxValue = fiscalYears.reduce((max, fiscalYear) => {
-//     const actualSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Actual Amount"
-//     );
+  //       return actual + projectedBalance;
+  //     });
 
-//     const projectedSeries = expenseRawSeries.find(
-//       (series) =>
-//         series.group === fiscalYear && series.name === "Projected Amount"
-//     );
+  //     return Math.max(max, ...monthlyMax);
+  //   }, 0);
 
-//     const monthlyMax = Array.from({ length: 12 }, (_, index) => {
-//       const actual = actualSeries?.data?.[index] || 0;
-//       const projectedBalance = projectedSeries?.data?.[index] || 0;
+  //   return Math.ceil((maxValue + 100000) / 100000) * 100000;
+  // }, [expenseRawSeries]);
+  const { roundedMax, tickAmount } = useMemo(() => {
+    const selectedYearSeries = expenseRawSeries.filter(
+      (series) => series.group === selectedHrFiscalYear,
+    );
 
-//       return actual + projectedBalance;
-//     });
-
-//     return Math.max(max, ...monthlyMax);
-//   }, 0);
-
-//   return Math.ceil((maxValue + 100000) / 100000) * 100000;
-// }, [expenseRawSeries]);
-const { roundedMax, tickAmount } = useMemo(() => {
- 
-  const selectedYearSeries = expenseRawSeries.filter(
-    (series) => series.group === selectedHrFiscalYear,
-  );
-
- 
-  const monthlyTotals = Array.from(
-    { length: 12 },
-    (_, monthIndex) =>
+    const monthlyTotals = Array.from({ length: 12 }, (_, monthIndex) =>
       selectedYearSeries.reduce(
-        (total, series) =>
-          total + Number(series?.data?.[monthIndex] || 0),
+        (total, series) => total + Number(series?.data?.[monthIndex] || 0),
         0,
       ),
-  );
+    );
 
-  const maxExpenseValue = Math.max(...monthlyTotals, 0);
+    const maxExpenseValue = Math.max(...monthlyTotals, 0);
 
-  if (maxExpenseValue <= 0) {
+    if (maxExpenseValue <= 0) {
+      return {
+        roundedMax: 10000,
+        tickAmount: 5,
+      };
+    }
+
+    const bufferedMax = maxExpenseValue * 1.1;
+    const roughStep = bufferedMax / 6;
+
+    const magnitude = 10 ** Math.floor(Math.log10(roughStep));
+
+    const normalizedStep = roughStep / magnitude;
+
+    let step = magnitude;
+
+    if (normalizedStep <= 1) {
+      step = magnitude;
+    } else if (normalizedStep <= 2) {
+      step = 2 * magnitude;
+    } else if (normalizedStep <= 5) {
+      step = 5 * magnitude;
+    } else {
+      step = 10 * magnitude;
+    }
+
+    const safeRoundedMax = Math.ceil(bufferedMax / step) * step;
+
     return {
-      roundedMax: 10000,
-      tickAmount: 5,
+      roundedMax: safeRoundedMax,
+      tickAmount: Math.max(Math.round(safeRoundedMax / step), 1),
     };
-  }
-
- 
-  const bufferedMax = maxExpenseValue * 1.1;
-  const roughStep = bufferedMax / 6;
-
-  const magnitude =
-    10 ** Math.floor(Math.log10(roughStep));
-
-  const normalizedStep = roughStep / magnitude;
-
-  let step = magnitude;
-
-  if (normalizedStep <= 1) {
-    step = magnitude;
-  } else if (normalizedStep <= 2) {
-    step = 2 * magnitude;
-  } else if (normalizedStep <= 5) {
-    step = 5 * magnitude;
-  } else {
-    step = 10 * magnitude;
-  }
-
-  const safeRoundedMax =
-    Math.ceil(bufferedMax / step) * step;
-
-  return {
-    roundedMax: safeRoundedMax,
-    tickAmount: Math.max(
-      Math.round(safeRoundedMax / step),
-      1,
-    ),
-  };
-}, [expenseRawSeries, selectedHrFiscalYear]);
+  }, [expenseRawSeries, selectedHrFiscalYear]);
 
   const selectedHrActualAmounts = useMemo(() => {
-  return (
-    hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.actual ||
-    Array(12).fill(0)
-  );
-}, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
-
-// const selectedHrProjectedSeries = expenseRawSeries.find(
-//   (item) =>
-//     item.group === selectedHrFiscalYear && item.name === "Projected Amount"
-// );
-const selectedHrProjectedAmounts = useMemo(() => {
-  return (
-    hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.projected ||
-    Array(12).fill(0)
-  );
-}, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
-
-const totalUtilised = useMemo(() => {
-  return selectedHrActualAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
-}, [selectedHrActualAmounts]);
-
-const currentFiscalMonthIndexForCard =
-  dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
-const previousFiscalMonthIndexForCard =
-  currentFiscalMonthIndexForCard > 0 ? currentFiscalMonthIndexForCard - 1 : 11;
-
-const selectedHrFiscalStartYear = Number(
-  String(selectedHrFiscalYear || "").match(/\d{4}/)?.[0],
-);
-
-const previousExpenseMonthLabel = Number.isFinite(selectedHrFiscalStartYear)
-  ? dayjs(
-      new Date(
-        previousFiscalMonthIndexForCard <= 8
-          ? selectedHrFiscalStartYear
-          : selectedHrFiscalStartYear + 1,
-        (previousFiscalMonthIndexForCard + 3) % 12,
-        1,
-      ),
-    ).format("MMMM-YY")
-  : "";
-
-const previousMonthActualExpense = Math.round(
-  selectedHrActualAmounts?.[previousFiscalMonthIndexForCard] || 0,
-);
-
-// const previousMonthProjectedExpense = Math.round(
-//   selectedHrProjectedSeries?.data?.[previousFiscalMonthIndexForCard] || 0
-// );
-const previousMonthProjectedExpense = Math.round(
-  selectedHrProjectedAmounts?.[previousFiscalMonthIndexForCard] || 0
-);
-
-const averageActualAmount = useMemo(() => {
-  if (!selectedHrActualAmounts?.length) {
-    return 0;
-  }
-
-  const totalActual = selectedHrActualAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
-
-  return totalActual / selectedHrActualAmounts.length;
-}, [selectedHrActualAmounts]);
-
-// const averageProjectedAmount = useMemo(() => {
-//   if (!selectedHrProjectedSeries?.data?.length) return 0;
-
-//   const totalProjected = selectedHrProjectedSeries.data.reduce(
-//     (sum, value) => sum + (Number(value) || 0),
-//     0
-//   );
-
-//   return totalProjected / selectedHrProjectedSeries.data.length;
-// }, [selectedHrProjectedSeries]);
-const averageProjectedAmount = useMemo(() => {
-  if (!selectedHrProjectedAmounts?.length) {
-    return 0;
-  }
-
-  const totalProjected = selectedHrProjectedAmounts.reduce(
-    (sum, value) => sum + (Number(value) || 0),
-    0,
-  );
-
-  return totalProjected / selectedHrProjectedAmounts.length;
-}, [selectedHrProjectedAmounts]);
-
-const activeHeadCount = usersQuery.isLoading
-  ? 0
-  : Array.isArray(usersQuery.data)
-    ? usersQuery.data.length
-    : 0;
-
-const previousMonthExitLabel = dayjs().subtract(1, "month").format("MMMM-YY");
-const previousMonthStart = dayjs().subtract(1, "month").startOf("month");
-const previousMonthEnd = dayjs().subtract(1, "month").endOf("month");
-
-const previousMonthExitCount = useMemo(() => {
-  const pastEmployees = Array.isArray(pastEmployeesQuery.data)
-    ? pastEmployeesQuery.data
-    : [];
-
-  return pastEmployees.filter((employee) => {
-    const exitDate = employee?.endDate || employee?.updatedAt;
-    if (!exitDate) return false;
-
-    const parsedExitDate = dayjs(exitDate);
-    if (!parsedExitDate.isValid()) return false;
-
     return (
-      parsedExitDate.isSameOrAfter(previousMonthStart, "day") &&
-      parsedExitDate.isSameOrBefore(previousMonthEnd, "day")
+      hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.actual || Array(12).fill(0)
     );
-  }).length;
-}, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
+  }, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
 
-const previousMonthExitEmployeeIds = useMemo(() => {
-  const pastEmployees = Array.isArray(pastEmployeesQuery.data)
-    ? pastEmployeesQuery.data
-    : [];
+  // const selectedHrProjectedSeries = expenseRawSeries.find(
+  //   (item) =>
+  //     item.group === selectedHrFiscalYear && item.name === "Projected Amount"
+  // );
+  const selectedHrProjectedAmounts = useMemo(() => {
+    return (
+      hrExpenseByFiscalYear?.[selectedHrFiscalYear]?.projected ||
+      Array(12).fill(0)
+    );
+  }, [hrExpenseByFiscalYear, selectedHrFiscalYear]);
 
-  return pastEmployees
-    .filter((employee) => {
+  const totalUtilised = useMemo(() => {
+    return selectedHrActualAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
+  }, [selectedHrActualAmounts]);
+
+  const currentFiscalMonthIndexForCard =
+    dayjs().month() >= 3 ? dayjs().month() - 3 : dayjs().month() + 9;
+  const previousFiscalMonthIndexForCard =
+    currentFiscalMonthIndexForCard > 0
+      ? currentFiscalMonthIndexForCard - 1
+      : 11;
+
+  const selectedHrFiscalStartYear = Number(
+    String(selectedHrFiscalYear || "").match(/\d{4}/)?.[0],
+  );
+
+  const previousExpenseMonthLabel = Number.isFinite(selectedHrFiscalStartYear)
+    ? dayjs(
+        new Date(
+          previousFiscalMonthIndexForCard <= 8
+            ? selectedHrFiscalStartYear
+            : selectedHrFiscalStartYear + 1,
+          (previousFiscalMonthIndexForCard + 3) % 12,
+          1,
+        ),
+      ).format("MMMM-YY")
+    : "";
+
+  const previousMonthActualExpense = Math.round(
+    selectedHrActualAmounts?.[previousFiscalMonthIndexForCard] || 0,
+  );
+
+  // const previousMonthProjectedExpense = Math.round(
+  //   selectedHrProjectedSeries?.data?.[previousFiscalMonthIndexForCard] || 0
+  // );
+  const previousMonthProjectedExpense = Math.round(
+    selectedHrProjectedAmounts?.[previousFiscalMonthIndexForCard] || 0,
+  );
+
+  const averageActualAmount = useMemo(() => {
+    if (!selectedHrActualAmounts?.length) {
+      return 0;
+    }
+
+    const totalActual = selectedHrActualAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
+
+    return totalActual / selectedHrActualAmounts.length;
+  }, [selectedHrActualAmounts]);
+
+  // const averageProjectedAmount = useMemo(() => {
+  //   if (!selectedHrProjectedSeries?.data?.length) return 0;
+
+  //   const totalProjected = selectedHrProjectedSeries.data.reduce(
+  //     (sum, value) => sum + (Number(value) || 0),
+  //     0
+  //   );
+
+  //   return totalProjected / selectedHrProjectedSeries.data.length;
+  // }, [selectedHrProjectedSeries]);
+  const averageProjectedAmount = useMemo(() => {
+    if (!selectedHrProjectedAmounts?.length) {
+      return 0;
+    }
+
+    const totalProjected = selectedHrProjectedAmounts.reduce(
+      (sum, value) => sum + (Number(value) || 0),
+      0,
+    );
+
+    return totalProjected / selectedHrProjectedAmounts.length;
+  }, [selectedHrProjectedAmounts]);
+
+  const activeHeadCount = usersQuery.isLoading
+    ? 0
+    : Array.isArray(usersQuery.data)
+      ? usersQuery.data.length
+      : 0;
+
+  const previousMonthExitLabel = dayjs().subtract(1, "month").format("MMMM-YY");
+  const previousMonthStart = dayjs().subtract(1, "month").startOf("month");
+  const previousMonthEnd = dayjs().subtract(1, "month").endOf("month");
+
+  const previousMonthExitCount = useMemo(() => {
+    const pastEmployees = Array.isArray(pastEmployeesQuery.data)
+      ? pastEmployeesQuery.data
+      : [];
+
+    return pastEmployees.filter((employee) => {
       const exitDate = employee?.endDate || employee?.updatedAt;
       if (!exitDate) return false;
 
@@ -790,232 +763,234 @@ const previousMonthExitEmployeeIds = useMemo(() => {
         parsedExitDate.isSameOrAfter(previousMonthStart, "day") &&
         parsedExitDate.isSameOrBefore(previousMonthEnd, "day")
       );
-    })
-    .map((employee) => employee?._id || employee?.empId)
-    .filter(Boolean);
-}, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
+    }).length;
+  }, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
 
- const expenseOptions = {
-  chart: {
-    type: "bar",
-    animations: { enabled: false },
-    toolbar: { show: false },
-    stacked: true,
-    fontFamily: "Poppins-Regular, Arial, sans-serif",
-   events: {
-  legendClick: (_chartContext, seriesIndex) => {
-    setHiddenHrExpenseSeries((currentState) => {
-      // Series index 0 = Actual Amount
-      if (seriesIndex === 0) {
-        return {
-          ...currentState,
-          actual: !currentState.actual,
-        };
-      }
+  const previousMonthExitEmployeeIds = useMemo(() => {
+    const pastEmployees = Array.isArray(pastEmployeesQuery.data)
+      ? pastEmployeesQuery.data
+      : [];
 
-      // Series index 1 = Projected Amount
-      if (seriesIndex === 1) {
-        return {
-          ...currentState,
-          projected: !currentState.projected,
-        };
-      }
+    return pastEmployees
+      .filter((employee) => {
+        const exitDate = employee?.endDate || employee?.updatedAt;
+        if (!exitDate) return false;
 
-      return currentState;
-    });
-  },
+        const parsedExitDate = dayjs(exitDate);
+        if (!parsedExitDate.isValid()) return false;
 
- 
-  dataPointSelection: () => {
-    navigate("finance/budget");
-  },
-},
-  },
-  colors: ["#54C4A7", "#c4c4c4"],
-  plotOptions: {
-    bar: {
-      horizontal: false,
-      columnWidth: "40%",
-      borderRadius: 5,
-      borderRadiusApplication: "end",
-      dataLabels: {
-        position: "top",
-        total: {
-          enabled: true,
-          // formatter: (_, config) => {
-          //   const isCurrentFiscalYearSelected =
-          //     selectedHrFiscalYear === currentFiscalYear;
-          //   const isCurrentFiscalMonth =
-          //     config?.dataPointIndex === currentFiscalMonthIndexForCard;
+        return (
+          parsedExitDate.isSameOrAfter(previousMonthStart, "day") &&
+          parsedExitDate.isSameOrBefore(previousMonthEnd, "day")
+        );
+      })
+      .map((employee) => employee?._id || employee?.empId)
+      .filter(Boolean);
+  }, [pastEmployeesQuery.data, previousMonthEnd, previousMonthStart]);
 
-          //   if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
-          //     return "";
-          //   }
+  const expenseOptions = {
+    chart: {
+      type: "bar",
+      animations: { enabled: false },
+      toolbar: { show: false },
+      stacked: true,
+      fontFamily: "Poppins-Regular, Arial, sans-serif",
+      events: {
+        legendClick: (_chartContext, seriesIndex) => {
+          setHiddenHrExpenseSeries((currentState) => {
+            // Series index 0 = Actual Amount
+            if (seriesIndex === 0) {
+              return {
+                ...currentState,
+                actual: !currentState.actual,
+              };
+            }
 
-          //   const total =
-          //     config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
-          //     0;
+            // Series index 1 = Projected Amount
+            if (seriesIndex === 1) {
+              return {
+                ...currentState,
+                projected: !currentState.projected,
+              };
+            }
 
-          //   return total ? Math.round(Number(total)).toLocaleString("en-IN") : "";
-          // },
-          formatter: (_, config) => {
-  const total =
-    config?.w?.globals?.stackedSeriesTotals?.[
-      config?.dataPointIndex
-    ] || 0;
+            return currentState;
+          });
+        },
 
-  if (Number(total) <= 0) {
-    return "";
-  }
-
-  return Math.round(
-    Number(total),
-  ).toLocaleString("en-IN");
-},
-          style: {
-            fontSize: "12px",
-            fontWeight: 600,
-            color: "#000",
-          },
-          offsetY: -8,
+        dataPointSelection: () => {
+          navigate("finance/budget");
         },
       },
     },
-  },
-  dataLabels: {
-    enabled: false,
-  },
- xaxis: {
-  categories: fiscalMonths,
-  title: {
-    text: "  ",
-  },
-  crosshairs: {
-    show: false,
+    colors: ["#54C4A7", "#c4c4c4"],
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: "40%",
+        borderRadius: 5,
+        borderRadiusApplication: "end",
+        dataLabels: {
+          position: "top",
+          total: {
+            enabled: true,
+            // formatter: (_, config) => {
+            //   const isCurrentFiscalYearSelected =
+            //     selectedHrFiscalYear === currentFiscalYear;
+            //   const isCurrentFiscalMonth =
+            //     config?.dataPointIndex === currentFiscalMonthIndexForCard;
+
+            //   if (isCurrentFiscalYearSelected && isCurrentFiscalMonth) {
+            //     return "";
+            //   }
+
+            //   const total =
+            //     config?.w?.globals?.stackedSeriesTotals?.[config?.dataPointIndex] ||
+            //     0;
+
+            //   return total ? Math.round(Number(total)).toLocaleString("en-IN") : "";
+            // },
+            formatter: (_, config) => {
+              const total =
+                config?.w?.globals?.stackedSeriesTotals?.[
+                  config?.dataPointIndex
+                ] || 0;
+
+              if (Number(total) <= 0) {
+                return "";
+              }
+
+              return Math.round(Number(total)).toLocaleString("en-IN");
+            },
+            style: {
+              fontSize: "12px",
+              fontWeight: 600,
+              color: "#000",
+            },
+            offsetY: -8,
+          },
+        },
+      },
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    xaxis: {
+      categories: fiscalMonths,
+      title: {
+        text: "  ",
+      },
+      crosshairs: {
+        show: false,
+        fill: {
+          opacity: 0,
+        },
+        stroke: {
+          opacity: 0,
+        },
+      },
+    },
+    // yaxis: {
+    //   min: 0,
+    //   max: roundedMax,
+    //   tickAmount: 4,
+    //   title: { text: "Amount In Lakhs (INR)" },
+    //   labels: {
+    //     formatter: (val) => `${Math.round(val / 100000)}`,
+    //   },
+    // },
+    yaxis: {
+      min: 0,
+      max: roundedMax,
+      tickAmount,
+      forceNiceScale: false,
+
+      title: {
+        text: "Amount In Lakhs (INR)",
+      },
+
+      labels: {
+        minWidth: 25,
+        maxWidth: 35,
+
+        formatter: (value) => {
+          const axisValue = Number(value || 0) / 10000;
+
+          if (Number.isInteger(axisValue)) {
+            return String(axisValue);
+          }
+
+          return Number(axisValue.toFixed(2)).toString();
+        },
+
+        style: {
+          fontFamily: "Poppins-Regular, Arial, sans-serif",
+          fontSize: "11px",
+        },
+      },
+    },
     fill: {
-      opacity: 0,
+      opacity: 1,
     },
-    stroke: {
-      opacity: 0,
-    },
-  },
-},
-  // yaxis: {
-  //   min: 0,
-  //   max: roundedMax,
-  //   tickAmount: 4,
-  //   title: { text: "Amount In Lakhs (INR)" },
-  //   labels: {
-  //     formatter: (val) => `${Math.round(val / 100000)}`,
-  //   },
-  // },
-  yaxis: {
-  min: 0,
-  max: roundedMax,
-  tickAmount,
-  forceNiceScale: false,
-
-  title: {
-    text: "Amount In Lakhs (INR)",
-  },
-
-  labels: {
-    minWidth: 25,
-    maxWidth: 35,
-
-   
-    formatter: (value) => {
-      const axisValue =
-        Number(value || 0) / 10000;
-
-      if (Number.isInteger(axisValue)) {
-        return String(axisValue);
-      }
-
-      return Number(
-        axisValue.toFixed(2),
-      ).toString();
-    },
-
-    style: {
-      fontFamily: "Poppins-Regular, Arial, sans-serif",
-      fontSize: "11px",
-    },
-  },
-},
-  fill: {
-    opacity: 1,
-  },
-  states: {
-    hover: {
-      filter: {
-        type: "none",
+    states: {
+      hover: {
+        filter: {
+          type: "none",
+        },
+      },
+      active: {
+        filter: {
+          type: "none",
+        },
       },
     },
-    active: {
-      filter: {
-        type: "none",
+    legend: {
+      show: true,
+      position: "top",
+
+      onItemClick: {
+        toggleDataSeries: false,
+      },
+
+      labels: {
+        colors: [
+          // Actual legend text
+          hiddenHrExpenseSeries.actual ? "#D5D5D5" : "#4B4B4B",
+
+          // Projected legend text
+          hiddenHrExpenseSeries.projected ? "#D5D5D5" : "#4B4B4B",
+        ],
+      },
+
+      markers: {
+        fillColors: [
+          // Actual legend marker
+          hiddenHrExpenseSeries.actual ? "#E1F5EF" : "#54C4A7",
+
+          // Projected legend marker
+          hiddenHrExpenseSeries.projected ? "#E2E2E2" : "#C4C4C4",
+        ],
       },
     },
-  },
- legend: {
-  show: true,
-  position: "top",
+    tooltip: {
+      enabled: true,
+      shared: true,
+      intersect: false,
 
- 
-  onItemClick: {
-    toggleDataSeries: false,
-  },
+      custom: function ({ dataPointIndex, w }) {
+        const selectedYearData = hrExpenseByFiscalYear?.[selectedHrFiscalYear];
 
-  labels: {
-    colors: [
-      // Actual legend text
-      hiddenHrExpenseSeries.actual
-        ? "#D5D5D5"
-        : "#4B4B4B",
+        const actualAmount = selectedYearData?.actual?.[dataPointIndex] || 0;
 
-      // Projected legend text
-      hiddenHrExpenseSeries.projected
-        ? "#D5D5D5"
-        : "#4B4B4B",
-    ],
-  },
+        const projectedAmount =
+          selectedYearData?.projected?.[dataPointIndex] || 0;
 
-  markers: {
-    fillColors: [
-      // Actual legend marker
-      hiddenHrExpenseSeries.actual
-        ? "#E1F5EF"
-        : "#54C4A7",
+        const monthLabel =
+          w?.globals?.labels?.[dataPointIndex] ||
+          fiscalMonths[dataPointIndex] ||
+          `Month ${dataPointIndex + 1}`;
 
-      // Projected legend marker
-      hiddenHrExpenseSeries.projected
-        ? "#E2E2E2"
-        : "#C4C4C4",
-    ],
-  },
-},
-  tooltip: {
-  enabled: true,
-  shared: true,
-  intersect: false,
-
-  custom: function ({ dataPointIndex, w }) {
-    const selectedYearData =
-      hrExpenseByFiscalYear?.[selectedHrFiscalYear];
-
-    const actualAmount =
-      selectedYearData?.actual?.[dataPointIndex] || 0;
-
-    const projectedAmount =
-      selectedYearData?.projected?.[dataPointIndex] || 0;
-
-    const monthLabel =
-      w?.globals?.labels?.[dataPointIndex] ||
-      fiscalMonths[dataPointIndex] ||
-      `Month ${dataPointIndex + 1}`;
-
-    return `
+        return `
       <div
         class="apexcharts-tooltip-title"
         style="
@@ -1107,9 +1082,9 @@ const previousMonthExitEmployeeIds = useMemo(() => {
         </div>
       </div>
     `;
-  },
-},
-};
+      },
+    },
+  };
 
   //-------------------HR Expense graph end--------------------//
   //-------------------Tasks vs Achievements graph--------------------//
@@ -1139,7 +1114,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   const { data: tasksOverallData = [], isLoading: isTasksLoading } = useQuery({
     queryKey: ["tasksRawData"],
     queryFn: async () => {
-      const response = await axios.get("api/tasks/get-tasks-summary");
+      const response = await axios.get("/api/tasks/get-tasks-summary");
       const formattedData = response.data.map((dept) => ({
         ...dept,
         department:
@@ -1200,12 +1175,12 @@ const previousMonthExitEmployeeIds = useMemo(() => {
 
   const tasksForSelectedYear = getTasksForSelectedFiscalYear(
     departmentTasks,
-    selectedFiscalYear
+    selectedFiscalYear,
   );
 
   const overallTasksForYear = getTasksForSelectedFiscalYear(
     tasksOverallData,
-    selectedFiscalYear
+    selectedFiscalYear,
   );
 
   // Month names in financial year order (Apr to Mar)
@@ -1228,7 +1203,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     departments,
     completedLabel,
     remainingLabel,
-    taskFilter = () => true
+    taskFilter = () => true,
   ) => {
     const fyData = {};
 
@@ -1311,19 +1286,19 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   const tasksData = buildCompletionSeriesByFiscalYear(
     tasksRawData,
     "Completed KPA",
-    "Remaining KPA"
+    "Remaining KPA",
   );
 
   const tasksGraphData = buildCompletionSeriesByFiscalYear(
     tasksOverallRedux,
     "Completed Tasks",
     "Remaining Tasks",
-    isDepartmentTask
+    isDepartmentTask,
   );
 
   const annualKpaTotals = useMemo(() => {
     const selectedYearSeries = tasksData.filter(
-      (series) => series.group === selectedFiscalYear
+      (series) => series.group === selectedFiscalYear,
     );
 
     const monthlyCompleted = Array(12).fill(0);
@@ -1347,12 +1322,11 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     };
   }, [tasksData, selectedFiscalYear]);
 
-  const annualKpaTotal =
-    annualKpaTotals.completed + annualKpaTotals.pending;
+  const annualKpaTotal = annualKpaTotals.completed + annualKpaTotals.pending;
 
   const annualTasksTotals = useMemo(() => {
     const selectedYearSeries = tasksGraphData.filter(
-      (series) => series.group === selectedFiscalYear
+      (series) => series.group === selectedFiscalYear,
     );
 
     const monthlyCompleted = Array(12).fill(0);
@@ -1412,14 +1386,14 @@ const previousMonthExitEmployeeIds = useMemo(() => {
             });
           });
 
-            navigate("/app/dashboard/HR-dashboard/overall-KPA/department-KPA", {
-              state: {
-                month: clickedMonth,
-                tasks: selectedMonthTasks,
-              },
-            });
-          },
+          navigate("/app/dashboard/HR-dashboard/overall-KPA/department-KPA", {
+            state: {
+              month: clickedMonth,
+              tasks: selectedMonthTasks,
+            },
+          });
         },
+      },
       animations: { enabled: false },
       fontFamily: "Poppins-Regular",
       toolbar: { show: false },
@@ -1607,11 +1581,11 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   const { companyAttandances = [], workingDays } = attendanceData;
   const averageAttendance = calculateAverageAttendance(
     companyAttandances,
-    workingDays
+    workingDays,
   );
   const averageWorkingHours = calculateAverageDailyWorkingHours(
     companyAttandances,
-    workingDays
+    workingDays,
   );
   //-----------------------Working Hours-------------------//
 
@@ -1634,7 +1608,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
         const normalizedDate = dayjs(
           `${today.year()}-${birthDate.format("MM-DD")}`,
           "YYYY-MM-DD",
-          true // strict parsing
+          true, // strict parsing
         );
 
         if (!normalizedDate.isValid()) return null;
@@ -1652,7 +1626,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   };
 
   const birthdays = getUpcomingBirthdays(
-    usersQuery.isLoading ? [] : usersQuery.data
+    usersQuery.isLoading ? [] : usersQuery.data,
   );
 
   //------------------Birthdays----------//
@@ -1669,10 +1643,10 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-          "/api/events/all-events?thisMonth=true"
+          "/api/events/all-events?thisMonth=true",
         );
         const filteredEvents = response.data.filter(
-          (event) => event.extendedProps.type !== "birthday"
+          (event) => event.extendedProps.type !== "birthday",
         );
         return filteredEvents;
       } catch (error) {
@@ -1817,42 +1791,42 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   //--------------------New Data card data -----------------------//
 
   const HrExpenses = {
-  cardTitle: "Expenses",
-  descriptionData: [
-    {
-      title: `${selectedHrFiscalYear}`,
-      value: `INR ${inrFormat(totalUtilised)}`,
-      route: "finance",
-    },
-    {
-      title: `Projected Amount ${previousExpenseMonthLabel}`,
-      value: `INR ${inrFormat(previousMonthProjectedExpense)}`,
-      route: "finance",
-    },
-    {
-      title: `Actual Amount ${previousExpenseMonthLabel}`,
-      value: `INR ${inrFormat(previousMonthActualExpense)}`,
-      route: "finance",
-    },
-    {
-      title: "Overall Active Head Count",
-      value: activeHeadCount,
-      route: "employee/employee-list",
-    },
-    {
-      title: `Exit Head Count ${previousMonthExitLabel}`,
-      value: previousMonthExitCount,
-      route: "employee/past-employees",
-      stateData: {
-        filterType: "last-month-exits",
-        startDate: previousMonthStart.toISOString(),
-        endDate: previousMonthEnd.toISOString(),
-        label: previousMonthExitLabel,
-        employeeIds: previousMonthExitEmployeeIds,
+    cardTitle: "Expenses",
+    descriptionData: [
+      {
+        title: `${selectedHrFiscalYear}`,
+        value: `INR ${inrFormat(totalUtilised)}`,
+        route: "finance",
       },
-    },
-  ],
-};
+      {
+        title: `Projected Amount ${previousExpenseMonthLabel}`,
+        value: `INR ${inrFormat(previousMonthProjectedExpense)}`,
+        route: "finance",
+      },
+      {
+        title: `Actual Amount ${previousExpenseMonthLabel}`,
+        value: `INR ${inrFormat(previousMonthActualExpense)}`,
+        route: "finance",
+      },
+      {
+        title: "Overall Active Head Count",
+        value: activeHeadCount,
+        route: "employee/employee-list",
+      },
+      {
+        title: `Exit Head Count ${previousMonthExitLabel}`,
+        value: previousMonthExitCount,
+        route: "employee/past-employees",
+        stateData: {
+          filterType: "last-month-exits",
+          startDate: previousMonthStart.toISOString(),
+          endDate: previousMonthEnd.toISOString(),
+          label: previousMonthExitLabel,
+          employeeIds: previousMonthExitEmployeeIds,
+        },
+      },
+    ],
+  };
   function getFYDateRange(fyString) {
     const match = fyString.match(/FY\s*(\d{4})-(\d{2})/);
     if (!match) throw new Error("Invalid FY format");
@@ -1904,7 +1878,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   const averageHeadCount = useMemo(() => {
     return getAverageHeadcount(
       usersQuery.isLoading ? [] : usersQuery.data,
-      selectedHrFiscalYear
+      selectedHrFiscalYear,
     );
   }, [usersQuery.data, usersQuery.isLoading, selectedHrFiscalYear]);
 
@@ -1953,7 +1927,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       averageActualAmount,
       averageAttendance,
       averageWorkingHours,
-    ]
+    ],
   );
 
   //--------------------New Data card data -----------------------//
@@ -1995,7 +1969,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
     ([city, count]) => ({
       label: city,
       value: count,
-    })
+    }),
   );
 
   const techGoaVisitorsOptions = {
@@ -2040,8 +2014,8 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       percent: true,
       data: genderData,
       options: genderPieChart,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
       permission: PERMISSIONS.HR_EMPLOYEE_GENDER_DISTRIBUTION_PIE.value,
     },
     {
@@ -2052,15 +2026,15 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       percent: true,
       data: pieChartData,
       options: techGoaVisitorsOptions,
-      height:320,
-      width:500,
+      height: 320,
+      width: 500,
       permission: PERMISSIONS.HR_CITY_WISE_EMPLOYEES_PIE.value,
     },
   ];
 
   const allowedPieCharts = pieChartsConfig.filter(
     (widget) =>
-      !widget.permission || userPermissions.includes(widget.permission)
+      !widget.permission || userPermissions.includes(widget.permission),
   );
   // PIE END
 
@@ -2092,8 +2066,8 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   const holidayTableConfig = {
     permission: PERMISSIONS.HR_CURRENT_MONTH_HOLIDAY_LIST.value,
   };
-// unit wise due task , executive wise due taska
-   const dueTasksConfigs = [
+  // unit wise due task , executive wise due taska
+  const dueTasksConfigs = [
     {
       key: PERMISSIONS.HR_UNIT_WISE_DUE_TASKS.value,
       title: "Unit Wise Due Tasks",
@@ -2115,12 +2089,13 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       colors: executiveTaskColors,
       series: executiveTasksCount,
       tooltipValue: executiveTasksCount,
-      tooltipFormatter: (label, value) => `${label}: ${value || 0} pending tasks`,
+      tooltipFormatter: (label, value) =>
+        `${label}: ${value || 0} pending tasks`,
     },
   ];
 
   const allowedDueTasks = dueTasksConfigs.filter((widget) =>
-    userPermissions.includes(widget.key)
+    userPermissions.includes(widget.key),
   );
 
   const hrTicketChartConfigs = [
@@ -2149,7 +2124,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
   ];
 
   const allowedHrTicketCharts = hrTicketChartConfigs.filter((widget) =>
-    userPermissions.includes(widget.key)
+    userPermissions.includes(widget.key),
   );
 
   const hrWidgets = [
@@ -2283,7 +2258,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       )),
     },
     {
-       layout: allowedDueTasks.length,
+      layout: allowedDueTasks.length,
       widgets: allowedDueTasks.map((config) => (
         <WidgetSection key={config.key} border title={config.title}>
           {config.type === "PieChartMui" ? (
@@ -2326,14 +2301,15 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       widgets: [
         userPermissions.includes(birthdayTableConfig.permission) &&
           (!usersQuery.isLoading ? (
-            <MuiTable showTableControls={false}
+            <MuiTable
+              showTableControls={false}
               key={birthdays.length}
               Title="Current Month's Birthday List"
               columns={columns}
               rows={birthdays
                 .filter((bd) => bd.start)
                 .sort(
-                  (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf()
+                  (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf(),
                 )
                 .map((bd, index) => ({
                   id: index + 1,
@@ -2346,16 +2322,21 @@ const previousMonthExitEmployeeIds = useMemo(() => {
               className="h-full"
             />
           ) : (
-            <CircularProgress key="loading-spinner" />
+            <HrLoadingSkeleton
+              key="loading-skeleton"
+              variant="table"
+              columns={columns}
+            />
           )),
         userPermissions.includes(holidayTableConfig.permission) && (
-          <MuiTable showTableControls={false}
+          <MuiTable
+            showTableControls={false}
             Title="Current Months Holiday List"
             columns={columns2}
             rows={holidayEvents
               .filter((h) => h.start)
               .sort(
-                (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf()
+                (a, b) => dayjs(a.start).valueOf() - dayjs(b.start).valueOf(),
               )
               .map((holiday, index) => ({
                 id: index + 1,
@@ -2587,7 +2568,7 @@ const previousMonthExitEmployeeIds = useMemo(() => {
       const data = transformBudgetData(hrFinance);
       const utilised = data?.[selectedFiscalYear]?.utilisedBudget?.reduce(
         (a, b) => a + b,
-        0
+        0,
       );
 
       //Salary calculation

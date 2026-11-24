@@ -51,10 +51,12 @@ const PerformanceMonthly = () => {
   const [selectedMonthRange, setSelectedMonthRange] = useState(null);
   const deptId = useSelector((state) => state.performance.selectedDepartment);
   const selectedDepartmentName = useSelector(
-    (state) => state.performance.selectedDepartmentName
+    (state) => state.performance.selectedDepartmentName,
   );
-    const selectedMember = useSelector((state) => state.performance.selectedMember);
-   const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
+  const selectedMember = useSelector(
+    (state) => state.performance.selectedMember,
+  );
+  const isEmployeeKraKpaRoute = location.pathname.includes("/employee-KRA-KPA");
   const primaryUserDepartment = auth?.user?.departments?.[0];
   const effectiveDeptId = isEmployeeKraKpaRoute
     ? primaryUserDepartment?._id
@@ -65,22 +67,29 @@ const PerformanceMonthly = () => {
   const departmentName =
     effectiveDepartmentName ||
     department ||
-    auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)?.name ||
+    auth?.user?.departments?.find((dept) => dept._id === effectiveDeptId)
+      ?.name ||
     "Department";
 
-  const loggedInUserName = [auth?.user?.firstName, auth?.user?.middleName, auth?.user?.lastName]
+  const loggedInUserName = [
+    auth?.user?.firstName,
+    auth?.user?.middleName,
+    auth?.user?.lastName,
+  ]
     .filter(Boolean)
     .join(" ")
     .trim();
-   // const activeMemberName = loggedInUserName || "User Name"; 
+  // const activeMemberName = loggedInUserName || "User Name";
   //  const selectedMemberFromRoute = location.state?.selectedMember;
   // const activeMember = selectedMemberFromRoute || selectedMember;
-  // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";  
+  // const activeMemberName = activeMember?.memberName || loggedInUserName || "User Name";
 
   const { data: selectedDepartments = [] } = useQuery({
     queryKey: ["performance-selectedDepartments-monthly"],
     queryFn: async () => {
-      const response = await axios.get("api/company/get-company-data?field=selectedDepartments");
+      const response = await axios.get(
+        "/api/company/get-company-data?field=selectedDepartments",
+      );
       return response.data?.selectedDepartments || [];
     },
   });
@@ -89,7 +98,7 @@ const PerformanceMonthly = () => {
     const normalize = (value) =>
       (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
 
-     const activeDepartmentName = effectiveDepartmentName || departmentName;
+    const activeDepartmentName = effectiveDepartmentName || departmentName;
     const activeDepartmentId = effectiveDeptId?.toString?.();
 
     const matchedDepartment = selectedDepartments.find((item) => {
@@ -97,7 +106,9 @@ const PerformanceMonthly = () => {
       const itemDepartmentName = item?.department?.name;
 
       return (
-        (activeDepartmentId && itemDepartmentId && activeDepartmentId === itemDepartmentId) ||
+        (activeDepartmentId &&
+          itemDepartmentId &&
+          activeDepartmentId === itemDepartmentId) ||
         (activeDepartmentName &&
           itemDepartmentName &&
           normalize(activeDepartmentName) === normalize(itemDepartmentName))
@@ -105,7 +116,12 @@ const PerformanceMonthly = () => {
     });
 
     return matchedDepartment?.admin || "";
- }, [departmentName, effectiveDepartmentName, effectiveDeptId, selectedDepartments]);
+  }, [
+    departmentName,
+    effectiveDepartmentName,
+    effectiveDeptId,
+    selectedDepartments,
+  ]);
 
   const activeMemberName = isEmployeeKraKpaRoute
     ? loggedInUserName || "User Name"
@@ -125,16 +141,20 @@ const PerformanceMonthly = () => {
   ];
 
   const isAddKpaDisabled = auth?.user?.role?.some((role) =>
-    restrictedRoles.includes(role.roleTitle)
+    restrictedRoles.includes(role.roleTitle),
   );
   const userPermissions = auth?.user?.permissions?.permissions || [];
-  const isManager = userPermissions.includes(PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value);
-  const roleTitles = (auth?.user?.role || []).map((role) => role?.roleTitle?.toLowerCase?.() || "");
+  const isManager = userPermissions.includes(
+    PERMISSIONS.PERFORMANCE_MONTHLY_KPA.value,
+  );
+  const roleTitles = (auth?.user?.role || []).map(
+    (role) => role?.roleTitle?.toLowerCase?.() || "",
+  );
   const isMasterOrSuperAdmin = roleTitles.some((title) =>
-    ["master admin", "super admin"].includes(title)
+    ["master admin", "super admin"].includes(title),
   );
   const canDeleteRecurrence = !isAddKpaDisabled;
-    const getRowMonthBucket = (row) => {
+  const getRowMonthBucket = (row) => {
     const rowDate = dayjs(row?.dueDate || row?.assignedDate);
     if (!rowDate.isValid()) return "current";
 
@@ -189,15 +209,12 @@ const PerformanceMonthly = () => {
     };
   };
 
-
   const shouldHideAddButtonForManager =
     !isMasterOrSuperAdmin &&
     isManager &&
     ["previous", "next"].includes(activeViewMonthBucket);
   const shouldHideActionsColumnForManager =
-    !isMasterOrSuperAdmin &&
-    isManager &&
-    activeViewMonthBucket === "previous";
+    !isMasterOrSuperAdmin && isManager && activeViewMonthBucket === "previous";
 
   const departmentAccess = [
     "67b2cf85b9b6ed5cedeb9a2e",
@@ -218,7 +235,7 @@ const PerformanceMonthly = () => {
   const showCheckBox = allowedDept || isManager;
 
   const matchingDepartment = auth.user?.departments?.some(
-    (dept) => dept._id === deptId
+    (dept) => dept._id === deptId,
   );
   const showActionsColumn =
     (matchingDepartment || isManager || isMasterOrSuperAdmin) &&
@@ -250,8 +267,8 @@ const PerformanceMonthly = () => {
         task: data.kpaName,
         taskType: "KPA",
         // description: data.description,
-       // department: deptId,
-         department: effectiveDeptId,
+        // department: deptId,
+        department: effectiveDeptId,
         assignedDate: data.startDate,
         dueDate: data.endDate,
         kpaDuration: "Monthly",
@@ -265,7 +282,7 @@ const PerformanceMonthly = () => {
       reset();
       reset();
       setOpenModal(false);
-         setIsEditMode(false);
+      setIsEditMode(false);
       setEditingTaskId(null);
     },
     onError: (error) => {
@@ -273,19 +290,19 @@ const PerformanceMonthly = () => {
       queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
       toast.error("Task type should be KRA");
       setOpenModal(false);
-       setIsEditMode(false);
+      setIsEditMode(false);
       setEditingTaskId(null);
     },
   });
 
- const resetModalState = () => {
+  const resetModalState = () => {
     setOpenModal(false);
     setIsEditMode(false);
     setEditingTaskId(null);
     reset();
   };
 
-   const handleOpenEditModal = (task) => {
+  const handleOpenEditModal = (task) => {
     setIsEditMode(true);
     setEditingTaskId(task.mongoId || task.id || null);
     reset({
@@ -303,7 +320,7 @@ const PerformanceMonthly = () => {
         toast.error("Unable to update task. Please reopen edit popup.");
         return;
       }
-     try {
+      try {
         await axios.patch(`/api/performance/update-task/${editingTaskId}`, {
           task: data.kpaName,
           description: data.description || "",
@@ -328,7 +345,7 @@ const PerformanceMonthly = () => {
     mutationFn: async (data) => {
       const response = await axios.patch(
         `/api/performance/update-status/${data.taskId}/KPA`,
-        { comment: data.comment }
+        { comment: data.comment },
       );
       return response.data;
     },
@@ -371,21 +388,24 @@ const PerformanceMonthly = () => {
     });
   };
 
-  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } = useMutation({
-    mutationKey: ["deleteMonthlyKpaRecurrence"],
-    mutationFn: async (taskId) => {
-      const response = await axios.patch(`/api/performance/delete-recurrence/${taskId}`);
-      return response.data;
-    },
-    onSuccess: (data) => {
-      queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
-      queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
-      toast.success(data.message || "KPA recurrence removed");
-    },
-    onError: () => {
-      toast.error("Failed to remove recurrence");
-    },
-  });
+  const { mutate: deleteMonthlyKpaRecurrence, isPending: isDeletePending } =
+    useMutation({
+      mutationKey: ["deleteMonthlyKpaRecurrence"],
+      mutationFn: async (taskId) => {
+        const response = await axios.patch(
+          `/api/performance/delete-recurrence/${taskId}`,
+        );
+        return response.data;
+      },
+      onSuccess: (data) => {
+        queryClient.refetchQueries({ queryKey: ["fetchedMonthlyKPA"] });
+        queryClient.refetchQueries({ queryKey: ["completedEntriesKPA"] });
+        toast.success(data.message || "KPA recurrence removed");
+      },
+      onError: () => {
+        toast.error("Failed to remove recurrence");
+      },
+    });
 
   const handleConfirmDelete = () => {
     if (!deleteTargetId) return;
@@ -396,7 +416,7 @@ const PerformanceMonthly = () => {
   const fetchDepartments = async () => {
     try {
       const response = await axios.get(
-       `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KPA`
+        `/api/performance/get-tasks?dept=${effectiveDeptId}&type=KPA`,
       );
       return response.data;
     } catch (error) {
@@ -404,7 +424,7 @@ const PerformanceMonthly = () => {
     }
   };
   const { data: departmentKra = [], isPending: departmentLoading } = useQuery({
-     queryKey: ["fetchedMonthlyKPA", effectiveDeptId],
+    queryKey: ["fetchedMonthlyKPA", effectiveDeptId],
     queryFn: fetchDepartments,
   });
   const { data: completedEntries, isLoading: isCompletedLoading } = useQuery({
@@ -412,7 +432,7 @@ const PerformanceMonthly = () => {
     queryFn: async () => {
       try {
         const response = await axios.get(
-            `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=KPA`
+          `/api/performance/get-completed-tasks?dept=${effectiveDeptId}&type=KPA`,
         );
         return response.data;
       } catch (error) {
@@ -469,67 +489,71 @@ const PerformanceMonthly = () => {
         );
       },
     },
-     ...(showActionsColumn
+    ...(showActionsColumn
       ? [
-        {
-          headerName: "Actions",
-          pinned: "right",
-          field: "actions",
-          width:250,
-          cellRenderer: (params) => {
-            const rowPermissions = getRowPermissions(params.data);
-            const isSelectionBlocked = rowPermissions.disableRowSelection;
-            const isRowSelected = params.node.selected && !isSelectionBlocked;
+          {
+            headerName: "Actions",
+            pinned: "right",
+            field: "actions",
+            width: 250,
+            cellRenderer: (params) => {
+              const rowPermissions = getRowPermissions(params.data);
+              const isSelectionBlocked = rowPermissions.disableRowSelection;
+              const isRowSelected = params.node.selected && !isSelectionBlocked;
 
-            return (
-              <div className="flex items-center">
+              return (
+                <div className="flex items-center">
+                  {/* Mark As Done */}
+                  {rowPermissions.showMarkAsDone && (
+                    <div
+                      role="button"
+                      onClick={() => {
+                        if (
+                          // !params.node.selected ||
+                          !isRowSelected ||
+                          isUpdatePending ||
+                          isDeletePending
+                        )
+                          return;
 
-                {/* Mark As Done */}
-                 {rowPermissions.showMarkAsDone && (
-                <div
-                  role="button"
-                  onClick={() => {
-                    if (
-                      // !params.node.selected ||
-                      !isRowSelected ||
-                      isUpdatePending ||
-                      isDeletePending
-                    )
-                      return;
-
-                    openMarkDoneModal(params.data);
-                  }}
-                  className="p-2"
-                >
-                  <PrimaryButton
-                    title={isUpdatePending ? "⏳" : "Mark As Done"}
-                    disabled={
-                       !isRowSelected ||
-                      // !params.node.selected ||
-                      isUpdatePending ||
-                      isDeletePending
-                    }
-                    className="px-2 py-1 text-xs w-28 h-7"
-                  />
-                </div>
+                        openMarkDoneModal(params.data);
+                      }}
+                      className="p-2"
+                    >
+                      <PrimaryButton
+                        title={isUpdatePending ? "⏳" : "Mark As Done"}
+                        disabled={
+                          !isRowSelected ||
+                          // !params.node.selected ||
+                          isUpdatePending ||
+                          isDeletePending
+                        }
+                        className="px-2 py-1 text-xs w-28 h-7"
+                      />
+                    </div>
                   )}
 
-                {/* Edit Recurrence */}
-                {/* {!isAddKpaDisabled && ( */}
+                  {/* Edit Recurrence */}
+                  {/* {!isAddKpaDisabled && ( */}
                   {rowPermissions.showEdit && !isAddKpaDisabled && (
-                  <button
-                    type="button"
-                    title="Edit"
-                     disabled={!isRowSelected || isUpdatePending || isDeletePending}
-                   // disabled={!params.node.selected || isUpdatePending || isDeletePending}
-                    onClick={() => handleOpenEditModal(params.data)}
-                    className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
-                  >
-                    {/* <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} /> */}
-                    <HiPencilSquare size={24} color={!isRowSelected ? "#9ca3af" : "#111827"} />
-                  </button>
-                )}
-                   {/* <button
+                    <button
+                      type="button"
+                      title="Edit"
+                      disabled={
+                        !isRowSelected || isUpdatePending || isDeletePending
+                      }
+                      // disabled={!params.node.selected || isUpdatePending || isDeletePending}
+                      onClick={() => handleOpenEditModal(params.data)}
+                      className="ml-2 px-2 py-1 text-xs w-10 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                    >
+                      {/* <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} /> */}
+                      <HiPencilSquare
+                        size={24}
+                        color={!isRowSelected ? "#9ca3af" : "#111827"}
+                      />
+                    </button>
+                  )}
+                  {/* <button
                   type="button"
                   title="Edit"
                   disabled={!params.node.selected || isUpdatePending || isDeletePending}
@@ -538,45 +562,43 @@ const PerformanceMonthly = () => {
                 >
                   <HiPencilSquare size={24} color={!params.node.selected ? "#9ca3af" : "#111827"} />
                 </button> */}
-                 {/* Delete Recurrence */}
-                {/* {canDeleteRecurrence && ( */}
-                 {rowPermissions.showDelete && canDeleteRecurrence && (
-                  <button
-                    type="button"
-                    title="Delete Recurrence"
-                    disabled={
-                       !isRowSelected ||
-                      // !params.node.selected ||
-                      isDeletePending ||
-                      isUpdatePending
-                    }
-                    onClick={() =>
-                      setDeleteTargetId(params.data.mongoId)
-                    }
-                    className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
-                  >
-                    {isDeletePending ? (
-                      "⏳"
-                    ) : (
-                      <MdDeleteForever
-                        size={26}
-                        color={!isRowSelected ? "gray" : "red"}
-                       // color={!params.node.selected ? "gray" : "red"}
-                      />
-                    )}
-                  </button>
-                )}
-              </div>
-            );
+                  {/* Delete Recurrence */}
+                  {/* {canDeleteRecurrence && ( */}
+                  {rowPermissions.showDelete && canDeleteRecurrence && (
+                    <button
+                      type="button"
+                      title="Delete Recurrence"
+                      disabled={
+                        !isRowSelected ||
+                        // !params.node.selected ||
+                        isDeletePending ||
+                        isUpdatePending
+                      }
+                      onClick={() => setDeleteTargetId(params.data.mongoId)}
+                      className="ml-2 px-2 py-1 text-xs w-28 h-7 flex items-center justify-center disabled:cursor-not-allowed"
+                    >
+                      {isDeletePending ? (
+                        "⏳"
+                      ) : (
+                        <MdDeleteForever
+                          size={26}
+                          color={!isRowSelected ? "gray" : "red"}
+                          // color={!params.node.selected ? "gray" : "red"}
+                        />
+                      )}
+                    </button>
+                  )}
+                </div>
+              );
+            },
           },
-        },
-      ]
-      : [])
+        ]
+      : []),
   ];
 
   const completedColumns = [
     { headerName: "Sr No", field: "srNo", width: 100, sort: "asc" },
-    { headerName: "KPA List", field: "taskName", flex: 1},
+    { headerName: "KPA List", field: "taskName", flex: 1 },
     {
       headerName: "Action",
       field: "action",
@@ -593,9 +615,19 @@ const PerformanceMonthly = () => {
         </button>
       ),
     },
-    { headerName: "Start Date", field: "startDateTime", flex: 1, exportFormat: "date" },
-    { headerName: "End Date", field: "endDateTime", flex: 1, exportFormat: "date" },
-    { headerName: "Completed By", field: "completedBy" ,flex: 1},
+    {
+      headerName: "Start Date",
+      field: "startDateTime",
+      flex: 1,
+      exportFormat: "date",
+    },
+    {
+      headerName: "End Date",
+      field: "endDateTime",
+      flex: 1,
+      exportFormat: "date",
+    },
+    { headerName: "Completed By", field: "completedBy", flex: 1 },
     {
       headerName: "Completed At",
       field: "completedAt",
@@ -643,10 +675,11 @@ const PerformanceMonthly = () => {
       },
     },
   ];
-    const normalizeValue = (value) =>
+  const normalizeValue = (value) =>
     (value || "").toString().replace(/\s+/g, " ").trim().toLowerCase();
   const doesTaskBelongToLoggedInUser = (item) => {
-   if (!isEmployeeKraKpaRoute || isManager || isMasterOrSuperAdmin) return true;
+    if (!isEmployeeKraKpaRoute || isManager || isMasterOrSuperAdmin)
+      return true;
     const matchCandidates = [
       item?.assignToId,
       item?.assignedToId,
@@ -656,7 +689,9 @@ const PerformanceMonthly = () => {
       item?.assignedTo,
       item?.createdBy,
       item?.completedBy,
-    ].flatMap((candidate) => (Array.isArray(candidate) ? candidate : [candidate]));
+    ].flatMap((candidate) =>
+      Array.isArray(candidate) ? candidate : [candidate],
+    );
     return matchCandidates.some((candidate) => {
       const normalizedCandidate = normalizeValue(candidate);
       if (!normalizedCandidate) return false;
@@ -666,9 +701,13 @@ const PerformanceMonthly = () => {
       );
     });
   };
-  const filteredDepartmentKpa = (departmentKra || []).filter(doesTaskBelongToLoggedInUser);
-  const filteredCompletedEntries = (completedEntries || []).filter(doesTaskBelongToLoggedInUser);
-   const selectedMonthLabel = selectedMonthRange?.startDate
+  const filteredDepartmentKpa = (departmentKra || []).filter(
+    doesTaskBelongToLoggedInUser,
+  );
+  const filteredCompletedEntries = (completedEntries || []).filter(
+    doesTaskBelongToLoggedInUser,
+  );
+  const selectedMonthLabel = selectedMonthRange?.startDate
     ? dayjs(selectedMonthRange.startDate).format("MMMM YYYY")
     : dayjs().format("MMMM YYYY");
   const completedEntriesForSelectedMonth = selectedMonthRange
@@ -678,17 +717,29 @@ const PerformanceMonthly = () => {
 
         const start = dayjs(selectedMonthRange.startDate).startOf("day");
         const end = dayjs(selectedMonthRange.endDate).endOf("day");
-        return completion.isAfter(start.subtract(1, "millisecond")) && completion.isBefore(end.add(1, "millisecond"));
+        return (
+          completion.isAfter(start.subtract(1, "millisecond")) &&
+          completion.isBefore(end.add(1, "millisecond"))
+        );
       })
     : filteredCompletedEntries;
   const showCompletedExport = activeViewMonthBucket !== "next";
 
-   const handleDepartmentDateFilterChange = ({ filteredData = [], selectedRange = null }) => {
+  const handleDepartmentDateFilterChange = ({
+    filteredData = [],
+    selectedRange = null,
+  }) => {
     setSelectedMonthRange((prev) => {
-      const prevStart = prev?.startDate ? dayjs(prev.startDate).valueOf() : null;
+      const prevStart = prev?.startDate
+        ? dayjs(prev.startDate).valueOf()
+        : null;
       const prevEnd = prev?.endDate ? dayjs(prev.endDate).valueOf() : null;
-      const nextStart = selectedRange?.startDate ? dayjs(selectedRange.startDate).valueOf() : null;
-      const nextEnd = selectedRange?.endDate ? dayjs(selectedRange.endDate).valueOf() : null;
+      const nextStart = selectedRange?.startDate
+        ? dayjs(selectedRange.startDate).valueOf()
+        : null;
+      const nextEnd = selectedRange?.endDate
+        ? dayjs(selectedRange.endDate).valueOf()
+        : null;
 
       if (prevStart === nextStart && prevEnd === nextEnd) return prev;
       return selectedRange;
@@ -698,14 +749,18 @@ const PerformanceMonthly = () => {
       return;
     }
 
-     const nextBucket = (() => {
+    const nextBucket = (() => {
       if (!filteredData.length) return "current";
-      const buckets = new Set(filteredData.map((item) => getRowMonthBucket(item)));
+      const buckets = new Set(
+        filteredData.map((item) => getRowMonthBucket(item)),
+      );
       if (buckets.size === 1) return [...buckets][0];
       return "current";
     })();
 
-    setActiveViewMonthBucket((prev) => (prev === nextBucket ? prev : nextBucket));
+    setActiveViewMonthBucket((prev) =>
+      prev === nextBucket ? prev : nextBucket,
+    );
   };
   // const filteredDepartmentKpa = (departmentKra || []).filter((item) => {
   //   if (!activeMember?.memberName) return true;
@@ -723,13 +778,19 @@ const PerformanceMonthly = () => {
             <WidgetSection padding layout={1}>
               <YearWiseTable
                 checkbox={showCheckBox}
-                  tableTitle={`${departmentName} - DEPARTMENT MONTHLY KPA - ${activeMemberName}`}
+                tableTitle={`${departmentName} - DEPARTMENT MONTHLY KPA - ${activeMemberName}`}
                 //tableTitle={`${departmentName} DEPARTMENT - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 //tableTitle={`${department} DEPARTMENT - MONTHLY KPA`}
                 // buttonTitle={"Add Monthly KPA"}
                 // buttonDisabled={isAddKpaDisabled}
-                  buttonTitle={shouldHideAddButtonForManager ? "" : "Add Department Monthly KPA"}
-                buttonDisabled={shouldHideAddButtonForManager || isAddKpaDisabled}
+                buttonTitle={
+                  shouldHideAddButtonForManager
+                    ? ""
+                    : "Add Department Monthly KPA"
+                }
+                buttonDisabled={
+                  shouldHideAddButtonForManager || isAddKpaDisabled
+                }
                 handleSubmit={() => {
                   setIsEditMode(false);
                   setEditingTaskId(null);
@@ -751,9 +812,10 @@ const PerformanceMonthly = () => {
                 dateColumn={"dueDate"}
                 columns={departmentColumns}
                 preserveCurrentMonthRange
-                isRowSelectable={(rowNode) => !getRowPermissions(rowNode?.data).disableRowSelection}
+                isRowSelectable={(rowNode) =>
+                  !getRowPermissions(rowNode?.data).disableRowSelection
+                }
                 onDateFilterChange={handleDepartmentDateFilterChange}
-
               />
             </WidgetSection>
           ) : (
@@ -766,7 +828,7 @@ const PerformanceMonthly = () => {
           {!isCompletedLoading ? (
             <WidgetSection padding layout={1}>
               <YearWiseTable
-               // exportData={true}
+                // exportData={true}
                 // tableTitle={`COMPLETED - MONTHLY KPA - ${loggedInUserName || "User Name"}`}
                 // key={completedEntries.length}
                 // data={[
@@ -779,7 +841,7 @@ const PerformanceMonthly = () => {
                 taskExportDateTimeFormatting
                 hideDateControls
                 data={[
-                   ...completedEntriesForSelectedMonth.map((item, index) => ({
+                  ...completedEntriesForSelectedMonth.map((item, index) => ({
                     taskName: item.taskName,
                     assignedDate: item.assignedDate,
                     dueDate: item.dueDate,
@@ -793,13 +855,13 @@ const PerformanceMonthly = () => {
                     completedAt: item.completionDate,
                   })),
                 ]}
-                 dateColumn={"completionDate"}
+                dateColumn={"completionDate"}
                 columns={completedColumns}
               />
             </WidgetSection>
           ) : (
             <div className="h-72 flex items-center justify-center">
-                <PerformanceTableSkeleton />
+              <PerformanceTableSkeleton />
             </div>
           )}
         </PageFrame>
@@ -820,7 +882,13 @@ const PerformanceMonthly = () => {
           completionCommentRef.current = "";
           setCompletionCommentError("");
         }}
-       title={selectedKpa ? "Comment" : isEditMode ? "Edit Task" : "Add Department Monthly KPA"}
+        title={
+          selectedKpa
+            ? "Comment"
+            : isEditMode
+              ? "Edit Task"
+              : "Add Department Monthly KPA"
+        }
       >
         {selectedKpa ? (
           <div className="grid grid-cols-1 gap-4">
@@ -829,7 +897,9 @@ const PerformanceMonthly = () => {
               size="small"
               multiline
               rows={4}
-              key={selectedKpa?.mongoId || selectedKpa?.id || "monthly-kpa-comment"}
+              key={
+                selectedKpa?.mongoId || selectedKpa?.id || "monthly-kpa-comment"
+              }
               defaultValue=""
               onChange={(event) => {
                 completionCommentRef.current = event.target.value;
@@ -862,32 +932,32 @@ const PerformanceMonthly = () => {
             </div>
           </div>
         ) : (
-        <form
-          onSubmit={submitDailyKra(handleFormSubmit)}
-          className="grid grid-cols-1 lg:grid-cols-1 gap-4"
-        >
-          <Controller
-            name="kpaName"
-            control={control}
-            rules={{
-              required: "KPA Name is required",
-              validate: {
-                noOnlyWhitespace,
-                isAlphanumeric,
-              },
-            }}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                size="small"
-                label={"KPA Name"}
-                fullWidth
-                error={!!errors?.kpaName?.message}
-                helperText={errors?.kpaName?.message}
-              />
-            )}
-          />
-          {/* <Controller
+          <form
+            onSubmit={submitDailyKra(handleFormSubmit)}
+            className="grid grid-cols-1 lg:grid-cols-1 gap-4"
+          >
+            <Controller
+              name="kpaName"
+              control={control}
+              rules={{
+                required: "KPA Name is required",
+                validate: {
+                  noOnlyWhitespace,
+                  isAlphanumeric,
+                },
+              }}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label={"KPA Name"}
+                  fullWidth
+                  error={!!errors?.kpaName?.message}
+                  helperText={errors?.kpaName?.message}
+                />
+              )}
+            />
+            {/* <Controller
             name="description"
             control={control}
             rules={{ required: "Description is required" }}
@@ -904,92 +974,92 @@ const PerformanceMonthly = () => {
               />
             )}
           /> */}
-          <Controller
-            name="startDate"
-            control={control}
-            rules={{
-              required: "Start date is required",
-              validate: (value) => {
-                if (!value) return true; // already handled by required
-                const today = dayjs().startOf("day");
-                const selected = dayjs(value);
-                if (selected.isBefore(today)) {
-                  return "Start date cannot be in the past.";
-                }
-                return true;
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="Start Date"
-                  format="DD-MM-YYYY"
-                  disablePast
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
+            <Controller
+              name="startDate"
+              control={control}
+              rules={{
+                required: "Start date is required",
+                validate: (value) => {
+                  if (!value) return true; // already handled by required
+                  const today = dayjs().startOf("day");
+                  const selected = dayjs(value);
+                  if (selected.isBefore(today)) {
+                    return "Start date cannot be in the past.";
                   }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                      error: !!fieldState.error,
-                      helperText: fieldState.error?.message,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
+                  return true;
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="Start Date"
+                    format="DD-MM-YYYY"
+                    disablePast
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(date ? date.toISOString() : null)
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        size: "small",
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
 
-          <Controller
-            name="endDate"
-            control={control}
-            rules={{
-              validate: (value) => {
-                if (!value) return "End date is required";
-                const today = dayjs().startOf("day");
-                const selected = dayjs(value);
-                if (!selected.isValid()) return "Invalid date selected";
-                if (selected.isBefore(today)) {
-                  return "End date cannot be in the past.";
-                }
-                return true;
-              },
-            }}
-            render={({ field, fieldState }) => (
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  {...field}
-                  label="End Date"
-                  disablePast
-                  format="DD-MM-YYYY"
-                  disabled={!startDate}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(date) =>
-                    field.onChange(date ? date.toISOString() : null)
+            <Controller
+              name="endDate"
+              control={control}
+              rules={{
+                validate: (value) => {
+                  if (!value) return "End date is required";
+                  const today = dayjs().startOf("day");
+                  const selected = dayjs(value);
+                  if (!selected.isValid()) return "Invalid date selected";
+                  if (selected.isBefore(today)) {
+                    return "End date cannot be in the past.";
                   }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      size: "small",
-                      error: !!fieldState.error,
-                      helperText: fieldState.error?.message,
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-            )}
-          />
+                  return true;
+                },
+              }}
+              render={({ field, fieldState }) => (
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    {...field}
+                    label="End Date"
+                    disablePast
+                    format="DD-MM-YYYY"
+                    disabled={!startDate}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(date) =>
+                      field.onChange(date ? date.toISOString() : null)
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        size: "small",
+                        error: !!fieldState.error,
+                        helperText: fieldState.error?.message,
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
+              )}
+            />
 
-          <PrimaryButton
-            type="submit"
-            title={"Submit"}
-            disabled={isAddKpaPending}
-            isLoading={isAddKpaPending}
-          />
-        </form>
+            <PrimaryButton
+              type="submit"
+              title={"Submit"}
+              disabled={isAddKpaPending}
+              isLoading={isAddKpaPending}
+            />
+          </form>
         )}
       </MuiModal>
       <MuiModal
@@ -998,23 +1068,35 @@ const PerformanceMonthly = () => {
         title="Completed Department Monthly KPA"
       >
         {completedTaskView && (
-                    <div className="grid grid-cols-1 gap-4">
-                        <DetalisFormatted title={"KPA"} detail={completedTaskView?.taskName} />
-                        <DetalisFormatted
-                            title={"Start Date"}
-                            detail={humanDate(completedTaskView?.startDateTime)}
-                        />
-                        <DetalisFormatted
-                            title={"End Date"}
-                            detail={humanDate(completedTaskView?.endDateTime)}
-                        />
-                        <DetalisFormatted title={"Completed By"} detail={completedTaskView?.completedBy} />
-                        <DetalisFormatted
-                            title={"Completed At"}
-                            detail={`${humanDate(completedTaskView?.completionDate)}, ${humanTime(completedTaskView?.completionTime)}`}
-                        />
-            <DetalisFormatted title={"Status"} detail={completedTaskView?.status} />
-            <DetalisFormatted title={"Comment"} detail={completedTaskView?.comment || "-"} />
+          <div className="grid grid-cols-1 gap-4">
+            <DetalisFormatted
+              title={"KPA"}
+              detail={completedTaskView?.taskName}
+            />
+            <DetalisFormatted
+              title={"Start Date"}
+              detail={humanDate(completedTaskView?.startDateTime)}
+            />
+            <DetalisFormatted
+              title={"End Date"}
+              detail={humanDate(completedTaskView?.endDateTime)}
+            />
+            <DetalisFormatted
+              title={"Completed By"}
+              detail={completedTaskView?.completedBy}
+            />
+            <DetalisFormatted
+              title={"Completed At"}
+              detail={`${humanDate(completedTaskView?.completionDate)}, ${humanTime(completedTaskView?.completionTime)}`}
+            />
+            <DetalisFormatted
+              title={"Status"}
+              detail={completedTaskView?.status}
+            />
+            <DetalisFormatted
+              title={"Comment"}
+              detail={completedTaskView?.comment || "-"}
+            />
           </div>
         )}
       </MuiModal>

@@ -234,6 +234,7 @@ export default function PastEmployees() {
       <PageFrame>
         <div className="w-full">
           <AgTable
+            loading={isLoading}
             search={true}
             tableTitle={
               filterState?.filterType === "last-month-exits"

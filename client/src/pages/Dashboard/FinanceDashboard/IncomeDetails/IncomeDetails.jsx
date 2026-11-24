@@ -5,7 +5,7 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 
-import { CircularProgress } from "@mui/material";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import FyBarGraphPercentage from "../../../../components/graphs/FyBarGraphPercentage";
 import dayjs from "dayjs";
@@ -286,9 +286,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
     const formatShare = (value) => {
       if (total <= 0 || value <= 0) return "0%";
       const percentage = (value / total) * 100;
-      if (percentage < 0.1) return "<0.1%";
-      if (percentage < 1) return `${percentage.toFixed(1)}%`;
-      return `${Math.round(percentage)}%`;
+      return `${Number(percentage.toFixed(2))}%`;
     };
     const rowsHtml = tooltipRows
       .map(({ label, color, value }) => `
@@ -316,9 +314,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
   return (
     <div className="flex flex-col gap-4 p-4">
       {isTotalLoading ? (
-        <div className="flex h-72 justify-center items-center">
-          <CircularProgress />
-        </div>
+        <FinanceLoadingSkeleton />
       ) : (
         <FyBarGraphPercentage
           data={paidRevenueData}
@@ -342,6 +338,7 @@ const IncomeDetails = ({ revenueBasePath = FINANCE_REVENUE_BASE_PATH }) => {
       )}
 
       <WidgetTable
+        loading={isTotalLoading}
         tableTitle="Annual Monthly Income Breakup"
         data={paidRevenueData}
         dateColumn="date"

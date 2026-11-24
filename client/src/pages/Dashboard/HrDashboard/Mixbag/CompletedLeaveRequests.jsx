@@ -88,12 +88,11 @@ export default function CompletedLeaveRequests() {
     },
   ];
 
-  if (isLeavesPending) return <div>Loading...</div>;
-
   return (
     <div>
       <PageFrame>
         <YearWiseTable
+          loading={isLeavesPending}
           data={leavesData}
           columns={leaveColumns}
           dateColumn="fromDate"

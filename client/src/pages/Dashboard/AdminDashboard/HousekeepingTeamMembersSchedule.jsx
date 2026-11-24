@@ -3,7 +3,8 @@ import AgTable from "../../../components/AgTable";
 import PrimaryButton from "../../../components/PrimaryButton";
 import MuiModal from "../../../components/MuiModal";
 import { Controller, useForm } from "react-hook-form";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
 import { toast } from "sonner";
 import useAuth from "../../../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -419,11 +420,7 @@ const HousekeepingTeamMembersSchedule = () => {
   //---------------------------------------Event Handlers------------------------------//
 
   if (isUnitsPending) {
-    return (
-      <div className="flex justify-center items-center h-[60vh]">
-        <CircularProgress color="#1E3D73" />
-      </div>
-    );
+    return <AdminLoadingSkeleton variant="table" />;
   }
 
   if (!Array.isArray(unitsData) || unitsData.length === 0) {
@@ -438,7 +435,7 @@ const HousekeepingTeamMembersSchedule = () => {
     <div>
       <PageFrame>
         {isUnitsPending ? (
-          <CircularProgress />
+          <AdminLoadingSkeleton variant="table" />
         ) : isSuccess && unitsData.length > 0 ? (
           <AgTable
             search
@@ -496,7 +493,7 @@ const HousekeepingTeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}
@@ -527,7 +524,7 @@ const HousekeepingTeamMembersSchedule = () => {
                             </MenuItem>
                           ))
                         ) : (
-                          <CircularProgress />
+                          <AdminLoadingSkeleton variant="option" />
                         )}
                       </TextField>
                     )}
@@ -790,7 +787,7 @@ const HousekeepingTeamMembersSchedule = () => {
                         </MenuItem>
                       ))
                     ) : (
-                      <CircularProgress />
+                      <AdminLoadingSkeleton variant="option" />
                     )}
                   </TextField>
                 )}

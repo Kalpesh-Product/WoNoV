@@ -230,6 +230,7 @@ const AdminClientsData = () => {
             search={true}
             tableTitle={"Client Members Data"}
             key={clientsData.length}
+            loading={isClientsDataPending}
             data={[
               ...clientsData.map((item, index) => ({
                 id: index + 1,

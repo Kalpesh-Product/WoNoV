@@ -6,7 +6,6 @@ import interactionPlugin from "@fullcalendar/interaction";
 
 import {
   Checkbox,
-  CircularProgress,
   FormControlLabel,
   FormGroup,
 } from "@mui/material";
@@ -17,6 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import humanDate from "../../../../utils/humanDateForamt";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
+import FinanceLoadingSkeleton from "../FinanceLoadingSkeleton";
 
 const PaymentSchedule = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -98,6 +98,10 @@ const PaymentSchedule = () => {
     setSelectedEvent(clickInfo.event);
     setIsDrawerOpen(true);
   };
+
+  if (isHrLoading) {
+    return <FinanceLoadingSkeleton variant="chart" />;
+  }
 
   return (
     <div className="flex flex-col  bg-white">

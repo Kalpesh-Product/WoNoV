@@ -42,12 +42,13 @@ const HrEvents = ({ title }) => {
   const columns = [
     { field: "srNo", headerName: "Sr No", width: 100 },
     { field: "title", headerName: "Event", flex: 1 },
-    { field: "startDate", headerName: "Date" ,flex: 1 },
-    { field: "day", headerName: "Day" ,flex: 1},
+    { field: "startDate", headerName: "Start Date", flex: 1 },
+    { field: "endDate", headerName: "End Date", flex: 1 },
+    { field: "day", headerName: "Day", flex: 1 },
     {
       field: "action",
       headerName: "Action",
-      flex: 1 ,
+      flex: 1,
       pinned: "right",
       cellRenderer: (params) => (
         <button
@@ -63,7 +64,7 @@ const HrEvents = ({ title }) => {
     },
   ];
 
-  const { data: holidayEvents = [] } = useQuery({
+  const { data: holidayEvents = [], isLoading: isEventsLoading } = useQuery({
     queryKey: ["hrEvents"],
     queryFn: async () => {
       const response = await axios.get("/api/events/get-events");
@@ -71,13 +72,16 @@ const HrEvents = ({ title }) => {
     },
   });
 
-  const combinedEvents = [...holidayEvents].map((holiday) => {
+  const combinedEvents = [...holidayEvents].map((holiday, index) => {
     const date = dayjs(holiday.start);
+    const endDate = holiday.end ? dayjs(holiday.end) : null;
     return {
       _id: holiday._id,
+      srNo: index + 1,
       title: holiday.title,
       day: date.format("dddd"),
-      startDate: holiday.start,
+      startDate: date.format("DD-MM-YYYY"),
+      endDate: endDate ? endDate.format("DD-MM-YYYY") : "-",
     };
   });
 
@@ -135,6 +139,7 @@ const HrEvents = ({ title }) => {
     <PageFrame>
       <div>
         <YearWiseTable
+          loading={isEventsLoading}
           dateColumn={"startDate"}
           key={combinedEvents.length}
           tableTitle={"Events"}
