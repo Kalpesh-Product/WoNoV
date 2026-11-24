@@ -1,6 +1,7 @@
 import React from "react";
 import ReactApexChart from "react-apexcharts";
 import useResponsiveChart from "../../hooks/useResponsiveChart";
+import { SingleLineLegend } from "./SectorLegend";
 
 const DonutChart = ({
   centerLabel,
@@ -14,6 +15,7 @@ const DonutChart = ({
   isMonetary = false,
   legendFormatter,
   legendPosition = "bottom",
+  singleLineLegend = false,
 }) => {
   const chartData = {
     series: series,
@@ -46,10 +48,12 @@ const DonutChart = ({
     },
     colors: chartData.colors,
      labels: chartData.labels,
-    legend: {
-      position: legendPosition,
-      formatter: legendFormatter,
-    },
+    legend: singleLineLegend
+      ? { show: false }
+      : {
+          position: legendPosition,
+          formatter: legendFormatter,
+        },
     dataLabels: {
       enabled: true,
       formatter: (val) => `${val.toFixed(0)}%`,
@@ -111,15 +115,26 @@ const DonutChart = ({
   };
 
   return (
-    <div className="rounded-md" ref={containerRef}>
-      <ReactApexChart
-        key={chartKey}
-        options={chartOptions}
-        series={chartData.series}
-        type="donut"
-        height={320}
-        width={width || "100%"}
-      />
+    <div
+      className={`rounded-md ${singleLineLegend ? "w-full" : ""}`}
+      ref={containerRef}
+    >
+      <div className="flex w-full justify-center">
+        <ReactApexChart
+          key={chartKey}
+          options={chartOptions}
+          series={chartData.series}
+          type="donut"
+          height={singleLineLegend ? 298 : 320}
+          width={width || "100%"}
+        />
+      </div>
+      {singleLineLegend && (
+        <SingleLineLegend
+          labels={chartData.labels || []}
+          colors={chartData.colors || []}
+        />
+      )}
     </div>
   );
 };
