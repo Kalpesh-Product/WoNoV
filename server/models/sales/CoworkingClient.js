@@ -18,6 +18,29 @@ const meetingCreditBalanceHistorySchema = new mongoose.Schema(
   { _id: false },
 );
 
+const clientUpdateHistorySchema = new mongoose.Schema(
+  {
+    snapshot: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
+    action: {
+      type: String,
+      default: "Client details updated",
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "UserData",
+      default: null,
+    },
+    updatedAt: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+  { _id: true },
+);
+
 const clientSchema = new mongoose.Schema(
   {
     company: {
@@ -129,6 +152,10 @@ const clientSchema = new mongoose.Schema(
     lastManualCreditResetAt: {
       type: Date,
       default: null,
+    },
+    updateHistory: {
+      type: [clientUpdateHistorySchema],
+      default: [],
     },
 
     startDate: {

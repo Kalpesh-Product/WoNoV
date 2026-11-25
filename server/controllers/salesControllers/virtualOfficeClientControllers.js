@@ -24,6 +24,34 @@ const VIRTUAL_OFFICE_CURRENT_STATUSES = [
   "On Hold",
 ];
 
+const createVirtualOfficeHistoryEntry = (
+  snapshot,
+  user,
+  action,
+  updatedAt = new Date(),
+) => {
+  const cleanSnapshot = { ...snapshot };
+  delete cleanSnapshot.updateHistory;
+  delete cleanSnapshot.__v;
+
+  return {
+    snapshot: cleanSnapshot,
+    action,
+    updatedBy: user?._id || user || null,
+    updatedAt,
+  };
+};
+
+const createInitialVirtualOfficeHistoryEntry = (client) =>
+  createVirtualOfficeHistoryEntry(
+    typeof client.toObject === "function"
+      ? client.toObject({ depopulate: true })
+      : client,
+    null,
+    "Client created",
+    client.createdAt || client.updatedAt || new Date(),
+  );
+
 const SOURCING_MANAGER_DEPARTMENT_IDS = new Set([
   "67b2cf85b9b6ed5cedeb9a2e",
   "6798ba9de469e809084e2494",
@@ -680,7 +708,10 @@ const updateVirtualOfficeClient = async (req, res) => {
       return res.status(400).json({ message: "Invalid current status" });
     }
 
-    const existing = await VirtualOfficeClient.findById(id).lean();
+    const existing = await VirtualOfficeClient.findOne({
+      _id: id,
+      company: req.company,
+    }).lean();
     if (!existing) {
       return res
         .status(404)
@@ -1025,10 +1056,28 @@ const updateVirtualOfficeClient = async (req, res) => {
     updates.nextIncrementDate = nextIncrementDate || null;
     updates.totalTerm = calculateTotalTermMonths(termStartDate, termEnd);
 
-    const updated = await VirtualOfficeClient.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const historyEntries = [];
+    if (!(existing.updateHistory || []).length) {
+      historyEntries.push(createInitialVirtualOfficeHistoryEntry(existing));
+    }
+    historyEntries.push(
+      createVirtualOfficeHistoryEntry(
+        { ...existing, ...updates },
+        req.user,
+        "Client details updated",
+      ),
+    );
+    const updated = await VirtualOfficeClient.findOneAndUpdate(
+      { _id: id, company: req.company },
+      {
+        $set: updates,
+        $push: { updateHistory: { $each: historyEntries } },
+      },
+      {
+        new: true,
+        runValidators: true,
+      },
+    );
 
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1061,6 +1110,100 @@ const updateVirtualOfficeClient = async (req, res) => {
   }
 };
 
+const getVirtualOfficeClientHistory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+
+    const client = await VirtualOfficeClient.findOne({
+      _id: id,
+      company: req.company,
+    })
+      .populate({
+        path: "updateHistory.updatedBy",
+        select: "firstName lastName email",
+      })
+      .lean()
+      .exec();
+
+    if (!client) {
+      return res.status(404).json({ message: "Virtual Office client not found" });
+    }
+
+    const savedHistory = client.updateHistory || [];
+    const { updateHistory: _updateHistory, __v: _version, ...currentSnapshot } =
+      client;
+    const historySource = savedHistory.length
+      ? savedHistory
+      : [
+          {
+            _id: client._id,
+            snapshot: currentSnapshot,
+            action: "Client created",
+            updatedBy: null,
+            updatedAt: client.updatedAt || client.createdAt,
+          },
+        ];
+    const history = [...historySource].sort(
+      (first, second) =>
+        new Date(second.updatedAt).getTime() -
+        new Date(first.updatedAt).getTime(),
+    );
+    const unitIds = history
+      .map((entry) => entry.snapshot?.unit?._id || entry.snapshot?.unit)
+      .filter((unitId) => mongoose.Types.ObjectId.isValid(unitId));
+    const serviceIds = history
+      .map((entry) => entry.snapshot?.service?._id || entry.snapshot?.service)
+      .filter((serviceId) => mongoose.Types.ObjectId.isValid(serviceId));
+    const [units, services] = await Promise.all([
+      Unit.find({ _id: { $in: unitIds } })
+        .select("unitName unitNo building")
+        .populate({
+          path: "building",
+          select: "buildingName fullAddress",
+        })
+        .lean()
+        .exec(),
+      ClientService.find({ _id: { $in: serviceIds } })
+        .select("serviceName description")
+        .lean()
+        .exec(),
+    ]);
+    const unitById = new Map(units.map((unit) => [String(unit._id), unit]));
+    const serviceById = new Map(
+      services.map((service) => [String(service._id), service]),
+    );
+    const enrichedHistory = history.map((entry) => {
+      const snapshot = { ...(entry.snapshot || {}) };
+      const unitId = snapshot.unit?._id || snapshot.unit;
+      const serviceId = snapshot.service?._id || snapshot.service;
+
+      if (unitById.has(String(unitId))) {
+        snapshot.unit = unitById.get(String(unitId));
+      }
+      if (serviceById.has(String(serviceId))) {
+        snapshot.service = serviceById.get(String(serviceId));
+      }
+
+      return { ...entry, snapshot };
+    });
+
+    return res.status(200).json({
+      clientId: client._id,
+      clientName: client.clientName,
+      history: enrichedHistory,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      message: "Unable to fetch Virtual Office client history",
+      error: error.message,
+    });
+  }
+};
+
 const updateVirtualOfficeStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -1074,7 +1217,10 @@ const updateVirtualOfficeStatus = async (req, res) => {
       });
     }
 
-    const existing = await VirtualOfficeClient.findById(id);
+    const existing = await VirtualOfficeClient.findOne({
+      _id: id,
+      company: req.company,
+    });
     if (!existing) {
       return res.status(404).json({
         message: "Virtual Office client not found",
@@ -1089,7 +1235,19 @@ const updateVirtualOfficeStatus = async (req, res) => {
       });
     }
 
+    if (!existing.updateHistory.length) {
+      existing.updateHistory.push(
+        createInitialVirtualOfficeHistoryEntry(existing),
+      );
+    }
     existing.clientStatus = isActive;
+    existing.updateHistory.push(
+      createVirtualOfficeHistoryEntry(
+        existing.toObject(),
+        req.user,
+        `Status changed to ${isActive ? "Active" : "Inactive"}`,
+      ),
+    );
     await existing.save();
 
     return res.status(200).json({
@@ -2000,6 +2158,7 @@ module.exports = {
   getVirtualOfficeClients,
   getVirtualOfficeClientsByMonth,
   updateVirtualOfficeClient,
+  getVirtualOfficeClientHistory,
   updateVirtualOfficeStatus,
   bulkInsertVirtualOfficeClients,
   bulkUpdateVirtualOfficeClients,

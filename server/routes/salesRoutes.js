@@ -25,6 +25,7 @@ router.patch("/partnership/:id/status", requirePartnershipAccess, updatePartners
 const {
   createCoworkingClient,
   getCoworkingClients,
+  getCoworkingClientHistory,
   bulkInsertCoworkingClients,
   uploadClientOccupancyImage,
   updateCoworkingClient,
@@ -44,6 +45,7 @@ const {
 const {
   bulkInsertVirtualOfficeClients,
   updateVirtualOfficeClient,
+  getVirtualOfficeClientHistory,
   createVirtualOfficeClient,
   getVirtualOfficeClients,
   updateVirtualOfficeStatus,
@@ -138,6 +140,7 @@ router.patch(
 );
 router.get("/consolidated-clients", getConsolidatedClients);
 router.get("/co-working-clients", getCoworkingClients);
+router.get("/co-working-clients/:clientId/history", getCoworkingClientHistory);
 router.patch("/co-working-client/:clientId/status", updateClientStatus);
 
 router.post(
@@ -175,6 +178,7 @@ router.post(
 );
 router.get("/virtual-office/clients", getVirtualOfficeClients);
 router.get("/virtual-office-clients", getVirtualOfficeClientsByMonth);
+router.get("/virtual-office/:id/history", getVirtualOfficeClientHistory);
 router.patch("/virtual-office/:id", updateVirtualOfficeClient);
 router.patch("/virtual-office/:id/status", updateVirtualOfficeStatus);
 router.post(

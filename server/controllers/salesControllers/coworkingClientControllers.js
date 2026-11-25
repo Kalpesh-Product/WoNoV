@@ -19,6 +19,39 @@ const {
 } = require("../../services/reports/client");
 const buildDateFilter = require("../../utils/dateFilter");
 
+const getUserId = (user) => user?._id || user || null;
+
+const createCoworkingClientHistoryEntry = (
+  client,
+  user,
+  action,
+  updatedAt = new Date(),
+) => {
+  const snapshot = client.toObject({ depopulate: true });
+  delete snapshot.updateHistory;
+  delete snapshot.__v;
+
+  return {
+    snapshot,
+    action,
+    updatedBy: getUserId(user),
+    updatedAt,
+  };
+};
+
+const preserveInitialCoworkingClientHistory = (client) => {
+  if (client.updateHistory.length) return;
+
+  client.updateHistory.push(
+    createCoworkingClientHistoryEntry(
+      client,
+      null,
+      "Client created",
+      client.createdAt || client.updatedAt || new Date(),
+    ),
+  );
+};
+
 const createCoworkingClient = async (req, res, next) => {
   const logPath = "sales/SalesLog";
   const logAction = "Onboard CoworkingClient";
@@ -701,7 +734,16 @@ const updateCoworkingClient = async (req, res, next) => {
 
     const oldState = existingClient.toObject();
 
+    preserveInitialCoworkingClientHistory(existingClient);
     existingClient.set(updateData);
+
+    existingClient.updateHistory.push(
+      createCoworkingClientHistoryEntry(
+        existingClient,
+        user,
+        "Client details updated",
+      ),
+    );
 
     console.log("existingClient", existingClient);
     await existingClient.save();
@@ -750,6 +792,97 @@ const updateCoworkingClient = async (req, res, next) => {
         new CustomError(error.message, logPath, logAction, logSourceKey, 500),
       );
     }
+  }
+};
+
+const getCoworkingClientHistory = async (req, res, next) => {
+  try {
+    const { clientId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(clientId)) {
+      return res.status(400).json({ message: "Invalid client ID" });
+    }
+
+    const client = await CoworkingClient.findOne({
+      _id: clientId,
+      company: req.company,
+    })
+      .populate({
+        path: "updateHistory.updatedBy",
+        select: "firstName lastName email",
+      })
+      .lean()
+      .exec();
+
+    if (!client) {
+      return res.status(404).json({ message: "Client not found" });
+    }
+
+    const savedHistory = client.updateHistory || [];
+    const { updateHistory: _updateHistory, __v: _version, ...currentSnapshot } =
+      client;
+    const historySource = savedHistory.length
+      ? savedHistory
+      : [
+          {
+            _id: client._id,
+            snapshot: currentSnapshot,
+            action: "Client created",
+            updatedBy: null,
+            updatedAt: client.updatedAt || client.createdAt,
+          },
+        ];
+    const history = [...historySource].sort(
+      (first, second) =>
+        new Date(second.updatedAt).getTime() -
+        new Date(first.updatedAt).getTime(),
+    );
+    const unitIds = history
+      .map((entry) => entry.snapshot?.unit?._id || entry.snapshot?.unit)
+      .filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const serviceIds = history
+      .map((entry) => entry.snapshot?.service?._id || entry.snapshot?.service)
+      .filter((id) => mongoose.Types.ObjectId.isValid(id));
+    const [units, services] = await Promise.all([
+      Unit.find({ _id: { $in: unitIds } })
+        .select("unitName unitNo building")
+        .populate({
+          path: "building",
+          select: "buildingName fullAddress",
+        })
+        .lean()
+        .exec(),
+      ClientService.find({ _id: { $in: serviceIds } })
+        .select("serviceName description")
+        .lean()
+        .exec(),
+    ]);
+    const unitById = new Map(units.map((unit) => [String(unit._id), unit]));
+    const serviceById = new Map(
+      services.map((service) => [String(service._id), service]),
+    );
+    const enrichedHistory = history.map((entry) => {
+      const snapshot = { ...(entry.snapshot || {}) };
+      const unitId = snapshot.unit?._id || snapshot.unit;
+      const serviceId = snapshot.service?._id || snapshot.service;
+
+      if (unitById.has(String(unitId))) {
+        snapshot.unit = unitById.get(String(unitId));
+      }
+      if (serviceById.has(String(serviceId))) {
+        snapshot.service = serviceById.get(String(serviceId));
+      }
+
+      return { ...entry, snapshot };
+    });
+
+    return res.status(200).json({
+      clientId: client._id,
+      clientName: client.clientName,
+      history: enrichedHistory,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -889,13 +1022,24 @@ const updateClientStatus = async (req, res) => {
       });
     }
 
-    const client = await CoworkingClient.findById(clientId);
+    const client = await CoworkingClient.findOne({
+      _id: clientId,
+      company: req.company,
+    });
 
     if (!client) {
       return res.status(404).json({ message: "Client not found" });
     }
 
+    preserveInitialCoworkingClientHistory(client);
     client.isActive = isActive;
+    client.updateHistory.push(
+      createCoworkingClientHistoryEntry(
+        client,
+        req.user,
+        `Status changed to ${isActive ? "Active" : "Inactive"}`,
+      ),
+    );
     await client.save();
 
     return res.status(200).json({
@@ -1641,6 +1785,7 @@ module.exports = {
   updateClientStatus,
   deleteCoworkingClient,
   getCoworkingClients,
+  getCoworkingClientHistory,
   bulkInsertCoworkingClients,
   bulkUpdateCoworkingClients,
   uploadClientOccupancyImage,

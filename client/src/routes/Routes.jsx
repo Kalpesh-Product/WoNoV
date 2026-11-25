@@ -512,9 +512,11 @@ import AssetsHome from "../pages/Assets/AssetsHome";
 import ManageAssetsHome from "../pages/Assets/ManageAssetsHome";
 import ViewClientInfo from "../pages/Dashboard/SalesDashboard/ViewClientInfo";
 import CoWorkingClients from "../pages/Dashboard/SalesDashboard/ViewClients/CoWorkingClients";
+import CoworkingClientHistory from "../pages/Dashboard/SalesDashboard/ViewClients/CoworkingClientHistory";
 import WorkationClients from "../pages/Dashboard/SalesDashboard/ViewClients/WorkationClients";
 import VirtualOfficeClients from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClients";
 import VirtualOfficeClientDetails from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDetails";
+import VirtualOfficeClientHistory from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientHistory";
 import VirtualOfficeClientDesks from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientDesks";
 import VirtualOfficeClientRevenue from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientRevenue";
 import VirtualOfficeClientMembers from "../pages/Dashboard/SalesDashboard/ViewClients/VirtualOfficeClientMembers";
@@ -4716,12 +4718,38 @@ export const routes = createBrowserRouter([
                         element: <CoWorkingClients />,
                       },
                       {
+                        path: "mix-bag/clients/co-working/coworking-client-history/:clientId",
+                        element: <CoworkingClientHistory />,
+                      },
+                      {
+                        path: "mix-bag/clients/co-working/coworking-client-history",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/clients/co-working"
+                            replace
+                          />
+                        ),
+                      },
+                      {
                         path: "mix-bag/clients/workation",
                         element: <WorkationClients />,
                       },
                       {
                         path: "mix-bag/clients/virtual-office",
                         element: <VirtualOfficeClients />,
+                      },
+                      {
+                        path: "mix-bag/clients/virtual-office/client-history/:clientId",
+                        element: <VirtualOfficeClientHistory />,
+                      },
+                      {
+                        path: "mix-bag/clients/virtual-office/client-history",
+                        element: (
+                          <Navigate
+                            to="/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office"
+                            replace
+                          />
+                        ),
                       },
                       {
                         path: "mix-bag/clients/virtual-office/:clientId",

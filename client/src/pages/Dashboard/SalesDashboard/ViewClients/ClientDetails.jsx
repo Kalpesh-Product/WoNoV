@@ -616,6 +616,10 @@ const ClientDetails = () => {
           ),
         ),
       );
+      await queryClient.invalidateQueries({
+        queryKey: ["coworking-client-history", selectedClient._id],
+        refetchType: "all",
+      });
 
       reset({
         ...data,

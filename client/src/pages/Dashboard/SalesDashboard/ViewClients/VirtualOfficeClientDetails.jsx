@@ -830,6 +830,10 @@ const VirtualOfficeClientDetails = () => {
         queryClient.invalidateQueries({
           queryKey: ["virtualOfficeClient", selectedClient._id],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ["virtual-office-client-history", selectedClient._id],
+          refetchType: "all",
+        }),
       ]);
 
       // Sync form with updated data

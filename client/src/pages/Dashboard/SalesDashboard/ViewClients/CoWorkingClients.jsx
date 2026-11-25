@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import AgTable from "../../../../components/AgTable";
 import PageFrame from "../../../../components/Pages/PageFrame";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -8,8 +8,9 @@ import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import { setClientData } from "../../../../redux/slices/salesSlice";
 import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { Chip } from "@mui/material";
-import { HiPencilSquare } from "react-icons/hi2";
 import { toast } from "sonner";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
+import { HiPencilSquare } from "react-icons/hi2";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -59,6 +60,7 @@ const CoWorkingClients = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const queryClient = useQueryClient();
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -97,7 +99,11 @@ const CoWorkingClients = () => {
       );
       return { previousClients };
     },
-    onSuccess: (response) => {
+    onSuccess: async (response, { id }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["coworking-client-history", id],
+        refetchType: "all",
+      });
       toast.success(response?.message || "Client status updated successfully");
     },
     onError: (error, _variables, context) => {
@@ -144,6 +150,17 @@ const CoWorkingClients = () => {
       id: clientData._id,
       isActive: !clientData.isActive,
     });
+  };
+
+  const handleViewHistory = (clientData) => {
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/clients/co-working/coworking-client-history/${clientData._id}`,
+      {
+        state: {
+          breadcrumbLabel: clientData.clientName || "Coworking Client History",
+        },
+      },
+    );
   };
   const viewEmployeeColumns = [
     { field: "id", headerName: "Sr No",width:150 },
@@ -202,7 +219,7 @@ const CoWorkingClients = () => {
       field: "actions",
       headerName: "Actions",
       pinned: "right",
-      minWidth: 110,
+      minWidth: 150,
       sortable: false,
       filter: false,
       cellRenderer: (params) => {
@@ -213,15 +230,6 @@ const CoWorkingClients = () => {
 
         return (
           <div className="flex h-full items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleClickRow(params.data)}
-              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
-              aria-label={`Edit ${params.data?.clientName || "client"}`}
-              title="Edit"
-            >
-              <HiPencilSquare size={26} />
-            </button>
             <button
               type="button"
               onClick={() => handleToggleClientStatus(params.data)}
@@ -242,6 +250,24 @@ const CoWorkingClients = () => {
                 }`}
               />
             </button>
+            <button
+              type="button"
+              onClick={() => handleClickRow(params.data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              aria-label={`Edit ${params.data?.clientName || "client"}`}
+              title="Edit"
+            >
+              <HiPencilSquare size={26} />
+            </button>
+            <ThreeDotMenu
+              rowId={params.data?._id}
+              menuItems={[
+                {
+                  label: "View History",
+                  onClick: () => handleViewHistory(params.data),
+                },
+              ]}
+            />
           </div>
         );
       },

@@ -154,6 +154,8 @@ const BreadCrumbComponent = () => {
       );
     const isNonNavigableSegment =
       segment === "visitor-history" ||
+      segment === "client-history" ||
+      segment === "coworking-client-history" ||
       isEmployeeWorkCrumb ||
       (segment === "daily-score" && location.pathname.startsWith("/app/kra-kpa/")) ||
       (isSalesVerticalClientPath && segment === "client");

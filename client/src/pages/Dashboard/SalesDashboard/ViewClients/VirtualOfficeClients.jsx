@@ -9,6 +9,7 @@ import { setSelectedClient } from "../../../../redux/slices/clientSlice";
 import { toast } from "sonner";
 import { HiPencilSquare } from "react-icons/hi2";
 import { useState } from "react";
+import ThreeDotMenu from "../../../../components/ThreeDotMenu";
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -114,7 +115,11 @@ const VirtualOfficeClients = () => {
         [String(id)]: isActive,
       }));
     },
-    onSuccess: (response, { id }) => {
+    onSuccess: async (response, { id }) => {
+      await queryClient.invalidateQueries({
+        queryKey: ["virtual-office-client-history", id],
+        refetchType: "all",
+      });
       toast.success(response?.message || "Client status updated successfully");
       setTimeout(async () => {
         await queryClient.invalidateQueries({ queryKey: ["clientDetails"] });
@@ -185,6 +190,17 @@ const VirtualOfficeClients = () => {
     updateClientStatus({ id: clientData._id, isActive: !currentStatus });
   };
 
+  const handleViewHistory = (clientData) => {
+    navigate(
+      `/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office/client-history/${clientData._id}`,
+      {
+        state: {
+          breadcrumbLabel: clientData.clientName || "Client History",
+        },
+      },
+    );
+  };
+
   //-------------------------Event Handlers-----------------------------//
   //-------------------------Table Data-----------------------------//
   const columns = [
@@ -226,7 +242,7 @@ const VirtualOfficeClients = () => {
       field: "actions",
       headerName: "Actions",
       pinned:"right",
-      minWidth: 110,
+      minWidth: 150,
       sortable: false,
       filter: false,
       cellRenderer: (params) => {
@@ -239,15 +255,6 @@ const VirtualOfficeClients = () => {
 
         return (
           <div className="flex h-full items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleViewClient(params.data)}
-              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
-              aria-label={`Edit ${params.data?.clientName || "client"}`}
-              title="Edit"
-            >
-              <HiPencilSquare size={26} />
-            </button>
             <button
               type="button"
               onClick={() => handleToggleClientStatus(params.data)}
@@ -268,6 +275,24 @@ const VirtualOfficeClients = () => {
                 }`}
               />
             </button>
+            <button
+              type="button"
+              onClick={() => handleViewClient(params.data)}
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              aria-label={`Edit ${params.data?.clientName || "client"}`}
+              title="Edit"
+            >
+              <HiPencilSquare size={26} />
+            </button>
+            <ThreeDotMenu
+              rowId={params.data?._id}
+              menuItems={[
+                {
+                  label: "View History",
+                  onClick: () => handleViewHistory(params.data),
+                },
+              ]}
+            />
           </div>
         );
       },
