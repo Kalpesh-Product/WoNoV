@@ -4718,6 +4718,18 @@ export const routes = createBrowserRouter([
                         element: <CoWorkingClients />,
                       },
                       {
+                        path: "mix-bag/clients/flexible-desk",
+                        element: (
+                          <SidebarDropdown
+                            permissions={[
+                              PERMISSIONS.SALES_FLEXIBLE_DESK_CLIENTS.value,
+                            ]}
+                          >
+                            <CoWorkingClients clientSegment="flexible-desk" />
+                          </SidebarDropdown>
+                        ),
+                      },
+                      {
                         path: "mix-bag/clients/co-working/coworking-client-history/:clientId",
                         element: <CoworkingClientHistory />,
                       },

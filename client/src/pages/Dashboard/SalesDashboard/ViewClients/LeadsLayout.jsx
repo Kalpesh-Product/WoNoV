@@ -20,6 +20,14 @@ const ACTUAL_UNIQUE_CLIENT_SERIES = [
   "External Meetings",
   "Open Desk",
 ];
+const ACTUAL_UNIQUE_CLIENT_SERIES_WITH_FLEXIBLE_DESK = [
+  "Co-Working",
+  "Flexible Desk",
+  "Virtual Office",
+  "External Meetings",
+  "Open Desk",
+];
+const FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR = "#B4CCBF";
 const PROJECTED_UNIQUE_CLIENT_COLORS = [
   "#3c3c3c",
   "#616161",
@@ -28,6 +36,7 @@ const PROJECTED_UNIQUE_CLIENT_COLORS = [
 ];
 const UNIQUE_CLIENT_COLOR_BY_SERIES = {
   "Co-Working": "#1E3D73",
+  "Flexible Desk": FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR,
   "Virtual Office": "#80BF01",
   "External Meetings": "#FFC300",
   "Open Desk": "#00C8D7",
@@ -136,6 +145,7 @@ const LeadsLayout = ({
   onSelectedFinancialYearClientsCountChange,
   showAllInvestorClientVerticals = false,
   hideWorkationInAllInvestorVerticals = false,
+  includeFlexibleDeskSeries = false,
 }) => {
   const singleSeriesOnly =
     virtualOfficeOnly || Boolean(focusedClientSeries);
@@ -154,7 +164,9 @@ const LeadsLayout = ({
   );
   const resolvedActualSeriesNames = useAllInvestorVerticals
     ? allInvestorClientVerticals
-    : ACTUAL_UNIQUE_CLIENT_SERIES;
+    : includeFlexibleDeskSeries
+      ? ACTUAL_UNIQUE_CLIENT_SERIES_WITH_FLEXIBLE_DESK
+      : ACTUAL_UNIQUE_CLIENT_SERIES;
   const resolvedProjectedSeriesNames = useAllInvestorVerticals
     ? allInvestorClientVerticals
         .filter((name) => name !== "Workation")
@@ -245,6 +257,7 @@ const LeadsLayout = ({
     return financialYearMonths.map((monthLabel) => {
       const domainCounts = {
         "Coworking": 0,
+        "Flexible Desk": 0,
         "Co-Living": 0,
         "Workation": 0,
         "Virtualoffice": 0,
@@ -298,6 +311,7 @@ const LeadsLayout = ({
         ? allInvestorClientVerticals
         : [
             "Coworking",
+            ...(includeFlexibleDeskSeries ? ["Flexible Desk"] : []),
             "Virtualoffice",
             "External Meetings",
             "Open Desk",
@@ -322,6 +336,7 @@ const LeadsLayout = ({
       focusedActualSeries,
       allInvestorClientVerticals,
       useAllInvestorVerticals,
+      includeFlexibleDeskSeries,
       reportingMonth,
     ],
   );
@@ -364,6 +379,9 @@ const LeadsLayout = ({
       ? allInvestorClientVerticals.map((name) => ({ name, key: name }))
       : [
           { name: "Co-Working", key: "Coworking" },
+          ...(includeFlexibleDeskSeries
+            ? [{ name: "Flexible Desk", key: "Flexible Desk" }]
+            : []),
           {
             name: "Workation",
             key: "Workation",
@@ -392,7 +410,7 @@ const LeadsLayout = ({
       return singleSeriesOnly
         ? actualSeries
         : actualSeries.filter((series) =>
-            ACTUAL_UNIQUE_CLIENT_SERIES.includes(series.name),
+            resolvedActualSeriesNames.includes(series.name),
           );
     }
 
@@ -408,7 +426,7 @@ const LeadsLayout = ({
       ? allInvestorClientVerticals
       : singleSeriesOnly && focusedActualSeries === "Workation"
         ? [...ACTUAL_UNIQUE_CLIENT_SERIES, "Workation"]
-        : ACTUAL_UNIQUE_CLIENT_SERIES;
+        : resolvedActualSeriesNames;
     const investorActualSeries = investorActualSeriesNames.map(
       (seriesName) => actualSeriesByName.get(seriesName),
     )
@@ -467,6 +485,8 @@ const LeadsLayout = ({
     virtualOfficeProjectedClientCount,
     useAllInvestorVerticals,
     resolvedProjectedSeriesNames,
+    resolvedActualSeriesNames,
+    includeFlexibleDeskSeries,
     reportingMonth,
   ]);
   const scopedUniqueClientsData = useMemo(() => {
@@ -789,7 +809,15 @@ const LeadsLayout = ({
       ? scopedUniqueClientsData.map(({ name }) =>
           getUniqueClientSeriesColor(name),
         )
-      : ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
+      : includeFlexibleDeskSeries
+        ? [
+            "#1E3D73",
+            FLEXIBLE_DESK_UNIQUE_CLIENT_COLOR,
+            "#80BF01",
+            "#FFC300",
+            "#00C8D7",
+          ]
+        : ["#1E3D73", "#80BF01", "#FFC300", "#00C8D7", "#FF5733"],
   };
 
   const handlePrevYear = () => {

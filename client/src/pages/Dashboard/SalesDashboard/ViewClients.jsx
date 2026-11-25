@@ -15,11 +15,48 @@ import WidgetSection from "../../../components/WidgetSection";
 import PageFrame from "../../../components/Pages/PageFrame";
 import TabLayout from "../../../components/Tabs/TabLayout";
 import DataCard from "../../../components/DataCard";
+import { PERMISSIONS } from "../../../constants/permissions";
+import useUserPermissions from "../../../hooks/useUserPermissions";
+import {
+  MdOutlineBusinessCenter,
+  MdOutlineChair,
+  MdOutlineCorporateFare,
+  MdOutlineGroups,
+  MdOutlineConfirmationNumber,
+} from "react-icons/md";
+
+const CLIENT_CARD_ACCENT_COLOR = "#1E3D73";
+
+const getCoworkingClientType = (client) => {
+  const clientType = String(client?.clientType || "")
+    .trim()
+    .toLowerCase();
+
+  if (clientType) return clientType;
+
+  return String(client?.billingFrequency || "").trim().toLowerCase() === "monthly"
+    ? "flexy desk client"
+    : "annual client";
+};
+
+const isFlexibleDeskClient = (client) => {
+  const clientType = getCoworkingClientType(client);
+
+  return [
+    "flexy desk client",
+    "flexi desk client",
+    "flexible desk client",
+  ].includes(clientType);
+};
+
+const isAnnualClient = (client) =>
+  getCoworkingClientType(client) === "annual client";
 
 const ViewClients = () => {
   const clientsData = useSelector((state) => state.sales.clientsData);
   const dispatch = useDispatch();
   const axios = useAxiosPrivate();
+  const { hasPermission } = useUserPermissions();
   useEffect(() => {
     const fetchSourceIfEmpty = async () => {
       if (clientsData.length === 0) {
@@ -62,6 +99,7 @@ const ViewClients = () => {
       const clientType = key.replace(/Clients$/, ""); // e.g., "coworkingClients" → "coworking"
       return clients.map((client) => ({
         ...client,
+        sourceClientType: client.clientType,
         clientType, // dynamically tagged
       }));
     });
@@ -88,13 +126,31 @@ const ViewClients = () => {
     [unifiedClients]
   );
 
+  const annualClients = useMemo(
+    () => coWorkingClients.filter(isAnnualClient),
+    [coWorkingClients],
+  );
+
   const coWorkingStatusSummary = useMemo(() => {
-    const active = coWorkingClients.filter((client) => client?.isActive).length;
+    const active = annualClients.filter((client) => client?.isActive).length;
     return {
       active,
-      inactive: Math.max(0, coWorkingClients.length - active),
+      inactive: Math.max(0, annualClients.length - active),
     };
-  }, [coWorkingClients]);
+  }, [annualClients]);
+
+  const flexibleDeskClients = useMemo(
+    () => coWorkingClients.filter(isFlexibleDeskClient),
+    [coWorkingClients],
+  );
+
+  const flexibleDeskStatusSummary = useMemo(() => {
+    const active = flexibleDeskClients.filter((client) => client?.isActive).length;
+    return {
+      active,
+      inactive: Math.max(0, flexibleDeskClients.length - active),
+    };
+  }, [flexibleDeskClients]);
 
   const virtualOfficeClients = Array.isArray(data?.virtualOfficeClients)
     ? data.virtualOfficeClients
@@ -144,7 +200,8 @@ const ViewClients = () => {
   }, [openDeskVisitors]);
 
   const clientCounts = {
-    coWorking: coWorkingClients.length,
+    coWorking: annualClients.length,
+    flexibleDesk: flexibleDeskClients.length,
     virtualOfficeClients: virtualOfficeClients.length,
     externalMeetings: externalMeetingVisitors.length,
     openDesk: openDeskVisitors.length,
@@ -157,13 +214,27 @@ const ViewClients = () => {
       value: clientCounts.coWorking,
       statusSummary: coWorkingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/co-working",
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineBusinessCenter size={17} />,
     },
     {
       id: 2,
+      name: "Flexible Desk",
+      value: clientCounts.flexibleDesk,
+      statusSummary: flexibleDeskStatusSummary,
+      route: "/app/dashboard/sales-dashboard/mix-bag/clients/flexible-desk",
+      permission: PERMISSIONS.SALES_FLEXIBLE_DESK_CLIENTS.value,
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineChair size={18} />,
+    },
+    {
+      id: 3,
       name: "Virtual-Office",
       value: clientCounts.virtualOfficeClients,
       statusSummary: virtualOfficeStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/clients/virtual-office",
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineCorporateFare size={18} />,
     },
     // {
     //   id: 3,
@@ -172,22 +243,28 @@ const ViewClients = () => {
     //   route: "/app/dashboard/sales-dashboard/mix-bag/external-client",
     // },
     {
-      id: 3,
+      id: 4,
       name: "External Meetings",
       value: clientCounts.externalMeetings,
       statusSummary: externalMeetingStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/meetings/external-companies",
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineGroups size={18} />,
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_MEETINGS_COMPANIES.value,
     },
     {
-      id: 4,
-      name: "Open Desk",
+      id: 5,
+      name: "Day Pass",
       value: clientCounts.openDesk,
       statusSummary: openDeskStatusSummary,
       route: "/app/dashboard/sales-dashboard/mix-bag/external-client/open-desk/external-companies",
+      accentColor: CLIENT_CARD_ACCENT_COLOR,
+      icon: <MdOutlineConfirmationNumber size={18} />,
       // permission: PERMISSIONS.SALES_EXTERNAL_CLIENT_OPEN_DESK_COMPANIES.value,
     },
-  ];
+  ].filter(
+    (card) => !card.permission || hasPermission(card.permission),
+  );
 
   const transformClientsGroupedByMonth = (clientsArray) => {
     const grouped = {};
@@ -202,9 +279,10 @@ const ViewClients = () => {
 
     const serviceMapping = {
       coworking: "Coworking",
+      flexibleDesk: "Flexible Desk",
       virtualOffice: "Virtualoffice",
       externalMeeting: "External Meetings",
-      openDesk: "Open Desk",
+      openDesk: "Day Pass Client",
       workation: "Workations",
       coliving: "Co-Living",
     };
@@ -228,14 +306,29 @@ const ViewClients = () => {
           rawServiceName = "workation";
         } else if (sName.includes("living") || sName.includes("coliving")) {
           rawServiceName = "coliving";
+        } else if (
+          isFlexibleDeskClient({
+            clientType: client.sourceClientType,
+            billingFrequency: client.billingFrequency,
+          })
+        ) {
+          rawServiceName = "flexibleDesk";
         }
+      } else if (
+        rawServiceName === "coworking" &&
+        isFlexibleDeskClient({
+          clientType: client.sourceClientType,
+          billingFrequency: client.billingFrequency,
+        })
+      ) {
+        rawServiceName = "flexibleDesk";
       }
 
       const formattedServiceName =
         serviceMapping[rawServiceName] || toTitleCase(rawServiceName);
 
       let date = null;
-      if (rawServiceName === "coworking") {
+      if (["coworking", "flexibleDesk"].includes(rawServiceName)) {
         date = client.startDate ? new Date(client.startDate) : null;
       } else if (rawServiceName === "virtualOffice") {
         date = client.termStartDate
@@ -302,6 +395,7 @@ const ViewClients = () => {
           data={transformedData}
           hideAccordion
           additionalData={`CLIENTS : ${unifiedClients.length}`}
+          includeFlexibleDeskSeries
         >
           <div className="border-b border-borderGray px-4 pb-4">
             <h2 className="text-mobileTitle lg:text-widgetTitle text-primary font-pmedium uppercase">
@@ -309,19 +403,20 @@ const ViewClients = () => {
             </h2>
           </div>
           <div className="pt-4">
-          <WidgetSection
-            layout={verticalsData.length <= 2 ? verticalsData.length : 2}
-          >
-            {verticalsData.map((item) => (
-              <DataCard
-                key={item.id}
-                data={item.value}
-                title={item.name}
-                statusSummary={item.statusSummary}
-                route={item.route}
-              />
-            ))}
-          </WidgetSection>
+            <WidgetSection layout={Math.min(verticalsData.length, 3)}>
+              {verticalsData.map((item) => (
+                <DataCard
+                  key={item.id}
+                  data={item.value}
+                  title={item.name}
+                  statusSummary={item.statusSummary}
+                  route={item.route}
+                  variant="client-summary"
+                  accentColor={item.accentColor}
+                  icon={item.icon}
+                />
+              ))}
+            </WidgetSection>
           </div>
         </UniqueClients>
       </div>

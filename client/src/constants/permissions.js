@@ -2733,6 +2733,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/dashboard/sales-dashboard/mix-bag/clients",
   },
+  SALES_FLEXIBLE_DESK_CLIENTS: {
+    value: "sales_flexible_desk_clients",
+    title: "FLEXIBLE DESK CLIENTS",
+    type: "read",
+    route: "/app/dashboard/sales-dashboard/mix-bag/clients/flexible-desk",
+  },
   SALES_PARTNERS_MIX_BAG: {
     value: "sales_partners_mix_bag_card",
     title: "ENQUIRIES",

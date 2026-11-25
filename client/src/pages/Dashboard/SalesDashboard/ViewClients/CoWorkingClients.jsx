@@ -54,7 +54,28 @@ const calculateAgreementExpiry = (startDate, endDate) => {
   return `${remainingDays}/${totalDays} ${totalDays === 1 ? "day" : "days"}`;
 };
 
-const CoWorkingClients = () => {
+const getCoworkingClientType = (client) => {
+  const clientType = String(client?.clientType || "")
+    .trim()
+    .toLowerCase();
+
+  if (clientType) return clientType;
+
+  return String(client?.billingFrequency || "").trim().toLowerCase() === "monthly"
+    ? "flexy desk client"
+    : "annual client";
+};
+
+const isFlexibleDeskClient = (client) =>
+  ["flexy desk client", "flexi desk client", "flexible desk client"].includes(
+    getCoworkingClientType(client),
+  );
+
+const isAnnualClient = (client) =>
+  getCoworkingClientType(client) === "annual client";
+
+const CoWorkingClients = ({ clientSegment = "coworking" }) => {
+  const isFlexibleDeskView = clientSegment === "flexible-desk";
   const navigate = useNavigate();
   const clientsData = useSelector((state) => state.sales.clientsData);
   const location = useLocation();
@@ -123,7 +144,9 @@ const CoWorkingClients = () => {
     const isMixBag = location.pathname.includes("mix-bag");
     const isRevenueBasePath =
       location.pathname.endsWith("/co-working") ||
-      location.pathname.endsWith("/co-working/");
+      location.pathname.endsWith("/co-working/") ||
+      location.pathname.endsWith("/flexible-desk") ||
+      location.pathname.endsWith("/flexible-desk/");
     const isCoworkingSummaryPath = location.pathname.endsWith(
       "/co-working/client-details",
     );
@@ -274,7 +297,10 @@ const CoWorkingClients = () => {
     },
   ];
 
-  const sortedClients = [...clientsData].sort((firstClient, secondClient) =>
+  const displayedClients = isFlexibleDeskView
+    ? clientsData.filter(isFlexibleDeskClient)
+    : clientsData.filter(isAnnualClient);
+  const sortedClients = [...displayedClients].sort((firstClient, secondClient) =>
     String(firstClient?.clientName || "").localeCompare(
       String(secondClient?.clientName || ""),
       undefined,
@@ -344,7 +370,11 @@ const CoWorkingClients = () => {
         <PageFrame>
           <AgTable
             search={true}
-            tableTitle={"CO-WORKING CLIENT DETAILS"}
+            tableTitle={
+              isFlexibleDeskView
+                ? "FLEXIBLE DESK CLIENT DETAILS"
+                : "CO-WORKING CLIENT DETAILS"
+            }
             titleRightContent={
               <div className="flex flex-wrap items-center justify-end gap-1.5">
                 <div className="flex items-center justify-center gap-1 rounded-lg border border-[#aec6fb] bg-[#dbe4ff] px-3 py-1.5 text-sm font-pmedium uppercase text-[#274784]">
