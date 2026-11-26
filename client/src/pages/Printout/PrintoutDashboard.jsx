@@ -7,6 +7,7 @@ import { Skeleton } from "@mui/material";
 import Card from "../../components/Card";
 import DonutChart from "../../components/graphs/DonutChart";
 import PieChartMui from "../../components/graphs/PieChartMui";
+import { SingleLineLegend } from "../../components/graphs/SectorLegend";
 import FyBarGraphCount from "../../components/graphs/FyBarGraphCount";
 import WidgetSection from "../../components/WidgetSection";
 import { PERMISSIONS } from "../../constants/permissions";
@@ -138,14 +139,31 @@ const unitWisePrintoutData = useMemo(() => {
   }, [printouts]);
 
   const clientWiseQuantityLabels = clientWiseQuantityData.map((item) => item.client);
+  const clientWiseQuantityColors = [
+    "#FFB946",
+    "#54C4A7",
+    "#6A5ACD",
+    "#FF4D4F",
+    "#00C49F",
+    "#4BC0C0",
+    "#9966FF",
+  ];
   const clientWiseQuantityPieData = clientWiseQuantityData.map((item) => ({
     label: item.client,
     value: item.quantity,
   }));
+  // Single-line legend with the same text formatting as the other dashboard charts
+  const clientWiseQuantityLegend = (
+    <SingleLineLegend
+      labels={clientWiseQuantityLabels}
+      colors={clientWiseQuantityColors}
+      maxLabelWidth={110}
+    />
+  );
   const clientWiseQuantityPieOptions = {
     labels: clientWiseQuantityLabels,
     legend: {
-      position: "bottom",
+      show: false,
     },
     tooltip: {
       y: {
@@ -160,15 +178,7 @@ const unitWisePrintoutData = useMemo(() => {
       type: "pie",
       fontFamily: "Poppins-Regular",
     },
-    colors: [
-      "#FFB946",
-      "#54C4A7",
-      "#6A5ACD",
-      "#FF4D4F",
-      "#00C49F",
-      "#4BC0C0",
-      "#9966FF",
-    ],
+    colors: clientWiseQuantityColors,
   };
 
   const canViewMonthlyTotalPrintout = userPermissions.includes(
@@ -201,6 +211,7 @@ const canViewClientWiseQuantity = userPermissions.includes(
       titleLabel: "Client Wise Printout",
       data: clientWiseQuantityPieData,
       options: clientWiseQuantityPieOptions,
+      customLegend: clientWiseQuantityLegend,
     },
   ].filter(Boolean);
   // const graphConfigs = [
@@ -273,26 +284,31 @@ const canViewClientWiseQuantity = userPermissions.includes(
                 title={chart.title}
                 titleLabel={chart.titleLabel}
                 border
+                autoHeight
               >
-                {isPrintoutsLoading ? (
-                  <Skeleton variant="rounded" width="100%" height={320} />
-                ) : chart.chartType === "pie" ? (
-                  <PieChartMui
-                    data={chart.data}
-                    options={chart.options}
-                    width={500}
-                    height={320}
-                    centerAlign
-                  />
-                ) : (
-                  <DonutChart
-                    centerLabel="Quantity"
-                    labels={chart.labels}
-                    colors={chart.colors}
-                    series={chart.series}
-                    tooltipValue={chart.tooltipValue}
-                  />
-                )}
+                <div className="pt-3">
+                  {isPrintoutsLoading ? (
+                    <Skeleton variant="rounded" width="100%" height={320} />
+                  ) : chart.chartType === "pie" ? (
+                    <PieChartMui
+                      data={chart.data}
+                      options={chart.options}
+                      width={440}
+                      height={320}
+                      customChartAreaHeight={286}
+                      customLegend={chart.customLegend}
+                      centerAlign
+                    />
+                  ) : (
+                    <DonutChart
+                      centerLabel="Quantity"
+                      labels={chart.labels}
+                      colors={chart.colors}
+                      series={chart.series}
+                      tooltipValue={chart.tooltipValue}
+                    />
+                  )}
+                </div>
               </WidgetSection>
             ))}
           </div>

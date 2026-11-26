@@ -45,7 +45,7 @@ const RecievedTickets = ({ title, departmentId }) => {
   };
 
   const { data: tickets = [], isLoading } = useQuery({
-    queryKey: ["tickets"],
+    queryKey: ["tickets", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -57,6 +57,9 @@ const RecievedTickets = ({ title, departmentId }) => {
         throw new Error(error.response.data.message);
       }
     },
+    enabled: Boolean(departmentId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const { mutate: acceptMutate } = useMutation({
@@ -89,6 +92,9 @@ const RecievedTickets = ({ title, departmentId }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["rejected-tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["all-tickets"] });
 
       toast.success(data);
     },
@@ -111,6 +117,8 @@ const RecievedTickets = ({ title, departmentId }) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["tickets"] });
+      queryClient.invalidateQueries({ queryKey: ["tickets-data"] });
+      queryClient.invalidateQueries({ queryKey: ["all-tickets"] });
       toast.success(data);
       handleClose(); // Close modal on success
       reset(); // Reset form after submission
@@ -133,8 +141,9 @@ const RecievedTickets = ({ title, departmentId }) => {
   };
 
   const { data: subOrdinates = [], isPending: isSubOrdinates } = useQuery({
-    queryKey: ["sub-ordinates"],
+    queryKey: ["sub-ordinates", departmentId],
     queryFn: fetchSubOrdinates,
+    enabled: Boolean(departmentId),
   });
 
   const { control, handleSubmit, reset } = useForm({

@@ -131,7 +131,7 @@ const AcceptedTickets = ({
 
   // Fetch Accepted Tickets
   const { data: acceptedTickets = [], isLoading } = useQuery({
-    queryKey: ["accepted-tickets"],
+    queryKey: ["accepted-tickets", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -147,6 +147,9 @@ const AcceptedTickets = ({
         throw new Error("Failed to fetch tickets");
       }
     },
+    enabled: Boolean(departmentId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const formatAssignments = (assignments = []) => {

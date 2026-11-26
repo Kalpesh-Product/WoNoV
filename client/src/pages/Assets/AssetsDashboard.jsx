@@ -4,6 +4,7 @@ import { MdFormatListBulleted, MdMiscellaneousServices } from "react-icons/md";
 import { CgProfile } from "react-icons/cg";
 import Card from "../../components/Card";
 import DonutChart from "../../components/graphs/DonutChart";
+import { SingleLineLegend } from "../../components/graphs/SectorLegend";
 import WidgetSection from "../../components/WidgetSection";
 import DataCard from "../../components/DataCard";
 import MuiTable from "../../components/Tables/MuiTable";
@@ -549,10 +550,34 @@ const AssetsDashboard = () => {
 
   // -----------------------Department Pie Data --------------------
 
-  const departmentWiseAssets = assetsDept.map((dept) => ({
-    label: `${dept.departmentName}`,
-    value: dept.assets.length,
-  }));
+ // Colors for departments (used by both the pie and its single-line legend)
+  const departmentPieColors = [
+    "#003f5c",
+    "#2f4b7c",
+    "#665191",
+    "#a05195",
+    "#d45087",
+    "#f95d6a",
+    "#ff7c43",
+    "#ffa600",
+    "#2ca58d",
+    "#0b6e4f",
+    "#8e44ad",
+  ];
+
+  const departmentWiseAssets = assetsDept.map((dept) => {
+    const fullName = (dept.departmentName || "").trim() || "N/A";
+    return {
+      // Tooltip shows the full name with the "Department" suffix
+      // ("IT" -> "IT Department"), legend keeps only the first word.
+      fullName:
+        fullName === "N/A" || /department/i.test(fullName)
+          ? fullName
+          : `${fullName} Department`,
+      label: fullName.split(/\s+/)[0],
+      value: dept.assets.length,
+    };
+  });
 
   const totalDepartmentAssets = departmentWiseAssets.reduce(
     (sum, dept) => sum + dept.value,
@@ -560,7 +585,8 @@ const AssetsDashboard = () => {
   );
 
   const departmentPieData = departmentWiseAssets.map((dept) => ({
-    label: `${dept.label} Department`,
+    label: dept.label,
+    fullName: dept.fullName,
     value: totalDepartmentAssets > 0 ? ((dept.value / totalDepartmentAssets) * 100).toFixed(1) : 0,
     count: dept.value,
   }));
@@ -569,8 +595,8 @@ const AssetsDashboard = () => {
     chart: {
       fontFamily: "Poppins-Regular",
     },
-    labels: departmentPieData.map((item) => item.label),
-    legend: { show: true },
+    labels: departmentPieData.map((item) => item.fullName),
+    legend: { show: false },
     dataLabels: {
       enabled: true,
       formatter: (val) => `${val.toFixed(0)}%`,
@@ -583,8 +609,19 @@ const AssetsDashboard = () => {
         },
       },
     },
-    colors: ["#003f5c", "#2f4b7c", "#665191", "#a05195", "#d45087"], // Different colors for departments
+    colors: departmentPieColors, // Different colors for departments
   };
+
+  // Single-line legend for the department wise asset usage chart
+  const departmentPieLegend = (
+    <SingleLineLegend
+      labels={departmentPieData.map((item) => item.label)}
+      colors={departmentPieData.map(
+        (_, index) => departmentPieColors[index % departmentPieColors.length],
+      )}
+      suffix="Department"
+    />
+  );
 
   const assetColumns = [
     { id: "srNo", label: "Sr No" ,width:150},
@@ -1196,7 +1233,10 @@ const AssetsDashboard = () => {
             {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <PieChartMui
               data={departmentPieData}
               options={departmentPieOptions}
-              width={550}
+              width={440}
+              height={320}
+              customChartAreaHeight={286}
+              customLegend={departmentPieLegend}
               centerAlign
             />}
           </WidgetSection>
@@ -1204,7 +1244,7 @@ const AssetsDashboard = () => {
         userPermissions.includes(PERMISSIONS.ASSETS_ASSET_CATEGORIES.value) && (
           <WidgetSection layout={1} title={"Asset Categories"} border>
             <div className="flex justify-center">
-              {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <DonutChart {...assetCategoriesData} width={440} />}
+              {isAssetsDashboardLoading ? <AssetChartSkeleton donut /> : <DonutChart {...assetCategoriesData} width={440} singleLineLegend />}
             </div>
           </WidgetSection>
         ),

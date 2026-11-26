@@ -505,8 +505,30 @@ async function filterCloseTickets(user, roles, userDepartments, companyId) {
   return await fetchTickets(query, companyId);
 }
 
+async function filterRejectedTickets(user, roles, userDepartments, companyId) {
+  const departmentQuery = {
+    status: "Rejected",
+    raisedToDepartment: { $in: [userDepartments] },
+    company: companyId,
+  };
+  const queryMapping = {
+    "Master Admin": departmentQuery,
+    "Super Admin": departmentQuery,
+    Admin: departmentQuery,
+    Employee: departmentQuery,
+  };
+
+  const query = generateQuery(queryMapping, roles);
+  if (!Object.keys(query).length) {
+    return [];
+  }
+
+  return await fetchTickets(query, companyId);
+}
+
 module.exports = {
   filterCloseTickets,
+  filterRejectedTickets,
   filterAcceptedTickets,
   filterAcceptedAssignedTickets,
   filterSupportTickets,

@@ -184,6 +184,12 @@ export const PERMISSIONS = {
     type: "read",
     route: "/app/tickets/manage-tickets",
   },
+  TICKETS_REJECTED_TICKETS: {
+    value: "rejected_tickets",
+    title: "REJECTED TICKETS",
+    type: "read",
+    route: "/app/tickets/manage-tickets",
+  },
 
   TICKETS_TICKET_SETTINGS: {
     value: "ticket_settings",

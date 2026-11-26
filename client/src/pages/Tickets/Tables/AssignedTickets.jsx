@@ -48,7 +48,7 @@ const AssignedTickets = ({
 
   // Fetch Supported Tickets
   const { data: supportedTickets = [], isLoading } = useQuery({
-    queryKey: ["assigned-tickets"],
+    queryKey: ["assigned-tickets", departmentId],
     queryFn: async () => {
       try {
         const response = await axios.get(
@@ -60,6 +60,9 @@ const AssignedTickets = ({
         console.error(error);
       }
     },
+    enabled: Boolean(departmentId),
+    staleTime: 0,
+    refetchOnMount: "always",
   });
 
   const handleOpenAssignModal = (ticketId) => {
@@ -460,8 +463,9 @@ const AssignedTickets = ({
   };
 
   const { data: subOrdinates = [], isPending: isSubOrdinates } = useQuery({
-    queryKey: ["sub-ordinates"],
+    queryKey: ["sub-ordinates", departmentId],
     queryFn: fetchSubOrdinates,
+    enabled: Boolean(departmentId),
   });
 
   const { control, handleSubmit, reset } = useForm({

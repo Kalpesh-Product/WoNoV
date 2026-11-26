@@ -796,7 +796,10 @@ const getInventories = async (req, res, next) => {
       },
     ]);
 
-    return res.status(200).json(inventories);
+    return res.status(200).json({
+      count: inventories.length,
+      data: inventories,
+    });
   } catch (error) {
     console.error("Fetch Inventory Error:", error);
     next(error);

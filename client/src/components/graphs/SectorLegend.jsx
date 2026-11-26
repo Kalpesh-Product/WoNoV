@@ -19,3 +19,32 @@ const SectorLegend = ({ data }) => {
 };
 
 export default SectorLegend;
+
+// Shared single-line (nowrap) legend used by the donut/pie dashboard charts so
+// every chart's legend text, dots and spacing look exactly the same.
+export const SingleLineLegend = ({
+  labels = [],
+  colors = [],
+  suffix = "",
+  maxLabelWidth,
+}) => (
+  <div className="w-full px-2 text-xs text-[#373d3f]">
+    <div className="flex w-full flex-wrap items-center justify-center gap-x-2.5 gap-y-1">
+      {labels.map((label, index) => (
+        <span
+          key={`${label}-${index}`}
+          className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap"
+          title={suffix ? `${label} ${suffix}` : label}
+        >
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: colors?.[index] || "#1E3D73" }}
+          />
+          <span style={maxLabelWidth ? { maxWidth: maxLabelWidth } : undefined}>
+            {label}
+          </span>
+        </span>
+      ))}
+    </div>
+  </div>
+);
