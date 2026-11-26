@@ -38,6 +38,7 @@ const MainLayout = () => {
       return res.data;
     },
     refetchInterval: 60000,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {

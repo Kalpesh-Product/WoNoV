@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Avatar,
   Popover,
@@ -16,6 +16,7 @@ import {
   IoIosArrowForward,
   IoMdNotificationsOutline,
 } from "react-icons/io";
+import { IoVolumeHighOutline, IoVolumeMuteOutline } from "react-icons/io5";
 import { MdOutlineMailOutline } from "react-icons/md";
 import { useSidebar } from "../context/SideBarContext";
 import biznestLogo from "../assets/biznest/biznest_logo.jpg";
@@ -62,7 +63,111 @@ const Header = ({
   const logout = useLogout();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
+  const audioContextRef = useRef(null);
+  const previousNotificationIdsRef = useRef(null);
+  const notificationSoundStorageKey = `notification-sound-muted:${
+    auth?.user?._id || "default"
+  }`;
+  const [isNotificationMuted, setIsNotificationMuted] = useState(
+    () => localStorage.getItem(notificationSoundStorageKey) === "true",
+  );
   const showCurrencySelector = location.pathname.includes("/investor-dashboard");
+
+  const getAudioContext = useCallback(() => {
+    if (typeof window === "undefined") return null;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContext) return null;
+    if (!audioContextRef.current) {
+      audioContextRef.current = new AudioContext();
+    }
+    return audioContextRef.current;
+  }, []);
+
+  const playNotificationSound = useCallback(() => {
+    const audioContext = getAudioContext();
+    if (!audioContext || audioContext.state !== "running") return;
+
+    const now = audioContext.currentTime;
+    [
+      { frequency: 880, start: 0, duration: 0.12 },
+      { frequency: 1175, start: 0.14, duration: 0.16 },
+    ].forEach(({ frequency, start, duration }) => {
+      const oscillator = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      const startAt = now + start;
+      const endAt = startAt + duration;
+
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(frequency, startAt);
+      gain.gain.setValueAtTime(0.0001, startAt);
+      gain.gain.exponentialRampToValueAtTime(0.16, startAt + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, endAt);
+      oscillator.connect(gain);
+      gain.connect(audioContext.destination);
+      oscillator.start(startAt);
+      oscillator.stop(endAt);
+    });
+  }, [getAudioContext]);
+
+  useEffect(() => {
+    const unlockAudio = () => {
+      const audioContext = getAudioContext();
+      if (audioContext?.state === "suspended") {
+        audioContext.resume().catch(() => undefined);
+      }
+      document.removeEventListener("pointerdown", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+    };
+
+    document.addEventListener("pointerdown", unlockAudio);
+    document.addEventListener("keydown", unlockAudio);
+    return () => {
+      document.removeEventListener("pointerdown", unlockAudio);
+      document.removeEventListener("keydown", unlockAudio);
+    };
+  }, [getAudioContext]);
+
+  useEffect(() => {
+    if (isRefreshingNotifications) return;
+
+    const currentUserId = String(auth?.user?._id || "");
+    const currentIds = new Set(notifications.map((notification) => notification._id));
+
+    if (previousNotificationIdsRef.current === null) {
+      previousNotificationIdsRef.current = currentIds;
+      return;
+    }
+
+    const hasNewUnreadNotification = notifications.some((notification) => {
+      if (previousNotificationIdsRef.current.has(notification._id)) return false;
+      const userEntry = notification.users?.find(
+        (item) =>
+          String(
+            item.userActions?.whichUser?._id || item.userActions?.whichUser,
+          ) === currentUserId,
+      );
+      return userEntry?.userActions?.hasRead === false;
+    });
+
+    previousNotificationIdsRef.current = currentIds;
+    if (hasNewUnreadNotification && !isNotificationMuted) {
+      playNotificationSound();
+    }
+  }, [
+    auth?.user?._id,
+    isNotificationMuted,
+    isRefreshingNotifications,
+    notifications,
+    playNotificationSound,
+  ]);
+
+  const toggleNotificationSound = () => {
+    setIsNotificationMuted((isMuted) => {
+      const nextValue = !isMuted;
+      localStorage.setItem(notificationSoundStorageKey, String(nextValue));
+      return nextValue;
+    });
+  };
 
   const { mutate: updateRead, isPending: isUpdatePending } = useMutation({
     mutationKey: ["updateRead"],
@@ -357,6 +462,27 @@ const Header = ({
               ></Badge>
             </div>
             <div className="flex items-center gap-2">
+              <IconButton
+                size="small"
+                onClick={toggleNotificationSound}
+                aria-label={
+                  isNotificationMuted
+                    ? "Turn on notification sound"
+                    : "Mute notification sound"
+                }
+                aria-pressed={isNotificationMuted}
+                title={
+                  isNotificationMuted
+                    ? "Turn on notification sound"
+                    : "Mute notification sound"
+                }
+              >
+                {isNotificationMuted ? (
+                  <IoVolumeMuteOutline className="text-slate-500" />
+                ) : (
+                  <IoVolumeHighOutline className="text-primary" />
+                )}
+              </IconButton>
               <button
                 type="button"
                 onClick={() => markAllRead()}
