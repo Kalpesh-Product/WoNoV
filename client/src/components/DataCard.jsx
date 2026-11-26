@@ -78,20 +78,12 @@ const DataCard = ({
             ) : statusSummary ? (
               <>
                 <span
-                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent px-2.5 text-[11px] font-semibold uppercase leading-none text-[#176B3A]"
-                  style={{
-                    background:
-                      "linear-gradient(to right, #3CB37180 0%, #3CB37145 100%)",
-                  }}
+                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent bg-[#b1cbbb] px-2.5 text-[11px] font-semibold uppercase leading-none text-slate-700"
                 >
                   {statusLabels?.active ?? "Active"}: {statusSummary.active ?? 0}
                 </span>
                 <span
-                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent px-2.5 text-[11px] font-semibold uppercase leading-none text-[#8B0000]"
-                  style={{
-                    background:
-                      "linear-gradient(to right, #FF000080 0%, #FF000045 100%)",
-                  }}
+                  className="inline-flex h-[26px] items-center justify-center rounded-[5px] border border-transparent bg-[#eca1a6] px-2.5 text-[11px] font-semibold uppercase leading-none text-slate-700"
                 >
                   {statusLabels?.inactive ?? "Inactive"}: {statusSummary.inactive ?? 0}
                 </span>
