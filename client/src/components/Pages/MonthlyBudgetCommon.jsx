@@ -17,7 +17,7 @@ const MonthlyBudgetCommon = () => {
   const [viewModal, setViewModal] = useState(false);
   const [selectedRow, setSelectedRow] = useState(null);
 
-  const { data: allBudgets = [] } = useQuery({
+  const { data: allBudgets = [], isPending: isBudgetsLoading } = useQuery({
     queryKey: ["monthlyBudgetReportByDepartment", departmentId],
     enabled: Boolean(departmentId),
     queryFn: async () => {
@@ -178,6 +178,7 @@ const MonthlyBudgetCommon = () => {
       <PageFrame>
         {departmentId ? (
         <YearWiseTable
+          loading={Boolean(departmentId) && isBudgetsLoading}
           data={rows}
           columns={columns}
           dropdownColumns={["department", "section"]}

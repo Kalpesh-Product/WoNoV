@@ -15,6 +15,7 @@ import dayjs from "dayjs";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import AdminLoadingSkeleton from "../../AdminDashboard/AdminLoadingSkeleton";
 
 const ItMonthlyInvoice = () => {
   const { auth } = useAuth();
@@ -290,14 +291,18 @@ const ItMonthlyInvoice = () => {
                       error={!!errors.name}
                       helperText={errors.name?.message}
                     >
-                      {assetsCategories.map((category) => (
-                        <MenuItem
-                          key={category._id}
-                          value={category.categoryName}
-                        >
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
+                      {assetPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        assetsCategories.map((category) => (
+                          <MenuItem
+                            key={category._id}
+                            value={category.categoryName}
+                          >
+                            {category.categoryName}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -431,11 +436,15 @@ const ItMonthlyInvoice = () => {
                       error={!!errors.vendor}
                       helperText={errors.vendor?.message}
                     >
-                      {vendorDetials.map((vendor) => (
-                        <MenuItem key={vendor._id} value={vendor.name}>
-                          {vendor.name}
-                        </MenuItem>
-                      ))}
+                      {isVendorDetails ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        vendorDetials.map((vendor) => (
+                          <MenuItem key={vendor._id} value={vendor.name}>
+                            {vendor.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />

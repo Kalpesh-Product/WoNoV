@@ -15,6 +15,7 @@ import { MdOutlineRemoveRedEye } from "react-icons/md";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
 import dayjs from "dayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import AdminLoadingSkeleton from "../../AdminDashboard/AdminLoadingSkeleton";
 
 const ItAmcRecords = () => {
   const { auth } = useAuth();
@@ -358,11 +359,15 @@ const ItAmcRecords = () => {
                       error={!!errors.categoryId}
                       helperText={errors.categoryId?.message}
                     >
-                      {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
+                      {assetPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        assetsCategories.map((category) => (
+                          <MenuItem key={category._id} value={category._id}>
+                            {category.categoryName}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -382,13 +387,17 @@ const ItAmcRecords = () => {
                       error={!!errors.subCategoryId}
                       helperText={errors.subCategoryId?.message}
                     >
-                      {assetsCategories
-                        .flatMap((cat) => cat.subCategories || [])
-                        .map((sub) => (
-                          <MenuItem key={sub._id} value={sub._id}>
-                            {sub.categoryName}
-                          </MenuItem>
-                        ))}
+                      {assetPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        assetsCategories
+                          .flatMap((cat) => cat.subCategories || [])
+                          .map((sub) => (
+                            <MenuItem key={sub._id} value={sub._id}>
+                              {sub.categoryName}
+                            </MenuItem>
+                          ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -502,11 +511,15 @@ const ItAmcRecords = () => {
                       error={!!errors.vendor}
                       helperText={errors.vendor?.message}
                     >
-                      {vendorDetials.map((vendor) => (
-                        <MenuItem key={vendor._id} value={vendor._id}>
-                          {vendor.name}
-                        </MenuItem>
-                      ))}
+                      {isVendorDetails ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        vendorDetials.map((vendor) => (
+                          <MenuItem key={vendor._id} value={vendor._id}>
+                            {vendor.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />

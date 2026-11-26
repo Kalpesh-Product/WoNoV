@@ -15,6 +15,7 @@ const EnergyMonthlyReadingHistory = () => {
   const location = useLocation();
   const axiosPrivate = useAxiosPrivate();
   const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const pathName = location.pathname.toLowerCase();
   const module =
     moduleParam ||
@@ -29,6 +30,7 @@ const EnergyMonthlyReadingHistory = () => {
 
   useEffect(() => {
     if (!module || !resolvedReadingId) {
+      setIsLoading(false);
       return;
     }
 
@@ -37,12 +39,14 @@ const EnergyMonthlyReadingHistory = () => {
     }
 
     let active = true;
+    setIsLoading(true);
     axiosPrivate
       .get(`/api/maintenance/energy-monthly-history/${module}/${resolvedReadingId}`)
       .then(({ data }) => active && setHistory(data.data || []))
       .catch((error) =>
         toast.error(error.response?.data?.message || "Unable to load monthly history"),
-      );
+      )
+      .finally(() => { if (active) setIsLoading(false); });
     return () => {
       active = false;
     };
@@ -77,6 +81,7 @@ const EnergyMonthlyReadingHistory = () => {
     <div className="p-4">
       <PageFrame>
         <AgTable
+          loading={isLoading}
           data={data}
           columns={columns}
           search

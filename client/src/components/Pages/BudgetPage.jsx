@@ -20,9 +20,12 @@ import { transformBudgetData } from "../../utils/transformBudgetData";
 import YearlyGraph from "../../components/graphs/YearlyGraph";
 import useAuth from "../../hooks/useAuth";
 import usePageDepartment from "../../hooks/usePageDepartment";
+import WidgetSection from "../WidgetSection";
+import SalesDashboardChartSkeleton from "../../pages/Dashboard/SalesDashboard/SalesDashboardChartSkeleton";
 import FyBarGraph from "../graphs/FyBarGraph";
 import { PERMISSIONS } from "../../constants/permissions";
 import useUserPermissions from "../../hooks/useUserPermissions";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 
 const getCurrentFinancialYearLabel = () => {
   const today = dayjs();
@@ -409,8 +412,6 @@ const BudgetPage = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
   const [hiddenBudgetSeries, setHiddenBudgetSeries] = useState({
     actual: false,
     projected: false,
@@ -422,13 +423,6 @@ const BudgetPage = () => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     const getFiscalYearStart = (date) =>
@@ -837,7 +831,11 @@ const BudgetPage = () => {
 
   return (
     <div className="flex flex-col gap-8">
-      <FyBarGraph
+      {isHrLoading ? (
+        <WidgetSection border title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}>
+          <SalesDashboardChartSkeleton title="Department Expense" />
+        </WidgetSection>
+      ) : <FyBarGraph
         data={budgetGraphData}
         dateKey="dueDate"
         valueKey="amount"
@@ -854,9 +852,10 @@ const BudgetPage = () => {
         greenTitle="Actual"
         totalTitle="Projected"
         summaryChipVariant="budget"
-      />
+      />}
 
       <AllocatedBudget
+        isLoading={isHrLoading}
         financialData={financialData}
         sortRowsByCreatedAt
         noInvoice={false}
@@ -903,7 +902,7 @@ const BudgetPage = () => {
                     Select Expense Type
                   </MenuItem>
                   {isHrLoading
-                    ? []
+                    ? <AdminLoadingSkeleton variant="option" />
                     : [
                         ...new Map(
                           hrFinance
@@ -974,7 +973,7 @@ const BudgetPage = () => {
                     Select Building
                   </MenuItem>
                   {locationsLoading
-                    ? []
+                    ? <AdminLoadingSkeleton variant="option" />
                     : uniqueBuildings.map((building) => (
                         <MenuItem key={building[0]} value={building[1]}>
                           {building[1]}
@@ -997,7 +996,7 @@ const BudgetPage = () => {
                     Select Unit
                   </MenuItem>
                   {locationsLoading
-                    ? []
+                    ? <AdminLoadingSkeleton variant="option" />
                     : units.map((unit) =>
                         unit.building.buildingName === selectedBuilding ? (
                           <MenuItem key={unit._id} value={unit._id}>

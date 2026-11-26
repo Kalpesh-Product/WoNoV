@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Lead = require("../../models/sales/Lead");
+const SalesLog = require("../../models/sales/salesLog");
 const Unit = require("../../models/locations/Unit");
 const CustomError = require("../../utils/customErrorlogs");
 const { createLog } = require("../../utils/moduleLogs");
@@ -8,7 +9,7 @@ const csvParser = require("csv-parser");
 const fs = require("fs");
 const path = require("path");
 const ClientService = require("../../models/sales/ClientService");
-const { fetchLeadReportService } = require("../../services/reports/lead");
+const { fetchLeadReportService, LEAD_POPULATE_OPTIONS } = require("../../services/reports/lead");
 
 const createLead = async (req, res, next) => {
   const { company } = req;
@@ -160,6 +161,27 @@ const createLead = async (req, res, next) => {
   }
 };
 
+const leadHistoryLabels = {
+  dateOfContact: "Date of Contact", companyName: "Company Name", serviceCategory: "Service Category",
+  leadStatus: "Lead Status", proposedLocations: "Proposed Locations", sector: "Sector",
+  headOfficeLocation: "Head Office Location", officeInGoa: "Office in Goa", pocName: "POC Name",
+  designation: "Designation", contactNumber: "Contact Number", emailAddress: "Email Address",
+  source: "Source", leadSource: "Lead Source", period: "Period", openDesks: "Open Desks",
+  cabinDesks: "Cabin Desks", totalDesks: "Total Desks", clientBudget: "Client Budget",
+  startDate: "Start Date", remarksComments: "Remarks", lastFollowUpDate: "Last Follow-up Date",
+};
+
+const leadHistoryValue = (field, value) => {
+  if (value == null || value === "") return null;
+  if (value instanceof Date) return value.toISOString().slice(0, 10);
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (field === "serviceCategory") return value.serviceName || String(value);
+  if (field === "proposedLocations") {
+    return value.map((unit) => [unit.unitNo, unit.unitName, unit.building?.buildingName].filter(Boolean).join(" - ") || String(unit)).join(", ") || null;
+  }
+  return String(value);
+};
+
 const editLead = async (req, res, next) => {
   const { company } = req;
 
@@ -190,7 +212,7 @@ const editLead = async (req, res, next) => {
       lastFollowUpDate,
     } = req.body;
 
-    const lead = await Lead.findById(leadId);
+    const lead = await Lead.findOne({ _id: leadId, company }).populate(LEAD_POPULATE_OPTIONS);
 
     if (!lead) {
       throw new CustomError("Lead not found", 404);
@@ -231,7 +253,7 @@ const editLead = async (req, res, next) => {
       company,
       _id: { $ne: leadId },
       companyName: {
-        $regex: new RegExp(`^${trimmedCompanyName}$`, "i"),
+        $regex: new RegExp(`^${trimmedCompanyName.replace(/[.*+?^$${}()|[\]\\]/g, "\\$&")}$`, "i"),
       },
       emailAddress: trimmedEmailAddress,
     };
@@ -304,7 +326,25 @@ const editLead = async (req, res, next) => {
         new: true,
         runValidators: true,
       },
-    );
+    ).populate(LEAD_POPULATE_OPTIONS);
+    if (!updatedLead) throw new CustomError("Lead not found", 404);
+
+    const fields = Object.entries(leadHistoryLabels).flatMap(([field, label]) => {
+      const oldValue = leadHistoryValue(field, lead[field]);
+      const newValue = leadHistoryValue(field, updatedLead[field]);
+      return oldValue === newValue ? [] : [{ field, label, oldValue, newValue }];
+    });
+    if (fields.length) {
+      try {
+        await SalesLog.create({
+          lead: updatedLead._id, company, performedBy: req.user, ipAddress: req.ip || "unknown",
+          action: "Lead Edited", changes: { fields },
+        });
+      } catch (error) {
+        console.error("Lead edit history could not be saved", error.name);
+        return res.status(500).json({ message: "The lead was updated, but its edit history could not be saved. Refresh before editing again." });
+      }
+    }
 
     return res.status(200).json({
       success: true,

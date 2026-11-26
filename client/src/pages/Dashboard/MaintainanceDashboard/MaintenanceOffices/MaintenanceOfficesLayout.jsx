@@ -15,6 +15,7 @@ import { useQuery } from "@tanstack/react-query";
 import useAxiosPrivate from "../../../../hooks/useAxiosPrivate";
 import sortByNumberDesc from "../../../../utils/sortByNumberDesc";
 import DoubleDataCard from "../../../../components/DoubleDataCard";
+import TableLoadingSkeleton from "../../../../components/Tables/TableLoadingSkeleton";
 
 const MaintenanceOfficesLayout = () => {
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -105,8 +106,11 @@ const MaintenanceOfficesLayout = () => {
 
   if (isUnitsLoading) {
     return (
-      <div className="h-screen">
-        <Skeleton height="100%" width="100%" />
+      <div className="flex min-w-0 flex-col gap-4 p-4" aria-busy="true">
+        <div className="flex gap-3"><Skeleton variant="rectangular" height={90} className="min-w-0 flex-1 rounded-lg" /><Skeleton variant="rectangular" height={90} className="min-w-0 flex-1 rounded-lg" /></div>
+        <WidgetSection border title="Occupancy details">
+          <TableLoadingSkeleton columns={[{ field: "unit" }, { field: "client" }, { field: "desks" }, { field: "occupancy" }]} />
+        </WidgetSection>
       </div>
     );
   }

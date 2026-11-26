@@ -5,6 +5,7 @@ import {
   Chip,
   MenuItem,
   Select,
+  Skeleton,
   TextField,
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
@@ -73,7 +74,10 @@ const ViewVendor = () => {
   const { state } = location;
   const navigate = useNavigate();
 
-  const { data: savedVendorTypeOptions = [] } = useQuery({
+  const {
+    data: savedVendorTypeOptions = [],
+    isPending: isVendorTypeOptionsLoading,
+  } = useQuery({
     queryKey: ["vendorTypeOptions"],
     queryFn: async () => {
       const response = await axios.get("/api/vendors/vendor-type-options");
@@ -789,6 +793,20 @@ const getCountryIsoCode = (countryValue) => {
                                         ? "Select or Add Vendor Type"
                                         : "Select Vendor Type"
                                     }
+                                    InputProps={{
+                                      ...params.InputProps,
+                                      startAdornment:
+                                        isVendorTypeOptionsLoading ? (
+                                          <Skeleton
+                                            variant="text"
+                                            width={80}
+                                            height={20}
+                                            aria-busy="true"
+                                          />
+                                        ) : (
+                                          params.InputProps.startAdornment
+                                        ),
+                                    }}
                                   />
                                 )}
                               />

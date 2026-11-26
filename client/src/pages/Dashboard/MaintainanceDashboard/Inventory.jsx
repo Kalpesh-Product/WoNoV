@@ -32,6 +32,7 @@ import useAuth from "../../../hooks/useAuth";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import ConfirmationModal from "../../../components/ConfirmationModal";
 import { MdDeleteForever, MdOutlineRestore } from "react-icons/md";
+import AdminLoadingSkeleton from "../AdminDashboard/AdminLoadingSkeleton";
 
 const canManageDeletedCategories = (auth) =>
   (auth?.user?.departments || []).some(
@@ -818,18 +819,19 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
   //   return inventoryData;
   // }, [inventoryData]);
 
-  const { data: inventoryCategories = [] } = useQuery({
-    queryKey: ["inventory-categories", department?._id, canManageDeleted],
-    queryFn: async () => {
-      if (!department?._id) {
-        return [];
-      }
-      const response = await axios.get(
-        `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory&includeDeleted=${canManageDeleted}`,
-      );
-      return response.data;
-    },
-  });
+  const { data: inventoryCategories = [], isPending: categoriesPending } =
+    useQuery({
+      queryKey: ["inventory-categories", department?._id, canManageDeleted],
+      queryFn: async () => {
+        if (!department?._id) {
+          return [];
+        }
+        const response = await axios.get(
+          `/api/category/get-category?departmentId=${department._id}&appliesTo=inventory&includeDeleted=${canManageDeleted}`,
+        );
+        return response.data;
+      },
+    });
 
   useEffect(() => {
     if (
@@ -871,7 +873,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     }
   }, [inventoryCategories, modalMode, selectedAsset, setValue]);
 
-  const { data: unitsData = [] } = useQuery({
+  const { data: unitsData = [], isPending: unitsPending } = useQuery({
     queryKey: ["inventory-units-list"],
     queryFn: async () => {
       const response = await axios.get("/api/company/fetch-simple-units");
@@ -879,7 +881,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
     },
   });
 
-  const { data: inventoryItems = [] } = useQuery({
+  const { data: inventoryItems = [], isPending: itemsPending } = useQuery({
     queryKey: [
       "inventory-items",
       department?._id,
@@ -2664,6 +2666,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       {inventoryRootView === "overall" && (
         <PageFrame>
           <YearWiseTable
+            loading={isInventoryLoading}
             //  key={isInventoryLoading ? 0 : selectedUnitInventoryRows?.length}
             key={isInventoryLoading ? 0 : overallInventoryRows?.length}
             search={true}
@@ -2692,6 +2695,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       {inventoryRootView === "category" && (
         <PageFrame>
           <AgTable
+            loading={isInventoryLoading}
             data={categoryRows}
             columns={categoryColumns}
             search={true}
@@ -2715,6 +2719,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
       {inventoryRootView === "item" && (
         <PageFrame>
           <AgTable
+            loading={isInventoryLoading}
             data={itemRows}
             columns={itemColumns}
             search={true}
@@ -2775,6 +2780,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
               )}
               <PageFrame>
                 <AgTable
+                  loading={isInventoryLoading}
                   data={unitListingRows}
                   showDateControls={false}
                   toolbarDateControls={
@@ -2801,6 +2807,7 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
             <>
               <PageFrame>
                 <YearWiseTable
+                  loading={isInventoryLoading}
                   key={
                     isInventoryLoading ? 0 : selectedUnitInventoryRows?.length
                   }
@@ -3075,13 +3082,17 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                   helperText={addItemErrors.category?.message}
                 >
                   <MenuItem value="">Select category</MenuItem>
-                  {inventoryCategories
-                    .filter((category) => category.isActive)
-                    .map((category) => (
-                      <MenuItem key={category._id} value={category._id}>
-                        {category.categoryName}
-                      </MenuItem>
-                    ))}
+                  {categoriesPending ? (
+                    <AdminLoadingSkeleton variant="option" />
+                  ) : (
+                    inventoryCategories
+                      .filter((category) => category.isActive)
+                      .map((category) => (
+                        <MenuItem key={category._id} value={category._id}>
+                          {category.categoryName}
+                        </MenuItem>
+                      ))
+                  )}
                 </TextField>
               )}
             />
@@ -3173,11 +3184,15 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                   helperText={itemEditErrors.category?.message}
                 >
                   <MenuItem value="">Select category</MenuItem>
-                  {inventoryCategories.map((category) => (
-                    <MenuItem key={category._id} value={category._id}>
-                      {category.categoryName}
-                    </MenuItem>
-                  ))}
+                  {categoriesPending ? (
+                    <AdminLoadingSkeleton variant="option" />
+                  ) : (
+                    inventoryCategories.map((category) => (
+                      <MenuItem key={category._id} value={category._id}>
+                        {category.categoryName}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
               )}
             />
@@ -3376,13 +3391,17 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                       }
                     >
                       <MenuItem value="">Select category</MenuItem>
-                      {inventoryCategories
-                        .filter((category) => category.isActive)
-                        .map((category) => (
-                          <MenuItem key={category._id} value={category._id}>
-                            {category.categoryName}
-                          </MenuItem>
-                        ))}
+                      {categoriesPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        inventoryCategories
+                          .filter((category) => category.isActive)
+                          .map((category) => (
+                            <MenuItem key={category._id} value={category._id}>
+                              {category.categoryName}
+                            </MenuItem>
+                          ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -3412,14 +3431,18 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                       }
                     >
                       <MenuItem value="">Select item</MenuItem>
-                      {(modalMode === "inventoryEdit"
-                        ? updateItemOptions
-                        : itemOptions
-                      ).map((item) => (
-                        <MenuItem key={item.id} value={item.id}>
-                          {item.name}
-                        </MenuItem>
-                      ))}
+                      {itemsPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        (modalMode === "inventoryEdit"
+                          ? updateItemOptions
+                          : itemOptions
+                        ).map((item) => (
+                          <MenuItem key={item.id} value={item.id}>
+                            {item.name}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -3862,11 +3885,15 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                           }
                         >
                           <MenuItem value="">Select unit</MenuItem>
-                          {selectedBuildingUnits.map((unit) => (
-                            <MenuItem key={unit?._id} value={unit?._id}>
-                              {unit?.unitNo}
-                            </MenuItem>
-                          ))}
+                          {unitsPending ? (
+                            <AdminLoadingSkeleton variant="option" />
+                          ) : (
+                            selectedBuildingUnits.map((unit) => (
+                              <MenuItem key={unit?._id} value={unit?._id}>
+                                {unit?.unitNo}
+                              </MenuItem>
+                            ))
+                          )}
                         </Select>
                         <FormHelperText>
                           {updateErrors.unitNo?.message}
@@ -3900,13 +3927,17 @@ const Inventory = ({ forcedBuildingTab = null, overallBuildingTab = null }) => {
                       helperText={updateErrors.category?.message}
                     >
                       <MenuItem value="">Select category</MenuItem>
-                      {inventoryCategories
-                        .filter((category) => category.isActive)
-                        .map((category) => (
-                          <MenuItem key={category._id} value={category._id}>
-                            {category.categoryName}
-                          </MenuItem>
-                        ))}
+                      {categoriesPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        inventoryCategories
+                          .filter((category) => category.isActive)
+                          .map((category) => (
+                            <MenuItem key={category._id} value={category._id}>
+                              {category.categoryName}
+                            </MenuItem>
+                          ))
+                      )}
                     </TextField>
                   )}
                 />

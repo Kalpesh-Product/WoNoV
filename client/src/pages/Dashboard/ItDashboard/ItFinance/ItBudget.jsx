@@ -1,13 +1,6 @@
-﻿import React, { Suspense, useEffect, useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import WidgetSection from "../../../../components/WidgetSection";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  Skeleton,
-  Box,
-} from "@mui/material";
+import { TextField, Select, MenuItem, FormControl } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import PrimaryButton from "../../../../components/PrimaryButton";
@@ -24,11 +17,10 @@ import { inrFormat } from "../../../../utils/currencyFormat";
 import { useNavigate } from "react-router-dom";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 
 const ItBudget = () => {
   const axios = useAxiosPrivate();
-  const [isReady, setIsReady] = useState(false);
-
   const [openModal, setOpenModal] = useState(false);
   const { data: hrFinance = [], isPending: isHrLoading } = useQuery({
     queryKey: ["hrFinance"],
@@ -50,13 +42,6 @@ const ItBudget = () => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(isHrLoading ? [] : hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     return [
@@ -244,21 +229,12 @@ const ItBudget = () => {
     .sort((a, b) => dayjs(b.latestDueDate).diff(dayjs(a.latestDueDate))); // Sort descending
 
   // ---------------------------------------------------------------------//
-  if (!isReady) {
-    return <Skeleton height="100vh" width="100%" />;
-  } else {
-    return (
+  return (
       <div className="flex flex-col gap-8">
         <div>
-          <Suspense
-            fallback={
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Simulating chart skeleton */}
-                <Skeleton variant="text" width={200} height={30} />
-                <Skeleton variant="rectangular" width="100%" height={300} />
-              </Box>
-            }
-          >
+          {isHrLoading ? (
+            <SalesDashboardChartSkeleton title="IT Expenses" />
+          ) : (
             <Yearlygraph
               data={expenseRawSeries}
               options={expenseOptions}
@@ -267,7 +243,7 @@ const ItBudget = () => {
                 "en-IN"
               )}`}
             />
-          </Suspense>
+          )}
         </div>
         <div>
           <WidgetSection layout={2} padding>
@@ -286,16 +262,12 @@ const ItBudget = () => {
         </div>
 
 
-        {!isHrLoading ? (
-          <AllocatedBudget
-            onRequestBudget={() => setOpenModal(true)}
-            financialData={financialData}
-            isLoading={isHrLoading}
-            variant={"fullWidth"}
-          />
-        ) : (
-          <Skeleton height={600} width={"100%"} />
-        )}
+        <AllocatedBudget
+          onRequestBudget={() => setOpenModal(true)}
+          financialData={financialData}
+          isLoading={isHrLoading}
+          variant={"fullWidth"}
+        />
 
         <MuiModal
           title="Request Budget"
@@ -395,8 +367,7 @@ const ItBudget = () => {
           </form>
         </MuiModal>
       </div>
-    );
-  }
+  );
 };
 
 export default ItBudget;

@@ -149,7 +149,7 @@ const DepartmentVoucherHistory = () => {
         //   tableTitle="Voucher History"
          tableTitle={`${departmentTitle} Voucher History`}
           tableHeight={450}
-          isLoading={isVoucherPending}
+          loading={isVoucherPending}
           exportData
         />
       </PageFrame>

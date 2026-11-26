@@ -7,6 +7,21 @@ const modelSelectMap = {
   Department: "name",
 };
 
+// Some payload keys can point to different collections depending on the action.
+// Example: `bookedBy` is a UserData id for internal meetings but a Visitor id
+// for external meetings, so try both before giving up.
+const payloadModelFallbacks = {
+  bookedBy: ["UserData", "Visitor"],
+  externalBookedBy: ["Visitor"],
+  clientBookedBy: ["CoworkingMember"],
+  client: ["CoworkingClient"],
+  externalCompany: ["Visitor"],
+  meetingId: ["Meeting"],
+};
+
+const pickName = (doc) =>
+  doc?.visitorCompany || doc?.companyName || doc?.name || doc?.clientName || "-";
+
 const getDateFilter = (req) => {
   const fromDate = req.query.fromDate || req.body?.fromDate;
   const toDate = req.query.toDate || req.body?.toDate;
@@ -74,19 +89,50 @@ const getLogs = async (req, res, next) => {
         const populatedPayload = { ...log.payload };
 
         for (const key of Object.keys(populatedPayload)) {
-          const modelName = modelMap[key];
           const value = populatedPayload[key];
 
-          if (modelName && mongoose.isValidObjectId(value)) {
-            const Model = mongoose.model(modelName);
+          if (!mongoose.isValidObjectId(value)) continue;
+
+          const candidateModels = [
+            ...(payloadModelFallbacks[key] || []),
+            modelMap[key],
+          ].filter((modelName, index, names) =>
+            modelName ? names.indexOf(modelName) === index : false,
+          );
+
+          for (const modelName of candidateModels) {
+            if (!mongoose.models[modelName]) continue;
+
+            const query = mongoose.model(modelName).findById(value);
             const selectFields = modelSelectMap[modelName];
-            const query = Model.findById(value);
 
             if (selectFields) {
               query.select(selectFields);
             }
 
-            populatedPayload[key] = await query.lean();
+            const doc = await query.lean();
+            if (!doc) continue;
+
+            if (key === "externalCompany") {
+              populatedPayload[key] = pickName(doc);
+            } else {
+              // The Logs modal shows Meeting Id as a compact block; the full
+              // checklist belongs in the meeting module, not in log details.
+              if (key === "meetingId") delete doc.housekeepingChecklist;
+              populatedPayload[key] = doc;
+            }
+
+            // External meeting bookings send the visitor id as `bookedBy`.
+            // Expose the same person under `externalBookedBy` so both labels
+            // are populated in the Logs modal.
+            if (
+              key === "bookedBy" &&
+              modelName === "Visitor" &&
+              !populatedPayload.externalBookedBy
+            ) {
+              populatedPayload.externalBookedBy = doc;
+            }
+            break;
           }
         }
 

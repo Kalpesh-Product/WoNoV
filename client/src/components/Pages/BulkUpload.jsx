@@ -17,6 +17,7 @@ import { toast } from "sonner";
 //import humanDate from "../../utils/humanDateForamt";
 import bulkInsertRoutes from "../../constants/bulkInsertRoutes";
 import formatDateTime from "../../utils/formatDateTime";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 const normalizeTemplateName = (value) =>
   String(value || "")
     .trim()
@@ -424,7 +425,10 @@ export default function BulkUpload() {
       enabled: !!deptDetails?._id,
     });
 
-  const { data: sourceDepartmentTemplates = [] } = useQuery({
+  const {
+    data: sourceDepartmentTemplates = [],
+    isPending: isSourceTemplatesPending,
+  } = useQuery({
     queryKey: [
       "department-templates",
       "source",
@@ -451,7 +455,7 @@ export default function BulkUpload() {
     },
     enabled: !!deptDetails?._id && sourceDepartmentIds.length > 0,
   });
-  const { data: buildings = [] } = useQuery({
+  const { data: buildings = [], isPending: isBuildingsPending } = useQuery({
     queryKey: ["company-buildings", deptDetails?._id],
     queryFn: async () => {
       const response = await axios.get("/api/company/buildings");
@@ -934,6 +938,7 @@ export default function BulkUpload() {
     <div className=" flex flex-col gap-4">
       <PageFrame>
         <AgTable
+          loading={isTemplatesPending}
           data={formattedTemplates}
           search
           dateColumn="updatedAt"
@@ -986,11 +991,18 @@ export default function BulkUpload() {
                         //     {item.name}
                         //   </MenuItem>
                         // ))}
-                      templateOptions.map((item) => (
-                        <MenuItem key={item.id} value={item.id}>
-                          {item.displayName}
-                        </MenuItem>
-                      ))
+                      !!deptDetails?._id &&
+                      (isTemplatesPending ||
+                        (sourceDepartmentIds.length > 0 &&
+                          isSourceTemplatesPending)) ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        templateOptions.map((item) => (
+                          <MenuItem key={item.id} value={item.id}>
+                            {item.displayName}
+                          </MenuItem>
+                        ))
+                      )
                     }
                   </TextField>
                 )}
@@ -1031,11 +1043,15 @@ export default function BulkUpload() {
                       <MenuItem value="" disabled>
                         Select a Building
                       </MenuItem>
-                      {buildings.map((building) => (
-                        <MenuItem key={building._id} value={building._id}>
-                          {building.buildingName}
-                        </MenuItem>
-                      ))}
+                      {!deptDetails?._id || !isBuildingsPending ? (
+                        buildings.map((building) => (
+                          <MenuItem key={building._id} value={building._id}>
+                            {building.buildingName}
+                          </MenuItem>
+                        ))
+                      ) : (
+                        <AdminLoadingSkeleton variant="option" />
+                      )}
                     </TextField>
                   )}
                 />

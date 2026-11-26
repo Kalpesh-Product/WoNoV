@@ -457,7 +457,11 @@ const ManageMeetings = ({ financeView = false }) => {
     date: meeting.date,
     bookedBy: meeting.bookedBy
       ? `${meeting.bookedBy.firstName} ${meeting.bookedBy.lastName}`
-      : meeting.clientBookedBy?.employeeName || "Unknown",
+      : meeting.externalBookedBy
+        ? typeof meeting.externalBookedBy === "string"
+          ? meeting.externalBookedBy
+          : `${meeting.externalBookedBy.firstName ?? ""} ${meeting.externalBookedBy.lastName ?? ""}`.trim()
+        : meeting.clientBookedBy?.employeeName || "Unknown",
     bookedById: meeting.bookedBy ? meeting.bookedBy._id : "",
     displayMeetingStatus: getMeetingDisplayStatus(meeting),
     startTime: meeting.startTime,

@@ -9,6 +9,7 @@ import NormalBarGraph from "../../../components/graphs/NormalBarGraph";
 import usePageDepartment from "../../../hooks/usePageDepartment";
 import SecondaryButton from "../../../components/SecondaryButton";
 import { MdNavigateBefore, MdNavigateNext } from "react-icons/md";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const formatCurrencyWithDecimals = (value = 0) =>
   Number(value).toLocaleString("en-IN", {
@@ -201,7 +202,11 @@ const ItPerSqExpense = () => {
         TitleAmount={`INR ${formatCurrencyWithDecimals(expensePerSqFtTotal)}`}
       >
         <div className="flex flex-col gap-4 rounded-md">
-          <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+          {isBudgetLoading ? (
+            <SalesDashboardChartSkeleton title="IT Expense per Sqft" />
+          ) : (
+            <NormalBarGraph data={barGraphSeries} options={expenseOptions} />
+          )}
 
           <div className="flex justify-center items-center gap-4 pt-2 -mt-2 pb-4">
             <SecondaryButton
@@ -226,6 +231,7 @@ const ItPerSqExpense = () => {
       </WidgetSection>
       <PageFrame>
         <YearWiseTable
+          loading={isBudgetLoading}
           data={tableData}
           columns={columns}
           search

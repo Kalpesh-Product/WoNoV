@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import dayjs from "dayjs";
 import PrimaryButton from "../../../components/PrimaryButton";
 import AllocatedBudget from "../../../components/Tables/AllocatedBudget";
@@ -200,21 +200,10 @@ const ItPerSqInternetExpense = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
-  // const [openModal, setOpenModal] = useState(false);
-
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
@@ -370,7 +359,12 @@ const ItPerSqInternetExpense = () => {
         </div>
       )} */}
 
-      <AllocatedBudget financialData={financialData} newTitle={"INTERNET EXPENSES"} exportData />
+      <AllocatedBudget
+        financialData={financialData}
+        newTitle={"INTERNET EXPENSES"}
+        exportData
+        isLoading={isHrLoading}
+      />
       <MuiModal
         title="Request Budget"
         open={openModal}

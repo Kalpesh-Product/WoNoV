@@ -168,6 +168,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
   const axiosPrivate = useAxiosPrivate();
   const { auth } = useAuth();
   const [readings, setReadings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterDate, setFilterDate] = useState(
     dayjs().format("YYYY-MM-DD"),
   );
@@ -196,10 +197,12 @@ const MaintainanceDtcEnergyReadingDaily = () => {
 
   useEffect(() => {
     let active = true;
+    setIsLoading(true);
     axiosPrivate
       .get(DTC_ENERGY_DAILY_GET_API, { params: { date: filterDate } })
       .then(({ data }) => active && setReadings(data.data || []))
-      .catch((error) => toast.error(error.response?.data?.message || "Unable to load readings"));
+      .catch((error) => toast.error(error.response?.data?.message || "Unable to load readings"))
+      .finally(() => { if (active) setIsLoading(false); });
     return () => {
       active = false;
     };
@@ -490,6 +493,7 @@ const MaintainanceDtcEnergyReadingDaily = () => {
       <PageFrame>
         <div className="flex flex-col gap-5">
           <AgTable
+            loading={isLoading}
             data={tableData}
             search={true}
             columns={columns}

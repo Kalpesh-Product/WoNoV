@@ -118,6 +118,7 @@ const DepartmentAssetCommon = ({ disabled }) => {
   return (
     <PageFrame>
       <AgTable
+        loading={Boolean(department?._id) && isLoading}
         key={tableData.length}
         search
         searchColumn={"assetNumber"}

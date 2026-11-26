@@ -1,4 +1,5 @@
 import React, { Suspense, useEffect, useState, useMemo } from "react";
+import { Skeleton } from "@mui/material";
 import Card from "../../../components/Card";
 import {
   MdFormatListBulleted,
@@ -23,7 +24,7 @@ import { useSidebar } from "../../../context/SideBarContext";
 import useAxiosPrivate from "../../../hooks/useAxiosPrivate";
 import { useQuery } from "@tanstack/react-query";
 import { transformBudgetData } from "../../../utils/transformBudgetData";
-import AdminLoadingSkeleton from "./AdminLoadingSkeleton";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 import YearlyGraph from "../../../components/graphs/YearlyGraph";
 import useAuth from "../../../hooks/useAuth";
 import { inrFormat } from "../../../utils/currencyFormat";
@@ -332,7 +333,7 @@ const AdminDashboard = () => {
     : unitsData.reduce((acc, unit) => acc + (unit.sqft || 0), 0);
 
   //----------------------Units data-----------------------//
-  const { data: selectedDepartments = [] } = useQuery({
+  const { data: selectedDepartments = [], isPending: isSelectedDepartmentsPending } = useQuery({
     queryKey: ["selectedDepartments"],
     queryFn: async () => {
       try {
@@ -1827,11 +1828,6 @@ const AdminDashboard = () => {
   };
 
   const isExpenseChartLoading = isHrFinanceLoading;
-  const areDataCardsLoading =
-    isHrFinanceLoading ||
-    isUnitsData ||
-    isTasksLoading ||
-    isTasksSummaryLoading;
   const isExecutiveShiftTableLoading = isWeeklyScheduleLoading;
   const isUpcomingEventsTableLoading = isHolidayEventsLoading;
   const isClientCelebrationsTableLoading = isClientsDataPending;
@@ -1867,6 +1863,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOTAL_ADMIN_OFFICES.value,
       title: "Total",
       data: Array.isArray(unitsData) ? unitsData.length : 0,
+      loading: isUnitsData,
       description: "Offices Under Management",
       route: "admin-offices",
     },
@@ -1875,6 +1872,7 @@ const AdminDashboard = () => {
       title: "Total",
       // data: tasks.length || 0,
       data: totalDueTasks,
+      loading: isTasksLoading,
       description: "Monthly Due Tasks",
       route: "/app/tasks/department-tasks",
     },
@@ -1882,6 +1880,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_MONTHLY_EXPENSE.value,
       title: "Average",
       data: `INR ${inrFormat(averageMonthlyExpense)}`,
+      loading: isHrFinanceLoading,
       description: "Monthly Expense",
       route: "admin-expenses",
     },
@@ -1890,6 +1889,7 @@ const AdminDashboard = () => {
       title: "Total",
       // data: `INR ${inrFormat(totalOverallExpense / totalSqFt)}`,
       data: `INR ${inrFormat(expensePerSqFtTotals.perSqFtExpense)}`,
+      loading: isHrFinanceLoading || isUnitsData,
       description: "Expense Per Sq. Ft.",
       route: "per-sq-ft-expense",
     },
@@ -1897,6 +1897,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_ELECTRICITY_EXPENSE_PER_SQFT.value,
       title: "Total",
       data: `INR ${inrFormat(currentMonthElectricityExpense / totalSqFt)}`,
+      loading: isHrFinanceLoading || isUnitsData,
       description: "Electricity Expense Per Sq. Ft.",
       route: "per-sq-ft-electricity-expense",
     },
@@ -1904,6 +1905,7 @@ const AdminDashboard = () => {
       key: PERMISSIONS.ADMIN_TOP_EXECUTIVE.value,
       title: "Top Executive",
       data: "",
+      loading: isSelectedDepartmentsPending,
       description: currentDepartmentAdminName,
       route: "admin-executive-expense",
     },
@@ -2205,7 +2207,6 @@ const AdminDashboard = () => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_INDIA_WISE_MEMBERS.value,
@@ -2218,7 +2219,6 @@ const AdminDashboard = () => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_CLIENT_MEMBER_GENDER_WISE_DATA.value,
@@ -2231,7 +2231,6 @@ const AdminDashboard = () => {
       height: 320,
       width: 500,
       isLoading: isClientsDataPending,
-      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
     {
       key: PERMISSIONS.ADMIN_BIOMETRICS_ACTIVATION_DATA.value,
@@ -2242,7 +2241,6 @@ const AdminDashboard = () => {
       data: biometricStatusSummary,
       options: biometricPieOptions,
       isLoading: isClientsDataPending,
-      loadingFallback: <AdminLoadingSkeleton variant="chart" />,
     },
   ];
 
@@ -2254,26 +2252,34 @@ const AdminDashboard = () => {
   const techWidgets = [
     {
       layout: 1,
-      widgets: isExpenseChartLoading ? (
-        <AdminLoadingSkeleton variant="chart" />
-      ) : (
-        <Suspense fallback={<AdminLoadingSkeleton variant="chart" />}>
+      widgets: [
+        <Suspense
+          fallback={
+            <SalesDashboardChartSkeleton title="Admin Department Expense" />
+          }
+        >
           <WidgetSection normalCase layout={1} padding>
-            {allowedDeptExpenseGrpah.map((config) => (
-              <YearlyGraph
-                key={config.chartId}
-                data={config.data}
-                responsiveResize={config.responsiveResize}
-                chartId={config.chartId}
-                options={config.options}
-                onYearChange={config.onYearChange}
-                title={config.title}
-                titleAmount={config.titleAmount}
-              />
-            ))}
+            {allowedDeptExpenseGrpah.map((config) =>
+              isExpenseChartLoading ? (
+                <WidgetSection key={config.key} border title={config.title}>
+                  <SalesDashboardChartSkeleton title={config.title} />
+                </WidgetSection>
+              ) : (
+                <YearlyGraph
+                  key={config.chartId}
+                  data={config.data}
+                  responsiveResize={config.responsiveResize}
+                  chartId={config.chartId}
+                  options={config.options}
+                  onYearChange={config.onYearChange}
+                  title={config.title}
+                  titleAmount={config.titleAmount}
+                />
+              ),
+            )}
           </WidgetSection>
-        </Suspense>
-      ),
+        </Suspense>,
+      ],
     },
 
     // {
@@ -2325,15 +2331,21 @@ const AdminDashboard = () => {
     },
     {
       layout: 3,
-      widgets: areDataCardsLoading ? (
-        <AdminLoadingSkeleton
-          variant="cards"
-          cardCount={allowedAdminDataCards.length || 6}
-        />
-      ) : (
-        allowedAdminDataCards.map((config) => (
+      widgets: allowedAdminDataCards.map((config) =>
+        config.loading ? (
+          <div
+            key={config.key}
+            className="min-w-0 rounded-lg border border-gray-200 bg-white p-5"
+            role="status"
+            aria-label={`Loading ${config.description}`}
+          >
+            <Skeleton variant="text" width="55%" height={24} />
+            <Skeleton variant="text" width="35%" height={42} />
+            <Skeleton variant="text" width="70%" height={22} />
+          </div>
+        ) : (
           <DataCard key={config.title} {...config} />
-        ))
+        ),
       ),
     },
 
@@ -2353,7 +2365,7 @@ const AdminDashboard = () => {
             title={config.title}
           >
             {isUnitWiseChartLoading ? (
-              <AdminLoadingSkeleton variant="chart" />
+              <SalesDashboardChartSkeleton circular title={config.title} />
             ) : (
               <PieChartMui
                 data={config.data}
@@ -2372,7 +2384,7 @@ const AdminDashboard = () => {
             title={config.title}
           >
             {isExecutiveWiseChartLoading ? (
-              <AdminLoadingSkeleton variant="chart" />
+              <SalesDashboardChartSkeleton circular title={config.title} />
             ) : (
               <DonutChart
                 centerLabel={config.centerLabel}
@@ -2392,7 +2404,7 @@ const AdminDashboard = () => {
       widgets: allowedAdminTicketCharts.map((config) => (
         <WidgetSection key={config.title} border title={config.title}>
           {isTicketChartsLoading ? (
-            <AdminLoadingSkeleton variant="chart" />
+            <SalesDashboardChartSkeleton circular title={config.title} />
           ) : (
             <PieChartMui
               data={config.data}
@@ -2414,7 +2426,7 @@ const AdminDashboard = () => {
           title={config.title}
         >
           {config.isLoading ? (
-            config.loadingFallback || <AdminLoadingSkeleton variant="chart" />
+            <SalesDashboardChartSkeleton circular title={config.title} />
           ) : (
             <PieChartMui
               data={config.data}

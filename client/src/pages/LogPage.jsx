@@ -2,8 +2,101 @@ import { useQuery } from "@tanstack/react-query";
 import React, { useCallback, useState } from "react";
 import useAxiosPrivate from "../hooks/useAxiosPrivate";
 import YearWiseTable from "../components/Tables/YearWiseTable";
-import humanDate from "../utils/humanDateForamt";
-import humanTime from "../utils/humanTime";
+const IST_TIME_ZONE = "Asia/Kolkata";
+
+// Meeting logs carry the whole room/client document; the modal only needs the
+// name of each so the remaining fields are not repeated as separate details.
+const NAME_ONLY_KEYS = new Set([
+  "bookedRoom",
+  "room",
+  "roomId",
+  "bookedBy",
+  "externalBookedBy",
+  "clientBookedBy",
+  "client",
+  "externalClient",
+  "externalCompany",
+  "unit",
+]);
+
+// Nested fields that should not be expanded under a specific parent in the
+// View Log modal.
+const HIDDEN_CHILD_KEYS_BY_PARENT = {
+  meetingId: new Set(["housekeepingChecklist"]),
+};
+
+const shouldHideChild = (parentKey, childKey) =>
+  Boolean(HIDDEN_CHILD_KEYS_BY_PARENT[parentKey]?.has(childKey));
+
+const ID_PROOF_KEYS = new Set(["idproof", "id_proof"]);
+const FLAT_ID_KEYS = new Set(["idtype", "idnumber"]);
+
+const isFlatIdKey = (key) =>
+  FLAT_ID_KEYS.has(String(key || "").toLowerCase().replace(/[^a-z]/g, ""));
+
+const isIdProofKey = (key) =>
+  ID_PROOF_KEYS.has(String(key || "").toLowerCase());
+
+// Visitor logs carry `idProof` as the raw JSON string submitted by the form;
+// parse it so its parts can be shown as normal fields.
+const parseJsonLikeValue = (value) => {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+
+  if (!trimmed || !/^[[{]/.test(trimmed) || !/[\]}]$/.test(trimmed)) {
+    return value;
+  }
+
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    return value;
+  }
+};
+
+const istDateFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: IST_TIME_ZONE,
+  day: "2-digit",
+  month: "2-digit",
+  year: "numeric",
+});
+
+const istTimeFormatter = new Intl.DateTimeFormat("en-GB", {
+  timeZone: IST_TIME_ZONE,
+  hour: "numeric",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const toIstDate = (value) => {
+  const parsed = new Date(value);
+
+  if (!value || Number.isNaN(parsed.getTime())) return "—";
+
+  return istDateFormatter.format(parsed).replace(/\//g, "-");
+};
+
+const toIstTime = (value) => {
+  const parsed = new Date(value);
+
+  if (!value || Number.isNaN(parsed.getTime())) return "—";
+
+  return istTimeFormatter.format(parsed);
+};
+
+const ISO_DATE_PATTERN =
+  /^\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2})?(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?)?$/;
+
+// Keys such as `checkIn`/`checkOut` carry timestamps without saying "date" or
+// "time" in the name, so recognise the value itself.
+const formatIsoDateValue = (value) => {
+  if (typeof value !== "string" || !ISO_DATE_PATTERN.test(value)) return null;
+
+  return value.includes("T") || value.includes(" ")
+    ? `${toIstDate(value)}, ${toIstTime(value)}`
+    : toIstDate(value);
+};
 import DetalisFormatted from "../components/DetalisFormatted";
 import MuiModal from "../components/MuiModal";
 import PageFrame from "../components/Pages/PageFrame";
@@ -81,14 +174,30 @@ const LogPage = ({
 
     return (
       fullName ||
+      value.employeeName ||
+      value.visitorCompany ||
       value.name ||
       value.title ||
       value.label ||
+      value.subject ||
+      value.clientName ||
+      value.clientCompany ||
+      value.registeredClientCompany ||
+      value.companyName ||
       value.departmentId ||
       value.empId ||
       value.email ||
       null
     );
+  };
+
+  const getNameOnlyValue = (value) => {
+    if (!value || typeof value !== "object") return null;
+
+    // Units are identified by their number, not by their internal name.
+    if (value.unitNo) return value.unitNo;
+
+    return getReadableLogLabel(value);
   };
 
   const findPayloadLabelById = (payload, targetId) => {
@@ -173,7 +282,7 @@ const LogPage = ({
       },
       cellRenderer: (params) => {
         if (!params.data?.createdAt) return "-";
-        return `${humanDate(params.data.createdAt)}, ${humanTime(params.data.createdAt)}`;
+        return `${toIstDate(params.data.createdAt)}, ${toIstTime(params.data.createdAt)}`;
       },
     },
     {
@@ -183,17 +292,17 @@ const LogPage = ({
       lockVisible: true,
       filter: false,
       getQuickFilterText: () => "",
-      valueGetter: (params) => formatLogDetailsForExport(params.data?.payload),
     },
     {
       headerName: "Actions",
       field: "actions",
       flex: 1,
-      align: "left",
+      align: "center",
+      headerAlign: "center",
       pinned: "right",
       suppressCsvExport: true,
       cellRenderer: (params) => (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex h-full min-h-[36px] items-center justify-center">
           <button
             type="button"
             aria-label="View log details"
@@ -216,7 +325,7 @@ const LogPage = ({
         path: formatLogPath(item.path, item.payload),
         createdAt: item.createdAt,
         createdAtExport: item.createdAt
-          ? `${humanDate(item.createdAt)}, ${humanTime(item.createdAt)}`
+          ? `${toIstDate(item.createdAt)}, ${toIstTime(item.createdAt)}`
           : "-",
         payload: item.payload,
       }));
@@ -227,12 +336,76 @@ const LogPage = ({
   // const formatKey = (key) =>
   //   key.replace(/([A-Z])/g, " $1").replace(/^./, (str) => str.toUpperCase());
 
-  const skipKeys = ["__v", "_id", "refreshToken", "password"];
+  const skipKeys = [
+    "__v",
+    "_id",
+    "refreshToken",
+    "password",
+    "createdAt",
+    "updatedAt",
+  ];
 
   const formatKey = (key) => {
     return key
       .replace(/([A-Z])/g, " $1")
       .replace(/^./, (str) => str.toUpperCase());
+  };
+
+  const getIdProofParts = (value) => {
+    const parsed = parseJsonLikeValue(value);
+
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+
+    if (parsed.idType === undefined && parsed.idNumber === undefined) {
+      return null;
+    }
+
+    return { idType: parsed.idType, idNumber: parsed.idNumber };
+  };
+
+  // Visitor forms send both `idProof` and flat `idType`/`idNumber` fields.
+  // Use the parsed object once and suppress the duplicate flat keys.
+  const getIdProofPartsFromPayload = (payload) => {
+    for (const [key, rawValue] of Object.entries(payload || {})) {
+      if (!isIdProofKey(key)) continue;
+      const parts = getIdProofParts(parseJsonLikeValue(rawValue));
+      if (parts) return parts;
+    }
+    return null;
+  };
+
+  // `idProof` is shown as two plain fields (ID Type / ID Number) instead of a
+  // single JSON blob in the View Log modal.
+  const getLogDetailEntries = (payload) => {
+    const idProofParts = getIdProofPartsFromPayload(payload);
+    let idProofRendered = false;
+
+    return Object.entries(payload || {}).flatMap(([key, rawValue]) => {
+      if (skipKeys.includes(key)) return [];
+
+      const value = parseJsonLikeValue(rawValue);
+
+      if (isIdProofKey(key)) {
+        if (idProofParts && !idProofRendered) {
+          idProofRendered = true;
+          return [
+            { key: "idType", title: "Id Type", value: idProofParts.idType },
+            {
+              key: "idNumber",
+              title: "Id Number",
+              value: idProofParts.idNumber,
+            },
+          ];
+        }
+        return [];
+      }
+
+      if (idProofParts && isFlatIdKey(key)) return [];
+
+      return [{ key, title: formatKey(key), value }];
+    });
   };
 
   const isMongoId = (value) => isMongoIdSegment(value);
@@ -256,6 +429,8 @@ const LogPage = ({
   };
 
   const formatNestedDisplayValue = (value, parentKey = "", asText = false) => {
+    value = parseJsonLikeValue(value);
+
     if (value === null || value === undefined || value === "") return "-";
 
     if (Array.isArray(value)) {
@@ -290,8 +465,14 @@ const LogPage = ({
     }
 
     if (typeof value === "object") {
+      if (NAME_ONLY_KEYS.has(parentKey)) {
+        return getNameOnlyValue(value) || "-";
+      }
+
       const entries = Object.entries(value).filter(
-        ([childKey, childValue]) => !shouldSkipField(childKey, childValue),
+        ([childKey, childValue]) =>
+          !shouldSkipField(childKey, childValue) &&
+          !shouldHideChild(parentKey, childKey),
       );
 
       if (!entries.length) return "-";
@@ -348,13 +529,18 @@ const LogPage = ({
       );
     }
 
-    if (parentKey.toLowerCase().includes("date")) return humanDate(value);
-    if (parentKey.toLowerCase().includes("time")) return humanTime(value);
+    if (parentKey.toLowerCase().includes("date")) return toIstDate(value);
+    if (parentKey.toLowerCase().includes("time")) return toIstTime(value);
+
+    const isoDate = formatIsoDateValue(value);
+    if (isoDate) return isoDate;
 
     return String(value);
   };
 
   const formatValue = (key, value, asText = false) => {
+    value = parseJsonLikeValue(value);
+
     if (shouldSkipField(key, value)) return null;
     if (isMongoId(value)) return null;
 
@@ -365,8 +551,14 @@ const LogPage = ({
 
     // Objects
     if (typeof value === "object" && value !== null) {
+      if (NAME_ONLY_KEYS.has(key)) {
+        return getNameOnlyValue(value) || "-";
+      }
+
       const entries = Object.entries(value).filter(
-        ([subKey, subVal]) => !shouldSkipField(subKey, subVal),
+        ([subKey, subVal]) =>
+          !shouldSkipField(subKey, subVal) &&
+          !shouldHideChild(key, subKey),
       );
 
       if (!entries.length) return null;
@@ -382,37 +574,159 @@ const LogPage = ({
     }
 
     // Top-level key formatting
-    if (key.toLowerCase().includes("date")) return humanDate(value);
-    if (key.toLowerCase().includes("time")) return humanTime(value);
+    if (key.toLowerCase().includes("date")) return toIstDate(value);
+    if (key.toLowerCase().includes("time")) return toIstTime(value);
+
+    const isoDate = formatIsoDateValue(value);
+    if (isoDate) return isoDate;
 
     return value ?? "-";
   };
 
+  // Flattens every field shown in the View Log modal into one line so the
+  // exported Details cell carries the same information (CSV cells that rely on
+  // line breaks appear truncated in most spreadsheet apps).
   const formatLogDetailsForExport = (payload) => {
-    return (
-      Object.entries(payload || {})
-        .map(([key, value]) => {
-          const formattedValue = formatValue(key, value, true);
-          return formattedValue === null
-            ? null
-            : `${formatKey(key)}: ${formattedValue}`;
-        })
-        .filter((value) => value !== null)
-        .join("\n") || "-"
-    );
+    const segments = [];
+
+    const pushValue = (rawValue, path, key) => {
+      const value = parseJsonLikeValue(rawValue);
+      const label = path.join(" > ");
+
+      const leafText = (leafValue) => {
+        if (leafValue === null || leafValue === undefined || leafValue === "") {
+          return "-";
+        }
+
+        const formatted = formatValue(key, leafValue, true);
+
+        return formatted === null || formatted === undefined
+          ? "-"
+          : String(formatted);
+      };
+
+      if (Array.isArray(value)) {
+        const visibleItems = value.filter((item) => {
+          if (item && typeof item === "object") {
+            return Object.entries(item).some(
+              ([itemKey, itemValue]) => !shouldSkipField(itemKey, itemValue),
+            );
+          }
+          return !isMongoId(item);
+        });
+
+        if (!visibleItems.length) {
+          segments.push(`${label}: -`);
+          return;
+        }
+
+        const primitiveItems = visibleItems.filter(
+          (item) => item === null || typeof item !== "object",
+        );
+
+        if (primitiveItems.length) {
+          segments.push(
+            `${label}: ${primitiveItems.map((item) => leafText(item)).join(", ")}`,
+          );
+        }
+
+        visibleItems
+          .filter((item) => item !== null && typeof item === "object")
+          .forEach((item, index) => {
+            pushValue(
+              item,
+              [
+                ...path.slice(0, -1),
+                `${path[path.length - 1]} ${index + 1}`,
+              ],
+              key,
+            );
+          });
+
+        return;
+      }
+
+      if (value && typeof value === "object") {
+        const entries = Object.entries(value).filter(
+          ([childKey, childValue]) =>
+            !shouldSkipField(childKey, childValue) &&
+            !shouldHideChild(key, childKey),
+        );
+
+        if (!entries.length) {
+          segments.push(`${label}: -`);
+          return;
+        }
+
+        const readableLabel = getReadableLogLabel(value);
+        const hasOnlyReadableLabel = entries.every(([childKey]) =>
+          ["name", "title", "label", "empId", "email"].includes(childKey),
+        );
+
+        if (NAME_ONLY_KEYS.has(key)) {
+          segments.push(`${label}: ${getNameOnlyValue(value) || "-"}`);
+          return;
+        }
+
+        if (readableLabel && hasOnlyReadableLabel) {
+          segments.push(`${label}: ${readableLabel}`);
+          return;
+        }
+
+        entries.forEach(([childKey, childValue]) => {
+          pushValue(childValue, [...path, formatKey(childKey)], childKey);
+        });
+
+        return;
+      }
+
+      segments.push(`${label}: ${leafText(value)}`);
+    };
+
+    const idProofParts = getIdProofPartsFromPayload(payload);
+    let idProofExported = false;
+
+    Object.entries(payload || {}).forEach(([key, rawValue]) => {
+      if (skipKeys.includes(key)) return;
+
+      const value = parseJsonLikeValue(rawValue);
+
+      if (isIdProofKey(key)) {
+        if (idProofParts && !idProofExported) {
+          idProofExported = true;
+          segments.push(`Id Type: ${idProofParts.idType ?? "-"}`);
+          segments.push(`Id Number: ${idProofParts.idNumber ?? "-"}`);
+        }
+        return;
+      }
+
+      if (idProofParts && isFlatIdKey(key)) return;
+      if (shouldSkipField(key, value) || isMongoId(value)) return;
+      pushValue(value, [formatKey(key)], key);
+    });
+
+    return segments.join(" | ") || "-";
   };
+
+  // The Details column is a value of the exported row itself, so the export
+  // does not depend on a hidden column's valueGetter.
+  const tableDataWithDetails = tableData.map((row) => ({
+    ...row,
+    logDetailsExport: formatLogDetailsForExport(row.payload),
+  }));
 
   return (
     <div className="p-4">
       <PageFrame>
         <YearWiseTable
           loading={isLoading}
-          data={tableData || []}
+          data={tableDataWithDetails || []}
           columns={columns}
           dateColumn="createdAt"
           tableHeight={400}
           tableTitle={tableTitle}
           exportData={true}
+          exportAllColumns
           search={true}
           showDateNavigator
           selectedDateLabel={selectedLogDateLabel}
@@ -428,25 +742,21 @@ const LogPage = ({
         >
           <div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
             {selectedLog &&
-              Object.entries(selectedLog).map(([key, value], index) => {
-                console.log("keys", key, "->", skipKeys.includes(key));
-                if (skipKeys.includes(key)) {
-                  console.log("inside", key, "->", skipKeys.includes(key));
-                  return null;
-                }
-                const formattedKey = formatKey(key);
-                const formattedValue = formatValue(key, value);
+              getLogDetailEntries(selectedLog).map(
+                ({ key, title, value }, index) => {
+                  const formattedValue = formatValue(key, value);
 
-                if (!formattedKey || formattedValue === null) return null;
+                  if (!title || formattedValue === null) return null;
 
-                return (
-                  <DetalisFormatted
-                    key={index}
-                    title={formattedKey}
-                    detail={formattedValue}
-                  />
-                );
-              })}
+                  return (
+                    <DetalisFormatted
+                      key={`${key}-${index}`}
+                      title={title}
+                      detail={formattedValue}
+                    />
+                  );
+                },
+              )}
           </div>
         </MuiModal>
       </PageFrame>

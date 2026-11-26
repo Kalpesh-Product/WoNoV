@@ -15,6 +15,7 @@ import useAuth from "../../../../hooks/useAuth";
 import { MdOutlineRemoveRedEye } from "react-icons/md";
 import dayjs from "dayjs";
 import PageFrame from "../../../../components/Pages/PageFrame";
+import AdminLoadingSkeleton from "../../AdminDashboard/AdminLoadingSkeleton";
 
 const ItAssetList = () => {
   const { auth } = useAuth();
@@ -427,11 +428,15 @@ const ItAssetList = () => {
                       label="Category"
                       size="small"
                     >
-                      {assetsCategories.map((category) => (
-                        <MenuItem key={category._id} value={category._id}>
-                          {category.categoryName}
-                        </MenuItem>
-                      ))}
+                      {assetPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        assetsCategories.map((category) => (
+                          <MenuItem key={category._id} value={category._id}>
+                            {category.categoryName}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />
@@ -448,11 +453,18 @@ const ItAssetList = () => {
                       label="Sub-Category"
                       size="small"
                     >
-                      {assetsCategories.subCategories?.map((subCategory) => (
-                        <MenuItem key={subCategory._id} value={subCategory._id}>
-                          {subCategory.categoryName}
-                        </MenuItem>
-                      ))}
+                      {assetPending ? (
+                        <AdminLoadingSkeleton variant="option" />
+                      ) : (
+                        assetsCategories.subCategories?.map((subCategory) => (
+                          <MenuItem
+                            key={subCategory._id}
+                            value={subCategory._id}
+                          >
+                            {subCategory.categoryName}
+                          </MenuItem>
+                        ))
+                      )}
                     </TextField>
                   )}
                 />

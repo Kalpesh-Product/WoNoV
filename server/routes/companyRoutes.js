@@ -100,6 +100,7 @@ const {
 } = require("../controllers/companyControllers/jobApplicationsController");
 const {
   getWebsiteJobApplications,
+  updateWebsiteJobApplication,
 } = require("../controllers/companyControllers/websiteJobApplicationsController");
 
 // Company basic info routes
@@ -182,6 +183,7 @@ router.post(
 );
 router.get("/get-job-applications", getJobApplications);
 router.get("/website-job-applications", getWebsiteJobApplications);
+router.patch("/website-job-applications/:id", updateWebsiteJobApplication);
 router.patch(
   "/update-job-application/:id",
   upload.single("resume"),

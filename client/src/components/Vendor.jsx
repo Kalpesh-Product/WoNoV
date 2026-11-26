@@ -1,6 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useForm, Controller } from "react-hook-form";
-import { Autocomplete, Chip, MenuItem, Select, TextField } from "@mui/material";
+import {
+  Autocomplete,
+  Chip,
+  MenuItem,
+  Select,
+  Skeleton,
+  TextField,
+} from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Country, State, City } from "country-state-city";
@@ -80,7 +87,10 @@ const Vendor = () => {
   const [vendorTypeOptions, setVendorTypeOptions] = useState([]);
   const [vendorTypeInput, setVendorTypeInput] = useState("");
 
-  const { data: savedVendorTypeOptions = [] } = useQuery({
+  const {
+    data: savedVendorTypeOptions = [],
+    isPending: isVendorTypeOptionsLoading,
+  } = useQuery({
     queryKey: ["vendorTypeOptions"],
     queryFn: async () => {
       const response = await axios.get("/api/vendors/vendor-type-options");
@@ -677,6 +687,19 @@ const Vendor = () => {
                             }
                             error={!!error}
                             helperText={error?.message}
+                            InputProps={{
+                              ...params.InputProps,
+                              startAdornment: isVendorTypeOptionsLoading ? (
+                                <Skeleton
+                                  variant="text"
+                                  width={80}
+                                  height={20}
+                                  aria-busy="true"
+                                />
+                              ) : (
+                                params.InputProps.startAdornment
+                              ),
+                            }}
                           />
                         )}
                       />

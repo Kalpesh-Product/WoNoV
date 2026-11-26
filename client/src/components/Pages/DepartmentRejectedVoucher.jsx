@@ -235,7 +235,7 @@ const DepartmentRejectedVoucher = () => {
           tableTitle={`${departmentTitle} Rejected Voucher`}
           data={tableData}
           columns={columns}
-          isLoading={isRejectedLoading}
+          loading={isRejectedLoading}
           exportData
         />
       </PageFrame>

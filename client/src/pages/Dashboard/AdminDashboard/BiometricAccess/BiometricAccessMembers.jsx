@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useParams } from "react-router-dom";
 import { Controller, useForm } from "react-hook-form";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Chip, MenuItem, TextField } from "@mui/material";
+import { Chip, MenuItem, Skeleton, TextField } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { toast } from "sonner";
@@ -105,9 +105,12 @@ const BiometricAccessMembers = () => {
         },
     });
 
-    const { data: clientData } = useQuery({
+    const isClientQueryEnabled = Boolean(
+        decodedClientName || selectedClient?._id || selectedClient?.clientName,
+    );
+    const { data: clientData, isPending: isClientPending } = useQuery({
         queryKey: ["biometricAccessClient", decodedClientName, selectedClient?._id],
-        enabled: Boolean(decodedClientName || selectedClient?._id || selectedClient?.clientName),
+        enabled: isClientQueryEnabled,
         queryFn: async () => {
             const response = await axios.get("/api/sales/co-working-clients");
             const clients = Array.isArray(response.data)
@@ -135,9 +138,10 @@ const BiometricAccessMembers = () => {
         return null;
     }, [clientData, selectedClient, routeClientKey]);
 
-    const { data: clientMembersData } = useQuery({
+    const isMembersQueryEnabled = Boolean(resolvedClient?._id);
+    const { data: clientMembersData, isPending: isMembersPending } = useQuery({
         queryKey: ["biometricAccessClientMembers", resolvedClient?._id, resolvedClient?.clientName],
-        enabled: Boolean(resolvedClient?._id),
+        enabled: isMembersQueryEnabled,
         queryFn: async () => {
             const response = await axios.get(
                 `/api/sales/co-working-client-members?clientId=${resolvedClient._id}`,
@@ -370,6 +374,10 @@ const BiometricAccessMembers = () => {
         return { total, active, inactive, disabled };
     }, [memberData]);
 
+    const isMembersLoading =
+        (isClientQueryEnabled && isClientPending) ||
+        (isMembersQueryEnabled && isMembersPending);
+
     const columns = [
         { field: "srNo", headerName: "SR No" },
         { field: "clientName", headerName: "Company Name", flex: 1,hide:true },
@@ -445,20 +453,32 @@ const BiometricAccessMembers = () => {
                         tableTitle={`${decodedClientName || selectedClient?.clientName || "Client"} - Biometric Access Members`}
                         data={memberData}
                         columns={columns}
+                        loading={isMembersLoading}
                         getRowStyle={(params) =>
                             params.data?.isDeleted
                                 ? { backgroundColor: "#f4f4f4", color: "#7a7a7a" }
                                 : undefined
                         }
                         titleRightContent={
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <StatusChip status="Total" count={memberStats.total} variant="count" />
-                                <StatusChip status="Active" count={memberStats.active} variant="count" />
-                                <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
-                                {canViewDisabledMembers ? (
-                                    <StatusChip status="Disabled" count={memberStats.disabled} variant="count" />
-                                ) : null}
-                            </div>
+                            isMembersLoading ? (
+                                <div className="flex items-center gap-2 flex-wrap" aria-busy="true">
+                                    <Skeleton variant="rounded" width={96} height={38} />
+                                    <Skeleton variant="rounded" width={96} height={38} />
+                                    <Skeleton variant="rounded" width={104} height={38} />
+                                    {canViewDisabledMembers ? (
+                                        <Skeleton variant="rounded" width={110} height={38} />
+                                    ) : null}
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <StatusChip status="Total" count={memberStats.total} variant="count" />
+                                    <StatusChip status="Active" count={memberStats.active} variant="count" />
+                                    <StatusChip status="Inactive" count={memberStats.inactive} variant="count" />
+                                    {canViewDisabledMembers ? (
+                                        <StatusChip status="Disabled" count={memberStats.disabled} variant="count" />
+                                    ) : null}
+                                </div>
+                            )
                         }
                         exportData
                        // hideFilter

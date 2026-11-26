@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import BarGraph from "../../../../components/graphs/BarGraph";
 import {
   Select,
@@ -29,6 +29,7 @@ import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { transformBudgetData } from "../../../../utils/transformBudgetData";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import { toast } from "sonner";
+import SalesDashboardChartSkeleton from "../../SalesDashboard/SalesDashboardChartSkeleton";
 
 const ItExpenses = () => {
   const axios = useAxiosPrivate();
@@ -244,21 +245,10 @@ const ItExpenses = () => {
 
   // BUDGET NEW START
 
-  const [isReady, setIsReady] = useState(false);
-
-  // const [openModal, setOpenModal] = useState(false);
-
   const budgetBar = useMemo(() => {
     if (isHrLoading || !Array.isArray(hrFinance)) return null;
     return transformBudgetData(hrFinance);
   }, [isHrLoading, hrFinance]);
-
-  useEffect(() => {
-    if (!isHrLoading) {
-      const timer = setTimeout(() => setIsReady(true), 1000);
-      return () => clearTimeout(timer); // Cleanup on unmount
-    }
-  }, [isHrLoading]);
 
   const expenseRawSeries = useMemo(() => {
     // Initialize monthly buckets
@@ -943,21 +933,27 @@ const dynamicExpenseOptions = {
         onYearChange={setSelectedFiscalYear}
       /> */}
 
-      <YearlyGraph
-  data={dynamicExpenseRawSeries}
-  options={dynamicExpenseOptions}
-  title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
-  TitleAmountTotal={`INR ${inrFormat(
-    selectedItYearTotals.projectedTotal,
-  )}`}
-  TitleAmountGreen={`INR ${inrFormat(
-    selectedItYearTotals.actualTotal,
-  )}`}
-  totalTitle="PROJECTED"
-  greenTitle="ACTUAL"
-  summaryChipVariant="budget"
-  onYearChange={setSelectedFiscalYear}
-/>
+      {isHrLoading ? (
+        <WidgetSection border title={`BIZ Nest ${department?.name?.toUpperCase()} DEPARTMENT EXPENSE`}>
+          <SalesDashboardChartSkeleton title="IT Expenses" />
+        </WidgetSection>
+      ) : (
+        <YearlyGraph
+          data={dynamicExpenseRawSeries}
+          options={dynamicExpenseOptions}
+          title={`BIZ Nest ${department?.name} DEPARTMENT EXPENSE`}
+          TitleAmountTotal={`INR ${inrFormat(
+            selectedItYearTotals.projectedTotal,
+          )}`}
+          TitleAmountGreen={`INR ${inrFormat(
+            selectedItYearTotals.actualTotal,
+          )}`}
+          totalTitle="PROJECTED"
+          greenTitle="ACTUAL"
+          summaryChipVariant="budget"
+          onYearChange={setSelectedFiscalYear}
+        />
+      )}
 
       {/* {!isTop && (
         <div className="flex justify-end">
@@ -970,7 +966,7 @@ const dynamicExpenseOptions = {
         </div>
       )} */}
 
-      <AllocatedBudget financialData={financialData} exportData />
+      <AllocatedBudget financialData={financialData} exportData isLoading={isHrLoading} />
       <MuiModal
         title="Request Budget"
         open={openModal}

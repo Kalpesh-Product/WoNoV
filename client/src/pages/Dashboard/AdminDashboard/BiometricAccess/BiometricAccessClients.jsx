@@ -1,4 +1,4 @@
-import { Chip } from "@mui/material";
+import { Chip, Skeleton } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { useMemo } from "react";
@@ -20,7 +20,7 @@ const BiometricAccessClients = () => {
         ? "IT-dashboard"
         : "admin-dashboard";
 
-    const { data: clientsData = [] } = useQuery({
+    const { data: clientsData = [], isPending: isClientsPending } = useQuery({
         queryKey: ["biometricAccessClientsData"],
         queryFn: async () => {
             const response = await axios.get("/api/sales/co-working-clients");
@@ -111,12 +111,21 @@ const BiometricAccessClients = () => {
                         key={data.length}
                         data={data}
                         columns={columns}
+                        loading={isClientsPending}
                         titleRightContent={
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <StatusChip status="Total" count={clientStats.total} variant="count" />
-                                <StatusChip status="Active" count={clientStats.active} variant="count" />
-                                <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
-                            </div>
+                            isClientsPending ? (
+                                <div className="flex items-center gap-2 flex-wrap" aria-busy="true">
+                                    <Skeleton variant="rounded" width={96} height={38} />
+                                    <Skeleton variant="rounded" width={96} height={38} />
+                                    <Skeleton variant="rounded" width={104} height={38} />
+                                </div>
+                            ) : (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <StatusChip status="Total" count={clientStats.total} variant="count" />
+                                    <StatusChip status="Active" count={clientStats.active} variant="count" />
+                                    <StatusChip status="Inactive" count={clientStats.inactive} variant="count" />
+                                </div>
+                            )
                         }
                         exportData
                        // hideFilter

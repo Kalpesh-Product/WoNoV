@@ -340,6 +340,7 @@ const MonthlyInvoiceCommon = () => {
       <PageFrame>
         {departmentId ? (
           <YearWiseTable
+            loading={Boolean(departmentId) && isHrLoading}
             data={mappedRows}
             dropdownColumns={["department"]}
             columns={invoiceCreationColumns}

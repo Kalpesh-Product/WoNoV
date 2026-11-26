@@ -26,6 +26,7 @@ import humanTime from "../../../utils/humanTime";
 import useAuth from "../../../hooks/useAuth";
 import { PERMISSIONS } from "./../../../constants/permissions";
 import { filterPermissions } from "../../../utils/accessConfig";
+import SalesDashboardChartSkeleton from "../SalesDashboard/SalesDashboardChartSkeleton";
 
 const ItDashboard = () => {
   const { setIsSidebarOpen } = useSidebar();
@@ -1190,6 +1191,7 @@ const ItDashboard = () => {
       data: expenseRawSeries,
       titleAmount: `INR ${Math.round(totalUtilised).toLocaleString("en-IN")}`,
       onYearChange: setSelectedFiscalYear,
+      loading: isHrFinanceLoading,
     },
   ];
 
@@ -1206,6 +1208,7 @@ const ItDashboard = () => {
       data: Array.isArray(unitsData) ? unitsData.length : 0,
       description: "Offices Under Management",
       route: "IT-offices",
+      loading: isUnitsData,
     },
     {
       key: PERMISSIONS.IT_DUE_TASKS_THIS_MONTH.value,
@@ -1213,6 +1216,7 @@ const ItDashboard = () => {
       data: dueTasksThisMonthCount,
       description: "Due Tasks This Month",
       route: "/app/tasks/department-tasks",
+      loading: isTasksLoading,
     },
     {
       key: PERMISSIONS.IT_INTERNET_EXPENSE_PER_SQFT.value,
@@ -1220,6 +1224,7 @@ const ItDashboard = () => {
       data: `INR ${inrFormat(internetExpense / totalSqFt)}`,
       description: "Internet Expense per sq.ft",
       route: "per-sq-ft-internet-expense",
+      loading: isHrFinanceLoading || isUnitsData,
     },
     {
       key: PERMISSIONS.IT_EXPENSE_PER_SQFT.value,
@@ -1227,6 +1232,7 @@ const ItDashboard = () => {
       data: `INR ${inrFormat((currentFiscalYearOverallExpense || 0) / totalSqFt)}`,
       description: "Expense per sq.ft",
       route: "per-sq-ft-expense",
+      loading: isHrFinanceLoading || isUnitsData,
     },
     {
       key: PERMISSIONS.IT_MONTHLY_EXPENSE.value,
@@ -1234,6 +1240,7 @@ const ItDashboard = () => {
       data: `INR ${inrFormat(averageMonthlyExpense)}`,
       description: "Monthly Expense",
       route: "IT-expenses",
+      loading: isHrFinanceLoading,
     },
     {
       key: PERMISSIONS.IT_MONTHLY_KPA.value,
@@ -1241,6 +1248,7 @@ const ItDashboard = () => {
       data: departmentKra.length || 0,
       description: "Monthly KPA",
       route: "/app/performance",
+      loading: departmentLoading,
     },
   ];
 
@@ -1258,6 +1266,7 @@ const ItDashboard = () => {
       title: "Top 10 High Priority Due Tasks",
       rows: transformedTasks,
       columns: priorityTasksColumns,
+      loading: isTasksLoading,
     },
     {
       key: PERMISSIONS.IT_WEEKLY_EXECUTIVE_SHIFT_TIMING.value,
@@ -1266,6 +1275,7 @@ const ItDashboard = () => {
       title: "Weekly Executive Shift Timing",
       rows: transformedWeeklyShifts,
       columns: executiveTimingsColumns,
+      loading: isWeeklyScheduleLoading,
     },
   ];
 
@@ -1344,6 +1354,7 @@ const ItDashboard = () => {
       width: 500,
       data: departmentWiseComplaintData,
       options: departmentWiseComplaintOptions,
+      loading: isTicketsLoading,
     },
     {
       key: PERMISSIONS.IT_BIOMETRICS_ACTIVATION_DATA.value,
@@ -1354,6 +1365,7 @@ const ItDashboard = () => {
       Width: 500,
       data: biometricStatusSummary,
       options: biometricPieOptions,
+      loading: isClientsDataPending,
     },
   ];
   const allowedPieCharts = filterPermissions(pieChartConfig, userPermissions);
@@ -1366,6 +1378,7 @@ const ItDashboard = () => {
       title: "Unit Wise Due Tasks",
       data: unitWisePieData,
       options: unitPieChartOptions,
+      loading: isTasksLoading,
     },
     {
       key: PERMISSIONS.IT_EXECUTIVE_WISE_DUE_TASKS.value,
@@ -1381,6 +1394,7 @@ const ItDashboard = () => {
         `${label}: ${value || 0} pending tasks`,
       width: 500,
       height: 320,
+      loading: isWeeklyScheduleLoading,
     },
   ];
   const allowedDueTasks = filterPermissions(dueTasksConfigs, userPermissions);
@@ -1542,6 +1556,7 @@ const ItDashboard = () => {
       centerAlign: true,
       height: 320,
       width: 500,
+      loading: isTicketsLoading,
     },
     {
       key: PERMISSIONS.IT_DUE_TICKETS.value,
@@ -1553,6 +1568,7 @@ const ItDashboard = () => {
       centerAlign: true,
       height: 320,
       width: 500,
+      loading: isTicketsLoading,
     },
   ];
 
@@ -1587,6 +1603,7 @@ const ItDashboard = () => {
       labels: complaintTypeLabels,
       series: donutComplaintTypeData,
       tooltipValue: complaintCounts,
+      loading: isTicketsLoading,
     },
   ];
   const allowedPieDonut = filterPermissions(pieDonutConfig, userPermissions);
@@ -1788,15 +1805,19 @@ const ItDashboard = () => {
           padding
           key={config.key}
         >
-          <YearlyGraph
-            chartId={config.chartId}
-            data={config.data}
-            options={config.options}
-            title={config.title}
-            titleAmount={config.titleAmount}
-            onYearChange={config.onYearChange}
-            responsiveResize
-          />
+          {config.loading ? (
+            <SalesDashboardChartSkeleton title={config.title} />
+          ) : (
+            <YearlyGraph
+              chartId={config.chartId}
+              data={config.data}
+              options={config.options}
+              title={config.title}
+              titleAmount={config.titleAmount}
+              onYearChange={config.onYearChange}
+              responsiveResize
+            />
+          )}
         </WidgetSection>
       )),
     },
@@ -1814,15 +1835,28 @@ const ItDashboard = () => {
     },
     {
       layout: 3,
-      widgets: allowedITDataCards.map((config) => (
-        <DataCard
-          key={config.key}
-          data={config.data}
-          title={config.title}
-          description={config.description}
-          route={config.route}
-        />
-      )),
+      widgets: allowedITDataCards.map((config) =>
+        config.loading ? (
+          <div
+            key={config.key}
+            className="min-w-0 rounded-lg border border-gray-200 bg-white p-5"
+            role="status"
+            aria-label={`Loading ${config.description}`}
+          >
+            <Skeleton variant="text" width="55%" height={24} />
+            <Skeleton variant="text" width="35%" height={42} />
+            <Skeleton variant="text" width="70%" height={22} />
+          </div>
+        ) : (
+          <DataCard
+            key={config.key}
+            data={config.data}
+            title={config.title}
+            description={config.description}
+            route={config.route}
+          />
+        ),
+      ),
     },
 
     {
@@ -1836,6 +1870,7 @@ const ItDashboard = () => {
           Title={config.title}
           rows={config.rows}
           columns={config.columns}
+          loading={config.loading}
         />
       )),
     },
@@ -1848,56 +1883,54 @@ const ItDashboard = () => {
           border={config.border}
           title={config.title}
         >
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config?.width}
-            height={config?.height}
-            centerAlign
-          />
+          {config.loading ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config?.width}
+              height={config?.height}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },
 
     {
       layout: allowedDueTasks.length,
-      widgets: allowedDueTasks.map((config) => {
-        if (config.type === "PieChartMui") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <PieChartMui
-                data={config.data}
-                options={config.options}
-                centerAlign
+      widgets: allowedDueTasks.map((config) => (
+        <WidgetSection
+          key={config.key}
+          border={config.border}
+          title={config.title}
+        >
+          {config.loading ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : config.type === "PieChartMui" ? (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign
+            />
+          ) : (
+            <div className="flex justify-center w-full">
+              <DonutChart
+                centerLabel={config.centerLabel}
+                labels={config.labels}
+                colors={config.colors}
+                series={config.series}
+                tooltipValue={config.tooltipValue}
+                tooltipFormatter={config.tooltipFormatter}
+                width={config.width}
               />
-            </WidgetSection>
-          );
-        } else if (config.type === "DonutChart") {
-          return (
-            <WidgetSection
-              key={config.key}
-              border={config.border}
-              title={config.title}
-            >
-              <div className="flex justify-center w-full">
-                <DonutChart
-                  centerLabel={config.centerLabel}
-                  labels={config.labels}
-                  colors={config.colors}
-                  series={config.series}
-                  tooltipValue={config.tooltipValue}
-                  tooltipFormatter={config.tooltipFormatter}
-                  width={config.width}
-                />
-              </div>
-            </WidgetSection>
-          );
-        }
-      }),
+            </div>
+          )}
+        </WidgetSection>
+      )),
     },
     {
       layout: allowedItTicketCharts.length,
@@ -1907,13 +1940,17 @@ const ItDashboard = () => {
           border={config.border}
           title={config.title}
         >
-          <PieChartMui
-            data={config.data}
-            options={config.options}
-            width={config.width}
-            height={config.height}
-            centerAlign
-          />
+          {config.loading ? (
+            <SalesDashboardChartSkeleton circular title={config.title} />
+          ) : (
+            <PieChartMui
+              data={config.data}
+              options={config.options}
+              width={config.width}
+              height={config.height}
+              centerAlign
+            />
+          )}
         </WidgetSection>
       )),
     },

@@ -10,7 +10,8 @@ import MuiModal from "../../components/MuiModal";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import useAxiosPrivate from "../../hooks/useAxiosPrivate";
 import usePageDepartment from "../../hooks/usePageDepartment";
-import { CircularProgress, MenuItem, TextField } from "@mui/material";
+import { MenuItem, TextField } from "@mui/material";
+import CalendarLoadingSkeleton from "../CalendarLoadingSkeleton";
 import DetalisFormatted from "../DetalisFormatted";
 import PageFrame from "./PageFrame";
 import { Controller, useForm } from "react-hook-form";
@@ -18,6 +19,7 @@ import PrimaryButton from "../../components/PrimaryButton";
 import { toast } from "sonner";
 import { DatePicker } from "@mui/x-date-pickers";
 import { queryClient } from "../../main";
+import AdminLoadingSkeleton from "../../pages/Dashboard/AdminDashboard/AdminLoadingSkeleton";
 
 const TeamMemberDetails = () => {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -298,9 +300,7 @@ const TeamMemberDetails = () => {
         </div>
 
         {isLoading || isFetching ? (
-          <div className="w-full flex justify-center items-center p-4">
-            <CircularProgress size={24} />
-          </div>
+          <CalendarLoadingSkeleton label="team member schedule" />
         ) : (
           <div className="w-full h-full overflow-y-auto">
             <FullCalendar
@@ -385,11 +385,15 @@ const TeamMemberDetails = () => {
                   <MenuItem value="" disabled>
                     Select Substitute
                   </MenuItem>
-                  {employees.map((emp) => (
-                    <MenuItem key={emp._id} value={emp._id}>
-                      {emp.firstName} {emp.lastName}
-                    </MenuItem>
-                  ))}
+                  {!isEmployeesLoading ? (
+                    employees.map((emp) => (
+                      <MenuItem key={emp._id} value={emp._id}>
+                        {emp.firstName} {emp.lastName}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <AdminLoadingSkeleton variant="option" />
+                  )}
                 </TextField>
               )}
             />

@@ -5,21 +5,37 @@ import { Controller, useForm } from "react-hook-form";
 import humanDate from "../../../../utils/humanDateForamt";
 import MuiModal from "../../../../components/MuiModal";
 import DetalisFormatted from "../../../../components/DetalisFormatted";
-import { Menu, MenuItem, TextField } from "@mui/material";
-import HrLoadingSkeleton from "../HrLoadingSkeleton";
+import { MenuItem, TextField } from "@mui/material";
+import AttachmentFilesInput from "../../../../components/AttachmentFilesInput";
 import { inrFormat } from "../../../../utils/currencyFormat";
 import WidgetTable from "../../../../components/Tables/WidgetTable";
 import StatusChip from "../../../../components/StatusChip";
 import PrimaryButton from "../../../../components/PrimaryButton";
 import ConfirmationModal from "../../../../components/ConfirmationModal";
 import { toast } from "sonner";
-import { MdDeleteForever, MdMoreHoriz, MdOutlineRestore } from "react-icons/md";
+import {
+  MdDeleteForever,
+  MdOutlineRemoveRedEye,
+  MdOutlineRestore,
+} from "react-icons/md";
+import { HiPencilSquare } from "react-icons/hi2";
 import useAuth from "../../../../hooks/useAuth";
+
+import dayjs from "dayjs";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { isLinkedInProfileUrl } from "../../../../utils/validators";
 
 const TECH_DEPARTMENT_ID = "6798ba9de469e809084e2494";
 const APPLICATION_STATUSES = [
-  "Pending", "Under Review", "Shortlisted", "Interviewing",
-  "Offered", "Selected", "Hired", "Rejected",
+  "Pending",
+  "Under Review",
+  "Shortlisted",
+  "Interviewing",
+  "Offered",
+  "Selected",
+  "Hired",
+  "Rejected",
 ];
 
 const defaultApplicationValues = {
@@ -43,8 +59,69 @@ const defaultApplicationValues = {
   finalSubmissionDate: new Date().toISOString().slice(0, 10),
   status: "Pending",
   remarks: "",
+  relevantExperience: "",
   resume: null,
 };
+
+const dateInputValue = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 10);
+};
+
+const ApplicationDateField = ({
+  name,
+  label,
+  control,
+  unchanged,
+  disabled,
+  maxDate,
+}) => (
+  <Controller
+    name={name}
+    control={control}
+    rules={{
+      validate: (value) => {
+        if (unchanged || disabled) return true;
+        if (!value) return `${label} is required`;
+        const date = dayjs(value);
+        if (!date.isValid()) return "Enter a valid date";
+        return (
+          !maxDate ||
+          !date.isAfter(maxDate, "day") ||
+          "Date of birth cannot be in the future"
+        );
+      },
+    }}
+    render={({ field, fieldState }) => (
+      <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <DatePicker
+          label={label}
+          value={field.value ? dayjs(field.value) : null}
+          onChange={(value) =>
+            field.onChange(value ? value.format("YYYY-MM-DD") : "")
+          }
+          maxDate={maxDate}
+          disabled={disabled}
+          slotProps={{
+            textField: {
+              name: field.name,
+              inputRef: field.ref,
+              onBlur: field.onBlur,
+              size: "small",
+              fullWidth: true,
+              error: Boolean(fieldState.error),
+              helperText: fieldState.error?.message,
+            },
+          }}
+        />
+      </LocalizationProvider>
+    )}
+  />
+);
+
+const applicationSourceLabel = (application) =>
+  application.isWebsiteApplication ? "BIZ Nest" : "Local";
 
 const JobApplicationList = () => {
   const axios = useAxiosPrivate();
@@ -57,34 +134,36 @@ const JobApplicationList = () => {
         department?.name?.trim().toLowerCase(),
       ),
   );
-  const [openModal, setOpenModal] = useState(false);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [editingApplication, setEditingApplication] = useState(null);
   const [confirmationAction, setConfirmationAction] = useState(null);
-  const [viewApplicationDetails, setViewApplicationDetails] = useState({});
-  const [actionPosition, setActionPosition] = useState(null);
-  const [actionRow, setActionRow] = useState(null);
-  const [statusExpanded, setStatusExpanded] = useState(false);
+  const [viewApplicationDetails, setViewApplicationDetails] = useState(null);
+  const isWebsiteEdit = Boolean(editingApplication?.isWebsiteApplication);
   const {
     control,
     handleSubmit,
+    getValues,
     reset,
-    formState: { errors },
+    formState: { errors, dirtyFields },
   } = useForm({ defaultValues: defaultApplicationValues });
-  const {
-    data: jobApplications,
-    isPending: isJobApplicationPending,
-  } = useQuery({
-    queryKey: ["jobApplications", Boolean(isTechDepartment)],
-    queryFn: async function () {
-      const response = await axios.get(
-        `/api/company/get-job-applications${
-          isTechDepartment ? "?includeDeleted=true" : ""
-        }`,
-      );
-      return response.data;
-    },
-  });
+  const localStatusOnly = Boolean(
+    editingApplication &&
+    !isWebsiteEdit &&
+    dirtyFields.status &&
+    Object.keys(dirtyFields).length === 1,
+  );
+  const { data: jobApplications, isPending: isJobApplicationPending } =
+    useQuery({
+      queryKey: ["jobApplications", Boolean(isTechDepartment)],
+      queryFn: async function () {
+        const response = await axios.get(
+          `/api/company/get-job-applications${
+            isTechDepartment ? "?includeDeleted=true" : ""
+          }`,
+        );
+        return response.data;
+      },
+    });
   const {
     data: websiteApplications,
     isPending: isWebsiteApplicationPending,
@@ -130,9 +209,33 @@ const JobApplicationList = () => {
 
   const saveApplicationMutation = useMutation({
     mutationFn: async (values) => {
+      if (isWebsiteEdit) {
+        const changes = Object.fromEntries(
+          Object.keys(dirtyFields).map((field) => [
+            field,
+            String(values[field] ?? "").trim(),
+          ]),
+        );
+        if (!Object.keys(changes).length) return { unchanged: true };
+        return (
+          await axios.patch(
+            `/api/company/website-job-applications/${editingApplication.externalSubmissionId}`,
+            changes,
+          )
+        ).data;
+      }
+      if (localStatusOnly) {
+        return (
+          await axios.patch(
+            `/api/company/job-application/${editingApplication._id}/status`,
+            { status: values.status },
+          )
+        ).data;
+      }
       const formData = new FormData();
 
       Object.entries(values).forEach(([key, value]) => {
+        if (key === "relevantExperience") return;
         if (key === "resume") {
           if (value) formData.append("resume", value);
           return;
@@ -149,11 +252,17 @@ const JobApplicationList = () => {
         : await axios.post("/api/company/add-job-application", formData);
       return response.data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
-      toast.success(
-        `Job application ${editingApplication ? "updated" : "added"} successfully`,
-      );
+    onSuccess: (result) => {
+      if (!result.unchanged) {
+        queryClient.invalidateQueries({
+          queryKey: [
+            isWebsiteEdit ? "websiteJobApplications" : "jobApplications",
+          ],
+        });
+        toast.success(
+          `Job application ${editingApplication ? "updated" : "added"} successfully`,
+        );
+      }
       reset(defaultApplicationValues);
       setEditingApplication(null);
       setOpenAddModal(false);
@@ -195,27 +304,6 @@ const JobApplicationList = () => {
     },
   });
 
-  const statusMutation = useMutation({
-    mutationFn: async ({ id, status }) =>
-      (await axios.patch(`/api/company/job-application/${id}/status`, { status })).data,
-    onSuccess: ({ application }) => {
-      queryClient.invalidateQueries({ queryKey: ["jobApplications"] });
-      setViewApplicationDetails((current) =>
-        current?._id === application._id ? { ...current, status: application.status } : current,
-      );
-      toast.success("Application status updated");
-    },
-    onError: (error) => {
-      toast.error(error?.response?.data?.message || "Failed to update application status");
-    },
-  });
-
-  const closeActionMenu = () => {
-    setActionPosition(null);
-    setActionRow(null);
-    setStatusExpanded(false);
-  };
-
   const closeAddModal = () => {
     reset(defaultApplicationValues);
     setEditingApplication(null);
@@ -232,13 +320,14 @@ const JobApplicationList = () => {
     setEditingApplication(application);
     reset({
       ...defaultApplicationValues,
-      ...application,
-      dateOfBirth: application.dateOfBirth
-        ? new Date(application.dateOfBirth).toISOString().slice(0, 10)
-        : "",
-      finalSubmissionDate: application.finalSubmissionDate
-        ? new Date(application.finalSubmissionDate).toISOString().slice(0, 10)
-        : "",
+      ...Object.fromEntries(
+        Object.keys(defaultApplicationValues).map((field) => [
+          field,
+          application[field] ?? defaultApplicationValues[field],
+        ]),
+      ),
+      dateOfBirth: dateInputValue(application.dateOfBirth),
+      finalSubmissionDate: dateInputValue(application.finalSubmissionDate),
       resume: null,
     });
     setOpenAddModal(true);
@@ -276,61 +365,107 @@ const JobApplicationList = () => {
 
   const leavesColumn = [
     { field: "srNo", headerName: "SR No", width: 100 },
+    { field: "name", headerName: "Name", flex: 1 },
+    { field: "email", headerName: "Email", flex: 1, hide: true },
+    { field: "dateOfBirth", headerName: "Date of Birth", flex: 1, hide: true },
+    { field: "mobileNumber", headerName: "Mobile Number", flex: 1, hide: true },
+    { field: "location", headerName: "Location", flex: 1, hide: true },
     {
-      field: "name",
-      headerName: "Name",
+      field: "experienceInYears",
+      headerName: "Experience (Years)",
       flex: 1,
-      cellRenderer: (params) => (
-        <span
-          className="text-primary underline cursor-pointer"
-          onClick={() => handleViewApplicationDetails(params.data)}
-        >
-          {params.value}
-        </span>
-      ),
+      hide: true,
     },
-    { field: "email", headerName: "Email", flex: 1 ,hide:true},
-    { field: "dateOfBirth", headerName: "Date of Birth", flex:1,hide:true },
-    { field: "mobileNumber", headerName: "Mobile Number", flex: 1,hide:true },
-    { field: "location", headerName: "Location", flex: 1,hide:true },
-    { field: "experienceInYears", headerName: "Experience (Years)", flex: 1 ,hide:true},
     {
       field: "currentMonthlySalary",
       headerName: "Current Monthly Salary",
       flex: 1,
-      hide:true,
+      hide: true,
       valueFormatter: (params) => inrFormat(params.value),
     },
-    { field: "expectedMonthlySalary",
+    {
+      field: "expectedMonthlySalary",
       headerName: "Expected Monthly Salary",
       flex: 1,
-      hide:true,
+      hide: true,
       valueFormatter: (params) => inrFormat(params.value),
     },
-    { field: "howSoonYouCanJoinInDays", headerName: "Joining Time", flex: 1 ,hide:true},
-    { field: "willRelocateToGoa", headerName: "Willing to Relocate to Goa", flex: 1 ,hide:true},
-    { field: "willingToBootstrap", headerName: "Willing to Bootstrap", flex: 1 ,hide:true},   
-    {field: "linkedInProfileUrl", headerName: "LinkedIn Profile", flex: 1, hide:true},
-    { field: "skillSetsForJob", headerName: "Skill Sets for Job", flex: 1, hide:true },
-    { field: "whyShouldWeConsiderYou", headerName: "Why Should We Consider You?", flex: 1, hide:true },
-    { field: "relevantExperience", headerName: "Relevant Experience", flex: 1, hide: true },
-    { field: "resumeFilename", headerName: "Resume Filename", flex: 1, hide: true },
-    { field: "whoAreYouAsPerson", headerName: "Who Are You As a Person?", flex: 1, hide:true },
-    { field: "message", headerName: "Message", flex: 1, hide:true },
-    { field: "resumeLink", headerName: "Resume Link", flex: 1, hide:true },
-    { field: "remarks", headerName: "Remarks", flex: 1, hide:true },
-    { field: "finalSubmissionDate", headerName: "Submission Date" ,flex:1},
-    { field: "source", headerName: "Source", flex: 1, minWidth: 150,
-      valueGetter: (params) => params.data?.source || "local" },
+    {
+      field: "howSoonYouCanJoinInDays",
+      headerName: "Joining Time",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "willRelocateToGoa",
+      headerName: "Willing to Relocate to Goa",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "willingToBootstrap",
+      headerName: "Willing to Bootstrap",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "linkedInProfileUrl",
+      headerName: "LinkedIn Profile",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "skillSetsForJob",
+      headerName: "Skill Sets for Job",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "whyShouldWeConsiderYou",
+      headerName: "Why Should We Consider You?",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "relevantExperience",
+      headerName: "Relevant Experience",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "resumeFilename",
+      headerName: "Resume Filename",
+      flex: 1,
+      hide: true,
+    },
+    {
+      field: "whoAreYouAsPerson",
+      headerName: "Who Are You As a Person?",
+      flex: 1,
+      hide: true,
+    },
+    { field: "message", headerName: "Message", flex: 1, hide: true },
+    { field: "resumeLink", headerName: "Resume Link", flex: 1, hide: true },
+    { field: "remarks", headerName: "Remarks", flex: 1, hide: true },
+    { field: "finalSubmissionDate", headerName: "Submission Date", flex: 1 },
+    {
+      field: "source",
+      headerName: "Source Company",
+      flex: 1,
+      minWidth: 150,
+      valueGetter: (params) =>
+        params.data ? applicationSourceLabel(params.data) : "",
+    },
     { field: "jobPosition", headerName: "Job Position", flex: 1 },
-    { field: "status",
+    {
+      field: "status",
       headerName: "Status",
       flex: 1,
       cellRenderer: (params) => (
         <StatusChip
           status={params.data?.isDeleted ? "Disabled" : params.value}
         />
-      )
+      ),
     },
     ...(jobApplications?.some((application) => Boolean(application.isDeleted))
       ? [
@@ -346,76 +481,106 @@ const JobApplicationList = () => {
     {
       field: "actions",
       headerName: "Actions",
-      width: 90,
+      width: 120,
       pinned: "right",
       lockPinned: true,
       sortable: false,
       filter: false,
       suppressCsvExport: true,
-      cellRenderer: (params) => {
+      cellRenderer: ({ data: application }) => {
+        if (!application) return null;
+        const canEdit = application.isWebsiteApplication
+          ? /^[a-f\d]{24}$/i.test(application.externalSubmissionId)
+          : Boolean(application._id);
         return (
-          <button
-            type="button"
-            aria-label="Open job application actions"
-            title="Actions"
-            className="p-1 text-primary"
-            onClick={(event) => {
-              const { right, bottom } = event.currentTarget.getBoundingClientRect();
-              setActionPosition({ top: bottom, left: right });
-              setActionRow(params.data);
-              setStatusExpanded(false);
-            }}
-          >
-            <MdMoreHoriz size={22} />
-          </button>
+          <div className="flex h-full items-center gap-1">
+            <button
+              type="button"
+              aria-label="View job application"
+              title="View Job Application"
+              className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+              onClick={() => setViewApplicationDetails(application)}
+            >
+              <MdOutlineRemoveRedEye size={20} />
+            </button>
+            {application.isDeleted ? (
+              <>
+                <button
+                  type="button"
+                  aria-label="Restore application"
+                  title="Restore"
+                  className="p-1 text-primary"
+                  onClick={() => restoreApplication(application)}
+                >
+                  <MdOutlineRestore size={20} />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Permanently delete application"
+                  title="Delete permanently"
+                  className="p-1 text-primary"
+                  onClick={() => permanentlyDeleteApplication(application)}
+                >
+                  <MdDeleteForever size={20} />
+                </button>
+              </>
+            ) : (
+              <>
+                {canEdit && (
+                  <button
+                    type="button"
+                    aria-label="Edit job application"
+                    title="Edit Job Application"
+                    className="flex h-8 w-8 items-center justify-center text-black hover:text-primary"
+                    onClick={() => openEditApplication(application)}
+                  >
+                    <HiPencilSquare size={24} />
+                  </button>
+                )}
+                {!application.isWebsiteApplication && canEdit && (
+                  <button
+                    type="button"
+                    aria-label="Archive application"
+                    title="Archive"
+                    className="p-1 text-primary"
+                    onClick={() => archiveApplication(application)}
+                  >
+                    <MdDeleteForever size={20} />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         );
       },
     },
   ];
 
-  const handleViewApplicationDetails = (job) => {
-    setViewApplicationDetails(job);
-    setOpenModal(true);
-  };
-
-  function isValidURL(string) {
+  const safeDetailUrl = (value) => {
     try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return false;
+      const url = new URL(value);
+      return ["http:", "https:"].includes(url.protocol) ? url.href : null;
+    } catch {
+      return null;
     }
-  }
-
-  const formatURL = (url) => {
-    if (!url) return "";
-
-    let formattedUrl =
-      url.startsWith("http://") || url.startsWith("https://")
-        ? url
-        : `https://${url}`;
-
-    // Ensure LinkedIn profile URLs have a trailing slash
-    if (
-      formattedUrl.includes("linkedin.com/in") &&
-      !formattedUrl.endsWith("/")
-    ) {
-      formattedUrl += "/";
-    }
-
-    return formattedUrl;
   };
+  const linkedInUrl = safeDetailUrl(viewApplicationDetails?.linkedInProfileUrl);
+  const resumeUrl = safeDetailUrl(viewApplicationDetails?.resumeLink);
 
   return (
     <div>
       {isWebsiteApplicationError && (
         <p role="alert" className="mb-3 text-red-600">
-          {websiteApplicationError?.response?.data?.message || "Unable to load website applications."} Local applications are still available.
+          {websiteApplicationError?.response?.data?.message ||
+            "Unable to load website applications."}{" "}
+          Local applications are still available.
         </p>
       )}
-      {(websiteApplications?.pagination?.filteredTotal ?? 0) > (websiteApplications?.data?.length ?? 0) && (
+      {(websiteApplications?.pagination?.filteredTotal ?? 0) >
+        (websiteApplications?.data?.length ?? 0) && (
         <p className="mb-3 text-sm text-gray-600">
-          Showing the first {websiteApplications.data.length} website applications. More pages require additional API query parameters.
+          Showing the first {websiteApplications.data.length} website
+          applications. More pages require additional API query parameters.
         </p>
       )}
       <WidgetTable
@@ -433,74 +598,41 @@ const JobApplicationList = () => {
         exportData
         loading={isJobApplicationPending || isWebsiteApplicationPending}
       />
-      <Menu
-        anchorReference="anchorPosition"
-        anchorPosition={actionPosition}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
-        open={Boolean(actionPosition)}
-        onClose={closeActionMenu}
-      >
-        {actionRow?.isDeleted ? [
-          <MenuItem key="restore" disabled={applicationActionMutation.isPending} onClick={() => {
-            const row = actionRow;
-            closeActionMenu();
-            restoreApplication(row);
-          }}><MdOutlineRestore className="mr-2" />Restore</MenuItem>,
-          <MenuItem key="permanent-delete" disabled={applicationActionMutation.isPending} onClick={() => {
-            const row = actionRow;
-            closeActionMenu();
-            permanentlyDeleteApplication(row);
-          }}><MdDeleteForever className="mr-2" />Delete permanently</MenuItem>,
-        ] : [
-          <MenuItem key="edit" disabled={actionRow?.isWebsiteApplication || !actionRow?._id} onClick={() => {
-            const row = actionRow;
-            closeActionMenu();
-            openEditApplication(row);
-          }}>Edit</MenuItem>,
-          <MenuItem key="status" disabled={actionRow?.isWebsiteApplication || !actionRow?._id} aria-expanded={statusExpanded} onClick={() => setStatusExpanded((expanded) => !expanded)}>
-            <span className="flex w-full items-center justify-between gap-4">Status <span aria-hidden="true">{statusExpanded ? "▴" : "▾"}</span></span>
-          </MenuItem>,
-          ...(statusExpanded && !actionRow?.isWebsiteApplication ? APPLICATION_STATUSES.map((status) => (
-            <MenuItem key={status} selected={actionRow?.status === status} disabled={statusMutation.isPending} sx={{ pl: 4 }} onClick={() => {
-              const row = actionRow;
-              closeActionMenu();
-              statusMutation.mutate({ id: row._id, status });
-            }}>{status}</MenuItem>
-          )) : []),
-          <MenuItem key="view" onClick={() => {
-            const row = actionRow;
-            closeActionMenu();
-            handleViewApplicationDetails(row);
-          }}>View</MenuItem>,
-          ...(!actionRow?.isWebsiteApplication && actionRow?._id ? [
-            <MenuItem key="delete" onClick={() => {
-              const row = actionRow;
-              closeActionMenu();
-              archiveApplication(row);
-            }}>Delete</MenuItem>,
-          ] : []),
-        ]}
-      </Menu>
       <MuiModal
         open={openAddModal}
         onClose={closeAddModal}
-        title={editingApplication ? "Edit Job Application" : "Add Job Application"}
+        title={
+          editingApplication ? "Edit Job Application" : "Add Job Application"
+        }
         widthClass="w-4/5 lg:w-3/5"
       >
         <form
-          onSubmit={handleSubmit((values) =>
-            saveApplicationMutation.mutate(values),
-          )}
+          onSubmit={(event) => {
+            if (localStatusOnly) {
+              event.preventDefault();
+              saveApplicationMutation.mutate({ status: getValues("status") });
+              return;
+            }
+            return handleSubmit((values) =>
+              saveApplicationMutation.mutate(values),
+            )(event);
+          }}
+          noValidate={isWebsiteEdit || localStatusOnly}
           className="flex flex-col gap-4"
         >
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Controller
               name="jobPosition"
               control={control}
-              rules={{ required: "Job position is required" }}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : { required: "Job position is required" }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
+                  disabled={isWebsiteEdit}
                   label="Job Position"
                   size="small"
                   error={!!errors.jobPosition}
@@ -511,11 +643,15 @@ const JobApplicationList = () => {
             <Controller
               name="name"
               control={control}
-              rules={{
-                required: "Name is required",
-                validate: (value) =>
-                  value.trim().length > 1 || "Enter a valid name",
-              }}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : {
+                      required: "Name is required",
+                      validate: (value) =>
+                        value.trim().length > 1 || "Enter a valid name",
+                    }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -529,13 +665,17 @@ const JobApplicationList = () => {
             <Controller
               name="email"
               control={control}
-              rules={{
-                required: "Email is required",
-                pattern: {
-                  value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                  message: "Enter a valid email",
-                },
-              }}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : {
+                      required: "Email is required",
+                      pattern: {
+                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                        message: "Enter a valid email",
+                      },
+                    }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -550,13 +690,17 @@ const JobApplicationList = () => {
             <Controller
               name="mobileNumber"
               control={control}
-              rules={{
-                required: "Mobile number is required",
-                pattern: {
-                  value: /^[0-9]{10}$/,
-                  message: "Enter a valid 10-digit mobile number",
-                },
-              }}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : {
+                      required: "Mobile number is required",
+                      pattern: {
+                        value: /^[0-9]{10}$/,
+                        message: "Enter a valid 10-digit mobile number",
+                      },
+                    }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -568,27 +712,19 @@ const JobApplicationList = () => {
                 />
               )}
             />
-            <Controller
+            <ApplicationDateField
               name="dateOfBirth"
+              label="Date of Birth"
               control={control}
-              rules={{ required: "Date of birth is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Date of Birth"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  inputProps={{ max: new Date().toISOString().slice(0, 10) }}
-                  error={!!errors.dateOfBirth}
-                  helperText={errors.dateOfBirth?.message}
-                />
-              )}
+              unchanged={isWebsiteEdit && !dirtyFields.dateOfBirth}
+              maxDate={dayjs()}
             />
             <Controller
               name="location"
               control={control}
-              rules={{ required: "Location is required" }}
+              rules={
+                isWebsiteEdit ? undefined : { required: "Location is required" }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -602,7 +738,11 @@ const JobApplicationList = () => {
             <Controller
               name="experienceInYears"
               control={control}
-              rules={{ required: "Experience is required", min: 0 }}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : { required: "Experience is required", min: 0 }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -618,10 +758,19 @@ const JobApplicationList = () => {
             <Controller
               name="linkedInProfileUrl"
               control={control}
+              rules={{
+                validate: (value) =>
+                  (isWebsiteEdit && !dirtyFields.linkedInProfileUrl) ||
+                  !value.trim() ||
+                  isLinkedInProfileUrl(value.trim()) ||
+                  "Enter a valid LinkedIn profile or company URL.",
+              }}
               render={({ field }) => (
                 <TextField
                   {...field}
                   label="LinkedIn Profile URL"
+                  error={Boolean(errors.linkedInProfileUrl)}
+                  helperText={errors.linkedInProfileUrl?.message}
                   size="small"
                 />
               )}
@@ -656,33 +805,21 @@ const JobApplicationList = () => {
               name="howSoonYouCanJoinInDays"
               control={control}
               render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Joining Time"
-                  size="small"
-                />
+                <TextField {...field} label="Joining Time" size="small" />
               )}
             />
-            <Controller
+            <ApplicationDateField
               name="finalSubmissionDate"
+              label="Submission Date"
               control={control}
-              rules={{ required: "Submission date is required" }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  label="Submission Date"
-                  type="date"
-                  size="small"
-                  InputLabelProps={{ shrink: true }}
-                  error={!!errors.finalSubmissionDate}
-                  helperText={errors.finalSubmissionDate?.message}
-                />
-              )}
+              disabled={isWebsiteEdit}
             />
             <Controller
               name="willRelocateToGoa"
               control={control}
-              rules={{ required: "Select an option" }}
+              rules={
+                isWebsiteEdit ? undefined : { required: "Select an option" }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -692,6 +829,11 @@ const JobApplicationList = () => {
                   error={!!errors.willRelocateToGoa}
                   helperText={errors.willRelocateToGoa?.message}
                 >
+                  {field.value && !["Yes", "No"].includes(field.value) && (
+                    <MenuItem value={field.value} disabled>
+                      {field.value}
+                    </MenuItem>
+                  )}
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
                 </TextField>
@@ -700,7 +842,9 @@ const JobApplicationList = () => {
             <Controller
               name="willingToBootstrap"
               control={control}
-              rules={{ required: "Select an option" }}
+              rules={
+                isWebsiteEdit ? undefined : { required: "Select an option" }
+              }
               render={({ field }) => (
                 <TextField
                   {...field}
@@ -710,6 +854,11 @@ const JobApplicationList = () => {
                   error={!!errors.willingToBootstrap}
                   helperText={errors.willingToBootstrap?.message}
                 >
+                  {field.value && !["Yes", "No"].includes(field.value) && (
+                    <MenuItem value={field.value} disabled>
+                      {field.value}
+                    </MenuItem>
+                  )}
                   <MenuItem value="Yes">Yes</MenuItem>
                   <MenuItem value="No">No</MenuItem>
                 </TextField>
@@ -720,24 +869,36 @@ const JobApplicationList = () => {
               control={control}
               render={({ field }) => (
                 <TextField {...field} select label="Status" size="small">
+                  {field.value &&
+                    !APPLICATION_STATUSES.includes(field.value) && (
+                      <MenuItem value={field.value} disabled>
+                        {field.value}
+                      </MenuItem>
+                    )}
                   {APPLICATION_STATUSES.map((status) => (
-                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                    <MenuItem key={status} value={status}>
+                      {status}
+                    </MenuItem>
                   ))}
                 </TextField>
               )}
             />
-            <Controller
-              name="remarks"
-              control={control}
-              render={({ field }) => (
-                <TextField {...field} label="Remarks" size="small" />
-              )}
-            />
+            {!isWebsiteEdit && (
+              <Controller
+                name="remarks"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Remarks" size="small" />
+                )}
+              />
+            )}
           </div>
 
           {[
             ["skillSetsForJob", "Skill Sets for Job"],
-            ["whyShouldWeConsiderYou", "Why Should We Consider You?"],
+            ...(isWebsiteEdit
+              ? [["relevantExperience", "Relevant Experience"]]
+              : [["whyShouldWeConsiderYou", "Why Should We Consider You?"]]),
             ["whoAreYouAsPerson", "Who Are You As a Person?"],
             ["message", "Message"],
           ].map(([name, label]) => (
@@ -757,32 +918,42 @@ const JobApplicationList = () => {
             />
           ))}
 
-          <Controller
-            name="resume"
-            control={control}
-            rules={{
-              validate: (value) =>
-                Boolean(value || editingApplication?.resumeLink) ||
-                "Resume is required",
-            }}
-            render={({ field: { onChange, value: _value, ...field } }) => (
-              <TextField
-                {...field}
-                label={
-                  editingApplication?.resumeLink
-                    ? "Replace Resume (Optional)"
-                    : "Resume *"
-                }
-                type="file"
-                size="small"
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ accept: ".pdf,.doc,.docx" }}
-                onChange={(event) => onChange(event.target.files?.[0] || null)}
-                error={!!errors.resume}
-                helperText={errors.resume?.message}
-              />
-            )}
-          />
+          {!isWebsiteEdit && (
+            <Controller
+              name="resume"
+              control={control}
+              rules={
+                isWebsiteEdit
+                  ? undefined
+                  : {
+                      validate: (value) =>
+                        Boolean(value || editingApplication?.resumeLink) ||
+                        "Resume is required",
+                    }
+              }
+              render={({ field, fieldState }) => (
+                <AttachmentFilesInput
+                  id="job-application-resume"
+                  value={field.value ? [field.value] : []}
+                  onChange={([file]) => field.onChange(file ?? null)}
+                  label={
+                    editingApplication?.resumeLink
+                      ? "Replace Resume (Optional)"
+                      : "Upload Resume *"
+                  }
+                  placeholder="Choose a resume file"
+                  fallbackName="Resume"
+                  extensions={["pdf", "doc", "docx"]}
+                  maxFiles={1}
+                  maxSizeMb={null}
+                  error={Boolean(fieldState.error)}
+                  helperText={
+                    fieldState.error?.message || "One PDF or Word document."
+                  }
+                />
+              )}
+            />
+          )}
 
           <div className="flex justify-end gap-3">
             <PrimaryButton
@@ -802,9 +973,7 @@ const JobApplicationList = () => {
       <ConfirmationModal
         open={Boolean(confirmationAction)}
         onClose={() => setConfirmationAction(null)}
-        onConfirm={() =>
-          applicationActionMutation.mutate(confirmationAction)
-        }
+        onConfirm={() => applicationActionMutation.mutate(confirmationAction)}
         title={confirmationContent?.title}
         message={confirmationContent?.message}
         confirmText={confirmationContent?.confirmText}
@@ -812,8 +981,8 @@ const JobApplicationList = () => {
         isLoading={applicationActionMutation.isPending}
       />
       <MuiModal
-        open={openModal}
-        onClose={() => setOpenModal(false)}
+        open={Boolean(viewApplicationDetails)}
+        onClose={() => setViewApplicationDetails(null)}
         title={"Job Application Details"}
       >
         {viewApplicationDetails ? (
@@ -829,7 +998,11 @@ const JobApplicationList = () => {
             />
             <DetalisFormatted
               title="Date of Birth"
-              detail={humanDate(viewApplicationDetails?.dateOfBirth)}
+              detail={
+                viewApplicationDetails.dateOfBirth
+                  ? humanDate(viewApplicationDetails.dateOfBirth)
+                  : ""
+              }
             />
             <DetalisFormatted
               title="Mobile Number"
@@ -871,22 +1044,17 @@ const JobApplicationList = () => {
             <DetalisFormatted
               title="LinkedIn Profile"
               detail={
-                !isValidURL(viewApplicationDetails.linkedInProfileUrl) ? (
-                  "Not Provided"
+                linkedInUrl ? (
+                  <a
+                    href={linkedInUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline break-all"
+                  >
+                    {linkedInUrl}
+                  </a>
                 ) : (
-                  <div>
-                    <a
-                      className="text-primary underline cursor-pointer"
-                      href={formatURL(
-                        viewApplicationDetails.linkedInProfileUrl
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: "underline" }}
-                    >
-                      LinkedIn Profile
-                    </a>
-                  </div>
+                  viewApplicationDetails.linkedInProfileUrl
                 )
               }
             />
@@ -900,8 +1068,11 @@ const JobApplicationList = () => {
                 detail={viewApplicationDetails?.whyShouldWeConsiderYou}
               />
             )}
-            {viewApplicationDetails?.relevantExperience && (
-              <DetalisFormatted title="Relevant Experience" detail={viewApplicationDetails.relevantExperience} />
+            {viewApplicationDetails.isWebsiteApplication && (
+              <DetalisFormatted
+                title="Relevant Experience"
+                detail={viewApplicationDetails.relevantExperience}
+              />
             )}
             <DetalisFormatted
               title="Who Are You As a Person?"
@@ -915,34 +1086,54 @@ const JobApplicationList = () => {
             <br />
             <div className="font-bold">Application Info</div>
             <DetalisFormatted
-              title="Resume Link"
+              title="Resume"
               detail={
-                !isValidURL(viewApplicationDetails.resumeLink) ? (
-                  viewApplicationDetails.hasResume
-                    ? viewApplicationDetails.resumeFilename || "Resume available on website"
-                    : "Not Provided"
+                resumeUrl ? (
+                  <a
+                    href={resumeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary underline"
+                  >
+                    {viewApplicationDetails.resumeFilename || "View resume"}
+                  </a>
                 ) : (
-                  <div>
-                    <a
-                      className="text-primary underline cursor-pointer"
-                      href={formatURL(viewApplicationDetails.resumeLink)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ textDecoration: "underline" }}
-                    >
-                      Resume
-                    </a>
-                  </div>
+                  viewApplicationDetails.resumeFilename ||
+                  (viewApplicationDetails.hasResume
+                    ? "Resume available on website"
+                    : "Not provided")
                 )
               }
             />
+            {viewApplicationDetails.isWebsiteApplication && (
+              <DetalisFormatted
+                title="Notification Status"
+                detail={viewApplicationDetails.notificationStatus}
+              />
+            )}
+            {viewApplicationDetails.isDeleted && (
+              <>
+                <DetalisFormatted
+                  title="Archived By"
+                  detail={viewApplicationDetails.deletedByName}
+                />
+                <DetalisFormatted
+                  title="Archived On"
+                  detail={
+                    viewApplicationDetails.deletedAt
+                      ? humanDate(viewApplicationDetails.deletedAt)
+                      : ""
+                  }
+                />
+              </>
+            )}
             <DetalisFormatted
               title="Status"
               detail={viewApplicationDetails?.status}
             />
             <DetalisFormatted
-              title="Source"
-              detail={viewApplicationDetails?.source || "local"}
+              title="Source Company"
+              detail={applicationSourceLabel(viewApplicationDetails)}
             />
             <DetalisFormatted
               title="Remarks"
@@ -954,12 +1145,14 @@ const JobApplicationList = () => {
             />
             <DetalisFormatted
               title="Final Submission Date"
-              detail={humanDate(viewApplicationDetails?.finalSubmissionDate)}
+              detail={
+                viewApplicationDetails.finalSubmissionDate
+                  ? humanDate(viewApplicationDetails.finalSubmissionDate)
+                  : ""
+              }
             />
           </div>
-        ) : (
-          <HrLoadingSkeleton />
-        )}
+        ) : null}
       </MuiModal>
     </div>
   );
