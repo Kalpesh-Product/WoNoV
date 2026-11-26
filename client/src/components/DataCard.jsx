@@ -58,7 +58,7 @@ const DataCard = ({
             >
               {icon}
             </span>
-            <div className="truncate text-[13px] font-semibold uppercase tracking-[0.12em] text-slate-900">
+            <div className="truncate text-[15px] font-pmedium uppercase text-slate-900">
               {title}
             </div>
           </div>
